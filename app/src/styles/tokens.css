@@ -1,0 +1,71 @@
+/* Paleta "Livro Vermelho", a mesma do Runas DM (Runas-Core/apps/runas-dm/app/globals.css).
+   Cores têm função: vermelho = dano/perigo, ciano = ação primária/testes, violeta = magia/segredo,
+   dourado = narrativa/destaque, verde = sucesso/restauração. */
+:root {
+  --bg: #0d0b0c;
+  --bg-deep: #080707;
+  --panel: #171314;
+  --panel-2: #21191a;
+  --panel-hover: #2a2021;
+  --text: #f3ece8;
+  --muted: #b8aaa5;
+  --faint: #8a7b77;
+  --line: #3c2d2f;
+  --line-strong: #704346;
+  --cyan: #82aaa6;
+  --cyan-dim: #5f817e;
+  --green: #86a47f;
+  --red: #c76561;
+  --gold: #b99b65;
+  --violet: #927f9c;
+  --on-accent: #0d0b0c;
+  --shadow: 0 24px 70px rgb(0 0 0 / 35%);
+  --shadow-sm: 0 6px 18px rgb(0 0 0 / 25%);
+  --bg-veil: linear-gradient(115deg, rgb(13 11 12 / 94%), rgb(13 11 12 / 82%));
+
+  /* Régua de espaçamento do Runas Tools (docs/design-system.md). */
+  --space-label: 0.125rem;
+  --space-field: 0.5rem;
+  --space-group: 0.625rem;
+  --space-column: 0.75rem;
+  --space-section: 1rem;
+  --space-page: 1.5rem;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-display: "Cinzel", "Geist Variable", serif;
+  --font-book: "EB Garamond Variable", Georgia, serif;
+
+  --sidebar-width: 248px;
+  --topbar-height: 56px;
+  --bottomnav-height: 64px;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #eee8df;
+  --bg-deep: #ded4c7;
+  --panel: #fffaf3;
+  --panel-2: #f3e9df;
+  --panel-hover: #eadbd0;
+  --text: #281d1c;
+  --muted: #6f5c58;
+  --faint: #8f7d78;
+  --line: #c9b6ac;
+  --line-strong: #8d625e;
+  --cyan: #315f5d;
+  --cyan-dim: #557b78;
+  --green: #4c6f49;
+  --red: #963f3d;
+  --gold: #7b612d;
+  --violet: #66516e;
+  --on-accent: #fffaf3;
+  --shadow: 0 24px 70px rgb(56 50 38 / 15%);
+  --shadow-sm: 0 6px 18px rgb(56 50 38 / 12%);
+  --bg-veil: linear-gradient(115deg, rgb(238 232 223 / 93%), rgb(238 232 223 / 84%));
+  color-scheme: light;
+}

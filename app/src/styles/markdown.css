@@ -1,0 +1,55 @@
+/* Nota renderizada (modo leitura). Mesma aparência que o snippet runas-codex.css dará ao Obsidian. */
+.md { font-size: 15px; line-height: 1.7; color: var(--text); overflow-wrap: anywhere; }
+.md > * + * { margin-top: 0.8em; }
+.md h1 { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin-top: 0.4em; }
+.md h2 { font-family: var(--font-display); font-size: 21px; font-weight: 600; margin-top: 1.4em; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.md h3 { font-size: 17px; margin-top: 1.2em; }
+.md h4, .md h5, .md h6 { font-size: 15px; margin-top: 1em; color: var(--muted); }
+.md ul, .md ol { padding-left: 1.4em; }
+.md li + li { margin-top: 0.2em; }
+.md li > ul, .md li > ol { margin-top: 0.2em; }
+.md blockquote { margin: 0; padding: 4px 14px; border-left: 3px solid var(--line-strong); color: var(--muted); }
+.md code { padding: 1px 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); font-family: var(--font-mono); font-size: 0.86em; }
+.md pre { overflow: auto; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-deep); }
+.md pre code { padding: 0; border: 0; background: transparent; }
+.md hr { height: 1px; border: 0; background: linear-gradient(90deg, transparent, var(--line-strong), transparent); margin: 1.6em 0; }
+.md table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.md th, .md td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.md th { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.md tr:nth-child(even) td { background: color-mix(in srgb, var(--panel-2) 50%, transparent); }
+.md mark { padding: 0 3px; border-radius: 3px; background: color-mix(in srgb, var(--gold) 35%, transparent); color: inherit; }
+.md input[type="checkbox"] { accent-color: var(--cyan); margin-right: 6px; }
+.md img { border-radius: var(--radius); }
+.md .footnotes { font-size: 13px; color: var(--muted); }
+
+/* Links internos */
+.wikilink { color: var(--cyan); text-decoration: none; border-bottom: 1px dotted color-mix(in srgb, var(--cyan) 60%, transparent); cursor: pointer; }
+.wikilink:hover { border-bottom-style: solid; }
+.wikilink.broken { color: var(--red); border-bottom-color: color-mix(in srgb, var(--red) 60%, transparent); }
+.wikilink.cross { color: var(--violet); border-bottom-color: color-mix(in srgb, var(--violet) 60%, transparent); }
+.tag { display: inline-block; padding: 0 7px; border-radius: 999px; background: color-mix(in srgb, var(--violet) 18%, transparent); color: var(--violet); font-size: 0.86em; font-weight: 600; text-decoration: none; }
+.dice-inline { display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--cyan) 40%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--cyan) 10%, transparent); color: var(--cyan); font-family: var(--font-mono); font-size: 0.86em; cursor: pointer; }
+
+/* Callouts > [!tipo] */
+.callout { --c: var(--cyan); margin: 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line)); border-left: 3px solid var(--c); border-radius: var(--radius); background: color-mix(in srgb, var(--c) 8%, var(--panel)); color: var(--text); }
+.callout-title { display: flex; align-items: center; gap: 7px; color: var(--c); font-weight: 700; }
+.callout-body { margin-top: 6px; }
+.callout-body > * + * { margin-top: 0.6em; }
+.callout.nota { --c: var(--cyan); }
+.callout.aviso, .callout.perigo { --c: var(--red); }
+.callout.dica, .callout.sucesso { --c: var(--green); }
+.callout.citacao, .callout.descritivo { --c: var(--gold); font-style: italic; }
+.callout.segredo { --c: var(--violet); }
+.callout.statblock { --c: var(--red); }
+
+/* Segredo do mestre */
+.secret { position: relative; }
+.secret.hidden .callout-body { filter: blur(6px); user-select: none; }
+.spoiler { padding: 0 4px; border-radius: 4px; background: var(--muted); color: transparent; cursor: pointer; }
+.spoiler.open { background: transparent; color: inherit; }
+
+/* Live preview: linha com o cursor mostra a sintaxe. */
+.md .src-line { padding: 2px 6px; margin-left: -6px; border-radius: 6px; background: color-mix(in srgb, var(--cyan) 8%, transparent); font-family: var(--font-mono); font-size: 13.5px; color: var(--muted); }
+.md .src-line b { color: var(--text); }
+.caret { display: inline-block; width: 2px; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: var(--cyan); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }

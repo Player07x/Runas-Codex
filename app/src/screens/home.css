@@ -1,0 +1,19 @@
+.capture { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--panel); }
+.capture input { min-height: 36px; border: 0; outline: 0; background: transparent; font-size: 15px; }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-column); }
+.next-session { display: grid; gap: 12px; border-color: color-mix(in srgb, var(--red) 35%, var(--line)); background: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--red) 16%, transparent), transparent 60%), var(--panel); }
+.countdown { display: flex; gap: 10px; }
+.countdown div { display: grid; justify-items: center; min-width: 64px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.countdown strong { font-family: var(--font-mono); font-size: 24px; }
+.countdown span { color: var(--muted); font-size: 11px; }
+.space-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-column); }
+.space-tile { display: grid; gap: 4px; justify-items: start; text-decoration: none; }
+.space-tile svg { width: 22px; height: 22px; margin-bottom: 6px; color: var(--tile); }
+.space-tile strong { font-size: 15px; }
+@media (max-width: 1100px) { .space-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 860px) {
+  .home-grid { grid-template-columns: minmax(0, 1fr); }
+  .space-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .space-tile { padding: 12px; }
+}
+@media (max-width: 420px) { .countdown div { min-width: 0; flex: 1; } }

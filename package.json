@@ -1,0 +1,19 @@
+{
+  "name": "runas-codex",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Runas-Codex: notas compatíveis com o Obsidian, wiki, campanhas, livros, agenda e VTT, offline",
+  "workspaces": [
+    "app"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @runas-codex/app",
+    "dev:rede": "npm run dev -w @runas-codex/app -- --host",
+    "build": "npm run build -w @runas-codex/app",
+    "preview": "npm run preview -w @runas-codex/app",
+    "typecheck": "npm run typecheck -w @runas-codex/app"
+  }
+}

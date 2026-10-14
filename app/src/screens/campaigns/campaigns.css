@@ -1,0 +1,36 @@
+.campaign-card { display: grid; gap: 8px; overflow: hidden; padding-top: 0; text-decoration: none; }
+.campaign-banner { height: 70px; margin: 0 calc(-1 * var(--space-section)) 4px; background: radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--accent) 55%, transparent), transparent 70%), linear-gradient(135deg, color-mix(in srgb, var(--accent) 30%, var(--bg-deep)), var(--bg-deep)); }
+.campaign-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-column); }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.stats div { display: grid; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.stats strong { font-family: var(--font-mono); font-size: 22px; }
+.stats span { color: var(--muted); font-size: 11px; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: var(--space-column); align-items: start; }
+.clocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.clock { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.mini-table { width: 100%; border-collapse: collapse; }
+.mini-table th { color: var(--faint); font-size: 10.5px; font-weight: 700; text-align: left; text-transform: uppercase; padding: 4px 6px; }
+.mini-table td { padding: 6px; border-top: 1px solid var(--line); vertical-align: top; }
+.avatar { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px; color: #120d0d; font-weight: 800; }
+@media (max-width: 860px) { .campaign-top { grid-template-columns: minmax(0, 1fr); } }
+
+.session-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--space-column); align-items: start; }
+.prep-step { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.prep-step input { margin-top: 3px; accent-color: var(--gold); width: 16px; height: 16px; }
+.prep-step.done { border-color: color-mix(in srgb, var(--gold) 40%, var(--line)); }
+@media (max-width: 860px) { .session-layout { grid-template-columns: minmax(0, 1fr); } .session-list { order: 2; } }
+
+.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 1fr); gap: var(--space-column); overflow-x: auto; padding-bottom: 8px; }
+.kanban-col { display: grid; gap: 8px; align-content: start; min-height: 300px; padding: 10px; border: 1px solid var(--line); border-top: 3px solid var(--col); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--panel) 80%, transparent); }
+.kanban-head { display: flex; align-items: center; gap: 8px; }
+.kanban-head strong { flex: 1; }
+.kanban-card { display: grid; gap: 6px; cursor: grab; background: var(--panel); }
+
+.canvas-board { overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: radial-gradient(circle, var(--line) 1px, transparent 1px) 0 0 / 22px 22px, var(--bg-deep); }
+.canvas-inner { position: relative; width: 900px; height: 520px; }
+.canvas-edges { position: absolute; inset: 0; pointer-events: none; }
+.canvas-group { position: absolute; border: 1.5px dashed color-mix(in srgb, var(--red) 45%, var(--line)); border-radius: 16px; background: color-mix(in srgb, var(--red) 5%, transparent); }
+.canvas-group span { position: absolute; top: -11px; left: 14px; padding: 0 8px; border-radius: 6px; background: var(--bg-deep); color: var(--red); font-size: 12px; font-weight: 700; }
+.canvas-node { position: absolute; display: grid; gap: 4px; align-content: start; padding: 10px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow-sm); }
+.canvas-node.text { border-left: 3px solid var(--gold); }
+.canvas-node.image { place-content: center; justify-items: center; background: repeating-linear-gradient(45deg, var(--panel-2) 0 10px, var(--panel) 10px 20px); }
