@@ -6,7 +6,7 @@ Quem está trabalhando em quê, para dois agentes não mexerem nos mesmos arquiv
 | Etapa | Quem | Branches | Pedido | Situação |
 |---|---|---|---|---|
 | **8a** Livros: estrutura em notas e editor | Codex (GPT-6 Astra) | `livros/8a-*` | [livros-8a-8b.md](livros-8a-8b.md) | mesclada (PR #8) |
-| **8b** Livros: prévia paginada e temas | Codex (GPT-6 Astra) | `livros/8b-*` | [livros-8a-8b.md](livros-8a-8b.md) | a fazer |
+| **8b** Livros: prévia paginada e temas | Codex (GPT-6 Astra), terminada pelo Claude Code | `livros/8b` | [livros-8a-8b.md](livros-8a-8b.md) | PR aberto |
 | **6** Wiki | Claude Code | `wiki/*` | docs/02, seção 8; [ADR 0010](../adr/0010-wiki.md) | PR aberto |
 
 ## Quem mexe em quê

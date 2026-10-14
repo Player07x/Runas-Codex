@@ -75,17 +75,20 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
     resize()
     return () => observer.disconnect()
   }, [settings.size])
+  // O atalho lê o estado na hora da tecla (registrar de novo a cada mudança deixava uma janela sem o atalho certo).
+  const readyNow = useRef(ready)
+  readyNow.current = ready
   useEffect(() => {
     const print = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
         event.preventDefault()
-        if (ready) vault.platform.printDocument?.()
+        if (readyNow.current) vault.platform.printDocument?.()
       }
     }
     document.addEventListener("keydown", print)
     document.body.classList.add("book-preview-open")
     return () => { document.removeEventListener("keydown", print); document.body.classList.remove("book-preview-open") }
-  }, [ready, vault.platform])
+  }, [vault.platform])
 
   async function change(key: string, value: string | boolean) {
     try { await vault.setProperty(book.path, key, value) } catch (err) { setError(String(err)) }
