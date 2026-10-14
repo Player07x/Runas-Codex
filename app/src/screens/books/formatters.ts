@@ -1,4 +1,4 @@
-/** Catálogo de formatadores (seção E.1 da checklist) com a sintaxe proposta no plano. */
+/** Catálogo de formatadores (seção E.1 da checklist) com a sintaxe do dialeto aprovado. */
 export interface Formatter {
   label: string
   syntax: string
@@ -37,7 +37,12 @@ export const FORMATTER_GROUPS: { title: string; items: Formatter[] }[] = [
   {
     title: "Parágrafo",
     items: [
-      { label: "Títulos H1–H6", syntax: "# … ######" },
+      { label: "Título H1", syntax: "# Título" },
+      { label: "Título H2", syntax: "## Título" },
+      { label: "Título H3", syntax: "### Título" },
+      { label: "Título H4", syntax: "#### Título" },
+      { label: "Título H5", syntax: "##### Título" },
+      { label: "Título H6", syntax: "###### Título" },
       { label: "Alinhar à esquerda/centro/direita", syntax: '<p align="center">texto</p>' },
       { label: "Justificar", syntax: '<p align="justify">texto</p>' },
       { label: "Citação (aninhada)", syntax: "> texto\n>> texto" },
@@ -46,7 +51,7 @@ export const FORMATTER_GROUPS: { title: string; items: Formatter[] }[] = [
       { label: "Lista de tarefas", syntax: "- [ ] tarefa" },
       { label: "Lista de definição", syntax: "Termo\n: definição" },
       { label: "Linha horizontal", syntax: "---" },
-      { label: "Separador decorativo", syntax: '<div class="separador"></div>' },
+      { label: "Separador decorativo", syntax: '<hr class="ornamento">' },
       { label: "Quebra de linha", syntax: "texto\\" },
       { label: "Atributos / classe", syntax: "{.classe}" },
       { label: "Contêiner nomeado", syntax: "::: nome\n…\n:::" },
@@ -64,32 +69,46 @@ export const FORMATTER_GROUPS: { title: string; items: Formatter[] }[] = [
       { label: "Bloco de código", syntax: "```ts\n…\n```" },
       { label: "Seção recolhível", syntax: "<details><summary>…</summary>…</details>" },
       { label: "Fórmula LaTeX", syntax: "$$ … $$" },
-      { label: "Diagrama Mermaid", syntax: "```mermaid" },
+      { label: "Diagrama Mermaid", syntax: "```mermaid\ngraph LR\n  A --> B\n```" },
     ],
   },
   {
     title: "Inserir",
     items: [
-      { label: "Tabela (com alinhamento)", syntax: "| a | b |\n|:--|--:|" },
-      { label: "Tabela com células mescladas", syntax: "<table>…colspan…</table>" },
+      { label: "Tabela (com alinhamento)", syntax: "| a | b |\n|:--|--:|\n| A | B |" },
+      { label: "Tabela com células mescladas", syntax: "<table><tr><th colspan=\"2\">Título</th></tr><tr><td>A</td><td>B</td></tr></table>" },
       { label: "Imagem com tamanho", syntax: "![[mapa.png|400]]" },
-      { label: "Legenda de imagem", syntax: '<figure>…<figcaption>…</figcaption></figure>' },
-      { label: "Imagem flutuante", syntax: '<img class="flutua-direita" …>' },
+      { label: "Legenda de imagem", syntax: '<figure><img src="runa.png" alt="Runa"><figcaption>Legenda</figcaption></figure>' },
+      { label: "Imagem flutuante", syntax: '<img class="flutuar-direita" src="runa.png" alt="Runa">' },
       { label: "Link para nota", syntax: "[[Nota|apelido]]" },
       { label: "Transclusão", syntax: "![[Nota#Seção]]" },
       { label: "Nota de rodapé", syntax: "texto[^1]\n[^1]: nota" },
       { label: "Rolagem", syntax: "`dice: 2d6+3`" },
+      { label: "Link com título", syntax: '[texto](https://example.com "Título")' },
+      { label: "Imagem com título", syntax: '![Runa](runa.png "Título")' },
+      { label: "Autolink", syntax: "<https://example.com>" },
+      { label: "Escapes", syntax: "\\*texto\\*" },
+      { label: "Rodapé inline", syntax: "^[Texto da nota]" },
+      { label: "Matemática inline", syntax: "$x^2$" },
+      { label: "Alinhar à esquerda", syntax: '<p align="left">texto</p>' },
+      { label: "Alinhar à direita", syntax: '<p align="right">texto</p>' },
+      { label: "Tabela listrada", syntax: "| A | B |\n|---|---|\n| 1 | 2 |\n\n{.listrada}" },
+      { label: "Tabela compacta", syntax: "| A | B |\n|---|---|\n| 1 | 2 |\n\n{.compacta}" },
+      { label: "Tabela destaque", syntax: "| A | B |\n|---|---|\n| 1 | 2 |\n\n{.destaque}" },
+      { label: "Imagem sangrando", syntax: '<img class="sangrar" src="runa.png" alt="Runa">' },
+      { label: "Imagem à esquerda", syntax: '<img class="flutuar-esquerda" src="runa.png" alt="Runa">' },
+      { label: "Três colunas", syntax: "<div style=\"column-count: 3\">Texto das colunas.</div>" },
       { label: "Tag", syntax: "#tag/aninhada" },
     ],
   },
   {
     title: "Livro",
     items: [
-      { label: "Duas colunas", syntax: "> [!colunas]" },
+      { label: "Duas colunas", syntax: "> [!colunas]\n> Primeira coluna.\n> <div class=\"quebra-coluna\"></div>\n> Segunda coluna." },
       { label: "Quebra de coluna", syntax: '<div class="quebra-coluna"></div>' },
       { label: "Quebra de página", syntax: '<div class="quebra-pagina"></div>' },
       { label: "Bloco largo", syntax: "> [!largo]" },
-      { label: "Sumário automático", syntax: "[TOC]" },
+      { label: "Sumário automático", syntax: "```table-of-contents\n```" },
     ],
   },
 ]
