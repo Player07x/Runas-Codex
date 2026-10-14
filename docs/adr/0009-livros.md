@@ -42,3 +42,38 @@ os leitores compartilhados.
 - Sete testes cobrem descoberta, contagem, links quebrados, ordem, YAML inválido e renomear com nomes duplicados.
 - A prévia falsa do protótipo deixa de ser exibida. Paginação, impressão e exportação não fazem parte da 8a.
 - A compatibilidade visual com o Obsidian e o gesto em aparelho Android real continuam sendo verificações manuais.
+
+## Fase 8b — prévia paginada (2026-10-14)
+
+A prévia usa **Paged.js 0.4.3**, carregado pelo `import()` do painel de prévia. O bundle ESM oficial está copiado,
+sem modificações, com licença e hash em `screens/books/vendor/`. A distribuição npm acrescentaria o postinstall
+transitivo de core-js; o bundle pronto evita novos scripts de instalação. A versão foi publicada em 2023-07-06.
+A CSP permanece intacta, sem eval nem recursos externos. Referências: [Previewer](https://pagedjs.org/devdocs/Previewer.html)
+e [funcionamento do Paged.js](https://pagedjs.org/en/documentation/4-how-paged.js-works/).
+
+O Markdown compartilhado desenha a fonte; esperamos fontes locais, imagens, KaTeX e Mermaid antes de paginar.
+Callouts recolhíveis e detalhes são expandidos para impressão. O contexto de cada nota permanece estável para não
+reiniciar os componentes assíncronos a cada atualização do painel. O conteúdo paginado é uma fotografia desse DOM.
+As folhas da aplicação são preservadas: o Previewer recebe explicitamente as regras `@page`, quebras e cabeçalhos.
+Temas e formatação ficam em CSS com escopo de livro. A mesma árvore paginada é exibida e impressa.
+
+`core/books-preview.ts` resolve a estrutura e o rascunho atual, valida os quatro temas e os quatro tamanhos e gera
+as regras físicas. Uma prop opcional de NoteView observa o rascunho sem alterar o autosave. A prévia espera 500 ms
+sem alterações; trabalhos obsoletos são descartados, a paginação é serializada e a posição de rolagem é conservada.
+Por enquanto pagina o livro inteiro. O tempo mostrado é o da paginação, sem incluir debounce/carregamento inicial.
+
+`tema` e `pagina` são propriedades da nota do livro. A opção booleana `capitulos_nova_pagina` permite sobrescrever
+o padrão do tema (ligado nos três primeiros, desligado no minimalista); partes sempre abrem página. Título usa
+o nome da nota, como na 8a: editá-lo renomeia a nota e atualiza links pelo fluxo existente. Subtítulo, autor,
+link da capa, créditos e contracapa usam `setProperty`. O formulário recusa uma base alterada externamente.
+As anotações no corpo da nota do livro não são impressas.
+
+A Platform ganha `printDocument` opcional, implementada por `window.print()` no navegador e Electron. Ctrl+P
+com a prévia pronta e o botão Imprimir usam essa operação. A CSS de impressão remove a interface, restaura escala
+1:1, mantém dimensões e cores e imprime somente as páginas prontas. Exportação permanece na fase 8c.
+
+Validação: corpus Formatadores nos 16 pares tema/tamanho; exemplo original em 9 páginas (0,15 s no navegador
+desktop); corpus em 5 páginas (0,20 s no Electron visível). Smokes ocultos sofrem limitação de temporizadores,
+portanto seu tempo não serve como benchmark. Impressão A4 via motor Chromium conferida em PDF temporário,
+com as mesmas cinco páginas e inspeção visual. Diálogo nativo, impressora física, Windows e Android real continuam
+na lista de conferência manual. As capturas estão em `docs/imagens/livros-8b/`.

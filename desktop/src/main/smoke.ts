@@ -80,6 +80,23 @@ export const SMOKE_SCRIPT = `(async () => {
     result.wiki = { age: /32 anos/.test(infobox), weekdays, pins: document.querySelectorAll(".map-pin").length, image: Boolean(mapImage && mapImage.naturalWidth > 0) }
   }
 
+  // Livros 8b: a prévia lazy precisa paginar com a CSP real, inclusive em somente leitura.
+  location.hash = "/livros/" + encodeURIComponent("Livros/Caderno de formatadores/Caderno de formatadores.md")
+  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Prévia")))?.click()
+  await until(() => Number(document.querySelector(".book-preview-output[aria-busy=false]")?.dataset.pages) > 1, 200)
+  const bookPages = document.querySelector(".book-preview-output")
+  result.bookPreview = { pages: Number(bookPages?.dataset.pages ?? 0), milliseconds: Number(bookPages?.dataset.paginationMs ?? 0),
+    math: Boolean(bookPages?.querySelector(".katex")), diagram: Boolean(bookPages?.querySelector(".mermaid svg")),
+    columns: Boolean(bookPages?.querySelector(".md-colunas")), images: [...(bookPages?.querySelectorAll("img") ?? [])].filter((img) => img.complete && img.naturalWidth > 0).length }
+
+  // Confere o caminho Ctrl+P → Platform sem abrir uma impressora durante o smoke.
+  const originalPrint = window.print
+  let printRequested = false
+  window.print = () => { printRequested = true }
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", ctrlKey: true, bubbles: true, cancelable: true }))
+  window.print = originalPrint
+  result.bookPreview.printShortcut = printRequested
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -253,6 +270,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const wiki = result.wiki as { age?: boolean; weekdays?: number; pins?: number; image?: boolean } | undefined
   const wikiOk = wiki?.age === true && wiki.weekdays === 6 && (wiki.pins ?? 0) >= 2 && wiki.image === true
   if (!readOk || !formattersOk || !graphOk || !wikiOk) return false
+  const bookPreview = result.bookPreview as Record<string, unknown> | undefined
+  if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (

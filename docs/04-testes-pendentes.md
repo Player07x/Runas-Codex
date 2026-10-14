@@ -160,3 +160,12 @@ automáticos). Falta o uso de verdade:
 - Ainda sem: timelapse do gráfico, prévia de link ao passar o mouse, comandos `/`, abas e painéis divididos,
   enquete de data pela sala, importar/exportar mesas.
 - Campanhas continua com dados de exemplo até a etapa 7.
+
+### Etapa 8 — Livros: fase 8b — prévia paginada
+
+- [ ] Conferir Ctrl+P no diálogo nativo do Electron, sobretudo no Windows: papel correto, escala 100%, sem cabeçalhos extras do driver e impressão das cores de fundo. O motor de impressão A4 foi conferido no Linux, sem impressora física.
+- [ ] Abrir o Caderno de formatadores nos quatro temas e quatro tamanhos; avaliar em especial caixas, colunas, imagens, fórmulas e tabelas perto das quebras. Capturas de referência em `docs/imagens/livros-8b/`.
+- [ ] No Obsidian, conferir `tema`, `pagina`, `capitulos_nova_pagina`, `capa`, `creditos` e `contracapa` como propriedades comuns; editar externamente com o formulário de capa aberto e conferir a recusa de conflito.
+- [ ] Renomear o título na prévia e conferir os links atualizados; o título continua sendo o nome da nota do livro.
+- [ ] Testar livros reais longos e imagens grandes; a medição atual cobre o exemplo de 9 páginas e o corpus de formatadores.
+- [ ] Android real: alternar Escrever/Prévia com teclado aberto; a largura de 320 px foi validada no navegador.

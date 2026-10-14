@@ -124,5 +124,6 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
       return { lanUrl: "http://192.168.0.12:30000/?k=8f2c9a71", code: "K7QM-2XPA" }
     },
     async stopRoom() {},
+    printDocument: () => window.print(),
   }
 }
