@@ -13,7 +13,7 @@ export default defineConfig({
     plugins: [react(), contentSecurityPolicy()],
     build: {
       outDir: resolve(__dirname, "out/renderer"),
-      rollupOptions: { input: resolve(__dirname, "../app/index.html") },
+      rollupOptions: { input: { index: resolve(__dirname, "../app/index.html"), player: resolve(__dirname, "../app/player.html") } },
     },
   },
 })

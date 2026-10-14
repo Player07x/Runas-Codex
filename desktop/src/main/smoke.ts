@@ -6,6 +6,7 @@ export const SMOKE_SCRIPT = `(async () => {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms))
   const until = async (test, tries = 60) => { for (let i = 0; i < tries; i++) { const v = test(); if (v) return v; await wait(100) } return null }
   const errorOf = async (promise) => { try { await promise; return "OK" } catch (e) { return e.message } }
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set
   const bridge = window.runasCodex
   const result = { bridge: Boolean(bridge), title: document.title }
   if (!bridge) return result
@@ -53,7 +54,6 @@ export const SMOKE_SCRIPT = `(async () => {
     const button = await until(() => document.querySelector("[aria-label='Renomear nota']"))
     button.click()
     const input = await until(() => document.querySelector("[aria-label='Novo nome']"))
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set
     setter.call(input, "Aldren Vael")
     input.dispatchEvent(new Event("input", { bubbles: true }))
     document.querySelector("[aria-label='Confirmar renomear']").click()
@@ -63,8 +63,52 @@ export const SMOKE_SCRIPT = `(async () => {
     result.renamed = Object.keys(texts).some((p) => p.endsWith("Aldren Vael.md"))
     result.linksAfterRename = Object.values(texts).join("\\n").match(/\\[\\[Aldren[^\\]]*\\]\\]/g) ?? []
   }
+
+  // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
+  location.hash = "/vtt/criar"
+  ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
+  const mesaName = await until(() => document.querySelector("[aria-label='Nome da mesa']"))
+  if (mesaName) {
+    setter.call(mesaName, "Mesa do Smoke")
+    mesaName.dispatchEvent(new Event("input", { bubbles: true }))
+    document.querySelector("[aria-label='Confirmar criar mesa']").click()
+    await until(() => location.hash.startsWith("#/vtt/mesa/"))
+    ;(await until(() => [...document.querySelectorAll(".vtt-root button")].find((b) => b.textContent.trim() === "Nova cena")))?.click()
+    await until(() => document.querySelector(".vtt-root canvas"))
+    await wait(1600)
+    result.mesaCanvas = Boolean(document.querySelector(".vtt-root canvas"))
+    result.mesas = (await bridge.vtt.listWorlds()).map((m) => m.title + ":" + m.scenes)
+    // Sala: o processo principal confere a página e o WebSocket como um jogador (checkRoom).
+    const room = await bridge.vtt.player.start(30000 + Math.floor(Math.random() * 2000), 2)
+    result.room = { port: room.port, key: room.key, codes: room.seats.map((seat) => seat.code) }
+  }
   return result
 })()`
+
+/**
+ * Confere a sala aberta pelo roteiro como um jogador faria, de fora da janela: a página com a chave, nada sem a
+ * chave, o WebSocket entregando a cena e o ingresso num assento com o código.
+ */
+export async function checkRoom(room: { port: number; key: string; codes: string[] }): Promise<Record<string, unknown>> {
+  const base = `http://127.0.0.1:${room.port}`
+  const page = await fetch(`${base}/?k=${room.key}`)
+  const html = await page.text()
+  const withoutKey = (await fetch(`${base}/`)).status
+  const scene = await new Promise<string | null>((resolve) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${room.port}/socket?k=${room.key}`)
+    const timer = setTimeout(() => (socket.close(), resolve(null)), 5000)
+    socket.onmessage = (event) => {
+      const message = JSON.parse(String(event.data)) as { type: string; projection?: { scene: { data: { name: string } } | null } }
+      if (message.type !== "snapshot") return
+      clearTimeout(timer)
+      socket.close()
+      resolve(message.projection?.scene?.data.name ?? "(sem cena)")
+    }
+    socket.onerror = () => (clearTimeout(timer), resolve(null))
+  })
+  const join = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[0] }) })
+  return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
+}
 
 /** O resultado do roteiro passou? */
 export function smokePassed(result: Record<string, unknown>, hasVault: boolean): boolean {
@@ -94,6 +138,15 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     typeof result.backup === "number" &&
     result.renamed === true &&
     links.length > 0 &&
-    links.every((link) => link.startsWith("[[Aldren Vael"))
+    links.every((link) => link.startsWith("[[Aldren Vael")) &&
+    result.mesaCanvas === true &&
+    Array.isArray(result.mesas) &&
+    (result.mesas as string[]).includes("Mesa do Smoke:1") &&
+    typeof result.roomCheck === "object" &&
+    (result.roomCheck as Record<string, unknown>).page === 200 &&
+    (result.roomCheck as Record<string, unknown>).csp === true &&
+    (result.roomCheck as Record<string, unknown>).withoutKey === 404 &&
+    (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
+    (result.roomCheck as Record<string, unknown>).join === 200
   )
 }

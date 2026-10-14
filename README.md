@@ -10,9 +10,11 @@ notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **No
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
 
-Fase atual: **etapa 3a, núcleo de notas** ([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O módulo **Notas** cria, edita,
-renomeia (atualizando os links do cofre) e manda para a lixeira notas de um cofre compatível com o Obsidian, com
-backups e sem regravar o que não mudou. Os outros módulos ainda usam dados de exemplo.
+Fase atual: **etapas 3a e 4 concluídas**. O módulo **Notas** cria, edita, renomeia (atualizando os links do cofre) e
+manda para a lixeira notas de um cofre compatível com o Obsidian, com backups e sem regravar o que não mudou
+([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O **VTT** tem mesas no cofre, a mesa do mestre (cenas, tokens, paredes,
+visão, névoa, luz, regiões, áudio) e a sala para os jogadores na rede local ou pela internet
+([ADR 0006](docs/adr/0006-mesa-vtt.md)). Agenda, Wiki, Campanhas e Livros ainda usam dados de exemplo.
 
 **Ver a versão web (dados de exemplo) sem instalar nada:** https://player07x.github.io/Runas-Codex/ (abre no PC e no celular).
 
@@ -64,6 +66,13 @@ Outros comandos: `npm run typecheck`, `npm test` e `npm run desktop:build`.
 Teste rápido sem abrir janela: `npm run smoke -w @runas-codex/desktop -- --vault=/caminho/do/cofre` (com `--write`, testa
 as gravações numa cópia temporária). Ida e volta num cofre real, só lendo: `RUNAS_CORPUS=/caminho npm test -w @runas-codex/app`.
 
+## Mesa (VTT)
+
+Em **VTT › Criar Sala › Criar Nova**, a mesa é criada dentro do cofre (`.runas/mesas/`, precisa da gravação liberada).
+Na mesa, o painel **Sala** abre o servidor para os jogadores: um link para a rede local e, se você pedir, um link
+público (túnel da Cloudflare). Cada assento tem um código; no token, **Controlado por** diz qual jogador o move.
+Quem vai jogar usa **VTT › Entrar Sala** (ou abre o link no navegador do celular).
+
 ## Instaladores (Linux, Windows e Android)
 
 Cada PR gera os instaladores no GitHub Actions (workflow **Release**, aba *Artifacts*): `.deb` e AppImage para
@@ -86,7 +95,9 @@ app/                      interface (React 19 + TypeScript + Vite), a mesma no n
   src/lib/                calendário fictício, dados de exemplo, gráfico, rotas
   src/components/         casca (barra lateral, barra inferior, paleta), Markdown, editor, painéis
   src/screens/            uma pasta por módulo: wiki, campaigns, books, vtt…
+  src/vtt/                mesa (código do RunasVTT): cena Pixi, painéis, página dos jogadores (player.html)
 desktop/                  casca Electron (Windows/Linux): processo principal, preload, testes e instaladores
+  src/main/vtt/           serviços da mesa: documentos em JSON, visão, áudio, regiões, servidor da sala, túnel
 mobile/                   casca Android (Capacitor): projeto Gradle em mobile/android/
 docs/                     estudo, checklist, plano e ADRs
 ```
