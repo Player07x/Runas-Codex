@@ -1,12 +1,11 @@
-import { useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, HardDrive, ImageUp, Link2, LogIn, Map, Plus, ScrollText, Users, WifiOff, Wifi, Hash, FileUp } from "lucide-react"
-import { MESAS } from "../../data/mesas"
-import { CAMPAIGNS } from "../../data/campaigns"
-import { TODAY } from "../../data/agenda"
+import { useEffect, useState } from "react"
+import { Camera, Clock, DoorOpen, Dices, Link2, LogIn, Map, Plus, WifiOff, Wifi, Hash } from "lucide-react"
 import { href, navigate } from "../../lib/router"
-import { formatDate, relativeDays } from "../../lib/navigation"
+import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal, Segmented, Switch, useToast } from "../../components/ui"
-import { GmTable } from "./GmTable"
+import { MesaTable } from "../../vtt/MesaTable"
+import { isBrowserPreview, vtt } from "../../vtt/api"
+import type { WorldSummary } from "../../vtt/shared/world"
 import { PlayerView } from "./PlayerView"
 import "./vtt.css"
 
@@ -14,7 +13,7 @@ export function VttScreen({ route }: { route: string[] }) {
   const [section, id] = route
   if (section === "criar") return <CreateRoom />
   if (section === "entrar") return <JoinRoom />
-  if (section === "mesa") return <GmTable mesaId={id} />
+  if (section === "mesa" && id) return <MesaTable id={id} />
   if (section === "jogador") return <PlayerView />
   return <VttHome />
 }
@@ -42,10 +41,14 @@ function VttHome() {
   )
 }
 
+/** Criar Sala: as mesas do cofre (`.runas/mesas/`) e "Criar Nova". */
 function CreateRoom() {
-  const [empty, setEmpty] = useState(false)
+  const [mesas, setMesas] = useState<WorldSummary[] | null>(null)
+  const [error, setError] = useState<string>()
   const [creating, setCreating] = useState(false)
-  const mesas = empty ? [] : MESAS
+  useEffect(() => {
+    vtt.listWorlds().then(setMesas, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
+  }, [])
   return (
     <div className="page">
       <div className="page-head">
@@ -53,12 +56,16 @@ function CreateRoom() {
           <span className="eyebrow">VTT</span>
           <h1 className="page-title">Criar Sala</h1>
         </div>
-        <label className="proto-note">
-          <input type="checkbox" checked={empty} onChange={(e) => setEmpty(e.target.checked)} /> Protótipo: ver como fica sem nenhuma mesa
-        </label>
+        {isBrowserPreview && <span className="proto-note">Prévia no navegador: as mesas ficam só na memória desta aba.</span>}
       </div>
 
-      {mesas.length === 0 ? (
+      {error ? (
+        <Empty title="Não deu para ler as mesas" action={<a className="btn" href={href("/config")}>Abrir Configurações</a>}>
+          {error}
+        </Empty>
+      ) : !mesas ? (
+        <p className="muted">Lendo as mesas…</p>
+      ) : mesas.length === 0 ? (
         <Empty
           title="Você ainda não criou nenhuma mesa"
           action={
@@ -67,46 +74,33 @@ function CreateRoom() {
             </button>
           }
         >
-          Uma mesa guarda cenas, tokens, mapas e músicas. Depois de criada, ela aparece aqui para você abrir a sala.
+          Uma mesa guarda cenas, tokens, mapas e músicas, dentro do cofre (em <code>.runas/mesas</code>). Depois de criada,
+          ela aparece aqui para você abrir a sala.
         </Empty>
       ) : (
         <div className="mesa-grid">
           <button className="mesa-card new" onClick={() => setCreating(true)}>
             <Plus size={34} />
             <strong>Criar Nova</strong>
-            <span className="muted small">Mesa em branco, de uma campanha ou importada</span>
+            <span className="muted small">Mesa em branco</span>
           </button>
-          {mesas.map((mesa) => {
-            const campaign = CAMPAIGNS.find((c) => c.id === mesa.campaignId)
-            return (
-              <button key={mesa.id} className="mesa-card" onClick={() => navigate(`/vtt/mesa/${mesa.id}`)}>
-                <div className="mesa-thumb" style={{ background: `radial-gradient(circle at 30% 30%, ${mesa.palette[0]}, ${mesa.palette[1]})` }}>
-                  <svg viewBox="0 0 120 70" aria-hidden="true">
-                    <rect x="8" y="30" width="40" height="28" fill="rgb(255 255 255 / 12%)" />
-                    <rect x="52" y="12" width="44" height="36" fill="rgb(255 255 255 / 12%)" />
-                    <rect x="48" y="40" width="8" height="6" fill="rgb(255 255 255 / 12%)" />
-                    <circle cx="24" cy="44" r="4" fill="#82aaa6" />
-                    <circle cx="70" cy="28" r="4" fill="#c76561" />
-                  </svg>
-                  <span className="chip">{mesa.scenes.length} {mesa.scenes.length === 1 ? "cena" : "cenas"}</span>
-                </div>
-                <div className="stack" style={{ gap: 4, padding: 12 }}>
-                  <strong className="display" style={{ fontSize: 16 }}>{mesa.title}</strong>
-                  {campaign && (
-                    <span className="small row" style={{ color: "var(--red)" }}>
-                      <ScrollText size={13} /> {campaign.title}
-                    </span>
-                  )}
-                  <span className="muted small row">
-                    <Clock size={13} /> Última sessão {relativeDays(mesa.lastSession, TODAY)} ({formatDate(mesa.lastSession, { day: "2-digit", month: "2-digit", year: "numeric" })})
-                  </span>
-                  <span className="muted small row">
-                    <Users size={13} /> {mesa.players} jogadores · <HardDrive size={13} /> {mesa.sizeMb} MB
-                  </span>
-                </div>
-              </button>
-            )
-          })}
+          {mesas.map((mesa) => (
+            <button key={mesa.id} className="mesa-card" onClick={() => navigate(`/vtt/mesa/${mesa.id}`)} data-mesa={mesa.title}>
+              <div className="mesa-thumb" style={{ background: "radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--cyan) 30%, var(--panel-2)), var(--bg-deep))" }}>
+                <Map size={34} style={{ color: "var(--cyan)", opacity: 0.6 }} />
+                <span className="chip">
+                  {mesa.scenes ?? 0} {mesa.scenes === 1 ? "cena" : "cenas"}
+                </span>
+              </div>
+              <div className="stack" style={{ gap: 4, padding: 12 }}>
+                <strong className="display" style={{ fontSize: 16 }}>{mesa.title}</strong>
+                {mesa.description && <span className="muted small">{mesa.description}</span>}
+                <span className="muted small row">
+                  <Clock size={13} /> Aberta {relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}
+                </span>
+              </div>
+            </button>
+          ))}
         </div>
       )}
 
@@ -116,70 +110,54 @@ function CreateRoom() {
 }
 
 function NewMesaModal({ onClose }: { onClose: () => void }) {
-  const toast = useToast()
-  const [origin, setOrigin] = useState("branco")
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [error, setError] = useState<string>()
+  const [busy, setBusy] = useState(false)
+  const create = async () => {
+    setBusy(true)
+    setError(undefined)
+    try {
+      const mesa = await vtt.createWorld({ title, description })
+      navigate(`/vtt/mesa/${mesa.id}`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+      setBusy(false)
+    }
+  }
   return (
     <Modal
       title="Criar Nova mesa"
       onClose={onClose}
       footer={
         <>
-          <button className="btn" onClick={onClose}>Cancelar</button>
-          <button
-            className="btn primary"
-            onClick={() => {
-              onClose()
-              toast("Protótipo: mesa criada em .runas/mesas/")
-            }}
-          >
+          <button className="btn" onClick={onClose} disabled={busy}>
+            Cancelar
+          </button>
+          <button className="btn primary" onClick={() => void create()} disabled={busy || !title.trim()} aria-label="Confirmar criar mesa">
             Criar mesa
           </button>
         </>
       }
     >
-      <label className="field">
-        <span>Nome</span>
-        <input className="input" placeholder="Ex.: A Cripta do Lobo" autoFocus />
-      </label>
-      <label className="field">
-        <span>Ligar a uma campanha (opcional)</span>
-        <select className="select">
-          <option>Nenhuma</option>
-          {CAMPAIGNS.map((c) => (
-            <option key={c.id}>{c.title}</option>
-          ))}
-        </select>
-      </label>
-      <div className="stack">
-        <span className="eyebrow">Primeira cena</span>
-        <div className="origin-grid">
-          {[
-            { id: "branco", icon: <Map size={20} />, label: "Em branco" },
-            { id: "imagem", icon: <ImageUp size={20} />, label: "Imagem de mapa" },
-            { id: "uvtt", icon: <FileUp size={20} />, label: "Universal VTT (.dd2vtt)" },
-            { id: "pacote", icon: <HardDrive size={20} />, label: "Pacote de mesa" },
-          ].map((o) => (
-            <button key={o.id} className={`card tight link template ${origin === o.id ? "picked" : ""}`} onClick={() => setOrigin(o.id)}>
-              {o.icon}
-              <span className="small">{o.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="grid-cards" style={{ gridTemplateColumns: "1fr 1fr" }}>
+      <form
+        className="stack"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (title.trim() && !busy) void create()
+        }}
+      >
         <label className="field">
-          <span>Grade</span>
-          <select className="select">
-            <option>Quadrada</option>
-            <option>Hexagonal</option>
-            <option>Sem grade (cinemático)</option>
-          </select>
+          <span>Nome</span>
+          <input className="input" placeholder="Ex.: A Cripta do Lobo" autoFocus value={title} onChange={(event) => setTitle(event.target.value)} aria-label="Nome da mesa" />
         </label>
         <label className="field">
-          <span>Distância por célula</span>
-          <input className="input" defaultValue="1,5 m" />
+          <span>Descrição (opcional)</span>
+          <input className="input" value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
-      </div>
+        <span className="small muted">A primeira cena (mapa, grade) é criada dentro da mesa, no painel Cenas.</span>
+      </form>
+      {error && <p className="small" style={{ color: "var(--red)" }}>{error}</p>}
     </Modal>
   )
 }

@@ -3,15 +3,19 @@ import type { Plugin } from "vite"
 /**
  * Política de conteúdo do app: nada sai da origem do próprio app (nenhuma chamada de rede, docs/02 seção 6) e HTML
  * vindo de notas importadas não consegue rodar script. `style-src 'unsafe-inline'` fica porque o dialeto Markdown usa
- * `<span style="…">`. A conexão com a sala do VTT entra aqui na etapa 4.
+ * `<span style="…">`.
  */
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  // `vtt-asset:` = mapas, tokens e áudio da mesa aberta (desktop); `blob:` = arquivos importados na prévia do navegador.
+  "img-src 'self' data: blob: vtt-asset:",
+  "media-src 'self' blob: vtt-asset:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' blob: vtt-asset:",
+  // O PixiJS decodifica imagens num worker criado a partir de `blob:`.
+  "worker-src 'self' blob:",
   "object-src 'none'",
   "frame-src 'none'",
   "base-uri 'none'",

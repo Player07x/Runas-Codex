@@ -6,6 +6,7 @@ export const SMOKE_SCRIPT = `(async () => {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms))
   const until = async (test, tries = 60) => { for (let i = 0; i < tries; i++) { const v = test(); if (v) return v; await wait(100) } return null }
   const errorOf = async (promise) => { try { await promise; return "OK" } catch (e) { return e.message } }
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set
   const bridge = window.runasCodex
   const result = { bridge: Boolean(bridge), title: document.title }
   if (!bridge) return result
@@ -53,7 +54,6 @@ export const SMOKE_SCRIPT = `(async () => {
     const button = await until(() => document.querySelector("[aria-label='Renomear nota']"))
     button.click()
     const input = await until(() => document.querySelector("[aria-label='Novo nome']"))
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set
     setter.call(input, "Aldren Vael")
     input.dispatchEvent(new Event("input", { bubbles: true }))
     document.querySelector("[aria-label='Confirmar renomear']").click()
@@ -62,6 +62,22 @@ export const SMOKE_SCRIPT = `(async () => {
     const texts = await bridge.vault.read((await bridge.vault.list()).filter((e) => e.path.endsWith(".md")).map((e) => e.path))
     result.renamed = Object.keys(texts).some((p) => p.endsWith("Aldren Vael.md"))
     result.linksAfterRename = Object.values(texts).join("\\n").match(/\\[\\[Aldren[^\\]]*\\]\\]/g) ?? []
+  }
+
+  // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
+  location.hash = "/vtt/criar"
+  ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
+  const mesaName = await until(() => document.querySelector("[aria-label='Nome da mesa']"))
+  if (mesaName) {
+    setter.call(mesaName, "Mesa do Smoke")
+    mesaName.dispatchEvent(new Event("input", { bubbles: true }))
+    document.querySelector("[aria-label='Confirmar criar mesa']").click()
+    await until(() => location.hash.startsWith("#/vtt/mesa/"))
+    ;(await until(() => [...document.querySelectorAll(".vtt-root button")].find((b) => b.textContent.trim() === "Nova cena")))?.click()
+    await until(() => document.querySelector(".vtt-root canvas"))
+    await wait(1600)
+    result.mesaCanvas = Boolean(document.querySelector(".vtt-root canvas"))
+    result.mesas = (await bridge.vtt.listWorlds()).map((m) => m.title + ":" + m.scenes)
   }
   return result
 })()`
@@ -94,6 +110,9 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     typeof result.backup === "number" &&
     result.renamed === true &&
     links.length > 0 &&
-    links.every((link) => link.startsWith("[[Aldren Vael"))
+    links.every((link) => link.startsWith("[[Aldren Vael")) &&
+    result.mesaCanvas === true &&
+    Array.isArray(result.mesas) &&
+    (result.mesas as string[]).includes("Mesa do Smoke:1")
   )
 }

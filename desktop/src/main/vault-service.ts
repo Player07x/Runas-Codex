@@ -34,7 +34,11 @@ export class VaultService {
   private ephemeral = false
   private ephemeralWritable = false
 
-  constructor(private readonly window: () => BrowserWindow | null) {}
+  constructor(
+    private readonly window: () => BrowserWindow | null,
+    /** Avisa que o cofre vai mudar (a mesa aberta, que mora dentro dele, precisa fechar). */
+    private readonly beforeSwitch: () => void = () => undefined,
+  ) {}
 
   private get configFile(): string {
     return join(app.getPath("userData"), "config.json")
@@ -73,6 +77,7 @@ export class VaultService {
   }
 
   private async open(path: string): Promise<void> {
+    this.beforeSwitch()
     this.watcher?.stop()
     this.path = path
     this.watcher = new VaultWatcher(path, (changes: VaultChange[]) => this.window()?.webContents.send(IPC.vaultChanged, changes))

@@ -4,10 +4,14 @@ import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
+import { registerAssetScheme, VttHost } from "./vtt/vtt-host"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
 if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(app.getPath("appData"), "runas-codex"))
+
+// Antes de "ready": imagens e áudio da mesa vêm por `vtt-asset://`.
+registerAssetScheme()
 
 /**
  * `--smoke [--vault=<pasta>] [--write] [--shot=<arquivo.png>]`: abre, confere a ponte, o cofre e o leitor de Notas,
@@ -17,7 +21,8 @@ const smoke = process.argv.includes("--smoke")
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
 let mainWindow: BrowserWindow | null = null
-const vault = new VaultService(() => mainWindow)
+const vault = new VaultService(() => mainWindow, () => vtt.closeWorld())
+const vtt = new VttHost(() => vault.rootPath, () => vault.info()?.readOnly === false)
 
 /** Só a janela do app conversa com o processo principal. */
 function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown): void {
@@ -56,6 +61,7 @@ function registerIpc(): void {
   handle(IPC.vaultBackup, () => vault.backup())
   handle(IPC.vaultListBackups, () => vault.listBackups())
   handle(IPC.vaultRevealBackups, () => vault.revealBackups())
+  vtt.register(handle)
 }
 
 function createMainWindow(): BrowserWindow {
@@ -99,6 +105,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
   } catch (error) {
     console.error(error)
   }
+  vtt.closeWorld()
   vault.stop()
   app.exit(ok ? 0 : 1)
 }
@@ -107,6 +114,7 @@ void app.whenReady().then(async () => {
   if (smoke) await vault.openForSmoke(argValue("vault"), process.argv.includes("--write"))
   else await vault.load()
   registerIpc()
+  vtt.registerProtocol()
   mainWindow = createMainWindow()
   if (smoke) void runSmoke(mainWindow)
   app.on("activate", () => {
@@ -115,6 +123,7 @@ void app.whenReady().then(async () => {
 })
 
 app.on("window-all-closed", () => {
+  vtt.closeWorld()
   vault.stop()
   if (process.platform !== "darwin") app.quit()
 })

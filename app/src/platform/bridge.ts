@@ -1,3 +1,4 @@
+import type { VttApi } from "../vtt/shared/ipc"
 import type { BackupInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
 
 /**
@@ -23,4 +24,6 @@ export interface RunasCodexBridge {
     listBackups(): Promise<BackupInfo[]>
     revealBackups(): Promise<void>
   }
+  /** A mesa (VTT): mesas do cofre, documentos, sala dos jogadores e áudio. */
+  readonly vtt: VttApi
 }

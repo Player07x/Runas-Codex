@@ -56,7 +56,7 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
   if (first === "livros" && second) crumbs.push({ label: BOOKS.find((b) => b.id === second)?.title ?? second })
   if (first === "vtt" && second) {
     const labels: Record<string, string> = { criar: "Criar Sala", entrar: "Entrar Sala", jogador: "Vista do jogador" }
-    if (second === "mesa") crumbs.push({ label: "Criar Sala", to: "/vtt/criar" }, { label: MESAS.find((m) => m.id === third)?.title ?? third })
+    if (second === "mesa") crumbs.push({ label: "Criar Sala", to: "/vtt/criar" }, { label: "Mesa" })
     else crumbs.push({ label: labels[second] ?? second })
   }
   return crumbs
