@@ -1,230 +1,122 @@
-import { useState } from "react"
-import {
-  Bold, ChevronLeft, Columns2, Download, Eye, FileDown, Highlighter, Image, Italic, LayoutGrid, Link2, List, ListOrdered, PenLine, Quote,
-  SeparatorHorizontal, Sparkles, Strikethrough, Swords, Table, TextAlignCenter, TextAlignJustify, TextAlignStart, Type, Underline,
-} from "lucide-react"
-import type { Book } from "../../data/types"
+import { useRef, useState } from "react"
+import { bookProperties, countWords, moveBookItem, readBook } from "../../core/books"
+import { dirname } from "../../core/text"
+import type { IndexedNote } from "../../core/vault-index"
+import { NoteView } from "../../components/vault/NoteView"
+import { Progress } from "../../components/ui"
 import { href, navigate } from "../../lib/router"
-import { Markdown } from "../../components/Markdown"
-import { Modal, Progress, Segmented, useToast } from "../../components/ui"
+import { vaultRoute } from "../../lib/vault-notes"
+import { useVault } from "../../platform/VaultProvider"
 import { FORMATTER_GROUPS } from "./formatters"
 
-type Pane = "escrever" | "previa"
-type View = "texto" | "cortica"
-
-const PAGE_BREAK = '<div class="quebra-pagina"></div>'
-
-export function BookEditor({ book }: { book: Book }) {
-  const toast = useToast()
-  const [chapterId, setChapterId] = useState(book.chapters.find((c) => c.markdown.length > 100)?.id ?? book.chapters[0].id)
-  const chapter = book.chapters.find((c) => c.id === chapterId)!
-  const [source, setSource] = useState(chapter.markdown)
-  const [pane, setPane] = useState<Pane>("escrever")
-  const [view, setView] = useState<View>("texto")
-  const [theme, setTheme] = useState("rpg")
-  const [page, setPage] = useState<string>(book.page)
-  const [catalog, setCatalog] = useState(false)
-  const [exporting, setExporting] = useState(false)
-  const parts = [...new Set(book.chapters.map((c) => c.part))]
-  const words = book.chapters.reduce((sum, c) => sum + c.words, 0)
-  const pages = source.split(PAGE_BREAK)
-
-  const open = (id: string) => {
-    const next = book.chapters.find((c) => c.id === id)!
-    setChapterId(id)
-    setSource(next.markdown)
-    setView("texto")
+export function BookEditor({ book }: { book: IndexedNote }) {
+  const vault = useVault(), index = vault.index!
+  const structure = readBook(index, book)
+  const [selected, setSelected] = useState<string | undefined>(() => structure.items.find((i) => i.note)?.note?.path)
+  const [view, setView] = useState("escrever")
+  const [creating, setCreating] = useState(false)
+  const [name, setName] = useState("")
+  const [kind, setKind] = useState("capitulo")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  const [announcement, setAnnouncement] = useState("")
+  const drag = useRef<number | null>(null)
+  const locked = Boolean(vault.info?.readOnly || busy || structure.error)
+  const current = selected ? index.note(selected) : undefined
+  const goal = Number(bookProperties(book).meta_palavras) || 0
+  const run = async (action: () => Promise<void>) => {
+    if (locked) return
+    setBusy(true); setError("")
+    try { await action() } catch (e) { setError(String(e)) } finally { setBusy(false) }
   }
-
-  const insert = (label: string) => () => toast(`Protótipo: inseriria ${label}`)
-
-  return (
-    <div className={`book-workspace pane-${pane}`}>
-      <aside className="pane-left binder">
-        <div className="pane-head">
-          <a className="row small" href={href("/livros")} style={{ textDecoration: "none" }}>
-            <ChevronLeft size={15} /> Livros
-          </a>
-          <strong className="display">{book.title}</strong>
-          <span className="tiny muted">
-            {words.toLocaleString("pt-BR")} / {book.goal.toLocaleString("pt-BR")} palavras
-          </span>
-          <Progress value={words} max={book.goal} color="var(--gold)" />
-        </div>
-        <div className="pane-body" style={{ gap: 10 }}>
-          {parts.map((part) => (
-            <div key={part} className="stack" style={{ gap: 2 }}>
-              <span className="eyebrow">{part}</span>
-              {book.chapters
-                .filter((c) => c.part === part)
-                .map((c) => (
-                  <button key={c.id} className={`list-item small ${c.id === chapterId ? "active" : ""}`} onClick={() => open(c.id)}>
-                    <span className={`status-dot ${c.status}`} title={c.status} />
-                    <span className="grow truncate">{c.title}</span>
-                    <span className="meta">{(c.words / 1000).toFixed(1)}k</span>
-                  </button>
-                ))}
-            </div>
-          ))}
-        </div>
+  const insertNote = async (path: string) => {
+    // Relê a estrutura depois da criação para incluir mudanças recebidas pelo observador.
+    const latest = readBook(index, index.note(book.path)!)
+    if (latest.error) throw new Error(latest.error)
+    const links = latest.items.map((i) => i.link)
+    const pos = latest.items.findIndex((i) => i.note?.path === selected)
+    links.splice(pos < 0 ? links.length : pos + 1, 0, `[[${index.linkTarget(path, book.path)}]]`)
+    await vault.setProperty(book.path, "estrutura", links)
+    setSelected(path)
+  }
+  const move = (from: number, to: number) => void run(async () => {
+    await vault.setProperty(book.path, "estrutura", moveBookItem(structure.items.map((i) => i.link), from, to))
+    setAnnouncement(`Item movido para a posição ${to + 1}.`)
+  })
+  const open = (path: string) => { setSelected(path); setView("escrever") }
+  return <div className={`books-editor books-view-${view}`}>
+    <header className="books-header">
+      <a className="btn" href={href("/livros")}>Livros</a>
+      <strong>{book.name}</strong>
+      <span>{structure.words.toLocaleString("pt-BR")} / {goal || "sem meta"} palavras</span>{goal > 0 && <div className="books-progress" aria-label={`Progresso: ${Math.round(structure.words / goal * 100)}%`}>
+        <Progress value={structure.words} max={goal} />
+      </div>}<nav className="row-wrap" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => setView(value!)}>{label}</button>)}</nav>
+      <button className="btn" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+    </header>
+    {vault.info?.readOnly && <p className="proto-note">Somente leitura. Libere a gravação em Configurações › Cofre.</p>}
+    {(error || structure.error) && <p role="alert">{error || structure.error}</p>}
+    <span className="books-announcement" role="status">{announcement}</span>
+    <div className="books-layout">
+      <aside className="books-binder" aria-label="Estrutura do livro">
+        <h2>Estrutura</h2>
+        <button className="btn primary" aria-label="Criar capítulo" disabled={locked} onClick={() => setCreating(!creating)}>Criar capítulo, parte ou seção</button>
+        {creating && <form className="stack" onSubmit={(e) => {
+          e.preventDefault(); void run(async () => {
+            const path = await vault.createNote(dirname(book.path), name.trim(), `---\ntipo: ${kind}\nstatus: rascunho\nresumo: ""\n---\n# ${name.trim()}\n`)
+            try { await insertNote(path) } catch (e) { throw new Error(`Nota criada; adicione-a por Fora do livro. ${String(e)}`) }
+            setCreating(false); setName(""); setView("escrever")
+          })
+        }}>
+          <label className="field">Título<input className="input" required aria-label="Título do capítulo" value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label className="field">Tipo<select className="input" value={kind} onChange={(e) => setKind(e.target.value)}>
+            <option value="capitulo">Capítulo</option>
+            <option value="parte">Parte</option>
+            <option value="secao">Seção</option>
+          </select>
+          </label>
+          <button className="btn" aria-label="Confirmar criar capítulo" disabled={locked || !name.trim()}>Criar</button>
+        </form>}
+        <ol>{structure.items.map((item, i) => <li key={i}>
+          <button className="books-item" disabled={!item.note} aria-current={selected === item.note?.path ? "true" : undefined} onClick={() => item.note && open(item.note.path)}>
+            <strong>{item.note?.name ?? item.link}</strong>
+            <small>{item.note ? `${item.kind} · ${item.status} · ${item.words} palavras` : "Link quebrado"}</small>
+          </button>
+        </li>)}</ol>
+        <h3>Fora do livro</h3>{structure.outside.map((n) => <div className="books-outside" key={n.path}>
+          <button className="books-item" onClick={() => open(n.path)}>{n.name}</button>
+          <button className="btn" disabled={locked} onClick={() => void run(() => insertNote(n.path))} aria-label={`Incluir ${n.name}`}>Incluir</button>
+        </div>)}
       </aside>
-
-      <section className="book-center">
-        <div className="editor-bar">
-          <button className="icon-btn mobile-switch" onClick={() => navigate("/livros")} aria-label="Voltar">
-            <ChevronLeft size={18} />
+      <main className="books-main">
+        {view === "cortica" ? <div className="books-cork" aria-label="Cortiça">{structure.items.map((item, i) => <article className="books-cork-card" data-book-position={i} key={`${item.link}:${structure.items.slice(0, i).filter((other) => other.link === item.link).length}`}>
+          <button className="btn books-drag" disabled={locked} aria-label={`Arrastar ${item.note?.name ?? item.link}`} onPointerDown={(e) => { drag.current = i; e.currentTarget.setPointerCapture(e.pointerId) }} onPointerCancel={() => { drag.current = null }} onPointerUp={(e) => {
+            const from = drag.current; drag.current = null
+            const target = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-book-position]")
+            if (from !== null && target && Number(target.dataset.bookPosition) !== from) move(from, Number(target.dataset.bookPosition))
+          }}>⠿ Arrastar</button>
+          <button className="books-item" disabled={!item.note} onClick={() => item.note && open(item.note.path)}>
+            <strong>{item.note?.name ?? item.link}</strong>
           </button>
-          <Segmented<View>
-            label="Visão"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "texto", label: "Texto", icon: <PenLine size={14} /> },
-              { value: "cortica", label: "Cortiça", icon: <LayoutGrid size={14} /> },
-            ]}
-          />
-          <div className="mobile-switch">
-            <Segmented<Pane>
-              label="Painel"
-              value={pane}
-              onChange={setPane}
-              options={[
-                { value: "escrever", label: "Escrever" },
-                { value: "previa", label: "Prévia", icon: <Eye size={14} /> },
-              ]}
-            />
+          <p>{item.summary || "Sem resumo"}</p>
+          <small>{item.note ? `${item.status} · ${item.words} palavras` : "Link quebrado"}</small>
+          <div className="row-wrap">
+            <button className="btn" disabled={locked || i === 0} onClick={() => move(i, i - 1)} aria-label={`Subir ${item.note?.name ?? item.link}`}>↑ Subir</button>
+            <button className="btn" disabled={locked || i === structure.items.length - 1} onClick={() => move(i, i + 1)} aria-label={`Descer ${item.note?.name ?? item.link}`}>↓ Descer</button>
           </div>
-          <span className="grow" />
-          <button className="btn sm primary" onClick={() => setExporting(true)}>
-            <Download size={14} /> Exportar
-          </button>
-        </div>
-
-        {view === "cortica" ? (
-          <div className="corkboard">
-            {book.chapters.map((c, i) => (
-              <button key={c.id} className="cork-card" onClick={() => open(c.id)} style={{ rotate: `${((i * 37) % 5) - 2}deg` }}>
-                <span className="tiny faint">{c.part}</span>
-                <strong>{c.title}</strong>
-                <span className="tiny muted">{c.words.toLocaleString("pt-BR")} palavras · {c.status}</span>
-              </button>
-            ))}
+        </article>)}</div> : current ? <>
+          <div className="books-chapter">
+            <strong>{current.name}</strong>
+            <span>{countWords(current.text)} palavras</span>
+            <button className="btn" onClick={() => navigate(vaultRoute(current.path))}>Propriedades e resumo</button>
           </div>
-        ) : (
-          <>
-            <div className="format-bar" role="toolbar" aria-label="Formatação do livro">
-              {[
-                [<Type size={15} />, "Título"],
-                [<Bold size={15} />, "Negrito"],
-                [<Italic size={15} />, "Itálico"],
-                [<Underline size={15} />, "Sublinhado"],
-                [<Strikethrough size={15} />, "Tachado"],
-                [<Highlighter size={15} />, "Destaque"],
-                [<TextAlignStart size={15} />, "Alinhar à esquerda"],
-                [<TextAlignCenter size={15} />, "Centralizar"],
-                [<TextAlignJustify size={15} />, "Justificar"],
-                [<List size={15} />, "Lista"],
-                [<ListOrdered size={15} />, "Lista numerada"],
-                [<Quote size={15} />, "Leia em voz alta"],
-                [<Swords size={15} />, "Statblock"],
-                [<Table size={15} />, "Tabela"],
-                [<Image size={15} />, "Imagem"],
-                [<Link2 size={15} />, "Link para a wiki"],
-                [<Columns2 size={15} />, "Quebra de coluna"],
-                [<SeparatorHorizontal size={15} />, "Quebra de página"],
-              ].map(([icon, label]) => (
-                <button key={label as string} className="icon-btn sm" title={label as string} onClick={insert(label as string)}>
-                  {icon}
-                </button>
-              ))}
-              <button className="btn sm" style={{ marginLeft: 6 }} onClick={() => setCatalog(true)}>
-                <Sparkles size={14} /> Todos os formatadores
-              </button>
-            </div>
-            <div className="book-split">
-              <textarea className="book-source" value={source} onChange={(e) => setSource(e.target.value)} spellCheck lang="pt-BR" aria-label="Texto do capítulo em Markdown" />
-              <div className="book-preview">
-                <div className="preview-bar">
-                  <select className="select" value={theme} onChange={(e) => setTheme(e.target.value)} aria-label="Tema">
-                    <option value="rpg">Manual de RPG</option>
-                    <option value="pergaminho">Pergaminho</option>
-                    <option value="minimalista">Minimalista</option>
-                  </select>
-                  <select className="select" value={page} onChange={(e) => setPage(e.target.value)} aria-label="Tamanho da página">
-                    <option>A4</option>
-                    <option>Carta</option>
-                    <option>A5</option>
-                  </select>
-                  <span className="tiny faint">{pages.length} páginas</span>
-                </div>
-                <div className="pages">
-                  {pages.map((content, i) => (
-                    <div key={i} className={`book-page theme-${theme} size-${page}`}>
-                      <div className="page-header">
-                        <span>{book.title}</span>
-                        <span>{chapter.title}</span>
-                      </div>
-                      <Markdown source={content} space="livros" className="page-columns" />
-                      <div className="page-footer">{i + 12}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </section>
-
-      {catalog && (
-        <Modal wide title="Todos os formatadores" onClose={() => setCatalog(false)}>
-          <p className="muted small">Tudo é Markdown que o Obsidian também abre. Itens com HTML usam o snippet `runas-codex.css` para ficar igual lá.</p>
-          {FORMATTER_GROUPS.map((group) => (
-            <div key={group.title} className="stack">
-              <span className="eyebrow">{group.title}</span>
-              <div className="formatter-grid">
-                {group.items.map((f) => (
-                  <button key={f.label} className="formatter" onClick={() => toast(`Protótipo: inseriria ${f.label}`)}>
-                    <strong className="small">{f.label}</strong>
-                    <code className="tiny">{f.syntax}</code>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </Modal>
-      )}
-
-      {exporting && (
-        <Modal
-          title="Exportar livro"
-          onClose={() => setExporting(false)}
-          footer={
-            <>
-              <button className="btn" onClick={() => setExporting(false)}>Cancelar</button>
-              <button className="btn primary" onClick={() => { setExporting(false); toast("Protótipo: geraria o PDF fiel à prévia") }}>
-                <FileDown size={15} /> Exportar
-              </button>
-            </>
-          }
-        >
-          <div className="grid-cards" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-            {["PDF (impressão)", "EPUB", "DOCX", "HTML", "Markdown", "RTF"].map((f, i) => (
-              <label key={f} className="card tight check">
-                <input type="radio" name="formato" defaultChecked={i === 0} /> {f}
-              </label>
-            ))}
-          </div>
-          <label className="check">
-            <input type="checkbox" defaultChecked /> Incluir capa, créditos e sumário
-          </label>
-          <label className="check">
-            <input type="checkbox" /> Marcas de corte e sangria (gráfica)
-          </label>
-          <label className="check">
-            <input type="checkbox" defaultChecked /> Versão dos jogadores (sem segredos)
-          </label>
-        </Modal>
-      )}
+          <NoteView key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => setView("estrutura")} onCreate={(target) => { setName(target); setCreating(true); setView("estrutura") }} onTag={() => navigate("/notas")} toolbar={(insert) => <div className="books-formatters">
+            <label>Inserir formatador<select className="input" aria-label="Inserir formatador" value="" onChange={(e) => { if (e.target.value) insert(e.target.value) }}>
+              <option value="">Escolha uma formatação…</option>{FORMATTER_GROUPS.map((group) => <optgroup key={group.title} label={group.title}>{group.items.map((f) => <option key={f.label} value={f.syntax}>{f.label}</option>)}</optgroup>)}</select>
+            </label>
+          </div>} />
+        </> : <p className="page">Selecione uma nota na estrutura. Links quebrados podem ser corrigidos nos metadados do livro.</p>}
+      </main>
     </div>
-  )
+  </div>
 }

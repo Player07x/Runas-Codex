@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { BookOpenText, ChevronLeft, Code2, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
 import { scopeOf } from "../../core/spaces"
 import { fillTemplate, insertTemplate } from "../../core/templates"
@@ -38,6 +38,8 @@ interface Props {
   onBack(): void
   onCreate(target: string): void
   onTag(tag: string): void
+  /** Barra opcional que insere no cursor do editor, sem outro fluxo de gravação. */
+  toolbar?: (insert: (text: string) => void) => ReactNode
   /** Pedido de rolar até um título (linha), vindo do sumário. */
   headingRequest?: { line: number; at: number }
   /** `false` esconde os segredos do mestre no modo leitura (versão dos jogadores). */
@@ -48,7 +50,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, showSecrets = true }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true }: Props) {
   const vault = useVault()
   const toast = useToast()
   const index = vault.index!
@@ -278,6 +280,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
           )}
         </div>
       )}
+
+      {!readOnly && mode !== "leitura" && toolbar?.((text) => editor.current?.insert(text))}
 
       <div className="editor-body" ref={reader}>
         {mode === "leitura" ? (

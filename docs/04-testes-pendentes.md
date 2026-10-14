@@ -137,6 +137,18 @@ automáticos). Falta o uso de verdade:
 - [ ] No Obsidian, os blocos `runas-calendario` e `runas-mapa` aparecem como código (esperado) e as propriedades
       `_mundo` como texto, não como data.
 
+## Etapa 8 — Livros
+
+### Fase 8a — estrutura em notas e editor
+
+- [ ] Abrir `Livros/Guia de Valdris` do cofre de teste no Obsidian: capítulos como notas comuns e `estrutura` como lista de links.
+- [ ] Renomear um capítulo em Notas, voltar ao livro e conferir ordem, texto e links; repetir com edição externa pelo Obsidian.
+- [ ] Conferir conflitos com o Obsidian aberto durante edição de capítulo e reordenação; nenhuma gravação deve sobrescrever uma versão externa.
+- [ ] Criar partes, capítulos e seções após a seleção; incluir notas de “Fora do livro”; corrigir um link quebrado pelo frontmatter.
+- [ ] Em Android real, arrastar pela alça na cortiça, inclusive com rolagem entre cartões distantes, e editar com teclado virtual.
+- [ ] Conferir os formatadores nos três modos, nos temas claro e escuro; prévia paginada permanece para a 8b.
+- [ ] Windows e Obsidian não foram executados localmente nesta fase. Linux/Electron e navegador em 320 px foram verificados.
+
 ---
 
 ## Limitações conhecidas (não precisam de teste agora)
