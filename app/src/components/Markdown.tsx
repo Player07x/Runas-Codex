@@ -64,11 +64,14 @@ interface MarkdownProps {
   /** Segredos do mestre aparecem (o mestre) ou somem (versão dos jogadores). */
   showSecrets?: boolean
   className?: string
+  /** Nota inteira, quando `source` é só um trecho dela (o live preview desenha bloco a bloco): os títulos do sumário vêm daqui. */
+  contextSource?: string
 }
 
-export function Markdown({ source, space, showSecrets = true, className }: MarkdownProps) {
+export function Markdown({ source, space, showSecrets = true, className, contextSource }: MarkdownProps) {
   const prepared = useMemo(() => prepareSource(source), [source])
-  const context = useMemo(() => ({ headings: headingsOf(prepared), showSecrets }), [prepared, showSecrets])
+  const headingSource = contextSource ?? prepared
+  const context = useMemo(() => ({ headings: headingsOf(headingSource), showSecrets }), [headingSource, showSecrets])
   return (
     <MarkdownContext.Provider value={context}>
       <div className={`md ${className ?? ""}`}>

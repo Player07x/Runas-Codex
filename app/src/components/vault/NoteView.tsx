@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { BookOpenText, ChevronLeft, Code2, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert } from "lucide-react"
+import { BookOpenText, ChevronLeft, Code2, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
 import { scopeOf } from "../../core/spaces"
 import { foldName, noteName, textToSave, toEditorText } from "../../core/text"
 import { splitFrontmatter } from "../../lib/links"
@@ -10,9 +10,22 @@ import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog } from "./dialogs"
+import type { LivePreviewHost } from "./live-preview"
 import { SourceEditor, type SourceEditorHandle } from "./SourceEditor"
 
-export type ViewMode = "leitura" | "fonte"
+/** Os três modos do Obsidian: leitura, live preview ("Editar") e código-fonte. */
+export type ViewMode = "leitura" | "live" | "fonte"
+
+const MODE_KEY = "runas-codex:modo-nota"
+
+function savedMode(): ViewMode {
+  try {
+    const value = localStorage.getItem(MODE_KEY)
+    return value === "leitura" || value === "fonte" ? value : "live"
+  } catch {
+    return "live"
+  }
+}
 type SaveState = "salvo" | "pendente" | "salvando" | "conflito" | "erro"
 
 const AUTOSAVE_MS = 800
@@ -38,7 +51,16 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const index = vault.index!
   const note = index.note(path)!
   const readOnly = vault.info?.readOnly ?? true
-  const [mode, setMode] = useState<ViewMode>(readOnly ? "leitura" : "fonte")
+  const [mode, setModeState] = useState<ViewMode>(readOnly ? "leitura" : savedMode)
+  const setMode = (next: ViewMode) => {
+    setModeState(next)
+    if (readOnly) return
+    try {
+      localStorage.setItem(MODE_KEY, next)
+    } catch {
+      /* só não é lembrado */
+    }
+  }
   const [base, setBase] = useState(note.text)
   const [draft, setDraft] = useState(() => toEditorText(note.text))
   const [docKey, setDocKey] = useState(0)
@@ -125,6 +147,34 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   }
 
   const noteSet = useMemo(() => vaultNoteSet(index, path, { onBroken: onCreate, onTag }, vault.platform), [index, path, onCreate, onTag, vault.version, vault.platform])
+  const previewHost = useMemo<LivePreviewHost>(
+    () => ({
+      noteSet: () => noteSet,
+      openWiki(target) {
+        const name = target.split("#")[0]!
+        if (!name) return
+        const found = noteSet.resolve?.(name, "wiki")
+        if (found) navigate(found.route)
+        else onCreate(name)
+      },
+      openUrl(url) {
+        if (/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+          window.open(url, "_blank", "noreferrer")
+          return
+        }
+        let target = url
+        try {
+          target = decodeURIComponent(url)
+        } catch {
+          /* fica como está */
+        }
+        const found = noteSet.resolve?.(target.split("#")[0]!, "markdown")
+        if (found) navigate(found.route)
+      },
+      openTag: onTag,
+    }),
+    [noteSet, onCreate, onTag],
+  )
   const suggestLinks = useCallback(
     (query: string) => {
       const root = scopeOf(path).root
@@ -139,7 +189,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
 
   useEffect(() => {
     if (!headingRequest) return
-    setMode("leitura")
+    setModeState("leitura")
     const headings = index.note(path)?.meta.headings ?? []
     const position = headings.findIndex((h) => h.line === headingRequest.line)
     setTimeout(() => reader.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[position]?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
@@ -160,7 +210,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
           onChange={setMode}
           options={[
             { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
-            { value: "fonte", label: readOnly ? "Código" : "Editar", icon: readOnly ? <Code2 size={14} /> : <PenLine size={14} /> },
+            ...(readOnly ? [] : [{ value: "live" as const, label: "Editar", icon: <Type size={14} /> }]),
+            { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
           ]}
         />
         {readOnly && (
@@ -178,7 +229,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
               title="Inserir link (inclusive para outro espaço)"
               aria-label="Inserir link"
               onClick={() => {
-                setMode("fonte")
+                if (mode === "leitura") setMode("live")
                 setDialog("link")
               }}
             >
@@ -220,7 +271,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} /> : <p className="muted">Nota vazia.</p>}
           </NoteSetContext.Provider>
         ) : (
-          <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} />
+          <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} />
         )}
       </div>
 

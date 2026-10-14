@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { app, BrowserWindow, ipcMain, protocol, type IpcMainInvokeEvent } from "electron"
+import { app, BrowserWindow, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
@@ -86,8 +86,12 @@ function createMainWindow(): BrowserWindow {
     },
   })
 
-  // O app nunca abre janelas nem sai de si mesmo; a navegação é toda por hash.
-  window.webContents.setWindowOpenHandler(() => ({ action: "deny" }))
+  // O app nunca abre janelas nem sai de si mesmo; a navegação é toda por hash. Links http(s) e mailto das notas
+  // abrem no navegador do sistema (só quando o usuário clica).
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^(https?:\/\/|mailto:)/i.test(url)) void shell.openExternal(url)
+    return { action: "deny" }
+  })
   window.webContents.on("will-navigate", (event, url) => {
     if (url.split("#")[0] !== window.webContents.getURL().split("#")[0]) event.preventDefault()
   })

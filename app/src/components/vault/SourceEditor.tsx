@@ -2,11 +2,14 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
 import { autocompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
 import { markdown } from "@codemirror/lang-markdown"
+import { GFM } from "@lezer/markdown"
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language"
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
 import { Compartment, EditorState } from "@codemirror/state"
 import { EditorView, keymap, placeholder } from "@codemirror/view"
 import { tags } from "@lezer/highlight"
+import { obsidianSyntax } from "../../markdown/lezer-obsidian"
+import { livePreview as livePreviewExtension, livePreviewHost, type LivePreviewHost } from "./live-preview"
 
 export interface LinkSuggestion {
   label: string
@@ -29,6 +32,8 @@ interface Props {
   onChange(value: string): void
   onSave?(): void
   suggestLinks?(query: string): LinkSuggestion[]
+  /** Com isto, o editor fica em live preview (marcação escondida fora do cursor, blocos desenhados). */
+  livePreview?: LivePreviewHost | null
 }
 
 /** Cores pelas variáveis do tema: o editor acompanha o claro/escuro do Órbita. */
@@ -62,13 +67,22 @@ const highlight = HighlightStyle.define([
   { tag: tags.list, color: "var(--violet)" },
 ])
 
-export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks }, ref) {
+export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview }, ref) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const readOnlyConf = useRef(new Compartment())
+  const previewConf = useRef(new Compartment())
   // As funções mudam a cada render; o editor lê sempre a versão atual por estas referências.
-  const callbacks = useRef({ onChange, onSave, suggestLinks })
-  callbacks.current = { onChange, onSave, suggestLinks }
+  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview })
+  callbacks.current = { onChange, onSave, suggestLinks, livePreview }
+  // Anfitrião estável para o live preview (o editor não é recriado quando as funções mudam).
+  const previewHost = useRef<LivePreviewHost>({
+    noteSet: () => callbacks.current.livePreview!.noteSet(),
+    openWiki: (target) => callbacks.current.livePreview?.openWiki(target),
+    openUrl: (url) => callbacks.current.livePreview?.openUrl(url),
+    openTag: (tag) => callbacks.current.livePreview?.openTag(tag),
+  })
+  const previewExtensions = (on: boolean) => (on ? [livePreviewHost.of(previewHost.current), livePreviewExtension()] : [])
 
   useEffect(() => {
     const linkSource = (context: CompletionContext): CompletionResult | null => {
@@ -86,7 +100,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
       doc: value,
       extensions: [
         history(),
-        markdown(),
+        markdown({ extensions: [GFM, obsidianSyntax] }),
         syntaxHighlighting(highlight),
         highlightSelectionMatches(),
         autocompletion({ override: [linkSource], icons: false }),
@@ -101,6 +115,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
           indentWithTab,
         ]),
         readOnlyConf.current.of([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]),
+        previewConf.current.of(previewExtensions(Boolean(livePreview))),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) callbacks.current.onChange(update.state.doc.toString())
         }),
@@ -119,6 +134,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     view.current?.dispatch({ effects: readOnlyConf.current.reconfigure([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]) })
   }, [readOnly])
 
+  useEffect(() => {
+    view.current?.dispatch({ effects: previewConf.current.reconfigure(previewExtensions(Boolean(livePreview))) })
+  }, [Boolean(livePreview)])
+
   useImperativeHandle(ref, () => ({
     insert(text: string) {
       const v = view.current
@@ -132,5 +151,5 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     },
   }))
 
-  return <div ref={host} className="source-editor" />
+  return <div ref={host} className={`source-editor ${livePreview ? "live" : ""}`} />
 })
