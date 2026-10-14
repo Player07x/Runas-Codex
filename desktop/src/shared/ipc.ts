@@ -17,6 +17,10 @@ export const IPC = {
   vaultInstallSnippet: "vault:install-snippet",
   /** Do processo principal para a janela: mudanças feitas fora do app. */
   vaultChanged: "vault:changed",
+  agendaSchedule: "agenda:schedule",
+  /** Do processo principal para a janela: clicaram num lembrete. */
+  agendaOpen: "agenda:open",
+  saveFile: "files:save",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

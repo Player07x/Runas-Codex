@@ -15,7 +15,7 @@ import { ARTICLES, WIKI } from "../data/wiki"
 import { CAMPAIGNS } from "../data/campaigns"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
-import { EVENTS } from "../data/agenda"
+import { AGENDA_ROOT } from "../core/agenda"
 import { Modal, useToast } from "./ui"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
@@ -23,7 +23,7 @@ type NavItem = { route: string; label: string; icon: ReactNode; count?: number; 
 export const NAV: NavItem[] = [
   { route: "/", label: "Início", icon: <House size={18} />, match: "" },
   { route: "/notas", label: "Notas", icon: <NotebookPen size={18} />, count: NOTES.length, match: "notas" },
-  { route: "/agenda", label: "Agenda", icon: <CalendarDays size={18} />, count: EVENTS.length, match: "agenda" },
+  { route: "/agenda", label: "Agenda", icon: <CalendarDays size={18} />, count: 0, match: "agenda" },
   { route: "/wiki", label: "Wiki", icon: <Library size={18} />, count: ARTICLES.length, match: "wiki" },
   { route: "/campanhas", label: "Campanhas", icon: <ScrollText size={18} />, count: CAMPAIGNS.length, match: "campanhas" },
   { route: "/livros", label: "Livros", icon: <BookOpen size={18} />, count: BOOKS.length, match: "livros" },
@@ -70,6 +70,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const current = route[0] ?? ""
   const crumbs = crumbsFor(route)
   const notesCount = vault.index ? vault.index.notesIn("Notas/").length || vault.index.size : NOTES.length
+  const agendaCount = vault.index ? vault.index.notesIn(AGENDA_ROOT).length : 0
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -97,7 +98,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.count}</span>}
+              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.match === "agenda" ? agendaCount : item.count}</span>}
             </a>
           ))}
         </div>

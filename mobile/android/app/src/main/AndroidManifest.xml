@@ -38,4 +38,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lembretes da Agenda na hora exata (Android 13+; o plugin de notificações pede SCHEDULE_EXACT_ALARM para os anteriores). -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 </manifest>

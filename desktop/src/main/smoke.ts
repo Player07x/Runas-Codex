@@ -106,6 +106,37 @@ export const SMOKE_SCRIPT = `(async () => {
   const dailyText = (await bridge.vault.read([dailyPath]))[dailyPath] ?? ""
   result.daily = dailyText.includes("## Humor do dia") && !dailyText.includes("{{") ? "OK" : dailyPath + ": " + dailyText.slice(0, 60)
 
+  // Agenda: criar um evento pela tela; a nota vai para Agenda/ no formato do Full Calendar e aparece no mês.
+  location.hash = "/agenda"
+  ;(await until(() => [...document.querySelectorAll("[role=tab]")].find((tab) => tab.textContent.trim() === "Mês")))?.click()
+  ;(await until(() => document.querySelector("[aria-label='Novo evento']")))?.click()
+  const eventTitle = await until(() => document.querySelector("[aria-label='Título do evento']"))
+  if (eventTitle) {
+    const tomorrow = new Date(Date.now() + 86400000)
+    const day = tomorrow.getFullYear() + "-" + String(tomorrow.getMonth() + 1).padStart(2, "0") + "-" + String(tomorrow.getDate()).padStart(2, "0")
+    const fill = (label, value) => {
+      const el = document.querySelector("[aria-label='" + label + "']")
+      const proto = el.tagName === "SELECT" ? HTMLSelectElement.prototype : HTMLInputElement.prototype
+      Object.getOwnPropertyDescriptor(proto, "value").set.call(el, value)
+      el.dispatchEvent(new Event(el.tagName === "SELECT" ? "change" : "input", { bubbles: true }))
+    }
+    fill("Título do evento", "Evento do smoke")
+    fill("Data do evento", day)
+    fill("Hora de início", "19:30")
+    fill("Lembrete", "60")
+    await wait(100)
+    document.querySelector("[aria-label='Salvar evento']").click()
+    await until(() => !document.querySelector("[aria-label='Salvar evento']"))
+    await wait(300)
+    const eventPath = "Agenda/" + day + " Evento do smoke.md"
+    const eventText = (await bridge.vault.read([eventPath]))[eventPath] ?? ""
+    result.agenda = {
+      note: /type: single/.test(eventText) && eventText.includes('date: "' + day + '"') && eventText.includes('startTime: "19:30"') ? "OK" : eventText.slice(0, 80),
+      inMonth: [...document.querySelectorAll("[data-day='" + day + "'] .event-pill")].some((pill) => pill.textContent.includes("Evento do smoke")),
+      scheduled: await bridge.agenda.schedule([{ id: "smoke", at: Date.now() + 10 * 86400000, title: "Smoke", body: "teste", path: eventPath }]),
+    }
+  }
+
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
   ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
@@ -191,6 +222,10 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     typeof result.backup === "number" &&
     result.snippet === "OK" &&
     result.daily === "OK" &&
+    typeof result.agenda === "object" &&
+    (result.agenda as Record<string, unknown>).note === "OK" &&
+    (result.agenda as Record<string, unknown>).inMonth === true &&
+    (result.agenda as Record<string, unknown>).scheduled === 1 &&
     result.renamed === true &&
     links.length > 0 &&
     links.every((link) => link.startsWith("[[Aldren Vael")) &&

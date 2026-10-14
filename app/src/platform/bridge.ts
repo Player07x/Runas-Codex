@@ -31,6 +31,14 @@ export interface RunasCodexBridge {
     /** Grava `.obsidian/snippets/runas-codex.css` (o snippet que faz o Obsidian mostrar o dialeto como o app). */
     installSnippet(css: string): Promise<string>
   }
+  /** Lembretes da Agenda (notificações do sistema, agendadas no processo principal). */
+  readonly agenda: {
+    schedule(reminders: { id: string; at: number; title: string; body: string; path: string }[]): Promise<number>
+    /** Clique numa notificação de lembrete: o caminho da nota do evento. */
+    onOpen(listener: (path: string) => void): () => void
+  }
+  /** Salva um arquivo onde o usuário escolher (exportações). Devolve o caminho, ou `null` se cancelou. */
+  saveFile(name: string, content: string): Promise<string | null>
   /** A mesa (VTT): mesas do cofre, documentos, sala dos jogadores e áudio. */
   readonly vtt: VttApi
 }

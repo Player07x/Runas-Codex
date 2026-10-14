@@ -1,7 +1,8 @@
 import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { app, BrowserWindow, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
+import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
+import { ReminderScheduler, validReminders } from "./reminders"
 import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
@@ -25,6 +26,7 @@ const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--
 let mainWindow: BrowserWindow | null = null
 const vault = new VaultService(() => mainWindow, () => vtt.closeWorld())
 const vtt = new VttHost(() => vault.rootPath, () => vault.info()?.readOnly === false)
+const reminders = new ReminderScheduler(() => mainWindow, (path) => mainWindow?.webContents.send(IPC.agendaOpen, path))
 
 /** Só a janela do app conversa com o processo principal. */
 function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown): void {
@@ -65,6 +67,14 @@ function registerIpc(): void {
   handle(IPC.vaultRevealBackups, () => vault.revealBackups())
   handle(IPC.vaultOpenFile, (_event, path) => vault.openFile(text(path, "caminho")))
   handle(IPC.vaultInstallSnippet, (_event, css) => vault.installSnippet(text(css, "snippet")))
+  handle(IPC.agendaSchedule, (_event, list) => reminders.schedule(validReminders(list)))
+  handle(IPC.saveFile, async (_event, name, content) => {
+    const fileName = text(name, "nome").replace(/[\\/:*?"<>|]/g, "-").slice(0, 120)
+    const result = await dialog.showSaveDialog(mainWindow!, { defaultPath: join(app.getPath("documents"), fileName) })
+    if (result.canceled || !result.filePath) return null
+    await writeFile(result.filePath, text(content, "conteúdo"), "utf8")
+    return result.filePath
+  })
   vtt.register(handle)
 }
 
@@ -136,6 +146,7 @@ void app.whenReady().then(async () => {
 })
 
 app.on("window-all-closed", () => {
+  reminders.stop()
   vtt.closeWorld()
   vault.stop()
   if (process.platform !== "darwin") app.quit()

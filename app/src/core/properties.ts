@@ -11,7 +11,8 @@ export type PropertyValue = string | number | boolean | null | string[]
 
 // Valores que o YAML leria como outro tipo, ou que o Obsidian trataria como data real (`4031-03-15` de um mundo
 // fictício vira data do calendário se ficar sem aspas — docs/02, seção 4).
-const PLAIN_UNSAFE = /^[\s\-?:,[\]{}#&*!|>'"%@`]|^(true|false|yes|no|on|off|null|~|[-+]?(\d[\d_]*(\.\d*)?|\.\d+)([eE][-+]?\d+)?|0x[\da-fA-F]+)$|^\d{1,6}-\d{1,2}-\d{1,2}|: |\s#|\s$|\n/i
+// Horas (`19:30`) também: o YAML 1.1 lê `19:30` como número em base 60.
+const PLAIN_UNSAFE = /^[\s\-?:,[\]{}#&*!|>'"%@`]|^(true|false|yes|no|on|off|null|~|[-+]?(\d[\d_]*(\.\d*)?|\.\d+)([eE][-+]?\d+)?|0x[\da-fA-F]+)$|^\d{1,6}-\d{1,2}-\d{1,2}|^\d{1,2}:\d{2}(:\d{2})?$|: |\s#|\s$|\n/i
 
 function scalar(value: string | number | boolean | null): string {
   if (value === null) return ""

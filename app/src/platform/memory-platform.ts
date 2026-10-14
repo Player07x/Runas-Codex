@@ -1,6 +1,7 @@
 import type { BackupInfo, Platform, RoomHostInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
 import { ALL_NOTES } from "../lib/links"
 import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
+import { isAndroidApp, onAndroidReminderOpen, scheduleInBrowser, scheduleOnAndroid } from "./reminders"
 
 /**
  * Plataforma em memória: o cofre de exemplo do navegador (e dos testes). Aceita gravar, mas nada vai para o disco —
@@ -103,6 +104,21 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     },
     async notify(title, body) {
       onNotify?.(title, body)
+    },
+    async scheduleReminders(reminders) {
+      if (isAndroidApp()) await scheduleOnAndroid(reminders)
+      else scheduleInBrowser(reminders, (title, body) => onNotify?.(title, body))
+    },
+    onReminderOpen: onAndroidReminderOpen,
+    async saveFile(name, content, mime) {
+      // Navegador (e Android, por enquanto): baixa o arquivo.
+      const url = URL.createObjectURL(new Blob([content], { type: mime }))
+      const link = document.createElement("a")
+      link.href = url
+      link.download = name
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      return name
     },
     async hostRoom(): Promise<RoomHostInfo> {
       return { lanUrl: "http://192.168.0.12:30000/?k=8f2c9a71", code: "K7QM-2XPA" }

@@ -1,29 +1,32 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, Dices, Feather, FileText, Library, Plus, ScrollText, Users } from "lucide-react"
 import { href } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
 import { formatDate, formatTime, routeOfNote } from "../lib/navigation"
 import { CAMPAIGNS } from "../data/campaigns"
-import { EVENTS, TODAY } from "../data/agenda"
 import { NOTES } from "../data/notes"
 import { ARTICLES } from "../data/wiki"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
+import { expandEvents, nextSession, type AgendaEvent, type Occurrence } from "../core/agenda"
+import { agendaEvents } from "../lib/agenda-data"
+import { vaultRoute } from "../lib/vault-notes"
+import { useVault } from "../platform/VaultProvider"
 import "./home.css"
 
 const campaign = CAMPAIGNS[0]
 const session = campaign.sessions.find((s) => s.status === "planejada")!
 const recent = [...ALL_NOTES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 4)
-const upcoming = EVENTS.filter((e) => new Date(e.start) >= TODAY).sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3)
 const spaces = [
   { title: "Notas", sub: "Capture suas ideias", count: NOTES.length, unit: "notas", icon: Feather, path: "/notas" },
-  { title: "Agenda", sub: "Dê tempo às histórias", count: EVENTS.length, unit: "eventos", icon: CalendarDays, path: "/agenda" },
+  { title: "Agenda", sub: "Dê tempo às histórias", count: -1, unit: "eventos", icon: CalendarDays, path: "/agenda" },
   { title: "Wiki", sub: "Construa seu universo", count: ARTICLES.length, unit: "artigos", icon: Library, path: "/wiki" },
   { title: "Campanhas", sub: "Conecte os capítulos", count: CAMPAIGNS.length, unit: "campanhas", icon: ScrollText, path: "/campanhas" },
   { title: "Livros", sub: "Escreva a próxima página", count: BOOKS.length, unit: "livros", icon: BookOpen, path: "/livros" },
   { title: "VTT", sub: "Reúna seu grupo", count: MESAS.length, unit: "mesas", icon: Dices, path: "/vtt" },
 ]
 const spaceLabel: Record<string, string> = { wiki: "Wiki", campanhas: "Campanhas" }
+const TODAY = new Date()
 const weekday = formatDate(TODAY.toISOString(), { weekday: "long" })
 
 export function Home() {
@@ -70,7 +73,29 @@ export function Home() {
   )
 }
 
+/** Eventos da Agenda do cofre aberto (vazio sem cofre). */
+function useAgendaEvents(): AgendaEvent[] {
+  const vault = useVault()
+  return useMemo(() => (vault.index ? agendaEvents(vault.index) : []), [vault.index, vault.version])
+}
+
+/** "Faltam 2 dias e 9 h", atualizado a cada minuto. */
+function Countdown({ to }: { to: Date }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(timer)
+  }, [])
+  const minutes = Math.max(0, Math.round((to.getTime() - now.getTime()) / 60_000))
+  const days = Math.floor(minutes / 1440)
+  const hours = Math.floor((minutes % 1440) / 60)
+  const text = minutes < 60 ? (minutes ? `Começa em ${minutes} min` : "Começando agora") : days ? `Faltam ${days} ${days === 1 ? "dia" : "dias"}${hours ? ` e ${hours} h` : ""}` : `Faltam ${hours} h`
+  return <span className="session-countdown">{text}</span>
+}
+
 function NextSession() {
+  const events = useAgendaEvents()
+  const next = useMemo<Occurrence | undefined>(() => nextSession(events, new Date()), [events])
   const confirmed = Object.values(session.attendance).filter(Boolean).length
   return (
     <section className="home-session">
@@ -86,13 +111,14 @@ function NextSession() {
           <br />
           <em>sessão.</em>
         </h2>
-        <p className="session-description">
-          Sessão {session.number} · {session.title}
-        </p>
+        <p className="session-description">{next ? next.event.title : `Sessão ${session.number} · ${session.title}`}</p>
+        {next && <Countdown to={next.start} />}
         <div className="session-meta">
           <span>
             <CalendarDays size={16} />
-            {formatDate(session.date, { day: "numeric", month: "long" })} · {formatTime(session.date)}
+            {next
+              ? `${next.start.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}${next.event.allDay ? "" : ` · ${String(next.start.getHours()).padStart(2, "0")}:${String(next.start.getMinutes()).padStart(2, "0")}`}`
+              : `${formatDate(session.date, { day: "numeric", month: "long" })} · ${formatTime(session.date)}`}
           </span>
           <span>
             <Users size={16} />
@@ -121,6 +147,7 @@ function NextSession() {
 }
 
 function Spaces() {
+  const agendaCount = useAgendaEvents().length
   return (
     <section className="home-spaces" aria-label="Seus espaços">
       {spaces.map((s, i) => (
@@ -133,7 +160,7 @@ function Spaces() {
           <p>{s.sub}</p>
           <footer>
             <span>
-              {s.count} {s.unit}
+              {s.count < 0 ? agendaCount : s.count} {s.unit}
             </span>
             <ArrowUpRight size={18} />
           </footer>
@@ -167,6 +194,11 @@ function Recent() {
 }
 
 function Horizon() {
+  const events = useAgendaEvents()
+  const upcoming = useMemo(() => {
+    const now = new Date()
+    return expandEvents(events, now, new Date(now.getTime() + 90 * 86_400_000)).slice(0, 3)
+  }, [events])
   return (
     <section>
       <div className="home-section-head">
@@ -175,16 +207,17 @@ function Horizon() {
           Agenda <ArrowUpRight size={15} />
         </a>
       </div>
-      {upcoming.map((e) => (
-        <a className="home-event" key={e.id} href={href("/agenda")}>
+      {upcoming.length === 0 && <p className="muted small">Nada marcado nos próximos 90 dias.</p>}
+      {upcoming.map((o) => (
+        <a className="home-event" key={o.key} href={href(vaultRoute(o.event.path))}>
           <div className="date-stamp">
-            <strong>{new Date(e.start).getDate()}</strong>
-            <span>{formatDate(e.start, { month: "short" })}</span>
+            <strong>{o.start.getDate()}</strong>
+            <span>{o.start.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}</span>
           </div>
           <div>
-            <small>{e.category}</small>
-            <h3>{e.title}</h3>
-            <span>{e.allDay ? "Dia inteiro" : formatTime(e.start)}</span>
+            <small>{o.event.category ?? "Evento"}</small>
+            <h3>{o.event.title}</h3>
+            <span>{o.event.allDay ? "Dia inteiro" : `${String(o.start.getHours()).padStart(2, "0")}:${String(o.start.getMinutes()).padStart(2, "0")}`}</span>
           </div>
           <ArrowUpRight size={17} />
         </a>

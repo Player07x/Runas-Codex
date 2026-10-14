@@ -2,6 +2,8 @@ import formatadores from "./formatadores.md?raw"
 import modeloDiario from "./modelos/Diário.md?raw"
 import modeloNpc from "./modelos/NPC.md?raw"
 import runa from "../assets/runa.png"
+import { eventFileName, eventNote, type EventInput } from "../core/agenda"
+import { EVENTS } from "./agenda"
 
 /**
  * Arquivos a mais do cofre de exemplo (navegador): a nota de teste dos formatadores, os modelos e as configurações
@@ -33,3 +35,32 @@ Pensar em [[Aldren]] e no [[Lago Espelhado]]. #rascunho
 export const DEMO_ASSETS: Record<string, string> = {
   "Notas/runa.png": runa,
 }
+
+const REMINDERS: Record<string, number> = { "Na hora": 0, "1 hora antes": 60, "1 dia antes": 1440 }
+
+/** Os eventos de exemplo da Agenda como notas no formato do Full Calendar (o mesmo de um cofre real). */
+function demoEvents(): Record<string, string> {
+  const files: Record<string, string> = {}
+  for (const e of EVENTS) {
+    const [date, time] = e.start.split("T") as [string, string]
+    const input: EventInput = {
+      title: e.title,
+      allDay: Boolean(e.allDay),
+      date,
+      ...(e.allDay ? {} : { startTime: time.slice(0, 5), ...(e.end ? { endTime: e.end.split("T")[1]!.slice(0, 5) } : {}) }),
+      repeat: e.recurrence === "Todo ano" ? { kind: "rrule", rule: "FREQ=YEARLY" } : { kind: "none" },
+      skipDates: [],
+      color: e.color,
+      category: e.category,
+      ...(e.location ? { location: e.location } : {}),
+      reminders: e.reminder && e.reminder in REMINDERS ? [REMINDERS[e.reminder]!] : [],
+      ...(e.sessionId === "s12" ? { session: "Campanhas/As Cinzas de Valdris/Sessões/Sessão 12" } : {}),
+      countdown: e.id === "e1",
+      notes: e.id === "e1" ? "## Preparação\n\n- [x] Confirmar presença no grupo\n- [ ] Imprimir o mapa da Cidade Alta\n- [ ] Separar as miniaturas dos lobos\n" : "",
+    }
+    files[`Agenda/${eventFileName(input)}.md`] = eventNote(input)
+  }
+  return files
+}
+
+Object.assign(DEMO_TEXT_FILES, demoEvents())
