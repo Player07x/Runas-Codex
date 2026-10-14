@@ -97,6 +97,25 @@ export const SMOKE_SCRIPT = `(async () => {
   window.print = originalPrint
   result.bookPreview.printShortcut = printRequested
 
+  // Campanhas (etapa 7): o painel lê sessões, missões, pistas e relógios das notas; o quadro .canvas é desenhado.
+  const campaignRoute = "/campanhas/" + encodeURIComponent("Cinzas de Valdris")
+  const canvasPath = "Campanhas/Cinzas de Valdris/Quadro.canvas"
+  location.hash = campaignRoute
+  await until(() => document.querySelector(".campaign-clock"))
+  await wait(300)
+  const dashboard = document.querySelector(".main")?.textContent ?? ""
+  const clocks = document.querySelectorAll(".campaign-clock").length
+  location.hash = "/quadro/" + encodeURIComponent(canvasPath)
+  await until(() => document.querySelectorAll(".canvas-card").length > 0)
+  await wait(300)
+  result.campaign = {
+    clocks,
+    quest: dashboard.includes("Entregar a carta"),
+    clue: dashboard.includes("A carta selada pede a prisão"),
+    cards: document.querySelectorAll(".canvas-card").length,
+    edges: document.querySelectorAll(".canvas-edge").length,
+  }
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -196,6 +215,53 @@ export const SMOKE_SCRIPT = `(async () => {
     result.books = Boolean(bookTexts[chapterPath]?.includes("tipo: capitulo") && bookTexts[bookPath]?.includes("[[Capítulo do smoke]]"))
   }
 
+  // Campanhas: criar a Sessão 13 pela tela (nota + evento na Agenda, um apontando para o outro).
+  location.hash = campaignRoute + "/sessoes"
+  ;(await until(() => [...document.querySelectorAll(".page-head button")].find((b) => b.textContent.trim() === "Nova sessão")))?.click()
+  const sessionTitle = await until(() => document.querySelector("[aria-label='Título da sessão']"))
+  if (sessionTitle) {
+    setter.call(sessionTitle, "Sessão do smoke")
+    sessionTitle.dispatchEvent(new Event("input", { bubbles: true }))
+    await wait(100)
+    ;[...document.querySelectorAll(".modal-foot button")].find((b) => b.textContent.trim() === "Criar sessão")?.click()
+    await until(() => location.hash.includes("/sessoes/"))
+    await wait(300)
+    const sessionPath = "Campanhas/Cinzas de Valdris/Sessões/Sessão 13.md"
+    const eventPath = (await bridge.vault.list()).find((e) => e.path.startsWith("Agenda/") && e.path.includes("Sessão 13"))?.path ?? ""
+    const sessionTexts = await bridge.vault.read(eventPath ? [sessionPath, eventPath] : [sessionPath])
+    const sessionText = sessionTexts[sessionPath] ?? ""
+    const sessionEvent = sessionTexts[eventPath] ?? ""
+    result.campaignSession = {
+      note: sessionText.includes("tipo: sessao") && sessionText.includes("numero: 13") && sessionText.includes("## Preparação") ? "OK" : sessionText.slice(0, 80),
+      event: eventPath && sessionEvent.includes("[[Campanhas/Cinzas de Valdris/Sessões/Sessão 13]]") && sessionText.includes("[[" + eventPath.replace(/\\.md$/, "") + "]]") ? "OK" : eventPath + ": " + sessionEvent.slice(0, 80),
+    }
+  }
+
+  // Quadro: um cartão novo pela barra; o JSON continua válido, com os campos desconhecidos e o link renomeado.
+  location.hash = "/quadro/" + encodeURIComponent(canvasPath)
+  await until(() => document.querySelectorAll(".canvas-card").length > 0)
+  ;[...document.querySelectorAll(".canvas-toolbar button")].find((b) => b.textContent.trim() === "Texto")?.click()
+  const cardText = await until(() => document.querySelector("[aria-label='Texto do cartão']"))
+  if (cardText) {
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set.call(cardText, "Cartão do smoke")
+    // O React ouve o blur como "focusout"; a janela do smoke pode estar sem foco.
+    cardText.dispatchEvent(new FocusEvent("focusout", { bubbles: true }))
+    await wait(1500)
+    const canvasText = (await bridge.vault.read([canvasPath]))[canvasPath] ?? ""
+    let canvas = null
+    try { canvas = JSON.parse(canvasText) } catch { canvas = null }
+    result.canvas = {
+      json: Boolean(canvas),
+      nodes: canvas ? canvas.nodes.length : 0,
+      text: Boolean(canvas && canvas.nodes.some((n) => n.text === "Cartão do smoke")),
+      unknown: Boolean(canvas && canvas["x-plugin-meta"]?.versao === 1 && canvas.nodes.some((n) => n["x-plugin-extra"]?.pin === true)),
+      renamed: Boolean(canvas && canvas.nodes.some((n) => n.file === "Wikis/Ordem x Caos/Personagens/Aldren Vael.md")),
+      // O checkout Windows usa CRLF; a tabulação deve ser preservada nos dois fins de linha.
+      tabs: /^\\{\\r?\\n\\t"nodes"/.test(canvasText),
+    }
+  }
+
+  // A sala do VTT fecha ao sair da mesa: o bloco da Mesa fica por último.
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
   ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
@@ -272,6 +338,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!readOk || !formattersOk || !graphOk || !wikiOk) return false
   const bookPreview = result.bookPreview as Record<string, unknown> | undefined
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
+  const campaign = result.campaign as Record<string, unknown> | undefined
+  if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (
@@ -302,6 +370,16 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.roomCheck as Record<string, unknown>).withoutKey === 404 &&
     (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
     (result.roomCheck as Record<string, unknown>).join === 200 &&
-    result.books === true
+    result.books === true &&
+    typeof result.campaignSession === "object" &&
+    (result.campaignSession as Record<string, unknown>).note === "OK" &&
+    (result.campaignSession as Record<string, unknown>).event === "OK" &&
+    typeof result.canvas === "object" &&
+    (result.canvas as Record<string, unknown>).json === true &&
+    (result.canvas as Record<string, unknown>).nodes === 4 &&
+    (result.canvas as Record<string, unknown>).text === true &&
+    (result.canvas as Record<string, unknown>).unknown === true &&
+    (result.canvas as Record<string, unknown>).renamed === true &&
+    (result.canvas as Record<string, unknown>).tabs === true
   )
 }

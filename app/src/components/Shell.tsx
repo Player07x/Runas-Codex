@@ -54,8 +54,10 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
   }
   if (first === "campanhas" && second) {
     crumbs.push({ label: CAMPAIGNS.find((c) => c.id === second)?.title ?? second, to: `/campanhas/${second}` })
-    const labels: Record<string, string> = { sessao: "Sessão", missoes: "Missões", canvas: "Quadro" }
+    const labels: Record<string, string> = { sessao: "Sessão", missoes: "Missões", canvas: "Quadro", sessoes: "Sessões", elenco: "Elenco", quadro: "Quadro" }
     if (third) crumbs.push({ label: third === "sessao" ? `Sessão ${fourth?.replace("s", "")}` : labels[third] ?? third })
+    // Campanhas da etapa 7: o quarto segmento é o caminho da nota (sessão) ou do quadro.
+    if (third && third !== "sessao" && fourth) crumbs.push({ label: fourth.split("/").pop()!.replace(/\.(md|canvas)$/i, "") })
   }
   if (first === "livros" && second) crumbs.push({ label: BOOKS.find((b) => b.id === second)?.title ?? second })
   if (first === "vtt" && second) {

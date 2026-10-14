@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, Dices, Feather, FileText, Library, Plus, ScrollText, Users } from "lucide-react"
 import { href } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
-import { formatDate, formatTime, routeOfNote } from "../lib/navigation"
+import { formatDate, routeOfNote } from "../lib/navigation"
 import { CAMPAIGNS } from "../data/campaigns"
 import { NOTES } from "../data/notes"
 import { ARTICLES } from "../data/wiki"
@@ -12,10 +12,10 @@ import { expandEvents, nextSession, type AgendaEvent, type Occurrence } from "..
 import { agendaEvents } from "../lib/agenda-data"
 import { vaultRoute } from "../lib/vault-notes"
 import { useVault } from "../platform/VaultProvider"
+import { nextCampaignSession } from "../core/campaigns"
+import { sessionRoute } from "./campaigns/campaign-state"
 import "./home.css"
 
-const campaign = CAMPAIGNS[0]
-const session = campaign.sessions.find((s) => s.status === "planejada")!
 const recent = [...ALL_NOTES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 4)
 const spaces = [
   { title: "Notas", sub: "Capture suas ideias", count: NOTES.length, unit: "notas", icon: Feather, path: "/notas" },
@@ -94,16 +94,23 @@ function Countdown({ to }: { to: Date }) {
 }
 
 function NextSession() {
+  const vault = useVault()
   const events = useAgendaEvents()
   const next = useMemo<Occurrence | undefined>(() => nextSession(events, new Date()), [events])
-  const confirmed = Object.values(session.attendance).filter(Boolean).length
+  const found = useMemo(
+    () => (vault.index ? nextCampaignSession(vault.index, new Date(), next ? { ...(next.event.session ? { session: next.event.session } : {}), from: next.event.path } : undefined) : null),
+    [vault.index, vault.version, next],
+  )
+  const session = found?.session
+  const present = found ? found.players.filter((p) => session!.present.includes(p.path)).length : 0
+  const when = next?.start ?? (session?.date ? new Date(`${session.date}T${session.time ?? "12:00"}`) : undefined)
   return (
     <section className="home-session">
       <div className="session-copy">
         <span className="home-kicker">
-          <span className="status-dot" /> Campanha em andamento
+          <span className="status-dot" /> {found ? "Campanha em andamento" : "Nenhuma sessão marcada"}
         </span>
-        <p className="session-world">{campaign.title}</p>
+        <p className="session-world">{found?.campaign.name ?? "Crie uma campanha e marque a primeira sessão"}</p>
         <h2>
           Toda história
           <br />
@@ -111,26 +118,28 @@ function NextSession() {
           <br />
           <em>sessão.</em>
         </h2>
-        <p className="session-description">{next ? next.event.title : `Sessão ${session.number} · ${session.title}`}</p>
-        {next && <Countdown to={next.start} />}
+        <p className="session-description">{next ? next.event.title : session ? session.title : "Sem sessão na Agenda nem nas campanhas."}</p>
+        {when && <Countdown to={when} />}
         <div className="session-meta">
-          <span>
-            <CalendarDays size={16} />
-            {next
-              ? `${next.start.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}${next.event.allDay ? "" : ` · ${String(next.start.getHours()).padStart(2, "0")}:${String(next.start.getMinutes()).padStart(2, "0")}`}`
-              : `${formatDate(session.date, { day: "numeric", month: "long" })} · ${formatTime(session.date)}`}
-          </span>
-          <span>
-            <Users size={16} />
-            {confirmed}/{campaign.players.length} confirmados
-          </span>
+          {when && (
+            <span>
+              <CalendarDays size={16} />
+              {`${when.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}${next?.event.allDay || (!next && !session?.time) ? "" : ` · ${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`}`}
+            </span>
+          )}
+          {found && found.players.length > 0 && (
+            <span>
+              <Users size={16} />
+              {present}/{found.players.length} presentes marcados
+            </span>
+          )}
         </div>
         <div className="session-buttons">
-          <a className="btn primary lg" href={href(`/campanhas/${campaign.id}/sessao/${session.id}`)}>
-            Preparar sessão <ArrowRight size={17} />
+          <a className="btn primary lg" href={href(session ? sessionRoute(session) : "/campanhas")}>
+            {session ? "Preparar sessão" : "Ver campanhas"} <ArrowRight size={17} />
           </a>
-          <a className="btn lg" href={href(`/vtt/mesa/${campaign.mesaId}`)}>
-            <Dices size={17} /> Abrir mesa
+          <a className="btn lg" href={href(found?.campaign.mesa ? `/vtt/mesa/${encodeURIComponent(found.campaign.mesa)}` : "/vtt")}>
+            <Dices size={17} /> {found?.campaign.mesa ? "Abrir mesa" : "Ir para o VTT"}
           </a>
         </div>
       </div>
@@ -140,7 +149,7 @@ function NextSession() {
         <div className="orbit-ring ring-three" />
         <span className="orbit-center">ᚱ</span>
         <span className="orbit-star">✦</span>
-        <span className="orbit-caption">VALDRIS / CAPÍTULO XII</span>
+        <span className="orbit-caption">{found ? `${found.campaign.name} / SESSÃO ${found.session.number ?? ""}`.toUpperCase() : "RUNAS-CODEX"}</span>
       </div>
     </section>
   )

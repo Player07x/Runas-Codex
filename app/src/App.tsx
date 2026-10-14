@@ -13,6 +13,7 @@ import { BooksScreen } from "./screens/books/BooksScreen"
 import { VttScreen } from "./screens/vtt/VttScreen"
 import { TransferScreen } from "./screens/TransferScreen"
 import { SettingsScreen } from "./screens/SettingsScreen"
+import { CanvasScreen } from "./components/canvas/CanvasScreen"
 
 function readTheme(): string {
   try {
@@ -29,7 +30,9 @@ function isFill(route: string[]): boolean {
     first === "notas" ||
     (first === "wiki" && (second === "artigo" || second === "mapa" || second === "grafico")) ||
     (first === "livros" && Boolean(second)) ||
-    (first === "vtt" && (second === "mesa" || second === "jogador"))
+    (first === "vtt" && (second === "mesa" || second === "jogador")) ||
+    (first === "campanhas" && (route[2] === "quadro" || (route[2] === "sessoes" && Boolean(route[3])))) ||
+    first === "quadro"
   )
 }
 
@@ -74,6 +77,9 @@ export function App() {
       break
     case "config":
       screen = <SettingsScreen theme={theme} onTheme={setTheme} />
+      break
+    case "quadro":
+      screen = <CanvasScreen path={rest[0]} />
       break
     default:
       screen = <Home />
