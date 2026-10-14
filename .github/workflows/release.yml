@@ -1,0 +1,159 @@
+name: Release
+
+# Gera os instaladores: Linux (.deb e AppImage), Windows (.exe) e Android (APK).
+# - Tag `v<versão>`: publica uma Release do GitHub com os quatro arquivos e as somas SHA-256.
+# - PR ou execução manual: só gera os instaladores como artefatos do workflow, para testar.
+# Ver docs/adr/0003-instaladores-e-android.md.
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths-ignore: ["docs/**", "**/*.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Conferir a tag com a versão
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          for file in package.json desktop/package.json mobile/package.json; do
+            expected="v$(node -p "require('./$file').version")"
+            if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+              echo "::error::A tag $GITHUB_REF_NAME não corresponde à versão $expected de $file."
+              exit 1
+            fi
+          done
+
+      - run: npm test
+
+      - name: Gerar o .deb e o AppImage
+        working-directory: desktop
+        run: npm run dist:linux
+
+      # O runner não tem tela: o Xvfb entrega uma. `--no-sandbox` vale só aqui (o runner restringe namespaces de
+      # usuário); o pacote instalado não usa a flag. Testa o app já empacotado, com a CSP e dentro do asar.
+      - name: Smoke no app empacotado
+        working-directory: desktop
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          xvfb-run -a release/linux-unpacked/runas-codex --smoke --no-sandbox --vault="$PWD/tests/cofre-exemplo"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-linux
+          path: |
+            desktop/release/Runas-Codex-*-linux-amd64.deb
+            desktop/release/Runas-Codex-*-linux-x86_64.AppImage
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Gerar o instalador
+        working-directory: desktop
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Smoke no Electron
+        working-directory: desktop
+        shell: bash
+        run: npx electron . --smoke --vault=tests/cofre-exemplo
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-windows
+          path: desktop/release/Runas-Codex-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+
+      # Build do app web + cópia para o projeto Android (cap sync).
+      - run: npm run sync -w @runas-codex/mobile
+
+      # APK de depuração: instala em qualquer Android 7+ (com "fontes desconhecidas"). O APK de release assinado
+      # depende de uma chave guardada nos segredos do repositório (próximo passo, ADR 0003).
+      - name: Gerar o APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Dar nome ao APK
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          cp mobile/android/app/build/outputs/apk/debug/app-debug.apk "Runas-Codex-$version-android-debug.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-android
+          path: Runas-Codex-*-android-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    # Uma Release só, com todos os instaladores, e só se os três builds passaram.
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [linux, windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Somas SHA-256
+        working-directory: artifacts
+        run: sha256sum Runas-Codex-* > SHA256SUMS.txt
+
+      - name: Publicar a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" artifacts/Runas-Codex-* artifacts/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Runas-Codex $GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag \
+            $prerelease

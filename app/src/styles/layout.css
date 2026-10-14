@@ -1,5 +1,6 @@
 /* ---------- Casca do app ---------- */
-.shell { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); height: 100dvh; }
+/* No Android de ponta a ponta, a barra de status e o entalhe ocupam as bordas (no navegador e no desktop, 0). */
+.shell { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
 .shell.collapsed { grid-template-columns: 64px minmax(0, 1fr); }
 
 .sidebar { display: flex; flex-direction: column; gap: 6px; min-height: 0; padding: 24px 14px 14px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--bg-deep); }
@@ -102,13 +103,13 @@
 @media (max-width: 1180px) {
   .workspace { grid-template-columns: 260px minmax(0, 1fr); }
   .workspace .pane-right { display: none; }
-  .workspace.show-right .pane-right { position: fixed; z-index: 60; top: var(--topbar-height); right: 0; bottom: 0; display: block; width: min(340px, 92vw); box-shadow: var(--shadow); background: var(--panel); }
+  .workspace.show-right .pane-right { position: fixed; z-index: 60; top: calc(var(--topbar-height) + env(safe-area-inset-top)); right: 0; bottom: 0; display: block; width: min(340px, 92vw); box-shadow: var(--shadow); background: var(--panel); }
 }
 @media (max-width: 860px) {
   .workspace, .workspace.no-right { grid-template-columns: minmax(0, 1fr); }
   .workspace .pane-left { display: none; }
   .workspace.show-left .pane-left { display: block; }
   .workspace.show-left > section { display: none; }
-  .workspace.show-right .pane-right { top: var(--topbar-height); bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); }
+  .workspace.show-right .pane-right { top: calc(var(--topbar-height) + env(safe-area-inset-top)); bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); }
   .mobile-switch { display: flex; }
 }

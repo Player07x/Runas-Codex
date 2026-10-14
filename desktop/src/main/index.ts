@@ -145,7 +145,16 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))
-    ok = result.bridge === true && (!vaultPath || (typeof result.markdown === "number" && !String(result.escape).startsWith("LEU") && result.write !== "GRAVOU"))
+    const listed = Array.isArray(result.listed) ? result.listed.length : -1
+    const vaultOk =
+      typeof result.markdown === "number" &&
+      result.markdown > 0 &&
+      listed === result.markdown &&
+      Array.isArray(result.backlinks) &&
+      result.backlinks.length > 0 &&
+      String(result.escape).startsWith("Caminho fora do cofre") &&
+      String(result.write).startsWith("Cofre em somente leitura")
+    ok = result.bridge === true && (!vaultPath || vaultOk)
   } catch (error) {
     console.error(error)
   }
