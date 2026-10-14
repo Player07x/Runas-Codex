@@ -9,6 +9,11 @@ export function vaultRoute(path: string): string {
   return `/notas/${encodeURIComponent(path)}`
 }
 
+/** Rota de uma nota pelo espaço dela: artigos de `Wikis/` abrem na Wiki; o resto, em Notas. */
+export function noteRoute(path: string): string {
+  return path.startsWith("Wikis/") ? `/wiki/artigo/${encodeURIComponent(path)}` : vaultRoute(path)
+}
+
 /** Links do Markdown resolvidos pelo índice do cofre, a partir da nota `from`; anexos pela plataforma. */
 export function vaultNoteSet(index: VaultIndex, from: string, handlers: Pick<NoteSet, "onBroken" | "onTag"> = {}, platform?: Pick<Platform, "fileUrl" | "openFile">): NoteSet {
   return {
@@ -17,7 +22,7 @@ export function vaultNoteSet(index: VaultIndex, from: string, handlers: Pick<Not
     resolve(target, kind) {
       const link: LinkRef = { kind, embed: false, target, start: 0, end: 0, raw: "", inFrontmatter: false }
       const { dest } = index.resolve(link, from)
-      return dest ? { path: dest, route: vaultRoute(dest), cross: scopeOf(dest).root !== scopeOf(from).root } : undefined
+      return dest ? { path: dest, route: noteRoute(dest), cross: scopeOf(dest).root !== scopeOf(from).root } : undefined
     },
     readNote: (path) => index.note(path)?.text,
     fileUrl: (path) => platform?.fileUrl(path) ?? undefined,

@@ -50,6 +50,11 @@ export const ARTICLES: WikiArticle[] = [
 tipo: personagem
 calendario: "[[Calendário de Ordem x Caos]]"
 nascimento_mundo: "3999-02-12"
+especie: Humano
+ocupacao: Cavaleiro renegado
+residencia: "[[Valdris]]"
+status: Vivo
+relacoes: ["[[Ordem da Chama Cinzenta]] (ex-membro)", "[[Lâmina de Obsidiana]] (guardião)"]
 aliases: [Aldren, o Cinzento]
 tags: [personagem, npc/aliado, ordem-da-chama]
 ---
@@ -101,7 +106,16 @@ Nascido numa família de ferreiros, Aldren entrou para a Ordem aos 14 anos. Carr
       { label: "Governante", value: "[[Conde Ormund]]" },
       { label: "Fundação", value: "", worldDate: "3655-05-01" },
     ],
-    markdown: `# Valdris
+    markdown: `---
+tipo: cidade
+calendario: "[[Calendário de Ordem x Caos]]"
+localizado_em: "[[Lago Espelhado]]"
+governante: "[[Conde Ormund]]"
+populacao: 12000
+fundacao_mundo: "3712-05-10"
+aliados: ["[[Ordem da Chama Cinzenta]]"]
+---
+# Valdris
 
 Capital do condado, erguida sobre a fortaleza de um mago da [[Era dos Magos]]. As cinzas da [[A Queda de Myrr|Queda de Myrr]] ainda cobrem os telhados no outono. #local/cidade
 
@@ -132,7 +146,15 @@ Capital do condado, erguida sobre a fortaleza de um mago da [[Era dos Magos]]. A
       { label: "Líder", value: "Grão-mestre Ilário" },
       { label: "Fundação", value: "", worldDate: "3890-01-01" },
     ],
-    markdown: `# Ordem da Chama Cinzenta
+    markdown: `---
+tipo: organizacao
+calendario: "[[Calendário de Ordem x Caos]]"
+sede: "[[Valdris]]"
+fundacao_mundo: "3895-02-01"
+objetivo: Guardar as lâminas forjadas em Myrr
+em_guerra_com: ["[[Culto de Morr]]"]
+---
+# Ordem da Chama Cinzenta
 
 Guardiões de relíquias da [[Era dos Magos]]. Desde a [[A Queda de Myrr|Queda de Myrr]] estão divididos.
 
@@ -158,7 +180,14 @@ Relíquias sob guarda: [[Lâmina de Obsidiana]] (perdida).
       { label: "Portador", value: "[[Aldren Vael]]" },
       { label: "Forjada em", value: "", worldDate: "3201-09-30" },
     ],
-    markdown: `# Lâmina de Obsidiana
+    markdown: `---
+tipo: item
+calendario: "[[Calendário de Ordem x Caos]]"
+dono_atual: "[[Aldren Vael]]"
+raridade: Lendária
+criacao_mundo: "3880-11-02"
+---
+# Lâmina de Obsidiana
 
 Forjada na [[Era dos Magos]] com vidro de Myrr. Hoje com [[Aldren Vael]].
 
@@ -183,7 +212,15 @@ Forjada na [[Era dos Magos]] com vidro de Myrr. Hoje com [[Aldren Vael]].
       { label: "Local", value: "Myrr (destruída)" },
       { label: "Mortos", value: "≈ 9.000" },
     ],
-    markdown: `# A Queda de Myrr
+    markdown: `---
+tipo: acontecimento
+calendario: "[[Calendário de Ordem x Caos]]"
+data_mundo: "4027-07-01"
+data_fim_mundo: "4027-07-03"
+trilha: "[[Ordem da Chama Cinzenta]]"
+envolvidos: ["[[Aldren Vael]]", "[[Conde Ormund]]"]
+---
+# A Queda de Myrr
 
 Em 9 de Semeadura de 4012 C.E. o vulcão sob Myrr despertou. A [[Ordem da Chama Cinzenta]] perdeu metade dos cavaleiros, e [[Aldren Vael]] saiu de lá com a [[Lâmina de Obsidiana]].
 `,
@@ -205,7 +242,18 @@ Em 9 de Semeadura de 4012 C.E. o vulcão sob Myrr despertou. A [[Ordem da Chama 
       { label: "Título", value: "Conde de [[Valdris]]" },
       { label: "Status", value: "Vivo" },
     ],
-    markdown: `# Conde Ormund
+    markdown: `---
+tipo: personagem
+calendario: "[[Calendário de Ordem x Caos]]"
+nascimento_mundo: "3975-09-03"
+ocupacao: Conde de Valdris
+residencia: "[[Valdris]]"
+filhos: ["[[Edric Ormund]]"]
+conjuges: ["[[Ilyra Ormund]]"]
+lider_de: "[[Ordem da Chama Cinzenta]]"
+inimigos: ["[[Aldren Vael]] (hostil)"]
+---
+# Conde Ormund
 
 Governa [[Valdris]] há trinta anos. Foi senhor de [[Aldren Vael]]. #npc/antagonista
 `,
@@ -224,7 +272,12 @@ Governa [[Valdris]] há trinta anos. Foi senhor de [[Aldren Vael]]. #npc/antagon
       { label: "Habitat", value: "Ruínas de Myrr, esgotos de [[Valdris]]" },
       { label: "Perigo", value: "Moderado" },
     ],
-    markdown: `# Lobo de Cinzas
+    markdown: `---
+tipo: especie
+habitat: "[[Lago Espelhado]]"
+dieta: Carniça e brasas
+---
+# Lobo de Cinzas
 
 Surgiram depois da [[A Queda de Myrr|Queda de Myrr]]. Caçam em matilhas perto do [[Lago Espelhado]].
 `,
@@ -243,7 +296,13 @@ Surgiram depois da [[A Queda de Myrr|Queda de Myrr]]. Caçam em matilhas perto d
       { label: "Região", value: "Norte de [[Valdris]]" },
       { label: "Perigo", value: "Baixo (de dia)" },
     ],
-    markdown: `# Lago Espelhado
+    markdown: `---
+tipo: local
+tipo_de_local: Lago
+localizado_em: "[[Valdris]]"
+perigo: Reflexos que mostram Myrr
+---
+# Lago Espelhado
 
 Ao norte de [[Valdris]]. Dizem que na cheia de Morr o reflexo mostra Myrr antes da queda.
 `,
@@ -262,7 +321,14 @@ Ao norte de [[Valdris]]. Dizem que na cheia de Morr o reflexo mostra Myrr antes 
       { label: "Início", value: "3.122 C.E." },
       { label: "Fim", value: "3.888 C.E." },
     ],
-    markdown: `# Era dos Magos
+    markdown: `---
+tipo: era
+calendario: "[[Calendário de Ordem x Caos]]"
+data_mundo: "3122-01-01"
+data_fim_mundo: "3887-10-36"
+trilha: Eras
+---
+# Era dos Magos
 
 De 3.122 a 3.888 C.E. Deixou fortalezas como a que está sob [[Valdris]] e relíquias como a [[Lâmina de Obsidiana]].
 `,
@@ -283,26 +349,121 @@ De 3.122 a 3.888 C.E. Deixou fortalezas como a que está sob [[Valdris]] e relí
       { label: "Semana", value: "6 dias" },
       { label: "Luas", value: "Selene (28 d), Morr (45 d)" },
     ],
-    markdown: `# Calendário de Ordem x Caos
+    markdown: `---
+tipo: calendario
+---
+# Calendário de Ordem x Caos
 
-Calendário de exemplo do protótipo. O antigo C.E./Logi do Runas DM vira esta nota.
+Dez meses de 36 dias, os cinco Dias de Logi fora da semana (seis no ano bissexto), semana de seis dias e duas luas. A wiki inteira calcula datas por este bloco.
 
 \`\`\`runas-calendario
 nome: Calendário de Ordem x Caos
 sufixo: C.E.
-equivalente: { nome: Logi, deslocamento: 4027 }
+semana: [Pedra, Raiz, Chama, Vento, Maré, Sombra]
 meses:
   - { nome: Gelo, dias: 36, estacao: Inverno }
   - { nome: Degelo, dias: 36, estacao: Inverno }
   - { nome: Semeadura, dias: 36, estacao: Primavera }
-  # … mais 7 meses
-intercalares: { nome: Dias de Logi, depois_do_mes: 10, dias: 5 }
-semana: [Pedra, Raiz, Chama, Vento, Maré, Sombra]
+  - { nome: Brotos, dias: 36, estacao: Primavera }
+  - { nome: Sol Alto, dias: 36, estacao: Verão }
+  - { nome: Colheita, dias: 36, estacao: Verão }
+  - { nome: Cinzas, dias: 36, estacao: Outono }
+  - { nome: Brumas, dias: 36, estacao: Outono }
+  - { nome: Longa Noite, dias: 36, estacao: Inverno }
+  - { nome: Vigília, dias: 36, estacao: Inverno }
+  - { nome: Dias de Logi, dias: 5, intercalar: true }
+bissexto: { a_cada: 4, mes: Dias de Logi, dias: 1 }
 luas:
-  - { nome: Selene, ciclo: 28 }
-  - { nome: Morr, ciclo: 45 }
+  - { nome: Selene, ciclo: 28, cheia_em: "4031-01-04", cor: "#bec6ff" }
+  - { nome: Morr, ciclo: 45, cheia_em: "4031-01-21", cor: "#ffa48e" }
 eras:
-  - { nome: Era dos Caçadores, inicio: 4027 }
+  - { nome: Era dos Magos, inicio: 3122 }
+  - { nome: Era das Migrações, inicio: 3888 }
+  - { nome: Era dos Caçadores, sigla: E.C., inicio: 4027 }
+equivalentes:
+  - { nome: Logi, deslocamento: 4027 }
+feriados:
+  - { nome: Festa das Cinzas, data: "07-01" }
+  - { nome: Noite de Morr, data: "09-36" }
+hoje: "4031-07-15"
+\`\`\`
+`,
+  },
+  {
+    id: "edric-ormund",
+    title: "Edric Ormund",
+    space: "wiki",
+    path: p("Personagens/Edric Ormund"),
+    kind: "personagem",
+    category: "Personagens",
+    summary: "Filho do Conde, escudeiro da Ordem.",
+    tags: ["personagem"],
+    updated: "2026-10-14T08:00:00",
+    infobox: [],
+    markdown: `---
+tipo: personagem
+calendario: "[[Calendário de Ordem x Caos]]"
+nascimento_mundo: "4010-04-18"
+pais: ["[[Conde Ormund]]"]
+membro_de: ["[[Ordem da Chama Cinzenta]]"]
+subordinado_a: "[[Conde Ormund]]"
+---
+# Edric Ormund
+
+Herdeiro de [[Valdris]], escudeiro da [[Ordem da Chama Cinzenta]]. Admira [[Aldren Vael]] sem saber por quê.
+`,
+  },
+  {
+    id: "culto-de-morr",
+    title: "Culto de Morr",
+    space: "wiki",
+    path: p("Organizações/Culto de Morr"),
+    kind: "organizacao",
+    category: "Organizações",
+    summary: "Seita que venera a lua vermelha.",
+    tags: ["organizacao", "vilao"],
+    updated: "2026-10-14T08:10:00",
+    infobox: [],
+    markdown: `---
+tipo: organizacao
+objetivo: Trazer Myrr de volta pela lua vermelha
+paz_tensa_com: ["[[Valdris]]"]
+---
+# Culto de Morr
+
+Seita que se reúne nas cheias de Morr. Em guerra aberta com a [[Ordem da Chama Cinzenta]].
+
+> [!segredo]
+> O covil fica sob as raízes da floresta do leste (pino secreto no mapa do condado).
+`,
+  },
+  {
+    id: "mapa-condado",
+    title: "Condado de Valdris",
+    space: "wiki",
+    path: p("Mapas/Condado de Valdris"),
+    kind: "mapa",
+    category: "Mapas",
+    summary: "Mapa do condado com Valdris, o Lago Espelhado e as ruínas de Myrr.",
+    tags: ["mapa"],
+    updated: "2026-10-14T08:20:00",
+    infobox: [],
+    markdown: `---
+tipo: mapa
+---
+# Condado de Valdris
+
+\`\`\`runas-mapa
+imagem: "[[mapa-condado-de-valdris.svg]]"
+camadas: [Locais, Perigos, Segredos]
+escala: { pixels: 100, distancia: 10, unidade: km }
+viagem: { por_dia: 30 }
+pinos:
+  - { nota: "[[Valdris]]", x: 0.52, y: 0.59, camada: Locais }
+  - { nota: "[[Lago Espelhado]]", x: 0.47, y: 0.36, camada: Locais }
+  - { nota: "[[A Queda de Myrr]]", x: 0.2, y: 0.33, camada: Perigos }
+  - { nota: "[[Lobo de Cinzas]]", x: 0.15, y: 0.62, camada: Perigos }
+  - { nota: "[[Culto de Morr]]", rotulo: Covil do culto, x: 0.82, y: 0.78, camada: Segredos }
 \`\`\`
 `,
   },

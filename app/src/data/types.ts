@@ -16,7 +16,7 @@ export interface Note {
 }
 
 export type ArticleKind =
-  | "personagem" | "local" | "cidade" | "organizacao" | "item" | "criatura" | "acontecimento" | "calendario" | "era"
+  | "personagem" | "local" | "cidade" | "organizacao" | "item" | "criatura" | "acontecimento" | "calendario" | "era" | "mapa"
 
 export interface InfoField {
   label: string

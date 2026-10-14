@@ -42,13 +42,15 @@ interface Props {
   toolbar?: (insert: (text: string) => void) => ReactNode
   /** Pedido de rolar até um título (linha), vindo do sumário. */
   headingRequest?: { line: number; at: number }
+  /** `false` esconde os segredos do mestre no modo leitura (versão dos jogadores). */
+  showSecrets?: boolean
 }
 
 /**
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true }: Props) {
   const vault = useVault()
   const toast = useToast()
   const index = vault.index!
@@ -284,7 +286,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
       <div className="editor-body" ref={reader}>
         {mode === "leitura" ? (
           <NoteSetContext.Provider value={noteSet}>
-            {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} /> : <p className="muted">Nota vazia.</p>}
+            {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} showSecrets={showSecrets} /> : <p className="muted">Nota vazia.</p>}
           </NoteSetContext.Provider>
         ) : (
           <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} />

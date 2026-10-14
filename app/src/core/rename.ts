@@ -1,3 +1,4 @@
+import { findCodeBlocks } from "./codeblocks"
 import type { LinkRef } from "./parse"
 import { caseCollision, pathProblem } from "./names"
 import { basename, dirname, extname, foldName, joinPath, noteName, relativePath } from "./text"
@@ -131,6 +132,24 @@ export function planRename(index: VaultIndex, from: string, to: string, texts: R
       if (markdownStyle(link, from, dest) !== "relative") continue
       const keepExt = extname(link.target) !== ""
       add(from, { start: link.start, end: link.end, text: rewriteMarkdown(link, markdownPath("relative", dirname(to), dest, keepExt)) })
+    }
+  }
+
+  // Links dentro dos blocos da Wiki (pinos e imagem do mapa, correspondências do calendário). O leitor de links não
+  // olha código, então eles são procurados aqui; sem isto, o mapa perderia o pino ao renomear a nota.
+  for (const note of index.allNotes()) {
+    if (!/```+ *runas-(mapa|calendario)/.test(note.text)) continue
+    for (const block of findCodeBlocks(note.text)) {
+      if (block.language !== "runas-mapa" && block.language !== "runas-calendario") continue
+      for (const m of block.content.matchAll(/\[\[([^\]|#\n]+)((?:#[^\]|\n]*)?)((?:\|[^\]\n]*)?)\]\]/g)) {
+        const target = m[1]!.trim()
+        const link: LinkRef = { kind: "wiki", embed: false, target, start: 0, end: 0, raw: m[0], inFrontmatter: false }
+        const resolved = index.resolve(link, note.path)
+        if (resolved.dest !== from || resolved.viaAlias) continue
+        const full = isNote ? to.replace(/\.md$/i, "") : to
+        const start = block.contentStart + m.index
+        add(note.path, { start, end: start + m[0].length, text: `[[${target.includes("/") || nameTaken ? full : newName}${m[2]}${m[3]}]]` })
+      }
     }
   }
 

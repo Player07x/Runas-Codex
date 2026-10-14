@@ -1,173 +1,333 @@
-import { useState } from "react"
-import { Building2, CalendarDays, Castle, Crown, Flame, Gem, Languages, MapPin, PawPrint, Plus, Scroll, Search, Shield, Sparkles, Sun, User, Users, Sword, Mountain, BookText } from "lucide-react"
-import { ARTICLES, CATEGORIES, WIKI } from "../../data/wiki"
-import { brokenLinks } from "../../lib/links"
-import { href } from "../../lib/router"
-import { relativeDays } from "../../lib/navigation"
-import { TODAY } from "../../data/agenda"
-import { Modal, useProtoAction } from "../../components/ui"
+import { useMemo, useState } from "react"
+import { ChevronDown, Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
+import { formatDate } from "../../core/calendar"
+import { noteBody } from "../../core/sections"
+import { dirname, noteName } from "../../core/text"
+import type { IndexedNote } from "../../core/vault-index"
+import { ARTICLE_KINDS, articleKind, newArticleNote, newCalendarNote, newMapNote, type ArticleKind } from "../../core/wiki"
+import { NoteSetContext } from "../../lib/note-set"
+import { href, navigate } from "../../lib/router"
+import { vaultNoteSet } from "../../lib/vault-notes"
+import { Markdown } from "../../components/Markdown"
+import { Modal, useToast } from "../../components/ui"
+import { useVault } from "../../platform/VaultProvider"
+import { articleRoute, iconByName, KindIcon, takeWikiSearch, useWiki } from "./wiki-state"
 
-const ICONS: Record<string, React.ReactNode> = {
-  user: <User size={20} />,
-  "map-pin": <MapPin size={20} />,
-  shield: <Shield size={20} />,
-  gem: <Gem size={20} />,
-  paw: <PawPrint size={20} />,
-  flame: <Flame size={20} />,
-  calendar: <CalendarDays size={20} />,
-  sun: <Sun size={20} />,
+interface FolderNode {
+  name: string
+  path: string
+  notes: IndexedNote[]
+  folders: FolderNode[]
 }
 
-const TEMPLATES = [
-  { id: "personagem", label: "Personagem", icon: <User size={18} />, questions: ["O que essa pessoa quer mais do que tudo?", "Do que ela tem medo?", "Quem ela deve, e quem deve a ela?", "Quando nasceu? (calcula a idade sozinho)"] },
-  { id: "cidade", label: "Cidade", icon: <Castle size={18} />, questions: ["Quem governa de fato?", "Qual é o cheiro da rua principal?", "O que a cidade exporta e o que esconde?"] },
-  { id: "organizacao", label: "Organização", icon: <Shield size={18} />, questions: ["Qual é o objetivo público? E o verdadeiro?", "Quem são os rivais?", "Como alguém entra?"] },
-  { id: "local", label: "Local", icon: <Mountain size={18} />, questions: ["Por que alguém iria até lá?", "Que perigo mora ali?"] },
-  { id: "item", label: "Item", icon: <Gem size={18} />, questions: ["Quem o criou e por quê?", "O que acontece se cair em mãos erradas?"] },
-  { id: "criatura", label: "Criatura", icon: <PawPrint size={18} />, questions: ["Onde vive e do que se alimenta?", "Como reconhecer seus rastros?"] },
-  { id: "acontecimento", label: "Acontecimento", icon: <Flame size={18} />, questions: ["Quando foi? (data no calendário do mundo)", "Quem ganhou e quem perdeu?"] },
-  { id: "religiao", label: "Religião", icon: <Sun size={18} />, questions: ["Qual é o mandamento central?", "O que é heresia?"] },
-  { id: "idioma", label: "Idioma", icon: <Languages size={18} />, questions: ["Quem fala?", "Três palavras e sua pronúncia."] },
-  { id: "cultura", label: "Cultura", icon: <Users size={18} />, questions: ["Como celebram o nascimento e a morte?"] },
-  { id: "pais", label: "País", icon: <Crown size={18} />, questions: ["Quem governa? Que guerra marcou o país?"] },
-  { id: "construcao", label: "Construção", icon: <Building2 size={18} />, questions: ["Quem construiu e para quê?"] },
-  { id: "guerra", label: "Guerra", icon: <Sword size={18} />, questions: ["Qual foi o estopim?", "Como terminou?"] },
-  { id: "magia", label: "Magia", icon: <Sparkles size={18} />, questions: ["Qual é o custo?", "Quem pode usar?"] },
-  { id: "documento", label: "Documento", icon: <Scroll size={18} />, questions: ["Quem escreveu e para quem?"] },
-  { id: "livre", label: "Em branco", icon: <BookText size={18} />, questions: [] },
-]
+function folderTree(notes: IndexedNote[], root: string, skip: string | undefined): FolderNode[] {
+  const top: FolderNode = { name: "", path: root.replace(/\/$/, ""), notes: [], folders: [] }
+  for (const note of notes) {
+    if (note.path === skip) continue
+    const rel = dirname(note.path).slice(top.path.length + 1)
+    let node = top
+    if (rel) {
+      for (const part of rel.split("/")) {
+        let child = node.folders.find((f) => f.name === part)
+        if (!child) node.folders.push((child = { name: part, path: `${node.path}/${part}`, notes: [], folders: [] }))
+        node = child
+      }
+    }
+    node.notes.push(note)
+  }
+  const sort = (node: FolderNode) => {
+    node.folders.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    node.notes.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    node.folders.forEach(sort)
+  }
+  sort(top)
+  // Artigos soltos na raiz entram como a categoria "Sem pasta".
+  return top.notes.length ? [...top.folders, { name: "Sem pasta", path: top.path, notes: top.notes, folders: [] }] : top.folders
+}
+
+const countNotes = (node: FolderNode): number => node.notes.length + node.folders.reduce((n, f) => n + countNotes(f), 0)
 
 export function WikiHome() {
-  const proto = useProtoAction()
+  const vault = useVault()
+  const toast = useToast()
+  const { wiki, calendar } = useWiki()
+  const index = vault.index!
+  const [query, setQuery] = useState(takeWikiSearch)
   const [creating, setCreating] = useState(false)
-  const [template, setTemplate] = useState(TEMPLATES[0])
-  const toWrite = brokenLinks("wiki")
-  const recent = [...ARTICLES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 6)
+  const root = wiki!.root
+  const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
+  const tree = useMemo(() => folderTree(notes, root, wiki!.home), [notes, root, wiki])
+  const recent = useMemo(() => [...notes].filter((n) => n.path !== wiki!.home).sort((a, b) => b.mtime - a.mtime).slice(0, 6), [notes, wiki])
+  const toWrite = useMemo(() => index.unresolved(root).slice(0, 12), [index, root, vault.version])
+  const results = useMemo(() => (query.trim() ? index.search(query, root, 40) : null), [index, query, root, vault.version])
+  const home = wiki!.home ? index.note(wiki!.home) : undefined
+  const noteSet = useMemo(() => vaultNoteSet(index, home?.path ?? root, {}, vault.platform), [index, home, root, vault.platform, vault.version])
+  const readOnly = vault.info?.readOnly ?? true
 
   return (
-    <div className="page">
+    <div className="page wiki-home">
       <section className="wiki-cover card">
-        <div className="stack" style={{ gap: 6 }}>
-          <span className="eyebrow" style={{ color: "var(--violet)" }}>Wiki · {WIKI.path}/</span>
-          <h1 className="page-title">{WIKI.title}</h1>
-          <p className="muted">{WIKI.description}</p>
+        <div className="stack" style={{ gap: 6, minWidth: 0 }}>
+          <span className="eyebrow" style={{ color: "var(--violet)" }}>Wiki · {root}</span>
+          <h1 className="page-title">{wiki!.name}</h1>
+          {home && noteBody(home.text).replace(/^#[^\n]*\n/, "").trim() && (
+            <NoteSetContext.Provider value={noteSet}>
+              <Markdown source={noteBody(home.text).replace(/^#[^\n]*\n/, "")} className="wiki-intro" />
+            </NoteSetContext.Provider>
+          )}
           <div className="row-wrap">
-            <span className="chip">{ARTICLES.length} artigos</span>
-            <span className="chip red">{toWrite.length} a escrever</span>
-            <span className="chip violet">2 segredos</span>
+            <span className="chip">{notes.length - (home ? 1 : 0)} artigos</span>
+            {toWrite.length > 0 && <span className="chip red">{toWrite.length} a escrever</span>}
+            {calendar?.calendar.today && (
+              <a className="chip violet" href={href(`/wiki/calendario`)} title="Data atual da campanha">
+                Hoje no mundo: {formatDate(calendar.calendar, calendar.calendar.today)}
+              </a>
+            )}
           </div>
         </div>
         <div className="row-wrap">
-          <label className="search" style={{ minWidth: 220 }}>
-            <Search size={15} />
-            <input className="input" placeholder="Buscar só nesta wiki" />
-          </label>
-          <button className="btn primary" onClick={() => setCreating(true)}>
+          {home && (
+            <a className="btn" href={href(articleRoute(home.path))}>
+              <PenLine size={15} /> Página inicial
+            </a>
+          )}
+          <button className="btn primary" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true))} aria-label="Novo artigo">
             <Plus size={16} /> Novo artigo
           </button>
         </div>
       </section>
 
-      <div className="stack">
-        <div className="row between">
-          <span className="section-title">Categorias</span>
-          <button className="btn ghost sm" onClick={proto("criar categoria")}>
-            <Plus size={14} /> Categoria
-          </button>
-        </div>
-        <div className="category-grid">
-          {CATEGORIES.map((cat) => {
-            const items = ARTICLES.filter((a) => a.category === cat.id)
-            return (
-              <div key={cat.id} className="card category-card" style={{ ["--cat" as string]: cat.color }}>
-                <div className="row">
-                  <span className="cat-icon">{ICONS[cat.icon]}</span>
-                  <strong className="grow">{cat.id}</strong>
-                  <span className="chip">{items.length}</span>
-                </div>
-                <div className="list">
-                  {items.slice(0, 3).map((a) => (
-                    <a key={a.id} className="list-item small" href={href(`/wiki/artigo/${a.id}`)}>
-                      {a.title}
-                    </a>
-                  ))}
-                  {items.length === 0 && <span className="muted small" style={{ padding: "6px 10px" }}>Vazia — comece por um modelo.</span>}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      <label className="search wiki-search">
+        <Search size={15} />
+        <input className="input" placeholder={`Buscar em ${wiki!.name} (tag:, path:, file:, “frase”)`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar na wiki" />
+      </label>
 
-      <div className="wiki-home-grid">
+      {results ? (
         <section className="card">
-          <div className="card-head">
-            <span className="section-title">Editados recentemente</span>
-          </div>
-          <div className="list">
-            {recent.map((a) => (
-              <a key={a.id} className="list-item" href={href(`/wiki/artigo/${a.id}`)}>
+          <span className="eyebrow">{results.length} resultado(s)</span>
+          <div className="list" style={{ marginTop: 6 }}>
+            {results.map((hit) => (
+              <a key={hit.path} className="list-item" href={href(articleRoute(hit.path))}>
+                <KindIcon tipo={index.note(hit.path)?.meta.frontmatter?.data?.tipo} />
                 <span className="grow" style={{ minWidth: 0 }}>
-                  <strong className="truncate" style={{ display: "block" }}>{a.title}</strong>
-                  <span className="muted small truncate" style={{ display: "block" }}>{a.summary}</span>
+                  <span className="truncate" style={{ display: "block", fontWeight: 600 }}>{noteName(hit.path)}</span>
+                  <span className="truncate tiny faint" style={{ display: "block" }}>{hit.snippet || hit.path.slice(root.length)}</span>
                 </span>
-                <span className="meta">{relativeDays(a.updated, TODAY)}</span>
               </a>
             ))}
           </div>
         </section>
-        <section className="card">
-          <div className="card-head">
-            <span className="section-title">A escrever</span>
-          </div>
-          <div className="list">
-            {toWrite.map((item) => (
-              <button key={item.target} className="list-item" onClick={() => { setTemplate(TEMPLATES[0]); setCreating(true) }}>
-                <span className="wikilink broken grow">{item.target}</span>
-                <span className="meta">{item.from.length}× citado</span>
-              </button>
+      ) : (
+        <>
+          <div className="category-grid">
+            {tree.map((folder) => (
+              <Category key={folder.path + folder.name} folder={folder} />
             ))}
+            {tree.length === 0 && <p className="muted">A wiki está vazia. Comece pelo primeiro artigo.</p>}
           </div>
-        </section>
-      </div>
-
-      {creating && (
-        <Modal
-          wide
-          title="Novo artigo"
-          onClose={() => setCreating(false)}
-          footer={
-            <>
-              <button className="btn" onClick={() => setCreating(false)}>Cancelar</button>
-              <button className="btn primary" onClick={() => setCreating(false)}>Criar em {WIKI.path}/</button>
-            </>
-          }
-        >
-          <div className="template-grid">
-            {TEMPLATES.map((t) => (
-              <button key={t.id} className={`card tight link template ${template.id === t.id ? "picked" : ""}`} onClick={() => setTemplate(t)}>
-                {t.icon}
-                <span className="small">{t.label}</span>
-              </button>
-            ))}
+          <div className="wiki-columns">
+            <section className="card">
+              <span className="section-title">Editados por último</span>
+              <div className="list" style={{ marginTop: 6 }}>
+                {recent.map((n) => (
+                  <a key={n.path} className="list-item" href={href(articleRoute(n.path))}>
+                    <KindIcon tipo={n.meta.frontmatter?.data?.tipo} />
+                    <span className="grow truncate">{n.name}</span>
+                    <span className="meta">{new Date(n.mtime).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+            {toWrite.length > 0 && (
+              <section className="card">
+                <span className="section-title row">
+                  <Unlink size={15} /> A escrever
+                </span>
+                <span className="tiny faint">Citados em artigos, mas ainda sem nota.</span>
+                <div className="list" style={{ marginTop: 6 }}>
+                  {toWrite.map((u) => (
+                    <button key={u.target} className="list-item small" onClick={() => (readOnly ? toast(`“${u.target}” ainda não existe.`) : setCreating(true))} title={`Citado em: ${u.from.map(noteName).join(", ")}`}>
+                      <span className="grow truncate" style={{ color: "var(--red)" }}>{u.target}</span>
+                      <span className="meta">{u.from.length}×</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
-          <label className="field">
-            <span>Título</span>
-            <input className="input" defaultValue={toWrite[0]?.target ?? ""} />
-          </label>
-          {template.questions.length > 0 && (
-            <div className="stack">
-              <span className="eyebrow">Perguntas-guia do modelo “{template.label}”</span>
-              {template.questions.map((q) => (
-                <label key={q} className="field">
-                  <span>{q}</span>
-                  <input className="input" placeholder="Responder depois também vale" />
-                </label>
-              ))}
-            </div>
-          )}
-        </Modal>
+        </>
       )}
+      {creating && <NewArticleDialog onClose={() => setCreating(false)} />}
     </div>
+  )
+}
+
+function Category({ folder }: { folder: FolderNode }) {
+  const [open, setOpen] = useState(false)
+  const kinds = folder.notes.map((n) => articleKind(n.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
+  const main = ARTICLE_KINDS.find((k) => k.folder === folder.name) ?? kinds[0]
+  const Icon = iconByName(main?.icon ?? "")
+  return (
+    <section className="card category-card" style={{ ["--cat" as string]: "var(--violet)" }}>
+      <button className="row category-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="cat-icon">{main ? <Icon size={18} /> : <Folder size={18} />}</span>
+        <strong className="grow truncate">{folder.name}</strong>
+        <span className="chip">{countNotes(folder)}</span>
+        <ChevronDown size={15} className={open ? "rot" : ""} />
+      </button>
+      {!open && (
+        <span className="tiny muted truncate">
+          {folder.notes
+            .slice(0, 4)
+            .map((n) => n.name)
+            .join(" · ")}
+          {folder.notes.length > 4 ? " …" : ""}
+        </span>
+      )}
+      {open && <FolderList folder={folder} />}
+    </section>
+  )
+}
+
+function FolderList({ folder }: { folder: FolderNode }) {
+  return (
+    <div className="list">
+      {folder.notes.map((n) => (
+        <a key={n.path} className="list-item small" href={href(articleRoute(n.path))}>
+          <KindIcon tipo={n.meta.frontmatter?.data?.tipo} size={14} />
+          <span className="grow truncate">{n.name}</span>
+        </a>
+      ))}
+      {folder.folders.map((sub) => (
+        <details key={sub.path} className="wiki-subfolder">
+          <summary className="eyebrow row" style={{ gap: 5 }}>
+            <Folder size={13} /> {sub.name} · {countNotes(sub)}
+          </summary>
+          <FolderList folder={sub} />
+        </details>
+      ))}
+    </div>
+  )
+}
+
+const IMAGE = /\.(png|jpe?g|webp|gif|avif|svg)$/i
+
+/** Novo artigo: tipo (com modelo e perguntas-guia), nome e pasta. Calendário e mapa têm o bloco pronto. */
+export function NewArticleDialog({ onClose, initialName = "" }: { onClose(): void; initialName?: string }) {
+  const vault = useVault()
+  const { wiki, calendar } = useWiki()
+  const index = vault.index!
+  const [kind, setKind] = useState<ArticleKind>(ARTICLE_KINDS[0]!)
+  const [name, setName] = useState(initialName)
+  const [folder, setFolder] = useState(ARTICLE_KINDS[0]!.folder)
+  const [image, setImage] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string>()
+  const root = wiki!.root.replace(/\/$/, "")
+  const images = useMemo(() => index.allFiles().filter((f) => f.path.startsWith(wiki!.root) && IMAGE.test(f.path)).map((f) => f.path), [index, wiki])
+
+  const create = async () => {
+    if (!name.trim()) return setError("Dê um nome ao artigo.")
+    if (kind.id === "mapa" && !image) return setError("Escolha a imagem do mapa (ponha a imagem na pasta da wiki antes).")
+    setBusy(true)
+    setError(undefined)
+    try {
+      const title = name.trim()
+      const text =
+        kind.id === "calendario" ? newCalendarNote(title)
+        : kind.id === "mapa" ? newMapNote(title, index.linkTarget(image, `${root}/${folder}/${title}.md`))
+        : newArticleNote(kind, title, calendar ? noteName(calendar.path) : undefined)
+      const created = await vault.createNote(folder.trim() ? `${root}/${folder.trim()}` : root, title, text)
+      onClose()
+      navigate(kind.id === "mapa" ? `/wiki/mapa/${encodeURIComponent(created)}` : articleRoute(created))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal
+      title="Novo artigo"
+      onClose={onClose}
+      wide
+      footer={
+        <>
+          <button className="btn ghost" onClick={onClose} disabled={busy}>
+            Cancelar
+          </button>
+          <button className="btn primary" onClick={() => void create()} disabled={busy} aria-label="Criar artigo">
+            {busy ? "Criando…" : "Criar"}
+          </button>
+        </>
+      }
+    >
+      <div className="template-grid" role="radiogroup" aria-label="Tipo do artigo">
+        {ARTICLE_KINDS.map((k) => {
+          const Icon = iconByName(k.icon)
+          return (
+            <button
+              key={k.id}
+              type="button"
+              role="radio"
+              aria-checked={k.id === kind.id}
+              className={`card tight template ${k.id === kind.id ? "picked" : ""}`}
+              onClick={() => {
+                setKind(k)
+                setFolder(k.folder)
+              }}
+            >
+              <Icon size={18} />
+              <span className="tiny">{k.label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <form
+        className="stack"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void create()
+        }}
+      >
+        <div className="form-grid">
+          <label className="field">
+            <span>Nome</span>
+            <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do artigo" />
+          </label>
+          <label className="field">
+            <span>Pasta (dentro de {wiki!.name})</span>
+            <input className="input" value={folder} onChange={(e) => setFolder(e.target.value)} aria-label="Pasta do artigo" />
+          </label>
+        </div>
+        {kind.id === "mapa" && (
+          <label className="field">
+            <span>Imagem do mapa</span>
+            <select className="select" value={image} onChange={(e) => setImage(e.target.value)} aria-label="Imagem do mapa">
+              <option value="">Escolha…</option>
+              {images.map((path) => (
+                <option key={path} value={path}>
+                  {path.slice(wiki!.root.length)}
+                </option>
+              ))}
+            </select>
+            {!images.length && <span className="tiny faint">Nenhuma imagem na pasta da wiki. Copie o arquivo do mapa para lá (pelo gerenciador de arquivos) e reabra.</span>}
+          </label>
+        )}
+        {kind.questions.length > 0 && (
+          <div className="card tight stack" style={{ gap: 4 }}>
+            <span className="eyebrow">Perguntas-guia ({kind.label})</span>
+            {kind.questions.map((q) => (
+              <span key={q} className="small muted">
+                • {q}
+              </span>
+            ))}
+            <span className="tiny faint">Elas entram no artigo como comentários (%% %%): aparecem só ao editar.</span>
+          </div>
+        )}
+        {kind.fields.length > 0 && <span className="tiny faint">Ficha: {kind.fields.map((field) => field.label).join(", ")}.</span>}
+        {error && <p className="small" style={{ color: "var(--red)" }}>{error}</p>}
+      </form>
+    </Modal>
   )
 }

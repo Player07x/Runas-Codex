@@ -27,6 +27,8 @@ export interface GraphEdge {
   target: string
   /** As duas notas apontam uma para a outra. */
   mutual?: boolean
+  /** Cor própria da ligação (ex.: teia diplomática: aliança, guerra…). */
+  color?: string
 }
 
 export interface GraphGroup {

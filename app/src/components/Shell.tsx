@@ -11,7 +11,7 @@ import { vaultRoute } from "../lib/vault-notes"
 import { noteName } from "../core/text"
 import { useVault } from "../platform/VaultProvider"
 import { NOTES } from "../data/notes"
-import { ARTICLES, WIKI } from "../data/wiki"
+import { ARTICLES } from "../data/wiki"
 import { CAMPAIGNS } from "../data/campaigns"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
@@ -42,11 +42,15 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
   const item = [...NAV, ...TOOLS].find((n) => n.match === (first ?? ""))
   const crumbs: { label: string; to?: string }[] = [{ label: item?.label ?? "Início", to: item?.route }]
   if (first === "notas" && second) crumbs.push({ label: second === "nova" ? "Nova nota" : second === "hoje" ? "Nota do dia" : second === "grafico" ? "Gráfico" : noteName(second) })
-  if (first === "wiki") {
-    crumbs.push({ label: WIKI.title, to: "/wiki" })
-    const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapa", relacoes: "Relações", grafico: "Gráfico" }
-    if (second === "artigo") crumbs.push({ label: ARTICLES.find((a) => a.id === third)?.title ?? third })
-    else if (second) crumbs.push({ label: labels[second] ?? second })
+  if (first === "wiki" && second) {
+    // Artigos, mapas e calendários abertos levam o caminho da nota na rota.
+    const path = third ? decodeURIComponent(third) : ""
+    const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapas", relacoes: "Relações", grafico: "Gráfico" }
+    if (second === "artigo") crumbs.push({ label: path ? noteName(path) : "Artigo" })
+    else {
+      crumbs.push({ label: labels[second] ?? second, ...(path ? { to: `/wiki/${second}` } : {}) })
+      if (path) crumbs.push({ label: noteName(path) })
+    }
   }
   if (first === "campanhas" && second) {
     crumbs.push({ label: CAMPAIGNS.find((c) => c.id === second)?.title ?? second, to: `/campanhas/${second}` })
@@ -71,6 +75,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const crumbs = crumbsFor(route)
   const notesCount = vault.index ? vault.index.notesIn("Notas/").length || vault.index.size : NOTES.length
   const agendaCount = vault.index ? vault.index.notesIn(AGENDA_ROOT).length : 0
+  const wikiCount = vault.index ? vault.index.notesIn("Wikis/").length : ARTICLES.length
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -98,7 +103,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.match === "agenda" ? agendaCount : item.count}</span>}
+              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.match === "agenda" ? agendaCount : item.match === "wiki" ? wikiCount : item.count}</span>}
             </a>
           ))}
         </div>

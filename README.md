@@ -10,15 +10,16 @@ notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **No
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
 
-Fase atual: **etapas 3a, 4, 3b e 5 concluídas**. O módulo **Notas** cria, edita, renomeia (atualizando os links do
-cofre) e manda para a lixeira notas de um cofre compatível com o Obsidian, com backups e sem regravar o que não mudou
-([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O editor tem os três modos do Obsidian (leitura, live preview e
-código), todos os formatadores do dialeto, transclusão, anexos, modelos e o gráfico em WebGL
-([ADR 0007](docs/adr/0007-editor-completo.md)). A **Agenda** guarda os eventos como notas no formato do plugin Full
-Calendar, com recorrência, lembretes no desktop e no Android, `.ics` e ligação com as sessões
-([ADR 0008](docs/adr/0008-agenda.md)). O **VTT** tem mesas no cofre, a mesa do mestre (cenas, tokens, paredes, visão,
-névoa, luz, regiões, áudio) e a sala para os jogadores na rede local ou pela internet
-([ADR 0006](docs/adr/0006-mesa-vtt.md)). Wiki, Campanhas e Livros ainda usam dados de exemplo.
+Fase atual: **etapas 3a, 4, 3b, 5 e 6 concluídas** (a 8, Livros, está em andamento). O módulo **Notas** cria, edita,
+renomeia (atualizando os links do cofre) e manda para a lixeira notas de um cofre compatível com o Obsidian, com
+backups e sem regravar o que não mudou ([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O editor tem os três modos do
+Obsidian (leitura, live preview e código), todos os formatadores do dialeto, transclusão, anexos, modelos e o gráfico
+em WebGL ([ADR 0007](docs/adr/0007-editor-completo.md)). A **Agenda** guarda os eventos como notas no formato do plugin
+Full Calendar, com recorrência, lembretes no desktop e no Android, `.ics` e ligação com as sessões
+([ADR 0008](docs/adr/0008-agenda.md)). A **Wiki** tem artigos por tipo com ficha, calendários fictícios com datas
+calculadas (idade, dia da semana, luas, eras), linha do tempo, mapas com pinos e relações com árvore genealógica,
+organograma e teia diplomática ([ADR 0010](docs/adr/0010-wiki.md)). O **VTT** tem mesas no cofre, a mesa do mestre e a
+sala para os jogadores ([ADR 0006](docs/adr/0006-mesa-vtt.md)). Campanhas ainda usa dados de exemplo.
 
 O que ainda falta conferir à mão está em [Testes pendentes](docs/04-testes-pendentes.md).
 

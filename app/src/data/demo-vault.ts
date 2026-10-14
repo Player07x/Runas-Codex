@@ -2,6 +2,7 @@ import formatadores from "./formatadores.md?raw"
 import modeloDiario from "./modelos/Diário.md?raw"
 import modeloNpc from "./modelos/NPC.md?raw"
 import runa from "../assets/runa.png"
+import mapaValdris from "./mapa-condado-de-valdris.svg"
 import { eventFileName, eventNote, type EventInput } from "../core/agenda"
 import { EVENTS } from "./agenda"
 
@@ -34,6 +35,7 @@ Pensar em [[Aldren]] e no [[Lago Espelhado]]. #rascunho
 /** Anexos do exemplo: o caminho no cofre e o arquivo empacotado com o app. */
 export const DEMO_ASSETS: Record<string, string> = {
   "Notas/runa.png": runa,
+  "Wikis/Ordem x Caos/Mapas/mapa-condado-de-valdris.svg": mapaValdris,
 }
 
 const REMINDERS: Record<string, number> = { "Na hora": 0, "1 hora antes": 60, "1 dia antes": 1440 }

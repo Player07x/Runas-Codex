@@ -30,6 +30,7 @@ interface SimLink extends SimulationLinkDatum<SimNode> {
   source: SimNode
   target: SimNode
   mutual: boolean
+  color?: string
 }
 
 interface Settings {
@@ -126,7 +127,7 @@ class GraphRuntime {
     this.links = data.edges.flatMap((edge) => {
       const source = this.byId.get(edge.source)
       const target = this.byId.get(edge.target)
-      return source && target ? [{ source, target, mutual: Boolean(edge.mutual) }] : []
+      return source && target ? [{ source, target, mutual: Boolean(edge.mutual), ...(edge.color ? { color: edge.color } : {}) }] : []
     })
     this.neighbors = new Map(this.nodes.map((n) => [n.id, new Set<string>()]))
     for (const link of this.links) {
@@ -250,7 +251,10 @@ class GraphRuntime {
       else dim.push(link)
     }
     paint(dim, this.palette.edge, 0.12)
-    paint(normal, this.palette.edge, 0.55)
+    // Ligações com cor própria (teia diplomática) saem por grupo de cor.
+    const byColor = new Map<string, SimLink[]>()
+    for (const link of normal) byColor.set(link.color ?? "", [...(byColor.get(link.color ?? "") ?? []), link])
+    for (const [color, list] of byColor) paint(list, color || this.palette.edge, color ? 0.85 : 0.55)
     paint(strong, this.palette.highlight, 0.9)
     if (forces.arrows) {
       for (const link of this.links) {
