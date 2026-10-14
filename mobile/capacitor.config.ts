@@ -14,6 +14,8 @@ const config: CapacitorConfig = {
   plugins: {
     // Tela de ponta a ponta: o app já usa `viewport-fit=cover` e `env(safe-area-inset-*)`.
     SystemBars: { insetsHandling: "css", initialViewportFitValueHint: "cover" },
+    // Lembretes da Agenda: ícone monocromático da runa e a cor do Órbita.
+    LocalNotifications: { smallIcon: "ic_stat_runa", iconColor: "#8d9adb" },
   },
 }
 

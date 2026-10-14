@@ -26,6 +26,11 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     async notify(title, body) {
       new Notification(title, { body })
     },
+    async scheduleReminders(reminders) {
+      await bridge.agenda.schedule(reminders.map((r) => ({ id: r.id, at: r.at.getTime(), title: r.title, body: r.body, path: r.path })))
+    },
+    onReminderOpen: (listener) => bridge.agenda.onOpen(listener),
+    saveFile: (name, content) => bridge.saveFile(name, content),
     async hostRoom() {
       throw new Error("Hospedar sala chega com o VTT no desktop (etapa 4).")
     },

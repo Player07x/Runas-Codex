@@ -1,3 +1,5 @@
+import type { Reminder } from "../core/agenda"
+
 /**
  * Fronteira entre o app (igual nas três plataformas) e a casca nativa.
  * Electron (Windows/Linux) implementa esta interface em `electron-platform.ts`; o Capacitor (Android) vem num
@@ -77,6 +79,12 @@ export interface Platform {
   /** Instala o snippet `runas-codex.css` no `.obsidian/snippets` do cofre; devolve o caminho gravado. */
   installSnippet(css: string): Promise<string>
   notify(title: string, body: string, at?: Date): Promise<void>
+  /** Agenda os lembretes da Agenda (substitui os anteriores). */
+  scheduleReminders(reminders: Reminder[]): Promise<void>
+  /** Chama `listener` com o caminho da nota quando tocam num lembrete. */
+  onReminderOpen(listener: (path: string) => void): () => void
+  /** Salva um arquivo onde o usuário escolher (exportar `.ics`); devolve o nome, ou `null` se cancelou. */
+  saveFile(name: string, content: string, mime: string): Promise<string | null>
   hostRoom(mesaId: string): Promise<RoomHostInfo>
   stopRoom(): Promise<void>
 }

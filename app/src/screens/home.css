@@ -115,3 +115,4 @@
   .home-capture .btn { padding: 0 10px; font-size: 11px; }
   .home-capture .btn svg { display: none; }
 }
+.session-countdown { display: inline-block; margin: 2px 0 10px; padding: 3px 12px; border-radius: 999px; background: color-mix(in srgb, var(--cyan) 18%, transparent); color: var(--cyan); font-size: 13px; font-weight: 700; }

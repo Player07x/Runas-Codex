@@ -11,4 +11,6 @@ declare global {
 }
 
 /** A plataforma em que o app está rodando: Electron se a ponte existir; senão, o exemplo em memória. */
-export const platform: Platform = window.runasCodex ? createElectronPlatform(window.runasCodex) : createMemoryPlatform()
+export const platform: Platform = window.runasCodex
+  ? createElectronPlatform(window.runasCodex)
+  : createMemoryPlatform((title, body) => window.dispatchEvent(new CustomEvent("runas-codex:aviso", { detail: { title, body } })))

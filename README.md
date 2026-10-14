@@ -10,13 +10,17 @@ notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **No
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
 
-Fase atual: **etapas 3a, 4 e 3b concluídas**. O módulo **Notas** cria, edita, renomeia (atualizando os links do
+Fase atual: **etapas 3a, 4, 3b e 5 concluídas**. O módulo **Notas** cria, edita, renomeia (atualizando os links do
 cofre) e manda para a lixeira notas de um cofre compatível com o Obsidian, com backups e sem regravar o que não mudou
 ([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O editor tem os três modos do Obsidian (leitura, live preview e
 código), todos os formatadores do dialeto, transclusão, anexos, modelos e o gráfico em WebGL
-([ADR 0007](docs/adr/0007-editor-completo.md)). O **VTT** tem mesas no cofre, a mesa do mestre (cenas, tokens, paredes,
-visão, névoa, luz, regiões, áudio) e a sala para os jogadores na rede local ou pela internet
+([ADR 0007](docs/adr/0007-editor-completo.md)). A **Agenda** guarda os eventos como notas no formato do plugin Full
+Calendar, com recorrência, lembretes no desktop e no Android, `.ics` e ligação com as sessões
+([ADR 0008](docs/adr/0008-agenda.md)). O **VTT** tem mesas no cofre, a mesa do mestre (cenas, tokens, paredes, visão,
+névoa, luz, regiões, áudio) e a sala para os jogadores na rede local ou pela internet
 ([ADR 0006](docs/adr/0006-mesa-vtt.md)). Wiki, Campanhas e Livros ainda usam dados de exemplo.
+
+O que ainda falta conferir à mão está em [Testes pendentes](docs/04-testes-pendentes.md).
 
 **Ver a versão web (dados de exemplo) sem instalar nada:** https://player07x.github.io/Runas-Codex/ (abre no PC e no celular).
 
@@ -26,7 +30,8 @@ visão, névoa, luz, regiões, áudio) e a sala para os jogadores na rede local 
 2. [Checklist de recursos](docs/01-checklist-recursos.md) — validada com os 283 itens.
 3. [Viabilidade e etapas](docs/02-viabilidade-e-etapas.md) — stack, arquitetura, riscos e plano de etapas.
 4. [Comparação dos protótipos](docs/03-comparacao-prototipos.md) — Original, Atlas e Órbita (histórico).
-5. [Decisões de arquitetura](docs/adr/) — ADRs numeradas.
+5. [Testes pendentes](docs/04-testes-pendentes.md) — o que conferir à mão em cada etapa.
+6. [Decisões de arquitetura](docs/adr/) — ADRs numeradas.
 
 ## Abrir o protótipo
 

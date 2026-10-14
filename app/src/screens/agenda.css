@@ -28,3 +28,39 @@
   .cell-dots { display: flex; }
   .month-head { text-align: center; padding: 4px 0; }
 }
+
+/* Agenda real (etapa 5) */
+.agenda-title::first-letter { text-transform: uppercase; }
+.month-cell { cursor: pointer; }
+.month-cell:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+button.event-pill { display: block; width: 100%; border-top: 0; border-right: 0; border-bottom: 0; color: var(--text); text-align: left; cursor: pointer; }
+.event-pill.active, .week-event.active { box-shadow: 0 0 0 1px var(--ev); }
+.event-pill.done { opacity: 0.55; text-decoration: line-through; }
+.timegrid { display: grid; grid-template-rows: auto minmax(0, 1fr); height: min(70vh, 720px); }
+.timegrid-head, .timegrid-body { display: grid; grid-template-columns: 44px repeat(var(--days), minmax(0, 1fr)); }
+.timegrid-head { border-bottom: 1px solid var(--line); }
+.timegrid-day-head { display: grid; gap: 2px; align-content: start; min-width: 0; padding: 4px 3px 6px; border-left: 1px solid var(--line); }
+.timegrid-day-head .ghost-link { padding: 2px 4px; border: 0; background: none; color: var(--muted); font-size: 12px; text-align: left; text-transform: uppercase; cursor: pointer; }
+.timegrid-day-head .ghost-link strong { font-size: 15px; color: inherit; }
+.timegrid-day-head.today .ghost-link { color: var(--red); }
+.timegrid-body { overflow-y: auto; }
+.timegrid-hours { display: grid; grid-auto-rows: 44px; color: var(--faint); font-size: 10px; }
+.timegrid-hours span { transform: translateY(-6px); padding-right: 6px; text-align: right; }
+.timegrid-col { position: relative; height: calc(24 * 44px); border-left: 1px solid var(--line); background: repeating-linear-gradient(to bottom, transparent 0 43px, var(--line) 43px 44px); }
+.timegrid-col.today { background-color: color-mix(in srgb, var(--cyan) 4%, transparent); }
+.timegrid .week-event { left: auto; right: auto; cursor: pointer; }
+.timegrid .week-event .block { display: block; }
+.now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--red); pointer-events: none; }
+.now-line::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.agenda-side .late { color: var(--red); font-weight: 700; }
+.event-form .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-group); }
+.chip.weekday { cursor: pointer; text-transform: capitalize; }
+.chip.weekday.on { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 20%, transparent); color: var(--text); }
+.color-swatch { width: 28px; height: 28px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+.color-swatch.none { border: 2px dashed var(--line-strong); background: transparent; }
+.color-swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg) inset; }
+@media (max-width: 640px) {
+  .timegrid { height: 64vh; }
+  .timegrid-head, .timegrid-body { grid-template-columns: 34px repeat(var(--days), minmax(0, 1fr)); }
+  .timegrid .week-event { font-size: 10px; padding: 2px 3px; }
+}

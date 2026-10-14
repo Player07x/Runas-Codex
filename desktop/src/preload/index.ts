@@ -37,6 +37,17 @@ const bridge: RunasCodexBridge = {
     openFile: (path) => invoke(IPC.vaultOpenFile, path),
     installSnippet: (css) => invoke(IPC.vaultInstallSnippet, css),
   },
+  agenda: {
+    schedule: (reminders) => invoke(IPC.agendaSchedule, reminders),
+    onOpen: (listener) => {
+      const handler = (_event: unknown, path: string) => listener(path)
+      ipcRenderer.on(IPC.agendaOpen, handler)
+      return () => {
+        ipcRenderer.removeListener(IPC.agendaOpen, handler)
+      }
+    },
+  },
+  saveFile: (name, content) => invoke(IPC.saveFile, name, content),
   vtt: {
     listWorlds: () => invoke(VTT.listWorlds),
     createWorld: (input) => invoke(VTT.createWorld, input),

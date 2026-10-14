@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from "react"
 import { useRoute } from "./lib/router"
 import { Shell } from "./components/Shell"
 import { ToastProvider } from "./components/ui"
+import { ReminderSync } from "./platform/ReminderSync"
 import { VaultProvider } from "./platform/VaultProvider"
 import { Home } from "./screens/Home"
 import { NotesScreen } from "./screens/NotesScreen"
-import { AgendaScreen } from "./screens/AgendaScreen"
+import { AgendaScreen } from "./screens/agenda/AgendaScreen"
 import { WikiScreen } from "./screens/wiki/WikiScreen"
 import { CampaignsScreen } from "./screens/campaigns/CampaignsScreen"
 import { BooksScreen } from "./screens/books/BooksScreen"
@@ -81,6 +82,7 @@ export function App() {
   return (
     <VaultProvider>
       <ToastProvider>
+        <ReminderSync />
         <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
           {screen}
         </Shell>
