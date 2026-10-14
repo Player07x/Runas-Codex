@@ -1,6 +1,6 @@
 import type { VaultEntry } from "../platform/platform"
 import { setProperty } from "./properties"
-import { planRename, renameProblem } from "./rename"
+import { planFolderRename, planRename, renameProblem } from "./rename"
 import { VaultIndex } from "./vault-index"
 
 function vault(files: Record<string, string>): VaultIndex {
@@ -80,5 +80,20 @@ describe("setProperty com quebras de linha misturadas", () => {
     const text = "---\nTipo: Plano\r\ntags:\r\n  - a\r\naliases:\n---\n# X\r\n"
     expect(setProperty(setProperty(text, "novo", "ok"), "novo", undefined)).toBe(text)
     expect(setProperty(text, "Tipo", "Reino")).toBe("---\nTipo: Reino\r\ntags:\r\n  - a\r\naliases:\n---\n# X\r\n")
+  })
+})
+
+describe("planFolderRename", () => {
+  it("atualiza links de fora e de dentro da pasta, inclusive relativos entre arquivos movidos", () => {
+    const index = vault({
+      "Wikis/OxC/Locais/Valdris.md": "[[Lago]] [lago](Lago.md) [fora](../Notas.md)\n",
+      "Wikis/OxC/Locais/Lago.md": "# Lago\n",
+      "Wikis/OxC/Notas.md": "[[Locais/Valdris]] [v](Locais/Valdris.md)\n",
+    })
+    const plan = planFolderRename(index, "Wikis/OxC/Locais", "Wikis/OxC/Geografia/Lugares")
+    const after = Object.fromEntries(plan.edits.map((e) => [e.path, e.after]))
+    expect(after["Wikis/OxC/Notas.md"]).toBe("[[Wikis/OxC/Geografia/Lugares/Valdris]] [v](Geografia/Lugares/Valdris.md)\n")
+    expect(after["Wikis/OxC/Locais/Valdris.md"]).toBe("[[Lago]] [lago](Lago.md) [fora](../../Notas.md)\n")
+    expect(() => planFolderRename(index, "Wikis/OxC", "Wikis/OxC/Sub")).toThrow(/dentro dela mesma/)
   })
 })

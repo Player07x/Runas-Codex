@@ -1,7 +1,7 @@
 import type { LinkRef } from "./parse"
 import { caseCollision, pathProblem } from "./names"
 import { basename, dirname, extname, foldName, joinPath, noteName, relativePath } from "./text"
-import type { VaultIndex } from "./vault-index"
+import { VaultIndex } from "./vault-index"
 
 /**
  * Renomear ou mover um arquivo atualizando todos os links do cofre: no texto, nas propriedades e nos nós de arquivo
@@ -149,5 +149,41 @@ export function planRename(index: VaultIndex, from: string, to: string, texts: R
     const after = before.replace(pattern, (_m, open: string, close: string) => open + JSON.stringify(to).slice(1, -1) + close)
     if (after !== before) edits.push({ path, before, after })
   }
+  return { from, to, edits }
+}
+
+/**
+ * Renomear ou mover uma pasta: simula a mudança arquivo por arquivo numa cópia do índice (assim links entre arquivos
+ * da própria pasta também ficam certos) e devolve as edições nos caminhos de antes — o app grava os textos e só
+ * depois move a pasta.
+ */
+export function planFolderRename(index: VaultIndex, from: string, to: string, texts: Record<string, string> = {}): RenamePlan {
+  if (from === to) throw new Error("O nome é o mesmo.")
+  if ((to + "/").startsWith(from + "/")) throw new Error("Uma pasta não pode ir para dentro dela mesma.")
+  const problem = pathProblem(to)
+  if (problem) throw new Error(problem)
+  const files = index.allFiles().filter((file) => file.path.startsWith(from + "/"))
+  if (!files.length) return { from, to, edits: [] }
+  const work = new VaultIndex(index.allFiles(), Object.fromEntries(index.allNotes().map((note) => [note.path, note.text])))
+  const canvas = { ...texts }
+  for (const file of files) {
+    const target = to + file.path.slice(from.length)
+    const plan = planRename(work, file.path, target, canvas)
+    for (const edit of plan.edits) {
+      if (extname(edit.path) === ".canvas") canvas[edit.path] = edit.after
+      else work.set(work.allFiles().find((f) => f.path === edit.path)!, edit.after)
+    }
+    const text = work.note(file.path)?.text
+    work.remove(file.path)
+    work.set({ ...file, path: target }, text)
+  }
+  const original = (path: string) => (path.startsWith(to + "/") ? from + path.slice(to.length) : path)
+  const edits: FileEdit[] = []
+  for (const note of work.allNotes()) {
+    const path = original(note.path)
+    const before = index.note(path)?.text
+    if (before !== undefined && before !== note.text) edits.push({ path, before, after: note.text })
+  }
+  for (const [path, after] of Object.entries(canvas)) if (texts[path] !== undefined && texts[path] !== after) edits.push({ path, before: texts[path]!, after })
   return { from, to, edits }
 }

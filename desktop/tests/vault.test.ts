@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, utimes, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { listVault, readTexts, resolveInside, VaultError } from "../src/main/vault"
+import { unzipSync } from "fflate"
+import { backupVault, createVault, listBackups, listVault, readTexts, renamePath, resolveInside, trashPath, VaultError, writeTextSafe } from "../src/main/vault"
 
 let base: string
 let root: string
@@ -59,5 +60,79 @@ describe("readTexts", () => {
 
   it("não lê nada fora do cofre", async () => {
     await expect(readTexts(root, ["Início.md", "../segredo.md"])).rejects.toBeInstanceOf(VaultError)
+  })
+})
+
+describe("writeTextSafe", () => {
+  it("cria, recusa criar de novo e atualiza só com a versão certa", async () => {
+    const created = await writeTextSafe(root, "Notas/Nova.md", "# Nova\n", null)
+    expect(created.size).toBe(7)
+    await expect(writeTextSafe(root, "Notas/Nova.md", "x", null)).rejects.toThrow("Já existe")
+    await expect(writeTextSafe(root, "Notas/Nova.md", "x", { mtime: 1, size: 7 })).rejects.toThrow("mudou fora do app")
+    const updated = await writeTextSafe(root, "Notas/Nova.md", "# Nova 2\n", created)
+    expect(await readFile(join(root, "Notas", "Nova.md"), "utf8")).toBe("# Nova 2\n")
+    expect(updated.size).toBe(9)
+    expect((await readdir(join(root, "Notas"))).filter((name) => name.includes("runas-tmp"))).toEqual([])
+  })
+
+  it("não regrava conteúdo igual (a data do arquivo não muda)", async () => {
+    const path = join(root, "Início.md")
+    await utimes(path, new Date(2020, 0, 1), new Date(2020, 0, 1))
+    const before = (await stat(path)).mtimeMs
+    const entry = await writeTextSafe(root, "Início.md", "\uFEFF# Início\r\n\r\nVer [[Aldren]].\r\n", { mtime: before, size: (await stat(path)).size })
+    expect(entry.mtime).toBe(before)
+    expect((await stat(path)).mtimeMs).toBe(before)
+  })
+
+  it.each([".obsidian/app.json", "Notas/.oculto.md", "../fora.md", "/tmp/x.md"])("recusa gravar em %j", async (path) => {
+    await expect(writeTextSafe(root, path, "x")).rejects.toBeInstanceOf(VaultError)
+  })
+
+  it("recusa gravar através de link simbólico", async () => {
+    await expect(writeTextSafe(root, "atalho.md", "x")).rejects.toThrow("simbólico")
+  })
+})
+
+describe("renamePath e trashPath", () => {
+  it("move criando a pasta, recusa sobrescrever e troca só maiúsculas", async () => {
+    await renamePath(root, "Início.md", "Notas/Início.md")
+    expect((await listVault(root)).map((e) => e.path)).toContain("Notas/Início.md")
+    await writeTextSafe(root, "Notas/Outra.md", "x", null)
+    await expect(renamePath(root, "Notas/Início.md", "Notas/Outra.md")).rejects.toThrow("Já existe")
+    await renamePath(root, "Notas/Outra.md", "Notas/outra.md")
+    expect(await readdir(join(root, "Notas"))).toContain("outra.md")
+  })
+
+  it("manda para .trash sem apagar, numerando repetidos", async () => {
+    await writeTextSafe(root, "a.md", "1", null)
+    expect(await trashPath(root, "a.md")).toBe(".trash/a.md")
+    await writeTextSafe(root, "a.md", "2", null)
+    expect(await trashPath(root, "a.md")).toBe(".trash/a 1.md")
+    expect(await readFile(join(root, ".trash", "a 1.md"), "utf8")).toBe("2")
+  })
+})
+
+describe("createVault e backups", () => {
+  it("cria as pastas dos espaços sem sobrescrever o .obsidian", async () => {
+    const fresh = join(base, "Novo")
+    await mkdir(fresh)
+    await createVault(fresh)
+    expect((await readdir(fresh)).sort()).toEqual([".obsidian", "Agenda", "Campanhas", "Livros", "Mesas", "Notas", "Wikis"])
+    await writeFile(join(fresh, ".obsidian", "app.json"), '{"meu":true}')
+    await createVault(fresh)
+    expect(await readFile(join(fresh, ".obsidian", "app.json"), "utf8")).toBe('{"meu":true}')
+  })
+
+  it("faz backup só do texto e guarda os mais recentes", async () => {
+    await writeFile(join(root, "imagem.png"), "binário")
+    const folder = join(base, "backups")
+    const info = await backupVault(root, folder, 2)
+    const zip = unzipSync(await readFile(join(folder, `${info.id}.zip`)))
+    expect(Object.keys(zip).sort()).toEqual([".obsidian/app.json", "Início.md", "Wikis/Ordem x Caos/Aldren.md"])
+    await new Promise((r) => setTimeout(r, 5))
+    await backupVault(root, folder, 2)
+    await new Promise((r) => setTimeout(r, 5))
+    await backupVault(root, folder, 2)
+    expect(await listBackups(folder)).toHaveLength(2)
   })
 })

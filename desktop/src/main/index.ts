@@ -1,53 +1,23 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises"
-import { basename, join } from "node:path"
-import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from "electron"
-import { IPC, type VaultInfo } from "../shared/ipc"
-import { listVault, readTexts } from "./vault"
+import { writeFile } from "node:fs/promises"
+import { join } from "node:path"
+import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
+import { IPC } from "../shared/ipc"
+import { SMOKE_SCRIPT, smokePassed } from "./smoke"
+import { VaultService } from "./vault-service"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
 if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(app.getPath("appData"), "runas-codex"))
 
-/** `--smoke [--vault=<pasta>] [--shot=<arquivo.png>]`: abre, confere a ponte e o cofre, imprime o resultado e sai. */
+/**
+ * `--smoke [--vault=<pasta>] [--write] [--shot=<arquivo.png>]`: abre, confere a ponte, o cofre e o leitor de Notas,
+ * imprime o resultado e sai. Com `--write`, trabalha numa cópia temporária do cofre e testa as gravações.
+ */
 const smoke = process.argv.includes("--smoke")
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
 let mainWindow: BrowserWindow | null = null
-let vaultPath: string | null = null
-
-const configFile = () => join(app.getPath("userData"), "config.json")
-
-async function isFolder(path: string): Promise<boolean> {
-  try {
-    return (await stat(path)).isDirectory()
-  } catch {
-    return false
-  }
-}
-
-async function loadConfig(): Promise<void> {
-  try {
-    const config = JSON.parse(await readFile(configFile(), "utf8")) as { vaultPath?: unknown }
-    if (typeof config.vaultPath === "string" && (await isFolder(config.vaultPath))) vaultPath = config.vaultPath
-  } catch {
-    vaultPath = null
-  }
-}
-
-async function saveConfig(): Promise<void> {
-  await mkdir(app.getPath("userData"), { recursive: true })
-  await writeFile(configFile(), JSON.stringify({ vaultPath }, null, 2) + "\n")
-}
-
-/** Até a etapa 3a o app só lê: a primeira abertura de um cofre nunca grava. */
-function vaultInfo(): VaultInfo | null {
-  return vaultPath ? { name: basename(vaultPath), path: vaultPath, readOnly: true } : null
-}
-
-function openVault(): string {
-  if (!vaultPath) throw new Error("Nenhum cofre aberto. Escolha a pasta em Configurações.")
-  return vaultPath
-}
+const vault = new VaultService(() => mainWindow)
 
 /** Só a janela do app conversa com o processo principal. */
 function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown): void {
@@ -57,25 +27,35 @@ function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: 
   })
 }
 
+const text = (value: unknown, name: string): string => {
+  if (typeof value !== "string") throw new Error(`Parâmetro inválido: ${name}.`)
+  return value
+}
+
 function registerIpc(): void {
-  handle(IPC.vaultCurrent, () => vaultInfo())
-  handle(IPC.vaultChoose, async () => {
-    const options: OpenDialogOptions = { title: "Abrir pasta do cofre", properties: ["openDirectory"], defaultPath: vaultPath ?? app.getPath("documents") }
-    const result = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options)
-    const chosen = result.filePaths[0]
-    if (result.canceled || !chosen) return vaultInfo()
-    vaultPath = chosen
-    await saveConfig()
-    return vaultInfo()
-  })
-  handle(IPC.vaultList, (_event, prefix) => listVault(openVault(), typeof prefix === "string" ? prefix : ""))
+  handle(IPC.vaultCurrent, () => vault.info())
+  handle(IPC.vaultChoose, () => vault.choose())
+  handle(IPC.vaultCreate, () => vault.create())
+  handle(IPC.vaultSetWritable, (_event, writable) => vault.setWritable(writable === true))
+  handle(IPC.vaultList, (_event, prefix) => vault.list(typeof prefix === "string" ? prefix : ""))
   handle(IPC.vaultRead, (_event, paths) => {
     if (!Array.isArray(paths) || !paths.every((path) => typeof path === "string")) throw new Error("Lista de caminhos inválida.")
-    return readTexts(openVault(), paths)
+    return vault.read(paths)
   })
-  handle(IPC.vaultWrite, () => {
-    throw new Error("Cofre em somente leitura: a gravação chega na etapa 3a.")
+  handle(IPC.vaultWrite, (_event, path, content, expected) => {
+    const version =
+      expected === null ? null
+      : expected && typeof expected === "object" && typeof (expected as { mtime?: unknown }).mtime === "number" && typeof (expected as { size?: unknown }).size === "number"
+        ? { mtime: (expected as { mtime: number }).mtime, size: (expected as { size: number }).size }
+        : undefined
+    return vault.write(text(path, "caminho"), text(content, "conteúdo"), version)
   })
+  handle(IPC.vaultCreateFolder, (_event, path) => vault.createFolder(text(path, "caminho")))
+  handle(IPC.vaultRename, (_event, from, to) => vault.rename(text(from, "origem"), text(to, "destino")))
+  handle(IPC.vaultTrash, (_event, path) => vault.trash(text(path, "caminho")))
+  handle(IPC.vaultBackup, () => vault.backup())
+  handle(IPC.vaultListBackups, () => vault.listBackups())
+  handle(IPC.vaultRevealBackups, () => vault.revealBackups())
 }
 
 function createMainWindow(): BrowserWindow {
@@ -107,36 +87,6 @@ function createMainWindow(): BrowserWindow {
   return window
 }
 
-/** Roda no renderer: confere a ponte, a recusa de caminhos fora do cofre e a lista de Notas. */
-const SMOKE_SCRIPT = `(async () => {
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms))
-  const bridge = window.runasCodex
-  const result = { bridge: Boolean(bridge), title: document.title }
-  if (!bridge) return result
-  result.vault = await bridge.vault.current()
-  if (!result.vault) return result
-  const entries = await bridge.vault.list()
-  result.files = entries.length
-  result.markdown = entries.filter((e) => e.path.endsWith(".md")).length
-  for (const path of ["../fora.md", "/etc/passwd"]) {
-    try { await bridge.vault.read([path]); result.escape = "LEU " + path } catch (e) { result.escape = result.escape ?? e.message }
-  }
-  try { await bridge.vault.write("x.md", "x"); result.write = "GRAVOU" } catch (e) { result.write = e.message }
-  location.hash = "/notas"
-  for (let i = 0; i < 50 && !document.querySelector(".vault-tree"); i++) await wait(100)
-  result.listed = [...document.querySelectorAll(".vault-tree .note-item strong")].map((el) => el.textContent)
-  const linked = entries.find((e) => e.path.endsWith("Aldren.md")) ?? entries.find((e) => e.path.endsWith(".md"))
-  if (linked) {
-    location.hash = "/notas/" + encodeURIComponent(linked.path)
-    for (let i = 0; i < 30 && !document.querySelector(".editor-body .md"); i++) await wait(100)
-    await wait(300)
-    result.opened = linked.path
-    result.backlinks = [...document.querySelectorAll(".pane-right .card strong")].map((el) => el.textContent)
-    result.wikilinks = [...document.querySelectorAll(".editor-body .wikilink")].map((el) => (el.classList.contains("broken") ? "✗ " : "✓ ") + el.textContent)
-  }
-  return result
-})()`
-
 async function runSmoke(window: BrowserWindow): Promise<void> {
   let ok = false
   try {
@@ -145,27 +95,17 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))
-    const listed = Array.isArray(result.listed) ? result.listed.length : -1
-    const vaultOk =
-      typeof result.markdown === "number" &&
-      result.markdown > 0 &&
-      listed === result.markdown &&
-      Array.isArray(result.backlinks) &&
-      result.backlinks.length > 0 &&
-      String(result.escape).startsWith("Caminho fora do cofre") &&
-      String(result.write).startsWith("Cofre em somente leitura")
-    ok = result.bridge === true && (!vaultPath || vaultOk)
+    ok = smokePassed(result, vault.rootPath !== null)
   } catch (error) {
     console.error(error)
   }
+  vault.stop()
   app.exit(ok ? 0 : 1)
 }
 
 void app.whenReady().then(async () => {
-  await loadConfig()
-  // No teste, o cofre vem da linha de comando e não é lembrado.
-  const smokeVault = argValue("vault")
-  if (smoke) vaultPath = smokeVault && (await isFolder(smokeVault)) ? smokeVault : null
+  if (smoke) await vault.openForSmoke(argValue("vault"), process.argv.includes("--write"))
+  else await vault.load()
   registerIpc()
   mainWindow = createMainWindow()
   if (smoke) void runSmoke(mainWindow)
@@ -175,5 +115,6 @@ void app.whenReady().then(async () => {
 })
 
 app.on("window-all-closed", () => {
+  vault.stop()
   if (process.platform !== "darwin") app.quit()
 })

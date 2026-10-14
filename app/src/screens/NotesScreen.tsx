@@ -1,209 +1,363 @@
-import { useMemo, useState } from "react"
-import { CalendarCheck, ChevronDown, Folder, Lock, Pin, Plus, Search, Trash } from "lucide-react"
-import { NOTES } from "../data/notes"
-import type { Note } from "../data/types"
-import { splitFrontmatter } from "../lib/links"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
+import { scopeOf } from "../core/spaces"
+import { dirname, joinPath, noteName } from "../core/text"
+import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
-import { relativeDays } from "../lib/navigation"
-import { TODAY } from "../data/agenda"
-import { NoteEditor } from "../components/NoteEditor"
-import { NotePanels } from "../components/NotePanels"
-import { useToast } from "../components/ui"
-import { useVault } from "../platform/VaultProvider"
-import { NoteSetContext } from "../lib/note-set"
 import { vaultRoute } from "../lib/vault-notes"
+import { ConfirmDialog, NameDialog, RenameDialog } from "../components/vault/dialogs"
+import { NoteView } from "../components/vault/NoteView"
+import { VaultPanels } from "../components/vault/VaultPanels"
+import { Empty, useToast } from "../components/ui"
+import { useVault } from "../platform/VaultProvider"
 import "./notes.css"
 
-const NEW_NOTE: Note = {
-  id: "nova",
-  title: "Sem título",
-  space: "notas",
-  path: "Notas/Sem título.md",
-  tags: [],
-  updated: TODAY.toISOString(),
-  markdown: "# Sem título\n\nComece a escrever. Use [[ para linkar e # para tags.\n",
-}
+const NOTES_ROOT = "Notas/"
+const SCOPE_KEY = "runas-codex:notas-escopo"
 
 export function NotesScreen({ noteId }: { noteId?: string }) {
-  const { info, notes, loading, error } = useVault()
-  if (notes && info) return <VaultNotes vaultName={info.name} notes={notes} noteId={noteId} />
-  if (loading)
+  const vault = useVault()
+  if (vault.loading && !vault.index) {
     return (
       <div className="page">
         <p className="muted">Abrindo o cofre…</p>
       </div>
     )
-  return <DemoNotes noteId={noteId} error={error} />
+  }
+  if (!vault.index || !vault.info) return <NoVault />
+  return <VaultNotes key={vault.info.path} index={vault.index} noteId={noteId} />
 }
 
-/** Notas de exemplo (navegador, ou app desktop sem cofre aberto). */
-function DemoNotes({ noteId, error }: { noteId?: string; error?: string }) {
+function NoVault() {
+  const vault = useVault()
   const toast = useToast()
-  const [query, setQuery] = useState("")
-  const [showRight, setShowRight] = useState(false)
-  const note = noteId === "nova" ? NEW_NOTE : NOTES.find((n) => n.id === noteId) ?? (noteId ? undefined : NOTES[0])
-  const filtered = NOTES.filter((n) => n.title.toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR")))
-  const pinned = filtered.filter((n) => n.pinned)
-  const daily = filtered.filter((n) => n.path.includes("/Diário/"))
-  const rest = filtered.filter((n) => !n.pinned && !n.path.includes("/Diário/"))
-
+  const run = (action: () => Promise<void>) => () => action().catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
   return (
-    <div className={`workspace ${noteId ? "" : "show-left"} ${showRight ? "show-right" : ""}`}>
-      <aside className="pane-left">
-        <div className="pane-head">
-          <div className="row between">
-            <strong>Notas</strong>
-            <div className="row" style={{ gap: 2 }}>
-              <button className="icon-btn sm" title="Nota do dia" onClick={() => navigate("/notas/2026-10-13")}>
-                <CalendarCheck size={16} />
-              </button>
-              <button className="icon-btn sm" title="Nova nota" onClick={() => navigate("/notas/nova")}>
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-          <label className="search">
-            <Search size={15} />
-            <input className="input" placeholder="Buscar em Notas" value={query} onChange={(e) => setQuery(e.target.value)} />
-          </label>
-          <span className="tiny faint">Só o espaço Notas — a wiki e as campanhas ficam de fora.</span>
-          {error && <span className="tiny" style={{ color: "var(--red)" }}>Não deu para abrir o cofre: {error}</span>}
-        </div>
-        <div className="pane-body" style={{ gap: 12 }}>
-          {pinned.length > 0 && <NoteGroup title="Fixadas" icon={<Pin size={13} />} notes={pinned} current={note?.id} />}
-          <NoteGroup title="Notas" icon={<Folder size={13} />} notes={rest} current={note?.id} />
-          <NoteGroup title="Diário" icon={<Folder size={13} />} notes={daily} current={note?.id} />
-          <button className="list-item muted small" onClick={() => toast("Protótipo: lixeira em .trash com restauração")}>
-            <Trash size={15} /> Lixeira
-          </button>
-        </div>
-      </aside>
-
-      <section className="pane-center">
-        {note ? (
-          <NoteEditor note={note} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} />
-        ) : (
-          <div className="page">
-            <p className="muted">Nota não encontrada.</p>
-          </div>
-        )}
-      </section>
-
-      <aside className="pane-right">{note && <NotePanels note={note} />}</aside>
-
-      <button className="fab" onClick={() => navigate("/notas/nova")} aria-label="Nova nota">
-        <Plus size={22} />
-      </button>
+    <div className="page">
+      <Empty title="Nenhum cofre aberto" action={<div className="row-wrap" style={{ justifyContent: "center" }}><button className="btn primary" onClick={run(vault.create)}><Plus size={16} /> Criar cofre novo</button><button className="btn" onClick={run(vault.choose)}><Vault size={16} /> Abrir pasta…</button></div>}>
+        O cofre é uma pasta de notas Markdown, compatível com o Obsidian. Crie um cofre novo ou abra um que já existe
+        (ele abre em somente leitura até você liberar a gravação).
+        {vault.error && <span style={{ display: "block", color: "var(--red)", marginTop: 8 }}>{vault.error}</span>}
+      </Empty>
     </div>
   )
 }
 
-function preview(markdown: string): string {
-  return splitFrontmatter(markdown)
-    .body.replace(/^#.*\n+/, "")
-    .replace(/\[\[([^\]|]*\/)?([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_m, _dir, name: string, label?: string) => label ?? name)
+type Dialog = { kind: "note"; folder: string } | { kind: "folder"; folder: string } | { kind: "rename-folder"; path: string } | { kind: "broken"; target: string; from?: string } | { kind: "unlock" }
+
+interface TreeFolder {
+  name: string
+  path: string
+  folders: Map<string, TreeFolder>
+  notes: IndexedNote[]
+}
+
+function buildTree(notes: IndexedNote[], root: string, extraFolders: string[]): TreeFolder {
+  const top: TreeFolder = { name: "", path: root.replace(/\/$/, ""), folders: new Map(), notes: [] }
+  const folderFor = (folderPath: string): TreeFolder => {
+    const rel = folderPath.slice(top.path ? top.path.length + 1 : 0)
+    let node = top
+    if (!rel || folderPath === top.path) return top
+    for (const part of rel.split("/")) {
+      const path = node.path ? `${node.path}/${part}` : part
+      if (!node.folders.has(part)) node.folders.set(part, { name: part, path, folders: new Map(), notes: [] })
+      node = node.folders.get(part)!
+    }
+    return node
+  }
+  for (const folder of extraFolders) if (folder.startsWith(root)) folderFor(folder)
+  for (const note of notes) folderFor(dirname(note.path)).notes.push(note)
+  return top
+}
+
+function preview(note: IndexedNote): string {
+  const body = note.meta.frontmatter ? note.text.slice(note.meta.frontmatter.end) : note.text
+  return body
+    .replace(/^#.*\n+/, "")
+    .replace(/!?\[\[([^\]|#]*\/)?([^\]|#]+)(?:#[^\]|]*)?(?:\\?\|([^\]]*))?\]\]/g, (_m, _dir, name: string, label?: string) => label ?? name)
     .replace(/[#>*\-[\]=|`]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 80)
 }
 
-function NoteGroup({ title, icon, notes, current }: { title: string; icon: React.ReactNode; notes: Note[]; current?: string }) {
-  if (notes.length === 0) return null
-  return (
-    <div className="stack" style={{ gap: 4 }}>
-      <span className="eyebrow row" style={{ gap: 5 }}>
-        <ChevronDown size={13} /> {icon} {title}
+const today = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+function uniqueName(index: VaultIndex, folder: string, base: string): string {
+  const taken = new Set(index.allFiles().filter((f) => dirname(f.path) === folder).map((f) => noteName(f.path).toLocaleLowerCase("pt-BR")))
+  for (let n = 0; ; n++) {
+    const name = n ? `${base} ${n}` : base
+    if (!taken.has(name.toLocaleLowerCase("pt-BR"))) return name
+  }
+}
+
+function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
+  const vault = useVault()
+  const toast = useToast()
+  const readOnly = vault.info?.readOnly ?? true
+  const hasNotesSpace = index.allFiles().some((f) => f.path.startsWith(NOTES_ROOT))
+  const [wholeVault, setWholeVault] = useState(() => {
+    try {
+      return localStorage.getItem(SCOPE_KEY) === "cofre"
+    } catch {
+      return false
+    }
+  })
+  const root = wholeVault || !hasNotesSpace ? "" : NOTES_ROOT
+  const [query, setQuery] = useState("")
+  const [showRight, setShowRight] = useState(false)
+  const [dialog, setDialog] = useState<Dialog | null>(null)
+  const [heading, setHeading] = useState<{ line: number; at: number }>()
+  const [createdFolders, setCreatedFolders] = useState<string[]>([])
+  const fail = useCallback((error: unknown) => toast(error instanceof Error ? error.message : String(error)), [toast])
+
+  const path = noteId && noteId !== "nova" && noteId !== "hoje" ? noteId : undefined
+  const note = path ? index.note(path) : undefined
+  const currentFolder = note ? dirname(note.path) : root.replace(/\/$/, "")
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SCOPE_KEY, wholeVault ? "cofre" : "notas")
+    } catch {
+      /* só não é lembrado */
+    }
+  }, [wholeVault])
+
+  // Rotas de ação: /notas/nova e /notas/hoje.
+  useEffect(() => {
+    if (noteId !== "nova" && noteId !== "hoje") return
+    if (readOnly) {
+      toast("Cofre em somente leitura: libere a gravação para criar notas.")
+      navigate("/notas")
+      return
+    }
+    if (noteId === "nova") {
+      const folder = root.replace(/\/$/, "")
+      vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => navigate(vaultRoute(created)), fail)
+    } else {
+      const folder = hasNotesSpace ? "Notas/Diário" : "Diário"
+      const daily = `${folder}/${today()}.md`
+      if (index.note(daily)) navigate(vaultRoute(daily))
+      else vault.createNote(folder, today(), `# ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n`).then((created) => navigate(vaultRoute(created)), fail)
+    }
+  }, [noteId])
+
+  const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
+  const folders = useMemo(() => [...new Set([...index.allFiles().map((f) => dirname(f.path)), ...createdFolders])].filter(Boolean), [index, createdFolders, vault.version])
+  const tree = useMemo(() => buildTree(notes, root, createdFolders), [notes, root, createdFolders])
+  const results = useMemo(() => (query.trim() ? index.search(query, root, 80) : null), [index, query, root, vault.version])
+  const tags = useMemo(() => index.tags(root), [index, root, vault.version])
+  const toWrite = useMemo(() => index.unresolved(root).slice(0, 30), [index, root, vault.version])
+
+  const openBroken = useCallback((target: string, from?: string) => (readOnly ? toast(`“${target}” ainda não existe.`) : setDialog({ kind: "broken", target, from })), [readOnly, toast])
+  const onTag = useCallback((tag: string) => setQuery(`tag:${tag}`), [])
+
+  const createFromBroken = async (target: string, from?: string) => {
+    const clean = target.replace(/\.md$/i, "")
+    const folder = clean.includes("/") ? dirname(clean) : (from ? scopeOf(from).root : root).replace(/\/$/, "") || currentFolder
+    const created = await vault.createNote(folder, clean.includes("/") ? clean.slice(clean.lastIndexOf("/") + 1) : clean)
+    navigate(vaultRoute(created))
+  }
+
+  const noteItem = (n: IndexedNote, extra?: ReactNode) => (
+    <a key={n.path} href={href(vaultRoute(n.path))} data-note-path={n.path} className={`list-item note-item ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: "transparent" }}>
+      <span className="grow" style={{ minWidth: 0 }}>
+        <span className="truncate" style={{ display: "block", fontWeight: 600 }}>{n.name}</span>
+        <span className="truncate tiny faint" style={{ display: "block" }}>{extra ?? (preview(n) || "Vazia")}</span>
       </span>
-      <div className="list">
-        {notes.map((n) => (
-          <a key={n.id} href={href(`/notas/${n.id}`)} className={`list-item note-item ${current === n.id ? "active" : ""}`} style={{ ["--note" as string]: n.color ? `var(--${n.color})` : "transparent" }}>
-            <span className="grow" style={{ minWidth: 0 }}>
-              <span className="truncate" style={{ display: "block", fontWeight: 600 }}>{n.title}</span>
-              <span className="truncate tiny faint" style={{ display: "block" }}>
-                {preview(n.markdown)}
-              </span>
-            </span>
-            <span className="meta">{relativeDays(n.updated, TODAY)}</span>
-          </a>
+    </a>
+  )
+
+  const renderFolder = (folder: TreeFolder, depth: number): ReactNode => {
+    const subfolders = [...folder.folders.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    const items = [...folder.notes].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    const content = (
+      <>
+        {subfolders.map((sub) => (
+          <details key={sub.path} open={depth < 1 || Boolean(note?.path.startsWith(sub.path + "/"))} className="vault-folder">
+            <summary className="eyebrow row" style={{ gap: 5 }}>
+              <ChevronDown size={13} className="folder-chevron" />
+              <Folder size={13} /> <span className="grow truncate">{sub.name}</span>
+              {!readOnly && (
+                <span className="folder-actions">
+                  <button className="icon-btn sm" title="Nova nota aqui" aria-label={`Nova nota em ${sub.name}`} onClick={(e) => (e.preventDefault(), setDialog({ kind: "note", folder: sub.path }))}>
+                    <FilePlus2 size={13} />
+                  </button>
+                  <button className="icon-btn sm" title="Renomear ou mover pasta" aria-label="Renomear pasta" onClick={(e) => (e.preventDefault(), setDialog({ kind: "rename-folder", path: sub.path }))}>
+                    <PenLine size={13} />
+                  </button>
+                </span>
+              )}
+            </summary>
+            <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>
+          </details>
         ))}
-      </div>
+        <div className="list">{items.map((n) => noteItem(n))}</div>
+      </>
+    )
+    return content
+  }
+
+  return (
+    <div className={`workspace ${path ? "" : "show-left"} ${showRight ? "show-right" : ""}`}>
+      <aside className="pane-left">
+        <div className="pane-head">
+          <div className="row between">
+            <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong>
+            <div className="row" style={{ gap: 2 }}>
+              {!readOnly && (
+                <>
+                  <button className="icon-btn sm" title="Nota do dia" aria-label="Nota do dia" onClick={() => navigate("/notas/hoje")}>
+                    <CalendarCheck size={16} />
+                  </button>
+                  <button className="icon-btn sm" title="Nova pasta" aria-label="Nova pasta" onClick={() => setDialog({ kind: "folder", folder: currentFolder })}>
+                    <FolderPlus size={16} />
+                  </button>
+                  <button className="icon-btn sm" title="Nova nota" aria-label="Nova nota" onClick={() => setDialog({ kind: "note", folder: currentFolder })}>
+                    <Plus size={16} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          <label className="search">
+            <Search size={15} />
+            <input className="input" placeholder="Buscar (tag:, path:, file:, “frase”)" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
+          </label>
+          {hasNotesSpace && (
+            <div className="segmented" role="tablist" aria-label="Onde mostrar">
+              <button className={!wholeVault ? "active" : ""} onClick={() => setWholeVault(false)} aria-label="Mostrar só o espaço Notas">
+                Espaço Notas
+              </button>
+              <button className={wholeVault ? "active" : ""} onClick={() => setWholeVault(true)} aria-label="Mostrar o cofre inteiro">
+                Cofre inteiro
+              </button>
+            </div>
+          )}
+          {readOnly && (
+            <button className="proto-note" style={{ cursor: "pointer", textAlign: "left" }} onClick={() => setDialog({ kind: "unlock" })}>
+              <Lock size={14} /> Somente leitura — liberar gravação
+            </button>
+          )}
+        </div>
+        <div className="pane-body" data-vault-tree style={{ gap: 12 }}>
+          {results ? (
+            <div className="stack" style={{ gap: 4 }}>
+              <span className="eyebrow">{results.length} resultado(s)</span>
+              <div className="list">{results.map((hit) => noteItem(index.note(hit.path)!, hit.snippet || hit.path))}</div>
+            </div>
+          ) : notes.length === 0 ? (
+            <span className="muted small">{root ? "O espaço Notas está vazio." : "Nenhuma nota .md neste cofre."}</span>
+          ) : (
+            renderFolder(tree, 0)
+          )}
+          {!results && tags.length > 0 && (
+            <details className="vault-folder">
+              <summary className="eyebrow row" style={{ gap: 5 }}>
+                <ChevronDown size={13} className="folder-chevron" /> <Hash size={13} /> Tags · {tags.length}
+              </summary>
+              <div className="row-wrap" style={{ padding: "6px 2px" }}>
+                {tags.map((t) => (
+                  <button key={t.tag} className="chip" onClick={() => onTag(t.tag)}>
+                    #{t.tag} <span className="faint">{t.count}</span>
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+          {!results && toWrite.length > 0 && (
+            <details className="vault-folder">
+              <summary className="eyebrow row" style={{ gap: 5 }}>
+                <ChevronDown size={13} className="folder-chevron" /> <Unlink size={13} /> A escrever · {toWrite.length}
+              </summary>
+              <div className="list">
+                {toWrite.map((u) => (
+                  <button key={u.target} className="list-item small" onClick={() => openBroken(u.target, u.from[0])} title={`Citada em: ${u.from.map(noteName).join(", ")}`}>
+                    <span className="grow truncate" style={{ color: "var(--red)" }}>{u.target}</span>
+                    <span className="meta">{u.from.length}×</span>
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      </aside>
+
+      <section className="pane-center">
+        {note ? (
+          <NoteView key={note.path} path={note.path} folders={folders} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, note.path)} onTag={onTag} headingRequest={heading} />
+        ) : (
+          <div className="page">
+            <p className="muted">{path ? "Nota não encontrada no cofre (foi renomeada ou apagada?)." : "Escolha uma nota na lista ou crie uma nova."}</p>
+          </div>
+        )}
+      </section>
+
+      <aside className="pane-right">
+        {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} />}
+      </aside>
+
+      {!readOnly && (
+        <button className="fab" onClick={() => setDialog({ kind: "note", folder: currentFolder })} aria-label="Nova nota (atalho)">
+          <Plus size={22} />
+        </button>
+      )}
+
+      {dialog?.kind === "note" && (
+        <NameDialog
+          title="Nova nota"
+          label="Nome da nota"
+          initial={uniqueName(index, dialog.folder, "Sem título")}
+          hint={`Em: ${dialog.folder || "raiz do cofre"}`}
+          confirmLabel="Criar"
+          onClose={() => setDialog(null)}
+          onConfirm={async (name) => navigate(vaultRoute(await vault.createNote(dialog.folder, name)))}
+        />
+      )}
+      {dialog?.kind === "folder" && (
+        <NameDialog
+          title="Nova pasta"
+          label="Nome da pasta"
+          hint={`Dentro de: ${dialog.folder || "raiz do cofre"}`}
+          confirmLabel="Criar"
+          onClose={() => setDialog(null)}
+          onConfirm={async (name) => {
+            const folder = joinPath(dialog.folder, name)!
+            await vault.createFolder(folder)
+            setCreatedFolders((list) => [...list, folder])
+          }}
+        />
+      )}
+      {dialog?.kind === "rename-folder" && (
+        <RenameDialog
+          index={index}
+          path={dialog.path}
+          isFolder
+          folders={folders}
+          onClose={() => setDialog(null)}
+          onRename={async (to) => {
+            const plan = await vault.rename(dialog.path, to)
+            setCreatedFolders((list) => list.map((f) => (f === dialog.path ? to : f)))
+            toast(plan.edits.length ? `Pasta renomeada; links atualizados em ${plan.edits.length} arquivo(s)` : "Pasta renomeada")
+            if (note && note.path.startsWith(dialog.path + "/")) navigate(vaultRoute(to + note.path.slice(dialog.path.length)))
+          }}
+        />
+      )}
+      {dialog?.kind === "broken" && (
+        <ConfirmDialog title="Criar nota" confirmLabel="Criar" onClose={() => setDialog(null)} onConfirm={() => createFromBroken(dialog.target, dialog.from)}>
+          “{dialog.target}” ainda não existe. Criar agora{dialog.from ? ` no espaço de “${noteName(dialog.from)}”` : ""}?
+        </ConfirmDialog>
+      )}
+      {dialog?.kind === "unlock" && (
+        <ConfirmDialog title="Liberar gravação" confirmLabel="Liberar" onClose={() => setDialog(null)} onConfirm={() => vault.setWritable(true)}>
+          O app passa a poder criar, editar, renomear e mandar notas para a lixeira neste cofre. Antes, ele faz um backup das
+          notas (fora do cofre). Arquivos que você não editar não são regravados.
+        </ConfirmDialog>
+      )}
     </div>
   )
 }
 
-/** Leitor do cofre real: todas as notas `.md`, agrupadas por pasta, abertas em somente leitura. */
-function VaultNotes({ vaultName, notes, noteId }: { vaultName: string; notes: Note[]; noteId?: string }) {
-  const [query, setQuery] = useState("")
-  const [showRight, setShowRight] = useState(false)
-  const noteSet = useMemo(() => ({ notes, routeOf: vaultRoute }), [notes])
-  const note = noteId ? notes.find((n) => n.id === noteId) : notes[0]
-  const q = query.trim().toLocaleLowerCase("pt-BR")
-  const folders = useMemo(() => {
-    const map = new Map<string, Note[]>()
-    for (const n of notes) {
-      if (q && !n.path.toLocaleLowerCase("pt-BR").includes(q)) continue
-      const folder = n.path.includes("/") ? n.path.slice(0, n.path.lastIndexOf("/")) : ""
-      map.set(folder, [...(map.get(folder) ?? []), n])
-    }
-    return [...map].sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
-  }, [notes, q])
-  const today = new Date()
-
-  return (
-    <NoteSetContext.Provider value={noteSet}>
-      <div className={`workspace ${noteId ? "" : "show-left"} ${showRight ? "show-right" : ""}`}>
-        <aside className="pane-left">
-          <div className="pane-head">
-            <div className="row between">
-              <strong className="truncate">{vaultName}</strong>
-              <span className="tiny faint">{notes.length} notas</span>
-            </div>
-            <label className="search">
-              <Search size={15} />
-              <input className="input" placeholder="Buscar no cofre" value={query} onChange={(e) => setQuery(e.target.value)} />
-            </label>
-            <span className="tiny faint row" style={{ gap: 5 }}>
-              <Lock size={12} /> Somente leitura — nada é gravado no disco.
-            </span>
-          </div>
-          <div className="pane-body vault-tree" style={{ gap: 12 }}>
-            {notes.length === 0 && <span className="muted small">Nenhuma nota .md nesta pasta.</span>}
-            {folders.map(([folder, list]) => (
-              <details key={folder} open={Boolean(q) || folders.length <= 12 || note?.path.startsWith(folder + "/")}>
-                <summary className="eyebrow row" style={{ gap: 5, cursor: "pointer" }}>
-                  <Folder size={13} /> {folder || "Raiz do cofre"} · {list.length}
-                </summary>
-                <div className="list" style={{ marginTop: 4 }}>
-                  {list.map((n) => (
-                    <a key={n.id} href={href(vaultRoute(n))} className={`list-item note-item ${note?.id === n.id ? "active" : ""}`} style={{ ["--note" as string]: "transparent" }}>
-                      <span className="grow" style={{ minWidth: 0 }}>
-                        <strong className="truncate" style={{ display: "block" }}>{n.title}</strong>
-                        <span className="truncate tiny faint" style={{ display: "block" }}>
-                          {preview(n.markdown)}
-                        </span>
-                      </span>
-                      <span className="meta">{relativeDays(n.updated, today)}</span>
-                    </a>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
-        </aside>
-
-        <section className="pane-center">
-          {note ? (
-            <NoteEditor note={note} readOnly onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} />
-          ) : (
-            <div className="page">
-              <p className="muted">{notes.length ? "Nota não encontrada no cofre." : "Este cofre ainda não tem notas .md."}</p>
-            </div>
-          )}
-        </section>
-
-        <aside className="pane-right">{note && <NotePanels note={note} />}</aside>
-      </div>
-    </NoteSetContext.Provider>
-  )
-}

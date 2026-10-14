@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ArrowRight, BarChart3, Clock, Dices, Eye, EyeOff, Hand, MonitorPlay, ShieldCheck, Sparkles } from "lucide-react"
 import type { Campaign } from "../../data/types"
 import { TODAY } from "../../data/agenda"
+import { vaultRoute } from "../../lib/vault-notes"
 import { href } from "../../lib/router"
 import { formatDate, formatTime, relativeDays } from "../../lib/navigation"
 import { ClockDial, Modal, useToast } from "../../components/ui"
@@ -228,7 +229,7 @@ function StorytellerScreen({ onClose }: { onClose: () => void }) {
           <span className="eyebrow">Notas fixadas</span>
           <a className="list-item small" href={href("/wiki/artigo/aldren-vael")}>Aldren Vael</a>
           <a className="list-item small" href={href("/wiki/artigo/valdris")}>Valdris · ganchos</a>
-          <a className="list-item small" href={href("/notas/regras-da-casa")}>Regras da casa</a>
+          <a className="list-item small" href={href(vaultRoute("Notas/Regras da casa.md"))}>Regras da casa</a>
         </section>
         <section className="card tight stack">
           <span className="eyebrow row">

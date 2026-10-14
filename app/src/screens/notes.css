@@ -14,3 +14,18 @@
   .editor-body { padding: 18px 16px 90px; }
   .fab { position: fixed; z-index: 45; right: 16px; bottom: calc(var(--bottomnav-height) + 16px + env(safe-area-inset-bottom)); display: grid; place-items: center; width: 52px; height: 52px; border: 0; border-radius: 16px; background: var(--cyan); color: var(--on-accent); box-shadow: var(--shadow-sm); }
 }
+
+/* ---------- Cofre: árvore de pastas e editor ---------- */
+.vault-folder > summary { list-style: none; cursor: pointer; min-height: 32px; padding: 0 4px; border-radius: 8px; }
+.vault-folder > summary::-webkit-details-marker { display: none; }
+.vault-folder > summary:hover { background: var(--panel-2); }
+.vault-folder .folder-chevron { transition: transform 120ms; transform: rotate(-90deg); }
+.vault-folder[open] > summary .folder-chevron { transform: none; }
+.vault-folder .folder-actions { display: none; gap: 2px; }
+.vault-folder > summary:hover .folder-actions, .vault-folder > summary:focus-within .folder-actions { display: inline-flex; }
+@media (hover: none) { .vault-folder .folder-actions { display: inline-flex; } }
+.source-editor { min-height: 60vh; }
+.source-editor .cm-editor { min-height: 60vh; }
+.editor-bar .segmented { flex-shrink: 0; overflow: visible; }
+.editor-bar .editor-status { flex: 1 1 auto; min-width: 0; text-align: right; }
+@media (max-width: 560px) { .editor-bar .editor-status { display: none; } .editor-bar { flex-wrap: wrap; } }

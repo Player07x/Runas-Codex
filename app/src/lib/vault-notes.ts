@@ -1,46 +1,23 @@
-import type { Note } from "../data/types"
-import type { VaultEntry } from "../platform/platform"
-import { basename, splitFrontmatter } from "./links"
-import { spaceOfPath } from "./spaces"
+import type { LinkRef } from "../core/parse"
+import { scopeOf } from "../core/spaces"
+import type { VaultIndex } from "../core/vault-index"
+import type { NoteSet } from "./note-set"
 
-/** `[a, "b c"]` ou `a, b` → lista (o editor real usa a lib `yaml` na etapa 3a). */
-function listValue(raw: string | undefined): string[] {
-  if (!raw) return []
-  return raw
-    .replace(/^\[|\]$/g, "")
-    .split(",")
-    .map((item) => item.trim().replace(/^["']|["']$/g, "").replace(/^#/, ""))
-    .filter(Boolean)
+/** Rota que abre uma nota do cofre no módulo Notas (o caminho vai codificado num segmento só). */
+export function vaultRoute(path: string): string {
+  return `/notas/${encodeURIComponent(path)}`
 }
 
-/** Tags no texto: `#tag` depois de espaço ou no começo da linha. Só números (`#1492`) não é tag no Obsidian. */
-function inlineTags(body: string): string[] {
-  const tags = [...body.replace(/```[\s\S]*?```|`[^`\n]*`/g, "").matchAll(/(?:^|\s)#([\p{L}\p{N}_/-]+)/gu)].map((match) => match[1]!)
-  return tags.filter((tag) => !/^\d+$/.test(tag))
-}
-
-/**
- * Converte um arquivo `.md` do cofre numa nota para as telas. Só para leitura: BOM e CRLF somem do texto mostrado,
- * mas o arquivo no disco não é tocado (a gravação, na etapa 3a, preserva os bytes originais).
- */
-export function toNote(entry: VaultEntry, content: string): Note {
-  const markdown = content.replace(/^﻿/, "").replace(/\r\n?/g, "\n")
-  const { properties, body } = splitFrontmatter(markdown)
-  const prop = (...keys: string[]) => properties.find(([key]) => keys.includes(key))?.[1]
-  const tags = [...new Set([...listValue(prop("tags", "tag")), ...inlineTags(body)].map((tag) => tag.toLocaleLowerCase("pt-BR")))]
+/** Links do Markdown resolvidos pelo índice do cofre, a partir da nota `from`. */
+export function vaultNoteSet(index: VaultIndex, from: string, handlers: Pick<NoteSet, "onBroken" | "onTag"> = {}): NoteSet {
   return {
-    id: entry.path,
-    title: basename(entry.path),
-    space: spaceOfPath(entry.path) ?? "notas",
-    path: entry.path,
-    markdown,
-    tags,
-    aliases: listValue(prop("aliases", "alias")),
-    updated: new Date(entry.mtime).toISOString(),
+    notes: [],
+    routeOf: (note) => vaultRoute(note.path),
+    resolve(target, kind) {
+      const link: LinkRef = { kind, embed: false, target, start: 0, end: 0, raw: "", inFrontmatter: false }
+      const { dest } = index.resolve(link, from)
+      return dest ? { path: dest, route: vaultRoute(dest), cross: scopeOf(dest).root !== scopeOf(from).root } : undefined
+    },
+    ...handlers,
   }
-}
-
-/** Rota que abre uma nota do cofre no leitor de Notas (o caminho vai codificado num segmento só). */
-export function vaultRoute(note: Note): string {
-  return `/notas/${encodeURIComponent(note.id)}`
 }
