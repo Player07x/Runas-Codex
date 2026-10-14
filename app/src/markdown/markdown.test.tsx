@@ -4,6 +4,7 @@ import { VaultIndex } from "../core/vault-index"
 import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
 import { NoteSetContext } from "../lib/note-set"
 import { vaultNoteSet } from "../lib/vault-notes"
+import { isRenderedCodeBlock, registerCodeBlock } from "./extensions"
 
 const FROM = "Notas/Formatadores.md"
 const index = new VaultIndex(
@@ -138,5 +139,12 @@ describe("Markdown (dialeto)", () => {
     expect(html).toContain("Formatadores do Runas-Codex")
     expect(html).toContain("md-colunas")
     expect(html).toContain("statblock")
+  })
+
+  it("blocos de código registrados por outros módulos são desenhados pelo componente deles", () => {
+    registerCodeBlock(["teste-bloco"], ({ code, language }) => <div className="bloco-teste">{`${language}: ${code}`}</div>)
+    expect(isRenderedCodeBlock("Teste-Bloco")).toBe(true)
+    expect(render("```teste-bloco\nlinha 1\nlinha 2\n```")).toContain('<div class="bloco-teste">teste-bloco: linha 1\nlinha 2</div>')
+    expect(render("```ts\nconst a = 1\n```")).toContain("<pre>")
   })
 })

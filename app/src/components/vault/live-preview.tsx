@@ -8,6 +8,7 @@ import type { NoteSet } from "../../lib/note-set"
 import { Markdown } from "../Markdown"
 import { NoteSetContext } from "../../lib/note-set"
 import { Embed } from "../../markdown/Embed"
+import { isRenderedCodeBlock } from "../../markdown/extensions"
 
 /**
  * Live preview do editor, como no Obsidian: fora da linha (ou do trecho) do cursor, a marcação some e o texto aparece
@@ -219,7 +220,8 @@ interface BlockRange {
 
 const CALLOUT_LINE = /^ {0,3}>\s*\[![^\]]+\]/
 const EMBED_ONLY = /^\s*(?:!\[\[[^\]\n]+\]\]|!\[[^\]\n]*\]\([^)\n]+\))(?:\s*(?:!\[\[[^\]\n]+\]\]|!\[[^\]\n]*\]\([^)\n]+\)))*\s*$/
-const RENDERED_FENCES = new Set(["mermaid", "table-of-contents", "toc"])
+/** O sumário precisa dos títulos da nota inteira; os outros blocos registrados se desenham sozinhos. */
+const TOC_FENCES = new Set(["table-of-contents", "toc"])
 
 function frontmatterRange(state: EditorState): BlockRange | null {
   const head = state.sliceDoc(0, Math.min(state.doc.length, 20_000))
@@ -249,7 +251,7 @@ function renderableBlocks(state: EditorState): (BlockRange & { source: string; k
     else if (node.name === "Blockquote" && CALLOUT_LINE.test(text)) kind = "block"
     else if (node.name === "FencedCode") {
       const info = /^ {0,3}(?:`{3,}|~{3,})\s*([\w-]+)/.exec(text)?.[1]?.toLowerCase() ?? ""
-      if (RENDERED_FENCES.has(info)) kind = info === "mermaid" ? "block" : "toc"
+      if (isRenderedCodeBlock(info)) kind = TOC_FENCES.has(info) ? "toc" : "block"
     } else if (node.name === "Paragraph") {
       const trimmed = text.trim()
       if ((trimmed.startsWith("$$") && trimmed.endsWith("$$") && trimmed.length > 4) || EMBED_ONLY.test(text)) kind = "block"
