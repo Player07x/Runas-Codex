@@ -1,26 +1,40 @@
-import { useState, type ReactNode } from "react"
+import { Children, createContext, useContext, useMemo, type ReactNode } from "react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
 import rehypeRaw from "rehype-raw"
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize"
-import { ChevronDown, ChevronRight, Dices, Eye, EyeOff, FileText, Info, Lock, ShieldAlert, Sparkles, Swords, Quote, Lightbulb, Workflow, Sigma } from "lucide-react"
+import rehypeHighlight from "rehype-highlight"
+import type { Element, ElementContent } from "hast"
+import { Dices, ImageOff, ListTree } from "lucide-react"
 import type { SpaceId } from "../data/types"
-import { basename, isCrossSpace, resolveLink } from "../lib/links"
+import { maskNonContent } from "../core/parse"
+import { foldName } from "../core/text"
+import { isCrossSpace, resolveLink } from "../lib/links"
 import { navigate } from "../lib/router"
 import { useNoteSet } from "../lib/note-set"
+import { prepareSource, remarkBlocks } from "../markdown/blocks"
+import { Callout, LayoutCallout, LAYOUT_CALLOUTS } from "../markdown/Callout"
+import { Embed, IMAGE_EXT } from "../markdown/Embed"
+import { MathTex } from "../markdown/MathTex"
+import { MermaidDiagram } from "../markdown/Mermaid"
+import { remarkObsidian } from "../markdown/remark-obsidian"
 
 /**
- * Renderizador do protótipo: remark + rehype (a mesma família da versão final), com as extensões do
- * Obsidian feitas aqui por pré-processamento. Na etapa 3b isto vira plugins de verdade, testados
- * contra o mesmo corpus do editor.
+ * Leitor de Markdown do Runas-Codex: remark (CommonMark + GFM + matemática) com o plugin do dialeto
+ * (`remark-obsidian`), HTML do texto passando pela sanitização, realce de código e os blocos que o remark não conhece
+ * (callouts, contêineres `:::`) separados antes por `splitBlocks`. A mesma sintaxe renderiza no Obsidian (docs/02, §5).
  */
 
 const schema = {
   ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames ?? []), "mark", "u", "kbd", "details", "summary", "span", "div", "p", "sup", "sub"],
+  tagNames: [...(defaultSchema.tagNames ?? []), "runas-callout", "runas-callout-title", "mark", "u", "kbd", "details", "summary", "span", "div", "p", "sup", "sub", "abbr", "dl", "dt", "dd", "figure", "figcaption", "small", "s", "ins", "hr"],
   attributes: {
     ...defaultSchema.attributes,
-    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "style", "align"],
+    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "style", "align", "title", "data*"],
+    img: [...(defaultSchema.attributes?.img ?? []), "width", "height", "loading"],
+    td: [...(defaultSchema.attributes?.td ?? []), "colSpan", "rowSpan"],
+    th: [...(defaultSchema.attributes?.th ?? []), "colSpan", "rowSpan"],
   },
   protocols: {
     ...defaultSchema.protocols,
@@ -28,93 +42,20 @@ const schema = {
   },
 }
 
-type Block =
-  | { type: "md"; text: string }
-  | { type: "callout"; kind: string; title: string; fold: "" | "+" | "-"; body: string }
+const remarkPlugins = [remarkGfm, remarkMath, remarkBlocks, remarkObsidian]
+const rehypePlugins = [rehypeRaw, [rehypeSanitize, schema], [rehypeHighlight, { detect: false }]] as never
 
-const CALLOUT_START = /^>\s*\[!([\w-]+)\]([+-])?\s*(.*)$/
+/** Títulos da nota (para o sumário ```table-of-contents```) e se os segredos do mestre aparecem. */
+const MarkdownContext = createContext<{ headings: { level: number; text: string }[]; showSecrets: boolean }>({ headings: [], showSecrets: true })
 
-function splitBlocks(source: string): Block[] {
-  const blocks: Block[] = []
+function headingsOf(source: string): { level: number; text: string }[] {
   const lines = source.split("\n")
-  let buffer: string[] = []
-  let inFence = false
-  const flush = () => {
-    if (buffer.length) blocks.push({ type: "md", text: buffer.join("\n") })
-    buffer = []
-  }
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i]
-    if (/^(```|~~~)/.test(line)) inFence = !inFence
-    const callout = !inFence && line.match(CALLOUT_START)
-    if (!callout) {
-      buffer.push(line)
-      continue
-    }
-    flush()
-    const body: string[] = []
-    while (i + 1 < lines.length && /^>/.test(lines[i + 1])) {
-      i += 1
-      body.push(lines[i].replace(/^>\s?/, ""))
-    }
-    blocks.push({ type: "callout", kind: callout[1].toLowerCase(), fold: (callout[2] ?? "") as "" | "+" | "-", title: callout[3], body: body.join("\n") })
-  }
-  flush()
-  return blocks
-}
-
-/** Sintaxe do Obsidian → Markdown/HTML que o remark entende, fora de blocos de código. */
-function preprocess(text: string): string {
-  let inFence = false
-  return text
-    .replace(/%%[\s\S]*?%%/g, "")
+  return maskNonContent(source)
     .split("\n")
-    .map((line) => {
-      if (/^(```|~~~)/.test(line)) {
-        inFence = !inFence
-        return line
-      }
-      if (inFence) return line
-      const math = line.match(/^\$\$(.*)\$\$\s*$/)
-      if (math) return "```math\n" + math[1].trim() + "\n```"
-      return line
-        .split(/(`[^`]*`|<[^>]+>)/)
-        .map((part) => (part.startsWith("`") || part.startsWith("<") ? part : inline(part)))
-        .join("")
+    .flatMap((line, i) => {
+      const m = /^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$/.exec(line)
+      return m ? [{ level: m[1]!.length, text: lines[i]!.replace(/^ {0,3}#{1,6}[ \t]+/, "").replace(/[ \t]+#+[ \t]*$|[ \t]*$/, "").replace(/\s*\{[.#][^}]*\}$/, "").replace(/\s\^[A-Za-z0-9-]+$/, "") }] : []
     })
-    .join("\n")
-}
-
-function inline(text: string): string {
-  return text
-    .replace(/==([^=]+)==/g, "<mark>$1</mark>")
-    .replace(/!\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_m, target: string) => `[${basename(target)}](embed:${encodeURIComponent(target)})`)
-    .replace(/\[\[([^\]|#]*)(#[^\]|]*)?(?:\|([^\]]*))?\]\]/g, (_m, target: string, heading: string | undefined, label: string | undefined) => {
-      const shown = label ?? (target ? basename(target) + (heading ? ` › ${heading.slice(1)}` : "") : heading?.slice(1) ?? "")
-      return `[${shown}](wiki:${encodeURIComponent(target + (heading ?? ""))})`
-    })
-    .replace(/(^|[\s(])#([\p{L}][\p{L}\p{N}_/-]*)/gu, (_m, before: string, tag: string) => `${before}[#${tag}](tag:${encodeURIComponent(tag)})`)
-}
-
-const CALLOUT_ICONS: Record<string, ReactNode> = {
-  nota: <Info size={16} />,
-  aviso: <ShieldAlert size={16} />,
-  perigo: <ShieldAlert size={16} />,
-  dica: <Lightbulb size={16} />,
-  descritivo: <Quote size={16} />,
-  citacao: <Quote size={16} />,
-  segredo: <Lock size={16} />,
-  statblock: <Swords size={16} />,
-}
-
-const CALLOUT_TITLES: Record<string, string> = {
-  nota: "Nota",
-  aviso: "Aviso",
-  perigo: "Perigo",
-  dica: "Dica",
-  descritivo: "Leia em voz alta",
-  segredo: "Segredo",
-  statblock: "Statblock",
 }
 
 interface MarkdownProps {
@@ -123,159 +64,239 @@ interface MarkdownProps {
   /** Segredos do mestre aparecem (o mestre) ou somem (versão dos jogadores). */
   showSecrets?: boolean
   className?: string
+  /** Nota inteira, quando `source` é só um trecho dela (o live preview desenha bloco a bloco): os títulos do sumário vêm daqui. */
+  contextSource?: string
 }
 
-export function Markdown({ source, space, showSecrets = true, className }: MarkdownProps) {
-  const blocks = splitBlocks(source)
+export function Markdown({ source, space, showSecrets = true, className, contextSource }: MarkdownProps) {
+  const prepared = useMemo(() => prepareSource(source), [source])
+  const headingSource = contextSource ?? prepared
+  const context = useMemo(() => ({ headings: headingsOf(headingSource), showSecrets }), [headingSource, showSecrets])
   return (
-    <div className={`md ${className ?? ""}`}>
-      {blocks.map((block, index) =>
-        block.type === "md" ? (
-          <MarkdownChunk key={index} text={block.text} space={space} />
-        ) : block.kind === "segredo" && !showSecrets ? null : (
-          <Callout key={index} block={block} space={space} />
-        ),
-      )}
-    </div>
-  )
-}
-
-function Callout({ block, space }: { block: Extract<Block, { type: "callout" }>; space?: SpaceId }) {
-  const [open, setOpen] = useState(block.fold !== "-")
-  const [revealed, setRevealed] = useState(false)
-  const secret = block.kind === "segredo"
-  return (
-    <div className={`callout ${block.kind} ${secret ? "secret" : ""} ${secret && !revealed ? "hidden" : ""}`}>
-      <div className="callout-title" onClick={block.fold ? () => setOpen(!open) : undefined} style={{ cursor: block.fold ? "pointer" : undefined }}>
-        {CALLOUT_ICONS[block.kind] ?? <Sparkles size={16} />}
-        <span className="grow">{block.title || CALLOUT_TITLES[block.kind] || block.kind}</span>
-        {secret && (
-          <button className="btn ghost sm" onClick={() => setRevealed(!revealed)} title="Segredos não vão para a versão dos jogadores">
-            {revealed ? <EyeOff size={14} /> : <Eye size={14} />} Só o mestre
-          </button>
-        )}
-        {block.fold && (open ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
+    <MarkdownContext.Provider value={context}>
+      <div className={`md ${className ?? ""}`}>
+        <MarkdownBody text={prepared} space={space} />
       </div>
-      {open && (
-        <div className="callout-body">
-          <Markdown source={block.body} space={space} />
-        </div>
-      )}
-    </div>
+    </MarkdownContext.Provider>
   )
 }
 
-function MarkdownChunk({ text, space }: { text: string; space?: SpaceId }) {
+function textOf(node: ElementContent | undefined): string {
+  if (!node) return ""
+  if (node.type === "text") return node.value
+  return node.type === "element" ? node.children.map(textOf).join("") : ""
+}
+
+function classesOf(node: Element | undefined): string[] {
+  const value = node?.properties?.className as unknown
+  return Array.isArray(value) ? value.map(String) : typeof value === "string" ? value.split(" ") : []
+}
+
+/** Rola até o título com esse texto, dentro da nota aberta. */
+function scrollToHeading(from: HTMLElement | null, text: string) {
+  const root = from?.closest(".editor-body, .page, .md") ?? document
+  const wanted = foldName(text)
+  const heading = [...root.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6")].find((h) => foldName(h.textContent ?? "") === wanted)
+  heading?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
+
+function TableOfContents() {
+  const { headings } = useContext(MarkdownContext)
+  if (!headings.length) return null
+  const top = Math.min(...headings.map((h) => h.level))
+  return (
+    <nav className="md-sumario" aria-label="Sumário da nota">
+      <span className="eyebrow row" style={{ gap: 6 }}>
+        <ListTree size={14} /> Sumário
+      </span>
+      {headings.map((h, i) => (
+        <a key={i} href="#" style={{ paddingLeft: (h.level - top) * 14 }} onClick={(event) => (event.preventDefault(), scrollToHeading(event.currentTarget, h.text))}>
+          {h.text}
+        </a>
+      ))}
+    </nav>
+  )
+}
+
+function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
   const set = useNoteSet()
-  const find = (target: string, kind: "wiki" | "markdown") => {
-    if (set.resolve) return set.resolve(target, kind)
-    const note = resolveLink(target, space, set.notes)
-    return note ? { path: note.path, route: set.routeOf(note), cross: isCrossSpace(target, space) } : undefined
-  }
-  const components: Components = {
-    a({ href = "", children }) {
-      if (href.startsWith("wiki:")) {
-        const raw = decodeURIComponent(href.slice(5))
-        const target = raw.split("#")[0]
-        const found = target ? find(target, "wiki") : undefined
-        const broken = Boolean(target) && !found
+  const { showSecrets } = useContext(MarkdownContext)
+  // Os dois últimos componentes desenham as tags próprias do `remarkBlocks` (callouts).
+  const components = useMemo(() => {
+    const find = (target: string, kind: "wiki" | "markdown") => {
+      if (set.resolve) return set.resolve(target, kind)
+      const note = resolveLink(target, space, set.notes)
+      return note ? { path: note.path, route: set.routeOf(note), cross: isCrossSpace(target, space) } : undefined
+    }
+    return {
+      a({ href = "", children, title }) {
+        if (href.startsWith("wiki:")) {
+          const raw = decodeURIComponent(href.slice(5))
+          const hash = raw.indexOf("#")
+          const target = hash < 0 ? raw : raw.slice(0, hash)
+          const subpath = hash < 0 ? "" : raw.slice(hash + 1)
+          const found = target ? find(target, "wiki") : undefined
+          const broken = Boolean(target) && !found
+          return (
+            <a
+              className={`wikilink ${broken ? "broken" : ""} ${found?.cross ? "cross" : ""}`}
+              title={broken ? `“${target}” ainda não existe — clique para criar` : found?.cross ? `Em outro espaço: ${found.path}` : (found?.path ?? subpath)}
+              data-href={raw}
+              onClick={(event) => {
+                event.preventDefault()
+                if (!target && subpath) scrollToHeading(event.currentTarget, subpath.split("#").at(-1)!.replace(/^\^/, ""))
+                else if (found) navigate(found.route)
+                else if (target) set.onBroken?.(target)
+              }}
+              href="#"
+            >
+              {children}
+            </a>
+          )
+        }
+        if (href.startsWith("tag:")) {
+          const tag = decodeURIComponent(href.slice(4))
+          return (
+            <a
+              className="tag"
+              href="#"
+              onClick={(event) => {
+                event.preventDefault()
+                set.onTag?.(tag)
+              }}
+            >
+              {children}
+            </a>
+          )
+        }
+        if (href.startsWith("embed:")) return <Embed target={decodeURIComponent(href.slice(6))} alias={title ?? undefined} space={space} />
+        // Link markdown para um arquivo do cofre (`[texto](Pasta/Nota.md)`): abre dentro do app.
+        if (!/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith("#")) {
+          let target = href
+          try {
+            target = decodeURIComponent(href)
+          } catch {
+            /* fica como está */
+          }
+          const found = find(target.split("#")[0]!, "markdown")
+          return (
+            <a
+              className={`wikilink ${found ? "" : "broken"} ${found?.cross ? "cross" : ""}`}
+              title={found?.path ?? `“${target}” não existe`}
+              href="#"
+              onClick={(event) => {
+                event.preventDefault()
+                if (found) navigate(found.route)
+              }}
+            >
+              {children}
+            </a>
+          )
+        }
+        if (href.startsWith("#")) return <a href={href}>{children}</a>
         return (
-          <a
-            className={`wikilink ${broken ? "broken" : ""} ${found?.cross ? "cross" : ""}`}
-            title={broken ? `“${target}” ainda não existe — clique para criar` : found?.cross ? `Em outro espaço: ${found.path}` : found?.path}
-            onClick={(event) => {
-              event.preventDefault()
-              if (found) navigate(found.route)
-              else if (target) set.onBroken?.(target)
-            }}
-            href="#"
-          >
+          <a href={href} target="_blank" rel="noreferrer" className="external" title={href}>
             {children}
           </a>
         )
-      }
-      if (href.startsWith("tag:")) {
-        const tag = decodeURIComponent(href.slice(4))
-        return (
-          <a
-            className="tag"
-            href="#"
-            onClick={(event) => {
-              event.preventDefault()
-              set.onTag?.(tag)
-            }}
-          >
-            {children}
-          </a>
-        )
-      }
-      if (href.startsWith("embed:")) {
-        return (
-          <span className="chip cyan">
-            <FileText size={13} /> {children}
-          </span>
-        )
-      }
-      // Link markdown para um arquivo do cofre (`[texto](Pasta/Nota.md)`): abre dentro do app.
-      if (set.resolve && !/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith("#")) {
-        let target = href
+      },
+      img({ src = "", alt, title, width, height, className }) {
+        // Imagens da internet não carregam: o app não faz chamadas de rede fora da mesa.
+        if (/^(https?:)?\/\//i.test(src)) {
+          return (
+            <span className="embed-missing" title={`Imagem da internet não carregada (o app é offline): ${src}`}>
+              <ImageOff size={14} /> {alt || "imagem externa"}
+            </span>
+          )
+        }
+        let path = src
         try {
-          target = decodeURIComponent(href)
+          path = decodeURIComponent(src)
         } catch {
           /* fica como está */
         }
-        const found = find(target.split("#")[0]!, "markdown")
+        if (/^(data|blob):/i.test(src)) return <img src={src} alt={alt} width={width} height={height} className={className} />
+        const found = find(path, "markdown") ?? find(path, "wiki")
+        const url = found && IMAGE_EXT.has(path.slice(path.lastIndexOf(".")).toLowerCase()) ? set.fileUrl?.(found.path) : undefined
+        if (!url) {
+          return (
+            <span className={`embed-missing ${found ? "" : "broken"}`} title={found ? "Anexos aparecem no app desktop" : `“${path}” não está no cofre`}>
+              <ImageOff size={14} /> {alt || path}
+            </span>
+          )
+        }
+        const image = <img src={url} alt={alt} width={width} height={height} className={className} loading="lazy" />
+        if (!title) return image
         return (
-          <a
-            className={`wikilink ${found ? "" : "broken"} ${found?.cross ? "cross" : ""}`}
-            title={found?.path ?? `“${target}” não existe`}
-            href="#"
-            onClick={(event) => {
-              event.preventDefault()
-              if (found) navigate(found.route)
-            }}
-          >
-            {children}
-          </a>
-        )
-      }
-      return <a href={href} target="_blank" rel="noreferrer">{children}</a>
-    },
-    code({ className, children }) {
-      const text = String(children)
-      if (!className && text.startsWith("dice:")) {
-        return (
-          <span className="dice-inline" title="Clique para rolar">
-            <Dices size={13} /> {text.slice(5).trim()}
+          <span className="md-figura">
+            {image}
+            <span className="md-legenda">{title}</span>
           </span>
         )
-      }
-      if (className === "language-mermaid") {
+      },
+      pre({ node, children }) {
+        const code = node?.children.find((child): child is Element => child.type === "element" && child.tagName === "code")
+        const classes = classesOf(code)
+        if (classes.includes("language-math")) return <MathTex tex={textOf(code).trim()} display />
+        if (classes.includes("language-mermaid")) return <MermaidDiagram code={textOf(code)} />
+        if (classes.includes("language-table-of-contents") || classes.includes("language-toc")) return <TableOfContents />
+        return <pre>{children}</pre>
+      },
+      code({ className, children, node }) {
+        const raw = textOf(node?.children[0])
+        if (className?.includes("language-math")) return <MathTex tex={raw} display={false} />
+        if (!className && raw.startsWith("dice:")) {
+          return (
+            <span className="dice-inline" title="Rolagem (sintaxe do Dice Roller)">
+              <Dices size={13} /> {raw.slice(5).trim()}
+            </span>
+          )
+        }
+        return <code className={className}>{children}</code>
+      },
+      "runas-callout"({ node, children }: { node?: Element; children?: ReactNode }) {
+        const props = node?.properties ?? {}
+        const kind = String(props.dataKind ?? "nota")
+        const meta = String(props.dataMeta ?? "")
+        const fold = String(props.dataFold ?? "") as "" | "+" | "-"
+        const titleNode = node?.children.find((child: ElementContent): child is Element => child.type === "element" && child.tagName === "runas-callout-title")
+        const hasTitle = Boolean(titleNode && (textOf(titleNode).trim() || titleNode.children.some((c: ElementContent) => c.type === "element")))
+        const [title, ...body] = Children.toArray(children).filter((child) => !(typeof child === "string" && !child.trim()))
+        const content = body.length ? body : null
+        if (LAYOUT_CALLOUTS.has(kind)) {
+          return (
+            <LayoutCallout kind={kind} title={title} hasTitle={hasTitle} meta={meta}>
+              {content}
+            </LayoutCallout>
+          )
+        }
         return (
-          <span className="row muted">
-            <Workflow size={16} /> Diagrama Mermaid — desenhado na etapa 3b: <code>{text.trim()}</code>
-          </span>
+          <Callout kind={kind} title={title} hasTitle={hasTitle} meta={meta} fold={fold} showSecrets={showSecrets}>
+            {content}
+          </Callout>
         )
-      }
-      if (className === "language-math") {
+      },
+      "runas-callout-title"({ children }: { children?: ReactNode }) {
+        return <>{children}</>
+      },
+      table({ children, className }) {
         return (
-          <span className="row" style={{ justifyContent: "center", fontFamily: "var(--font-book)", fontSize: 18 }}>
-            <Sigma size={16} /> {text.trim().replace(/\\text\{([^}]*)\}/g, "$1")}
-          </span>
+          <div className="table-wrap">
+            <table className={className}>{children}</table>
+          </div>
         )
-      }
-      return <code className={className}>{children}</code>
-    },
-  }
+      },
+    }
+  }, [set, space, showSecrets]) as Components
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw, [rehypeSanitize, schema]]}
+      remarkPlugins={remarkPlugins}
+      rehypePlugins={rehypePlugins}
       remarkRehypeOptions={{ footnoteLabel: "Notas de rodapé", footnoteBackLabel: "Voltar ao texto" }}
       urlTransform={(url) => url}
       components={components}
     >
-      {preprocess(text)}
+      {text}
     </ReactMarkdown>
   )
 }

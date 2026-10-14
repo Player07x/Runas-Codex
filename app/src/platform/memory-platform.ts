@@ -1,12 +1,18 @@
 import type { BackupInfo, Platform, RoomHostInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
 import { ALL_NOTES } from "../lib/links"
+import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
 
 /**
  * Plataforma em memória: o cofre de exemplo do navegador (e dos testes). Aceita gravar, mas nada vai para o disco —
  * recarregar a página volta ao exemplo. Segue as mesmas regras da plataforma real (versão esperada, lixeira…).
  */
 export function createMemoryPlatform(onNotify?: (title: string, body: string) => void): Platform {
-  const files = new Map<string, { content: string; mtime: number }>(ALL_NOTES.map((n) => [n.path, { content: n.markdown, mtime: Date.parse(n.updated) }]))
+  const files = new Map<string, { content: string; mtime: number }>([
+    ...ALL_NOTES.map((n) => [n.path, { content: n.markdown, mtime: Date.parse(n.updated) }] as const),
+    ...Object.entries(DEMO_TEXT_FILES).map(([path, content]) => [path, { content, mtime: Date.parse("2026-10-14T09:00:00") }] as const),
+    // Anexos: só o nome entra no cofre; a imagem vem empacotada com o app (`fileUrl`).
+    ...Object.keys(DEMO_ASSETS).map((path) => [path, { content: "", mtime: Date.parse("2026-10-14T09:00:00") }] as const),
+  ])
   const listeners = new Set<(changes: VaultChange[]) => void>()
   const backups: BackupInfo[] = []
   let vault: VaultInfo = { name: "Mesa do João (exemplo)", path: "Exemplo em memória — nada é salvo", readOnly: false }
@@ -85,6 +91,15 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     },
     async revealBackups() {
       onNotify?.("Backups", "No exemplo em memória os backups não vão para o disco.")
+    },
+    fileUrl(path) {
+      return DEMO_ASSETS[path] ?? null
+    },
+    async openFile(path) {
+      onNotify?.("Anexos", `No exemplo do navegador, “${path}” não abre fora do app.`)
+    },
+    async installSnippet() {
+      return ".obsidian/snippets/runas-codex.css"
     },
     async notify(title, body) {
       onNotify?.(title, body)

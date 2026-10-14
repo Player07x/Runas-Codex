@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
-import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
+import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, Network, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
 import { scopeOf } from "../core/spaces"
 import { dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
 import { vaultRoute } from "../lib/vault-notes"
-import { ConfirmDialog, NameDialog, RenameDialog } from "../components/vault/dialogs"
+import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
+import { fillTemplate, formatDate } from "../core/templates"
+import { GraphPage } from "../components/vault/GraphPage"
 import { NoteView } from "../components/vault/NoteView"
 import { VaultPanels } from "../components/vault/VaultPanels"
 import { Empty, useToast } from "../components/ui"
@@ -81,11 +83,6 @@ function preview(note: IndexedNote): string {
     .slice(0, 80)
 }
 
-const today = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
-
 function uniqueName(index: VaultIndex, folder: string, base: string): string {
   const taken = new Set(index.allFiles().filter((f) => dirname(f.path) === folder).map((f) => noteName(f.path).toLocaleLowerCase("pt-BR")))
   for (let n = 0; ; n++) {
@@ -114,7 +111,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [createdFolders, setCreatedFolders] = useState<string[]>([])
   const fail = useCallback((error: unknown) => toast(error instanceof Error ? error.message : String(error)), [toast])
 
-  const path = noteId && noteId !== "nova" && noteId !== "hoje" ? noteId : undefined
+  const graph = noteId === "grafico"
+  const path = noteId && noteId !== "nova" && noteId !== "hoje" && !graph ? noteId : undefined
   const note = path ? index.note(path) : undefined
   const currentFolder = note ? dirname(note.path) : root.replace(/\/$/, "")
 
@@ -138,10 +136,17 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       const folder = root.replace(/\/$/, "")
       vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => navigate(vaultRoute(created)), fail)
     } else {
-      const folder = hasNotesSpace ? "Notas/Diário" : "Diário"
-      const daily = `${folder}/${today()}.md`
-      if (index.note(daily)) navigate(vaultRoute(daily))
-      else vault.createNote(folder, today(), `# ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n`).then((created) => navigate(vaultRoute(created)), fail)
+      // Como o plugin Notas diárias do Obsidian: pasta, formato do nome e modelo de `.obsidian/daily-notes.json`.
+      const { daily, templates } = vault.config
+      const now = new Date()
+      const relative = formatDate(now, daily.format)
+      const daily_ = joinPath(daily.folder || (hasNotesSpace ? "Notas/Diário" : "Diário"), relative + ".md")!
+      if (index.note(daily_)) navigate(vaultRoute(daily_))
+      else {
+        const template = daily.template ? index.note(daily.template + ".md")?.text : undefined
+        const content = template !== undefined ? fillTemplate(template, { title: noteName(daily_), date: now, config: templates }) : `# ${now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n`
+        vault.createNote(dirname(daily_), noteName(daily_), content).then((created) => navigate(vaultRoute(created)), fail)
+      }
     }
   }, [noteId])
 
@@ -202,12 +207,15 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   }
 
   return (
-    <div className={`workspace ${path ? "" : "show-left"} ${showRight ? "show-right" : ""}`}>
+    <div className={`workspace ${path || graph ? "" : "show-left"} ${showRight ? "show-right" : ""} ${graph ? "no-right" : ""}`}>
       <aside className="pane-left">
         <div className="pane-head">
           <div className="row between">
             <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong>
             <div className="row" style={{ gap: 2 }}>
+              <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
+                <Network size={16} />
+              </button>
               {!readOnly && (
                 <>
                   <button className="icon-btn sm" title="Nota do dia" aria-label="Nota do dia" onClick={() => navigate("/notas/hoje")}>
@@ -286,8 +294,10 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         </div>
       </aside>
 
-      <section className="pane-center">
-        {note ? (
+      <section className={`pane-center ${graph ? "graph" : ""}`}>
+        {graph ? (
+          <GraphPage index={index} root={root} version={vault.version} onBroken={(target) => openBroken(target)} />
+        ) : note ? (
           <NoteView key={note.path} path={note.path} folders={folders} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, note.path)} onTag={onTag} headingRequest={heading} />
         ) : (
           <div className="page">
@@ -296,7 +306,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         )}
       </section>
 
-      <aside className="pane-right">
+      <aside className="pane-right" hidden={graph}>
         {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} />}
       </aside>
 
@@ -307,14 +317,16 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       )}
 
       {dialog?.kind === "note" && (
-        <NameDialog
-          title="Nova nota"
-          label="Nome da nota"
+        <NewNoteDialog
           initial={uniqueName(index, dialog.folder, "Sem título")}
           hint={`Em: ${dialog.folder || "raiz do cofre"}`}
-          confirmLabel="Criar"
+          templates={vault.templates().map((t) => t.path)}
           onClose={() => setDialog(null)}
-          onConfirm={async (name) => navigate(vaultRoute(await vault.createNote(dialog.folder, name)))}
+          onConfirm={async (name, templatePath) => {
+            const template = templatePath ? index.note(templatePath)?.text : undefined
+            const content = template !== undefined ? fillTemplate(template, { title: name, date: new Date(), config: vault.config.templates }) : ""
+            navigate(vaultRoute(await vault.createNote(dialog.folder, name, content)))
+          }}
         />
       )}
       {dialog?.kind === "folder" && (

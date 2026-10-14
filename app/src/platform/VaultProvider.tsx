@@ -2,8 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { caseCollision, nameProblem } from "../core/names"
 import { setProperty as setPropertyText, type PropertyValue } from "../core/properties"
 import { planFolderRename, planRename, type RenamePlan } from "../core/rename"
+import { CONFIG_FILES, obsidianConfig, type ObsidianConfig } from "../core/templates"
 import { extname, joinPath } from "../core/text"
-import { VaultIndex } from "../core/vault-index"
+import { VaultIndex, type IndexedNote } from "../core/vault-index"
 import { platform } from "./index"
 import type { Platform, VaultChange, VaultEntry, VaultInfo } from "./platform"
 
@@ -19,6 +20,10 @@ export interface VaultState {
   index: VaultIndex | null
   /** Muda a cada alteração do índice (para `useMemo`). */
   version: number
+  /** Configurações lidas do `.obsidian` (modelos e nota do dia). */
+  config: ObsidianConfig
+  /** Notas da pasta de modelos (a configurada no Obsidian, ou `Templates/`/`Modelos/`). */
+  templates(): IndexedNote[]
   loading: boolean
   error?: string
   choose(): Promise<void>
@@ -56,6 +61,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const [info, setInfo] = useState<VaultInfo | null>(null)
   const [index, setIndex] = useState<VaultIndex | null>(null)
   const [version, setVersion] = useState(0)
+  const [config, setConfig] = useState<ObsidianConfig>(() => obsidianConfig({}))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
   const indexRef = useRef<VaultIndex | null>(null)
@@ -72,6 +78,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true)
     try {
+      setConfig(obsidianConfig(await platform.readTexts([...CONFIG_FILES]).catch(() => ({}))))
       const loaded = await loadIndex()
       indexRef.current = loaded
       setIndex(loaded)
@@ -198,13 +205,23 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [requireIndex, save],
   )
 
+  const templates = useCallback((): IndexedNote[] => {
+    const current = indexRef.current
+    if (!current) return []
+    const folders = config.templates.folder ? [config.templates.folder] : ["Templates", "Modelos", "Notas/Templates", "Notas/Modelos"]
+    return current
+      .allNotes()
+      .filter((note) => folders.some((folder) => note.path.startsWith(folder + "/")))
+      .sort((a, b) => a.path.localeCompare(b.path, "pt-BR"))
+  }, [config])
+
   const choose = useCallback(async () => open(await platform.chooseVault()), [open])
   const create = useCallback(async () => open(await platform.createVault()), [open])
   const setWritable = useCallback(async (writable: boolean) => setInfo(await platform.setWritable(writable)), [])
   const reload = useCallback(async () => open(await platform.vault()), [open])
 
   return (
-    <VaultContext.Provider value={{ platform, info, index, version, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty }}>
+    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty }}>
       {children}
     </VaultContext.Provider>
   )

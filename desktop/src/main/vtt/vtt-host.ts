@@ -11,9 +11,9 @@ import { assetResponse, importAsset } from "./world-assets"
 import { clearLog, deleteDocument, listDocuments, putDocument } from "./world-documents"
 import { WorldStore } from "./world-store"
 
-/** Precisa rodar antes de `app.ready`: o esquema dos assets se comporta como https (o PixiJS exige para texturas). */
-export function registerAssetScheme(): void {
-  protocol.registerSchemesAsPrivileged([{ scheme: ASSET_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }])
+/** Registrado antes de `app.ready`: o esquema dos assets se comporta como https (o PixiJS exige para texturas). */
+export function assetSchemePrivilege() {
+  return { scheme: ASSET_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }
 }
 
 type Handle = (channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown) => void

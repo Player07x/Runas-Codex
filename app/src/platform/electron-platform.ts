@@ -1,4 +1,4 @@
-import type { RunasCodexBridge } from "./bridge"
+import { VAULT_FILE_SCHEME, type RunasCodexBridge } from "./bridge"
 import type { Platform } from "./platform"
 
 /** Plataforma do app desktop: tudo passa pela ponte `window.runasCodex` do preload. */
@@ -20,6 +20,9 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     backup: () => vault.backup(),
     listBackups: () => vault.listBackups(),
     revealBackups: () => vault.revealBackups(),
+    fileUrl: (path) => `${VAULT_FILE_SCHEME}://cofre/${path.split("/").map(encodeURIComponent).join("/")}`,
+    openFile: (path) => vault.openFile(path),
+    installSnippet: (css) => vault.installSnippet(css),
     async notify(title, body) {
       new Notification(title, { body })
     },

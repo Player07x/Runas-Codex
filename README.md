@@ -10,11 +10,13 @@ notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **No
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
 
-Fase atual: **etapas 3a e 4 concluídas**. O módulo **Notas** cria, edita, renomeia (atualizando os links do cofre) e
-manda para a lixeira notas de um cofre compatível com o Obsidian, com backups e sem regravar o que não mudou
-([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O **VTT** tem mesas no cofre, a mesa do mestre (cenas, tokens, paredes,
+Fase atual: **etapas 3a, 4 e 3b concluídas**. O módulo **Notas** cria, edita, renomeia (atualizando os links do
+cofre) e manda para a lixeira notas de um cofre compatível com o Obsidian, com backups e sem regravar o que não mudou
+([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O editor tem os três modos do Obsidian (leitura, live preview e
+código), todos os formatadores do dialeto, transclusão, anexos, modelos e o gráfico em WebGL
+([ADR 0007](docs/adr/0007-editor-completo.md)). O **VTT** tem mesas no cofre, a mesa do mestre (cenas, tokens, paredes,
 visão, névoa, luz, regiões, áudio) e a sala para os jogadores na rede local ou pela internet
-([ADR 0006](docs/adr/0006-mesa-vtt.md)). Agenda, Wiki, Campanhas e Livros ainda usam dados de exemplo.
+([ADR 0006](docs/adr/0006-mesa-vtt.md)). Wiki, Campanhas e Livros ainda usam dados de exemplo.
 
 **Ver a versão web (dados de exemplo) sem instalar nada:** https://player07x.github.io/Runas-Codex/ (abre no PC e no celular).
 
@@ -61,6 +63,10 @@ Abre o Runas-Codex numa janela própria (Electron). Em **Configurações › Cof
 com os espaços (`Notas/`, `Wikis/`, `Campanhas/`…); **Abrir pasta…** abre um cofre do Obsidian que já existe, em
 **somente leitura** até você ligar **Permitir gravação** (um backup é feito antes). No navegador, o módulo Notas usa um
 cofre de exemplo em memória: dá para editar, mas nada é salvo.
+
+A nota **Notas/Formatadores.md** do cofre de teste (`desktop/tests/cofre-exemplo`) mostra todos os formatadores. Para
+o Obsidian mostrar callouts, colunas e capitulares como o app, use **Configurações › Compatibilidade com o Obsidian ›
+Snippet runas-codex.css › Instalar** e ligue o snippet no Obsidian (Aparência › Trechos de CSS).
 
 Outros comandos: `npm run typecheck`, `npm test` e `npm run desktop:build`.
 Teste rápido sem abrir janela: `npm run smoke -w @runas-codex/desktop -- --vault=/caminho/do/cofre` (com `--write`, testa

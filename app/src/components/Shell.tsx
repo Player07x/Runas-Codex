@@ -41,7 +41,7 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
   const [first, second, third, fourth] = route
   const item = [...NAV, ...TOOLS].find((n) => n.match === (first ?? ""))
   const crumbs: { label: string; to?: string }[] = [{ label: item?.label ?? "Início", to: item?.route }]
-  if (first === "notas" && second) crumbs.push({ label: second === "nova" ? "Nova nota" : second === "hoje" ? "Nota do dia" : noteName(second) })
+  if (first === "notas" && second) crumbs.push({ label: second === "nova" ? "Nova nota" : second === "hoje" ? "Nota do dia" : second === "grafico" ? "Gráfico" : noteName(second) })
   if (first === "wiki") {
     crumbs.push({ label: WIKI.title, to: "/wiki" })
     const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapa", relacoes: "Relações", grafico: "Gráfico" }

@@ -13,6 +13,8 @@ export const IPC = {
   vaultBackup: "vault:backup",
   vaultListBackups: "vault:list-backups",
   vaultRevealBackups: "vault:reveal-backups",
+  vaultOpenFile: "vault:open-file",
+  vaultInstallSnippet: "vault:install-snippet",
   /** Do processo principal para a janela: mudanças feitas fora do app. */
   vaultChanged: "vault:changed",
 } as const

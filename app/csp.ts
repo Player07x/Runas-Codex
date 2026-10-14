@@ -9,10 +9,12 @@ export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  // `vtt-asset:` = mapas, tokens e áudio da mesa aberta (desktop); `blob:` = arquivos importados na prévia do navegador.
-  "img-src 'self' data: blob: vtt-asset:",
-  "media-src 'self' blob: vtt-asset:",
-  "font-src 'self'",
+  // `vtt-asset:` = mapas, tokens e áudio da mesa aberta (desktop); `vault-file:` = anexos das notas (desktop);
+  // `blob:` = arquivos importados na prévia do navegador.
+  "img-src 'self' data: blob: vtt-asset: vault-file:",
+  "media-src 'self' blob: vtt-asset: vault-file:",
+  // `data:`: o Vite embute as fontes pequenas do KaTeX no CSS.
+  "font-src 'self' data:",
   "connect-src 'self' blob: vtt-asset:",
   // O PixiJS decodifica imagens num worker criado a partir de `blob:`.
   "worker-src 'self' blob:",

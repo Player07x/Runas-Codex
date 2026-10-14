@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react"
-import { FileText, Link2, Search } from "lucide-react"
+import { FileText, LayoutTemplate, Link2, Search } from "lucide-react"
 import { planRename, renameProblem } from "../../core/rename"
 import { scopeOf } from "../../core/spaces"
 import { dirname, extname, noteName } from "../../core/text"
@@ -118,6 +118,63 @@ export function NameDialog({ title, label, initial = "", hint, confirmLabel, onC
       </label>
       {hint && <span className="small muted">{hint}</span>}
     </ActionDialog>
+  )
+}
+
+/** Nota nova: nome e, se o cofre tem modelos, qual usar. */
+export function NewNoteDialog({ initial, hint, templates, onConfirm, onClose }: { initial: string; hint: string; templates: string[]; onConfirm(name: string, template: string | null): Promise<void>; onClose(): void }) {
+  const [name, setName] = useState(initial)
+  const [template, setTemplate] = useState("")
+  return (
+    <ActionDialog title="Nova nota" confirmLabel="Criar" confirm={() => onConfirm(name.trim(), template || null)} onClose={onClose} disabled={!name.trim()}>
+      <label className="field">
+        <span>Nome da nota</span>
+        <input className="input" autoFocus aria-label="Nome da nota" value={name} onChange={(event) => setName(event.target.value)} />
+      </label>
+      {templates.length > 0 && (
+        <label className="field">
+          <span>Modelo</span>
+          <select className="select" value={template} onChange={(event) => setTemplate(event.target.value)} aria-label="Modelo da nota">
+            <option value="">Nota em branco</option>
+            {templates.map((path) => (
+              <option key={path} value={path}>
+                {noteName(path)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <span className="small muted">{hint}</span>
+    </ActionDialog>
+  )
+}
+
+/** Escolher um modelo para inserir na nota aberta. */
+export function TemplatePicker({ templates, folder, onPick, onClose }: { templates: string[]; folder: string; onPick(path: string): void; onClose(): void }) {
+  return (
+    <Modal title="Inserir modelo" onClose={onClose}>
+      <div className="list">
+        {templates.length === 0 && (
+          <span className="muted small">
+            Nenhum modelo. Crie notas em <code>{folder || "Templates/"}</code> (a pasta de modelos do Obsidian) com variáveis como <code>{"{{título}}"}</code>, <code>{"{{data}}"}</code> e{" "}
+            <code>{"{{hora}}"}</code>.
+          </span>
+        )}
+        {templates.map((path) => (
+          <button
+            key={path}
+            className="list-item"
+            onClick={() => {
+              onPick(path)
+              onClose()
+            }}
+          >
+            <LayoutTemplate size={15} />
+            <span className="grow truncate">{noteName(path)}</span>
+          </button>
+        ))}
+      </div>
+    </Modal>
   )
 }
 
