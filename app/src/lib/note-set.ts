@@ -25,6 +25,12 @@ export interface NoteSet {
   onBroken?: (target: string) => void
   /** Clique numa tag. */
   onTag?: (tag: string) => void
+  /** Texto de uma nota (para a transclusão `![[nota]]`), pelo caminho que `resolve` devolveu. */
+  readNote?: (path: string) => string | undefined
+  /** Endereço que a interface carrega para um anexo do cofre (imagem, áudio, vídeo); sem isto, só o nome aparece. */
+  fileUrl?: (path: string) => string | undefined
+  /** Abre um anexo no programa padrão do sistema (PDF, por exemplo). */
+  openFile?: (path: string) => void
 }
 
 export const NoteSetContext = createContext<NoteSet>({ notes: ALL_NOTES, routeOf: routeOfNote })

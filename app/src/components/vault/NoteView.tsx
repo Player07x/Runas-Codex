@@ -124,7 +124,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
     setTimeout(() => void flush())
   }
 
-  const noteSet = useMemo(() => vaultNoteSet(index, path, { onBroken: onCreate, onTag }), [index, path, onCreate, onTag, vault.version])
+  const noteSet = useMemo(() => vaultNoteSet(index, path, { onBroken: onCreate, onTag }, vault.platform), [index, path, onCreate, onTag, vault.version, vault.platform])
   const suggestLinks = useCallback(
     (query: string) => {
       const root = scopeOf(path).root

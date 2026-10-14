@@ -1,0 +1,88 @@
+/*
+ * Runas-Codex — snippet para o Obsidian mostrar o dialeto Markdown do Runas-Codex como o app (docs/02, seção 5).
+ * Instalado pelo app em .obsidian/snippets/runas-codex.css. Para ligar: Obsidian › Configurações › Aparência ›
+ * Trechos de CSS › runas-codex. Não muda nada nos arquivos das notas.
+ */
+
+/* Callouts do dialeto (os do Obsidian continuam com as cores dele) */
+.callout[data-callout="nota"] { --callout-color: 141, 154, 219; --callout-icon: lucide-pencil; }
+.callout[data-callout="aviso"] { --callout-color: 214, 160, 72; --callout-icon: lucide-triangle-alert; }
+.callout[data-callout="perigo"] { --callout-color: 222, 103, 77; --callout-icon: lucide-zap; }
+.callout[data-callout="dica"] { --callout-color: 96, 168, 132; --callout-icon: lucide-flame; }
+.callout[data-callout="segredo"] { --callout-color: 150, 120, 220; --callout-icon: lucide-lock; }
+.callout[data-callout="descritivo"],
+.callout[data-callout="leia-em-voz-alta"] {
+  --callout-color: 214, 160, 72;
+  --callout-icon: lucide-scroll-text;
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 1.05em;
+}
+.callout[data-callout="barra-lateral"] {
+  --callout-color: 105, 121, 156;
+  --callout-icon: lucide-panel-right;
+  float: right;
+  width: min(42%, 320px);
+  margin: 0 0 12px 16px;
+  font-size: 0.92em;
+}
+.callout[data-callout="statblock"] {
+  --callout-color: 222, 103, 77;
+  --callout-icon: lucide-swords;
+  border-top: 2px solid rgb(var(--callout-color));
+  border-bottom: 2px solid rgb(var(--callout-color));
+}
+
+/* Colunas e bloco largo: callouts sem a caixa */
+.callout[data-callout="colunas"],
+.callout[data-callout="largo"] {
+  padding: 0;
+  border: 0;
+  background: none;
+  mix-blend-mode: normal;
+}
+.callout[data-callout="colunas"] > .callout-title,
+.callout[data-callout="largo"] > .callout-title { display: none; }
+.callout[data-callout="colunas"] > .callout-content {
+  column-count: 2;
+  column-gap: 28px;
+  column-rule: 1px solid var(--background-modifier-border);
+}
+.callout[data-callout="colunas"][data-callout-metadata="3"] > .callout-content { column-count: 3; }
+.callout[data-callout="colunas"][data-callout-metadata="4"] > .callout-content { column-count: 4; }
+.callout[data-callout="largo"] { column-span: all; }
+
+/* Quebras */
+.quebra-coluna { break-after: column; height: 0; }
+.quebra-pagina { break-after: page; height: 0; margin: 1.4em 0; border-top: 1px dashed var(--background-modifier-border); }
+
+/* Tipografia */
+.capitular {
+  float: left;
+  margin: 0.06em 0.08em 0 0;
+  font-family: "Cinzel", "EB Garamond", serif;
+  font-size: 3.4em;
+  line-height: 0.82;
+  color: #b8862b;
+}
+.versalete { font-variant: small-caps; letter-spacing: 0.03em; }
+.centro { text-align: center; }
+.direita { text-align: right; }
+.justificado { text-align: justify; }
+
+/* Separador decorativo */
+hr.ornamento { height: auto; border: 0; background: none; text-align: center; color: #b8862b; }
+hr.ornamento::before { content: "✦ ✦ ✦"; letter-spacing: 0.6em; }
+
+/* Tabelas */
+table.listrada tr:nth-child(odd) td { background: var(--background-secondary); }
+table.compacta th, table.compacta td { padding: 3px 8px; }
+table.destaque th { background: rgba(214, 160, 72, 0.22); }
+td[colspan], th[colspan] { text-align: center; }
+
+/* Figuras numeradas e posição de imagem */
+.markdown-rendered, .markdown-source-view { counter-reset: figura; }
+figure { margin: 0; text-align: center; }
+figcaption { margin-top: 4px; font-size: 0.88em; font-style: italic; opacity: 0.8; }
+figcaption::before { counter-increment: figura; content: "Figura " counter(figura) " — "; font-style: normal; font-weight: 600; }
+.flutuar-esquerda { float: left; max-width: 45%; margin: 4px 16px 8px 0; }
+.flutuar-direita { float: right; max-width: 45%; margin: 4px 0 8px 16px; }

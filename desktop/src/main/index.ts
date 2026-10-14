@@ -1,17 +1,19 @@
 import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
+import { app, BrowserWindow, ipcMain, protocol, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
-import { registerAssetScheme, VttHost } from "./vtt/vtt-host"
+import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
+import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
+import { assetSchemePrivilege, VttHost } from "./vtt/vtt-host"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
 if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(app.getPath("appData"), "runas-codex"))
 
-// Antes de "ready": imagens e áudio da mesa vêm por `vtt-asset://`.
-registerAssetScheme()
+// Antes de "ready" (uma chamada só): imagens e áudio da mesa vêm por `vtt-asset://`; anexos das notas, por `vault-file://`.
+protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege()])
 
 /**
  * `--smoke [--vault=<pasta>] [--write] [--shot=<arquivo.png>] [--hold=<s>]`: abre, confere a ponte, o cofre e o leitor de Notas,
@@ -61,6 +63,8 @@ function registerIpc(): void {
   handle(IPC.vaultBackup, () => vault.backup())
   handle(IPC.vaultListBackups, () => vault.listBackups())
   handle(IPC.vaultRevealBackups, () => vault.revealBackups())
+  handle(IPC.vaultOpenFile, (_event, path) => vault.openFile(text(path, "caminho")))
+  handle(IPC.vaultInstallSnippet, (_event, css) => vault.installSnippet(text(css, "snippet")))
   vtt.register(handle)
 }
 
@@ -119,6 +123,7 @@ void app.whenReady().then(async () => {
   else await vault.load()
   registerIpc()
   vtt.registerProtocol()
+  protocol.handle(VAULT_FILE_SCHEME, (request) => vaultFileResponse(vault.rootPath, request.url, request.headers.get("range")))
   mainWindow = createMainWindow()
   if (smoke) void runSmoke(mainWindow)
   app.on("activate", () => {

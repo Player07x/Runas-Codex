@@ -70,6 +70,12 @@ export interface Platform {
   listBackups(): Promise<BackupInfo[]>
   /** Abre a pasta dos backups no gerenciador de arquivos. */
   revealBackups(): Promise<void>
+  /** Endereço que a interface carrega para um anexo do cofre (imagem, áudio, vídeo); `null` se não dá para mostrar. */
+  fileUrl(path: string): string | null
+  /** Abre um anexo (PDF, mídia) no programa padrão do sistema. */
+  openFile(path: string): Promise<void>
+  /** Instala o snippet `runas-codex.css` no `.obsidian/snippets` do cofre; devolve o caminho gravado. */
+  installSnippet(css: string): Promise<string>
   notify(title: string, body: string, at?: Date): Promise<void>
   hostRoom(mesaId: string): Promise<RoomHostInfo>
   stopRoom(): Promise<void>

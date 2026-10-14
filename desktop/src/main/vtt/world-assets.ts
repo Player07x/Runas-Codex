@@ -73,7 +73,7 @@ export function parseRange(header: string | null | undefined, size: number): { s
 }
 
 /** Corpo lido do disco sob demanda, para não carregar um mapa ou uma música inteira em memória. */
-function fileStream(file: string, start?: number, end?: number): ReadableStream<Uint8Array> {
+export function fileStream(file: string, start?: number, end?: number): ReadableStream<Uint8Array> {
   return Readable.toWeb(createReadStream(file, { start, end })) as ReadableStream<Uint8Array>
 }
 

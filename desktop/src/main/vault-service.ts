@@ -4,6 +4,7 @@ import { basename, join } from "node:path"
 import { app, dialog, shell, type BrowserWindow, type OpenDialogOptions } from "electron"
 import { IPC, type BackupInfo, type VaultChange, type VaultEntry, type VaultInfo } from "../shared/ipc"
 import { backupFolder, backupVault, createFolder, createVault, listBackups, listVault, readTexts, renamePath, trashPath, writeTextSafe } from "./vault"
+import { installSnippet, mediaFile } from "./vault-files"
 import { VaultWatcher } from "./watcher"
 
 interface Config {
@@ -208,6 +209,18 @@ export class VaultService {
 
   listBackups(): Promise<BackupInfo[]> {
     return this.path ? listBackups(this.backupsDir) : Promise.resolve([])
+  }
+
+  /** Abre um anexo de mídia ou PDF no programa padrão (nunca executáveis: só os tipos de `VAULT_FILE_TYPES`). */
+  async openFile(path: string): Promise<void> {
+    const file = await mediaFile(this.root(), path)
+    if (!file) throw new Error(`“${path}” não é um anexo que o app abre.`)
+    const error = await shell.openPath(file)
+    if (error) throw new Error(error)
+  }
+
+  installSnippet(css: string): Promise<string> {
+    return installSnippet(this.writableRoot(), css)
   }
 
   async revealBackups(): Promise<void> {

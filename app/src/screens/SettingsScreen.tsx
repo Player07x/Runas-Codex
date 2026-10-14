@@ -3,6 +3,7 @@ import { Archive, Bell, FolderOpen, Keyboard, Lock, Network, Palette, Plus, Refr
 import { Switch, useProtoAction, useToast } from "../components/ui"
 import { useVault } from "../platform/VaultProvider"
 import type { BackupInfo } from "../platform/platform"
+import snippetCss from "../markdown/runas-codex.css?raw"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -98,8 +99,15 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <Row title="Pasta de anexos" hint="Lida de .obsidian/app.json">
             <input className="input mono small" defaultValue="./Anexos" />
           </Row>
-          <Row title="Instalar snippet runas-codex.css" hint="Faz callouts, colunas e capitulares aparecerem iguais no Obsidian">
-            <Switch on label="Snippet" />
+          <Row title="Snippet runas-codex.css" hint="Faz callouts, colunas e capitulares aparecerem iguais no Obsidian. Depois de instalar, ligue em Obsidian › Aparência › Trechos de CSS.">
+            <button
+              className="btn sm"
+              disabled={!desktop || !vault.info || vault.info.readOnly || busy}
+              title={!desktop ? "Disponível no app desktop" : vault.info?.readOnly ? "Libere a gravação no cofre primeiro" : "Grava .obsidian/snippets/runas-codex.css"}
+              onClick={run(() => vault.platform.installSnippet(snippetCss).then((path) => toast(`Snippet gravado em ${path}`)))}
+            >
+              Instalar
+            </button>
           </Row>
           <Row title="Avisar quando um link resolveria diferente no Obsidian">
             <Switch on label="Aviso de link" />

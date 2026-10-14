@@ -33,8 +33,32 @@ export const SMOKE_SCRIPT = `(async () => {
     result.wikilinks = [...document.querySelectorAll(".editor-body .wikilink")].map((el) => (el.classList.contains("broken") ? "✗ " : "✓ ") + el.textContent)
   }
 
+  // Nota dos formatadores no modo leitura, com a CSP de verdade: KaTeX, Mermaid, anexos por vault-file:// e transclusão.
+  const formatters = entries.find((e) => e.path.endsWith("Formatadores.md"))
+  if (formatters) {
+    location.hash = "/notas/" + encodeURIComponent(formatters.path)
+    await until(() => document.querySelector(".editor-status")?.getAttribute("title") === formatters.path)
+    ;(await until(() => [...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))))?.click()
+    await until(() => document.querySelector(".editor-body .md .katex") && document.querySelector(".editor-body .md .mermaid svg"), 100)
+    await wait(500)
+    const md = document.querySelector(".editor-body .md")
+    const images = md ? [...md.querySelectorAll("img")] : []
+    // As imagens são "lazy": fora da tela não carregam sozinhas.
+    for (const img of images) img.loading = "eager"
+    await until(() => images.every((img) => img.complete), 50)
+    result.formatters = {
+      katex: md ? md.querySelectorAll(".katex").length : 0,
+      mermaid: md ? md.querySelectorAll(".mermaid svg").length : 0,
+      images: images.length,
+      imagesLoaded: images.filter((img) => img.complete && img.naturalWidth > 0).length,
+      embeds: md ? md.querySelectorAll(".embed-note").length : 0,
+      footnotesLast: md ? md.lastElementChild?.classList.contains("footnotes") === true : false,
+    }
+  }
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
+    result.snippet = await errorOf(bridge.vault.installSnippet("x"))
     return result
   }
   // Gravações (só numa cópia temporária do cofre).
@@ -47,10 +71,14 @@ export const SMOKE_SCRIPT = `(async () => {
   result.trash = await errorOf(bridge.vault.trash("Notas/Smoke.md"))
   result.trashed = !(await bridge.vault.list()).some((e) => e.path === "Notas/Smoke.md")
   result.backup = (await bridge.vault.backup()).files
+  await bridge.vault.installSnippet("/* smoke */")
+  result.snippet = (await bridge.vault.read([".obsidian/snippets/runas-codex.css"]))[".obsidian/snippets/runas-codex.css"] === "/* smoke */" ? "OK" : "não gravou"
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
     location.hash = "/notas/" + encodeURIComponent(aldren.path)
+    // Espera a nota trocar (o botão da nota anterior ainda pode estar na tela).
+    await until(() => document.querySelector(".editor-status")?.getAttribute("title") === aldren.path)
     const button = await until(() => document.querySelector("[aria-label='Renomear nota']"))
     button.click()
     const input = await until(() => document.querySelector("[aria-label='Novo nome']"))
@@ -124,8 +152,17 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.backlinks.length > 0 &&
     String(result.escape).startsWith("Caminho fora do cofre") &&
     String(result.escapeAbs).startsWith("Caminho fora do cofre")
-  if (!readOk) return false
-  if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura")
+  const formatters = result.formatters as Record<string, unknown> | undefined
+  const formattersOk =
+    !!formatters &&
+    Number(formatters.katex) > 0 &&
+    Number(formatters.mermaid) > 0 &&
+    Number(formatters.images) > 0 &&
+    formatters.imagesLoaded === formatters.images &&
+    Number(formatters.embeds) > 0 &&
+    formatters.footnotesLast === true
+  if (!readOk || !formattersOk) return false
+  if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (
     result.create === "OK" &&
@@ -136,6 +173,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.trash === "OK" &&
     result.trashed === true &&
     typeof result.backup === "number" &&
+    result.snippet === "OK" &&
     result.renamed === true &&
     links.length > 0 &&
     links.every((link) => link.startsWith("[[Aldren Vael")) &&

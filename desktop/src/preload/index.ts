@@ -34,6 +34,8 @@ const bridge: RunasCodexBridge = {
     backup: () => invoke(IPC.vaultBackup),
     listBackups: () => invoke(IPC.vaultListBackups),
     revealBackups: () => invoke(IPC.vaultRevealBackups),
+    openFile: (path) => invoke(IPC.vaultOpenFile, path),
+    installSnippet: (css) => invoke(IPC.vaultInstallSnippet, css),
   },
   vtt: {
     listWorlds: () => invoke(VTT.listWorlds),
