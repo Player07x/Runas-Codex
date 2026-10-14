@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
-import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
+import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, Network, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
 import { scopeOf } from "../core/spaces"
 import { dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
@@ -7,6 +7,7 @@ import { href, navigate } from "../lib/router"
 import { vaultRoute } from "../lib/vault-notes"
 import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
 import { fillTemplate, formatDate } from "../core/templates"
+import { GraphPage } from "../components/vault/GraphPage"
 import { NoteView } from "../components/vault/NoteView"
 import { VaultPanels } from "../components/vault/VaultPanels"
 import { Empty, useToast } from "../components/ui"
@@ -110,7 +111,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [createdFolders, setCreatedFolders] = useState<string[]>([])
   const fail = useCallback((error: unknown) => toast(error instanceof Error ? error.message : String(error)), [toast])
 
-  const path = noteId && noteId !== "nova" && noteId !== "hoje" ? noteId : undefined
+  const graph = noteId === "grafico"
+  const path = noteId && noteId !== "nova" && noteId !== "hoje" && !graph ? noteId : undefined
   const note = path ? index.note(path) : undefined
   const currentFolder = note ? dirname(note.path) : root.replace(/\/$/, "")
 
@@ -205,12 +207,15 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   }
 
   return (
-    <div className={`workspace ${path ? "" : "show-left"} ${showRight ? "show-right" : ""}`}>
+    <div className={`workspace ${path || graph ? "" : "show-left"} ${showRight ? "show-right" : ""} ${graph ? "no-right" : ""}`}>
       <aside className="pane-left">
         <div className="pane-head">
           <div className="row between">
             <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong>
             <div className="row" style={{ gap: 2 }}>
+              <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
+                <Network size={16} />
+              </button>
               {!readOnly && (
                 <>
                   <button className="icon-btn sm" title="Nota do dia" aria-label="Nota do dia" onClick={() => navigate("/notas/hoje")}>
@@ -289,8 +294,10 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         </div>
       </aside>
 
-      <section className="pane-center">
-        {note ? (
+      <section className={`pane-center ${graph ? "graph" : ""}`}>
+        {graph ? (
+          <GraphPage index={index} root={root} version={vault.version} onBroken={(target) => openBroken(target)} />
+        ) : note ? (
           <NoteView key={note.path} path={note.path} folders={folders} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, note.path)} onTag={onTag} headingRequest={heading} />
         ) : (
           <div className="page">
@@ -299,7 +306,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         )}
       </section>
 
-      <aside className="pane-right">
+      <aside className="pane-right" hidden={graph}>
         {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} />}
       </aside>
 

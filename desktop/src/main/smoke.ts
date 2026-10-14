@@ -56,6 +56,12 @@ export const SMOKE_SCRIPT = `(async () => {
     }
   }
 
+  // Gráfico global em WebGL (PixiJS) com a CSP de verdade.
+  location.hash = "/notas/grafico"
+  const graphCanvas = await until(() => document.querySelector(".graph-page canvas"))
+  await wait(1500)
+  result.graph = { canvas: Boolean(graphCanvas), stats: document.querySelector(".graph-toolbar .small")?.textContent ?? "" }
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -169,7 +175,9 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     formatters.imagesLoaded === formatters.images &&
     Number(formatters.embeds) > 0 &&
     formatters.footnotesLast === true
-  if (!readOk || !formattersOk) return false
+  const graph = result.graph as { canvas?: boolean; stats?: string } | undefined
+  const graphOk = graph?.canvas === true && /^[1-9]\d* nós/.test(graph.stats ?? "")
+  if (!readOk || !formattersOk || !graphOk) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (

@@ -8,6 +8,7 @@ import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
 import { Compartment, EditorState } from "@codemirror/state"
 import { EditorView, keymap, placeholder } from "@codemirror/view"
 import { tags } from "@lezer/highlight"
+import { parseFrontmatter } from "../../core/parse"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import { livePreview as livePreviewExtension, livePreviewHost, type LivePreviewHost } from "./live-preview"
 
@@ -100,6 +101,8 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     }
     const state = EditorState.create({
       doc: value,
+      // O cursor começa depois do frontmatter (no live preview, as propriedades aparecem desenhadas).
+      selection: { anchor: parseFrontmatter(value)?.end ?? 0 },
       extensions: [
         history(),
         markdown({ extensions: [GFM, obsidianSyntax] }),

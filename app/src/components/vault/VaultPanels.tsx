@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { AlertTriangle, ArrowUpRight, Link2, ListTree, Network, Plus, Tags, Trash2, Unlink } from "lucide-react"
+import { buildGraph } from "../../core/graph-data"
 import type { PropertyValue } from "../../core/properties"
 import { scopeOf } from "../../core/spaces"
 import { noteName } from "../../core/text"
@@ -7,6 +8,7 @@ import type { VaultIndex } from "../../core/vault-index"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { useToast } from "../ui"
+import { DEFAULT_FORCES, GraphView } from "./GraphView"
 
 type Tab = "links" | "props" | "outline" | "graph"
 
@@ -42,7 +44,7 @@ export function VaultPanels(props: Props) {
         {tab === "links" && <LinksPanel {...props} />}
         {tab === "props" && <PropertiesPanel {...props} />}
         {tab === "outline" && <OutlinePanel {...props} />}
-        {tab === "graph" && <VaultGraph index={props.index} path={props.path} />}
+        {tab === "graph" && <VaultGraph index={props.index} path={props.path} onCreate={props.onCreate} />}
       </div>
     </div>
   )
@@ -184,39 +186,42 @@ function OutlinePanel({ index, path, onHeading }: Props) {
 }
 
 /** Vizinhança da nota (profundidade 1): saídas e backlinks. */
-export function VaultGraph({ index, path, size = 260 }: { index: VaultIndex; path: string; size?: number }) {
-  const out = index.outgoing(path).map((r) => r.dest).filter((d): d is string => Boolean(d) && d !== path)
-  const back = index.backlinks(path).map((b) => b.from)
-  const neighbors = [...new Set([...out, ...back])]
-  const c = size / 2
-  const r = size / 2 - 40
+/** Gráfico local da nota aberta (WebGL), com a profundidade escolhida. Notas de outro espaço aparecem como portais. */
+export function VaultGraph({ index, path, onCreate }: { index: VaultIndex; path: string; onCreate(target: string): void }) {
+  const [depth, setDepth] = useState(1)
+  const [fit, setFit] = useState(0)
   const root = scopeOf(path).root
+  const data = useMemo(() => buildGraph(index, { root, filter: "", showOrphans: true, showAttachments: false, showMissing: true, groups: [], center: path, depth }), [index, path, root, depth, index.size])
   return (
     <div className="stack">
-      <span className="eyebrow">Gráfico local · profundidade 1</span>
-      <svg viewBox={`0 0 ${size} ${size}`} width="100%" style={{ background: "var(--bg)", borderRadius: 10, border: "1px solid var(--line)" }}>
-        {neighbors.map((n, i) => {
-          const a = (i / neighbors.length) * Math.PI * 2 - Math.PI / 2
-          const x = c + r * Math.cos(a)
-          const y = c + r * Math.sin(a)
-          const cross = scopeOf(n).root !== root
-          const title = noteName(n)
-          return (
-            <g key={n} style={{ cursor: "pointer" }} onClick={() => navigate(vaultRoute(n))}>
-              <line x1={c} y1={c} x2={x} y2={y} stroke="var(--line-strong)" strokeDasharray={cross ? "4 3" : undefined} />
-              <circle cx={x} cy={y} r={7} fill={cross ? "var(--violet)" : "var(--cyan-dim)"} />
-              <text x={x} y={y + 19} textAnchor="middle" fontSize={9.5} fill="var(--muted)">
-                {title.length > 18 ? title.slice(0, 17) + "…" : title}
-              </text>
-            </g>
-          )
-        })}
-        <circle cx={c} cy={c} r={11} fill="var(--cyan)" />
-        <text x={c} y={c + 25} textAnchor="middle" fontSize={11} fontWeight={700} fill="var(--text)">
-          {noteName(path)}
-        </text>
-      </svg>
-      <span className="tiny muted">Linha tracejada = nota de outro espaço (“portal”).</span>
+      <div className="row between">
+        <span className="eyebrow">Gráfico local</span>
+        <div className="segmented" role="tablist" aria-label="Profundidade do gráfico local">
+          {[1, 2, 3].map((d) => (
+            <button key={d} className={depth === d ? "active" : ""} onClick={() => (setDepth(d), setFit((n) => n + 1))} aria-label={`Profundidade ${d}`}>
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
+      <GraphView
+        className="local"
+        data={data}
+        groups={[]}
+        forces={LOCAL_FORCES}
+        center={path}
+        labels="always"
+        fitSignal={fit}
+        onOpen={(node) => (node.kind === "missing" ? onCreate(node.path) : node.kind !== "attachment" && node.path !== path ? navigate(vaultRoute(node.path)) : undefined)}
+      />
+      <span className="tiny muted">
+        {data.nodes.length - 1} {data.nodes.length === 2 ? "nota ligada" : "notas ligadas"} · losango = outro espaço (portal) ·{" "}
+        <a href="#" onClick={(e) => (e.preventDefault(), navigate("/notas/grafico"))}>
+          gráfico inteiro
+        </a>
+      </span>
     </div>
   )
 }
+
+const LOCAL_FORCES = { ...DEFAULT_FORCES, repulsion: 220, distance: 55, arrows: true }
