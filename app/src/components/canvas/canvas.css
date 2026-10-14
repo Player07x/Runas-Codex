@@ -1,0 +1,47 @@
+/* Quadro .canvas: tudo com prefixo canvas- (o leitor de Markdown não muda; só o tamanho do texto dentro do cartão). */
+.canvas-shell { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 420px; height: 100%; }
+.canvas-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 88%, transparent); }
+.canvas-sep { width: 1px; height: 22px; background: var(--line); }
+.canvas-colors { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; color: var(--muted); }
+.canvas-swatch { width: 18px; height: 18px; padding: 0; border: 2px solid var(--panel); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); }
+.canvas-swatch:disabled { opacity: 0.35; }
+.canvas-zoom { min-width: 40px; text-align: center; }
+.canvas-inspector { position: absolute; z-index: 4; top: 56px; right: 12px; width: 240px; padding: 10px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-sm); }
+
+.canvas-board { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; cursor: grab; background: radial-gradient(circle, color-mix(in srgb, var(--line) 80%, transparent) 1px, transparent 1.2px) 0 0 / 24px 24px, var(--bg-deep); }
+.canvas-board.panning { cursor: grabbing; }
+.canvas-board.linking .canvas-card { cursor: crosshair; }
+.canvas-world { position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform-origin: 0 0; }
+.canvas-edges { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; }
+.canvas-edge-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; pointer-events: stroke; }
+.canvas-edge.selected path:not(.canvas-edge-hit) { stroke: var(--cyan); }
+.canvas-edge-label { fill: var(--muted); font-size: 13px; paint-order: stroke; stroke: var(--bg-deep); stroke-width: 4px; }
+.canvas-hint { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); max-width: 320px; color: var(--faint); text-align: center; pointer-events: none; }
+.canvas-message { padding: 24px; color: var(--muted); }
+
+.canvas-card { --card: var(--line-strong); position: absolute; display: flex; flex-direction: column; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow-sm); cursor: grab; user-select: none; }
+.canvas-card.colored { border-color: var(--card); background: color-mix(in srgb, var(--card) 10%, var(--panel)); }
+.canvas-card.selected { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.canvas-card.type-group { border-style: dashed; border-width: 1.5px; border-color: color-mix(in srgb, var(--card) 70%, var(--line)); background: color-mix(in srgb, var(--card) 6%, transparent); box-shadow: none; }
+.canvas-group-label { position: absolute; top: -26px; left: 4px; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); color: var(--text); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.canvas-card-body { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; }
+.canvas-md { font-size: 13px; line-height: 1.5; }
+.canvas-md > * + * { margin-top: 0.4em; }
+.canvas-file-title { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--cyan); font-size: 13px; font-weight: 700; text-decoration: none; word-break: break-all; }
+.canvas-image { display: block; width: 100%; height: calc(100% - 26px); object-fit: contain; border-radius: 8px; }
+.canvas-textarea { width: 100%; height: 100%; padding: 0; border: 0; outline: 0; resize: none; background: transparent; color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; user-select: text; }
+.canvas-resize { position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border: 2px solid var(--panel); border-radius: 4px; background: var(--cyan); cursor: nwse-resize; touch-action: none; }
+
+@media (max-width: 860px) {
+  .canvas-toolbar { gap: 4px; padding: 6px 8px; overflow-x: auto; flex-wrap: nowrap; }
+  .canvas-toolbar .btn { min-height: 44px; }
+  .canvas-inspector { top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; }
+  .canvas-resize { width: 22px; height: 22px; right: -10px; bottom: -10px; }
+}
+
+.canvas-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.canvas-page-head { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+
+/* Dentro do cartão, títulos menores (a nota inteira é só uma prévia). */
+.canvas-md h1, .canvas-md h2 { font-size: 15px; margin-top: 0.2em; padding-bottom: 0; border: 0; }
+.canvas-md h3, .canvas-md h4, .canvas-md h5, .canvas-md h6 { font-size: 13px; }

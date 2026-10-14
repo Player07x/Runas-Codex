@@ -87,28 +87,5 @@ export const CAMPAIGNS: Campaign[] = [
   },
 ]
 
-/** Notas do espaço Campanhas (isoladas da wiki). */
-export const CAMPAIGN_NOTES: Note[] = [
-  {
-    id: "sessao-12",
-    title: "Sessão 12",
-    space: "campanhas",
-    path: "Campanhas/As Cinzas de Valdris/Sessões/Sessão 12.md",
-    tags: ["sessao"],
-    updated: "2026-10-12T23:00:00",
-    markdown: `# Sessão 12 — O selo na carta
-
-Data no mundo: 16 de Cinzas de 4031 C.E. Ver [[Wikis/Ordem x Caos/Personagens/Aldren Vael|Aldren Vael]].
-`,
-  },
-]
-
-export const PREP_STEPS = [
-  { id: "recap", title: "Recapitulação", text: "Os esgotos, o covil dos lobos e Aldren salvando Ilsa.", done: true },
-  { id: "inicio", title: "Início forte", text: "A guarda bate à porta do Corvo Manco com uma carta selada.", done: true },
-  { id: "cenas", title: "Cenas possíveis", text: "Audiência com o Conde · emboscada no Portão do Lago · conversa com Aldren.", done: true },
-  { id: "segredos", title: "Segredos e pistas", text: "Escolher 3 dos 4 segredos para tentar revelar.", done: false },
-  { id: "locais", title: "Locais", text: "Cidade Alta, Portão do Lago.", done: false },
-  { id: "npcs", title: "NPCs", text: "Aldren, Conde Ormund, capitã da guarda.", done: false },
-  { id: "recompensas", title: "Recompensas", text: "Favor do Conde ou a confiança de Aldren.", done: false },
-]
+/** As notas de campanha do exemplo agora vêm de `campaign-demo.ts` (formato da etapa 7). */
+export const CAMPAIGN_NOTES: Note[] = []

@@ -85,3 +85,7 @@ for (const book of BOOKS) {
 // Corpus visual da fase 8b, usando exatamente o leitor e o dialeto das Notas.
 DEMO_TEXT_FILES["Livros/Caderno de formatadores/Caderno de formatadores.md"] = newBookText("Caderno de formatadores", ["[[Livros/Caderno de formatadores/Formatadores]]"], "O dialeto completo em páginas", 5000)
 DEMO_TEXT_FILES["Livros/Caderno de formatadores/Formatadores.md"] = formatadores
+
+// Campanhas de exemplo (etapa 7): sessões, missões, personagens e um quadro .canvas.
+import { campaignDemoFiles } from "./campaign-demo"
+Object.assign(DEMO_TEXT_FILES, campaignDemoFiles())

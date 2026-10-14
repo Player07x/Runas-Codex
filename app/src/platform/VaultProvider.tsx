@@ -39,6 +39,8 @@ export interface VaultState {
   rename(from: string, to: string): Promise<RenamePlan>
   trash(path: string): Promise<void>
   setProperty(path: string, key: string, value: PropertyValue | undefined): Promise<void>
+  /** Cria um arquivo de texto que não é nota (ex.: um quadro `.canvas`), pelo caminho completo. */
+  createFile(path: string, content: string): Promise<string>
 }
 
 const VaultContext = createContext<VaultState | null>(null)
@@ -205,6 +207,24 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [requireIndex, save],
   )
 
+  const createFile = useCallback(
+    async (path: string, content: string) => {
+      const current = requireIndex()
+      for (const part of path.split("/")) {
+        const problem = nameProblem(part)
+        if (problem) throw new Error(problem)
+      }
+      const existing = current.allFiles().map((f) => f.path)
+      const clash = caseCollision(path, existing)
+      if (clash) throw new Error(`Já existe “${clash}”.`)
+      const entry = await platform.writeText(path, content, null)
+      current.set(entry, extname(path) === ".md" ? content : undefined)
+      bump()
+      return path
+    },
+    [requireIndex, bump],
+  )
+
   const templates = useCallback((): IndexedNote[] => {
     const current = indexRef.current
     if (!current) return []
@@ -221,7 +241,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => open(await platform.vault()), [open])
 
   return (
-    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty }}>
+    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile }}>
       {children}
     </VaultContext.Provider>
   )

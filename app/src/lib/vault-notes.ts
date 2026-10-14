@@ -11,6 +11,8 @@ export function vaultRoute(path: string): string {
 
 /** Rota de uma nota pelo espaço dela: artigos de `Wikis/` abrem na Wiki; o resto, em Notas. */
 export function noteRoute(path: string): string {
+  // Quadros `.canvas` abrem no editor de quadros, onde quer que estejam.
+  if (/\.canvas$/i.test(path)) return `/quadro/${encodeURIComponent(path)}`
   return path.startsWith("Wikis/") ? `/wiki/artigo/${encodeURIComponent(path)}` : vaultRoute(path)
 }
 

@@ -35,7 +35,7 @@
   border-bottom: 1px solid var(--line); background: var(--bg);
 }
 .crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--muted); font-size: 13px; }
-.crumbs a { color: var(--muted); text-decoration: none; white-space: nowrap; }
+.crumbs a { overflow: hidden; color: var(--muted); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .crumbs a:hover { color: var(--text); }
 .crumbs strong { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
 .crumbs svg { flex: 0 0 auto; color: var(--faint); }
@@ -112,4 +112,10 @@
   .workspace.show-left > section { display: none; }
   .workspace.show-right .pane-right { top: calc(var(--topbar-height) + env(safe-area-inset-top)); bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); }
   .mobile-switch { display: flex; }
+}
+
+/* Caminhos longos (campanha › seção › nota): no celular ficam só os dois últimos níveis. */
+@media (max-width: 640px) {
+  .crumbs > :not(:nth-last-child(-n + 2)) { display: none; }
+  .crumbs > :nth-last-child(2) svg { display: none; }
 }

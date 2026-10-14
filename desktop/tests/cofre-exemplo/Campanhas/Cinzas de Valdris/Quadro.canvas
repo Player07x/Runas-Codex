@@ -1,0 +1,11 @@
+{
+	"nodes":[
+		{"id":"a1b2c3d4e5f60718","type":"group","x":-40,"y":-60,"width":760,"height":360,"label":"Ato 2"},
+		{"id":"0f1e2d3c4b5a6978","type":"file","file":"Wikis/Ordem x Caos/Personagens/Aldren.md","x":0,"y":0,"width":300,"height":200,"color":"5"},
+		{"id":"1122334455667788","type":"text","text":"A carta selada","x":380,"y":0,"width":260,"height":120,"color":"3","x-plugin-extra":{"pin":true}}
+	],
+	"edges":[
+		{"id":"99aabbccddeeff00","fromNode":"0f1e2d3c4b5a6978","fromSide":"right","toNode":"1122334455667788","toSide":"left","label":"escreveu?"}
+	],
+	"x-plugin-meta":{"versao":1}
+}

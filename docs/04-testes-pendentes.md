@@ -158,6 +158,15 @@ automáticos). Falta o uso de verdade:
 - [ ] Testar livros reais longos e imagens grandes; a medição atual cobre o exemplo de 9 páginas e o corpus de formatadores.
 - [ ] Android real: alternar Escrever/Prévia com teclado aberto; a largura de 320 px foi validada no navegador.
 
+## Etapa 7 — Campanhas e quadros
+
+- [ ] Abrir `Campanhas/Cinzas de Valdris/Quadro.canvas` do cofre de teste no Obsidian depois de editar no app: cartões, cores, grupo e ligações iguais; campos desconhecidos mantidos.
+- [ ] Criar uma sessão pela campanha e conferir a nota e o evento na Agenda (lembrete de 1 dia, contagem na tela inicial); abrir os dois no Obsidian.
+- [ ] Revelar uma pista, avançar um relógio, mover uma missão no quadro de missões e mudar a atitude de um NPC; conferir o Markdown no Obsidian.
+- [ ] Exportar o diário da campanha (.md) no desktop pelo diálogo de salvar.
+- [ ] Android real: quadro com toque (arrastar, ligar, zoom pelos botões; pinça ainda não existe) e seletor de coluna das missões.
+- [ ] Windows e Obsidian não foram executados nesta fase; Linux/Electron (smoke com e sem `--write`) e navegador em 390 px foram verificados.
+
 ---
 
 ## Limitações conhecidas (não precisam de teste agora)
@@ -168,4 +177,4 @@ automáticos). Falta o uso de verdade:
   depois.
 - Ainda sem: timelapse do gráfico, prévia de link ao passar o mouse, comandos `/`, abas e painéis divididos,
   enquete de data pela sala, importar/exportar mesas.
-- Campanhas continua com dados de exemplo até a etapa 7.
+- Campanhas: pacote de campanha (exportar/importar), tesouro, diário dos jogadores e avaliação pela sala ficam para depois (ADR 0011).

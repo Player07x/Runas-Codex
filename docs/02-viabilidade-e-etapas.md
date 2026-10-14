@@ -252,11 +252,15 @@ Regras que valem para todas:
 | **3b** | Editor completo | Live preview, transclusão, **todos os formatadores**, gráfico em WebGL, templates | Nota de teste com todos os formatadores renderiza igual no app e no Obsidian | GG |
 | **5** | Agenda | Visões, eventos, recorrência, lembretes, `.ics`, ligação com sessões | Lembrete dispara no Android e no desktop | M |
 | **6** | Wiki | Modelos de artigo, **calendários fictícios + datas automáticas**, linhas do tempo, mapas com pinos, relações | Calendário com luas e intercalares calcula idade e dia da semana certos (testes) | G |
-| **7** | Canvas + Campanhas | `.canvas` (JSON Canvas 1.0, preservando campos desconhecidos); dashboard, sessões, missões, NPCs | Organizador atual migrado para `.canvas` abre no Obsidian | M + M |
+| **7** | Canvas + Campanhas | `.canvas` (JSON Canvas 1.0, preservando campos desconhecidos); dashboard, sessões, missões, NPCs ([ADR 0011](adr/0011-campanhas.md)) | O quadro da campanha salvo em `.canvas` abre igual no Obsidian (a migração do Runas-DM saiu do plano, ADR 0004) | M + M |
 | **8** | Livros | Estrutura em notas, prévia paginada, temas, exportações, importar Homebrewery | Livro de exemplo sai em PDF/EPUB/DOCX fiel à prévia | GG |
-| **9** | VTT no toque + Android anfitrião | Interface do mestre por toque; sala hospedada pelo celular na LAN | Sessão de teste com o mestre no celular | G + G |
+| **9** | VTT no toque | Interface do mestre por toque (a sala hospedada pelo celular foi para a etapa A) | Sessão de teste com o mestre no celular, sala aberta no desktop | G |
 | **10** | Migrações | Obsidian primeiro; Notion, Kanka e World Anvil depois da 1.0 | Dados reais migrados sem perda | G |
+| **A** | Android completo | Cofre real no Android, sala hospedada pelo celular na LAN, testes automáticos no emulador do CI | Cofre do Obsidian aberto e editado no celular; sessão de teste com a sala no celular | G + G |
 | **11** | Polimento e lançamento | Desempenho, acessibilidade, instaladores (NSIS, deb/AppImage, APK), beta | Beta com sua mesa | M |
+
+Ordem combinada em 14/10/2026 (depois da 8b): **7 → 8c → 8d → 9 → 10 → A (Android) → 11**. O Android completo fica
+para a penúltima etapa, automatizado no emulador do CI.
 
 Por que essa ordem:
 - **Notas antes de tudo:** wiki, campanhas, livros e agenda são notas com regras extras.

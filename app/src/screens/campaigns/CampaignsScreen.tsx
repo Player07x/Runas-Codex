@@ -1,50 +1,125 @@
-import { CalendarDays, LayoutDashboard, ListTodo, Plus, ScrollText, Shapes, Users } from "lucide-react"
-import { CAMPAIGNS } from "../../data/campaigns"
-import { TODAY } from "../../data/agenda"
-import { href } from "../../lib/router"
-import { formatDate, relativeDays } from "../../lib/navigation"
-import { useProtoAction } from "../../components/ui"
+import { useMemo, useState } from "react"
+import { CalendarDays, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Plus, ScrollText, Shapes, Users } from "lucide-react"
+import { CAMPAIGN_STATUS, listCampaigns, listPlayers, listSessions, upcomingSession } from "../../core/campaigns"
+import { href, navigate } from "../../lib/router"
+import { Empty, useToast } from "../../components/ui"
+import { useVault } from "../../platform/VaultProvider"
+import { NewCampaignDialog } from "./campaign-dialogs"
+import { campaignRoute, daysFrom, useCampaignData } from "./campaign-state"
 import { CampaignDashboard } from "./CampaignDashboard"
-import { SessionView } from "./SessionView"
+import { SessionsView } from "./SessionView"
 import { QuestBoard } from "./QuestBoard"
-import { CampaignCanvas } from "./CampaignCanvas"
+import { CastView } from "./CastView"
+import { BoardsView } from "./CampaignCanvas"
+import { StorytellerScreen } from "./StorytellerScreen"
 import "./campaigns.css"
 
+const TABS = [
+  { id: "", label: "Painel", icon: <LayoutDashboard size={15} /> },
+  { id: "sessoes", label: "Sessões", icon: <CalendarDays size={15} /> },
+  { id: "missoes", label: "Missões", icon: <ListTodo size={15} /> },
+  { id: "elenco", label: "Elenco", icon: <Users size={15} /> },
+  { id: "quadro", label: "Quadro", icon: <Shapes size={15} /> },
+]
+
+/** Rotas: /campanhas, /campanhas/<nome>[/sessoes[/<caminho>] | /missoes | /elenco | /quadro[/<caminho>]] */
 export function CampaignsScreen({ route }: { route: string[] }) {
-  const [id, section, sub] = route
-  const campaign = CAMPAIGNS.find((c) => c.id === id)
-  if (!campaign) return <CampaignList />
-  return (
-    <div style={{ ["--accent" as string]: campaign.accent }}>
-      <div className="wiki-header">
-        <strong className="display row" style={{ whiteSpace: "nowrap" }}>
-          <ScrollText size={16} color="var(--accent)" /> {campaign.title}
-        </strong>
-        <nav className="tabs wiki-tabs">
-          <a href={href(`/campanhas/${id}`)} className={!section ? "active" : ""}>
-            <LayoutDashboard size={15} /> Painel
-          </a>
-          <a href={href(`/campanhas/${id}/sessao/s12`)} className={section === "sessao" ? "active" : ""}>
-            <CalendarDays size={15} /> Sessões
-          </a>
-          <a href={href(`/campanhas/${id}/missoes`)} className={section === "missoes" ? "active" : ""}>
-            <ListTodo size={15} /> Missões
-          </a>
-          <a href={href(`/campanhas/${id}/canvas`)} className={section === "canvas" ? "active" : ""}>
-            <Shapes size={15} /> Quadro
-          </a>
-        </nav>
+  const vault = useVault()
+  const [name, section = "", id] = route
+  if (vault.loading && !vault.index) return <div className="page"><p className="muted">Abrindo o cofre…</p></div>
+  if (!vault.index) {
+    return (
+      <div className="page">
+        <Empty title="Nenhum cofre aberto">As campanhas ficam em Campanhas/&lt;nome&gt;/ do cofre. Abra ou crie um cofre em Configurações.</Empty>
       </div>
-      {!section && <CampaignDashboard campaign={campaign} />}
-      {section === "sessao" && <SessionView campaign={campaign} sessionId={sub ?? "s12"} />}
-      {section === "missoes" && <QuestBoard campaign={campaign} />}
-      {section === "canvas" && <CampaignCanvas />}
+    )
+  }
+  if (!name) return <CampaignList />
+  const exists = listCampaigns(vault.index).some((c) => c.name === name)
+  if (!exists) {
+    return (
+      <div className="page">
+        <Empty title="Campanha não encontrada" action={<a className="btn" href={href("/campanhas")}>Ver campanhas</a>}>
+          A pasta Campanhas/{name}/ não está no cofre (foi renomeada ou apagada?).
+        </Empty>
+      </div>
+    )
+  }
+  return <CampaignPage key={name} name={name} section={section} id={id} />
+}
+
+function CampaignPage({ name, section, id }: { name: string; section: string; id?: string }) {
+  const data = useCampaignData(name)
+  const [screen, setScreen] = useState(false)
+  const fill = section === "quadro" || (section === "sessoes" && Boolean(id))
+  return (
+    <div className={fill ? "campaign-fill" : ""} style={data.campaign.color ? { ["--accent" as string]: data.campaign.color } : undefined}>
+      <CampaignHeader name={name} current={section} onScreen={() => setScreen(true)} />
+      {section === "" && <CampaignDashboard data={data} onScreen={() => setScreen(true)} />}
+      {section === "sessoes" && <SessionsView data={data} path={id} />}
+      {section === "missoes" && <QuestBoard data={data} />}
+      {section === "elenco" && <CastView data={data} />}
+      {section === "quadro" && <BoardsView data={data} path={id} />}
+      {screen && <StorytellerScreen data={data} onClose={() => setScreen(false)} />}
+    </div>
+  )
+}
+
+function CampaignHeader({ name, current, onScreen }: { name: string; current: string; onScreen(): void }) {
+  const vault = useVault()
+  const campaigns = useMemo(() => listCampaigns(vault.index!), [vault.index, vault.version])
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="campaign-header">
+      <div className="campaign-switcher">
+        <button className="btn ghost" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Trocar de campanha">
+          <ScrollText size={16} color="var(--accent, var(--red))" />
+          <strong className="truncate">{name}</strong>
+          <ChevronDown size={15} />
+        </button>
+        {open && (
+          <div className="campaign-menu" onMouseLeave={() => setOpen(false)}>
+            {campaigns.map((c) => (
+              <a key={c.name} className={`list-item ${c.name === name ? "active" : ""}`} href={href(campaignRoute(c.name))} onClick={() => setOpen(false)}>
+                <ScrollText size={15} /> <span className="grow truncate">{c.name}</span>
+                <span className="meta">{CAMPAIGN_STATUS.find((s) => s.id === c.status)?.label}</span>
+              </a>
+            ))}
+            <div className="divider" />
+            <a className="list-item" href={href("/campanhas")} onClick={() => setOpen(false)}>
+              Todas as campanhas
+            </a>
+          </div>
+        )}
+      </div>
+      <nav className="tabs campaign-tabs">
+        {TABS.map((tab) => (
+          <a key={tab.id} href={href(campaignRoute(name, tab.id))} className={current === tab.id ? "active" : ""}>
+            {tab.icon} {tab.label}
+          </a>
+        ))}
+      </nav>
+      <button className="btn sm ghost campaign-screen-btn" onClick={onScreen} title="Notas fixadas, preparação, NPCs e relógios num lugar só">
+        <MonitorPlay size={15} /> Tela do Mestre
+      </button>
     </div>
   )
 }
 
 function CampaignList() {
-  const proto = useProtoAction()
+  const vault = useVault()
+  const toast = useToast()
+  const index = vault.index!
+  const [creating, setCreating] = useState(false)
+  const readOnly = vault.info?.readOnly ?? true
+  const campaigns = useMemo(() => {
+    const today = new Date()
+    return listCampaigns(index).map((c) => {
+      const sessions = listSessions(index, c, today)
+      return { ...c, sessions: sessions.length, done: sessions.filter((s) => s.status === "realizada").length, next: upcomingSession(sessions, today), players: listPlayers(index, c).length }
+    })
+  }, [index, vault.version])
+  const create = () => (readOnly ? toast("Libere a gravação em Configurações para criar uma campanha.") : setCreating(true))
   return (
     <div className="page">
       <div className="page-head">
@@ -52,38 +127,41 @@ function CampaignList() {
           <span className="eyebrow">Espaço Campanhas · Campanhas/</span>
           <h1 className="page-title">Campanhas</h1>
         </div>
-        <button className="btn primary" onClick={proto("criar campanha (escolhe a wiki e cria a mesa)")}>
+        <button className="btn primary" onClick={create}>
           <Plus size={16} /> Nova campanha
         </button>
       </div>
-      <div className="grid-cards">
-        {CAMPAIGNS.map((c) => {
-          const next = c.sessions.find((s) => s.status === "planejada")
-          const last = c.sessions.find((s) => s.status === "realizada")
-          return (
-            <a key={c.id} className="card link campaign-card" href={href(`/campanhas/${c.id}`)} style={{ ["--accent" as string]: c.accent }}>
+      {campaigns.length === 0 ? (
+        <Empty title="Nenhuma campanha neste cofre" action={<button className="btn primary" onClick={create}><Plus size={16} /> Criar campanha</button>}>
+          Uma campanha é uma pasta em Campanhas/ com sessões, missões, os personagens dos jogadores e um quadro. Os NPCs vêm da wiki do mundo.
+        </Empty>
+      ) : (
+        <div className="grid-cards">
+          {campaigns.map((c) => (
+            <a key={c.name} className="card link campaign-card" href={href(campaignRoute(c.name))} style={c.color ? { ["--accent" as string]: c.color } : undefined}>
               <div className="campaign-banner" />
               <div className="row between">
-                <span className={`chip ${c.status === "ativa" ? "green" : c.status === "pausada" ? "gold" : ""}`}>{c.status}</span>
+                <span className={`chip ${c.status === "ativa" ? "green" : c.status === "pausada" ? "gold" : ""}`}>{CAMPAIGN_STATUS.find((s) => s.id === c.status)?.label}</span>
                 <span className="muted small row">
-                  <Users size={14} /> {c.players.length}
+                  <Users size={14} /> {c.players}
                 </span>
               </div>
-              <strong className="display" style={{ fontSize: 18 }}>{c.title}</strong>
-              <p className="muted small">{c.summary}</p>
+              <strong className="campaign-card-title">{c.name}</strong>
+              {c.summary && <p className="muted small">{c.summary}</p>}
               <span className="small">
-                {next ? (
+                {c.next ? (
                   <span style={{ color: "var(--red)" }}>
-                    Próxima: sessão {next.number}, {relativeDays(next.date, TODAY)}
+                    Próxima: sessão {c.next.number ?? ""} {daysFrom(c.next.date) ? `· ${daysFrom(c.next.date)}` : ""}
                   </span>
-                ) : last ? (
-                  <span className="muted">Última: sessão {last.number}, {formatDate(last.date, { day: "2-digit", month: "short", year: "numeric" })}</span>
-                ) : null}
+                ) : (
+                  <span className="muted">{c.done} {c.done === 1 ? "sessão jogada" : "sessões jogadas"}</span>
+                )}
               </span>
             </a>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+      {creating && <NewCampaignDialog onClose={() => setCreating(false)} onCreated={(name) => navigate(campaignRoute(name))} />}
     </div>
   )
 }
