@@ -2,6 +2,10 @@
 
 > Baseado no [estudo](00-estudo.md) e na [checklist](01-checklist-recursos.md). As estimativas mudam conforme os itens
 > que você desmarcar.
+>
+> **Atualização (14/10/2026):** o Runas-Codex é independente da Runas Suite e só reaproveita código dela
+> ([ADR 0004](adr/0004-independente-da-runas-suite.md)): sem migrar o cofre do Runas DM, sem importar mundos do
+> RunasVTT e sem ponte com os sites. O dialeto Markdown da seção 5 foi aprovado.
 
 ## Sumário
 
@@ -180,9 +184,9 @@ Regras que entram nos testes desde a etapa 3a:
 - Lixeira em `.trash`.
 - **A primeira abertura de um cofre existente é somente leitura** até o usuário liberar a escrita.
 
-### Dialeto Markdown proposto
+### Dialeto Markdown
 
-Para validar na etapa 0. Tudo renderiza no Obsidian; o snippet `runas-codex.css` faz o Obsidian mostrar igual ao app.
+**Aprovado em 14/10/2026** (etapa 0). Tudo renderiza no Obsidian; o snippet `runas-codex.css` faz o Obsidian mostrar igual ao app.
 
 | Recurso | Sintaxe proposta | No Obsidian sem o snippet |
 |---|---|---|
@@ -243,15 +247,15 @@ Regras que valem para todas:
 | **0** | Validação de requisitos | Checklist desmarcada; dialeto Markdown fechado | Você aprova a checklist e a tabela do dialeto | P |
 | **1** | **Protótipo visual navegável** | App React com dados fictícios, todas as telas, desktop e celular ([detalhes](#9-etapa-1-em-detalhe-protótipo-visual)) | Você navega por todas as telas no PC e no celular e aprova o visual | M |
 | **2** | Fundação técnica + spikes | Monorepo, cascas Electron e Capacitor, `Platform`, CI gerando instaladores Windows/Linux e APK; spikes: cofre no Android, autoridade da sala em TS, WebSocket no Android, Pixi no WebView, CodeMirror com teclado Android, indexar 5 mil notas num celular médio | Instaladores abrem nos três sistemas; spikes com decisão registrada em ADR | G |
-| **3a** | Núcleo de notas | Abrir/criar cofre, índice, espaços isolados, modos fonte e leitura, links, backlinks, busca, tags, propriedades, renomear atualizando links, backups; **espaço Notas** pronto | Cofre real do Runas DM abre sem alterar um byte; testes de ida e volta passam | G |
-| **4** | VTT no desktop | SceneView portado, mesas em `.runas/`, importar mundos do RunasVTT, **Criar Sala / Entrar Sala** com túnel | Uma sessão real roda no Runas-Codex; o RunasVTT pode ser aposentado | M |
+| **3a** | Núcleo de notas | Abrir/criar cofre, índice, espaços isolados, modos fonte e leitura, links, backlinks, busca, tags, propriedades, renomear atualizando links, backups; **espaço Notas** pronto | Um cofre do Obsidian abre sem alterar um byte; testes de ida e volta passam | G |
+| **4** | VTT no desktop | SceneView portado, mesas em `.runas/`, **Criar Sala / Entrar Sala** com túnel | Uma sessão real roda no Runas-Codex | M |
 | **3b** | Editor completo | Live preview, transclusão, **todos os formatadores**, gráfico em WebGL, templates | Nota de teste com todos os formatadores renderiza igual no app e no Obsidian | GG |
 | **5** | Agenda | Visões, eventos, recorrência, lembretes, `.ics`, ligação com sessões | Lembrete dispara no Android e no desktop | M |
 | **6** | Wiki | Modelos de artigo, **calendários fictícios + datas automáticas**, linhas do tempo, mapas com pinos, relações | Calendário com luas e intercalares calcula idade e dia da semana certos (testes) | G |
 | **7** | Canvas + Campanhas | `.canvas` (JSON Canvas 1.0, preservando campos desconhecidos); dashboard, sessões, missões, NPCs | Organizador atual migrado para `.canvas` abre no Obsidian | M + M |
 | **8** | Livros | Estrutura em notas, prévia paginada, temas, exportações, importar Homebrewery | Livro de exemplo sai em PDF/EPUB/DOCX fiel à prévia | GG |
 | **9** | VTT no toque + Android anfitrião | Interface do mestre por toque; sala hospedada pelo celular na LAN | Sessão de teste com o mestre no celular | G + G |
-| **10** | Migrações | Obsidian, RunasVTT e Runas DM primeiro; Notion, Kanka e World Anvil depois da 1.0 | Dados reais migrados sem perda | G |
+| **10** | Migrações | Obsidian primeiro; Notion, Kanka e World Anvil depois da 1.0 | Dados reais migrados sem perda | G |
 | **11** | Polimento e lançamento | Desempenho, acessibilidade, instaladores (NSIS, deb/AppImage, APK), beta | Beta com sua mesa | M |
 
 Por que essa ordem:

@@ -19,7 +19,7 @@
     "desktop": "npm run dev -w @runas-codex/desktop",
     "desktop:build": "npm run build -w @runas-codex/desktop",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm test -w @runas-codex/desktop",
+    "test": "npm test --workspaces --if-present",
     "android": "npm run sync -w @runas-codex/mobile"
   },
   "allowScripts": {

@@ -4,7 +4,8 @@
 [![Pages](https://github.com/Player07x/Runas-Codex/actions/workflows/pages.yml/badge.svg)](https://player07x.github.io/Runas-Codex/)
 [![Release](https://github.com/Player07x/Runas-Codex/actions/workflows/release.yml/badge.svg)](https://github.com/Player07x/Runas-Codex/actions/workflows/release.yml)
 
-App único, **offline**, para **Windows, Linux e Android**, que junta os projetos da Runas Suite: um organizador de
+App único, **offline**, para **Windows, Linux e Android** (independente da Runas Suite, da qual só reaproveita código —
+[ADR 0004](docs/adr/0004-independente-da-runas-suite.md)): um organizador de
 notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **Notas**, **Agenda**, **Wiki** (com
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
