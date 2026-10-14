@@ -32,6 +32,7 @@ O que ainda falta conferir à mão está em [Testes pendentes](docs/04-testes-pe
 4. [Comparação dos protótipos](docs/03-comparacao-prototipos.md) — Original, Atlas e Órbita (histórico).
 5. [Testes pendentes](docs/04-testes-pendentes.md) — o que conferir à mão em cada etapa.
 6. [Decisões de arquitetura](docs/adr/) — ADRs numeradas.
+7. [Tarefas em andamento](docs/tarefas/README.md) — quem faz o quê; as regras para agentes estão no [AGENTS.md](AGENTS.md).
 
 ## Abrir o protótipo
 

@@ -16,6 +16,7 @@ import { useNoteSet } from "../lib/note-set"
 import { prepareSource, remarkBlocks } from "../markdown/blocks"
 import { Callout, LayoutCallout, LAYOUT_CALLOUTS } from "../markdown/Callout"
 import { Embed, IMAGE_EXT } from "../markdown/Embed"
+import { codeBlockFor, registerCodeBlock, type CodeBlockProps } from "../markdown/extensions"
 import { MathTex } from "../markdown/MathTex"
 import { MermaidDiagram } from "../markdown/Mermaid"
 import { remarkObsidian } from "../markdown/remark-obsidian"
@@ -117,6 +118,9 @@ function TableOfContents() {
     </nav>
   )
 }
+
+registerCodeBlock(["mermaid"], ({ code }: CodeBlockProps) => <MermaidDiagram code={code} />)
+registerCodeBlock(["table-of-contents", "toc"], () => <TableOfContents />)
 
 function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
   const set = useNoteSet()
@@ -238,8 +242,10 @@ function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
         const code = node?.children.find((child): child is Element => child.type === "element" && child.tagName === "code")
         const classes = classesOf(code)
         if (classes.includes("language-math")) return <MathTex tex={textOf(code).trim()} display />
-        if (classes.includes("language-mermaid")) return <MermaidDiagram code={textOf(code)} />
-        if (classes.includes("language-table-of-contents") || classes.includes("language-toc")) return <TableOfContents />
+        // Blocos desenhados (```mermaid, ```table-of-contents e os que outros módulos registram).
+        const language = classes.find((c) => c.startsWith("language-"))?.slice("language-".length)
+        const Block = language ? codeBlockFor(language) : undefined
+        if (Block && language) return <Block code={textOf(code).replace(/\n$/, "")} language={language} />
         return <pre>{children}</pre>
       },
       code({ className, children, node }) {
