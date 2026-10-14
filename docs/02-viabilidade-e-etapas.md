@@ -50,7 +50,7 @@ Por quê:
 - É o mesmo par que o **Obsidian** usa (inclusive CodeMirror 6 no celular) — a melhor prova de que funciona para
   esse tipo de produto.
 - **Chromium nos três sistemas**: Pixi (mesa) e editor se comportam igual.
-- Coerente com a [ADR 0007 do RunasVTT](../../RunasVTT/docs/adr/0007-electron.md) (Electron em vez de Tauri) e
+- Coerente com a [ADR 0007 do RunasVTT](https://github.com/Player07x/RunasVTT/blob/main/docs/adr/0007-electron.md) (Electron em vez de Tauri) e
   reaproveita o código Node do RunasVTT no desktop.
 - **Tauri descartado:** exigiria reescrever o Node em Rust e usaria o WebKitGTK no Linux (risco para WebGL, áudio e
   telas em branco com NVIDIA).
