@@ -1,55 +1,80 @@
-import { Plus, Target } from "lucide-react"
-import { BOOKS } from "../../data/books"
-import { href } from "../../lib/router"
-import { Progress, useProtoAction } from "../../components/ui"
+import { useState } from "react"
+import { bookProperties, bookRoute, findBooks, newBookText, readBook } from "../../core/books"
+import { nameProblem } from "../../core/names"
+import { href, navigate } from "../../lib/router"
+import { useVault } from "../../platform/VaultProvider"
+import { Progress } from "../../components/ui"
 import { BookEditor } from "./BookEditor"
 import "./books.css"
 
 export function BooksScreen({ bookId }: { bookId?: string }) {
-  const book = BOOKS.find((b) => b.id === bookId)
-  if (book) return <BookEditor book={book} />
+  const vault = useVault()
+  if (vault.loading) return <div className="page">Carregando livros…</div>
+  if (!vault.index || !vault.info) return <div className="page">
+    <h1>Livros</h1>
+    <p>{vault.error ?? "Abra um cofre em Configurações para acessar seus livros."}</p>
+  </div>
+  if (bookId) {
+    const book = findBooks(vault.index).find((n) => n.path === bookId)
+    return book ? <BookEditor key={book.path} book={book} /> : <div className="page">
+      <p>Livro não encontrado.</p>
+      <a href={href("/livros")}>Voltar aos livros</a>
+    </div>
+  }
   return <BookList />
 }
-
 function BookList() {
-  const proto = useProtoAction()
-  return (
-    <div className="page">
-      <div className="page-head">
-        <div>
-          <span className="eyebrow">Espaço Livros · cada capítulo é uma nota .md</span>
-          <h1 className="page-title">Livros</h1>
-        </div>
-        <div className="row-wrap">
-          <button className="btn" onClick={proto("importar Homebrewery / GM Binder / DOCX")}>Importar</button>
-          <button className="btn primary" onClick={proto("criar livro")}>
-            <Plus size={16} /> Novo livro
-          </button>
-        </div>
+  const vault = useVault()
+  const index = vault.index!
+  const [creating, setCreating] = useState(false)
+  const [title, setTitle] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  async function create() {
+    setBusy(true); setError("")
+    try {
+      const name = title.trim()
+      const problem = nameProblem(name)
+      if (problem) throw new Error(problem)
+      const folder = `Livros/${name}`
+      if (index.allFiles().some((f) => f.path.toLocaleLowerCase().startsWith(folder.toLocaleLowerCase() + "/"))) throw new Error("Já existe uma pasta para esse livro.")
+      await vault.createFolder(folder)
+      const path = await vault.createNote(folder, name, newBookText(name))
+      const chapterName = name === "Capítulo 1 — Início" ? "Capítulo 1" : "Capítulo 1 — Início"
+      const chapter = await vault.createNote(folder, chapterName, "---\ntipo: capitulo\nstatus: rascunho\n---\n# Início\n")
+      await vault.setProperty(path, "estrutura", [`[[${index.linkTarget(chapter, path)}]]`])
+      navigate(bookRoute(path))
+    } catch (e) { setError(String(e)) } finally { setBusy(false) }
+  }
+  return <div className="page books-list">
+    <div className="page-head">
+      <div>
+        <span className="eyebrow">Cada capítulo é uma nota .md</span>
+        <h1 className="page-title">Livros</h1>
       </div>
-      <div className="book-shelf">
-        {BOOKS.map((book) => {
-          const words = book.chapters.reduce((sum, c) => sum + c.words, 0)
-          return (
-            <a key={book.id} className="book-card" href={href(`/livros/${book.id}`)}>
-              <div className="book-cover">
-                <span className="display">{book.title}</span>
-                <small>{book.subtitle}</small>
-              </div>
-              <div className="stack" style={{ gap: 6 }}>
-                <strong>{book.title}</strong>
-                <span className="muted small">
-                  {book.chapters.length} capítulos · {book.page} · tema {book.theme}
-                </span>
-                <span className="row small">
-                  <Target size={14} color="var(--gold)" /> {words.toLocaleString("pt-BR")} / {book.goal.toLocaleString("pt-BR")} palavras
-                </span>
-                <Progress value={words} max={book.goal} color="var(--gold)" />
-              </div>
-            </a>
-          )
-        })}
-      </div>
+      <button className="btn primary" disabled={vault.info?.readOnly} onClick={() => setCreating(!creating)}>Novo livro</button>
     </div>
-  )
+    {vault.info?.readOnly && <p className="proto-note">Cofre em somente leitura. Libere a gravação em Configurações › Cofre para criar ou editar livros.</p>}
+    {creating && <form className="row-wrap" onSubmit={(e) => { e.preventDefault(); if (!busy) void create() }}>
+      <label className="field">Título do livro<input className="input" aria-label="Título do livro" value={title} onChange={(e) => setTitle(e.target.value)} required />
+      </label>
+      <button className="btn primary" disabled={busy || !title.trim()}>Criar livro</button>
+    </form>}
+    {error && <p role="alert">{error} Se houve criação parcial, as notas permanecem disponíveis em Notas.</p>}
+    <div className="book-shelf">{findBooks(index).map((book) => {
+      const stats = readBook(index, book), data = bookProperties(book)
+      const goal = typeof data.meta_palavras === "number" && data.meta_palavras > 0 ? data.meta_palavras : 0
+      return <a key={book.path} className="book-card" href={href(bookRoute(book.path))}>
+        <div className="book-cover">
+          <span className="display">{book.name}</span>
+        </div>
+        <div className="stack">
+          <strong>{book.name}</strong>
+          <span>{String(data.subtitulo ?? "")}</span>
+          <span className="small muted">{stats.chapters} capítulos · {stats.words.toLocaleString("pt-BR")} palavras</span>
+          <span className="small">Meta: {goal ? goal.toLocaleString("pt-BR") : "não definida"}</span>{goal > 0 && <Progress value={stats.words} max={goal} />}</div>
+      </a>
+    })}</div>
+    {!findBooks(index).length && <p>Nenhum livro neste cofre. Crie seu primeiro livro.</p>}
+  </div>
 }

@@ -137,6 +137,22 @@ export const SMOKE_SCRIPT = `(async () => {
     }
   }
 
+  // Livros: a criação pela tela precisa persistir o capítulo e seu link na estrutura.
+  const bookPath = "Livros/Guia de Valdris/Guia de Valdris.md"
+  location.hash = "/livros/" + encodeURIComponent(bookPath)
+  ;(await until(() => document.querySelector("[aria-label='Criar capítulo']")))?.click()
+  const chapterTitle = await until(() => document.querySelector("[aria-label='Título do capítulo']"))
+  if (chapterTitle) {
+    setter.call(chapterTitle, "Capítulo do smoke")
+    chapterTitle.dispatchEvent(new Event("input", { bubbles: true }))
+    await wait(100)
+    document.querySelector("[aria-label='Confirmar criar capítulo']").click()
+    await until(() => !document.querySelector("[aria-label='Confirmar criar capítulo']"))
+    const chapterPath = "Livros/Guia de Valdris/Capítulo do smoke.md"
+    const bookTexts = await bridge.vault.read([bookPath, chapterPath])
+    result.books = Boolean(bookTexts[chapterPath]?.includes("tipo: capitulo") && bookTexts[bookPath]?.includes("[[Capítulo do smoke]]"))
+  }
+
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
   ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
@@ -237,6 +253,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.roomCheck as Record<string, unknown>).csp === true &&
     (result.roomCheck as Record<string, unknown>).withoutKey === 404 &&
     (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
-    (result.roomCheck as Record<string, unknown>).join === 200
+    (result.roomCheck as Record<string, unknown>).join === 200 &&
+    result.books === true
   )
 }

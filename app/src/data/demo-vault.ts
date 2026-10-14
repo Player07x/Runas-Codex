@@ -64,3 +64,18 @@ function demoEvents(): Record<string, string> {
 }
 
 Object.assign(DEMO_TEXT_FILES, demoEvents())
+
+// Livros de exemplo como notas comuns, com a ordem registrada em links.
+import { BOOKS } from "./books"
+import { newBookText } from "../core/books"
+import { stringify } from "yaml"
+for (const book of BOOKS) {
+  const folder = `Livros/${book.title}`
+  const links: string[] = []
+  for (const chapter of book.chapters) {
+    const title = chapter.title.replaceAll(":", " —")
+    links.push(`[[${folder}/${title}]]`)
+    DEMO_TEXT_FILES[`${folder}/${title}.md`] = `---\n${stringify({ tipo: "capitulo", status: chapter.status === "revisão" ? "revisao" : chapter.status, resumo: chapter.part })}---\n${chapter.markdown}\n`
+  }
+  DEMO_TEXT_FILES[`${folder}/${book.title}.md`] = newBookText(book.title, links, book.subtitle, book.goal)
+}
