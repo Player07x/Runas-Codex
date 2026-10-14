@@ -37,7 +37,7 @@ export function AudioPanel({ store, audio }: { store: DocumentStore; audio: Audi
     <MixControls />
     {ambientCount > 0 && <p className="hint"><Volume2 size={12} /> {ambientCount} {ambientCount === 1 ? "som do mapa tocando" : "sons do mapa tocando"} perto dos aliados.</p>}
     <div className="row-actions"><button className="primary" onClick={() => run(createPlaylist)}><Plus size={15} /> Nova playlist</button></div>
-    {playlists.length === 0 && <p className="muted">Crie uma playlist e adicione arquivos de áudio (MP3, OGG, WAV, M4A, FLAC, WEBM ou OPUS). Eles são copiados para a pasta do mundo e tocam sem internet.</p>}
+    {playlists.length === 0 && <p className="muted">Crie uma playlist e adicione arquivos de áudio (MP3, OGG, WAV, M4A, FLAC, WEBM ou OPUS). Eles são copiados para a pasta da mesa e tocam sem internet.</p>}
     <ul className="playlist-list">
       {playlists.map((playlist) => <PlaylistCard key={playlist.id} playlist={playlist} store={store} audio={audio} playing={playingPlaylists.has(playlist.id)} open={expanded.has(playlist.id)} onToggle={() => setExpanded((current) => { const next = new Set(current); if (next.has(playlist.id)) next.delete(playlist.id); else next.add(playlist.id); return next })} run={run} />)}
     </ul>

@@ -81,6 +81,11 @@ function createBrowserPreviewApi(): VttApi {
       rotateSeatCode: async (slotId) => { const seat = player.seats.find((candidate) => candidate.slotId === slotId); if (!seat) throw new Error("Assento de jogador não encontrado."); seat.code = `PREVIEW-${slotId.toUpperCase()}-${Date.now()}`; emitPlayer(); return { ...player, seats: player.seats.map((candidate) => ({ ...candidate })) } },
       clearSeat: async (slotId) => { const seat = player.seats.find((candidate) => candidate.slotId === slotId); if (!seat) throw new Error("Assento de jogador não encontrado."); seat.status = "available"; seat.tokenId = null; seat.revision = 0; emitPlayer(); return { ...player, seats: player.seats.map((candidate) => ({ ...candidate })) } },
       openWindow: async () => undefined,
+      join: async (url) => {
+        const target = new URL(url)
+        if (target.protocol !== "http:" && target.protocol !== "https:") throw new Error("Use um link http:// ou https://.")
+        window.open(target.href, "_blank", "noopener")
+      },
       setScene: async (sceneId) => { player.sceneId = sceneId; emitPlayer() },
       ruler: async () => undefined,
       pullCamera: async () => undefined,

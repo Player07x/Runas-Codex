@@ -24,6 +24,7 @@ export const IPC = {
   playerRotateSeatCode: "vtt:player-rotate-seat-code",
   playerClearSeat: "vtt:player-clear-seat",
   playerOpenWindow: "vtt:player-open-window",
+  playerJoin: "vtt:player-join",
   playerSetScene: "vtt:player-set-scene",
   playerRuler: "vtt:player-ruler",
   playerPullCamera: "vtt:player-pull-camera",
@@ -165,6 +166,8 @@ export interface VttApi {
     rotateSeatCode(slotId: string): Promise<PlayerState>
     clearSeat(slotId: string): Promise<PlayerState>
     openWindow(): Promise<void>
+    /** Entrar Sala: abre a página da sala de outra pessoa (o link que o mestre mandou). */
+    join(url: string): Promise<void>
     setScene(sceneId: string | null): Promise<void>
     /** Régua da ferramenta Régua do mestre, repassada aos espectadores; `null` apaga. */
     ruler(ruler: PlayerRuler | null): Promise<void>

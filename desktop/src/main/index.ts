@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
-import { SMOKE_SCRIPT, smokePassed } from "./smoke"
+import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
 import { registerAssetScheme, VttHost } from "./vtt/vtt-host"
 
@@ -14,7 +14,7 @@ if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(ap
 registerAssetScheme()
 
 /**
- * `--smoke [--vault=<pasta>] [--write] [--shot=<arquivo.png>]`: abre, confere a ponte, o cofre e o leitor de Notas,
+ * `--smoke [--vault=<pasta>] [--write] [--shot=<arquivo.png>] [--hold=<s>]`: abre, confere a ponte, o cofre e o leitor de Notas,
  * imprime o resultado e sai. Com `--write`, trabalha numa cópia temporária do cofre e testa as gravações.
  */
 const smoke = process.argv.includes("--smoke")
@@ -98,10 +98,14 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
   try {
     await new Promise<void>((resolve) => window.webContents.once("did-finish-load", () => resolve()))
     const result = (await window.webContents.executeJavaScript(SMOKE_SCRIPT)) as Record<string, unknown>
+    if (result.room) result.roomCheck = await checkRoom(result.room as { port: number; key: string; codes: string[] })
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))
     ok = smokePassed(result, vault.rootPath !== null)
+    // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
+    const hold = Number(argValue("hold") ?? 0)
+    if (hold > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(hold, 600) * 1000))
   } catch (error) {
     console.error(error)
   }

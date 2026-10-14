@@ -313,6 +313,9 @@ function ImagePicker({ kind, path, onChange }: { kind: AssetKind; path: string |
   </div>
 }
 
+/** Assentos da sala (`player-1`…): o jogador daquele assento pode mover este token. */
+const PLAYER_SLOTS = Array.from({ length: 12 }, (_, index) => `player-${index + 1}`)
+
 function TokenFields({ data, scene, update }: { data: TokenData; scene: WorldDocument<SceneData>; update: (patch: Partial<TokenData>) => void }) {
   const setBar = (index: number, patch: Partial<TokenBar>) => update({ bars: data.bars.map((bar, current) => current === index ? { ...bar, ...patch } : bar) })
   const freeLabels = (["PV", "PA", "PE"] as const).filter((label) => !data.bars.some((bar) => bar.label === label))
@@ -325,6 +328,7 @@ function TokenFields({ data, scene, update }: { data: TokenData; scene: WorldDoc
       <Field label="Rotação"><NumberInput value={data.rotation} step={15} onCommit={(rotation) => update({ rotation })} /></Field>
     </div>
     <Field label="Disposição"><select value={data.disposition} onChange={(event) => update({ disposition: event.target.value as TokenDisposition })}>{TOKEN_DISPOSITIONS.map((disposition) => <option key={disposition} value={disposition}>{DISPOSITION_LABELS[disposition]}</option>)}</select></Field>
+    <Field label="Controlado por"><select aria-label="Jogador que controla o token" value={data.playerSlotId ?? ""} onChange={(event) => update({ playerSlotId: event.target.value || undefined, ...(event.target.value ? { disposition: "player" as TokenDisposition } : {}) })}><option value="">Ninguém (só o mestre)</option>{PLAYER_SLOTS.map((slot, index) => <option key={slot} value={slot}>Jogador {index + 1}</option>)}</select></Field>
     <label className="check"><input type="checkbox" checked={data.showName} onChange={(event) => update({ showName: event.target.checked })} /> Mostrar nome</label>
     <label className="check"><input type="checkbox" checked={data.mirror} onChange={(event) => update({ mirror: event.target.checked })} /> Espelhar a imagem (F)</label>
     <div className="bars">

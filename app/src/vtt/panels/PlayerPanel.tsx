@@ -65,10 +65,10 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
 
   return <section className="player-panel">
     <header className="panel-header">
-      <div><p className="eyebrow">Fase 10</p><h2>Vista dos Jogadores</h2></div>
+      <div><p className="eyebrow">Jogadores</p><h2>Sala</h2></div>
       <Radio size={20} className={state?.enabled ? "player-live" : "muted"} />
     </header>
-    <p className="muted">A transmissão começa com assentos individuais. Cada código libera um jogador para abrir o Runas Tools e enviar a própria ficha.</p>
+    <p className="muted">A sala começa com assentos individuais. Cada código identifica um jogador, que passa a mover o token atribuído a ele (campo “Controlado por” do token). Quem entra sem código assiste como espectador.</p>
 
     <div className="player-controls">
       <label className="field"><span>Porta local</span><input inputMode="numeric" value={port} disabled={Boolean(state?.enabled) || busy} onChange={(event) => setPort(event.target.value.replace(/\D/g, "").slice(0, 5))} /></label>
@@ -81,7 +81,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
     {state?.enabled && <>
       <div className="player-link-card">
         <div className="player-link-heading"><strong>Link para os jogadores</strong><span><Users size={14} /> {state.players} jogadores · {state.spectators} {state.spectators === 1 ? "espectador" : "espectadores"}</span></div>
-        <div className="player-link-row"><input readOnly value={link} aria-label="Link da Vista dos Jogadores" /><button className="ghost small" onClick={() => { void navigator.clipboard?.writeText(link); setCopied(true); window.setTimeout(() => setCopied(false), 1600) }}>{copied ? "Copiado" : "Copiar"}</button></div>
+        <div className="player-link-row"><input readOnly value={link} aria-label="Link da sala" /><button className="ghost small" onClick={() => { void navigator.clipboard?.writeText(link); setCopied(true); window.setTimeout(() => setCopied(false), 1600) }}>{copied ? "Copiado" : "Copiar"}</button></div>
         {qr && <img className="player-qr" src={qr} alt="QR code do link para os jogadores" />}
         <small className="hint">{state.publicUrl ? "Link público pela internet: qualquer pessoa com ele assiste à cena. Desligue a transmissão para encerrá-lo." : lanHint}</small>
         {state.publicUrl && state.tunnel && <small className="hint">Túnel conectado{state.tunnel.location ? ` via ${state.tunnel.location.toUpperCase()}` : ""}{state.tunnel.protocol ? ` (${state.tunnel.protocol})` : ""}.</small>}
@@ -89,7 +89,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
       </div>
       <div className="player-seats">
         <div className="player-link-heading"><strong>Assentos da sessão</strong><span><KeyRound size={14} /> {state.seats.length} {state.seats.length === 1 ? "jogador" : "jogadores"}</span></div>
-        <p className="hint">Entregue um código a cada jogador. Regenerar invalida o código anterior; limpar remove a ficha anexada ao assento.</p>
+        <p className="hint">Entregue um código a cada jogador. Regenerar invalida o código anterior; limpar desconecta quem está no assento.</p>
         <div className="table-scroll"><table><thead><tr><th>Assento</th><th>Código</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{state.seats.map((seat) => <tr key={seat.slotId}><td>{seat.label}</td><td><code>{seat.code ?? "••••••••"}</code>{seat.code && <button className="ghost small" aria-label={`Copiar código de ${seat.label}`} onClick={() => { void navigator.clipboard?.writeText(seat.code ?? "") }}>Copiar</button>}</td><td>{seat.status === "attached" ? "Ficha anexada" : seat.status === "connected" ? "Conectado" : "Disponível"}</td><td><button className="ghost small" disabled={busy} onClick={() => void run(async () => { const next = await vtt.player.rotateSeatCode(seat.slotId); setState(next) })}><RotateCw size={13} /> Regenerar</button><button className="ghost small danger" disabled={busy || (!seat.tokenId && seat.status === "available")} onClick={() => { if (window.confirm(`Limpar a ficha de ${seat.label}?`)) void run(async () => { const next = await vtt.player.clearSeat(seat.slotId); setState(next) }) }}><Trash2 size={13} /> Limpar</button></td></tr>)}</tbody></table></div>
       </div>
       <div className="player-actions"><button className="ghost" onClick={() => void run(() => vtt.player.openWindow())}><MonitorPlay size={15} /> Abrir janela local</button><button className="ghost" disabled={busy} onClick={() => { if (window.confirm("Baixar o cloudflared do release oficial da Cloudflare, verificar o SHA-256 e abrir um túnel público?")) void run(async () => { setTunneling(true); try { await vtt.player.publicLink() } finally { setTunneling(false) } }) }}><ExternalLink size={15} /> {tunneling ? "Conectando à Cloudflare…" : state.publicUrl ? "Gerar novo link público" : "Gerar link público"}</button>{state.publicUrl && <button className="ghost" disabled={busy || testing} onClick={() => { setTesting(true); setLinkTest(null); void vtt.player.testPublicLink().then(setLinkTest).catch((reason) => setLinkTest({ ok: false, ms: 0, error: reason instanceof Error ? reason.message : String(reason) })).finally(() => setTesting(false)) }}><Activity size={15} /> {testing ? "Testando…" : "Testar link"}</button>}</div>

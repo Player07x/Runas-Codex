@@ -32,7 +32,7 @@ export function LogPanel({ store }: { store: DocumentStore }) {
       <div><p className="eyebrow">Registro</p><h2>{entries.length ? `${entries.length} ${entries.length === 1 ? "entrada" : "entradas"}` : "Nada registrado"}</h2></div>
       {entries.length > 0 && <button type="button" className="ghost danger small" disabled={clearing} onClick={() => void clear()} title="Apagar todas as entradas do Registro"><Trash2 size={14} /> Limpar</button>}
     </header>
-    {entries.length === 0 && <p className="hint">Testes e danos feitos no Runas DM, dentro do navegador integrado, aparecem aqui e sobre o token na cena.</p>}
+    {entries.length === 0 && <p className="hint">Avisos das regiões (texto e teleporte) aparecem aqui e sobre o token na cena.</p>}
     <ol className="log-list">
       {entries.map((entry) => {
         const kind = KIND[entry.data.kind]

@@ -22,12 +22,17 @@ export const CONTENT_SECURITY_POLICY = [
   "form-action 'none'",
 ].join("; ")
 
-/** Grava a política no `index.html` dos builds (o servidor de desenvolvimento do Vite precisa de script inline). */
+/** A página da sala dos jogadores conversa com o servidor do mestre por WebSocket (e só com ele). */
+export const PLAYER_CONTENT_SECURITY_POLICY = CONTENT_SECURITY_POLICY.replace("connect-src 'self' blob: vtt-asset:", "connect-src 'self' ws: wss:")
+
+/** Grava a política no HTML dos builds (o servidor de desenvolvimento do Vite precisa de script inline). */
 export function contentSecurityPolicy(): Plugin {
   return {
     name: "runas-codex:csp",
     apply: "build",
-    transformIndexHtml: (html) =>
-      html.replace("<head>", `<head>\n    <meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}" />`),
+    transformIndexHtml: (html, context) => {
+      const policy = context.path.endsWith("player.html") ? PLAYER_CONTENT_SECURITY_POLICY : CONTENT_SECURITY_POLICY
+      return html.replace("<head>", `<head>\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`)
+    },
   }
 }

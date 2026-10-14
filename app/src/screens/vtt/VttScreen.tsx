@@ -2,11 +2,10 @@ import { useEffect, useState } from "react"
 import { Camera, Clock, DoorOpen, Dices, Link2, LogIn, Map, Plus, WifiOff, Wifi, Hash } from "lucide-react"
 import { href, navigate } from "../../lib/router"
 import { relativeDays } from "../../lib/navigation"
-import { Empty, Modal, Segmented, Switch, useToast } from "../../components/ui"
+import { Empty, Modal } from "../../components/ui"
 import { MesaTable } from "../../vtt/MesaTable"
 import { isBrowserPreview, vtt } from "../../vtt/api"
 import type { WorldSummary } from "../../vtt/shared/world"
-import { PlayerView } from "./PlayerView"
 import "./vtt.css"
 
 export function VttScreen({ route }: { route: string[] }) {
@@ -14,7 +13,6 @@ export function VttScreen({ route }: { route: string[] }) {
   if (section === "criar") return <CreateRoom />
   if (section === "entrar") return <JoinRoom />
   if (section === "mesa" && id) return <MesaTable id={id} />
-  if (section === "jogador") return <PlayerView />
   return <VttHome />
 }
 
@@ -162,9 +160,52 @@ function NewMesaModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+const RECENT_KEY = "runas-codex:salas-recentes"
+
+interface RecentRoom {
+  url: string
+  at: number
+}
+
+function readRecent(): RecentRoom[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as RecentRoom[]
+    return Array.isArray(value) ? value.filter((r) => typeof r.url === "string").slice(0, 8) : []
+  } catch {
+    return []
+  }
+}
+
+/** Link da sala: `http(s)://endereço/?k=chave`. Aceita também só o endereço com a chave colada à parte. */
+function roomUrl(link: string): string {
+  let text = link.trim()
+  if (!/^https?:\/\//i.test(text)) text = `http://${text}`
+  const url = new URL(text)
+  if (!url.searchParams.get("k")) throw new Error("O link precisa ter a chave da sala (a parte ?k=…). Peça ao mestre o link completo.")
+  return url.href
+}
+
+/** Entrar Sala: abre a página da sala de outra pessoa. O código do assento é pedido dentro da própria sala. */
 function JoinRoom() {
-  const toast = useToast()
-  const [how, setHow] = useState<"link" | "codigo" | "qr">("link")
+  const [link, setLink] = useState("")
+  const [error, setError] = useState<string>()
+  const [recent, setRecent] = useState(readRecent)
+  const join = async (value: string) => {
+    setError(undefined)
+    try {
+      const url = roomUrl(value)
+      await vtt.player.join(url)
+      const next = [{ url, at: Date.now() }, ...recent.filter((r) => r.url !== url)].slice(0, 8)
+      setRecent(next)
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+      } catch {
+        /* só não é lembrada */
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+    }
+  }
   return (
     <div className="page join">
       <div className="page-head">
@@ -175,83 +216,50 @@ function JoinRoom() {
       </div>
       <div className="join-layout">
         <section className="card stack-lg">
-          <Segmented
-            label="Como entrar"
-            value={how}
-            onChange={setHow}
-            options={[
-              { value: "link", label: "Link", icon: <Link2 size={14} /> },
-              { value: "codigo", label: "Código", icon: <Hash size={14} /> },
-              { value: "qr", label: "QR", icon: <Camera size={14} /> },
-            ]}
-          />
-          {how === "link" && (
-            <label className="field">
-              <span>Link que o mestre mandou</span>
-              <input className="input mono" placeholder="https://… ou http://192.168.0.12:30000/?k=…" defaultValue="http://192.168.0.12:30000/?k=8f2c9a71" />
-            </label>
-          )}
-          {how === "codigo" && (
-            <div className="stack">
-              <label className="field">
-                <span>Endereço da sala</span>
-                <input className="input mono" defaultValue="192.168.0.12:30000" />
-              </label>
-              <label className="field">
-                <span>Código do seu assento</span>
-                <input className="input mono seat-code" defaultValue="K7QM-2XPA" />
-              </label>
-            </div>
-          )}
-          {how === "qr" && (
-            <div className="qr-camera">
-              <Camera size={40} />
-              <span className="muted small">A câmera abre aqui (no celular). Aponte para o QR na tela do mestre.</span>
-            </div>
-          )}
-          <label className="field">
-            <span>Seu nome na mesa</span>
-            <input className="input" defaultValue="Ana" />
-          </label>
-          <button
-            className="btn primary lg"
-            onClick={() => {
-              toast("Conectado à sala “As Cinzas de Valdris”")
-              navigate("/vtt/jogador")
+          <form
+            className="stack"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void join(link)
             }}
           >
-            <LogIn size={18} /> Entrar
-          </button>
+            <label className="field">
+              <span>Link que o mestre mandou</span>
+              <input className="input mono" placeholder="http://192.168.0.12:30000/?k=… ou https://….trycloudflare.com/?k=…" value={link} onChange={(event) => setLink(event.target.value)} aria-label="Link da sala" autoFocus />
+            </label>
+            {error && <span className="small" style={{ color: "var(--red)" }}>{error}</span>}
+            <button className="btn primary lg" disabled={!link.trim()}>
+              <LogIn size={18} /> Entrar
+            </button>
+          </form>
+          <span className="small muted row">
+            <Hash size={14} /> Se o mestre te deu um código de assento, ele é pedido dentro da sala.
+          </span>
+          <span className="small muted row">
+            <Camera size={14} /> No celular, ler o QR com a câmera abre a sala no navegador.
+          </span>
         </section>
         <aside className="stack-lg">
           <section className="card stack">
             <span className="section-title">Salas recentes</span>
-            <button className="list-item" onClick={() => navigate("/vtt/jogador")}>
-              <Dices size={16} />
-              <span className="grow">
-                <strong className="small">As Cinzas de Valdris</strong>
-                <span className="tiny faint" style={{ display: "block" }}>Mesa do Bruno · rede local</span>
-              </span>
-              <span className="meta">sáb</span>
-            </button>
-            <button className="list-item" onClick={() => toast("Protótipo: sala fechada no momento")}>
-              <Dices size={16} />
-              <span className="grow">
-                <strong className="small">Noite de terror</strong>
-                <span className="tiny faint" style={{ display: "block" }}>trycloudflare.com · internet</span>
-              </span>
-              <span className="meta">set</span>
-            </button>
+            {recent.length === 0 && <span className="muted small">As salas em que você entrar aparecem aqui.</span>}
+            {recent.map((room) => (
+              <button key={room.url} className="list-item" onClick={() => void join(room.url)}>
+                <Dices size={16} />
+                <span className="grow" style={{ minWidth: 0 }}>
+                  <strong className="small truncate" style={{ display: "block" }}>{new URL(room.url).host}</strong>
+                  <span className="tiny faint" style={{ display: "block" }}>{new URL(room.url).protocol === "https:" ? "internet (túnel)" : "rede local"}</span>
+                </span>
+                <span className="meta">{relativeDays(new Date(room.at).toISOString(), new Date())}</span>
+              </button>
+            ))}
           </section>
           <section className="card stack small">
             <span className="row">
               <Wifi size={15} color="var(--green)" /> Mesma rede (Wi-Fi): conexão direta, sem internet.
             </span>
             <span className="row muted">
-              <Link2 size={15} /> Fora de casa: o mestre liga o túnel e manda um link https.
-            </span>
-            <span className="row muted">
-              <Switch on label="Lembrar" /> Lembrar desta sala neste aparelho
+              <Link2 size={15} /> Fora de casa: o mestre liga o link público e manda um endereço https.
             </span>
           </section>
         </aside>

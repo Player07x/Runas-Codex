@@ -78,9 +78,37 @@ export const SMOKE_SCRIPT = `(async () => {
     await wait(1600)
     result.mesaCanvas = Boolean(document.querySelector(".vtt-root canvas"))
     result.mesas = (await bridge.vtt.listWorlds()).map((m) => m.title + ":" + m.scenes)
+    // Sala: o processo principal confere a página e o WebSocket como um jogador (checkRoom).
+    const room = await bridge.vtt.player.start(30000 + Math.floor(Math.random() * 2000), 2)
+    result.room = { port: room.port, key: room.key, codes: room.seats.map((seat) => seat.code) }
   }
   return result
 })()`
+
+/**
+ * Confere a sala aberta pelo roteiro como um jogador faria, de fora da janela: a página com a chave, nada sem a
+ * chave, o WebSocket entregando a cena e o ingresso num assento com o código.
+ */
+export async function checkRoom(room: { port: number; key: string; codes: string[] }): Promise<Record<string, unknown>> {
+  const base = `http://127.0.0.1:${room.port}`
+  const page = await fetch(`${base}/?k=${room.key}`)
+  const html = await page.text()
+  const withoutKey = (await fetch(`${base}/`)).status
+  const scene = await new Promise<string | null>((resolve) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${room.port}/socket?k=${room.key}`)
+    const timer = setTimeout(() => (socket.close(), resolve(null)), 5000)
+    socket.onmessage = (event) => {
+      const message = JSON.parse(String(event.data)) as { type: string; projection?: { scene: { data: { name: string } } | null } }
+      if (message.type !== "snapshot") return
+      clearTimeout(timer)
+      socket.close()
+      resolve(message.projection?.scene?.data.name ?? "(sem cena)")
+    }
+    socket.onerror = () => (clearTimeout(timer), resolve(null))
+  })
+  const join = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[0] }) })
+  return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
+}
 
 /** O resultado do roteiro passou? */
 export function smokePassed(result: Record<string, unknown>, hasVault: boolean): boolean {
@@ -113,6 +141,12 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     links.every((link) => link.startsWith("[[Aldren Vael")) &&
     result.mesaCanvas === true &&
     Array.isArray(result.mesas) &&
-    (result.mesas as string[]).includes("Mesa do Smoke:1")
+    (result.mesas as string[]).includes("Mesa do Smoke:1") &&
+    typeof result.roomCheck === "object" &&
+    (result.roomCheck as Record<string, unknown>).page === 200 &&
+    (result.roomCheck as Record<string, unknown>).csp === true &&
+    (result.roomCheck as Record<string, unknown>).withoutKey === 404 &&
+    (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
+    (result.roomCheck as Record<string, unknown>).join === 200
   )
 }

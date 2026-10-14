@@ -6,6 +6,9 @@ import { contentSecurityPolicy } from "./csp"
 export default defineConfig({
   base: "./",
   plugins: [react(), contentSecurityPolicy()],
+  // Duas páginas: o app e a sala dos jogadores (servida pelo computador do mestre). Caminhos relativos à pasta
+  // `app/`, de onde os scripts do projeto rodam o build.
+  build: { rollupOptions: { input: { main: "index.html", player: "player.html" } } },
   server: { port: 5180 },
   preview: { port: 5181 },
 })

@@ -71,6 +71,7 @@ const bridge: RunasCodexBridge = {
       rotateSeatCode: (slotId) => invoke(VTT.playerRotateSeatCode, slotId),
       clearSeat: (slotId) => invoke(VTT.playerClearSeat, slotId),
       openWindow: () => invoke(VTT.playerOpenWindow),
+      join: (url) => invoke(VTT.playerJoin, url),
       setScene: (sceneId) => invoke(VTT.playerSetScene, sceneId),
       ruler: (ruler) => invoke(VTT.playerRuler, ruler),
       pullCamera: () => invoke(VTT.playerPullCamera),
