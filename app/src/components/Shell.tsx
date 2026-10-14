@@ -8,6 +8,7 @@ import { href, navigate } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
 import { routeOfNote } from "../lib/navigation"
 import { vaultRoute } from "../lib/vault-notes"
+import { noteName } from "../core/text"
 import { useVault } from "../platform/VaultProvider"
 import { NOTES } from "../data/notes"
 import { ARTICLES, WIKI } from "../data/wiki"
@@ -15,8 +16,7 @@ import { CAMPAIGNS } from "../data/campaigns"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
 import { EVENTS } from "../data/agenda"
-import { Modal } from "./ui"
-import type { Note } from "../data/types"
+import { Modal, useToast } from "./ui"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -37,11 +37,11 @@ const TOOLS: NavItem[] = [
 
 const BOTTOM = ["", "notas", "agenda", "vtt"]
 
-function crumbsFor(route: string[], notes: Note[]): { label: string; to?: string }[] {
+function crumbsFor(route: string[]): { label: string; to?: string }[] {
   const [first, second, third, fourth] = route
   const item = [...NAV, ...TOOLS].find((n) => n.match === (first ?? ""))
   const crumbs: { label: string; to?: string }[] = [{ label: item?.label ?? "Início", to: item?.route }]
-  if (first === "notas" && second) crumbs.push({ label: notes.find((n) => n.id === second)?.title ?? second })
+  if (first === "notas" && second) crumbs.push({ label: second === "nova" ? "Nova nota" : second === "hoje" ? "Nota do dia" : noteName(second) })
   if (first === "wiki") {
     crumbs.push({ label: WIKI.title, to: "/wiki" })
     const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapa", relacoes: "Relações", grafico: "Gráfico" }
@@ -68,7 +68,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const [palette, setPalette] = useState(false)
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
-  const crumbs = crumbsFor(route, vault.notes ?? NOTES)
+  const crumbs = crumbsFor(route)
+  const notesCount = vault.index ? vault.index.notesIn("Notas/").length || vault.index.size : NOTES.length
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -96,7 +97,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{item.match === "notas" && vault.notes ? vault.notes.length : item.count}</span>}
+              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.count}</span>}
             </a>
           ))}
         </div>
@@ -184,13 +185,13 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
 
 function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
   const vault = useVault()
-  const source = vault.notes ?? ALL_NOTES
-  const routeOf = vault.notes ? vaultRoute : routeOfNote
+  const toast = useToast()
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
     () => [
       { label: "Nova nota", icon: <Plus size={16} />, hint: "Ctrl N", run: () => navigate("/notas/nova") },
+      { label: "Nota do dia", icon: <CalendarDays size={16} />, hint: "Notas", run: () => navigate("/notas/hoje") },
       { label: "Criar Sala", icon: <DoorOpen size={16} />, hint: "VTT", run: () => navigate("/vtt/criar") },
       { label: "Entrar Sala", icon: <LogIn size={16} />, hint: "VTT", run: () => navigate("/vtt/entrar") },
       { label: "Abrir agenda", icon: <CalendarDays size={16} />, hint: "", run: () => navigate("/agenda") },
@@ -202,10 +203,25 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
     [onToggleTheme],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
-  const notes = source.filter((n) => !q || n.title.toLocaleLowerCase("pt-BR").includes(q) || n.aliases?.some((a) => a.toLocaleLowerCase("pt-BR").includes(q))).slice(0, 7)
+  // Notas do cofre (pelo índice); no exemplo do navegador, as que têm tela própria (wiki, campanhas) abrem nela.
+  const notes = useMemo(() => {
+    if (!vault.index) return ALL_NOTES.filter((n) => !q || n.title.toLocaleLowerCase("pt-BR").includes(q) || n.aliases?.some((a) => a.toLocaleLowerCase("pt-BR").includes(q))).slice(0, 7).map((n) => ({ key: n.id, label: n.title, path: n.path, route: routeOfNote(n) }))
+    const demo = vault.platform.kind === "memory" ? new Map(ALL_NOTES.map((n) => [n.path, n])) : null
+    const paths = q ? vault.index.search(query, "", 7).map((hit) => hit.path) : vault.index.allNotes().sort((a, b) => b.mtime - a.mtime).slice(0, 7).map((n) => n.path)
+    return paths.map((path) => {
+      const example = demo?.get(path)
+      return { key: path, label: noteName(path), path, route: example && example.space !== "notas" ? routeOfNote(example) : vaultRoute(path) }
+    })
+  }, [vault.index, vault.platform.kind, vault.version, q, query])
   const cmds = commands.filter((c) => !q || c.label.toLocaleLowerCase("pt-BR").includes(q))
+  const canCreate = Boolean(vault.index && !vault.info?.readOnly && query.trim() && !notes.some((n) => n.label.toLocaleLowerCase("pt-BR") === q))
+  const createNote = () => {
+    const folder = vault.index?.allFiles().some((f) => f.path.startsWith("Notas/")) ? "Notas" : ""
+    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+  }
   const items = [
-    ...notes.map((n) => ({ key: n.id, label: n.title, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(routeOf(n)), section: "Notas" })),
+    ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas" })),
+    ...(canCreate ? [{ key: "criar", label: `Criar nota “${query.trim()}”`, icon: <Plus size={16} />, hint: "Enter", run: createNote, section: "Notas" }] : []),
     ...cmds.map((c) => ({ key: c.label, ...c, section: "Comandos" })),
   ]
 
@@ -221,7 +237,7 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
           <Search size={18} color="var(--muted)" />
           <input
             autoFocus
-            placeholder="Buscar nota pelo nome ou apelido, ou um comando…"
+            placeholder="Buscar nota (nome, apelido, tag:, path:) ou um comando…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
@@ -236,11 +252,7 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
           />
         </div>
         <div className="palette-list">
-          {items.length === 0 && (
-            <div className="palette-item muted">
-              <Plus size={16} /> Criar nota “{query}”
-            </div>
-          )}
+          {items.length === 0 && <div className="palette-item muted">Nada encontrado.</div>}
           {items.map((item, index) => (
             <div key={item.key}>
               {(index === 0 || items[index - 1].section !== item.section) && <div className="palette-section">{item.section}</div>}

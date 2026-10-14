@@ -54,6 +54,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y xvfb
           xvfb-run -a release/linux-unpacked/runas-codex --smoke --no-sandbox --vault="$PWD/tests/cofre-exemplo"
+          xvfb-run -a release/linux-unpacked/runas-codex --smoke --no-sandbox --vault="$PWD/tests/cofre-exemplo" --write
 
       - uses: actions/upload-artifact@v4
         with:
@@ -84,7 +85,9 @@ jobs:
       - name: Smoke no Electron
         working-directory: desktop
         shell: bash
-        run: npx electron . --smoke --vault=tests/cofre-exemplo
+        run: |
+          npx electron . --smoke --vault=tests/cofre-exemplo
+          npx electron . --smoke --vault=tests/cofre-exemplo --write
 
       - uses: actions/upload-artifact@v4
         with:

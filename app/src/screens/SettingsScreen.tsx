@@ -1,7 +1,8 @@
-import type { ReactNode } from "react"
-import { Bell, FolderOpen, Keyboard, Lock, Network, Palette, ShieldCheck, Vault } from "lucide-react"
+import { useEffect, useState, type ReactNode } from "react"
+import { Archive, Bell, FolderOpen, Keyboard, Lock, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { Switch, useProtoAction, useToast } from "../components/ui"
 import { useVault } from "../platform/VaultProvider"
+import type { BackupInfo } from "../platform/platform"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -21,19 +22,20 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   const toast = useToast()
   const vault = useVault()
   const desktop = vault.platform.kind !== "memory"
-  const chooseVault = () => vault.choose().catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
-  const vaultHint = !desktop
-    ? "Exemplo em memória — abrir uma pasta real só no app desktop"
-    : vault.info
-      ? vault.info.path
-      : "Nenhum cofre aberto"
-  const notesHint = vault.loading
-    ? "Lendo o cofre…"
-    : vault.error
-      ? `Erro: ${vault.error}`
-      : vault.notes
-        ? `${vault.notes.length} notas Markdown lidas`
-        : "Usando as notas de exemplo"
+  const [backups, setBackups] = useState<BackupInfo[]>([])
+  const [busy, setBusy] = useState(false)
+  const run = (action: () => Promise<unknown>) => () => {
+    setBusy(true)
+    action()
+      .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      .finally(() => setBusy(false))
+  }
+  useEffect(() => {
+    if (vault.info) vault.platform.listBackups().then(setBackups, () => setBackups([]))
+  }, [vault.info, vault.platform])
+  const vaultHint = vault.info ? vault.info.path : "Nenhum cofre aberto"
+  const notesHint = vault.loading ? "Lendo o cofre…" : vault.error ? `Erro: ${vault.error}` : vault.index ? `${vault.index.size} notas Markdown no índice` : "—"
+  const lastBackup = backups[0]
   return (
     <div className="page">
       <div className="page-head">
@@ -47,26 +49,38 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Vault size={16} /> Cofre
           </span>
-          <Row title="Pasta do cofre" hint={vaultHint}>
-            <button className="btn sm" onClick={chooseVault} disabled={!desktop} title={desktop ? "Escolher a pasta do cofre" : "Disponível no app desktop"}>
-              <FolderOpen size={14} /> {vault.info && desktop ? "Trocar" : "Abrir pasta…"}
-            </button>
+          <Row title={vault.info?.name ?? "Pasta do cofre"} hint={vaultHint}>
+            <div className="row" style={{ gap: 6 }}>
+              <button className="btn sm" onClick={run(vault.choose)} disabled={!desktop || busy} title={desktop ? "Abrir um cofre que já existe" : "Disponível no app desktop"}>
+                <FolderOpen size={14} /> Abrir pasta…
+              </button>
+              <button className="btn sm" onClick={run(vault.create)} disabled={!desktop || busy} title={desktop ? "Criar um cofre novo numa pasta vazia" : "Disponível no app desktop"}>
+                <Plus size={14} /> Criar cofre
+              </button>
+            </div>
           </Row>
           <Row title="Notas" hint={notesHint}>
-            <span className="tiny faint">{vault.info?.name ?? "—"}</span>
+            <button className="btn sm" onClick={run(vault.reload)} disabled={!vault.info || busy}>
+              <RefreshCw size={14} /> Reler
+            </button>
           </Row>
-          <Row title="Somente leitura" hint="Até a etapa 3a o app só lê o cofre: nenhum arquivo é criado ou alterado">
-            <Switch on label="Somente leitura" />
+          <Row title="Permitir gravação" hint={vault.info?.readOnly ? "Desligado: o app só lê este cofre. Ao ligar, ele faz um backup antes." : "Ligado: o app cria, edita, renomeia e manda notas para a lixeira (.trash)."}>
+            <Switch on={Boolean(vault.info && !vault.info.readOnly)} label="Permitir gravação" onChange={(on) => run(() => vault.setWritable(on).then(() => vault.platform.listBackups().then(setBackups)))()} />
+          </Row>
+          <Row title="Backups" hint={lastBackup ? `Último: ${new Date(lastBackup.createdAt).toLocaleString("pt-BR")} · ${backups.length} guardado(s), até 15. Automático antes da 1ª gravação do dia.` : "Nenhum ainda. Feitos antes da 1ª gravação de cada dia (só o texto das notas, fora do cofre)."}>
+            <div className="row" style={{ gap: 6 }}>
+              <button className="btn sm" onClick={run(() => vault.platform.backup().then(() => vault.platform.listBackups().then(setBackups)).then(() => toast("Backup feito")))} disabled={!vault.info || busy}>
+                <Archive size={14} /> Fazer agora
+              </button>
+              {desktop && (
+                <button className="btn sm ghost" onClick={run(vault.platform.revealBackups)} disabled={!vault.info}>
+                  Abrir pasta
+                </button>
+              )}
+            </div>
           </Row>
           <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
             <button className="btn sm" onClick={proto("renomear pastas dos espaços")}>Ajustar</button>
-          </Row>
-          <Row title="Backup automático" hint="Snapshots locais, guarda os 15 últimos">
-            <select className="select" defaultValue="diario">
-              <option value="hora">A cada hora</option>
-              <option value="diario">Todo dia</option>
-              <option value="semanal">Toda semana</option>
-            </select>
           </Row>
         </section>
 

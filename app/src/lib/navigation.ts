@@ -1,4 +1,5 @@
 import type { Note } from "../data/types"
+import { vaultRoute } from "./vault-notes"
 
 /** Rota da tela que abre uma nota, conforme o espaço dela. */
 export function routeOfNote(note: Note): string {
@@ -9,7 +10,7 @@ export function routeOfNote(note: Note): string {
       return `/campanhas/cinzas-de-valdris/sessao/s12`
     case "notas":
     default:
-      return `/notas/${note.id}`
+      return vaultRoute(note.path)
   }
 }
 

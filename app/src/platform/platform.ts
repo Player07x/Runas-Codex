@@ -17,8 +17,22 @@ export interface VaultInfo {
   name: string
   /** Pasta no disco (ou um rótulo, na plataforma em memória). */
   path: string
-  /** A primeira abertura de um cofre existente nunca grava (docs/02, seção 5). */
+  /**
+   * Um cofre que já existia abre em somente leitura até o usuário liberar a gravação (docs/02, seção 5).
+   * Um cofre criado pelo app já nasce gravável.
+   */
   readOnly: boolean
+}
+
+/** Mudança feita fora do app (Obsidian, sincronização) ou pelo próprio app em outra janela. */
+export type VaultChange = { type: "changed"; entry: VaultEntry } | { type: "deleted"; path: string }
+
+export interface BackupInfo {
+  id: string
+  createdAt: number
+  /** Arquivos no backup (0 quando a contagem não está à mão). */
+  files: number
+  size: number
 }
 
 export interface RoomHostInfo {
@@ -33,10 +47,29 @@ export interface Platform {
   vault(): Promise<VaultInfo | null>
   /** Pede ao usuário uma pasta de cofre; devolve o cofre aberto depois da escolha (o anterior, se cancelar). */
   chooseVault(): Promise<VaultInfo | null>
+  /** Cria um cofre novo (pastas dos espaços + `.obsidian`) numa pasta escolhida pelo usuário. */
+  createVault(): Promise<VaultInfo | null>
+  /** Libera (ou volta a bloquear) a gravação no cofre aberto. */
+  setWritable(writable: boolean): Promise<VaultInfo | null>
   /** Lista arquivos do cofre de uma vez (o SAF do Android é lento arquivo a arquivo). */
   listVault(prefix?: string): Promise<VaultEntry[]>
   readTexts(paths: string[]): Promise<Record<string, string>>
-  writeText(path: string, content: string, expectedMtime?: number): Promise<VaultEntry>
+  /**
+   * Grava um texto. `expected` é a versão que o app leu: se o arquivo mudou desde então, recusa. `null` cria e recusa
+   * se já existir. Conteúdo igual ao do disco não é regravado.
+   */
+  writeText(path: string, content: string, expected?: VaultEntry | null): Promise<VaultEntry>
+  createFolder(path: string): Promise<void>
+  /** Renomeia ou move arquivo ou pasta (os links são atualizados antes, pelo app). */
+  rename(from: string, to: string): Promise<void>
+  /** Manda para a lixeira do cofre (`.trash`). */
+  trash(path: string): Promise<void>
+  /** Avisa de mudanças feitas fora do app. Devolve a função que para de observar. */
+  watch(listener: (changes: VaultChange[]) => void): () => void
+  backup(): Promise<BackupInfo>
+  listBackups(): Promise<BackupInfo[]>
+  /** Abre a pasta dos backups no gerenciador de arquivos. */
+  revealBackups(): Promise<void>
   notify(title: string, body: string, at?: Date): Promise<void>
   hostRoom(mesaId: string): Promise<RoomHostInfo>
   stopRoom(): Promise<void>

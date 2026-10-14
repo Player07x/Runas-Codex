@@ -1,0 +1,136 @@
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
+import { autocompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
+import { markdown } from "@codemirror/lang-markdown"
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language"
+import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
+import { Compartment, EditorState } from "@codemirror/state"
+import { EditorView, keymap, placeholder } from "@codemirror/view"
+import { tags } from "@lezer/highlight"
+
+export interface LinkSuggestion {
+  label: string
+  detail: string
+  /** Texto que entra entre `[[` e `]]`. */
+  insert: string
+}
+
+export interface SourceEditorHandle {
+  /** Insere texto no cursor (ou no lugar da seleção). */
+  insert(text: string): void
+  focus(): void
+}
+
+interface Props {
+  /** Texto inicial; para trocar o documento por fora (outra nota, recarregar), mude `docKey`. */
+  value: string
+  docKey: string
+  readOnly: boolean
+  onChange(value: string): void
+  onSave?(): void
+  suggestLinks?(query: string): LinkSuggestion[]
+}
+
+/** Cores pelas variáveis do tema: o editor acompanha o claro/escuro do Órbita. */
+const theme = EditorView.theme({
+  "&": { color: "var(--text)", backgroundColor: "transparent", fontSize: "14px", height: "100%" },
+  ".cm-content": { fontFamily: "var(--font-mono)", lineHeight: "1.7", caretColor: "var(--cyan)", padding: "0 0 40vh" },
+  ".cm-cursor": { borderLeftColor: "var(--cyan)" },
+  "&.cm-focused": { outline: "none" },
+  ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": { backgroundColor: "color-mix(in srgb, var(--cyan) 28%, transparent) !important" },
+  ".cm-activeLine": { backgroundColor: "transparent" },
+  ".cm-placeholder": { color: "var(--faint)" },
+  ".cm-tooltip": { border: "1px solid var(--line-strong)", borderRadius: "10px", backgroundColor: "var(--panel)", color: "var(--text)", overflow: "hidden" },
+  ".cm-tooltip-autocomplete > ul > li": { padding: "4px 10px", fontFamily: "var(--font-sans)" },
+  ".cm-tooltip-autocomplete > ul > li[aria-selected]": { backgroundColor: "var(--panel-2)", color: "var(--text)" },
+  ".cm-completionDetail": { color: "var(--faint)", marginLeft: "8px", fontStyle: "normal" },
+  ".cm-searchMatch": { backgroundColor: "color-mix(in srgb, var(--gold) 30%, transparent)" },
+  ".cm-panels": { backgroundColor: "var(--panel)", color: "var(--text)", borderColor: "var(--line)" },
+})
+
+const highlight = HighlightStyle.define([
+  { tag: tags.heading1, fontWeight: "700", fontSize: "1.3em", color: "var(--text)" },
+  { tag: tags.heading2, fontWeight: "700", fontSize: "1.15em", color: "var(--text)" },
+  { tag: [tags.heading3, tags.heading4, tags.heading5, tags.heading6], fontWeight: "700", color: "var(--text)" },
+  { tag: tags.strong, fontWeight: "700" },
+  { tag: tags.emphasis, fontStyle: "italic" },
+  { tag: tags.strikethrough, textDecoration: "line-through" },
+  { tag: [tags.link, tags.url], color: "var(--cyan)" },
+  { tag: tags.monospace, color: "var(--gold)" },
+  { tag: tags.quote, color: "var(--muted)" },
+  { tag: [tags.processingInstruction, tags.meta, tags.contentSeparator], color: "var(--faint)" },
+  { tag: tags.list, color: "var(--violet)" },
+])
+
+export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks }, ref) {
+  const host = useRef<HTMLDivElement>(null)
+  const view = useRef<EditorView | null>(null)
+  const readOnlyConf = useRef(new Compartment())
+  // As funções mudam a cada render; o editor lê sempre a versão atual por estas referências.
+  const callbacks = useRef({ onChange, onSave, suggestLinks })
+  callbacks.current = { onChange, onSave, suggestLinks }
+
+  useEffect(() => {
+    const linkSource = (context: CompletionContext): CompletionResult | null => {
+      const match = context.matchBefore(/\[\[[^\]|#\n]*/)
+      if (!match || !callbacks.current.suggestLinks) return null
+      const query = match.text.slice(2)
+      const closing = context.state.sliceDoc(context.pos, context.pos + 2) === "]]"
+      return {
+        from: match.from + 2,
+        filter: false,
+        options: callbacks.current.suggestLinks(query).map((s) => ({ label: s.label, detail: s.detail, apply: closing ? s.insert : `${s.insert}]]` })),
+      }
+    }
+    const state = EditorState.create({
+      doc: value,
+      extensions: [
+        history(),
+        markdown(),
+        syntaxHighlighting(highlight),
+        highlightSelectionMatches(),
+        autocompletion({ override: [linkSource], icons: false }),
+        EditorView.lineWrapping,
+        EditorView.contentAttributes.of({ spellcheck: "true", lang: "pt-BR", "aria-label": "Código-fonte Markdown" }),
+        placeholder("Comece a escrever. Use [[ para ligar a outra nota."),
+        keymap.of([
+          { key: "Mod-s", run: () => (callbacks.current.onSave?.(), true) },
+          ...defaultKeymap,
+          ...historyKeymap,
+          ...searchKeymap,
+          indentWithTab,
+        ]),
+        readOnlyConf.current.of([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) callbacks.current.onChange(update.state.doc.toString())
+        }),
+        theme,
+      ],
+    })
+    view.current = new EditorView({ state, parent: host.current! })
+    return () => {
+      view.current?.destroy()
+      view.current = null
+    }
+    // O documento só é recriado quando `docKey` muda (trocar de nota ou recarregar do disco).
+  }, [docKey])
+
+  useEffect(() => {
+    view.current?.dispatch({ effects: readOnlyConf.current.reconfigure([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]) })
+  }, [readOnly])
+
+  useImperativeHandle(ref, () => ({
+    insert(text: string) {
+      const v = view.current
+      if (!v) return
+      const { from, to } = v.state.selection.main
+      v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } })
+      v.focus()
+    },
+    focus() {
+      view.current?.focus()
+    },
+  }))
+
+  return <div ref={host} className="source-editor" />
+})

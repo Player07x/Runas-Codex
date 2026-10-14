@@ -4,13 +4,15 @@
 [![Pages](https://github.com/Player07x/Runas-Codex/actions/workflows/pages.yml/badge.svg)](https://player07x.github.io/Runas-Codex/)
 [![Release](https://github.com/Player07x/Runas-Codex/actions/workflows/release.yml/badge.svg)](https://github.com/Player07x/Runas-Codex/actions/workflows/release.yml)
 
-App único, **offline**, para **Windows, Linux e Android**, que junta os projetos da Runas Suite: um organizador de
+App único, **offline**, para **Windows, Linux e Android** (independente da Runas Suite, da qual só reaproveita código —
+[ADR 0004](docs/adr/0004-independente-da-runas-suite.md)): um organizador de
 notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **Notas**, **Agenda**, **Wiki** (com
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
 
-Fase atual: **etapa 2, fundação técnica**. O visual Órbita está fechado; há instaladores para Linux, Windows e Android,
-e o app desktop já abre um cofre real do Obsidian em **somente leitura** no módulo Notas. Os outros módulos ainda usam dados de exemplo, e nada é gravado em disco.
+Fase atual: **etapa 3a, núcleo de notas** ([ADR 0005](docs/adr/0005-nucleo-de-notas.md)). O módulo **Notas** cria, edita,
+renomeia (atualizando os links do cofre) e manda para a lixeira notas de um cofre compatível com o Obsidian, com
+backups e sem regravar o que não mudou. Os outros módulos ainda usam dados de exemplo.
 
 **Ver a versão web (dados de exemplo) sem instalar nada:** https://player07x.github.io/Runas-Codex/ (abre no PC e no celular).
 
@@ -53,12 +55,14 @@ commit do repositório.
 npm run desktop
 ```
 
-Abre o Runas-Codex numa janela própria (Electron). Em **Configurações › Cofre › Abrir pasta…** escolha a pasta de um
-cofre do Obsidian: o módulo **Notas** passa a listar e ler as notas `.md` dele, com links e backlinks. Nada é gravado
-no cofre nesta fase ([ADR 0002](docs/adr/0002-casca-desktop-electron.md)).
+Abre o Runas-Codex numa janela própria (Electron). Em **Configurações › Cofre**, **Criar cofre** prepara uma pasta vazia
+com os espaços (`Notas/`, `Wikis/`, `Campanhas/`…); **Abrir pasta…** abre um cofre do Obsidian que já existe, em
+**somente leitura** até você ligar **Permitir gravação** (um backup é feito antes). No navegador, o módulo Notas usa um
+cofre de exemplo em memória: dá para editar, mas nada é salvo.
 
-Outros comandos: `npm run typecheck`, `npm test` (testes do desktop) e `npm run desktop:build`.
-Teste rápido sem abrir janela: `npm run smoke -w @runas-codex/desktop -- --vault=/caminho/do/cofre`.
+Outros comandos: `npm run typecheck`, `npm test` e `npm run desktop:build`.
+Teste rápido sem abrir janela: `npm run smoke -w @runas-codex/desktop -- --vault=/caminho/do/cofre` (com `--write`, testa
+as gravações numa cópia temporária). Ida e volta num cofre real, só lendo: `RUNAS_CORPUS=/caminho npm test -w @runas-codex/app`.
 
 ## Instaladores (Linux, Windows e Android)
 
@@ -78,7 +82,8 @@ Linux, `.exe` para Windows e o APK para Android. Uma tag `v<versão>` publica tu
 app/                      interface (React 19 + TypeScript + Vite), a mesma no navegador, no desktop e no Android
   src/platform/           interface Platform: Electron, versão em memória e o provedor do cofre
   src/data/               dados fictícios (wiki, notas, campanhas, agenda, livros, mesas)
-  src/lib/                links/backlinks, calendário fictício, dados, gráfico, rotas
+  src/core/               núcleo de notas: leitura, índice, links, renomear, propriedades (sem React, com testes)
+  src/lib/                calendário fictício, dados de exemplo, gráfico, rotas
   src/components/         casca (barra lateral, barra inferior, paleta), Markdown, editor, painéis
   src/screens/            uma pasta por módulo: wiki, campaigns, books, vtt…
 desktop/                  casca Electron (Windows/Linux): processo principal, preload, testes e instaladores

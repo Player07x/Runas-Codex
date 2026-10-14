@@ -166,22 +166,27 @@ function Callout({ block, space }: { block: Extract<Block, { type: "callout" }>;
 }
 
 function MarkdownChunk({ text, space }: { text: string; space?: SpaceId }) {
-  const { notes, routeOf } = useNoteSet()
+  const set = useNoteSet()
+  const find = (target: string, kind: "wiki" | "markdown") => {
+    if (set.resolve) return set.resolve(target, kind)
+    const note = resolveLink(target, space, set.notes)
+    return note ? { path: note.path, route: set.routeOf(note), cross: isCrossSpace(target, space) } : undefined
+  }
   const components: Components = {
     a({ href = "", children }) {
       if (href.startsWith("wiki:")) {
         const raw = decodeURIComponent(href.slice(5))
         const target = raw.split("#")[0]
-        const note = target ? resolveLink(target, space, notes) : undefined
-        const cross = isCrossSpace(target, space)
-        const broken = Boolean(target) && !note
+        const found = target ? find(target, "wiki") : undefined
+        const broken = Boolean(target) && !found
         return (
           <a
-            className={`wikilink ${broken ? "broken" : ""} ${cross ? "cross" : ""}`}
-            title={broken ? `“${target}” ainda não existe — clique para criar` : cross ? `Em outro espaço: ${note?.path}` : note?.path}
+            className={`wikilink ${broken ? "broken" : ""} ${found?.cross ? "cross" : ""}`}
+            title={broken ? `“${target}” ainda não existe — clique para criar` : found?.cross ? `Em outro espaço: ${found.path}` : found?.path}
             onClick={(event) => {
               event.preventDefault()
-              if (note) navigate(routeOf(note))
+              if (found) navigate(found.route)
+              else if (target) set.onBroken?.(target)
             }}
             href="#"
           >
@@ -190,13 +195,48 @@ function MarkdownChunk({ text, space }: { text: string; space?: SpaceId }) {
         )
       }
       if (href.startsWith("tag:")) {
-        return <a className="tag" href={`#/busca/${href.slice(4)}`}>{children}</a>
+        const tag = decodeURIComponent(href.slice(4))
+        return (
+          <a
+            className="tag"
+            href="#"
+            onClick={(event) => {
+              event.preventDefault()
+              set.onTag?.(tag)
+            }}
+          >
+            {children}
+          </a>
+        )
       }
       if (href.startsWith("embed:")) {
         return (
           <span className="chip cyan">
             <FileText size={13} /> {children}
           </span>
+        )
+      }
+      // Link markdown para um arquivo do cofre (`[texto](Pasta/Nota.md)`): abre dentro do app.
+      if (set.resolve && !/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith("#")) {
+        let target = href
+        try {
+          target = decodeURIComponent(href)
+        } catch {
+          /* fica como está */
+        }
+        const found = find(target.split("#")[0]!, "markdown")
+        return (
+          <a
+            className={`wikilink ${found ? "" : "broken"} ${found?.cross ? "cross" : ""}`}
+            title={found?.path ?? `“${target}” não existe`}
+            href="#"
+            onClick={(event) => {
+              event.preventDefault()
+              if (found) navigate(found.route)
+            }}
+          >
+            {children}
+          </a>
         )
       }
       return <a href={href} target="_blank" rel="noreferrer">{children}</a>

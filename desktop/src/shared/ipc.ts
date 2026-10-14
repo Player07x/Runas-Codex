@@ -2,10 +2,20 @@
 export const IPC = {
   vaultCurrent: "vault:current",
   vaultChoose: "vault:choose",
+  vaultCreate: "vault:create",
+  vaultSetWritable: "vault:set-writable",
   vaultList: "vault:list",
   vaultRead: "vault:read",
   vaultWrite: "vault:write",
+  vaultCreateFolder: "vault:create-folder",
+  vaultRename: "vault:rename",
+  vaultTrash: "vault:trash",
+  vaultBackup: "vault:backup",
+  vaultListBackups: "vault:list-backups",
+  vaultRevealBackups: "vault:reveal-backups",
+  /** Do processo principal para a janela: mudanças feitas fora do app. */
+  vaultChanged: "vault:changed",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"
-export type { VaultEntry, VaultInfo } from "../../../app/src/platform/platform"
+export type { BackupInfo, VaultChange, VaultEntry, VaultInfo } from "../../../app/src/platform/platform"

@@ -3,13 +3,23 @@ import type { Platform } from "./platform"
 
 /** Plataforma do app desktop: tudo passa pela ponte `window.runasCodex` do preload. */
 export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
+  const { vault } = bridge
   return {
     kind: "electron",
-    vault: () => bridge.vault.current(),
-    chooseVault: () => bridge.vault.choose(),
-    listVault: (prefix) => bridge.vault.list(prefix),
-    readTexts: (paths) => bridge.vault.read(paths),
-    writeText: (path, content, expectedMtime) => bridge.vault.write(path, content, expectedMtime),
+    vault: () => vault.current(),
+    chooseVault: () => vault.choose(),
+    createVault: () => vault.create(),
+    setWritable: (writable) => vault.setWritable(writable),
+    listVault: (prefix) => vault.list(prefix),
+    readTexts: (paths) => vault.read(paths),
+    writeText: (path, content, expected) => vault.write(path, content, expected),
+    createFolder: (path) => vault.createFolder(path),
+    rename: (from, to) => vault.rename(from, to),
+    trash: (path) => vault.trash(path),
+    watch: (listener) => vault.onChange(listener),
+    backup: () => vault.backup(),
+    listBackups: () => vault.listBackups(),
+    revealBackups: () => vault.revealBackups(),
     async notify(title, body) {
       new Notification(title, { body })
     },
