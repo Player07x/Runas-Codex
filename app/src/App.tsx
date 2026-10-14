@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRoute } from "./lib/router"
 import { Shell } from "./components/Shell"
 import { ToastProvider } from "./components/ui"
+import { VaultProvider } from "./platform/VaultProvider"
 import { Home } from "./screens/Home"
 import { NotesScreen } from "./screens/NotesScreen"
 import { AgendaScreen } from "./screens/AgendaScreen"
@@ -11,13 +12,8 @@ import { BooksScreen } from "./screens/books/BooksScreen"
 import { VttScreen } from "./screens/vtt/VttScreen"
 import { TransferScreen } from "./screens/TransferScreen"
 import { SettingsScreen } from "./screens/SettingsScreen"
-import { PrototypeBar, readDesign, type Design } from "./prototypes/PrototypeBar"
-import { PrototypeHome } from "./prototypes/PrototypeHome"
-import "./prototypes/prototypes.css"
 
 function readTheme(): string {
-  const design = readDesign()
-  if (design !== "original") return design === "atlas" ? "light" : "dark"
   try {
     return localStorage.getItem("runas-codex:tema") ?? "dark"
   } catch {
@@ -39,19 +35,6 @@ function isFill(route: string[]): boolean {
 export function App() {
   const route = useRoute()
   const [theme, setTheme] = useState(readTheme)
-  const [design, setDesign] = useState<Design>(readDesign)
-
-  useEffect(() => {
-    document.documentElement.dataset.design = design
-  }, [design])
-
-  const changeDesign = (next: Design) => {
-    setDesign(next)
-    if (next !== "original") setTheme(next === "atlas" ? "light" : "dark")
-    const url = new URL(window.location.href)
-    url.searchParams.set("design", next)
-    window.history.replaceState(null, "", url)
-  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -67,9 +50,6 @@ export function App() {
 
   let screen
   switch (first) {
-    case undefined:
-      screen = design === "original" ? <Home /> : <PrototypeHome design={design} />
-      break
     case "notas":
       screen = <NotesScreen noteId={rest[0]} />
       break
@@ -95,15 +75,16 @@ export function App() {
       screen = <SettingsScreen theme={theme} onTheme={setTheme} />
       break
     default:
-      screen = design === "original" ? <Home /> : <PrototypeHome design={design} />
+      screen = <Home />
   }
 
   return (
-    <ToastProvider>
-      <PrototypeBar design={design} onChange={changeDesign} />
-      <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
-        {screen}
-      </Shell>
-    </ToastProvider>
+    <VaultProvider>
+      <ToastProvider>
+        <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
+          {screen}
+        </Shell>
+      </ToastProvider>
+    </VaultProvider>
   )
 }

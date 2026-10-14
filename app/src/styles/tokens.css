@@ -1,27 +1,26 @@
-/* Paleta "Livro Vermelho", a mesma do Runas DM (Runas-Core/apps/runas-dm/app/globals.css).
-   Cores têm função: vermelho = dano/perigo, ciano = ação primária/testes, violeta = magia/segredo,
+/* Paleta Órbita: grafite e lavanda no escuro (padrão), névoa e índigo no claro (docs/adr/0001-design-orbita.md).
+   Cores têm função: ciano/lavanda = ação primária/testes, vermelho = dano/perigo, violeta = magia/segredo,
    dourado = narrativa/destaque, verde = sucesso/restauração. */
 :root {
-  --bg: #0d0b0c;
-  --bg-deep: #080707;
-  --panel: #171314;
-  --panel-2: #21191a;
-  --panel-hover: #2a2021;
-  --text: #f3ece8;
-  --muted: #b8aaa5;
-  --faint: #8a7b77;
-  --line: #3c2d2f;
-  --line-strong: #704346;
-  --cyan: #82aaa6;
-  --cyan-dim: #5f817e;
-  --green: #86a47f;
-  --red: #c76561;
-  --gold: #b99b65;
-  --violet: #927f9c;
-  --on-accent: #0d0b0c;
+  --bg: #11131a;
+  --bg-deep: #0c0f15;
+  --panel: #191d27;
+  --panel-2: #242936;
+  --panel-hover: #303748;
+  --text: #f0f2fa;
+  --muted: #b0b8cd;
+  --faint: #a0aabe;
+  --line: #303747;
+  --line-strong: #69799c;
+  --cyan: #bec6ff;
+  --cyan-dim: #8d9adb;
+  --green: #9dcbb4;
+  --red: #ffa48e;
+  --gold: #ecc484;
+  --violet: #bfadf1;
+  --on-accent: #1a2040;
   --shadow: 0 24px 70px rgb(0 0 0 / 35%);
-  --shadow-sm: 0 6px 18px rgb(0 0 0 / 25%);
-  --bg-veil: linear-gradient(115deg, rgb(13 11 12 / 94%), rgb(13 11 12 / 82%));
+  --shadow-sm: 0 8px 24px rgb(0 0 0 / 13%);
 
   /* Régua de espaçamento do Runas Tools (docs/design-system.md). */
   --space-label: 0.125rem;
@@ -31,14 +30,16 @@
   --space-section: 1rem;
   --space-page: 1.5rem;
 
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
 
   --font-sans: "Geist Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
-  --font-display: "Cinzel", "Geist Variable", serif;
+  --font-display: "Geist Variable", system-ui, sans-serif;
   --font-book: "EB Garamond Variable", Georgia, serif;
+  /* Só a prévia impressa de Livros: as páginas mantêm o visual de livro de RPG. */
+  --font-cinzel: "Cinzel", "EB Garamond Variable", serif;
 
   --sidebar-width: 248px;
   --topbar-height: 56px;
@@ -47,25 +48,24 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #eee8df;
-  --bg-deep: #ded4c7;
-  --panel: #fffaf3;
-  --panel-2: #f3e9df;
-  --panel-hover: #eadbd0;
-  --text: #281d1c;
-  --muted: #6f5c58;
-  --faint: #8f7d78;
-  --line: #c9b6ac;
-  --line-strong: #8d625e;
-  --cyan: #315f5d;
-  --cyan-dim: #557b78;
-  --green: #4c6f49;
-  --red: #963f3d;
-  --gold: #7b612d;
-  --violet: #66516e;
-  --on-accent: #fffaf3;
-  --shadow: 0 24px 70px rgb(56 50 38 / 15%);
-  --shadow-sm: 0 6px 18px rgb(56 50 38 / 12%);
-  --bg-veil: linear-gradient(115deg, rgb(238 232 223 / 93%), rgb(238 232 223 / 84%));
+  --bg: #f0f2fa;
+  --bg-deep: #e5e8f4;
+  --panel: #fff;
+  --panel-2: #e9edf8;
+  --panel-hover: #dce2f3;
+  --text: #222a42;
+  --muted: #53617c;
+  --faint: #63708a;
+  --line: #cbd3e6;
+  --line-strong: #8393b6;
+  --cyan: #454e9c;
+  --cyan-dim: #6974b4;
+  --green: #396549;
+  --red: #a54433;
+  --gold: #806021;
+  --violet: #745b8e;
+  --on-accent: #fff;
+  --shadow: 0 24px 70px rgb(34 42 66 / 15%);
+  --shadow-sm: 0 8px 24px rgb(34 42 66 / 10%);
   color-scheme: light;
 }

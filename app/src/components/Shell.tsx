@@ -7,6 +7,8 @@ import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
 import { routeOfNote } from "../lib/navigation"
+import { vaultRoute } from "../lib/vault-notes"
+import { useVault } from "../platform/VaultProvider"
 import { NOTES } from "../data/notes"
 import { ARTICLES, WIKI } from "../data/wiki"
 import { CAMPAIGNS } from "../data/campaigns"
@@ -14,6 +16,7 @@ import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
 import { EVENTS } from "../data/agenda"
 import { Modal } from "./ui"
+import type { Note } from "../data/types"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -34,11 +37,11 @@ const TOOLS: NavItem[] = [
 
 const BOTTOM = ["", "notas", "agenda", "vtt"]
 
-function crumbsFor(route: string[]): { label: string; to?: string }[] {
+function crumbsFor(route: string[], notes: Note[]): { label: string; to?: string }[] {
   const [first, second, third, fourth] = route
   const item = [...NAV, ...TOOLS].find((n) => n.match === (first ?? ""))
   const crumbs: { label: string; to?: string }[] = [{ label: item?.label ?? "Início", to: item?.route }]
-  if (first === "notas" && second) crumbs.push({ label: NOTES.find((n) => n.id === second)?.title ?? second })
+  if (first === "notas" && second) crumbs.push({ label: notes.find((n) => n.id === second)?.title ?? second })
   if (first === "wiki") {
     crumbs.push({ label: WIKI.title, to: "/wiki" })
     const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapa", relacoes: "Relações", grafico: "Gráfico" }
@@ -60,11 +63,12 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
 }
 
 export function Shell({ route, theme, onToggleTheme, fill, children }: { route: string[]; theme: string; onToggleTheme: () => void; fill?: boolean; children: ReactNode }) {
+  const vault = useVault()
   const [collapsed, setCollapsed] = useState(false)
   const [palette, setPalette] = useState(false)
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
-  const crumbs = crumbsFor(route)
+  const crumbs = crumbsFor(route, vault.notes ?? NOTES)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -78,13 +82,13 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   }, [])
 
   return (
-    <div className={`shell app-bg ${collapsed ? "collapsed" : ""}`}>
+    <div className={`shell ${collapsed ? "collapsed" : ""}`}>
       <nav className="sidebar" aria-label="Espaços">
         <a className="brand" href={href("/")}>
           <img src={runa} alt="" />
           <div>
             <strong>Runas-Codex</strong>
-            <small>Cofre: Mesa do João</small>
+            <small className="truncate">Cofre: {vault.info?.name ?? "nenhum aberto"}</small>
           </div>
         </a>
         <div className="nav-group">
@@ -92,7 +96,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{item.count}</span>}
+              {item.count !== undefined && <span className="count">{item.match === "notas" && vault.notes ? vault.notes.length : item.count}</span>}
             </a>
           ))}
         </div>
@@ -179,6 +183,9 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
 }
 
 function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
+  const vault = useVault()
+  const source = vault.notes ?? ALL_NOTES
+  const routeOf = vault.notes ? vaultRoute : routeOfNote
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
@@ -195,10 +202,10 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
     [onToggleTheme],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
-  const notes = ALL_NOTES.filter((n) => !q || n.title.toLocaleLowerCase("pt-BR").includes(q) || n.aliases?.some((a) => a.toLocaleLowerCase("pt-BR").includes(q))).slice(0, 7)
+  const notes = source.filter((n) => !q || n.title.toLocaleLowerCase("pt-BR").includes(q) || n.aliases?.some((a) => a.toLocaleLowerCase("pt-BR").includes(q))).slice(0, 7)
   const cmds = commands.filter((c) => !q || c.label.toLocaleLowerCase("pt-BR").includes(q))
   const items = [
-    ...notes.map((n) => ({ key: n.id, label: n.title, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(routeOfNote(n)), section: "Notas" })),
+    ...notes.map((n) => ({ key: n.id, label: n.title, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(routeOf(n)), section: "Notas" })),
     ...cmds.map((c) => ({ key: c.label, ...c, section: "Comandos" })),
   ]
 

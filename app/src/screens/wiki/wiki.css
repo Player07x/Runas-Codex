@@ -82,3 +82,6 @@
 @media (max-width: 860px) { .graph-panel { left: 12px; right: 12px; width: auto; top: 56px; max-height: 60%; } }
 
 .relations-svg { display: block; width: 100%; max-width: 900px; min-width: 640px; height: auto; margin: 0 auto; }
+
+.wiki-home-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-column); }
+@media (max-width: 860px) { .wiki-home-grid { grid-template-columns: minmax(0, 1fr); } }

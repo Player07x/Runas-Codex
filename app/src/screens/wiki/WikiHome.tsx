@@ -99,7 +99,7 @@ export function WikiHome() {
         </div>
       </div>
 
-      <div className="home-grid">
+      <div className="wiki-home-grid">
         <section className="card">
           <div className="card-head">
             <span className="section-title">Editados recentemente</span>

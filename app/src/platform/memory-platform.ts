@@ -1,4 +1,4 @@
-import type { Platform, RoomHostInfo, VaultEntry } from "./platform"
+import type { Platform, RoomHostInfo, VaultEntry, VaultInfo } from "./platform"
 import { ALL_NOTES } from "../lib/links"
 
 /**
@@ -11,9 +11,15 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     const file = files.get(path)!
     return { path, size: new TextEncoder().encode(file.content).length, mtime: file.mtime }
   }
+  const vault: VaultInfo = { name: "Mesa do João", path: "Exemplo em memória", readOnly: false }
   return {
     kind: "memory",
-    vaultName: "Mesa do João (exemplo)",
+    async vault() {
+      return vault
+    },
+    async chooseVault() {
+      return vault
+    },
     async listVault(prefix = "") {
       return [...files.keys()].filter((p) => p.startsWith(prefix)).map(entry)
     },

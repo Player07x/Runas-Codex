@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { BookOpenText, Code2, PenLine, PanelRight, ChevronLeft, Bold, Italic, Strikethrough, Highlighter, Link2, List, ListChecks, Quote, Table, Image, Heading2, Dices } from "lucide-react"
+import { BookOpenText, Code2, Lock, PenLine, PanelRight, ChevronLeft, Bold, Italic, Strikethrough, Highlighter, Link2, List, ListChecks, Quote, Table, Image, Heading2, Dices } from "lucide-react"
 import type { Note } from "../data/types"
 import { splitFrontmatter } from "../lib/links"
 import { Markdown } from "./Markdown"
@@ -9,9 +9,11 @@ export type EditorMode = "leitura" | "live" | "codigo"
 
 const PLAIN = /^(?![-*>#|`\d]|\s*$|<|\$\$).+/
 
-export function NoteEditor({ note, onShowPanel, onBack }: { note: Note; onShowPanel?: () => void; onBack?: () => void }) {
+/** `readOnly`: nota de um cofre real aberto em somente leitura — só o modo Leitura, sem barra de formatação. */
+export function NoteEditor({ note, onShowPanel, onBack, readOnly }: { note: Note; onShowPanel?: () => void; onBack?: () => void; readOnly?: boolean }) {
   const toast = useToast()
-  const [mode, setMode] = useState<EditorMode>("live")
+  const [chosenMode, setMode] = useState<EditorMode>("live")
+  const mode = readOnly ? "leitura" : chosenMode
   const [source, setSource] = useState(note.markdown)
   useEffect(() => setSource(note.markdown), [note])
   const { body } = splitFrontmatter(source)
@@ -26,18 +28,24 @@ export function NoteEditor({ note, onShowPanel, onBack }: { note: Note; onShowPa
             <ChevronLeft size={18} />
           </button>
         )}
-        <Segmented<EditorMode>
-          label="Modo de edição"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
-            { value: "live", label: "Live preview", icon: <PenLine size={14} /> },
-            { value: "codigo", label: "Código", icon: <Code2 size={14} /> },
-          ]}
-        />
+        {readOnly ? (
+          <span className="chip gold">
+            <Lock size={13} /> Somente leitura
+          </span>
+        ) : (
+          <Segmented<EditorMode>
+            label="Modo de edição"
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
+              { value: "live", label: "Live preview", icon: <PenLine size={14} /> },
+              { value: "codigo", label: "Código", icon: <Code2 size={14} /> },
+            ]}
+          />
+        )}
         <span className="grow" />
-        <span className="tiny faint hide-narrow">Salvo · {note.path}</span>
+        <span className="tiny faint hide-narrow">{readOnly ? note.path : `Salvo · ${note.path}`}</span>
         {onShowPanel && (
           <button className="icon-btn" onClick={onShowPanel} title="Links, propriedades e gráfico local">
             <PanelRight size={18} />

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Bell, FolderOpen, Keyboard, Lock, Network, Palette, ShieldCheck, Vault } from "lucide-react"
-import { Switch, useProtoAction } from "../components/ui"
+import { Switch, useProtoAction, useToast } from "../components/ui"
+import { useVault } from "../platform/VaultProvider"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -17,6 +18,22 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
 
 export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
   const proto = useProtoAction()
+  const toast = useToast()
+  const vault = useVault()
+  const desktop = vault.platform.kind !== "memory"
+  const chooseVault = () => vault.choose().catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+  const vaultHint = !desktop
+    ? "Exemplo em memória — abrir uma pasta real só no app desktop"
+    : vault.info
+      ? vault.info.path
+      : "Nenhum cofre aberto"
+  const notesHint = vault.loading
+    ? "Lendo o cofre…"
+    : vault.error
+      ? `Erro: ${vault.error}`
+      : vault.notes
+        ? `${vault.notes.length} notas Markdown lidas`
+        : "Usando as notas de exemplo"
   return (
     <div className="page">
       <div className="page-head">
@@ -30,12 +47,15 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Vault size={16} /> Cofre
           </span>
-          <Row title="Pasta do cofre" hint="~/Documentos/Obsidian/Mesa do João">
-            <button className="btn sm" onClick={proto("escolher outra pasta")}>
-              <FolderOpen size={14} /> Trocar
+          <Row title="Pasta do cofre" hint={vaultHint}>
+            <button className="btn sm" onClick={chooseVault} disabled={!desktop} title={desktop ? "Escolher a pasta do cofre" : "Disponível no app desktop"}>
+              <FolderOpen size={14} /> {vault.info && desktop ? "Trocar" : "Abrir pasta…"}
             </button>
           </Row>
-          <Row title="Primeira abertura em somente leitura" hint="Até você liberar, nada é gravado num cofre existente">
+          <Row title="Notas" hint={notesHint}>
+            <span className="tiny faint">{vault.info?.name ?? "—"}</span>
+          </Row>
+          <Row title="Somente leitura" hint="Até a etapa 3a o app só lê o cofre: nenhum arquivo é criado ou alterado">
             <Switch on label="Somente leitura" />
           </Row>
           <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
