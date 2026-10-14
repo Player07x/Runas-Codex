@@ -256,7 +256,8 @@ export const SMOKE_SCRIPT = `(async () => {
       text: Boolean(canvas && canvas.nodes.some((n) => n.text === "Cartão do smoke")),
       unknown: Boolean(canvas && canvas["x-plugin-meta"]?.versao === 1 && canvas.nodes.some((n) => n["x-plugin-extra"]?.pin === true)),
       renamed: Boolean(canvas && canvas.nodes.some((n) => n.file === "Wikis/Ordem x Caos/Personagens/Aldren Vael.md")),
-      tabs: canvasText.startsWith('{\\n\\t"nodes"'),
+      // O checkout Windows usa CRLF; a tabulação deve ser preservada nos dois fins de linha.
+      tabs: /^\\{\\r?\\n\\t"nodes"/.test(canvasText),
     }
   }
 
