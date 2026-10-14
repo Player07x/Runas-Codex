@@ -34,15 +34,15 @@
 .book-page.theme-rpg { background: radial-gradient(circle at 20% 10%, rgb(255 255 255 / 55%), transparent 55%), linear-gradient(#f4ead2, #efe2c4); }
 .book-page.theme-pergaminho { background: radial-gradient(circle at 50% 50%, #f1e1bd, #d9c08e); }
 .book-page.theme-minimalista { background: #fdfcf9; font-family: var(--font-sans); }
-.page-header { position: absolute; top: 16px; left: 44px; right: 44px; display: flex; justify-content: space-between; color: #8b2a22; font-family: var(--font-display); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
-.page-footer { position: absolute; bottom: 16px; left: 0; right: 0; color: #8b2a22; font-family: var(--font-display); font-size: 11px; text-align: center; }
+.page-header { position: absolute; top: 16px; left: 44px; right: 44px; display: flex; justify-content: space-between; color: #8b2a22; font-family: var(--font-cinzel); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+.page-footer { position: absolute; bottom: 16px; left: 0; right: 0; color: #8b2a22; font-family: var(--font-cinzel); font-size: 11px; text-align: center; }
 .page-columns { columns: 2; column-gap: 22px; font-size: inherit; line-height: inherit; color: inherit; }
 .size-A5 .page-columns { columns: 1; }
 .page-columns > * + * { margin-top: 0.55em; }
 .page-columns .md { color: inherit; font-size: inherit; line-height: inherit; }
-.page-columns h1 { column-span: all; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #b8913f; color: #7a1d17; font-family: var(--font-display); font-size: 24px; }
-.page-columns h2 { margin-top: 0.9em; border-bottom: 1px solid #b8913f; color: #7a1d17; font-family: var(--font-display); font-size: 16px; }
-.page-columns h3 { color: #7a1d17; font-family: var(--font-display); font-size: 13px; }
+.page-columns h1 { column-span: all; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #b8913f; color: #7a1d17; font-family: var(--font-cinzel); font-size: 24px; }
+.page-columns h2 { margin-top: 0.9em; border-bottom: 1px solid #b8913f; color: #7a1d17; font-family: var(--font-cinzel); font-size: 16px; }
+.page-columns h3 { color: #7a1d17; font-family: var(--font-cinzel); font-size: 13px; }
 .theme-minimalista .page-columns h1, .theme-minimalista .page-columns h2, .theme-minimalista .page-columns h3 { color: #222; font-family: var(--font-sans); border-color: #ccc; }
 .page-columns p, .page-columns li { text-align: justify; hyphens: auto; }
 .page-columns table { font-size: 11px; break-inside: avoid; }
@@ -50,7 +50,7 @@
 .page-columns td { border-color: #ded0ac; }
 .page-columns tr:nth-child(even) td { background: rgb(184 145 63 / 14%); }
 .page-columns .callout { break-inside: avoid; background: rgb(224 229 193 / 75%); border: 0; border-left: 0; border-radius: 0; box-shadow: 0 0 0 1px #c9c49b; color: #2a1f17; padding: 8px 10px; }
-.page-columns .callout-title { color: #4f5a2a; font-family: var(--font-display); font-size: 11px; font-style: normal; }
+.page-columns .callout-title { color: #4f5a2a; font-family: var(--font-cinzel); font-size: 11px; font-style: normal; }
 .page-columns .callout.descritivo { background: rgb(228 210 168 / 70%); border-top: 3px solid #4f2d1c; border-bottom: 3px solid #4f2d1c; box-shadow: none; }
 .page-columns .callout.descritivo .callout-title { color: #4f2d1c; }
 .page-columns .callout.statblock { background: #fdf1dc; border-top: 4px solid #e69a28; border-bottom: 4px solid #e69a28; box-shadow: 0 0 4px rgb(0 0 0 / 25%); }
@@ -58,7 +58,7 @@
 .page-columns .callout.nota { background: rgb(224 229 193 / 80%); }
 .page-columns .wikilink { color: #7a1d17; border-bottom-color: rgb(122 29 23 / 40%); }
 .page-columns .footnotes { font-size: 10px; color: #5a4a3a; }
-.capitular { float: left; margin: 2px 6px 0 0; color: #7a1d17; font-family: var(--font-display); font-size: 3.4em; line-height: 0.85; }
+.capitular { float: left; margin: 2px 6px 0 0; color: #7a1d17; font-family: var(--font-cinzel); font-size: 3.4em; line-height: 0.85; }
 .md .quebra-coluna { break-after: column; }
 .md .quebra-pagina { margin: 18px 0; border-top: 2px dashed var(--line-strong); }
 .md .quebra-pagina::after { content: "quebra de página"; display: block; margin-top: 4px; color: var(--faint); font-size: 11px; text-align: center; }

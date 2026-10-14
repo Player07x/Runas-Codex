@@ -17,6 +17,8 @@ Fase atual: **etapa 1, protótipo visual**. Os dados são fictícios e nada é g
 1. [Estudo](docs/00-estudo.md) — o que já existe no Runas-Core e no RunasVTT e o que os outros gerenciadores e VTTs fazem.
 2. [Checklist de recursos](docs/01-checklist-recursos.md) — validada com os 283 itens.
 3. [Viabilidade e etapas](docs/02-viabilidade-e-etapas.md) — stack, arquitetura, riscos e plano de etapas.
+4. [Comparação dos protótipos](docs/03-comparacao-prototipos.md) — Original, Atlas e Órbita (histórico).
+5. [Decisões de arquitetura](docs/adr/) — ADRs numeradas.
 
 ## Abrir o protótipo
 
@@ -33,24 +35,13 @@ Abre em http://localhost:5180.
 No celular, no mesmo Wi-Fi: rode `npm run dev:rede` e abra no celular o endereço “Network” que o Vite mostrar
 (ex.: `http://192.168.1.9:5180`).
 
-## Comparar os designs
+## Design: Órbita
 
-A faixa **Lab de design** alterna entre o original e duas propostas navegáveis:
-
-- **Atlas**: estilo editorial, papel claro e verde, navegação lateral e checklist de preparação.
-  Abra `http://localhost:5180/?design=atlas`.
-- **Órbita**: estilo escuro, lavanda, navegação lateral à esquerda e destaque visual da campanha.
-  Abra `http://localhost:5180/?design=orbita`.
-
-Ambos mantêm acesso aos seis módulos e oferecem navegação inferior no celular. O seletor mantém
-a tela atual ao trocar de design. Os links diretos abrem Atlas em tema claro e Órbita em tema escuro;
-o botão de tema também permite comparar as variações clara e escura.
-
-As novas capturas rápidas mantêm apenas rascunhos temporários na tela. O checklist de Atlas é
-interativo, mas independente da preparação no módulo Campanhas. Nenhuma dessas ações grava no cofre.
-
-Veja a inspeção e as verificações em [Comparação dos protótipos](docs/03-comparacao-prototipos.md).
-As imagens de referência estão em `app/previews/` e o código das propostas em `app/src/prototypes/`.
+O visual oficial é o **Órbita**: grafite e lavanda no tema escuro (padrão), com variação clara no botão de tema,
+barra lateral recolhível no computador e barra inferior no celular. A página inicial destaca a próxima sessão da
+campanha. A escolha está registrada na [ADR 0001](docs/adr/0001-design-orbita.md); a comparação com as outras
+propostas (Original e Atlas) fica em [Comparação dos protótipos](docs/03-comparacao-prototipos.md) e no primeiro
+commit do repositório.
 
 `npm run build` gera a versão estática em `app/dist/` (abre de qualquer pasta).
 

@@ -78,7 +78,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   }, [])
 
   return (
-    <div className={`shell app-bg ${collapsed ? "collapsed" : ""}`}>
+    <div className={`shell ${collapsed ? "collapsed" : ""}`}>
       <nav className="sidebar" aria-label="Espaços">
         <a className="brand" href={href("/")}>
           <img src={runa} alt="" />

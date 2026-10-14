@@ -1,5 +1,9 @@
 # Inspeção e comparação dos protótipos
 
+> **Decisão (14/10/2026):** o **Órbita** foi escolhido como design oficial
+> ([ADR 0001](adr/0001-design-orbita.md)). O Lab de design, o Atlas e o visual original saíram do código; este
+> documento fica como histórico, e o código das três propostas continua no primeiro commit do repositório.
+
 ## Código atual
 
 O aplicativo usa React, TypeScript e Vite. O roteador por hash mantém navegação compatível com

@@ -1,177 +1,229 @@
 import { useState } from "react"
-import { ArrowRight, BookOpen, CalendarDays, Clock, Dices, Feather, Library, NotebookPen, ScrollText, Send, Users } from "lucide-react"
-import { href, navigate } from "../lib/router"
-import { ALL_NOTES, brokenLinks } from "../lib/links"
-import { formatDate, formatTime, relativeDays, routeOfNote } from "../lib/navigation"
-import { CAMPAIGN_TODAY, ORDEM_X_CAOS, formatWorldDate, moonPhase, dayNumber, weekday } from "../lib/fictional-calendar"
-import { EVENTS, TODAY } from "../data/agenda"
+import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, Dices, Feather, FileText, Library, Plus, ScrollText, Users } from "lucide-react"
+import { href } from "../lib/router"
+import { ALL_NOTES } from "../lib/links"
+import { formatDate, formatTime, routeOfNote } from "../lib/navigation"
 import { CAMPAIGNS } from "../data/campaigns"
+import { EVENTS, TODAY } from "../data/agenda"
 import { NOTES } from "../data/notes"
 import { ARTICLES } from "../data/wiki"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
-import { useToast } from "../components/ui"
-import { MoonIcon } from "../components/MoonIcon"
 import "./home.css"
 
+const campaign = CAMPAIGNS[0]
+const session = campaign.sessions.find((s) => s.status === "planejada")!
+const recent = [...ALL_NOTES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 4)
+const upcoming = EVENTS.filter((e) => new Date(e.start) >= TODAY).sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3)
+const spaces = [
+  { title: "Notas", sub: "Capture suas ideias", count: NOTES.length, unit: "notas", icon: Feather, path: "/notas" },
+  { title: "Agenda", sub: "Dê tempo às histórias", count: EVENTS.length, unit: "eventos", icon: CalendarDays, path: "/agenda" },
+  { title: "Wiki", sub: "Construa seu universo", count: ARTICLES.length, unit: "artigos", icon: Library, path: "/wiki" },
+  { title: "Campanhas", sub: "Conecte os capítulos", count: CAMPAIGNS.length, unit: "campanhas", icon: ScrollText, path: "/campanhas" },
+  { title: "Livros", sub: "Escreva a próxima página", count: BOOKS.length, unit: "livros", icon: BookOpen, path: "/livros" },
+  { title: "VTT", sub: "Reúna seu grupo", count: MESAS.length, unit: "mesas", icon: Dices, path: "/vtt" },
+]
+const spaceLabel: Record<string, string> = { wiki: "Wiki", campanhas: "Campanhas" }
+const weekday = formatDate(TODAY.toISOString(), { weekday: "long" })
+
 export function Home() {
-  const toast = useToast()
-  const [capture, setCapture] = useState("")
-  const campaign = CAMPAIGNS[0]
-  const next = campaign.sessions.find((s) => s.status === "planejada")!
-  const confirmed = Object.values(next.attendance).filter(Boolean).length
-  const upcoming = EVENTS.filter((e) => new Date(e.start) >= new Date("2026-10-13T00:00:00")).sort((a, b) => a.start.localeCompare(b.start)).slice(0, 4)
-  const recent = [...ALL_NOTES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 6)
-  const toWrite = brokenLinks("wiki")
-  const day = dayNumber(ORDEM_X_CAOS, CAMPAIGN_TODAY)
-
-  const spaces = [
-    { to: "/notas", icon: <NotebookPen />, label: "Notas", info: `${NOTES.length} notas`, color: "var(--gold)" },
-    { to: "/agenda", icon: <CalendarDays />, label: "Agenda", info: `${upcoming.length} próximos`, color: "var(--cyan)" },
-    { to: "/wiki", icon: <Library />, label: "Wiki", info: `${ARTICLES.length} artigos`, color: "var(--violet)" },
-    { to: "/campanhas", icon: <ScrollText />, label: "Campanhas", info: `${CAMPAIGNS.filter((c) => c.status === "ativa").length} ativa`, color: "var(--red)" },
-    { to: "/livros", icon: <BookOpen />, label: "Livros", info: `${BOOKS.length} livros`, color: "var(--green)" },
-    { to: "/vtt", icon: <Dices />, label: "VTT", info: `${MESAS.length} mesas`, color: "var(--red)" },
-  ]
-
   return (
-    <div className="page home">
-      <div className="page-head">
+    <div className="home">
+      <header className="home-heading">
         <div>
-          <span className="eyebrow">{TODAY.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
-          <h1 className="page-title">Bom dia, João</h1>
-          <span className="muted small row">
-            <MoonIcon fraction={moonPhase(ORDEM_X_CAOS.moons[0], day).fraction} color="var(--cyan)" size={14} />
-            No mundo: {weekday(ORDEM_X_CAOS, CAMPAIGN_TODAY)}, {formatWorldDate(ORDEM_X_CAOS, CAMPAIGN_TODAY, true)}
-          </span>
+          <span className="home-kicker">MESA DO JOÃO / PAINEL DO MESTRE</span>
+          <h1>Seu próximo capítulo.</h1>
+        </div>
+        <span className="home-date">
+          {weekday.charAt(0).toUpperCase() + weekday.slice(1)}
+          <br />
+          <strong>{formatDate(TODAY.toISOString(), { day: "numeric", month: "long" })}, {TODAY.getFullYear()}</strong>
+        </span>
+      </header>
+      <NextSession />
+      <div className="home-section-head">
+        <h2>Explore seu universo</h2>
+        <span>06 espaços · infinitas histórias</span>
+      </div>
+      <Spaces />
+      <div className="home-columns">
+        <Recent />
+        <Horizon />
+        <div className="home-quick">
+          <span className="home-kicker">CENTELHAS</span>
+          <h2>
+            Grandes mundos.
+            <br />
+            <em>Pequenas ideias.</em>
+          </h2>
+          <p>Guarde aquele personagem, lugar ou reviravolta que acabou de surgir.</p>
+          <Capture />
+          <a href={href("/wiki")} className="quick-link">
+            Explorar Ordem x Caos <ArrowUpRight size={17} />
+          </a>
         </div>
       </div>
+      <footer className="home-footer">
+        RUNAS-CODEX <span>A aventura começa com uma ideia.</span>
+      </footer>
+    </div>
+  )
+}
 
+function NextSession() {
+  const confirmed = Object.values(session.attendance).filter(Boolean).length
+  return (
+    <section className="home-session">
+      <div className="session-copy">
+        <span className="home-kicker">
+          <span className="status-dot" /> Campanha em andamento
+        </span>
+        <p className="session-world">{campaign.title}</p>
+        <h2>
+          Toda história
+          <br />
+          pede uma próxima
+          <br />
+          <em>sessão.</em>
+        </h2>
+        <p className="session-description">
+          Sessão {session.number} · {session.title}
+        </p>
+        <div className="session-meta">
+          <span>
+            <CalendarDays size={16} />
+            {formatDate(session.date, { day: "numeric", month: "long" })} · {formatTime(session.date)}
+          </span>
+          <span>
+            <Users size={16} />
+            {confirmed}/{campaign.players.length} confirmados
+          </span>
+        </div>
+        <div className="session-buttons">
+          <a className="btn primary lg" href={href(`/campanhas/${campaign.id}/sessao/${session.id}`)}>
+            Preparar sessão <ArrowRight size={17} />
+          </a>
+          <a className="btn lg" href={href(`/vtt/mesa/${campaign.mesaId}`)}>
+            <Dices size={17} /> Abrir mesa
+          </a>
+        </div>
+      </div>
+      <div className="orbital-art" aria-hidden="true">
+        <div className="orbit-ring ring-one" />
+        <div className="orbit-ring ring-two" />
+        <div className="orbit-ring ring-three" />
+        <span className="orbit-center">ᚱ</span>
+        <span className="orbit-star">✦</span>
+        <span className="orbit-caption">VALDRIS / CAPÍTULO XII</span>
+      </div>
+    </section>
+  )
+}
+
+function Spaces() {
+  return (
+    <section className="home-spaces" aria-label="Seus espaços">
+      {spaces.map((s, i) => (
+        <a href={href(s.path)} key={s.path}>
+          <div className="space-top">
+            <s.icon size={23} />
+            <span>0{i + 1}</span>
+          </div>
+          <h3>{s.title}</h3>
+          <p>{s.sub}</p>
+          <footer>
+            <span>
+              {s.count} {s.unit}
+            </span>
+            <ArrowUpRight size={18} />
+          </footer>
+        </a>
+      ))}
+    </section>
+  )
+}
+
+function Recent() {
+  return (
+    <section>
+      <div className="home-section-head">
+        <h2>Retome o fio</h2>
+        <span>Últimas edições</span>
+      </div>
+      {recent.map((n) => (
+        <a className="home-note" key={n.id} href={href(routeOfNote(n))}>
+          <FileText size={19} />
+          <div>
+            <h3>{n.title}</h3>
+            <small>
+              {spaceLabel[n.space] ?? "Notas"} · {formatDate(n.updated, { day: "numeric", month: "short" })}
+            </small>
+          </div>
+          <ArrowUpRight size={16} />
+        </a>
+      ))}
+    </section>
+  )
+}
+
+function Horizon() {
+  return (
+    <section>
+      <div className="home-section-head">
+        <h2>No horizonte</h2>
+        <a href={href("/agenda")}>
+          Agenda <ArrowUpRight size={15} />
+        </a>
+      </div>
+      {upcoming.map((e) => (
+        <a className="home-event" key={e.id} href={href("/agenda")}>
+          <div className="date-stamp">
+            <strong>{new Date(e.start).getDate()}</strong>
+            <span>{formatDate(e.start, { month: "short" })}</span>
+          </div>
+          <div>
+            <small>{e.category}</small>
+            <h3>{e.title}</h3>
+            <span>{e.allDay ? "Dia inteiro" : formatTime(e.start)}</span>
+          </div>
+          <ArrowUpRight size={17} />
+        </a>
+      ))}
+    </section>
+  )
+}
+
+/** Captura rápida: por enquanto os rascunhos vivem só nesta tela (a gravação no cofre chega na etapa 3a). */
+function Capture() {
+  const [text, setText] = useState("")
+  const [drafts, setDrafts] = useState<string[]>([])
+  return (
+    <div className="home-capture">
       <form
-        className="capture"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!capture.trim()) return
-          toast(`Nota salva em Notas/Caixa de entrada.md`)
-          setCapture("")
+          if (!text.trim()) return
+          setDrafts((d) => [text.trim(), ...d])
+          setText("")
         }}
       >
-        <Feather size={18} color="var(--gold)" />
-        <input className="grow" value={capture} onChange={(event) => setCapture(event.target.value)} placeholder="Anotar algo rápido… (vai para Notas)" aria-label="Captura rápida" />
-        <button className="btn primary sm" type="submit">
-          <Send size={14} /> Salvar
+        <Feather size={19} />
+        <input aria-label="Captura rápida" placeholder="Uma ideia antes que ela escape…" value={text} onChange={(event) => setText(event.target.value)} />
+        <button className="btn primary" disabled={!text.trim()}>
+          <Plus size={16} /> Capturar
         </button>
       </form>
-
-      <div className="home-grid">
-        <section className="card next-session">
-          <div className="card-head">
-            <span className="eyebrow" style={{ color: "var(--red)" }}>Próxima sessão</span>
-            <span className="chip red">
-              <Clock size={13} /> {relativeDays(next.date, TODAY)}
-            </span>
-          </div>
-          <h2 className="display" style={{ fontSize: 22 }}>
-            Sessão {next.number} — {next.title}
-          </h2>
-          <p className="muted">
-            {campaign.title} · {formatDate(next.date, { weekday: "long", day: "2-digit", month: "long" })} às {formatTime(next.date)}
-          </p>
-          <div className="countdown">
-            {[
-              ["4", "dias"],
-              ["9", "horas"],
-              ["30", "min"],
-            ].map(([value, unit]) => (
-              <div key={unit}>
-                <strong>{value}</strong>
-                <span>{unit}</span>
-              </div>
-            ))}
-          </div>
-          <div className="row-wrap">
-            <span className="chip">
-              <Users size={13} /> {confirmed}/{campaign.players.length} confirmados
-            </span>
-            <span className="chip gold">Preparação 3/7</span>
-          </div>
-          <div className="row-wrap">
-            <a className="btn primary" href={href(`/campanhas/${campaign.id}/sessao/${next.id}`)}>
-              Preparar sessão <ArrowRight size={15} />
-            </a>
-            <a className="btn" href={href("/vtt/mesa/cinzas")}>
-              <Dices size={15} /> Abrir mesa
-            </a>
-          </div>
-        </section>
-
-        <section className="card">
-          <div className="card-head">
-            <span className="section-title">Agenda</span>
-            <a className="btn ghost sm" href={href("/agenda")}>
-              Ver tudo
-            </a>
-          </div>
-          <div className="list">
-            {upcoming.map((event) => (
-              <a key={event.id} className="list-item" href={href("/agenda")}>
-                <span className="dot" style={{ background: `var(--${event.color})` }} />
-                <span className="grow truncate">{event.title}</span>
-                <span className="meta">
-                  {relativeDays(event.start, TODAY)}
-                  {!event.allDay && ` · ${formatTime(event.start)}`}
-                </span>
-              </a>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <section className="space-tiles">
-        {spaces.map((space) => (
-          <a key={space.to} className="card link space-tile" href={href(space.to)} style={{ ["--tile" as string]: space.color }}>
-            {space.icon}
-            <strong>{space.label}</strong>
-            <span className="muted small">{space.info}</span>
-          </a>
-        ))}
-      </section>
-
-      <div className="home-grid">
-        <section className="card">
-          <div className="card-head">
-            <span className="section-title">Editadas recentemente</span>
-          </div>
-          <div className="list">
-            {recent.map((note) => (
-              <button key={note.id} className="list-item" onClick={() => navigate(routeOfNote(note))}>
-                <span className="chip" style={{ minWidth: 74, justifyContent: "center" }}>
-                  {note.space === "wiki" ? "Wiki" : note.space === "campanhas" ? "Campanha" : "Notas"}
-                </span>
-                <span className="grow truncate">{note.title}</span>
-                <span className="meta">{relativeDays(note.updated, TODAY)}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-        <section className="card">
-          <div className="card-head">
-            <span className="section-title">A escrever na wiki</span>
-            <span className="chip">{toWrite.length}</span>
-          </div>
-          <p className="muted small" style={{ marginBottom: 8 }}>
-            Links que apontam para artigos que ainda não existem.
-          </p>
-          <div className="list">
-            {toWrite.map((item) => (
-              <button key={item.target} className="list-item" onClick={() => toast(`Protótipo: criaria “${item.target}” na wiki`)}>
-                <span className="wikilink broken">{item.target}</span>
-                <span className="meta">citado em {item.from.map((n) => n.title).join(", ")}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      </div>
+      <small>Rascunhos temporários · disponíveis enquanto esta tela estiver aberta</small>
+      {drafts.length > 0 && (
+        <ul aria-live="polite">
+          {drafts.map((draft, i) => (
+            <li key={i}>
+              <Check size={14} />
+              {draft}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
