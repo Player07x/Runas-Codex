@@ -5,7 +5,8 @@ import { dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
 import { vaultRoute } from "../lib/vault-notes"
-import { ConfirmDialog, NameDialog, RenameDialog } from "../components/vault/dialogs"
+import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
+import { fillTemplate, formatDate } from "../core/templates"
 import { NoteView } from "../components/vault/NoteView"
 import { VaultPanels } from "../components/vault/VaultPanels"
 import { Empty, useToast } from "../components/ui"
@@ -81,11 +82,6 @@ function preview(note: IndexedNote): string {
     .slice(0, 80)
 }
 
-const today = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
-
 function uniqueName(index: VaultIndex, folder: string, base: string): string {
   const taken = new Set(index.allFiles().filter((f) => dirname(f.path) === folder).map((f) => noteName(f.path).toLocaleLowerCase("pt-BR")))
   for (let n = 0; ; n++) {
@@ -138,10 +134,17 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       const folder = root.replace(/\/$/, "")
       vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => navigate(vaultRoute(created)), fail)
     } else {
-      const folder = hasNotesSpace ? "Notas/Diário" : "Diário"
-      const daily = `${folder}/${today()}.md`
-      if (index.note(daily)) navigate(vaultRoute(daily))
-      else vault.createNote(folder, today(), `# ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n`).then((created) => navigate(vaultRoute(created)), fail)
+      // Como o plugin Notas diárias do Obsidian: pasta, formato do nome e modelo de `.obsidian/daily-notes.json`.
+      const { daily, templates } = vault.config
+      const now = new Date()
+      const relative = formatDate(now, daily.format)
+      const daily_ = joinPath(daily.folder || (hasNotesSpace ? "Notas/Diário" : "Diário"), relative + ".md")!
+      if (index.note(daily_)) navigate(vaultRoute(daily_))
+      else {
+        const template = daily.template ? index.note(daily.template + ".md")?.text : undefined
+        const content = template !== undefined ? fillTemplate(template, { title: noteName(daily_), date: now, config: templates }) : `# ${now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n`
+        vault.createNote(dirname(daily_), noteName(daily_), content).then((created) => navigate(vaultRoute(created)), fail)
+      }
     }
   }, [noteId])
 
@@ -307,14 +310,16 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       )}
 
       {dialog?.kind === "note" && (
-        <NameDialog
-          title="Nova nota"
-          label="Nome da nota"
+        <NewNoteDialog
           initial={uniqueName(index, dialog.folder, "Sem título")}
           hint={`Em: ${dialog.folder || "raiz do cofre"}`}
-          confirmLabel="Criar"
+          templates={vault.templates().map((t) => t.path)}
           onClose={() => setDialog(null)}
-          onConfirm={async (name) => navigate(vaultRoute(await vault.createNote(dialog.folder, name)))}
+          onConfirm={async (name, templatePath) => {
+            const template = templatePath ? index.note(templatePath)?.text : undefined
+            const content = template !== undefined ? fillTemplate(template, { title: name, date: new Date(), config: vault.config.templates }) : ""
+            navigate(vaultRoute(await vault.createNote(dialog.folder, name, content)))
+          }}
         />
       )}
       {dialog?.kind === "folder" && (

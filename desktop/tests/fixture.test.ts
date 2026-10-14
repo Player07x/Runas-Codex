@@ -1,10 +1,14 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
+import { DEMO_TEXT_FILES } from "../../app/src/data/demo-vault"
+
+const FIXTURE = join(__dirname, "cofre-exemplo")
 
 describe("cofre de teste", () => {
-  it("a nota dos formatadores é a mesma do exemplo do navegador", async () => {
-    const fixture = await readFile(join(__dirname, "cofre-exemplo", "Notas", "Formatadores.md"), "utf8")
-    const demo = await readFile(join(__dirname, "..", "..", "app", "src", "data", "formatadores.md"), "utf8")
-    expect(fixture).toBe(demo)
-  })
+  it.each(["Notas/Formatadores.md", "Notas/Modelos/NPC.md", "Notas/Modelos/Diário.md", ".obsidian/templates.json", ".obsidian/daily-notes.json"])(
+    "%s é igual ao do exemplo do navegador",
+    async (path) => {
+      expect(await readFile(join(FIXTURE, ...path.split("/")), "utf8")).toBe(DEMO_TEXT_FILES[path])
+    },
+  )
 })

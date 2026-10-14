@@ -21,6 +21,8 @@ export interface LinkSuggestion {
 export interface SourceEditorHandle {
   /** Insere texto no cursor (ou no lugar da seleção). */
   insert(text: string): void
+  /** Troca o documento inteiro a partir do texto e do cursor atuais (um passo só no desfazer). */
+  transform(change: (doc: string, cursor: number) => { text: string; cursor: number }): void
   focus(): void
 }
 
@@ -144,6 +146,13 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
       if (!v) return
       const { from, to } = v.state.selection.main
       v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } })
+      v.focus()
+    },
+    transform(change) {
+      const v = view.current
+      if (!v) return
+      const { text, cursor } = change(v.state.doc.toString(), v.state.selection.main.head)
+      v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: text }, selection: { anchor: Math.min(cursor, text.length) } })
       v.focus()
     },
     focus() {

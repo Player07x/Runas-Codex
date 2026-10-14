@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { BookOpenText, ChevronLeft, Code2, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
+import { BookOpenText, ChevronLeft, Code2, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
 import { scopeOf } from "../../core/spaces"
+import { fillTemplate, insertTemplate } from "../../core/templates"
 import { foldName, noteName, textToSave, toEditorText } from "../../core/text"
 import { splitFrontmatter } from "../../lib/links"
 import { NoteSetContext } from "../../lib/note-set"
@@ -9,7 +10,7 @@ import { vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { Segmented, useToast } from "../ui"
-import { ConfirmDialog, LinkPicker, RenameDialog } from "./dialogs"
+import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
 import type { LivePreviewHost } from "./live-preview"
 import { SourceEditor, type SourceEditorHandle } from "./SourceEditor"
 
@@ -66,7 +67,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const [docKey, setDocKey] = useState(0)
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()
-  const [dialog, setDialog] = useState<"rename" | "trash" | "link" | null>(null)
+  const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
   const editor = useRef<SourceEditorHandle>(null)
   const reader = useRef<HTMLDivElement>(null)
 
@@ -235,6 +236,17 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             >
               <Link2 size={17} />
             </button>
+            <button
+              className="icon-btn"
+              title="Inserir modelo"
+              aria-label="Inserir modelo"
+              onClick={() => {
+                if (mode === "leitura") setMode("live")
+                setDialog("template")
+              }}
+            >
+              <LayoutTemplate size={17} />
+            </button>
             <button className="icon-btn" title="Renomear ou mover" aria-label="Renomear nota" onClick={() => void flush().then(() => setDialog("rename"))}>
               <PenLine size={17} />
             </button>
@@ -275,6 +287,17 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
         )}
       </div>
 
+      {dialog === "template" && (
+        <TemplatePicker
+          templates={vault.templates().map((t) => t.path)}
+          folder={vault.config.templates.folder}
+          onClose={() => setDialog(null)}
+          onPick={(templatePath) => {
+            const template = fillTemplate(index.note(templatePath)?.text ?? "", { title: noteName(path), date: new Date(), config: vault.config.templates })
+            setTimeout(() => editor.current?.transform((doc, cursor) => insertTemplate(doc, cursor, template)))
+          }}
+        />
+      )}
       {dialog === "link" && <LinkPicker index={index} from={path} onPick={(link) => setTimeout(() => editor.current?.insert(link))} onClose={() => setDialog(null)} />}
       {dialog === "rename" && (
         <RenameDialog

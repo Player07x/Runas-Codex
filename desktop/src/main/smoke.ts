@@ -92,6 +92,14 @@ export const SMOKE_SCRIPT = `(async () => {
     result.linksAfterRename = Object.values(texts).join("\\n").match(/\\[\\[Aldren[^\\]]*\\]\\]/g) ?? []
   }
 
+  // Nota do dia: pasta, nome e modelo de .obsidian/daily-notes.json (variáveis preenchidas).
+  location.hash = "/notas/hoje"
+  await until(() => location.hash.includes(encodeURIComponent("Notas/Diário/")))
+  await wait(300)
+  const dailyPath = decodeURIComponent(location.hash.slice("#/notas/".length))
+  const dailyText = (await bridge.vault.read([dailyPath]))[dailyPath] ?? ""
+  result.daily = dailyText.includes("## Humor do dia") && !dailyText.includes("{{") ? "OK" : dailyPath + ": " + dailyText.slice(0, 60)
+
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
   ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
@@ -174,6 +182,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.trashed === true &&
     typeof result.backup === "number" &&
     result.snippet === "OK" &&
+    result.daily === "OK" &&
     result.renamed === true &&
     links.length > 0 &&
     links.every((link) => link.startsWith("[[Aldren Vael")) &&
