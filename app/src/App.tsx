@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRoute } from "./lib/router"
 import { Shell } from "./components/Shell"
 import { ToastProvider } from "./components/ui"
+import { VaultProvider } from "./platform/VaultProvider"
 import { Home } from "./screens/Home"
 import { NotesScreen } from "./screens/NotesScreen"
 import { AgendaScreen } from "./screens/AgendaScreen"
@@ -78,10 +79,12 @@ export function App() {
   }
 
   return (
-    <ToastProvider>
-      <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
-        {screen}
-      </Shell>
-    </ToastProvider>
+    <VaultProvider>
+      <ToastProvider>
+        <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
+          {screen}
+        </Shell>
+      </ToastProvider>
+    </VaultProvider>
   )
 }

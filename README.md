@@ -8,9 +8,10 @@ notas Markdown **compatível com o Obsidian** (links, backlinks, gráfico), **No
 calendários fictícios), **Campanhas**, **Livros** e um **VTT** (Criar Sala / Entrar Sala). O único recurso online é a
 conexão com uma mesa do VTT.
 
-Fase atual: **etapa 1, protótipo visual**. Os dados são fictícios e nada é gravado em disco.
+Fase atual: **etapa 2, fundação técnica**. O visual Órbita está fechado; o app desktop já abre um cofre real do
+Obsidian em **somente leitura** no módulo Notas. Os outros módulos ainda usam dados de exemplo, e nada é gravado em disco.
 
-**Ver o protótipo sem instalar nada:** https://player07x.github.io/Runas-Codex/ (abre no PC e no celular).
+**Ver a versão web (dados de exemplo) sem instalar nada:** https://player07x.github.io/Runas-Codex/ (abre no PC e no celular).
 
 ## Documentos
 
@@ -45,14 +46,28 @@ commit do repositório.
 
 `npm run build` gera a versão estática em `app/dist/` (abre de qualquer pasta).
 
+## App desktop (Windows e Linux)
+
+```bash
+npm run desktop
+```
+
+Abre o Runas-Codex numa janela própria (Electron). Em **Configurações › Cofre › Abrir pasta…** escolha a pasta de um
+cofre do Obsidian: o módulo **Notas** passa a listar e ler as notas `.md` dele, com links e backlinks. Nada é gravado
+no cofre nesta fase ([ADR 0002](docs/adr/0002-casca-desktop-electron.md)).
+
+Outros comandos: `npm run typecheck`, `npm test` (testes do desktop) e `npm run desktop:build`.
+Teste rápido sem abrir janela: `npm run smoke -w @runas-codex/desktop -- --vault=/caminho/do/cofre`.
+
 ## Estrutura
 
 ```
-app/                      protótipo (React 19 + TypeScript + Vite) — vira a interface real na etapa 2
-  src/platform/           interface Platform (Electron/Capacitor) + versão em memória
+app/                      interface (React 19 + TypeScript + Vite), a mesma no navegador, no desktop e no Android
+  src/platform/           interface Platform: Electron, versão em memória e o provedor do cofre
   src/data/               dados fictícios (wiki, notas, campanhas, agenda, livros, mesas)
   src/lib/                links/backlinks, calendário fictício, dados, gráfico, rotas
   src/components/         casca (barra lateral, barra inferior, paleta), Markdown, editor, painéis
   src/screens/            uma pasta por módulo: wiki, campaigns, books, vtt…
-docs/                     estudo, checklist e plano
+desktop/                  casca Electron (Windows/Linux): processo principal, preload e testes
+docs/                     estudo, checklist, plano e ADRs
 ```

@@ -7,7 +7,7 @@ import { ChevronDown, ChevronRight, Dices, Eye, EyeOff, FileText, Info, Lock, Sh
 import type { SpaceId } from "../data/types"
 import { basename, isCrossSpace, resolveLink } from "../lib/links"
 import { navigate } from "../lib/router"
-import { routeOfNote } from "../lib/navigation"
+import { useNoteSet } from "../lib/note-set"
 
 /**
  * Renderizador do protótipo: remark + rehype (a mesma família da versão final), com as extensões do
@@ -166,12 +166,13 @@ function Callout({ block, space }: { block: Extract<Block, { type: "callout" }>;
 }
 
 function MarkdownChunk({ text, space }: { text: string; space?: SpaceId }) {
+  const { notes, routeOf } = useNoteSet()
   const components: Components = {
     a({ href = "", children }) {
       if (href.startsWith("wiki:")) {
         const raw = decodeURIComponent(href.slice(5))
         const target = raw.split("#")[0]
-        const note = target ? resolveLink(target, space) : undefined
+        const note = target ? resolveLink(target, space, notes) : undefined
         const cross = isCrossSpace(target, space)
         const broken = Boolean(target) && !note
         return (
@@ -180,7 +181,7 @@ function MarkdownChunk({ text, space }: { text: string; space?: SpaceId }) {
             title={broken ? `“${target}” ainda não existe — clique para criar` : cross ? `Em outro espaço: ${note?.path}` : note?.path}
             onClick={(event) => {
               event.preventDefault()
-              if (note) navigate(routeOfNote(note))
+              if (note) navigate(routeOf(note))
             }}
             href="#"
           >

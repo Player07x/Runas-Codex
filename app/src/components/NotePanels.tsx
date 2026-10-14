@@ -3,7 +3,7 @@ import { ArrowUpRight, Link2, ListTree, Network, Tags, Unlink } from "lucide-rea
 import type { Note } from "../data/types"
 import { backlinksOf, outgoingOf, splitFrontmatter } from "../lib/links"
 import { navigate } from "../lib/router"
-import { routeOfNote } from "../lib/navigation"
+import { useNoteSet } from "../lib/note-set"
 import { SPACES } from "../lib/spaces"
 import { useToast } from "./ui"
 
@@ -39,10 +39,11 @@ export function NotePanels({ note }: { note: Note }) {
 
 function LinksPanel({ note }: { note: Note }) {
   const toast = useToast()
-  const backs = backlinksOf(note)
+  const { notes, routeOf } = useNoteSet()
+  const backs = backlinksOf(note, notes)
   const same = backs.filter((b) => !b.crossSpace)
   const other = backs.filter((b) => b.crossSpace)
-  const outgoing = outgoingOf(note)
+  const outgoing = outgoingOf(note, notes)
   const mentions = note.title === "Valdris" ? ["Rascunho — O Corvo Manco"] : []
   return (
     <>
@@ -50,7 +51,7 @@ function LinksPanel({ note }: { note: Note }) {
         <span className="eyebrow">Ligam para esta nota · {same.length}</span>
         {same.length === 0 && <span className="muted small">Nenhuma nota deste espaço aponta para cá.</span>}
         {same.map((b) => (
-          <button key={b.note.id} className="card tight link" onClick={() => navigate(routeOfNote(b.note))}>
+          <button key={b.note.id} className="card tight link" onClick={() => navigate(routeOf(b.note))}>
             <strong className="small">{b.note.title}</strong>
             <p className="muted small" style={{ marginTop: 2 }}>{b.context}</p>
           </button>
@@ -60,7 +61,7 @@ function LinksPanel({ note }: { note: Note }) {
         <div className="stack">
           <span className="eyebrow" style={{ color: "var(--violet)" }}>De outros espaços · {other.length}</span>
           {other.map((b) => (
-            <button key={b.note.id} className="card tight link" onClick={() => navigate(routeOfNote(b.note))}>
+            <button key={b.note.id} className="card tight link" onClick={() => navigate(routeOf(b.note))}>
               <span className="row small">
                 <span className="chip violet">{SPACES[b.note.space].label}</span>
                 <strong className="truncate">{b.note.title}</strong>
@@ -85,7 +86,7 @@ function LinksPanel({ note }: { note: Note }) {
         <span className="eyebrow">Links de saída · {outgoing.length}</span>
         <div className="list">
           {outgoing.map(({ link, note: target }) => (
-            <button key={link.target + link.heading} className="list-item" onClick={() => (target ? navigate(routeOfNote(target)) : toast(`Protótipo: criaria “${link.target}”`))}>
+            <button key={link.target + link.heading} className="list-item" onClick={() => (target ? navigate(routeOf(target)) : toast(`Protótipo: criaria “${link.target}”`))}>
               {target ? <ArrowUpRight size={15} /> : <Unlink size={15} color="var(--red)" />}
               <span className={`grow truncate ${target ? "" : "wikilink broken"}`}>{target?.title ?? link.target}</span>
               {target && target.space !== note.space && <span className="chip violet">{SPACES[target.space].label}</span>}
@@ -142,8 +143,9 @@ function OutlinePanel({ note }: { note: Note }) {
 
 /** Vizinhança da nota (profundidade 1): saídas e backlinks. */
 export function LocalGraph({ note, size = 260 }: { note: Note; size?: number }) {
-  const out = outgoingOf(note).filter((o) => o.note).map((o) => o.note!)
-  const back = backlinksOf(note).map((b) => b.note)
+  const { notes, routeOf } = useNoteSet()
+  const out = outgoingOf(note, notes).filter((o) => o.note).map((o) => o.note!)
+  const back = backlinksOf(note, notes).map((b) => b.note)
   const neighbors = [...new Map([...out, ...back].map((n) => [n.id, n])).values()]
   const c = size / 2
   const r = size / 2 - 40
@@ -157,7 +159,7 @@ export function LocalGraph({ note, size = 260 }: { note: Note; size?: number }) 
           const y = c + r * Math.sin(a)
           const cross = n.space !== note.space
           return (
-            <g key={n.id} style={{ cursor: "pointer" }} onClick={() => navigate(routeOfNote(n))}>
+            <g key={n.id} style={{ cursor: "pointer" }} onClick={() => navigate(routeOf(n))}>
               <line x1={c} y1={c} x2={x} y2={y} stroke="var(--line-strong)" strokeDasharray={cross ? "4 3" : undefined} />
               <circle cx={x} cy={y} r={7} fill={cross ? "var(--violet)" : "var(--cyan-dim)"} />
               <text x={x} y={y + 19} textAnchor="middle" fontSize={9.5} fill="var(--muted)">
