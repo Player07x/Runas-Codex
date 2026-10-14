@@ -1,0 +1,56 @@
+/* O mesmo papel é usado para medir, visualizar e imprimir. Nenhum seletor muda o leitor fora do livro. */
+.book-paper {
+  --paper: #f6efdf; --ink: #30251e; --accent: #7b251c; --rule: #bea56f;
+  --text: var(--ink); --muted: #66594b; --faint: #776a5e; --cyan: #7b251c; --gold: #86672b;
+  --violet: #665075; --red: #8b291d; --green: #3c5d36; --line: #cfbd99; --line-strong: #99814e;
+  --panel: #f6efdf; --panel-2: #e9dfc9; --bg: #f6efdf; --bg-deep: #eee4cf;
+  --font-display: "Cinzel", serif; --book-body: "EB Garamond Variable", Georgia, serif;
+  color: var(--ink); background: var(--paper); color-scheme: light;
+}
+.book-paper.tema-pergaminho { --paper: #ead7b2; --panel: #ead7b2; --panel-2: #dcca9e; --bg: #ead7b2; --ink: #493522; --accent: #694421; }
+.book-paper.tema-moderno { --paper: #fff; --panel: #fff; --panel-2: #edf2f7; --bg: #fff; --ink: #263b50; --accent: #215a79; --rule: #789cad; --cyan: #215a79; --font-display: "Geist Variable", sans-serif; --book-body: "Geist Variable", sans-serif; }
+.book-paper.tema-minimalista { --paper: #fff; --panel: #fff; --panel-2: #f2f2f2; --bg: #fff; --ink: #222; --accent: #222; --rule: #bbb; --cyan: #333; --font-display: "Geist Variable", sans-serif; --book-body: "Geist Variable", sans-serif; }
+.book-print { font-family: var(--book-body); font-size: 11pt; line-height: 1.4; color: var(--ink); overflow-wrap: anywhere; }
+.book-print .md, .book-print .embed-note > .md { font-family: inherit; font-size: inherit; line-height: inherit; color: inherit; }
+.book-print h1, .book-print h2, .book-print h3, .book-print h4 { font-family: var(--font-display); color: var(--accent); }
+.book-print h1 { font-size: 24pt; line-height: 1.15; margin: 0 0 6mm; }
+.book-print h2 { font-size: 16pt; border-color: var(--rule); margin-top: 5mm; }
+.book-print h3 { font-size: 13pt; }
+.book-print .book-chapter-heading { font-size: 11pt; letter-spacing: .08em; margin: 0 0 4mm; color: var(--accent); }
+.book-print .book-part { text-align: center; padding-top: 20mm; }
+.book-print .book-print-cover { min-height: 175mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 7mm; }
+.book-print .book-print-cover h1 { font-size: 32pt; margin: 0; }
+.book-print .book-print-cover .md { width: 100%; }
+.book-print .book-print-cover img { max-height: 85mm; width: auto; max-width: 100%; margin: auto; object-fit: contain; }
+.book-print .book-print-subtitle { font-size: 16pt; }
+.book-print .book-print-author { margin-top: 10mm; font-size: 12pt; }
+.book-print .book-print-credits, .book-print .book-print-back { padding-top: 12mm; white-space: pre-wrap; }
+.book-print .book-print-back { min-height: 150mm; }
+.book-print .md-colunas { clear: both; column-gap: 6mm; column-fill: balance; column-rule: 1px solid var(--rule); }
+.book-print .md-colunas .md > * { break-inside: auto; }
+.book-print .md-largo { column-span: all; }
+.book-print .quebra-coluna, .book-print .quebra-pagina { border: 0; margin: 0; height: 0; }
+.book-print .quebra-pagina::after { display: none; }
+.book-print .capitular { color: var(--accent); }
+.book-print .callout { border-radius: 0; border: 1px solid var(--rule); background: var(--panel-2); box-shadow: 0 1px 3px #0002; padding: 3mm; }
+.book-print .callout-title { font-family: var(--font-display); font-size: 10pt; color: var(--accent); }
+.book-print .callout.descritivo { border-width: 2px 0; background: transparent; font-family: var(--book-body); }
+.book-print .callout.statblock { border-width: 3px 0; border-color: var(--accent); background: var(--paper); }
+.book-print .callout.barra-lateral { max-width: 42%; font-size: 9pt; }
+.book-print .callout.segredo.hidden .callout-body { filter: none; }
+.book-print .callout-title button { display: none; }
+.book-print .table-wrap { overflow: visible; }
+.book-print table { font-size: 9pt; table-layout: fixed; }
+.book-print th, .book-print td { padding: 2mm; border-color: var(--rule); }
+.book-print th { font-size: 8pt; color: var(--accent); }
+.book-print table.listrada tr:nth-child(odd) td { background: var(--panel-2); }
+.book-print figure { margin: 3mm 0; }
+.book-print figcaption { font-size: 9pt; }
+.book-print img, .book-print svg { max-height: 150mm; max-width: 100%; }
+.book-print .mermaid, .book-print .math-display { overflow: visible; }
+.book-print pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow: visible; font-size: 8pt; padding: 3mm; }
+.book-print .footnotes { font-size: 9pt; }
+.book-print .md-sumario a { font-size: 9pt; }
+.book-print .embed-note { padding: 2mm; border-radius: 0; }
+.book-paper.tema-minimalista .callout { box-shadow: none; border-width: 0 0 0 2px; background: transparent; }
+.book-paper.tema-moderno .callout { border-left: 3px solid var(--accent); }

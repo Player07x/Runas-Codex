@@ -38,6 +38,8 @@ interface Props {
   onBack(): void
   onCreate(target: string): void
   onTag(tag: string): void
+  /** Observação do rascunho para prévias; não grava nem substitui o autosave. */
+  onDraftChange?: (text: string) => void
   /** Barra opcional que insere no cursor do editor, sem outro fluxo de gravação. */
   toolbar?: (insert: (text: string) => void) => ReactNode
   /** Pedido de rolar até um título (linha), vindo do sumário. */
@@ -50,7 +52,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true, onDraftChange }: Props) {
   const vault = useVault()
   const toast = useToast()
   const index = vault.index!
@@ -68,6 +70,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   }
   const [base, setBase] = useState(note.text)
   const [draft, setDraft] = useState(() => toEditorText(note.text))
+  useEffect(() => { onDraftChange?.(draft) }, [draft, onDraftChange])
   const [docKey, setDocKey] = useState(0)
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()

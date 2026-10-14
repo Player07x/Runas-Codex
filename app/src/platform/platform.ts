@@ -87,4 +87,6 @@ export interface Platform {
   saveFile(name: string, content: string, mime: string): Promise<string | null>
   hostRoom(mesaId: string): Promise<RoomHostInfo>
   stopRoom(): Promise<void>
+  /** Abre o diálogo de impressão do documento atual. */
+  printDocument?(): void
 }

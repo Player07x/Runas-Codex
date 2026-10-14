@@ -35,5 +35,6 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
       throw new Error("Hospedar sala chega com o VTT no desktop (etapa 4).")
     },
     async stopRoom() {},
+    printDocument: () => window.print(),
   }
 }
