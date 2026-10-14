@@ -115,6 +115,28 @@ Critério: *lembrete dispara no Android e no desktop.*
       até ela; com "Contagem regressiva", a tela inicial mostra quanto falta.
 - [ ] Visões no celular: mês (pontinhos), semana e dia com rolagem, lista.
 
+## Etapa 6 — Wiki
+Critério: *calendário com luas e intercalares calcula idade e dia da semana certos* (já coberto por testes
+automáticos). Falta o uso de verdade:
+
+- [ ] Criar uma wiki pelo app (Wiki › Criar wiki) e abrir a pasta `Wikis/<nome>/` no Obsidian: notas comuns.
+- [ ] Escrever o calendário do seu mundo (Wiki › Novo artigo › Calendário) com os meses, a semana, as luas e as eras
+      de verdade; conferir à mão alguns dias da semana e fases da lua que você já conhece.
+- [ ] Um personagem com `nascimento_mundo` (e outro com `morte_mundo`): a ficha mostra a idade certa; "+1 mês" no
+      calendário muda a idade quando passa o aniversário.
+- [ ] Novo artigo de cada tipo que você usa: a ficha e as perguntas-guia fazem sentido? (anotar o que trocar).
+- [ ] Relações: pôr `pais`/`filhos`/`conjuges` numa família e conferir a árvore; `membro_de` numa organização e o
+      organograma; `aliados`/`em_guerra_com` entre facções e a teia diplomática.
+- [ ] Linha do tempo com acontecimentos em duas trilhas (`trilha: "[[País A]]"`) e uma era longa: rolagem e zoom
+      confortáveis.
+- [ ] Mapa: pôr a imagem do seu mapa na pasta da wiki, criar o artigo Mapa, pôr pinos (um criando nota nova), mover
+      um pino, medir uma distância com a régua (ajuste a `escala` do bloco) e entrar num mapa aninhado.
+- [ ] Renomear no app uma nota que tem pino no mapa: o pino continua ligado (no Obsidian, renomear não atualiza o
+      pino — avisar se for um problema).
+- [ ] "Versão dos jogadores": callouts `[!segredo]`, a camada "Segredos" e os pinos secretos somem.
+- [ ] No Obsidian, os blocos `runas-calendario` e `runas-mapa` aparecem como código (esperado) e as propriedades
+      `_mundo` como texto, não como data.
+
 ---
 
 ## Limitações conhecidas (não precisam de teste agora)
@@ -125,4 +147,4 @@ Critério: *lembrete dispara no Android e no desktop.*
   depois.
 - Ainda sem: timelapse do gráfico, prévia de link ao passar o mouse, comandos `/`, abas e painéis divididos,
   enquete de data pela sala, importar/exportar mesas.
-- Wiki, Campanhas e Livros continuam com dados de exemplo até as etapas 6, 7 e 8.
+- Campanhas continua com dados de exemplo até a etapa 7.

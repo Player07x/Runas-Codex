@@ -76,6 +76,9 @@ blocos), sem reescrever nem reordenar o que existe: `package.json`, `package-loc
 
 ## Fluxo de trabalho
 
+- **Trabalhe numa cópia própria** do repositório (`git worktree add` ou outro clone), **nunca na pasta principal do
+  dono** (`~/Documentos/GitHub/Runas-Codex`): outro agente pode estar trabalhando nela, e arquivos seus deixados lá
+  acabam entrando no commit dele. Prefira uma pasta que não seja apagada ao reiniciar (evite `/tmp`).
 - Um branch e um PR por fase da tarefa, a partir da `main` atualizada (nomes como `livros/8a-estrutura`).
 - **Nunca** faça push na `main`, nunca mescle PR e nunca use `--force` em branch dos outros. Quem mescla é o dono.
 - PR em português: o que mudou, como verificou (comandos e resultados) e **o que ficou sem verificar**. Imagens da
