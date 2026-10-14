@@ -151,7 +151,7 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
 .modal-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-field); padding: 12px 16px; border-top: 1px solid var(--line); }
 @media (max-width: 640px) {
   .backdrop { place-items: end stretch; padding: 0; }
-  .modal, .modal.wide { width: 100%; max-height: 92dvh; border-radius: 18px 18px 0 0; }
+  .modal, .modal.wide { width: 100%; max-height: 92dvh; padding-bottom: env(safe-area-inset-bottom); border-radius: 18px 18px 0 0; }
 }
 
 /* ---------- Estado vazio ---------- */

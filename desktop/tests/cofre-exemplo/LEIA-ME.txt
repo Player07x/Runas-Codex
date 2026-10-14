@@ -1,0 +1,2 @@
+Cofre mínimo usado pelo teste `--smoke` (desktop/src/main/index.ts) no CI e no workflow de Release.
+Não é lido pelos testes unitários.

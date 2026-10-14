@@ -5,7 +5,8 @@
   "description": "Runas-Codex: notas compatíveis com o Obsidian, wiki, campanhas, livros, agenda e VTT, offline",
   "workspaces": [
     "app",
-    "desktop"
+    "desktop",
+    "mobile"
   ],
   "engines": {
     "node": ">=24"
@@ -17,11 +18,13 @@
     "preview": "npm run preview -w @runas-codex/app",
     "desktop": "npm run dev -w @runas-codex/desktop",
     "desktop:build": "npm run build -w @runas-codex/desktop",
-    "typecheck": "npm run typecheck --workspaces",
-    "test": "npm test -w @runas-codex/desktop"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test -w @runas-codex/desktop",
+    "android": "npm run sync -w @runas-codex/mobile"
   },
   "allowScripts": {
     "esbuild@0.25.12": true,
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "electron-winstaller@5.4.0": false
   }
 }
