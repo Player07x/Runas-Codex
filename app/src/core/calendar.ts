@@ -22,6 +22,8 @@ import { parse as parseYaml } from "yaml"
  *   - { nome: Festa das Cinzas, data: "07-01" }        # todo ano
  *   - { nome: Eclipse de Morr, data: "4030-05-12" }    # uma vez
  * hoje: "4031-07-15"                 # a data atual da campanha
+ * correspondencias:                  # o mesmo dia em outro calendário (para converter datas)
+ *   - { calendario: "[[Calendário élfico]]", data: "4031-01-01", data_no_outro: "0812-01-01" }
  * ```
  *
  * Datas são `ANO-MM-DD` (o ano pode ser 0 ou negativo, com sinal: `-120-03-01`). Tudo é contado em "dias absolutos"
@@ -81,6 +83,8 @@ export interface Calendar {
   equivalents: { name: string; offset: number }[]
   holidays: Holiday[]
   today?: WorldDate
+  /** Dias que este calendário e outro marcam juntos (o outro é o alvo de um link). */
+  correspondences: { calendar: string; here: WorldDate; there: WorldDate }[]
 }
 
 export interface WorldDate {
@@ -176,6 +180,7 @@ export function parseCalendar(source: string): Calendar {
     eras: [],
     equivalents: [],
     holidays: [],
+    correspondences: [],
   }
 
   calendar.moons = (Array.isArray(d.luas) ? d.luas : []).map((m, i) => {
@@ -205,6 +210,13 @@ export function parseCalendar(source: string): Calendar {
     if (annual) return [{ name: str(o.nome) || "Feriado", month: Number(annual[1]), day: Number(annual[2]), ...(str(o.cor) ? { color: str(o.cor) } : {}) }]
     if (once) return [{ name: str(o.nome) || "Evento", month: once.month, day: once.day, year: once.year, ...(str(o.cor) ? { color: str(o.cor) } : {}) }]
     return []
+  })
+  calendar.correspondences = (Array.isArray(d.correspondencias) ? d.correspondencias : []).flatMap((c) => {
+    const o = (c && typeof c === "object" ? c : {}) as Record<string, unknown>
+    const target = /\[\[([^\]|#]+)/.exec(str(o.calendario))?.[1]?.trim() ?? str(o.calendario)
+    const here = parseWorldDate(o.data)
+    const there = parseWorldDate(o.data_no_outro)
+    return target && here && there ? [{ calendar: target, here, there }] : []
   })
   const today = parseWorldDate(d.hoje)
   if (today) {
@@ -362,8 +374,9 @@ export function eraOf(cal: Calendar, year: number): { era: Era; year: number } |
 // ---------- Texto ----------
 
 export function formatYear(cal: Calendar, year: number): string {
-  if (year < 0 && cal.negativeSuffix) return `${(-year).toLocaleString("pt-BR")} ${cal.negativeSuffix}`
-  return `${year.toLocaleString("pt-BR")}${cal.suffix ? ` ${cal.suffix}` : ""}`
+  // Anos sem separador de milhar ("4031 C.E."), como se escreve em mundos de RPG.
+  if (year < 0 && cal.negativeSuffix) return `${-year} ${cal.negativeSuffix}`
+  return `${year}${cal.suffix ? ` ${cal.suffix}` : ""}`
 }
 
 /** "15 de Cinzas de 4031 C.E." (nos intercalares, "3º dos Dias de Logi de 4031 C.E."). */
@@ -375,7 +388,7 @@ export function formatDate(cal: Calendar, date: WorldDate): string {
 
 /** A mesma data contada de outra origem (ex.: 4031 C.E. = 4 Logi). */
 export function equivalentYears(cal: Calendar, year: number): string[] {
-  return cal.equivalents.map((e) => `${(year - e.offset).toLocaleString("pt-BR")} ${e.name}`)
+  return cal.equivalents.map((e) => `${year - e.offset} ${e.name}`)
 }
 
 // ---------- Intervalos ----------

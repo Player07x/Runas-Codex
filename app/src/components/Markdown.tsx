@@ -49,6 +49,11 @@ const rehypePlugins = [rehypeRaw, [rehypeSanitize, schema], [rehypeHighlight, { 
 /** Títulos da nota (para o sumário ```table-of-contents```) e se os segredos do mestre aparecem. */
 const MarkdownContext = createContext<{ headings: { level: number; text: string }[]; showSecrets: boolean }>({ headings: [], showSecrets: true })
 
+/** Opções da renderização em volta (para blocos registrados: ex. esconder pinos secretos na versão dos jogadores). */
+export function useMarkdownOptions(): { showSecrets: boolean } {
+  return { showSecrets: useContext(MarkdownContext).showSecrets }
+}
+
 function headingsOf(source: string): { level: number; text: string }[] {
   const lines = source.split("\n")
   return maskNonContent(source)

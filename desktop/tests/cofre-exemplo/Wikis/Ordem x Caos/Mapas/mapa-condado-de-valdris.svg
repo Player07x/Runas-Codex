@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <!-- Mapa de exemplo da wiki Ordem x Caos (Condado de Valdris), desenhado para o Runas-Codex. -->
+  <defs>
+    <radialGradient id="papel" cx="50%" cy="45%" r="75%">
+      <stop offset="0" stop-color="#e9dcc0"/>
+      <stop offset="1" stop-color="#cdb98e"/>
+    </radialGradient>
+    <pattern id="arvores" width="26" height="22" patternUnits="userSpaceOnUse">
+      <path d="M13 3 L20 16 L6 16 Z" fill="#7d8b5a" opacity="0.75"/>
+    </pattern>
+    <pattern id="montes" width="60" height="40" patternUnits="userSpaceOnUse">
+      <path d="M4 34 L22 8 L40 34" fill="none" stroke="#6f5a3e" stroke-width="2.4"/>
+      <path d="M30 34 L44 16 L58 34" fill="none" stroke="#6f5a3e" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="800" fill="url(#papel)"/>
+  <!-- Montanhas Cinzentas -->
+  <path d="M0 0 H1200 V150 C1050 190 930 120 820 160 C700 205 610 130 470 170 C360 200 250 140 120 175 C70 188 30 180 0 170 Z" fill="url(#montes)" opacity="0.9"/>
+  <!-- Florestas -->
+  <path d="M60 420 C120 360 260 380 300 450 C330 520 250 600 160 590 C80 580 30 500 60 420 Z" fill="url(#arvores)"/>
+  <path d="M880 520 C960 470 1100 500 1130 580 C1160 660 1050 730 960 700 C880 680 830 590 880 520 Z" fill="url(#arvores)"/>
+  <!-- Lago Espelhado -->
+  <path d="M470 230 C540 190 650 205 690 255 C730 310 680 370 600 372 C520 375 430 340 425 290 C422 262 440 245 470 230 Z" fill="#8fb3c2" stroke="#4f7181" stroke-width="3"/>
+  <path d="M500 270 C540 255 600 262 630 285" fill="none" stroke="#c8dde4" stroke-width="2" opacity="0.8"/>
+  <!-- Rio Cinza -->
+  <path d="M600 372 C590 430 640 480 610 540 C580 600 520 640 540 700 C552 740 600 770 620 800" fill="none" stroke="#5f8796" stroke-width="7" stroke-linecap="round"/>
+  <!-- Estradas -->
+  <path d="M0 560 C150 540 300 560 420 520 C510 490 560 470 610 470 C700 470 780 430 860 380 C930 336 1050 330 1200 350" fill="none" stroke="#8a6a44" stroke-width="4" stroke-dasharray="14 8"/>
+  <path d="M610 470 C640 560 700 620 760 800" fill="none" stroke="#8a6a44" stroke-width="3" stroke-dasharray="10 8"/>
+  <!-- Muralhas de Valdris -->
+  <circle cx="624" cy="472" r="34" fill="#b49a72" stroke="#5b4630" stroke-width="4"/>
+  <circle cx="624" cy="472" r="14" fill="#7a5c3c"/>
+  <!-- Ruínas de Myrr -->
+  <g transform="translate(240 260)" stroke="#5b4630" stroke-width="3" fill="none">
+    <path d="M-20 18 V-6 H-8 V18 M4 18 V-14 H16 V18"/>
+    <path d="M-30 22 H30"/>
+  </g>
+  <!-- Rosa dos ventos -->
+  <g transform="translate(1100 700)" fill="#5b4630">
+    <path d="M0 -46 L9 0 L0 46 L-9 0 Z"/>
+    <path d="M-46 0 L0 -9 L46 0 L0 9 Z" opacity="0.6"/>
+    <text y="-54" text-anchor="middle" font-family="serif" font-size="20" font-weight="700">N</text>
+  </g>
+  <!-- Escala: 100 px = 10 km -->
+  <g transform="translate(60 740)" font-family="serif" font-size="16" fill="#5b4630">
+    <rect width="100" height="8" fill="#5b4630"/>
+    <rect x="100" width="100" height="8" fill="none" stroke="#5b4630" stroke-width="2"/>
+    <text y="30">0</text><text x="92" y="30">10</text><text x="186" y="30">20 km</text>
+  </g>
+  <text x="600" y="60" text-anchor="middle" font-family="serif" font-size="34" font-style="italic" fill="#4a3826">Condado de Valdris</text>
+</svg>

@@ -1,165 +1,197 @@
-import { useState } from "react"
-import { CalendarDays, ChevronLeft, Eye, PanelRight, PenLine, Search, Users } from "lucide-react"
-import { ARTICLES, CATEGORIES } from "../../data/wiki"
-import type { WikiArticle } from "../../data/types"
-import { splitFrontmatter } from "../../lib/links"
+import { useCallback, useMemo, useState } from "react"
+import { GitFork, Link2, Network, Plus } from "lucide-react"
+import { dirname, noteName } from "../../core/text"
+import { calendarFor, RELATION_TYPES, relationsOf, type Relation } from "../../core/wiki"
+import { NoteSetContext } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
-import { CAMPAIGN_TODAY, ORDEM_X_CAOS, dayNumber, eraOf, formatWorldDate, moonPhase, parseWorldDate, seasonOf, weekday, yearsBetween } from "../../lib/fictional-calendar"
-import { Markdown } from "../../components/Markdown"
-import { NoteEditor } from "../../components/NoteEditor"
-import { NotePanels } from "../../components/NotePanels"
-import { MoonIcon } from "../../components/MoonIcon"
-import { Segmented } from "../../components/ui"
+import { noteRoute, vaultNoteSet } from "../../lib/vault-notes"
+import { useToast } from "../../components/ui"
+import { NoteView } from "../../components/vault/NoteView"
+import { useVault } from "../../platform/VaultProvider"
+import { Infobox } from "./Infobox"
+import { NewArticleDialog } from "./WikiHome"
+import { askWikiSearch, useWiki } from "./wiki-state"
 
-export function WikiArticleView({ articleId }: { articleId: string }) {
-  const article = ARTICLES.find((a) => a.id === articleId)
-  const [mode, setMode] = useState<"ver" | "editar">("ver")
-  const [players, setPlayers] = useState(false)
-  const [showRight, setShowRight] = useState(false)
-  if (!article) return <div className="page muted">Artigo não encontrado.</div>
-  const { body } = splitFrontmatter(article.markdown)
+export function WikiArticleView({ path }: { path: string }) {
+  const vault = useVault()
+  const toast = useToast()
+  const { wiki, players } = useWiki()
+  const index = vault.index!
+  const note = index.note(path)
+  const [panel, setPanel] = useState(false)
+  const [create, setCreate] = useState<string | null>(null)
+  const readOnly = vault.info?.readOnly ?? true
+  const folders = useMemo(() => [...new Set(index.allFiles().map((f) => dirname(f.path)))].filter(Boolean), [index, vault.version])
+  const calendarRef = useMemo(() => calendarFor(index, path), [index, path, vault.version])
+  const noteSet = useMemo(() => vaultNoteSet(index, path, {}, vault.platform), [index, path, vault.platform, vault.version])
+  const onCreate = useCallback((target: string) => (readOnly ? toast(`“${target}” ainda não existe.`) : setCreate(target)), [readOnly, toast])
+  const onTag = useCallback((tag: string) => {
+    askWikiSearch(`tag:${tag}`)
+    navigate("/wiki")
+  }, [])
+
+  if (!note) {
+    return (
+      <div className="page">
+        <p className="muted">Artigo não encontrado (foi renomeado ou apagado?). <a href={href("/wiki")}>Voltar para a wiki</a></p>
+      </div>
+    )
+  }
 
   return (
-    <div className={`workspace ${showRight ? "show-right" : ""}`}>
-      <aside className="pane-left">
-        <div className="pane-head">
-          <a className="row small" href={href("/wiki")} style={{ textDecoration: "none" }}>
-            <ChevronLeft size={15} /> Ordem x Caos
-          </a>
-          <label className="search">
-            <Search size={15} />
-            <input className="input" placeholder="Buscar na wiki" />
-          </label>
-        </div>
-        <div className="pane-body" style={{ gap: 10 }}>
-          {CATEGORIES.map((cat) => {
-            const items = ARTICLES.filter((a) => a.category === cat.id)
-            if (!items.length) return null
-            return (
-              <div key={cat.id} className="stack" style={{ gap: 2 }}>
-                <span className="eyebrow" style={{ color: cat.color }}>{cat.id}</span>
-                <div className="list">
-                  {items.map((a) => (
-                    <a key={a.id} className={`list-item small ${a.id === article.id ? "active" : ""}`} href={href(`/wiki/artigo/${a.id}`)}>
-                      {a.title}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </aside>
-
-      <section className="pane-center">
-        {mode === "editar" ? (
-          <>
-            <div className="editor-bar">
-              <button className="btn sm" onClick={() => setMode("ver")}>
-                <Eye size={14} /> Ver artigo
-              </button>
-            </div>
-            <NoteEditor note={article} onShowPanel={() => setShowRight(!showRight)} />
-          </>
-        ) : (
-          <>
-            <div className="editor-bar">
-              <button className="icon-btn mobile-switch" onClick={() => navigate("/wiki")} aria-label="Voltar">
-                <ChevronLeft size={18} />
-              </button>
-              <Segmented
-                label="Modo"
-                value={mode}
-                onChange={setMode}
-                options={[
-                  { value: "ver", label: "Ver", icon: <Eye size={14} /> },
-                  { value: "editar", label: "Editar", icon: <PenLine size={14} /> },
-                ]}
-              />
-              <button className={`btn sm ${players ? "primary" : ""}`} onClick={() => setPlayers(!players)} title="Esconde os segredos, como na exportação para jogadores">
-                <Users size={14} /> {players ? "Versão dos jogadores" : "Versão do mestre"}
-              </button>
-              <span className="grow" />
-              <button className="icon-btn" onClick={() => setShowRight(!showRight)} title="Links e gráfico local">
-                <PanelRight size={18} />
-              </button>
-            </div>
-            <article className="article">
-              <header className="article-head">
-                <span className="chip" style={{ color: CATEGORIES.find((c) => c.id === article.category)?.color }}>{article.category}</span>
-                {article.aliases && <span className="muted small">também: {article.aliases.join(", ")}</span>}
-              </header>
-              <Infobox article={article} />
-              <Markdown source={body} space="wiki" showSecrets={!players} />
-            </article>
-          </>
-        )}
+    <div className={`wiki-article-layout ${panel ? "show-panel" : ""}`}>
+      <section className="wiki-article-main">
+        <NoteView key={path} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} />
       </section>
-
-      <aside className="pane-right">
-        <NotePanels note={article} />
+      <aside className="wiki-article-side">
+        <NoteSetContext.Provider value={noteSet}>
+          <Infobox
+            note={note}
+            calendar={calendarRef && "calendar" in calendarRef ? calendarRef.calendar : null}
+            {...(calendarRef && "error" in calendarRef ? { calendarError: calendarRef.error } : {})}
+            readOnly={readOnly}
+            onSet={(key, value) => vault.setProperty(path, key, value)}
+          />
+          <Relations path={path} root={wiki?.root ?? ""} readOnly={readOnly} />
+          <Mentions path={path} />
+        </NoteSetContext.Provider>
       </aside>
+      {create !== null && <NewArticleDialog initialName={create} onClose={() => setCreate(null)} />}
     </div>
   )
 }
 
-function Infobox({ article }: { article: WikiArticle }) {
-  const cal = ORDEM_X_CAOS
+function Relations({ path, root, readOnly }: { path: string; root: string; readOnly: boolean }) {
+  const vault = useVault()
+  const toast = useToast()
+  const index = vault.index!
+  const [adding, setAdding] = useState(false)
+  const relations = useMemo(() => relationsOf(index, path, root), [index, path, root, vault.version])
+  const groups = new Map<string, Relation[]>()
+  for (const r of relations) groups.set(r.type.label, [...(groups.get(r.type.label) ?? []), r])
+  const family = relations.some((r) => r.type.group === "familia")
+  const org = relations.some((r) => r.type.key === "membro_de" && r.inverse) || relations.some((r) => r.type.key === "lider_de" && r.inverse)
   return (
-    <aside className="infobox">
-      <div className="infobox-portrait" aria-hidden="true">
-        {article.title
-          .split(" ")
-          .filter((w) => w.length > 2)
-          .slice(0, 2)
-          .map((w) => w[0])
-          .join("")}
+    <section className="card wiki-relations">
+      <div className="row between">
+        <span className="section-title row">
+          <GitFork size={15} /> Relações
+        </span>
+        {!readOnly && (
+          <button className="icon-btn sm" onClick={() => setAdding(!adding)} aria-label="Adicionar relação" title="Adicionar relação">
+            <Plus size={15} />
+          </button>
+        )}
       </div>
-      <strong className="display" style={{ textAlign: "center", fontSize: 17 }}>{article.title}</strong>
-      <p className="muted small" style={{ textAlign: "center" }}>{article.summary}</p>
-      <dl>
-        {article.infobox.map((field) => {
-          if (!field.worldDate) {
-            return (
-              <div key={field.label}>
-                <dt>{field.label}</dt>
-                <dd>
-                  <Markdown source={field.value} space="wiki" className="inline-md" />
-                </dd>
-              </div>
-            )
-          }
-          const date = parseWorldDate(field.worldDate)
-          const years = yearsBetween(date, CAMPAIGN_TODAY)
-          const day = dayNumber(cal, date)
-          const isBirth = field.label === "Nascimento"
-          return (
-            <div key={field.label}>
-              <dt>{field.label}</dt>
-              <dd>
-                <span>{formatWorldDate(cal, date)}</span>
-                <span className="computed">
-                  <CalendarDays size={12} /> {isBirth ? `${years} anos` : `há ${years} anos`} · {weekday(cal, date)} · {seasonOf(cal, date)}
-                </span>
-                <span className="computed">
-                  {cal.moons.map((moon) => {
-                    const m = moonPhase(moon, day)
-                    return (
-                      <span key={moon.name} className="row" style={{ gap: 3 }}>
-                        <MoonIcon fraction={m.fraction} color={moon.color} size={12} /> {moon.name} {m.phase}
-                      </span>
-                    )
-                  })}
-                </span>
-                <span className="computed">{eraOf(cal, date.year)}</span>
-              </dd>
-            </div>
-          )
-        })}
-      </dl>
-      <span className="tiny faint" style={{ textAlign: "center" }}>
-        Calculado pelo Calendário de Ordem x Caos em relação a {formatWorldDate(cal, CAMPAIGN_TODAY)}.
+      {adding && <AddRelation path={path} root={root} onDone={() => setAdding(false)} onError={(m) => toast(m)} />}
+      {relations.length === 0 && !adding && <span className="small muted">Nenhuma. Relações são propriedades como aliados, inimigos, pais, membro_de (uma lista de links).</span>}
+      {[...groups].map(([label, list]) => (
+        <div key={label} className="stack" style={{ gap: 2 }}>
+          <span className="eyebrow">{label}</span>
+          {list.map((r, i) => (
+            <span key={i} className="small row" style={{ gap: 6 }}>
+              {r.other ? (
+                <a href={href(noteRoute(r.other))} className="wikilink">
+                  {noteName(r.other)}
+                </a>
+              ) : (
+                <span className="wikilink broken">{r.target}</span>
+              )}
+              {r.note && <span className="chip">{r.note}</span>}
+              {r.inverse && <span className="tiny faint" title="Escrito na outra nota">↩</span>}
+            </span>
+          ))}
+        </div>
+      ))}
+      {(family || org) && (
+        <div className="row-wrap">
+          {family && (
+            <a className="btn sm" href={href(`/wiki/relacoes/${encodeURIComponent(path)}`)}>
+              <Network size={14} /> Árvore genealógica
+            </a>
+          )}
+          {org && (
+            <a className="btn sm" href={href(`/wiki/relacoes/${encodeURIComponent(path)}`)}>
+              <Network size={14} /> Organograma
+            </a>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function AddRelation({ path, root, onDone, onError }: { path: string; root: string; onDone(): void; onError(message: string): void }) {
+  const vault = useVault()
+  const index = vault.index!
+  const [type, setType] = useState(RELATION_TYPES[0]!.key)
+  const [target, setTarget] = useState("")
+  const [attitude, setAttitude] = useState("")
+  const names = useMemo(() => index.notesIn(root).filter((n) => n.path !== path).map((n) => n.path), [index, root, path])
+  const save = async () => {
+    const dest = names.find((p) => noteName(p).toLocaleLowerCase("pt-BR") === target.trim().toLocaleLowerCase("pt-BR")) ?? names.find((p) => p === target.trim())
+    if (!target.trim()) return onError("Escolha a nota.")
+    const link = `[[${dest ? index.linkTarget(dest, path) : target.trim()}]]${attitude.trim() ? ` (${attitude.trim()})` : ""}`
+    const current = index.note(path)?.meta.frontmatter?.data?.[type]
+    const list = Array.isArray(current) ? current.map(String) : typeof current === "string" && current.trim() ? [current] : []
+    try {
+      await vault.setProperty(path, type, [...list, link])
+      onDone()
+    } catch (error) {
+      onError(error instanceof Error ? error.message : String(error))
+    }
+  }
+  return (
+    <form
+      className="stack add-relation"
+      onSubmit={(e) => {
+        e.preventDefault()
+        void save()
+      }}
+    >
+      <select className="select" value={type} onChange={(e) => setType(e.target.value)} aria-label="Tipo da relação">
+        {RELATION_TYPES.map((r) => (
+          <option key={r.key} value={r.key}>
+            {r.label}
+          </option>
+        ))}
+      </select>
+      <input className="input" list="relacao-notas" placeholder="Nota" value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Nota da relação" />
+      <datalist id="relacao-notas">
+        {names.map((p) => (
+          <option key={p} value={noteName(p)} />
+        ))}
+      </datalist>
+      <input className="input" placeholder="Atitude (opcional): hostil, amigo de infância…" value={attitude} onChange={(e) => setAttitude(e.target.value)} aria-label="Atitude" />
+      <div className="row" style={{ gap: 6 }}>
+        <button className="btn sm primary" type="submit">
+          Adicionar
+        </button>
+        <button className="btn sm ghost" type="button" onClick={onDone}>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function Mentions({ path }: { path: string }) {
+  const vault = useVault()
+  const backlinks = useMemo(() => vault.index!.backlinks(path), [vault.index, path, vault.version])
+  if (!backlinks.length) return null
+  return (
+    <section className="card">
+      <span className="section-title row">
+        <Link2 size={15} /> Citado em · {backlinks.length}
       </span>
-    </aside>
+      <div className="stack" style={{ gap: 6, marginTop: 6 }}>
+        {backlinks.slice(0, 12).map((b) => (
+          <a key={b.from} className="card tight link" href={href(noteRoute(b.from))} style={{ textDecoration: "none", color: "var(--text)" }}>
+            <strong className="small">{noteName(b.from)}</strong>
+            {b.context[0] && <p className="muted tiny" style={{ marginTop: 2 }}>{b.context[0]}</p>}
+          </a>
+        ))}
+      </div>
+    </section>
   )
 }

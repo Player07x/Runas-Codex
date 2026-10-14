@@ -62,6 +62,24 @@ export const SMOKE_SCRIPT = `(async () => {
   await wait(1500)
   result.graph = { canvas: Boolean(graphCanvas), stats: document.querySelector(".graph-toolbar .small")?.textContent ?? "" }
 
+  // Wiki: ficha com datas calculadas, calendário fictício e mapa (imagem por vault-file:// e pinos).
+  const aldrenWiki = entries.find((e) => e.path.endsWith("Personagens/Aldren.md"))
+  const mapNote = entries.find((e) => e.path.endsWith("Mapas/Condado de Valdris.md"))
+  if (aldrenWiki && mapNote) {
+    location.hash = "/wiki/artigo/" + encodeURIComponent(aldrenWiki.path)
+    await until(() => document.querySelector(".infobox"))
+    await wait(300)
+    const infobox = document.querySelector(".infobox")?.textContent ?? ""
+    location.hash = "/wiki/calendario"
+    await until(() => document.querySelector(".fmonth .month-head"))
+    const weekdays = document.querySelectorAll(".fmonth .month-head").length
+    location.hash = "/wiki/mapa/" + encodeURIComponent(mapNote.path)
+    await until(() => document.querySelectorAll(".map-pin").length > 0, 60)
+    const mapImage = document.querySelector(".map-world img")
+    await until(() => mapImage && mapImage.complete, 30)
+    result.wiki = { age: /32 anos/.test(infobox), weekdays, pins: document.querySelectorAll(".map-pin").length, image: Boolean(mapImage && mapImage.naturalWidth > 0) }
+  }
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -105,6 +123,14 @@ export const SMOKE_SCRIPT = `(async () => {
   const dailyPath = decodeURIComponent(location.hash.slice("#/notas/".length))
   const dailyText = (await bridge.vault.read([dailyPath]))[dailyPath] ?? ""
   result.daily = dailyText.includes("## Humor do dia") && !dailyText.includes("{{") ? "OK" : dailyPath + ": " + dailyText.slice(0, 60)
+
+  // Wiki: "+1 dia" avança o "hoje" do mundo dentro do bloco runas-calendario (só aquela linha muda).
+  location.hash = "/wiki/calendario"
+  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "+1 dia")))?.click()
+  await wait(700)
+  const calendarPath = "Wikis/Ordem x Caos/Calendários/Calendário de Ordem x Caos.md"
+  const calendarText = (await bridge.vault.read([calendarPath]))[calendarPath] ?? ""
+  result.wikiToday = calendarText.includes('hoje: "4031-07-16"') ? "OK" : (calendarText.match(/hoje:.*$/m)?.[0] ?? "sem hoje")
 
   // Agenda: criar um evento pela tela; a nota vai para Agenda/ no formato do Full Calendar e aparece no mês.
   location.hash = "/agenda"
@@ -208,7 +234,9 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     formatters.footnotesLast === true
   const graph = result.graph as { canvas?: boolean; stats?: string } | undefined
   const graphOk = graph?.canvas === true && /^[1-9]\d* nós/.test(graph.stats ?? "")
-  if (!readOk || !formattersOk || !graphOk) return false
+  const wiki = result.wiki as { age?: boolean; weekdays?: number; pins?: number; image?: boolean } | undefined
+  const wikiOk = wiki?.age === true && wiki.weekdays === 6 && (wiki.pins ?? 0) >= 2 && wiki.image === true
+  if (!readOk || !formattersOk || !graphOk || !wikiOk) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (
@@ -222,6 +250,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     typeof result.backup === "number" &&
     result.snippet === "OK" &&
     result.daily === "OK" &&
+    result.wikiToday === "OK" &&
     typeof result.agenda === "object" &&
     (result.agenda as Record<string, unknown>).note === "OK" &&
     (result.agenda as Record<string, unknown>).inMonth === true &&

@@ -50,6 +50,8 @@ feriados:
   - { nome: Festa das Cinzas, data: "07-01" }
   - { nome: Eclipse de Morr, data: "4030-05-12" }
 hoje: "4031-07-15"
+correspondencias:
+  - { calendario: "[[Élfico]]", data: "4031-01-01", data_no_outro: "0812-01-01" }
 `
 
 const date = (text: string) => parseWorldDate(text)!
@@ -130,11 +132,12 @@ describe("calendário de Ordem x Caos (intercalares, bissexto, luas, eras)", () 
     expect(eraOf(cal, 3000)).toBeNull()
     expect(season(cal, today)).toBe("Outono")
     expect(equivalentYears(cal, 4031)).toEqual(["4 Logi"])
-    expect(formatDate(cal, today)).toBe("15 de Cinzas de 4.031 C.E.")
-    expect(formatDate(cal, date("4031-11-03"))).toBe("3º dos Dias de Logi de 4.031 C.E.")
+    expect(formatDate(cal, today)).toBe("15 de Cinzas de 4031 C.E.")
+    expect(formatDate(cal, date("4031-11-03"))).toBe("3º dos Dias de Logi de 4031 C.E.")
     expect(holidaysOn(cal, date("4035-07-01")).map((h) => h.name)).toEqual(["Festa das Cinzas"])
     expect(holidaysOn(cal, date("4030-05-12")).map((h) => h.name)).toEqual(["Eclipse de Morr"])
     expect(holidaysOn(cal, date("4031-05-12"))).toEqual([])
+    expect(cal.correspondences).toEqual([{ calendar: "Élfico", here: date("4031-01-01"), there: date("0812-01-01") }])
   })
 
   it("somar meses mantém o dia dentro do mês de destino", () => {

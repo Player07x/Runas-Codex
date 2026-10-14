@@ -97,3 +97,18 @@ describe("planFolderRename", () => {
     expect(() => planFolderRename(index, "Wikis/OxC", "Wikis/OxC/Sub")).toThrow(/dentro dela mesma/)
   })
 })
+
+describe("renomear e os blocos da Wiki", () => {
+  const map = "# Mapa\n\n```runas-mapa\nimagem: \"[[mapa.png]]\"\npinos:\n  - { nota: \"[[Aldren]]\", x: 0.5, y: 0.5 }\n  - { nota: \"[[Wikis/M/Valdris|a cidade]]\", x: 0.1, y: 0.1 }\n```\n"
+  const files: Record<string, string> = { "Wikis/M/Mapa.md": map, "Wikis/M/Aldren.md": "# Aldren", "Wikis/M/Valdris.md": "# Valdris" }
+  const index = new VaultIndex([...Object.keys(files), "Wikis/M/mapa.png"].map((path) => ({ path, size: 1, mtime: 1 })), files)
+
+  it("atualiza pinos e a imagem do mapa, mantendo o estilo do link", () => {
+    const aldren = planRename(index, "Wikis/M/Aldren.md", "Wikis/M/Aldren Vael.md").edits.find((e) => e.path === "Wikis/M/Mapa.md")!
+    expect(aldren.after).toContain('nota: "[[Aldren Vael]]"')
+    const valdris = planRename(index, "Wikis/M/Valdris.md", "Wikis/M/Locais/Valdris.md").edits.find((e) => e.path === "Wikis/M/Mapa.md")!
+    expect(valdris.after).toContain('"[[Wikis/M/Locais/Valdris|a cidade]]"')
+    const image = planRename(index, "Wikis/M/mapa.png", "Wikis/M/condado.png").edits.find((e) => e.path === "Wikis/M/Mapa.md")!
+    expect(image.after).toContain('imagem: "[[condado.png]]"')
+  })
+})

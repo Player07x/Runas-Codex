@@ -1,135 +1,193 @@
-import { useState } from "react"
-import { ChevronRight, Compass, Layers, MapPin, Ruler, Shield, Skull, Castle, Eye } from "lucide-react"
-import { ARTICLES } from "../../data/wiki"
-import { href } from "../../lib/router"
-import { Switch } from "../../components/ui"
+import { useMemo, useState } from "react"
+import { ChevronLeft, Map as MapIcon, Pencil, Plus } from "lucide-react"
+import { findCodeBlocks, replaceCodeBlock, setBlockKeys } from "../../core/codeblocks"
+import { noteName } from "../../core/text"
+import { articleKind, isMapNote, listMaps, newArticleNote, parseMap, pinsToYaml, type MapPin, type MapSpec } from "../../core/wiki"
+import { useNoteSet } from "../../lib/note-set"
+import { href, navigate } from "../../lib/router"
+import { noteRoute } from "../../lib/vault-notes"
+import { useMarkdownOptions } from "../../components/Markdown"
+import { useToast } from "../../components/ui"
+import { useVault } from "../../platform/VaultProvider"
+import { MapView, type PinTarget } from "./MapView"
+import { articleRoute, useWiki } from "./wiki-state"
+import { NewArticleDialog } from "./WikiHome"
 
-type LayerId = "locais" | "perigos" | "rotas" | "segredos"
+/** Bloco ```runas-mapa``` dentro de uma nota: o mapa navegável (os pinos se editam na tela Mapas). */
+export function MapBlock({ code }: { code: string }) {
+  const set = useNoteSet()
+  const { showSecrets } = useMarkdownOptions()
+  const here = set.resolve?.("", "wiki")?.path
+  let spec: MapSpec
+  try {
+    spec = parseMap(code)
+  } catch (error) {
+    return (
+      <div className="callout aviso">
+        <div className="callout-title">Mapa com erro</div>
+        <div className="callout-body small">{error instanceof Error ? error.message : String(error)}</div>
+      </div>
+    )
+  }
+  const image = set.resolve?.(spec.image, "wiki")
+  return (
+    <div className="map-block">
+      <MapView
+        compact
+        spec={spec}
+        imageUrl={image ? set.fileUrl?.(image.path) : undefined}
+        showSecrets={showSecrets}
+        resolvePin={(note) => {
+          const found = set.resolve?.(note, "wiki")
+          return found ? { path: found.path, route: found.route } : undefined
+        }}
+        onOpen={(target) => navigate(target.route)}
+      />
+      {here && (
+        <a className="btn sm map-block-open" href={href(`/wiki/mapa/${encodeURIComponent(here)}`)}>
+          <Pencil size={13} /> Abrir no editor de mapas
+        </a>
+      )}
+    </div>
+  )
+}
 
-const PINS = [
-  { id: "valdris", x: 520, y: 330, layer: "locais" as LayerId, icon: <Castle size={16} />, nested: true },
-  { id: "lago-espelhado", x: 470, y: 150, layer: "locais" as LayerId, icon: <MapPin size={16} /> },
-  { id: "ordem-chama-cinzenta", x: 610, y: 235, layer: "locais" as LayerId, icon: <Shield size={16} /> },
-  { id: "lobo-de-cinzas", x: 300, y: 420, layer: "perigos" as LayerId, icon: <Skull size={16} /> },
-  { id: "queda-de-myrr", x: 230, y: 250, layer: "perigos" as LayerId, icon: <Skull size={16} /> },
-]
+/** Tela Mapas: a lista dos mapas da wiki ou um mapa aberto, com pinos editáveis. */
+export function WikiMap({ path }: { path?: string }) {
+  const vault = useVault()
+  const { wiki } = useWiki()
+  const index = vault.index!
+  const maps = useMemo(() => listMaps(index, wiki!.root), [index, wiki, vault.version])
+  const [creating, setCreating] = useState(false)
+  const readOnly = vault.info?.readOnly ?? true
+  if (path) return <MapEditor key={path} path={path} />
+  return (
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <span className="eyebrow">Wiki · {wiki!.name}</span>
+          <h1 className="page-title">Mapas</h1>
+        </div>
+        {!readOnly && (
+          <button className="btn primary" onClick={() => setCreating(true)}>
+            <Plus size={16} /> Novo mapa
+          </button>
+        )}
+      </div>
+      {maps.length === 0 ? (
+        <p className="muted">Nenhum mapa. Um mapa é uma nota com um bloco <code>```runas-mapa</code> que aponta para uma imagem do cofre; os pinos ligam lugares do mapa a artigos da wiki.</p>
+      ) : (
+        <div className="category-grid">
+          {maps.map((note) => (
+            <a key={note.path} className="card category-card" href={href(`/wiki/mapa/${encodeURIComponent(note.path)}`)} style={{ ["--cat" as string]: "var(--green)", textDecoration: "none", color: "var(--text)" }}>
+              <span className="cat-icon">
+                <MapIcon size={18} />
+              </span>
+              <strong>{note.name}</strong>
+              <span className="tiny muted">{(() => {
+                try {
+                  return `${parseMap(findCodeBlocks(note.text, "runas-mapa")[0]!.content).pins.length} pino(s)`
+                } catch {
+                  return "com erro"
+                }
+              })()}</span>
+            </a>
+          ))}
+        </div>
+      )}
+      {creating && <NewArticleDialog onClose={() => setCreating(false)} />}
+    </div>
+  )
+}
 
-export function WikiMap() {
-  const [layers, setLayers] = useState<Record<LayerId, boolean>>({ locais: true, perigos: true, rotas: true, segredos: false })
-  const [selected, setSelected] = useState<string | null>("valdris")
-  const [measure, setMeasure] = useState(false)
-  const article = ARTICLES.find((a) => a.id === selected)
-  const pin = PINS.find((p) => p.id === selected)
+function MapEditor({ path }: { path: string }) {
+  const vault = useVault()
+  const toast = useToast()
+  const { wiki, players, calendar } = useWiki()
+  const index = vault.index!
+  const note = index.note(path)
+  const readOnly = vault.info?.readOnly ?? true
+  const block = note ? findCodeBlocks(note.text, "runas-mapa")[0] : undefined
+  const parsed = useMemo(() => {
+    if (!block) return null
+    try {
+      return { spec: parseMap(block.content) }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  }, [block?.content])
+  const resolve = (target: string) => {
+    const dest = index.resolve({ kind: "wiki", embed: false, target, start: 0, end: 0, raw: "", inFrontmatter: false }, path).dest
+    return dest
+  }
+  const notes = useMemo(() => index.notesIn(wiki!.root).map((n) => n.name), [index, wiki, vault.version])
+
+  if (!note || !block || !parsed) return <div className="page"><p className="muted">Mapa não encontrado. <a href={href("/wiki/mapa")}>Ver os mapas</a></p></div>
+  if ("error" in parsed) {
+    return (
+      <div className="page">
+        <div className="callout aviso">
+          <div className="callout-title">Mapa com erro</div>
+          <div className="callout-body small">{parsed.error}</div>
+        </div>
+        <a className="btn sm" href={href(articleRoute(path))}>
+          Corrigir na nota
+        </a>
+      </div>
+    )
+  }
+  const spec = parsed.spec
+  const image = resolve(spec.image)
+
+  const savePins = async (pins: MapPin[]) => {
+    const current = index.note(path)!
+    const currentBlock = findCodeBlocks(current.text, "runas-mapa")[0]!
+    await vault.save(path, replaceCodeBlock(current.text, currentBlock, setBlockKeys(currentBlock.content, { pinos: pinsToYaml(pins) })))
+  }
+  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+
+  const addPin = async (pin: MapPin) => {
+    let next = pin
+    if (pin.note) {
+      const dest = resolve(pin.note)
+      if (dest) next = { ...pin, note: index.linkTarget(dest, path) }
+      else {
+        // Nota nova a partir do pino: um Local da wiki.
+        const local = articleKind("local")!
+        const created = await vault.createNote(`${wiki!.root}${local.folder}`, pin.note, newArticleNote(local, pin.note, calendar ? noteName(calendar.path) : undefined))
+        next = { ...pin, note: index.linkTarget(created, path) }
+        toast(`Nota criada: ${created}`)
+      }
+    }
+    // Os pinos de agora (a nota pode ter mudado enquanto a nota nova era criada).
+    const currentPins = parseMap(findCodeBlocks(index.note(path)!.text, "runas-mapa")[0]!.content).pins
+    await savePins([...currentPins, next])
+  }
 
   return (
     <div className="map-screen">
-      <div className="map-toolbar">
-        <div className="crumbs small">
-          <a href={href("/wiki/mapa")}>Mundo</a>
-          <ChevronRight size={13} />
-          <strong>Condado de Valdris</strong>
-        </div>
-        <span className="grow" />
-        <button className={`btn sm ${measure ? "primary" : ""}`} onClick={() => setMeasure(!measure)}>
-          <Ruler size={14} /> Régua
+      <div className="map-head">
+        <button className="icon-btn" onClick={() => history.back()} aria-label="Voltar">
+          <ChevronLeft size={18} />
         </button>
+        <strong className="grow truncate">{note.name}</strong>
+        <a className="btn sm ghost" href={href(articleRoute(path))}>
+          <Pencil size={14} /> Nota
+        </a>
       </div>
-      <div className="map-body">
-        <svg className="map-canvas" viewBox="0 0 800 560" role="img" aria-label="Mapa do Condado de Valdris">
-          <defs>
-            <pattern id="paper" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M40 0H0V40" fill="none" stroke="var(--line)" strokeOpacity="0.25" />
-            </pattern>
-            <radialGradient id="ash" cx="30%" cy="45%" r="35%">
-              <stop offset="0" stopColor="var(--red)" stopOpacity="0.35" />
-              <stop offset="1" stopColor="var(--red)" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <rect width="800" height="560" fill="var(--bg-deep)" />
-          <rect width="800" height="560" fill="url(#paper)" />
-          <path d="M80 120 C 160 40, 380 30, 520 70 S 760 90, 740 260 S 700 500, 520 520 S 140 520, 90 400 S 20 200, 80 120 Z" style={{ fill: "color-mix(in srgb, var(--panel-2) 85%, var(--green))" }} stroke="var(--line-strong)" strokeWidth="2" />
-          <ellipse cx="470" cy="150" rx="80" ry="42" style={{ fill: "color-mix(in srgb, var(--cyan) 30%, var(--bg))" }} stroke="var(--cyan-dim)" />
-          <path d="M470 192 C 480 250, 500 290, 520 330 S 560 430, 600 520" fill="none" style={{ stroke: "color-mix(in srgb, var(--cyan) 55%, var(--bg))" }} strokeWidth="5" strokeLinecap="round" />
-          {Array.from({ length: 9 }, (_, i) => (
-            <path key={i} d={`M${120 + i * 26} ${210 - (i % 3) * 14} l14 -26 l14 26 Z`} fill="var(--panel-hover)" stroke="var(--line-strong)" />
-          ))}
-          <circle cx="230" cy="250" r="120" fill="url(#ash)" />
-          {layers.rotas && (
-            <path d="M300 420 C 380 400, 450 360, 520 330 C 560 300, 590 260, 610 235 M520 330 C 500 260, 480 220, 470 192" fill="none" stroke="var(--gold)" strokeWidth="2.5" strokeDasharray="8 6" />
-          )}
-          {layers.segredos && (
-            <g>
-              <circle cx="660" cy="180" r="26" fill="none" stroke="var(--violet)" strokeDasharray="4 4" />
-              <text x="660" y="225" textAnchor="middle" fontSize="13" fill="var(--violet)">Torre de Vesper (segredo)</text>
-            </g>
-          )}
-          {measure && (
-            <g>
-              <line x1="520" y1="330" x2="470" y2="150" stroke="var(--cyan)" strokeWidth="2" strokeDasharray="6 4" />
-              <rect x="510" y="225" width="132" height="26" rx="6" fill="var(--panel)" stroke="var(--cyan-dim)" />
-              <text x="576" y="243" textAnchor="middle" fontSize="13" fill="var(--text)">18 km · ≈ 4 h a pé</text>
-            </g>
-          )}
-          {PINS.filter((p) => layers[p.layer]).map((p) => {
-            const a = ARTICLES.find((x) => x.id === p.id)!
-            return (
-              <g key={p.id} className={`map-pin ${selected === p.id ? "active" : ""}`} transform={`translate(${p.x} ${p.y})`} onClick={() => setSelected(p.id)}>
-                <circle r="15" fill={p.layer === "perigos" ? "var(--red)" : "var(--panel)"} stroke={p.layer === "perigos" ? "var(--red)" : "var(--gold)"} strokeWidth="2" />
-                <foreignObject x="-8" y="-8" width="16" height="16" style={{ color: p.layer === "perigos" ? "#fff" : "var(--gold)", pointerEvents: "none" }}>
-                  {p.icon}
-                </foreignObject>
-                <text y="30" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--text)" style={{ paintOrder: "stroke", stroke: "var(--bg-deep)", strokeWidth: 3 }}>
-                  {a.title}
-                </text>
-              </g>
-            )
-          })}
-          <g transform="translate(40 500)">
-            <rect width="120" height="6" fill="var(--text)" />
-            <rect width="60" height="6" fill="var(--bg)" stroke="var(--text)" />
-            <text y="22" fontSize="11" fill="var(--muted)">0</text>
-            <text x="112" y="22" fontSize="11" fill="var(--muted)">20 km</text>
-          </g>
-        </svg>
-        <div className="map-compass" aria-hidden="true">
-          <Compass size={34} />
-        </div>
-
-        <aside className="map-panel stack">
-          <div className="card tight stack">
-            <span className="section-title row">
-              <Layers size={15} /> Camadas
-            </span>
-            {(
-              [
-                ["locais", "Locais"],
-                ["perigos", "Perigos"],
-                ["rotas", "Rotas"],
-                ["segredos", "Segredos do mestre"],
-              ] as [LayerId, string][]
-            ).map(([id, label]) => (
-              <div key={id} className="row between small">
-                <span className="row">
-                  {id === "segredos" && <Eye size={14} color="var(--violet)" />}
-                  {label}
-                </span>
-                <Switch on={layers[id]} label={label} onChange={(v) => setLayers({ ...layers, [id]: v })} />
-              </div>
-            ))}
-          </div>
-          {article && (
-            <div className="card tight stack">
-              <span className="chip">{article.category}</span>
-              <strong className="display" style={{ fontSize: 16 }}>{article.title}</strong>
-              <p className="muted small">{article.summary}</p>
-              <div className="row-wrap">
-                <a className="btn sm primary" href={href(`/wiki/artigo/${article.id}`)}>Abrir artigo</a>
-                {pin?.nested && <button className="btn sm">Entrar no mapa da cidade</button>}
-              </div>
-            </div>
-          )}
-        </aside>
-      </div>
+      <MapView
+        spec={spec}
+        imageUrl={image ? (vault.platform.fileUrl(image) ?? undefined) : undefined}
+        showSecrets={!players}
+        notes={notes}
+        resolvePin={(target): PinTarget | undefined => {
+          const dest = resolve(target)
+          return dest ? { path: dest, route: noteRoute(dest), ...(isMapNote(index, dest) ? { map: dest } : {}), tipo: index.note(dest)?.meta.frontmatter?.data?.tipo } : undefined
+        }}
+        onOpen={(target, kind) => navigate(kind === "mapa" && target.map ? `/wiki/mapa/${encodeURIComponent(target.map)}` : target.route)}
+        {...(readOnly ? {} : { onChange: (pins: MapPin[]) => void savePins(pins).catch(fail), onNewPin: (pin: MapPin) => void addPin(pin).catch(fail) })}
+      />
+      {readOnly && <span className="tiny faint map-hint">Somente leitura: libere a gravação para pôr e mover pinos.</span>}
     </div>
   )
 }

@@ -1,112 +1,179 @@
-import { useState } from "react"
-import { GitFork, Network, Users } from "lucide-react"
-import { href } from "../../lib/router"
+import { useMemo, useState } from "react"
+import { Crown } from "lucide-react"
+import type { GraphData } from "../../core/graph-data"
+import { noteName } from "../../core/text"
+import { articleKind, diplomacy, familyTree, orgChart, relationsOf, type OrgNode } from "../../core/wiki"
+import { href, navigate } from "../../lib/router"
+import { noteRoute } from "../../lib/vault-notes"
 import { Segmented } from "../../components/ui"
+import { DEFAULT_FORCES, GraphView } from "../../components/vault/GraphView"
+import { useVault } from "../../platform/VaultProvider"
+import { useWiki } from "./wiki-state"
 
-type View = "familia" | "diplomacia" | "organograma"
+type Tab = "diplomacia" | "familia" | "organizacao"
 
-const FACTIONS = [
-  { id: "ordem", label: "Ordem da Chama", x: 200, y: 110, color: "var(--cyan)" },
-  { id: "condado", label: "Condado de Valdris", x: 520, y: 110, color: "var(--green)" },
-  { id: "contrabando", label: "Contrabandistas", x: 140, y: 330, color: "var(--gold)" },
-  { id: "culto", label: "Culto do Reflexo", x: 580, y: 330, color: "var(--violet)" },
-]
+const DIPLOMACY_COLORS: Record<string, { color: string; label: string }> = {
+  aliados: { color: "#9dcbb4", label: "Aliança" },
+  inimigos: { color: "#ffa48e", label: "Inimizade" },
+  em_guerra_com: { color: "#ff6f5e", label: "Guerra" },
+  rivais: { color: "#ecc484", label: "Rivalidade" },
+  paz_tensa_com: { color: "#d9b26b", label: "Paz tensa" },
+  vassalo_de: { color: "#bfadf1", label: "Vassalagem" },
+}
 
-const TIES = [
-  { a: "ordem", b: "condado", kind: "tensa", label: "dívida" },
-  { a: "condado", b: "contrabando", kind: "guerra", label: "repressão" },
-  { a: "ordem", b: "culto", kind: "guerra", label: "heresia" },
-  { a: "contrabando", b: "culto", kind: "alianca", label: "rotas" },
-  { a: "ordem", b: "contrabando", kind: "neutra", label: "suborno" },
-]
+export function WikiRelations({ path }: { path?: string }) {
+  const vault = useVault()
+  const { wiki } = useWiki()
+  const index = vault.index!
+  const root = wiki!.root
+  const people = useMemo(() => index.notesIn(root).filter((n) => relationsOf(index, n.path, root).some((r) => r.type.group === "familia")).map((n) => n.path), [index, root, vault.version])
+  const orgs = useMemo(() => index.notesIn(root).filter((n) => articleKind(n.meta.frontmatter?.data?.tipo)?.id === "organizacao").map((n) => n.path), [index, root, vault.version])
+  const initial: Tab = path ? (articleKind(index.note(path)?.meta.frontmatter?.data?.tipo)?.id === "organizacao" ? "organizacao" : "familia") : "diplomacia"
+  const [tab, setTab] = useState<Tab>(initial)
+  const [person, setPerson] = useState(path && initial === "familia" ? path : (people[0] ?? ""))
+  // Sem organização pedida, abre a primeira que tem membros.
+  const [org, setOrg] = useState(() => (path && initial === "organizacao" ? path : (orgs.find((o) => orgChart(index, o, root).children.length > 0) ?? orgs[0] ?? "")))
 
-const TIE_COLORS: Record<string, string> = { alianca: "var(--green)", guerra: "var(--red)", tensa: "var(--gold)", neutra: "var(--muted)" }
-
-export function WikiRelations() {
-  const [view, setView] = useState<View>("familia")
   return (
-    <div className="page">
+    <div className="page wiki-relations-page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Relações tipadas entre artigos</span>
+          <span className="eyebrow">Wiki · {wiki!.name}</span>
           <h1 className="page-title">Relações</h1>
         </div>
-        <Segmented<View>
-          label="Tipo"
-          value={view}
-          onChange={setView}
+        <Segmented<Tab>
+          label="Visão das relações"
+          value={tab}
+          onChange={setTab}
           options={[
-            { value: "familia", label: "Árvore genealógica", icon: <GitFork size={14} /> },
-            { value: "diplomacia", label: "Teia diplomática", icon: <Network size={14} /> },
-            { value: "organograma", label: "Organograma", icon: <Users size={14} /> },
+            { value: "diplomacia", label: "Teia diplomática" },
+            { value: "familia", label: "Árvore genealógica" },
+            { value: "organizacao", label: "Organograma" },
           ]}
         />
       </div>
-
-      <div className="card flat" style={{ padding: 0, overflow: "auto" }}>
-        {view === "familia" && (
-          <svg viewBox="0 0 800 400" className="relations-svg" role="img" aria-label="Árvore genealógica da Casa Ormund">
-            <Person x={300} y={50} name="Lorde Ademar Ormund" sub="3940 – 3998" />
-            <Person x={520} y={50} name="Lady Helena" sub="3945 – 4001" />
-            <path d="M380 50 H440" stroke="var(--gold)" strokeWidth="2" />
-            <path d="M410 50 V130 M170 130 H650 M170 130 V170 M650 130 V170" stroke="var(--line-strong)" strokeWidth="2" fill="none" />
-            <Person x={170} y={195} name="Conde Ormund" sub="63 anos (calculado)" to="conde-ormund" />
-            <Person x={650} y={195} name="Irmã Celeste" sub="morta em Myrr" />
-            <Person x={420} y={195} name="Mara Vael" sub="ferreira" />
-            <path d="M250 195 H340" stroke="var(--violet)" strokeWidth="2" strokeDasharray="5 4" />
-            <text x="295" y="187" textAnchor="middle" fontSize="11" fill="var(--violet)">segredo</text>
-            <path d="M295 195 V300" stroke="var(--violet)" strokeWidth="2" strokeDasharray="5 4" />
-            <Person x={295} y={325} name="Aldren Vael" sub="32 anos (calculado)" to="aldren-vael" secret />
-          </svg>
-        )}
-
-        {view === "diplomacia" && (
-          <svg viewBox="0 0 760 440" className="relations-svg" role="img" aria-label="Teia diplomática">
-            {TIES.map((t) => {
-              const a = FACTIONS.find((f) => f.id === t.a)!
-              const b = FACTIONS.find((f) => f.id === t.b)!
-              return (
-                <g key={t.a + t.b}>
-                  <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={TIE_COLORS[t.kind]} strokeWidth={t.kind === "guerra" ? 3 : 2} strokeDasharray={t.kind === "tensa" ? "8 6" : undefined} />
-                  <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 6} textAnchor="middle" fontSize="12" fill={TIE_COLORS[t.kind]} style={{ paintOrder: "stroke", stroke: "var(--panel)", strokeWidth: 4 }}>
-                    {t.label}
-                  </text>
-                </g>
-              )
-            })}
-            {FACTIONS.map((f) => (
-              <g key={f.id} transform={`translate(${f.x} ${f.y})`}>
-                <circle r="44" fill="var(--panel-2)" stroke={f.color} strokeWidth="3" />
-                <text textAnchor="middle" y="4" fontSize="12" fontWeight="700" fill="var(--text)">{f.label}</text>
-              </g>
-            ))}
-          </svg>
-        )}
-
-        {view === "organograma" && (
-          <svg viewBox="0 0 760 340" className="relations-svg" role="img" aria-label="Organograma da Ordem">
-            <Person x={380} y={50} name="Grão-mestre Ilário" sub="a escrever" />
-            <path d="M380 75 V120 M180 120 H580 M180 120 V150 M380 120 V150 M580 120 V150" stroke="var(--line-strong)" strokeWidth="2" fill="none" />
-            <Person x={180} y={175} name="Mestres-ferreiros" sub="relíquias" />
-            <Person x={380} y={175} name="Cavaleiros" sub="patrulha" />
-            <Person x={580} y={175} name="Alquimistas" sub="segredo: os lobos" secret />
-            <path d="M380 200 V250" stroke="var(--line-strong)" strokeWidth="2" />
-            <Person x={380} y={275} name="Escudeiros" sub="Aldren começou aqui" to="aldren-vael" />
-          </svg>
-        )}
-      </div>
-      <p className="tiny faint">As relações ficam nas propriedades das notas (ex.: `pai: "[[Conde Ormund]]"`), então o Obsidian também as vê.</p>
+      {tab === "diplomacia" && <Diplomacy root={root} />}
+      {tab === "familia" &&
+        (people.length ? (
+          <>
+            <select className="select" value={person} onChange={(e) => setPerson(e.target.value)} aria-label="Pessoa da árvore">
+              {people.map((p) => (
+                <option key={p} value={p}>
+                  {noteName(p)}
+                </option>
+              ))}
+            </select>
+            {person && <FamilyTreeView center={person} root={root} />}
+          </>
+        ) : (
+          <p className="muted">Nenhuma relação de família. Use as propriedades <code>pais</code>, <code>filhos</code>, <code>conjuges</code> e <code>irmaos</code> (listas de links) nos artigos.</p>
+        ))}
+      {tab === "organizacao" &&
+        (orgs.length ? (
+          <>
+            <select className="select" value={org} onChange={(e) => setOrg(e.target.value)} aria-label="Organização">
+              {orgs.map((p) => (
+                <option key={p} value={p}>
+                  {noteName(p)}
+                </option>
+              ))}
+            </select>
+            {org && <OrgChartView org={org} root={root} />}
+          </>
+        ) : (
+          <p className="muted">Nenhuma organização. Crie artigos do tipo Organização; os membros usam <code>membro_de</code>, <code>lider_de</code> e <code>subordinado_a</code>.</p>
+        ))}
     </div>
   )
 }
 
-function Person({ x, y, name, sub, to, secret }: { x: number; y: number; name: string; sub: string; to?: string; secret?: boolean }) {
-  const body = (
-    <g transform={`translate(${x} ${y})`}>
-      <rect x="-80" y="-25" width="160" height="50" rx="10" fill="var(--panel-2)" stroke={secret ? "var(--violet)" : to ? "var(--gold)" : "var(--line-strong)"} strokeWidth="1.5" strokeDasharray={secret ? "5 4" : undefined} />
-      <text textAnchor="middle" y="-3" fontSize="13" fontWeight="700" fill="var(--text)">{name}</text>
-      <text textAnchor="middle" y="15" fontSize="11" fill="var(--muted)">{sub}</text>
-    </g>
+function Diplomacy({ root }: { root: string }) {
+  const vault = useVault()
+  const index = vault.index!
+  const web = useMemo(() => diplomacy(index, root), [index, root, vault.version])
+  const data = useMemo<GraphData>(
+    () => ({
+      nodes: web.nodes.map((path) => ({ id: path, label: noteName(path), kind: "note" as const, path, degree: web.edges.filter((e) => e.from === path || e.to === path).length })),
+      edges: web.edges.map((e) => ({ source: e.from, target: e.to, color: DIPLOMACY_COLORS[e.kind]?.color ?? "#69799c", ...(e.kind === "vassalo_de" ? {} : { mutual: true }) })),
+    }),
+    [web],
   )
-  return to ? <a href={href(`/wiki/artigo/${to}`)}>{body}</a> : body
+  if (!web.edges.length) return <p className="muted">Nenhuma relação entre facções. Em organizações, países, culturas e religiões, use <code>aliados</code>, <code>inimigos</code>, <code>rivais</code>, <code>em_guerra_com</code>, <code>paz_tensa_com</code> e <code>vassalo_de</code>.</p>
+  return (
+    <div className="stack">
+      <div className="diplomacy-graph card flat">
+        <GraphView data={data} groups={[]} forces={{ ...DEFAULT_FORCES, repulsion: 400, distance: 120, linkWidth: 2.5, nodeSize: 1.6, arrows: true }} labels="always" onOpen={(node) => navigate(noteRoute(node.path))} />
+      </div>
+      <div className="row-wrap">
+        {Object.entries(DIPLOMACY_COLORS)
+          .filter(([kind]) => web.edges.some((e) => e.kind === kind))
+          .map(([kind, { color, label }]) => (
+            <span key={kind} className="chip" style={{ borderColor: color, color }}>
+              {label}
+            </span>
+          ))}
+      </div>
+    </div>
+  )
+}
+
+const BOX_W = 150
+const BOX_H = 40
+const GAP_X = 30
+const GAP_Y = 70
+
+function FamilyTreeView({ center, root }: { center: string; root: string }) {
+  const vault = useVault()
+  const tree = useMemo(() => familyTree(vault.index!, center, 2, root), [vault.index, center, root, vault.version])
+  const levels = [...tree.generations.keys()].sort((a, b) => a - b)
+  const widest = Math.max(...levels.map((g) => tree.generations.get(g)!.length))
+  const width = widest * (BOX_W + GAP_X) + GAP_X
+  const pos = new Map<string, { x: number; y: number }>()
+  levels.forEach((g, row) => {
+    const people = tree.generations.get(g)!
+    const offset = (width - people.length * (BOX_W + GAP_X) + GAP_X) / 2
+    people.forEach((p, i) => pos.set(p, { x: offset + i * (BOX_W + GAP_X), y: 20 + row * (BOX_H + GAP_Y) }))
+  })
+  const height = 40 + levels.length * (BOX_H + GAP_Y) - GAP_Y
+  return (
+    <div className="card flat family-tree">
+      <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="img" aria-label={`Árvore genealógica de ${noteName(center)}`}>
+        {tree.edges.map((e, i) => {
+          const a = pos.get(e.from)
+          const b = pos.get(e.to)
+          if (!a || !b) return null
+          if (e.kind === "casamento") return <line key={i} x1={a.x + BOX_W} y1={a.y + BOX_H / 2} x2={b.x} y2={b.y + BOX_H / 2} className="tree-marriage" />
+          const [x1, y1, x2, y2] = [a.x + BOX_W / 2, a.y + BOX_H, b.x + BOX_W / 2, b.y]
+          return <path key={i} d={`M${x1},${y1} C${x1},${(y1 + y2) / 2} ${x2},${(y1 + y2) / 2} ${x2},${y2}`} className="tree-line" />
+        })}
+        {[...pos].map(([path, p]) => (
+          <a key={path} href={href(noteRoute(path))}>
+            <rect x={p.x} y={p.y} width={BOX_W} height={BOX_H} rx={10} className={`tree-box ${path === center ? "center" : ""}`} />
+            <text x={p.x + BOX_W / 2} y={p.y + BOX_H / 2 + 4} textAnchor="middle" className="tree-name">
+              {noteName(path).length > 20 ? noteName(path).slice(0, 19) + "…" : noteName(path)}
+            </text>
+          </a>
+        ))}
+      </svg>
+      <span className="tiny faint">Linha cheia: filiação · tracejada: casamento. Clique num nome para abrir o artigo.</span>
+    </div>
+  )
+}
+
+function OrgChartView({ org, root }: { org: string; root: string }) {
+  const vault = useVault()
+  const chart = useMemo(() => orgChart(vault.index!, org, root), [vault.index, org, root, vault.version])
+  const node = (n: OrgNode, depth: number) => (
+    <li key={n.path}>
+      <a href={href(noteRoute(n.path))} className={`org-node ${depth === 0 ? "root" : ""} ${n.role === "lider" ? "leader" : ""}`}>
+        {n.role === "lider" && <Crown size={13} />} {noteName(n.path)}
+      </a>
+      {n.children.length > 0 && <ul>{n.children.map((c) => node(c, depth + 1))}</ul>}
+    </li>
+  )
+  return (
+    <div className="card flat org-chart">
+      {chart.children.length ? <ul className="org-tree">{node(chart, 0)}</ul> : <p className="muted small">Ninguém declarou ser membro desta organização (propriedade <code>membro_de</code> nos artigos dos membros).</p>}
+    </div>
+  )
 }

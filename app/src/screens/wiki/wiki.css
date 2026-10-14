@@ -85,3 +85,112 @@
 
 .wiki-home-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-column); }
 @media (max-width: 860px) { .wiki-home-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Wiki real (etapa 6) ---------- */
+.wiki-players { margin-left: auto; flex: 0 0 auto; }
+@media (max-width: 860px) { .wiki-players { align-self: flex-end; margin: 4px 0; } }
+.wiki-home { gap: var(--space-section); }
+.wiki-intro { max-width: 70ch; color: var(--muted); }
+.wiki-search { max-width: 640px; }
+.category-head { width: 100%; gap: 8px; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.category-head .rot { transform: rotate(180deg); }
+.wiki-subfolder > summary { cursor: pointer; padding: 4px 2px; }
+.wiki-subfolder > .list { padding-left: 10px; }
+.wiki-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--space-column); align-items: start; }
+.template.card { cursor: pointer; }
+
+/* Artigo: editor no centro, ficha e relações ao lado */
+.wiki-article-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; flex: 1; min-height: 0; }
+.wiki-article-main { min-height: 0; overflow: auto; }
+.wiki-article-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 12px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
+.wiki-article-side .infobox { float: none; width: auto; margin: 0; }
+.infobox-portrait { overflow: hidden; }
+.infobox-portrait .embed-image { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+.infobox .computed.bad { color: var(--red); }
+.infobox .input.sm { width: 100%; }
+.wiki-relations { display: grid; gap: 8px; }
+.add-relation { padding: 8px; border: 1px dashed var(--line-strong); border-radius: var(--radius); }
+@media (max-width: 1100px) {
+  .wiki-article-layout { grid-template-columns: minmax(0, 1fr); }
+  .wiki-article-side { display: none; }
+  .wiki-article-layout.show-panel .wiki-article-side { display: flex; position: fixed; z-index: 60; top: calc(var(--topbar-height) + env(safe-area-inset-top)); right: 0; bottom: 0; width: min(360px, 94vw); box-shadow: var(--shadow); background: var(--panel); }
+}
+@media (max-width: 760px) {
+  .wiki-article-layout.show-panel .wiki-article-side { bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); }
+}
+
+/* Calendário fictício */
+.fmonth-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 4px; }
+.fcell { text-align: left; cursor: pointer; }
+.cell-moons { display: inline-flex; gap: 1px; font-size: 13px; line-height: 1; }
+.calendar-block { display: grid; gap: 8px; }
+.calendar-block .fcell { min-height: 48px; }
+.calendar-block .cell-events { display: none; }
+.calendar-help summary { cursor: pointer; font-weight: 650; }
+.calendar-help p + p { margin-top: 6px; }
+
+/* Linha do tempo */
+.timeline-canvas { position: relative; padding: 10px 12px 14px; }
+.tl-row { display: flex; align-items: stretch; }
+.tl-row > .tl-name { flex: 0 0 168px; position: static; padding: 6px 10px 0 0; font-size: 12px; font-weight: 700; }
+.tl-lane { position: relative; flex: 0 0 auto; }
+.tl-head .tl-lane { height: 26px; }
+.tl-lane.tl-axis { height: 24px; margin-top: 4px; border-bottom: 1px solid var(--line); }
+.tl-lane.tl-axis span { position: absolute; top: 4px; transform: translateX(-50%); color: var(--faint); font-family: var(--font-mono); font-size: 10.5px; white-space: nowrap; }
+.tl-lane.tl-track { border-bottom: 1px dashed var(--line); background: linear-gradient(to bottom, transparent 18px, color-mix(in srgb, var(--tr) 22%, transparent) 18px 20px, transparent 20px); }
+.tl-event { position: absolute; display: flex; align-items: center; gap: 5px; transform: none; color: var(--text); font-size: 11.5px; text-decoration: none; white-space: nowrap; }
+.tl-event .tl-dot { flex: 0 0 auto; transform: translateX(-6px); }
+.tl-bar { flex: 0 0 auto; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--tr) 55%, transparent); border: 1px solid var(--tr); }
+.tl-event.range .tl-label { margin-left: 2px; }
+.tl-event.nascimento .tl-dot { background: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.tl-event.morte .tl-dot { background: var(--faint); box-shadow: 0 0 0 1px var(--faint); }
+.tl-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--red); opacity: 0.7; }
+.track-chip { cursor: pointer; border-color: var(--tr); color: var(--tr); }
+.track-chip.off, .chip.off { opacity: 0.45; text-decoration: line-through; }
+
+/* Mapas */
+.map-screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.map-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.map-view { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.map-view.compact { height: 360px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.map-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.map-layers { flex-wrap: wrap; gap: 4px; }
+.map-layers .chip { cursor: pointer; }
+.map-box { position: relative; flex: 1; min-height: 260px; overflow: hidden; background: var(--bg-deep); cursor: grab; touch-action: none; user-select: none; }
+.map-box.tool-pino, .map-box.tool-regua { cursor: crosshair; }
+.map-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+.map-world > img { display: block; max-width: none; pointer-events: none; }
+.map-missing { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; color: var(--muted); text-align: center; }
+.map-pin { position: absolute; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; color: var(--gold); cursor: pointer; transform-origin: 50% 100%; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 50%)); }
+.map-pin svg { fill: color-mix(in srgb, var(--gold) 35%, transparent); }
+.map-pin.active, .map-pin:hover { color: var(--cyan); }
+.map-pin.broken { color: var(--red); }
+.map-pin.nested svg { fill: color-mix(in srgb, var(--violet) 55%, transparent); color: var(--violet); }
+.map-pin-label { margin-top: 1px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--text); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.map-ruler { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
+.map-ruler line { stroke: var(--cyan); stroke-dasharray: 8 6; }
+.map-ruler circle { fill: var(--cyan); }
+.map-distance { position: absolute; left: 10px; bottom: 10px; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 92%, transparent); color: var(--cyan); font-size: 13px; font-weight: 700; }
+.map-popup { position: absolute; top: 10px; right: 10px; display: grid; gap: 6px; width: min(260px, calc(100% - 20px)); }
+.map-hint { padding: 4px 10px; }
+.map-block { display: grid; gap: 6px; }
+.map-block-open { justify-self: start; }
+
+/* Relações */
+.wiki-relations-page { gap: var(--space-section); }
+.diplomacy-graph { height: min(62vh, 560px); padding: 0; overflow: hidden; }
+.family-tree { overflow-x: auto; }
+.family-tree svg { display: block; margin: 0 auto; }
+.tree-box { fill: var(--panel-2); stroke: var(--line-strong); }
+.tree-box.center { fill: color-mix(in srgb, var(--cyan) 22%, var(--panel)); stroke: var(--cyan); }
+.tree-name { fill: var(--text); font-size: 12px; font-weight: 650; }
+.tree-line { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.tree-marriage { stroke: var(--gold); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.org-tree, .org-tree ul { list-style: none; margin: 0; padding-left: 22px; }
+.org-tree { padding-left: 0; }
+.org-tree li { position: relative; padding: 4px 0; }
+.org-tree ul li::before { content: ""; position: absolute; left: -14px; top: 0; bottom: 50%; width: 12px; border-left: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); border-bottom-left-radius: 6px; }
+.org-node { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 13px; text-decoration: none; }
+.org-node.root { border-color: var(--violet); font-weight: 700; }
+.org-node.leader { border-color: var(--gold); color: var(--gold); }
+.wiki-graph { position: relative; flex: 1; min-height: 0; }
