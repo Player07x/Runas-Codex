@@ -8,6 +8,7 @@ import rehypeHighlight from "rehype-highlight"
 import type { Element, ElementContent } from "hast"
 import { Dices, ImageOff, ListTree } from "lucide-react"
 import type { SpaceId } from "../data/types"
+import { parseEmbedOptions } from "../core/embeds"
 import { maskNonContent } from "../core/parse"
 import { foldName } from "../core/text"
 import { isCrossSpace, resolveLink } from "../lib/links"
@@ -16,6 +17,7 @@ import { useNoteSet } from "../lib/note-set"
 import { prepareSource, remarkBlocks } from "../markdown/blocks"
 import { Callout, LayoutCallout, LAYOUT_CALLOUTS } from "../markdown/Callout"
 import { Embed, IMAGE_EXT } from "../markdown/Embed"
+import { EmbedImage } from "../markdown/EmbedImage"
 import { codeBlockFor, registerCodeBlock, type CodeBlockProps } from "../markdown/extensions"
 import { MathTex } from "../markdown/MathTex"
 import { MermaidDiagram } from "../markdown/Mermaid"
@@ -234,7 +236,19 @@ function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
             </span>
           )
         }
-        const image = <img src={url} alt={alt} width={width} height={height} className={className} loading="lazy" />
+        // `![direita|300](mapa.png)`: posição e tamanho no texto alternativo, como no embed.
+        const options = parseEmbedOptions(alt || undefined)
+        const number = (value: string | number | undefined) => (value === undefined || value === "" || Number.isNaN(Number(value)) ? undefined : Number(value))
+        const image = (
+          <EmbedImage
+            src={url}
+            alt={options.caption ?? alt ?? ""}
+            options={{ ...options, width: options.width ?? number(width), height: options.height ?? number(height) }}
+            target={path}
+            alias={alt || undefined}
+            className={className ?? ""}
+          />
+        )
         if (!title) return image
         return (
           <span className="md-figura">

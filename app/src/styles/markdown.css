@@ -147,3 +147,32 @@
 .md .src-line b { color: var(--text); }
 .caret { display: inline-block; width: 2px; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: var(--cyan); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
+
+/* Posição de imagem pela marca no link (`![[mapa.png|direita|300]]`, ADR 0012); o snippet do Obsidian faz igual. */
+.md img.pos-esquerda { float: left; max-width: 45%; margin: 4px 16px 8px 0; }
+.md img.pos-direita { float: right; max-width: 45%; margin: 4px 0 8px 16px; }
+.md img.pos-centro { display: block; margin-inline: auto; }
+.md img.pos-largo { display: block; width: 100%; }
+
+/* No editor (live preview) a imagem fica alinhada, sem o texto em volta (o editor mede uma linha por vez); a alça e o
+   menu regravam só o link. No toque, ficam sempre à mostra e com 44 px. */
+.img-edit { position: relative; display: block; width: fit-content; max-width: 100%; }
+.img-edit.pos-esquerda { margin-right: auto; }
+.img-edit.pos-centro { margin-inline: auto; }
+.img-edit.pos-direita { margin-left: auto; }
+.img-edit.pos-largo { width: 100%; }
+.md .img-edit img { display: block; float: none; max-width: 100%; margin: 0; }
+.md .img-edit.pos-largo img { width: 100%; }
+.img-edit-bar { position: absolute; top: 6px; left: 6px; display: flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line-strong); border-radius: 10px; background: color-mix(in srgb, var(--panel) 94%, transparent); box-shadow: 0 4px 14px rgb(0 0 0 / 25%); opacity: 0; pointer-events: none; transition: opacity 0.12s; }
+.img-edit:hover .img-edit-bar, .img-edit:focus-within .img-edit-bar { opacity: 1; pointer-events: auto; }
+.img-edit-bar button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--muted); cursor: pointer; }
+.img-edit-bar button:hover { background: var(--panel-2); color: var(--text); }
+.img-edit-bar button.active { background: color-mix(in srgb, var(--cyan) 22%, transparent); color: var(--cyan); }
+.img-edit-size { padding: 0 6px; font: 600 11px var(--font-mono); color: var(--faint); white-space: nowrap; }
+.img-edit-handle { position: absolute; right: -8px; bottom: -8px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--cyan); cursor: nwse-resize; touch-action: none; opacity: 0; transition: opacity 0.12s; }
+.img-edit:hover .img-edit-handle, .img-edit:focus-within .img-edit-handle, .img-edit-handle:active { opacity: 1; }
+@media (hover: none) {
+  .img-edit-bar, .img-edit-handle { opacity: 1; pointer-events: auto; }
+  .img-edit-bar button { width: 44px; height: 44px; }
+  .img-edit-handle { right: 0; bottom: 0; width: 44px; height: 44px; }
+}

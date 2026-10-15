@@ -115,3 +115,23 @@ export function attachmentFolderLabel(setting: string): string {
   if (value.startsWith("./")) return `Subpasta “${value.slice(2)}” da nota`
   return `Pasta “${value.replace(/^\/+|\/+$/g, "")}”`
 }
+
+/** O que o leitor mostra dentro da nota (e por isso conta como anexo). */
+export const ATTACHMENT_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp", ".mp3", ".wav", ".ogg", ".m4a", ".flac", ".opus", ".3gp", ".mp4", ".webm", ".ogv", ".mov", ".mkv", ".pdf"])
+
+/**
+ * Anexos que nenhuma nota nem quadro usa. Conservador: além dos links resolvidos, basta o nome do arquivo aparecer em
+ * algum texto (propriedade, bloco desenhado como `runas-mapa`, HTML, quadro `.canvas`) para o anexo não entrar na lista.
+ */
+export function unusedAttachments(index: VaultIndex, otherTexts: string[] = []): string[] {
+  const candidates = index.allFiles().map((f) => f.path).filter((path) => ATTACHMENT_EXTENSIONS.has(extname(path)) && index.backlinks(path).length === 0)
+  if (!candidates.length) return []
+  const texts = [...index.allNotes().map((note) => note.text), ...otherTexts].map(foldName)
+  return candidates
+    .filter((path) => {
+      const name = foldName(basename(path))
+      const encoded = name.replace(/ /g, "%20")
+      return !texts.some((text) => text.includes(name) || text.includes(encoded))
+    })
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+}

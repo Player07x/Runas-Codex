@@ -3,11 +3,13 @@ import { syntaxTree } from "@codemirror/language"
 import { Facet, StateField, type EditorState, type Extension, type Range } from "@codemirror/state"
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import type { SyntaxNodeRef } from "@lezer/common"
+import { changeEmbed } from "../../core/embeds"
 import { parseFrontmatter } from "../../core/parse"
 import type { NoteSet } from "../../lib/note-set"
 import { Markdown } from "../Markdown"
 import { NoteSetContext } from "../../lib/note-set"
 import { Embed } from "../../markdown/Embed"
+import { ImageEditContext, type ImageEditApi } from "../../markdown/EmbedImage"
 import { isRenderedCodeBlock } from "../../markdown/extensions"
 
 /**
@@ -45,6 +47,21 @@ function unmountReact(dom: HTMLElement): void {
   ;(dom as HTMLElement & { cleanup?: () => void }).cleanup?.()
 }
 
+/**
+ * Alça e menu das imagens do widget: regravam o embed dentro de `raw`, o texto que o widget substitui (a partir de
+ * onde ele está agora no documento). Se o texto mudou no meio do caminho, não grava nada.
+ */
+function imageEditApi(view: EditorView, dom: HTMLElement, raw: string): ImageEditApi {
+  return {
+    change(target, alias, next) {
+      const from = view.posAtDOM(dom)
+      if (view.state.sliceDoc(from, from + raw.length) !== raw) return
+      const change = changeEmbed(raw, target, alias, next)
+      if (change) view.dispatch({ changes: { from: from + change.from, to: from + change.to, insert: change.insert } })
+    },
+  }
+}
+
 /** Bloco desenhado pelo leitor (tabela, callout, HTML, matemática, Mermaid, sumário, embed sozinho na linha). */
 class RenderedBlock extends WidgetType {
   constructor(
@@ -65,7 +82,9 @@ class RenderedBlock extends WidgetType {
     mountReact(view, dom, (root) =>
       root.render(
         <NoteSetContext.Provider value={host?.noteSet() ?? { notes: [], routeOf: () => "" }}>
-          <Markdown source={this.source} contextSource={this.context || undefined} />
+          <ImageEditContext.Provider value={imageEditApi(view, dom, this.source)}>
+            <Markdown source={this.source} contextSource={this.context || undefined} />
+          </ImageEditContext.Provider>
         </NoteSetContext.Provider>,
       ),
     )
@@ -130,12 +149,14 @@ class InlineEmbed extends WidgetType {
   constructor(
     readonly target: string,
     readonly alias: string | undefined,
+    /** O texto do embed no documento (para a alça da imagem regravar). */
+    readonly raw: string,
   ) {
     super()
   }
 
   eq(other: InlineEmbed): boolean {
-    return other.target === this.target && other.alias === this.alias
+    return other.target === this.target && other.alias === this.alias && other.raw === this.raw
   }
 
   toDOM(view: EditorView): HTMLElement {
@@ -145,7 +166,9 @@ class InlineEmbed extends WidgetType {
     mountReact(view, dom, (root) =>
       root.render(
         <NoteSetContext.Provider value={host?.noteSet() ?? { notes: [], routeOf: () => "" }}>
-          <Embed target={this.target} alias={this.alias} />
+          <ImageEditContext.Provider value={imageEditApi(view, dom, this.raw)}>
+            <Embed target={this.target} alias={this.alias} />
+          </ImageEditContext.Provider>
         </NoteSetContext.Provider>,
       ),
     )
@@ -339,7 +362,7 @@ function buildInline(view: EditorView): DecorationSet {
           const { target, alias, aliasStart } = wikiParts(inner)
           if (near(node.from, node.to)) return false
           if (embed) {
-            ranges.push(Decoration.replace({ widget: new InlineEmbed(target, alias) }).range(node.from, node.to))
+            ranges.push(Decoration.replace({ widget: new InlineEmbed(target, alias, state.sliceDoc(node.from, node.to)) }).range(node.from, node.to))
             return false
           }
           const name_ = target.split("#")[0]!
@@ -360,7 +383,7 @@ function buildInline(view: EditorView): DecorationSet {
           }
           if (name === "Image") {
             const alt = marks.length >= 2 ? state.sliceDoc(marks[0]!.to, marks[1]!.from) : ""
-            ranges.push(Decoration.replace({ widget: new InlineEmbed(decodeTarget(url.replace(/^<|>$/g, "")), alt || undefined) }).range(node.from, node.to))
+            ranges.push(Decoration.replace({ widget: new InlineEmbed(decodeTarget(url.replace(/^<|>$/g, "")), alt || undefined, state.sliceDoc(node.from, node.to)) }).range(node.from, node.to))
             return false
           }
           if (marks.length < 2 || !url) return

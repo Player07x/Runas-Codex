@@ -1,4 +1,4 @@
-import { appConfig, attachmentEmbed, attachmentFolder, attachmentFolderLabel, attachmentPath, availableAttachmentPath, cleanAttachmentName, imageExtension, pastedImageName } from "./attachments"
+import { appConfig, attachmentEmbed, attachmentFolder, attachmentFolderLabel, attachmentPath, availableAttachmentPath, cleanAttachmentName, imageExtension, pastedImageName, unusedAttachments } from "./attachments"
 import { VaultIndex } from "./vault-index"
 
 describe("appConfig", () => {
@@ -102,5 +102,18 @@ describe("attachmentFolderLabel", () => {
     expect(attachmentFolderLabel("./")).toBe("Mesma pasta da nota")
     expect(attachmentFolderLabel("./img")).toBe("Subpasta “img” da nota")
     expect(attachmentFolderLabel("Anexos/")).toBe("Pasta “Anexos”")
+  })
+})
+
+describe("unusedAttachments", () => {
+  it("lista só os anexos que nenhum texto usa, nem por link, propriedade, bloco ou quadro", () => {
+    const files: Record<string, string> = {
+      "Notas/A.md": "![[usada.png|direita|300]] e ![](Anexos/Com%20espaço.jpg)",
+      "Wikis/Mapa.md": '```runas-mapa\nimagem: "[[mapa.png]]"\n```',
+      "Livros/Livro.md": '---\ncapa: "[[capa.png]]"\n---\n',
+    }
+    const paths = [...Object.keys(files), "usada.png", "Anexos/Com espaço.jpg", "mapa.png", "capa.png", "no-quadro.png", "sobra.png", "Anexos/sobra.pdf", "leia.txt"]
+    const index = new VaultIndex(paths.map((path) => ({ path, size: 1, mtime: 1 })), files)
+    expect(unusedAttachments(index, ['{"nodes":[{"type":"file","file":"no-quadro.png"}]}'])).toEqual(["Anexos/sobra.pdf", "sobra.png"])
   })
 })

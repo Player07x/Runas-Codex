@@ -167,6 +167,22 @@ export const SMOKE_SCRIPT = `(async () => {
   if (pastedImg) { pastedImg.loading = "eager"; await until(() => pastedImg.complete, 30) }
   result.paste = { file: pastedPath, link: Boolean(pastedPath && caderno.includes("![[" + pastedPath + "]]")), shown: Boolean(pastedImg && pastedImg.naturalWidth > 0) }
 
+  // Posição pelo menu da imagem no live preview (C2): só o apelido do link muda, e na leitura a imagem flutua.
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
+  const lastLine = await until(() => [...document.querySelectorAll(".cm-line")].at(-1))
+  if (lastLine) {
+    // O cursor sai da linha da imagem (senão o editor mostra o código dela).
+    const box = lastLine.getBoundingClientRect()
+    lastLine.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX: box.left + 2, clientY: box.top + 4, button: 0 }))
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }))
+  }
+  ;(await until(() => document.querySelector(".img-edit [aria-label='À direita, com o texto em volta']")))?.click()
+  await wait(1500)
+  const positioned = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
+  const floated = await until(() => document.querySelector(".editor-body .md img.pos-direita"))
+  result.position = { link: Boolean(pastedPath && positioned.includes("![[" + pastedPath + "|direita]]")), float: floated ? getComputedStyle(floated).float : null }
+
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
     location.hash = "/notas/" + encodeURIComponent(aldren.path)
@@ -423,6 +439,9 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     typeof result.paste === "object" &&
     typeof (result.paste as Record<string, unknown>).file === "string" &&
     (result.paste as Record<string, unknown>).link === true &&
-    (result.paste as Record<string, unknown>).shown === true
+    (result.paste as Record<string, unknown>).shown === true &&
+    typeof result.position === "object" &&
+    (result.position as Record<string, unknown>).link === true &&
+    (result.position as Record<string, unknown>).float === "right"
   )
 }
