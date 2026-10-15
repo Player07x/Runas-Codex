@@ -40,5 +40,15 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     writeBinary: (path, bytes, expected) => vault.writeBinary(path, bytes, expected),
     saveBytes: (name, bytes) => bridge.saveBytes(name, bytes),
     exportPdf: (name) => bridge.exportPdf(name),
+    appVersion: () => bridge.updates.version(),
+    checkUpdate: () => bridge.updates.check(),
+    async installUpdate(onProgress) {
+      const stop = bridge.updates.onProgress(({ received, total }) => onProgress(received, total))
+      try {
+        return await bridge.updates.install()
+      } finally {
+        stop()
+      }
+    },
   }
 }

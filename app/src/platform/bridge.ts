@@ -1,3 +1,4 @@
+import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 import type { VttApi } from "../vtt/shared/ipc"
 import type { BackupInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
 
@@ -47,4 +48,11 @@ export interface RunasCodexBridge {
   saveBytes(name: string, bytes: Uint8Array): Promise<string | null>
   /** PDF das páginas prontas da prévia do livro (`printToPDF`); devolve o caminho, ou `null` se cancelou. */
   exportPdf(name: string): Promise<string | null>
+  /** Versão instalada e "Verificar atualizações" (ADR 0017). */
+  readonly updates: {
+    version(): Promise<string>
+    check(): Promise<UpdateInfo>
+    install(): Promise<UpdateInstallResult>
+    onProgress(listener: (progress: { received: number; total: number }) => void): () => void
+  }
 }

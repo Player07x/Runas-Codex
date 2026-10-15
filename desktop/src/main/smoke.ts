@@ -120,6 +120,11 @@ export const SMOKE_SCRIPT = `(async () => {
     edges: document.querySelectorAll(".canvas-edge").length,
   }
 
+  // Atualizações (ADR 0017): a versão vem do app e Configurações tem o botão; o smoke não vai à internet.
+  result.version = await bridge.updates.version()
+  location.hash = "/config"
+  result.updatesRow = Boolean(await until(() => document.querySelector("[data-updates] button")))
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -502,6 +507,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
   if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
+  if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (

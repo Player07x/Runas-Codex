@@ -10,6 +10,8 @@ import { VaultService } from "./vault-service"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
 import { assetSchemePrivilege, VttHost } from "./vtt/vtt-host"
+import { checkForUpdate, downloadUpdate, installUpdate, updateTarget } from "./updates"
+import type { UpdateInfo } from "../../../app/src/core/updates"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -94,6 +96,28 @@ function registerIpc(): void {
     if (result.canceled || !result.filePath) return null
     await writeFile(result.filePath, content)
     return result.filePath
+  })
+  // "Verificar atualizações" (ADR 0017): só quando o usuário clica. Instala só o que a última consulta encontrou.
+  let lastUpdate: UpdateInfo | null = null
+  handle(IPC.appVersion, () => app.getVersion())
+  handle(IPC.updatesCheck, async () => {
+    const target = updateTarget()
+    if (!target) throw new Error("A atualização pelo app existe no Windows e no Linux.")
+    lastUpdate = await checkForUpdate(app.getVersion(), target)
+    return lastUpdate
+  })
+  handle(IPC.updatesInstall, async () => {
+    const target = updateTarget()
+    if (!target || !lastUpdate?.newer) throw new Error("Verifique as atualizações primeiro.")
+    const file = await downloadUpdate(lastUpdate, join(app.getPath("downloads"), "Runas-Codex"), (received, total) => mainWindow?.webContents.send(IPC.updatesProgress, { received, total }))
+    return installUpdate(file, target, {
+      openPath: (path) => shell.openPath(path),
+      quit: () => app.quit(),
+      relaunch: (execPath) => {
+        app.relaunch({ execPath })
+        app.exit(0)
+      },
+    })
   })
 }
 

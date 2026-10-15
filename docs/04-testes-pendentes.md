@@ -207,6 +207,12 @@ automáticos). Falta o uso de verdade:
 - [ ] Importar uma imagem de token pelo celular (galeria ou câmera).
 - [ ] Tablet e celular deitado: até a X3 (layout por toque), a mesa usa o layout do desktop. Captura do celular em pé em `docs/imagens/vtt-9/`.
 - [ ] Windows: firewall pedindo permissão para a porta da sala na primeira vez.
+## Atualizações (botão "Verificar atualizações")
+
+- [ ] Instalar a pré-release `v0.1.0-beta.1` (Windows `.exe`, Linux AppImage e `.deb`), abrir Configurações › Verificar atualizações: aparece a `v0.1.0-beta.2`, com "O que mudou".
+- [ ] "Baixar e instalar": no Windows o instalador abre e o app fecha; no AppImage o app reinicia já na beta.2; no `.deb` o pacote abre no instalador do sistema (pede a senha). Conferir a versão nova em Configurações.
+- [ ] Sem internet, ou com o GitHub fora: a mensagem de erro aparece e nada muda.
+- [ ] Android: a linha explica que o APK novo se baixa pela página de versões.
 
 ## Limitações conhecidas (não precisam de teste agora)
 

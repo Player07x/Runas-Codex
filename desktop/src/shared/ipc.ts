@@ -25,6 +25,11 @@ export const IPC = {
   vaultWriteBinary: "vault:write-binary",
   saveBytes: "files:save-bytes",
   booksPdf: "books:pdf",
+  appVersion: "app:version",
+  updatesCheck: "updates:check",
+  updatesInstall: "updates:install",
+  /** Do processo principal para a janela: andamento do download da atualização. */
+  updatesProgress: "updates:progress",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"
