@@ -103,6 +103,7 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 | **C3** Mestre pelo celular | Claude Code | `vtt/etapa9-mestre-remoto` | [vtt-9.md](vtt-9.md) | mesclada (PR #17, pelo #19) |
 | Verificar atualizações | Claude Code | `atualizacoes/verificar` | [ADR 0017](../adr/0017-atualizacoes.md) | mesclada (PR #18, pelo #19) |
 | **X2** 8d Livros: importar Homebrewery, GM Binder e DOCX | Codex (GPT-6 Astra) | `livros/8d-importacoes` | [livros-8c-8d.md](livros-8c-8d.md) | mesclada (PR #20) |
+| **X3** 9 VTT: gestos e layout no toque | Codex | `vtt/etapa9-toque` | [vtt-9.md](vtt-9.md) | em revisão (PR #23) |
 | **C4** 10 Migrações do Obsidian | Claude Code | `migracoes/etapa10` | [migracoes-10.md](migracoes-10.md) | mesclada (PR #21) |
 | Corretor ortográfico sem rede | Claude Code | `desktop/corretor-offline` | [ADR 0018](../adr/0018-corretor-offline.md) | mesclada (PR #22) |
 | **C5a** Notas: links, gráfico e notas pessoais (A.1, A.2, F.1) | Claude Code | `notas/c5a-links-grafico` | [fechamento-modulos.md](fechamento-modulos.md) | mesclada (PR #24) |

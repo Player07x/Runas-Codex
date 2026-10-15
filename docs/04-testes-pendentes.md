@@ -256,6 +256,26 @@ automáticos). Falta o uso de verdade:
 - [ ] Windows: depois de usar o editor, a pasta `%APPDATA%\runas-codex\Dictionaries` tem o `pt-BR-3-0.bdic` copiado
   pelo app; com o Windows em outro idioma, o app continua corrigindo em pt-BR e não aparece outro dicionário lá.
 
+## Etapa 9 — VTT no toque (X3)
+
+- [ ] Celular Android real: criar uma mesa em memória no APK, mover tokens, desenhar à mão livre, usar régua,
+  criar paredes/portas, regiões e luzes só por toque. Tocar no vazio desmarca; arrastar no vazio seleciona em retângulo.
+- [ ] Começar um traço ou arrasto e acrescentar o segundo dedo: o mapa move/aproxima, sem deixar desenho ou edição.
+  Soltar um dedo antes do outro não cria objeto. Interromper com troca de aplicativo também cancela a prévia.
+- [ ] Toque longo num objeto abre editar/ocultar/apagar; testar alças de tamanho e giro de token/imagem e os dois
+  raios da luz. Conferir encaixe e botão “Ignorar grade”.
+- [ ] Conferir desfazer/refazer, mover uma casa, espelhar, ocultar e apagar pelos botões. Editar no desktop enquanto
+  o mestre remoto está conectado: desfazer no celular deve recusar sobrescrever uma alteração posterior do desktop.
+- [ ] Celular de 320 px, tablet em pé/deitado, temas claro/escuro: gavetas, folha de propriedades, teclado virtual,
+  seleção de arquivos e rolagem interna, sem rolagem lateral da página.
+- [ ] Tela de toque no desktop: gestos e alças; depois repetir com mouse, roda, botão direito e atalhos.
+- [ ] Com sala no desktop, abrir o link do mestre no celular e operar só por toque enquanto um jogador acompanha.
+  Hospedar a sala no Android permanece na X7; a mesa em memória não persiste após fechar o APK.
+- [ ] Repetir o mapa de 4096 px com névoa e luzes num aparelho físico e comparar fluidez com o artefato do CI.
+
+A X3 foi conferida no emulador Android 15 (CI): 31,8 FPS na cena simples e 24 FPS no mapa de 4096 px com névoa e
+luzes, com resolução adaptada para 1 e GPU por software. Os números e capturas estão na ADR 0006; a conferência em
+aparelho físico acima continua necessária.
 ## Notas: links, gráfico e notas pessoais (C5a)
 
 - [ ] Prévia de link: na leitura, passar o mouse num link; no modo Editar, com Ctrl apertado; no celular, tocar e

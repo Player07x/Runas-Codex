@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type DragEvent } from "react"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
 import { useSettings } from "../settings"
-import { AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
 import type { DocumentInput } from "../shared/ipc"
 import { snapTokenCenter } from "../shared/grid"
 import { BAR_COLORS, isAlly, TOKEN_DISPOSITIONS, WALL_KINDS, type DrawingData, type DrawingShape, type LightData, type NoteData, type SceneData, type TileData, type TokenBar, type TokenData, type TokenDisposition, type WallData, type WallKind } from "../shared/scene"
@@ -13,6 +13,7 @@ import type { AssetKind, WorldDocument } from "../shared/world"
 import { resolveAssetUrl, vtt } from "../api"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
+import { SceneHistory, type SceneEdit } from "./history"
 import { useSceneKeyboard } from "./keyboard"
 
 const TOOLS: { id: SceneTool; label: string; action: KeyAction; icon: typeof Ruler }[] = [
@@ -67,6 +68,10 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
   const rulerSender = useRef<{ timer: number | null; pending: PlayerRuler | null }>({ timer: null, pending: null })
   const viewRef = useRef<SceneView | null>(null)
   const [ready, setReady] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const [propertiesOpen, setPropertiesOpen] = useState(false)
+  const [freePlacement, setFreePlacement] = useState(false)
+  const [context, setContext] = useState<{ id: string; x: number; y: number } | null>(null)
   const [tool, setTool] = useState<SceneTool>("select")
   const [wallKind, setWallKind] = useState<WallKind>("wall")
   const [regionShape, setRegionShape] = useState<RegionShape>("rectangle")
@@ -75,6 +80,12 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
   const [selection, setSelection] = useState<string[]>([])
   const [status, setStatus] = useState("")
   const [error, setError] = useState("")
+  const [, setHistoryVersion] = useState(0)
+  const [history] = useState(() => new SceneHistory({
+    get: (id) => store.get(id), put: (input) => store.put(input),
+    remove: async (id) => { await store.remove(id); store.apply({ kind: "delete", ids: [id] }) },
+  }, () => setHistoryVersion(value => value + 1)))
+  const pendingEdits = useRef(new Map<string, SceneEdit>())
   const tileInput = useRef<HTMLInputElement>(null)
   const reportTimer = useRef<number | null>(null)
   const latest = useRef({ sceneId, selection })
@@ -103,7 +114,17 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
     }, 50)
   }
   const scene = sceneId ? store.get<SceneData>(sceneId) : null
-  const put = (input: DocumentInput) => { void store.put(input).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))) }
+  const reportError = (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))
+  const edit = (change: SceneEdit) => {
+    const first = pendingEdits.current.size === 0
+    pendingEdits.current.set(change.id, change)
+    if (first) queueMicrotask(() => {
+      const changes = [...pendingEdits.current.values()]; pendingEdits.current.clear()
+      void history.apply(changes).catch(reportError)
+    })
+  }
+  const put = (input: DocumentInput) => edit({ id: input.id, value: input })
+  useEffect(() => { history.clear(); setContext(null); setSelection([]); setPropertiesOpen(false) }, [sceneId, history])
 
   useEffect(() => {
     const element = host.current
@@ -111,10 +132,12 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
     let disposed = false
     let created: SceneView | null = null
     void SceneView.create(element, {
-      onSelectionChange: (ids) => { setSelection(ids); latest.current = { ...latest.current, selection: ids }; scheduleReport() },
+      onSelectionChange: (ids) => { setSelection(ids); setPropertiesOpen(ids.length > 0); setContext(null); latest.current = { ...latest.current, selection: ids }; scheduleReport() },
       onViewChange: scheduleReport,
+      onToolChange: setTool,
+      onContextMenu: (id, point) => { setContext({ id, ...point }); setPropertiesOpen(false) },
       onPut: put,
-      onRemove: (ids) => { for (const id of ids) void store.remove(id) },
+      onRemove: (ids) => { for (const id of ids) edit({ id, value: null }) },
       onOpenNote: (note) => { if (note.url) onOpenUrl(note.url) },
       onStatus: setStatus,
       onRulerChange: sendRuler,
@@ -158,6 +181,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
   }, [version, ready, store])
 
   useEffect(() => { viewRef.current?.setTool(tool) }, [tool, ready])
+  useEffect(() => { viewRef.current?.setFreePlacement(freePlacement) }, [freePlacement, ready])
   useEffect(() => { viewRef.current?.setDrawOptions(drawOptions) }, [drawOptions, ready])
   useEffect(() => { viewRef.current?.setPanSpeed(settings.panSpeed) }, [settings.panSpeed, ready])
   useEffect(() => { viewRef.current?.setWallKind(wallKind) }, [wallKind, ready])
@@ -215,12 +239,18 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
 
   const selected = selection.length === 1 ? store.get(selection[0]!) : null
 
-  return <div className="scene-canvas" tabIndex={0} onKeyDown={keyboard.onKeyDown} onKeyUp={keyboard.onKeyUp} onBlur={keyboard.onBlur} onPointerDown={(event) => { if ((event.target as HTMLElement).tagName === "CANVAS") event.currentTarget.focus() }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
+  return <div className={`scene-canvas ${propertiesOpen && selection.length ? "properties-open" : ""}`} tabIndex={0} onKeyDown={(event) => {
+    if (!(event.target as HTMLElement).closest("input,select,textarea") && (event.ctrlKey || event.metaKey) && ["z", "y"].includes(event.key.toLowerCase())) {
+      event.preventDefault()
+      void (event.shiftKey || event.key.toLowerCase() === "y" ? history.redo() : history.undo()).catch(reportError)
+    } else keyboard.onKeyDown(event)
+  }} onKeyUp={keyboard.onKeyUp} onBlur={keyboard.onBlur} onPointerDown={(event) => { if ((event.target as HTMLElement).tagName === "CANVAS") event.currentTarget.focus() }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
     <div ref={host} className="scene-host" />
     {!scene && <div className="canvas-placeholder floating"><strong>Nenhuma cena aberta</strong><p>Crie ou abra uma cena na aba <b>Cenas</b> do painel lateral.</p></div>}
     {scene && <>
-      <nav className="scene-tools" aria-label="Ferramentas">
-        {TOOLS.map(({ id, label, action, icon: Icon }) => <button key={id} className={tool === id ? "active" : ""} title={shortcutOf(action) ? `${label} (${shortcutOf(action)})` : label} aria-label={label} onClick={() => setTool(id)}><Icon size={17} /></button>)}
+      <button className="scene-tools-toggle ghost" aria-label="Mostrar ferramentas" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}><Wrench size={18} /> Ferramentas</button>
+      <nav className={`scene-tools ${toolsOpen ? "open" : ""}`} aria-label="Ferramentas">
+        {TOOLS.map(({ id, label, action, icon: Icon }) => <button key={id} className={tool === id ? "active" : ""} title={shortcutOf(action) ? `${label} (${shortcutOf(action)})` : label} aria-label={label} aria-pressed={tool === id} onClick={() => { setTool(id); setToolsOpen(false); setContext(null) }}><Icon size={17} /></button>)}
         <span className="divider" />
         <button className={preview ? "active" : ""} title={scene.data.vision.enabled ? "Ver como os jogadores (névoa e escuridão)" : "Ver a escuridão como os jogadores (a névoa está desligada nesta cena)"} aria-label="Ver como os jogadores" aria-pressed={preview} onClick={() => setPreview((value) => !value)}><ScanEye size={17} /></button>
         <button title="Adicionar imagem (tile)" aria-label="Adicionar imagem" onClick={() => tileInput.current?.click()}><ImagePlus size={17} /></button>
@@ -240,8 +270,33 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
         {WALL_KINDS.map((kind) => { const Icon = WALL_ICONS[kind]; return <button key={kind} className={wallKind === kind ? "active" : ""} title={WALL_LABELS[kind]} aria-label={WALL_LABELS[kind]} onClick={() => setWallKind(kind)}><Icon size={15} /></button> })}
         <span className="draw-options-label">{WALL_LABELS[wallKind]}</span>
       </div>}
-      {selected && <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} onRemove={() => viewRef.current?.deleteSelection()} />}
-      {selection.length > 1 && <div className="properties multi"><strong>{selection.length} objetos selecionados</strong><div className="row-actions"><button className="ghost" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={14} /> Ocultar/mostrar</button><button className="ghost danger" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={14} /> Excluir</button></div></div>}
+      <nav className="scene-actions" aria-label="Comandos da cena">
+        <button aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!history.canUndo} onClick={() => void history.undo().catch(reportError)}><Undo2 size={18} /></button>
+        <button aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!history.canRedo} onClick={() => void history.redo().catch(reportError)}><Redo2 size={18} /></button>
+        <button aria-label="Afastar mapa" onClick={() => viewRef.current?.zoomBy(1 / 1.2)}><Minus size={18} /></button>
+        <button aria-label="Aproximar mapa" onClick={() => viewRef.current?.zoomBy(1.2)}><Plus size={18} /></button>
+        <button aria-label="Enquadrar cena" onClick={() => viewRef.current?.fitScene()}><Maximize2 size={18} /></button>
+        <button aria-label="Ignorar grade" title="Ignorar grade ao soltar (Alt)" aria-pressed={freePlacement} className={freePlacement ? "active" : ""} onClick={() => setFreePlacement(value => !value)}><Grid2X2 size={18} /></button>
+      </nav>
+      {selection.length > 0 && <div className="selection-actions" role="toolbar" aria-label="Comandos da seleção">
+        <button aria-label="Propriedades do objeto" aria-expanded={propertiesOpen} onClick={() => setPropertiesOpen(value => !value)}><SlidersHorizontal size={18} /></button>
+        <button aria-label="Mover seleção para a esquerda" onClick={() => viewRef.current?.nudgeSelection(-1, 0)}><ArrowLeft size={18} /></button>
+        <button aria-label="Mover seleção para cima" onClick={() => viewRef.current?.nudgeSelection(0, -1)}><ArrowUp size={18} /></button>
+        <button aria-label="Mover seleção para baixo" onClick={() => viewRef.current?.nudgeSelection(0, 1)}><ArrowDown size={18} /></button>
+        <button aria-label="Mover seleção para a direita" onClick={() => viewRef.current?.nudgeSelection(1, 0)}><ArrowRight size={18} /></button>
+        <button aria-label="Ocultar ou mostrar seleção" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={18} /></button>
+        <button aria-label="Espelhar seleção" onClick={() => viewRef.current?.flipSelection()}><UserRound size={18} /></button>
+        <button aria-label="Apagar seleção" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={18} /></button>
+        <button aria-label="Soltar seleção" onClick={() => viewRef.current?.cancel()}><X size={18} /></button>
+      </div>}
+      {context && <div className="scene-context-menu" role="menu" aria-label="Ações do objeto" style={{ left: Math.max(8, Math.min(context.x, (host.current?.clientWidth ?? 320) - 224)), top: Math.max(8, Math.min(context.y, (host.current?.clientHeight ?? 500) - 220)) }}>
+        <button role="menuitem" onClick={() => { setPropertiesOpen(true); setContext(null) }}>Editar objeto</button>
+        <button role="menuitem" onClick={() => { viewRef.current?.toggleHiddenSelection(); setContext(null) }}>Ocultar / mostrar</button>
+        <button role="menuitem" onClick={() => { viewRef.current?.deleteSelection(); setContext(null) }}>Apagar</button>
+        <button role="menuitem" onClick={() => setContext(null)}>Fechar menu</button>
+      </div>}
+      {selected && propertiesOpen && <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} onRemove={() => viewRef.current?.deleteSelection()} onClose={() => setPropertiesOpen(false)} />}
+      {selection.length > 1 && propertiesOpen && <div className="properties multi"><strong>{selection.length} objetos selecionados</strong><div className="row-actions"><button className="ghost" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={14} /> Ocultar/mostrar</button><button className="ghost danger" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={14} /> Excluir</button></div></div>}
       <footer className="scene-status">
         <span>{status || TOOL_HINTS[tool] || "Botão direito ou WASD/setas movem o mapa · roda do mouse aproxima · Shift + direção move a seleção · Alt ao soltar um token ignora a grade"}</span>
         <button className="link" onClick={() => viewRef.current?.fitScene()}>Enquadrar cena</button>
@@ -270,7 +325,7 @@ function TextInput({ value, onCommit, placeholder }: { value: string; onCommit: 
   return <input value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
 }
 
-function PropertiesPanel({ document, scene, store, put, onRemove }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; onRemove: () => void }) {
+function PropertiesPanel({ document, scene, store, put, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; onRemove: () => void; onClose: () => void }) {
   const update = (patch: Record<string, unknown>) => put({ id: document.id, type: document.type, parentId: document.parentId, data: { ...(document.data as object), ...patch } })
   const data = document.data as { hidden?: boolean; locked?: boolean }
   const title = { token: "Token", tile: "Imagem", drawing: "Desenho", note: "Nota", wall: "Parede", light: "Luz", sound: "Som", region: "Região" }[document.type as "token"] ?? "Objeto"
@@ -281,6 +336,7 @@ function PropertiesPanel({ document, scene, store, put, onRemove }: { document: 
         {"hidden" in data && <button className={`icon-toggle ${data.hidden ? "active" : ""}`} title={document.type === "light" ? (data.hidden ? "Apagada (H)" : "Acesa (H)") : document.type === "sound" ? (data.hidden ? "Desligado (H)" : "Ligado (H)") : data.hidden ? "Oculto para os jogadores (H)" : "Visível para os jogadores (H)"} aria-label="Ocultar" onClick={() => update({ hidden: !data.hidden })}>{data.hidden ? <EyeOff size={15} /> : <Eye size={15} />}</button>}
         {"locked" in data && <button className={`icon-toggle ${data.locked ? "active" : ""}`} title={data.locked ? "Travado" : "Travar posição"} aria-label="Travar" onClick={() => update({ locked: !data.locked })}><Lock size={15} /></button>}
         <button className="icon-toggle danger" title="Excluir (Delete)" aria-label="Excluir" onClick={onRemove}><Trash2 size={15} /></button>
+        <button className="icon-toggle" aria-label="Fechar propriedades" onClick={onClose}><X size={15} /></button>
       </div>
     </header>
     {document.type === "token" && <TokenFields data={document.data as TokenData} scene={scene} update={update} />}
@@ -322,6 +378,10 @@ function TokenFields({ data, scene, update }: { data: TokenData; scene: WorldDoc
   return <>
     <ImagePicker kind="tokens" path={data.image} onChange={(image) => update({ image })} />
     <Field label="Nome"><TextInput value={data.name} onCommit={(name) => update({ name })} /></Field>
+    <div className="field-row">
+      <Field label="Posição X"><NumberInput value={data.x} onCommit={(x) => update({ x })} /></Field>
+      <Field label="Posição Y"><NumberInput value={data.y} onCommit={(y) => update({ y })} /></Field>
+    </div>
     <div className="field-row">
       <Field label="Tamanho (células)"><NumberInput value={data.size} step={0.5} onCommit={(size) => update({ size, ...snapTokenCenter({ x: data.x, y: data.y }, size, scene.data.grid) })} /></Field>
       <Field label="Elevação"><NumberInput value={data.elevation} onCommit={(elevation) => update({ elevation })} /></Field>

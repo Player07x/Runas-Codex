@@ -331,3 +331,84 @@
 /* Animações não podem ficar dentro de uma regra aninhada. */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes player-spin { to { transform: rotate(360deg); } }
+
+/* Controles de toque compartilhados com a página do mestre remoto. */
+.vtt-root {
+  min-width: 0;
+  .table, .table-title, .side-panel { min-width: 0; }
+  .table-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scene-tools-toggle, .mesa-panel-toggle { display: none; }
+  .scene-actions, .selection-actions { position: absolute; z-index: 3; display: flex; gap: 3px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow-sm); }
+  .scene-actions { top: 12px; left: 62px; }
+  .selection-actions { bottom: 42px; left: 12px; flex-wrap: wrap; max-width: calc(100% - 24px); }
+  .scene-actions button, .selection-actions button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text); }
+  .scene-actions button.active, .scene-actions button[aria-pressed=true] { background: var(--panel-2); color: var(--cyan); }
+  button:disabled { opacity: .4; cursor: default; }
+  .scene-context-menu { position: absolute; z-index: 8; display: grid; width: 216px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow-lg); }
+  .scene-context-menu button { min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: left; padding-inline: 12px; }
+  .scene-context-menu button:hover { background: var(--panel-hover); }
+  .draw-options { top: 62px; flex-wrap: wrap; max-width: calc(100% - 74px); }
+  .scene-host { touch-action: none; }
+  /* O toque longo pertence à mesa; o WebView não deve selecionar o texto do botão mais próximo. */
+  .scene-canvas { -webkit-user-select: none; user-select: none; }
+  .scene-canvas input, .scene-canvas textarea { -webkit-user-select: text; user-select: text; }
+}
+
+@media (pointer: coarse), (max-width: 900px) {
+  .vtt-root {
+    button, select, input:not([type=checkbox]):not([type=range]):not([type=color]), summary { min-height: 44px; }
+    button { touch-action: manipulation; }
+    .scene-tools button, .scene-actions button, .selection-actions button, .side-tabs button, .icon-toggle, .icon { min-width: 44px; min-height: 44px; }
+    .field-row { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .field-row > :only-child { grid-column: 1 / -1; }
+    .check { min-height: 44px; }
+    .properties { width: min(290px, calc(100% - 16px)); }
+    .scene-tools { max-height: calc(100% - 100px); overflow-y: auto; }
+    .scene-actions { left: 72px; }
+  }
+}
+
+@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
+  .vtt-root {
+    .table { position: relative; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: 52px minmax(0, 1fr) 52px; overflow: hidden; }
+    .table-bar { display: flex; gap: 6px; min-width: 0; padding: 4px 8px; }
+    .table-title { flex: 1; overflow: hidden; font-size: 13px; }
+    .table-bar .chip { max-width: 130px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .table-actions { margin-left: auto; gap: 4px; }
+    .table-actions .ghost { font-size: 0; padding: 0; min-width: 44px; justify-content: center; }
+    .mesa-panel-toggle { display: inline-flex; padding: 0 8px; }
+    .canvas-area { grid-row: 2; grid-column: 1; }
+    .side-panel { position: absolute; inset: auto 0 0; height: 52px; grid-template-columns: minmax(0, 1fr); grid-template-rows: 52px minmax(0, 1fr); z-index: 6; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
+    .table.panel-open .side-panel { height: min(48%, 390px); }
+    .side-tabs { flex-direction: row; align-items: center; justify-content: space-around; gap: 4px; padding: 4px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .side-tabs button { width: 52px; }
+    .side-panel > :not(.side-tabs):not(.panel-resizer) { display: none; }
+    .table.panel-open .side-panel > :not(.side-tabs):not(.panel-resizer) { display: grid; }
+    .panel-resizer, .side-tabs-spacer, .side-tabs > button:last-child { display: none; }
+    .scene-tools-toggle { position: absolute; z-index: 5; top: 8px; left: 8px; display: inline-flex; }
+    .scene-tools { display: none; top: 58px; left: 8px; width: min(262px, calc(100% - 16px)); max-height: 36%; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; padding: 5px; z-index: 6; }
+    .scene-tools.open { display: grid; }
+    .scene-tools button { width: 44px; }
+    .scene-tools .divider { display: none; }
+    .scene-actions { top: auto; left: 8px; bottom: 8px; max-width: calc(100% - 16px); }
+    .scene-actions button, .selection-actions button { width: 44px; height: 44px; flex: 0 0 44px; }
+    .selection-actions { bottom: 66px; left: 8px; gap: 2px; max-width: calc(100% - 16px); }
+    .properties-open .selection-actions { display: none; }
+    .properties { top: auto; bottom: 66px; left: 8px; right: 8px; width: auto; max-height: 42%; padding: 10px; border-radius: 16px 16px 8px 8px; z-index: 4; }
+    .properties header { position: sticky; top: -10px; z-index: 1; background: var(--panel); padding-block: 4px; }
+    .draw-options { top: 58px; left: 8px; max-width: calc(100% - 16px); z-index: 4; }
+    .scene-status { top: 8px; right: 8px; bottom: auto; left: 160px; font-size: 11px; }
+    .scene-status > span { display: none; }
+    .scene-status .link { min-height: 44px; }
+    .player-controls, .player-actions, .player-link-row { flex-wrap: wrap; }
+    .player-controls .field { min-width: 100px; }
+    .player-link-row input { flex-basis: 100%; }
+    .settings-dialog { max-height: calc(100dvh - 24px); }
+    .modal-backdrop { padding: 12px; }
+    .settings-tabs { flex-wrap: wrap; padding-inline: 12px; }
+  }
+}
+@media (max-width: 480px) {
+  .vtt-root .table-title { display: none; }
+  .vtt-root .table-bar > .ghost:first-child { padding-inline: 8px; }
+}

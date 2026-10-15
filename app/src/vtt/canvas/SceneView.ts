@@ -1,7 +1,7 @@
 // O PixiJS gera shaders com `new Function` por padrão; este módulo oficial
 // troca isso por código pré-compilado, e a CSP da interface continua sem unsafe-eval.
 import "pixi.js/unsafe-eval"
-import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture, type FederatedPointerEvent } from "pixi.js"
+import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture } from "pixi.js"
 import type { DocumentInput } from "../shared/ipc"
 import { cellCenter, hexCentersIn, hexVertices, snapTokenCenter, type GridConfig, type Point } from "../shared/grid"
 import type { DrawingData, DrawingShape, LightData, NoteData, SceneData, TileData, TokenData, TokenDisposition, WallData, WallKind } from "../shared/scene"
@@ -14,6 +14,8 @@ import type { SceneChildren } from "../document-store"
 import type { PlayerRuler } from "../shared/player"
 import type { LogKind } from "../shared/log"
 import { resolveAssetUrl } from "../api"
+import { LONG_PRESS_MS, TouchGestures, type TouchGesture } from "./gestures"
+import { transformCenter, transformObject, type TransformHandle } from "./transforms"
 
 export type SceneTool = "select" | "ruler" | "token" | "note" | "draw" | "wall" | "light" | "sound" | "region"
 
@@ -27,6 +29,8 @@ export interface DrawOptions {
 
 export interface SceneViewHandlers {
   onSelectionChange(ids: string[]): void
+  onContextMenu?(id: string, point: Point): void
+  onToolChange?(tool: SceneTool): void
   onPut(input: DocumentInput): void
   onRemove(ids: string[]): void
   onOpenNote(note: NoteData): void
@@ -62,6 +66,8 @@ interface Item {
   onZoom?: () => void
 }
 
+interface ScenePointer { global: Point; button: number; altKey: boolean; shiftKey: boolean; pointerType?: string; stopPropagation(): void }
+
 interface Built { display: Container; selection: Graphics; onZoom?: () => void }
 
 /** Ferramenta que seleciona e move cada tipo de objeto. */
@@ -77,7 +83,7 @@ function distanceToSegment(point: Point, wall: WallData): number {
 }
 
 type Interaction =
-  | { type: "pan"; startGlobal: Point; startPosition: Point }
+  | { type: "pan"; startGlobal: Point; startPosition: Point; context?: boolean }
   // A seleção fica pendente durante o arrasto. Assim, clicar e segurar um
   // token não abre a ficha: a ponte só recebe a seleção no pointerup de um
   // clique sem movimento.
@@ -87,6 +93,7 @@ type Interaction =
   | { type: "draw"; start: Point; points: number[] }
   | { type: "wall"; start: Point }
   | { type: "region"; start: Point }
+  | { type: "transform"; id: string; handle: TransformHandle; origin: Point; before: WorldDocument; preview: DocumentInput }
   | { type: "wall-end"; id: string; end: 1 | 2; fixed: Point }
 
 const DISPOSITION_COLORS: Record<TokenDisposition, number> = { player: 0x86a47f, friendly: 0x82aaa6, neutral: 0xb99b65, hostile: 0xc76561, secret: 0x927f9c }
@@ -132,6 +139,13 @@ export class SceneView {
   private readonly playerRegions = new Graphics()
   /** Alças nas pontas da parede selecionada. */
   private readonly wallHandles = new Container()
+  private readonly transformHandles = new Container()
+  private readonly handleActions = new Map<Container, (event: ScenePointer) => void>()
+  private readonly doorActions = new Map<Container, () => void>()
+  private freePlacement = false
+  private readonly touchGestures = new TouchGestures()
+  private touchPlacement = false
+  private touchTimer: ReturnType<typeof setTimeout> | null = null
   private readonly overlay = new Graphics()
   private readonly rulerLabel = new Text({ text: "", style: { fill: 0xf3ece8, fontSize: 15, fontFamily: "Segoe UI", fontWeight: "600", stroke: { color: 0x080707, width: 4 } } })
   /** Régua do mestre na Vista dos Jogadores, separada da régua local do espectador. */
@@ -158,6 +172,7 @@ export class SceneView {
   /** Pinça com dois dedos em andamento: zoom inicial, distância inicial e o ponto do mapa sob o centro dos dedos. */
   private pinch: { zoom: number; distance: number; anchor: Point } | null = null
   private destroyed = false
+  private qualitySample = { at: 0, frames: 0 }
   /** Vista dos Jogadores: quais tokens o espectador pode arrastar. */
   private movable: (document: WorldDocument) => boolean = () => false
 
@@ -169,12 +184,24 @@ export class SceneView {
     this.layers.lights.visible = false
     this.layers.sounds.visible = false
     this.layers.regions.addChild(this.playerRegions)
-    this.layers.overlay.addChild(this.remoteOverlay, this.remoteRulerLabel, this.overlay, this.rulerLabel, this.wallHandles)
+    this.layers.overlay.addChild(this.remoteOverlay, this.remoteRulerLabel, this.overlay, this.rulerLabel, this.wallHandles, this.transformHandles)
     this.rulerLabel.anchor.set(0.5, 1.2)
     this.rulerLabel.visible = false
     this.remoteRulerLabel.anchor.set(0.5, 1.2)
     this.remoteRulerLabel.visible = false
-    app.ticker.add((ticker) => this.panTick(ticker.deltaMS))
+    app.ticker.add((ticker) => {
+      this.panTick(ticker.deltaMS)
+      const now = performance.now(), sample = this.qualitySample
+      if (!sample.at) sample.at = now
+      sample.frames++
+      if (now - sample.at >= 2500) {
+        const fps = sample.frames * 1000 / (now - sample.at)
+        if (fps < 30 && app.renderer.resolution > 1 && window.matchMedia("(pointer: coarse)").matches) app.renderer.resize(app.screen.width, app.screen.height, 1)
+        app.canvas.dataset.renderFps = fps.toFixed(1)
+        app.canvas.dataset.renderResolution = String(app.renderer.resolution)
+        this.qualitySample = { at: now, frames: 0 }
+      }
+    })
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault()
@@ -182,55 +209,67 @@ export class SceneView {
       this.zoomAt({ x: event.clientX - rect.left, y: event.clientY - rect.top }, Math.exp(-event.deltaY * 0.0015))
     }
     const onContextMenu = (event: MouseEvent) => event.preventDefault()
-    // Pinça com dois dedos (celular e tablet). O PixiJS desliga os gestos do
-    // navegador no canvas (`touch-action: none`), então o zoom é feito aqui.
-    // Os ouvintes ficam em captura no container para rodar antes do PixiJS.
-    const touches = new Map<number, Point>()
-    const touchPoint = (event: PointerEvent): Point => {
+    // O toque passa pelo reconhecedor antes do Pixi: o primeiro dedo não grava nada.
+    const sample = (event: PointerEvent) => {
       const rect = container.getBoundingClientRect()
-      return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      return { id: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top, time: performance.now() }
+    }
+    const stopTouch = (event: PointerEvent) => {
+      event.preventDefault(); event.stopImmediatePropagation()
     }
     const onTouchDown = (event: PointerEvent) => {
       if (event.pointerType !== "touch") return
-      touches.set(event.pointerId, touchPoint(event))
-      if (touches.size === 2) this.startPinch(...([...touches.values()] as [Point, Point]))
+      stopTouch(event)
+      try { container.setPointerCapture(event.pointerId) } catch { /* eventos simulados não têm captura nativa */ }
+      this.handleTouch(this.touchGestures.down(sample(event)))
+      if (this.touchTimer) clearTimeout(this.touchTimer)
+      this.touchTimer = setTimeout(() => this.handleTouch(this.touchGestures.tick(performance.now())), LONG_PRESS_MS + 20)
     }
     const onTouchMove = (event: PointerEvent) => {
-      if (event.pointerType !== "touch" || !touches.has(event.pointerId)) return
-      touches.set(event.pointerId, touchPoint(event))
-      if (this.pinch && touches.size >= 2) this.movePinch(...([...touches.values()].slice(0, 2) as [Point, Point]))
+      if (event.pointerType !== "touch") return
+      stopTouch(event); this.handleTouch(this.touchGestures.move(sample(event)))
     }
     const onTouchUp = (event: PointerEvent) => {
-      if (!touches.delete(event.pointerId) || touches.size >= 2 || !this.pinch) return
-      this.pinch = null
-      this.handlers.onViewChange?.()
+      if (event.pointerType !== "touch") return
+      stopTouch(event)
+      if (this.touchTimer) clearTimeout(this.touchTimer)
+      this.handleTouch(this.touchGestures.up(sample(event), event.type !== "pointerup"))
+      if (container.hasPointerCapture(event.pointerId)) container.releasePointerCapture(event.pointerId)
     }
+    const cancelTouch = () => {
+      if (this.touchTimer) clearTimeout(this.touchTimer)
+      this.touchGestures.reset(); this.cancelInteraction(); this.pinch = null
+    }
+    window.addEventListener("blur", cancelTouch)
     container.addEventListener("wheel", onWheel, { passive: false })
     container.addEventListener("contextmenu", onContextMenu)
     container.addEventListener("pointerdown", onTouchDown, true)
     container.addEventListener("pointermove", onTouchMove, true)
     container.addEventListener("pointerup", onTouchUp, true)
     container.addEventListener("pointercancel", onTouchUp, true)
+    container.addEventListener("lostpointercapture", onTouchUp, true)
     this.removeWheel = () => {
+      window.removeEventListener("blur", cancelTouch)
       container.removeEventListener("wheel", onWheel)
       container.removeEventListener("contextmenu", onContextMenu)
       container.removeEventListener("pointerdown", onTouchDown, true)
       container.removeEventListener("pointermove", onTouchMove, true)
       container.removeEventListener("pointerup", onTouchUp, true)
       container.removeEventListener("pointercancel", onTouchUp, true)
+      container.removeEventListener("lostpointercapture", onTouchUp, true)
     }
 
     app.stage.eventMode = "static"
     app.stage.hitArea = new Rectangle(-1e7, -1e7, 2e7, 2e7)
-    app.stage.on("pointerdown", (event) => this.onStagePointerDown(event))
-    app.stage.on("globalpointermove", (event) => this.onPointerMove(event))
-    app.stage.on("pointerup", (event) => this.onPointerUp(event))
-    app.stage.on("pointerupoutside", (event) => this.onPointerUp(event))
+    app.stage.on("pointerdown", (event) => { if (event.pointerType !== "touch") this.onStagePointerDown(event) })
+    app.stage.on("globalpointermove", (event) => { if (event.pointerType !== "touch") this.onPointerMove(event) })
+    app.stage.on("pointerup", (event) => { if (event.pointerType !== "touch") this.onPointerUp(event) })
+    app.stage.on("pointerupoutside", (event) => { if (event.pointerType !== "touch") this.onPointerUp(event) })
   }
 
   static async create(container: HTMLElement, handlers: SceneViewHandlers, options: SceneViewOptions): Promise<SceneView> {
     const app = new Application()
-    await app.init({ resizeTo: container, background: "#0c0f15", antialias: true, autoDensity: true, resolution: window.devicePixelRatio || 1 })
+    await app.init({ resizeTo: container, background: "#0c0f15", antialias: true, autoDensity: true, resolution: window.matchMedia("(pointer: coarse)").matches ? Math.min(window.devicePixelRatio || 1, 1.5) : window.devicePixelRatio || 1 })
     container.appendChild(app.canvas)
     return new SceneView(app, container, handlers, options)
   }
@@ -238,6 +277,8 @@ export class SceneView {
   destroy(): void {
     this.destroyed = true
     this.removeWheel()
+    if (this.touchTimer) clearTimeout(this.touchTimer)
+    this.touchGestures.reset()
     this.visionLayer.destroy()
     this.app.destroy(true, { children: true })
   }
@@ -248,8 +289,11 @@ export class SceneView {
     const changedScene = scene?.id !== this.scene?.id
     this.scene = scene
     if (changedScene) {
+      this.cancelInteraction()
+      this.touchGestures.reset()
       for (const item of this.items.values()) item.display.destroy({ children: true })
       this.items.clear()
+      this.doorActions.clear()
       this.selection.clear()
       this.clearOverlay()
       this.sceneKey = ""
@@ -337,6 +381,7 @@ export class SceneView {
 
   setTool(tool: SceneTool): void {
     const changed = tool !== this.tool
+    if (changed) { this.cancelInteraction(); this.touchGestures.reset() }
     this.tool = tool
     this.clearOverlay()
     this.app.canvas.style.cursor = tool === "select" ? "default" : "crosshair"
@@ -349,7 +394,10 @@ export class SceneView {
       this.emitSelection()
     }
     this.updateWallHandles()
+    this.updateTransformHandles()
   }
+
+  setFreePlacement(free: boolean): void { this.freePlacement = free }
 
   setDrawOptions(options: DrawOptions): void {
     this.drawOptions = options
@@ -480,8 +528,7 @@ export class SceneView {
   }
 
   cancel(): void {
-    this.interaction = null
-    this.clearOverlay()
+    this.cancelInteraction()
     if (this.selection.size) {
       this.selection.clear()
       this.refreshSelection()
@@ -572,6 +619,7 @@ export class SceneView {
         this.applyMovable(item)
       }
     }
+    for (const target of this.doorActions.keys()) if (target.destroyed) this.doorActions.delete(target)
     this.refreshSelection()
   }
 
@@ -643,14 +691,18 @@ export class SceneView {
     else graphics.rect(-5, -7, 10, 14).fill({ color, alpha: 0.85 }).circle(2.5, 0, 1.3).fill(0x171314)
     icon.addChild(graphics)
     icon.eventMode = "static"
+    icon.hitArea = new Rectangle(-22, -22, 44, 44)
     icon.cursor = "pointer"
-    icon.on("pointerdown", (event) => {
-      if (event.button !== 0 || (this.tool !== "select" && this.tool !== "wall")) return
-      event.stopPropagation()
+    const toggle = () => {
       const item = this.items.get(id)
       if (!item) return
       const current = item.document.data as WallData
       this.handlers.onPut({ id, type: "wall", parentId: item.document.parentId, data: { ...current, open: !current.open } })
+    }
+    this.doorActions.set(icon, toggle)
+    icon.on("pointerdown", (event) => {
+      if (event.button !== 0 || (this.tool !== "select" && this.tool !== "wall")) return
+      event.stopPropagation(); toggle()
     })
     return icon
   }
@@ -679,7 +731,7 @@ export class SceneView {
     }
     draw()
     display.alpha = data.hidden ? 0.45 : 1
-    display.hitArea = { contains: (x: number, y: number) => Math.hypot(x, y) <= 14 / this.world.scale.x }
+    display.hitArea = { contains: (x: number, y: number) => Math.hypot(x, y) <= 22 / this.world.scale.x }
     return { display, selection, onZoom: draw }
   }
 
@@ -754,7 +806,7 @@ export class SceneView {
     }
     draw()
     display.alpha = data.hidden ? 0.45 : 1
-    display.hitArea = { contains: (x: number, y: number) => Math.hypot(x, y) <= 14 / this.world.scale.x }
+    display.hitArea = { contains: (x: number, y: number) => Math.hypot(x, y) <= 22 / this.world.scale.x }
     return { display, selection, onZoom: draw }
   }
 
@@ -976,11 +1028,12 @@ export class SceneView {
   private refreshSelection(): void {
     for (const item of this.items.values()) item.selection.visible = this.options.editable && this.selection.has(item.id)
     this.updateWallHandles()
+    this.updateTransformHandles()
   }
 
   /** Alças para arrastar as pontas da parede selecionada (ferramenta Paredes). */
   private updateWallHandles(): void {
-    this.wallHandles.removeChildren().forEach((child) => child.destroy())
+    for (const child of this.wallHandles.removeChildren()) { this.handleActions.delete(child); child.destroy() }
     if (this.tool !== "wall" || this.selection.size !== 1) return
     const item = this.items.get([...this.selection][0]!)
     if (!item || item.kind !== "wall") return
@@ -989,16 +1042,19 @@ export class SceneView {
     for (const end of [1, 2] as const) {
       const point = end === 1 ? { x: data.x1, y: data.y1 } : { x: data.x2, y: data.y2 }
       const fixed = end === 1 ? { x: data.x2, y: data.y2 } : { x: data.x1, y: data.y1 }
-      const handle = new Graphics().circle(0, 0, 7).fill({ color: 0x171314 }).stroke({ color: SELECTION_COLOR, width: 2 })
+      const handle = new Graphics().circle(0, 0, 9).fill({ color: 0x171314 }).stroke({ color: SELECTION_COLOR, width: 2 })
       handle.position.set(point.x, point.y)
       handle.scale.set(1 / zoom)
       handle.eventMode = "static"
       handle.cursor = "move"
-      handle.on("pointerdown", (event) => {
+      handle.hitArea = new Rectangle(-22, -22, 44, 44)
+      const start = (event: ScenePointer) => {
         if (event.button !== 0) return
         event.stopPropagation()
         this.interaction = { type: "wall-end", id: item.id, end, fixed }
-      })
+      }
+      handle.on("pointerdown", start)
+      this.handleActions.set(handle, start)
       this.wallHandles.addChild(handle)
     }
   }
@@ -1046,10 +1102,14 @@ export class SceneView {
   }
 
   private updateOverlayScale(): void {
+    this.app.canvas.dataset.viewZoom = String(this.world.scale.x)
+    this.app.canvas.dataset.viewX = String(this.world.x)
+    this.app.canvas.dataset.viewY = String(this.world.y)
     this.rulerLabel.scale.set(1 / this.world.scale.x)
     if (this.remoteRuler) this.drawRemoteRuler()
     for (const item of this.items.values()) item.onZoom?.()
     for (const handle of this.wallHandles.children) handle.scale.set(1 / this.world.scale.x)
+    this.updateTransformHandles()
   }
 
   /** Desenha uma régua e devolve o texto da medida. */
@@ -1116,10 +1176,7 @@ export class SceneView {
 
   /** O segundo dedo tocou: cancela o gesto de um dedo (sem mover nada) e começa a pinça. */
   private startPinch(first: Point, second: Point): void {
-    const interaction = this.interaction
-    this.interaction = null
-    if (interaction?.type === "drag") for (const entry of interaction.entries) this.items.get(entry.id)?.display.position.set(entry.start.x, entry.start.y)
-    if (interaction && interaction.type !== "pan") this.clearOverlay()
+    this.cancelInteraction()
     const middle = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }
     this.pinch = { zoom: this.world.scale.x, distance: Math.max(1, Math.hypot(second.x - first.x, second.y - first.y)), anchor: this.world.toLocal(middle) }
   }
@@ -1135,6 +1192,156 @@ export class SceneView {
     this.updateOverlayScale()
   }
 
+  /** Cancela só a prévia do gesto; nunca grava nem apaga documentos. */
+  private cancelInteraction(): void {
+    const interaction = this.interaction
+    if (interaction?.type === "drag") for (const entry of interaction.entries) this.items.get(entry.id)?.display.position.set(entry.start.x, entry.start.y)
+    if (interaction?.type === "transform") this.restoreTransform(interaction)
+    this.interaction = null
+    this.touchPlacement = false
+    this.clearOverlay()
+  }
+
+  private pointer(point: Point): ScenePointer {
+    return { global: point, button: 0, shiftKey: false, altKey: this.freePlacement, pointerType: "touch", stopPropagation() {} }
+  }
+
+  private hitAt(point: Point): { item?: Item; action?: (event: ScenePointer) => void; door?: () => void } {
+    const boundary = this.app.renderer.events.rootBoundary
+    boundary.rootTarget = this.app.stage
+    let target: Container | null = boundary.hitTest(point.x, point.y)
+    let doorAction: (() => void) | undefined
+    while (target && target !== this.app.stage) {
+      const action = this.handleActions.get(target)
+      if (action) return { action }
+      const door = this.doorActions.get(target)
+      if (door && (this.tool === "select" || this.tool === "wall")) doorAction = door
+      const item = [...this.items.values()].find((item) => item.display === target)
+      if (item) return { item, door: doorAction }
+      target = target.parent
+    }
+    // Objetos pequenos continuam alcançáveis com o dedo quando o mapa está afastado.
+    const local = this.world.toLocal(point)
+    let closest: Item | undefined, distance = 22 / this.world.scale.x
+    for (const item of this.items.values()) {
+      if (TOOL_FOR_KIND[item.kind] !== this.tool) continue
+      const center = item.display.position
+      const next = item.kind === "wall" ? distanceToSegment(local, item.document.data as WallData) : Math.hypot(local.x - center.x, local.y - center.y)
+      if (next < distance) { closest = item; distance = next }
+    }
+    return { item: closest }
+  }
+
+  private openContext(point: Point): void {
+    if (!this.options.editable) return
+    const hit = this.hitAt(point)
+    if (!hit.item) return
+    this.cancelInteraction()
+    this.setTool(TOOL_FOR_KIND[hit.item.kind])
+    this.handlers.onToolChange?.(this.tool)
+    this.selection = new Set([hit.item.id])
+    this.emitSelection()
+    this.handlers.onContextMenu?.(hit.item.id, point)
+  }
+
+  private beginTouch(point: Point): void {
+    const hit = this.hitAt(point), event = this.pointer(point)
+    if (hit.action) { hit.action(event); return }
+    if (hit.item) this.onItemPointerDown(event, hit.item.id)
+    if (this.interaction) return
+    // Ferramentas de clique só criam no pointerup, mesmo depois de um arrasto.
+    if (this.options.editable && (["token", "note", "light", "sound"].includes(this.tool) || this.tool === "draw" && this.drawOptions.shape === "text")) {
+      this.touchPlacement = true
+      return
+    }
+    if (!hit.door) this.onStagePointerDown(event)
+  }
+
+  private handleTouch(events: TouchGesture[]): void {
+    for (const event of events) {
+      if (event.type === "cancel") { this.cancelInteraction(); continue }
+      if (event.type === "pinchstart") { this.startPinch(event.first, event.second); continue }
+      if (event.type === "pinchmove") { this.movePinch(event.first, event.second); continue }
+      if (event.type === "pinchend") { this.pinch = null; this.handlers.onViewChange?.(); continue }
+      if (event.type === "longpress") { this.openContext(event.point); continue }
+      if (event.type === "tap") {
+        const hit = this.hitAt(event.point)
+        if (hit.door) { hit.door(); continue }
+        this.beginTouch(event.point)
+      }
+      if (event.type === "start") this.beginTouch(event.origin)
+      if (event.type === "move") this.onPointerMove(this.pointer(event.point))
+      if (event.type === "tap" || event.type === "end") {
+        if (this.touchPlacement) { this.touchPlacement = false; this.onStagePointerDown(this.pointer(event.point)) }
+        this.onPointerMove(this.pointer(event.point))
+        this.onPointerUp(this.pointer(event.point))
+      }
+    }
+  }
+
+  private updateTransformHandles(): void {
+    for (const child of this.transformHandles.removeChildren()) { this.handleActions.delete(child); child.destroy() }
+    if (!this.options.editable || this.selection.size !== 1) return
+    const item = this.items.get([...this.selection][0]!)
+    if (!item || this.isLocked(item) || !["token", "tile", "light"].includes(item.kind)) return
+    const zoom = this.world.scale.x, cell = this.scene?.data.grid.size || 100
+    const center = transformCenter(item.document)
+    const add = (kind: TransformHandle, point: Point, label: string) => {
+      const handle = new Container()
+      handle.position.set(point.x, point.y); handle.scale.set(1 / zoom)
+      handle.addChild(new Graphics().circle(0, 0, 12).fill({ color: 0x171314 }).stroke({ color: SELECTION_COLOR, width: 2 }))
+      const text = new Text({ text: label, style: { fill: SELECTION_COLOR, fontSize: 15, fontFamily: "sans-serif" } })
+      text.anchor.set(0.5); handle.addChild(text)
+      handle.eventMode = "static"; handle.cursor = kind === "rotation" ? "grab" : "nwse-resize"
+      handle.hitArea = new Rectangle(-22, -22, 44, 44)
+      const start = (event: ScenePointer) => {
+        if (event.button !== 0) return
+        event.stopPropagation()
+        this.interaction = { type: "transform", id: item.id, handle: kind, origin: this.world.toLocal(event.global), before: item.document, preview: { id: item.id, type: item.kind, parentId: item.document.parentId, data: item.document.data } }
+      }
+      handle.on("pointerdown", start); this.handleActions.set(handle, start); this.transformHandles.addChild(handle)
+    }
+    if (item.kind === "light") {
+      const data = item.document.data as LightData
+      add("dim", { x: center.x + Math.max(data.dim * cell, 40 / zoom), y: center.y }, "P")
+      add("bright", { x: center.x, y: center.y - Math.max(data.bright * cell, 40 / zoom) }, "L")
+      return
+    }
+    const data = item.document.data as TokenData | TileData
+    const halfWidth = item.kind === "token" ? (data as TokenData).size * cell / 2 : (data as TileData).width / 2
+    const halfHeight = item.kind === "token" ? halfWidth : (data as TileData).height / 2
+    const angle = data.rotation * Math.PI / 180
+    const rotate = (x: number, y: number) => ({ x: center.x + x * Math.cos(angle) - y * Math.sin(angle), y: center.y + x * Math.sin(angle) + y * Math.cos(angle) })
+    add("size", rotate(halfWidth + 22 / zoom, halfHeight + 22 / zoom), "↘")
+    add("rotation", rotate(0, -halfHeight - 36 / zoom), "↻")
+  }
+
+  private previewTransform(interaction: Extract<Interaction, { type: "transform" }>): void {
+    const item = this.items.get(interaction.id)
+    if (!item) return
+    const data = interaction.preview.data as TokenData | TileData | LightData
+    const before = interaction.before.data as TokenData | TileData
+    if (item.kind === "token") {
+      item.display.scale.set((data as TokenData).size / (before as TokenData).size)
+      item.display.children[0].angle = (data as TokenData).rotation
+    } else if (item.kind === "tile") {
+      item.display.scale.set((data as TileData).width / (before as TileData).width)
+      item.display.angle = (data as TileData).rotation
+    } else {
+      const light = data as LightData, cell = this.scene?.data.grid.size || 100
+      item.selection.clear().circle(0, 0, light.dim * cell).stroke({ color: SELECTION_COLOR, width: 2 / this.world.scale.x }).circle(0, 0, light.bright * cell).stroke({ color: SELECTION_COLOR, width: 2 / this.world.scale.x })
+    }
+  }
+
+  private restoreTransform(interaction: Extract<Interaction, { type: "transform" }>): void {
+    const item = this.items.get(interaction.id)
+    if (!item) return
+    item.display.scale.set(1)
+    if (item.kind === "tile") item.display.angle = (item.document.data as TileData).rotation
+    if (item.kind === "token") item.display.children[0].angle = (item.document.data as TokenData).rotation
+    item.onZoom?.()
+  }
+
   // ── Interação ───────────────────────────────────────────────────────────
 
   private isLocked(item: Item): boolean {
@@ -1146,7 +1353,7 @@ export class SceneView {
     this.handlers.onSelectionChange([...this.selection])
   }
 
-  private onItemPointerDown(event: FederatedPointerEvent, id: string): void {
+  private onItemPointerDown(event: ScenePointer, id: string): void {
     const item = this.items.get(id)
     if (this.pinch || event.button !== 0 || !item || TOOL_FOR_KIND[item.kind] !== this.tool) return
     // Espectador: só arrasta tokens "Jogador", e um de cada vez.
@@ -1186,10 +1393,10 @@ export class SceneView {
     this.interaction = { type: "drag", origin: this.world.toLocal(event.global), moved: false, entries, selection: nextSelection }
   }
 
-  private onStagePointerDown(event: FederatedPointerEvent): void {
+  private onStagePointerDown(event: ScenePointer): void {
     if (this.pinch) return
     if (event.button === 1 || event.button === 2) {
-      this.interaction = { type: "pan", startGlobal: { x: event.global.x, y: event.global.y }, startPosition: { x: this.world.x, y: this.world.y } }
+      this.interaction = { type: "pan", startGlobal: { x: event.global.x, y: event.global.y }, startPosition: { x: this.world.x, y: this.world.y }, context: event.button === 2 }
       this.app.canvas.style.cursor = "grabbing"
       return
     }
@@ -1215,34 +1422,34 @@ export class SceneView {
         break
       case "token": {
         const id = crypto.randomUUID().replaceAll("-", "")
-        const center = snapTokenCenter(point, 1, grid)
+        const center = this.freePlacement ? point : snapTokenCenter(point, 1, grid)
         this.handlers.onPut({ id, type: "token", parentId, data: { name: "Token", x: center.x, y: center.y, size: 1, disposition: "hostile" } })
         this.pendingSelection = id
         break
       }
       case "note": {
         const id = crypto.randomUUID().replaceAll("-", "")
-        const center = grid.type === "none" ? point : cellCenter(point, grid)
+        const center = this.freePlacement || grid.type === "none" ? point : cellCenter(point, grid)
         this.handlers.onPut({ id, type: "note", parentId, data: { x: center.x, y: center.y, label: "Nota" } })
         this.pendingSelection = id
         break
       }
       case "wall":
-        this.interaction = { type: "wall", start: this.snapWallPoint(point, event.altKey) }
+        this.interaction = { type: "wall", start: this.snapWallPoint(point, (event.altKey || this.freePlacement)) }
         break
       case "region":
-        this.interaction = { type: "region", start: this.snapHalfCell(point, event.altKey) }
+        this.interaction = { type: "region", start: this.snapHalfCell(point, (event.altKey || this.freePlacement)) }
         break
       case "sound": {
         const id = crypto.randomUUID().replaceAll("-", "")
-        const center = event.altKey || grid.type === "none" ? point : cellCenter(point, grid)
+        const center = (event.altKey || this.freePlacement) || grid.type === "none" ? point : cellCenter(point, grid)
         this.handlers.onPut({ id, type: "sound", parentId, data: { x: center.x, y: center.y } })
         this.pendingSelection = id
         break
       }
       case "light": {
         const id = crypto.randomUUID().replaceAll("-", "")
-        const center = event.altKey || grid.type === "none" ? point : cellCenter(point, grid)
+        const center = (event.altKey || this.freePlacement) || grid.type === "none" ? point : cellCenter(point, grid)
         this.handlers.onPut({ id, type: "light", parentId, data: { x: center.x, y: center.y } })
         this.pendingSelection = id
         break
@@ -1272,7 +1479,7 @@ export class SceneView {
     return id
   }
 
-  private onPointerMove(event: FederatedPointerEvent): void {
+  private onPointerMove(event: ScenePointer): void {
     const interaction = this.interaction
     if (!interaction) return
     if (interaction.type === "pan") {
@@ -1291,10 +1498,15 @@ export class SceneView {
       if (first && firstItem?.kind === "token" && interaction.entries.length === 1) this.drawRuler(first.start, { x: first.start.x + dx, y: first.start.y + dy })
       return
     }
+    if (interaction.type === "transform") {
+      interaction.preview = transformObject(interaction.before, interaction.handle, interaction.origin, point, this.scene?.data.grid.size || 100, event.altKey || this.freePlacement)
+      this.previewTransform(interaction)
+      return
+    }
     if (interaction.type === "ruler") { this.drawRuler(interaction.start, point, this.options.editable); return }
-    if (interaction.type === "wall") { this.drawWallPreview(interaction.start, this.snapWallPoint(point, event.altKey)); return }
-    if (interaction.type === "region") { this.drawRegionPreview(interaction.start, this.snapHalfCell(point, event.altKey)); return }
-    if (interaction.type === "wall-end") { this.drawWallPreview(interaction.fixed, this.snapWallPoint(point, event.altKey, interaction.id)); return }
+    if (interaction.type === "wall") { this.drawWallPreview(interaction.start, this.snapWallPoint(point, (event.altKey || this.freePlacement))); return }
+    if (interaction.type === "region") { this.drawRegionPreview(interaction.start, this.snapHalfCell(point, (event.altKey || this.freePlacement))); return }
+    if (interaction.type === "wall-end") { this.drawWallPreview(interaction.fixed, this.snapWallPoint(point, (event.altKey || this.freePlacement), interaction.id)); return }
     if (interaction.type === "box") {
       const width = 1.5 / this.world.scale.x
       this.overlay.clear().rect(Math.min(interaction.start.x, point.x), Math.min(interaction.start.y, point.y), Math.abs(point.x - interaction.start.x), Math.abs(point.y - interaction.start.y)).fill({ color: 0x82aaa6, alpha: 0.08 }).stroke({ color: 0x82aaa6, width })
@@ -1324,11 +1536,23 @@ export class SceneView {
     }
   }
 
-  private onPointerUp(event: FederatedPointerEvent): void {
+  private onPointerUp(event: ScenePointer): void {
     const interaction = this.interaction
     this.interaction = null
     if (!interaction) return
-    if (interaction.type === "pan") { this.setTool(this.tool); this.handlers.onViewChange?.(); return }
+    if (interaction.type === "pan") {
+      this.setTool(this.tool); this.handlers.onViewChange?.()
+      if (interaction.context && Math.hypot(event.global.x - interaction.startGlobal.x, event.global.y - interaction.startGlobal.y) < 4) this.openContext(event.global)
+      return
+    }
+    if (interaction.type === "transform") {
+      const item = this.items.get(interaction.id)
+      if (Math.hypot(event.global.x - this.world.toGlobal(interaction.origin).x, event.global.y - this.world.toGlobal(interaction.origin).y) < 4) { this.restoreTransform(interaction); return }
+      if (item && item.document.updatedAt === interaction.before.updatedAt) this.handlers.onPut(transformObject(interaction.before, interaction.handle, interaction.origin, this.world.toLocal(event.global), this.scene?.data.grid.size || 100, event.altKey || this.freePlacement))
+      this.restoreTransform(interaction)
+      this.refreshSelection()
+      return
+    }
     const scene = this.scene
     if (!scene) return
     const point = this.world.toLocal(event.global)
@@ -1338,7 +1562,7 @@ export class SceneView {
       const item = entry ? this.items.get(entry.id) : null
       if (!interaction.moved || !item) return
       const data = item.document.data as TokenData
-      const position = event.altKey ? { x: item.display.x, y: item.display.y } : snapTokenCenter({ x: item.display.x, y: item.display.y }, data.size, scene.data.grid)
+      const position = (event.altKey || this.freePlacement) ? { x: item.display.x, y: item.display.y } : snapTokenCenter({ x: item.display.x, y: item.display.y }, data.size, scene.data.grid)
       item.display.position.set(position.x, position.y)
       this.handlers.onMove?.(item.id, position)
       return
@@ -1359,14 +1583,14 @@ export class SceneView {
         if (item.kind === "wall") {
           // A parede inteira anda; o deslocamento encaixa em meias células.
           const grid = scene.data.grid
-          const step = grid.type === "square" && !event.altKey ? grid.size / 2 : 0
+          const step = grid.type === "square" && !(event.altKey || this.freePlacement) ? grid.size / 2 : 0
           const dx = step ? Math.round(moved.x / step) * step : moved.x
           const dy = step ? Math.round(moved.y / step) * step : moved.y
           const wall = data as unknown as WallData
           this.handlers.onPut({ id: item.id, type: "wall", parentId: item.document.parentId, data: { ...wall, x1: wall.x1 + dx, y1: wall.y1 + dy, x2: wall.x2 + dx, y2: wall.y2 + dy } })
           continue
         }
-        if (item.kind === "token") position = event.altKey ? moved : snapTokenCenter(moved, (data as unknown as TokenData).size, scene.data.grid)
+        if (item.kind === "token") position = (event.altKey || this.freePlacement) ? moved : snapTokenCenter(moved, (data as unknown as TokenData).size, scene.data.grid)
         else if (item.kind === "tile") position = { x: moved.x - (data.width as number) / 2, y: moved.y - (data.height as number) / 2 }
         else position = moved
         this.handlers.onPut({ id: item.id, type: item.kind, parentId: item.document.parentId, data: { ...data, ...position } })
@@ -1374,12 +1598,13 @@ export class SceneView {
       this.selection = new Set([...interaction.selection].filter((id) => this.items.has(id)))
       // Arrastar reposiciona e destaca o token localmente, mas não publica a
       // seleção. A ficha só deve abrir no clique sem movimento, ao soltar.
-      this.refreshSelection()
+      if (event.pointerType === "touch") this.emitSelection()
+      else this.refreshSelection()
       return
     }
     if (interaction.type === "wall") {
       this.overlay.clear()
-      const end = this.snapWallPoint(point, event.altKey)
+      const end = this.snapWallPoint(point, (event.altKey || this.freePlacement))
       if (Math.hypot(end.x - interaction.start.x, end.y - interaction.start.y) * this.world.scale.x < 4) return
       const id = crypto.randomUUID().replaceAll("-", "")
       this.handlers.onPut({ id, type: "wall", parentId: scene.id, data: { x1: interaction.start.x, y1: interaction.start.y, x2: end.x, y2: end.y, kind: this.wallKind } })
@@ -1387,7 +1612,7 @@ export class SceneView {
     }
     if (interaction.type === "region") {
       this.overlay.clear()
-      const end = this.snapHalfCell(point, event.altKey)
+      const end = this.snapHalfCell(point, (event.altKey || this.freePlacement))
       const width = Math.abs(end.x - interaction.start.x)
       const height = Math.abs(end.y - interaction.start.y)
       if (width * this.world.scale.x < 6 || height * this.world.scale.x < 6) return
@@ -1400,7 +1625,7 @@ export class SceneView {
       this.overlay.clear()
       const item = this.items.get(interaction.id)
       if (!item) return
-      const end = this.snapWallPoint(point, event.altKey, interaction.id)
+      const end = this.snapWallPoint(point, (event.altKey || this.freePlacement), interaction.id)
       const wall = item.document.data as WallData
       const next = interaction.end === 1 ? { ...wall, x1: end.x, y1: end.y } : { ...wall, x2: end.x, y2: end.y }
       this.handlers.onPut({ id: item.id, type: "wall", parentId: item.document.parentId, data: next })
