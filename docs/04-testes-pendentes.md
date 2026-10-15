@@ -272,3 +272,7 @@ automáticos). Falta o uso de verdade:
 - [ ] Com sala no desktop, abrir o link do mestre no celular e operar só por toque enquanto um jogador acompanha.
   Hospedar a sala no Android permanece na X7; a mesa em memória não persiste após fechar o APK.
 - [ ] Repetir o mapa de 4096 px com névoa e luzes num aparelho físico e comparar fluidez com o artefato do CI.
+
+A X3 foi conferida no emulador Android 15 (CI): 31,8 FPS na cena simples e 24 FPS no mapa de 4096 px com névoa e
+luzes, com resolução adaptada para 1 e GPU por software. Os números e capturas estão na ADR 0006; a conferência em
+aparelho físico acima continua necessária.

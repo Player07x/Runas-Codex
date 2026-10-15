@@ -1,0 +1,46 @@
+{
+  "initialToken": {
+    "x": 1250,
+    "y": 950
+  },
+  "token": {
+    "x": 1450,
+    "y": 1050
+  },
+  "undoEnabled": true,
+  "redoEnabled": true,
+  "menu": true,
+  "example": {
+    "fps": 31.8,
+    "p95ms": 50.1,
+    "resolution": "1",
+    "zoom": "0.12634666666666666",
+    "cameraX": "4.709680679566418",
+    "cameraY": "103.65333333333334",
+    "physicalWidth": 412,
+    "physicalHeight": 460,
+    "frames": 160
+  },
+  "vision": {
+    "fog": true,
+    "daylight": false
+  },
+  "largeMap": {
+    "fps": 24,
+    "p95ms": 83.4,
+    "resolution": "1",
+    "zoom": "0.0925390625",
+    "cameraX": "5.438979889146566",
+    "cameraY": "40.47999999999999",
+    "physicalWidth": 412,
+    "physicalHeight": 460,
+    "frames": 120
+  },
+  "device": {
+    "userAgent": "Mozilla/5.0 (Linux; Android 15; sdk_gphone64_x86_64 Build/AE3A.240806.043; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0.6367.219 Mobile Safari/537.36",
+    "dpr": 2.625,
+    "width": 412,
+    "height": 684,
+    "scrollWidth": 412
+  }
+}

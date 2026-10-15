@@ -64,5 +64,24 @@ dedos em cada cena. A segunda usa PNG sintético de 4096 × 4096, névoa ligada,
 luzes. `Runas-Codex-android-toque` guarda `metrics.json`, capturas e log do emulador. A opção de depuração é aplicada
 somente ao arquivo gerado do APK de teste; não muda o instalador distribuído.
 
-Medição do emulador: aguardando a primeira execução do job neste PR. Números do Electron não substituem esta
-medição; aparelhos físicos e tela de toque continuam na lista de conferência manual.
+Medição de 15/10/2026, [execução 38764957646](https://github.com/Player07x/Runas-Codex/actions/runs/38764957646),
+commit `94392df`: emulador 37.2.12, perfil Pixel 2, Android 15 (API 35, x86_64), KVM e GPU por software SwiftShader;
+WebView Chromium 124. Viewport 412 × 684 CSS, DPR 2,625, canvas 412 × 460 CSS. A primeira cena tem 3000 × 2000,
+um aliado e um traço. A segunda liga também a prévia dos jogadores, para desenhar a névoa, além de calculá-la.
+FPS é a cadência de `requestAnimationFrame` durante 5 s de movimento, não uma medição em GPU de aparelho físico.
+
+| Cena | Quadros/s | Intervalo p95 | Resolução final do canvas |
+|---|---:|---:|---|
+| Exemplo simples | 31,8 | 50,1 ms | 1 (412 × 460 físicos) |
+| Mapa 4096, névoa e duas luzes | 24,0 | 83,4 ms | 1 (412 × 460 físicos) |
+
+A adaptação reduziu a resolução inicial de 1,5 para 1. O mínimo de 1 preserva a leitura; o mapa grande ainda ficou
+abaixo de 30 FPS neste emulador por software. Conferir fluidez em celular/tablet com GPU física continua pendente.
+O roteiro passou: token de (1250, 950) para (1450, 1050), mão livre, desfazer/refazer e toque longo; sem erros no
+WebView e sem rolagem lateral (412 CSS de conteúdo para 412 CSS de viewport).
+
+Os [dados brutos](../imagens/vtt-9-toque/android-metricas.json) e as capturas de
+[propriedades](../imagens/vtt-9-toque/android-propriedades.png) e
+[mapa com névoa](../imagens/vtt-9-toque/android-mapa-4096.png) ficam versionados. A captura Android usa `adb screencap`.
+O emulador recebe a permissão de notificações antes de abrir o app, para que o diálogo do sistema não cubra a mesa
+nem coloque o WebView em segundo plano durante a medição. Essas configurações pertencem apenas ao teste.
