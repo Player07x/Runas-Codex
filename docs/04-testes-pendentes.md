@@ -232,3 +232,10 @@ automáticos). Falta o uso de verdade:
 - [ ] Windows e Android real: seletor de arquivo, cancelamento, prévia e confirmação; no Android, persistência no cofre real depende da C8.
 - [ ] Importar duas vezes o mesmo título: a segunda pasta recebe outro número. Em falha de gravação, conferir a pasta informada e as notas preservadas antes de tentar novamente.
 - [ ] Importar um livro longo com muitas imagens e conferir os limites informados (20 MB de entrada, 30 s por conversão, DOCX até 100 MB descompactados).
+
+## Corretor ortográfico sem rede (ADR 0018)
+
+- [ ] Abrir o app instalado (Linux e Windows) e escrever numa nota uma palavra errada ("palavrra"): ela fica
+  sublinhada. (As sugestões no clique direito ainda não existem; entram na C5a.)
+- [ ] Windows: depois de usar o editor, a pasta `%APPDATA%\runas-codex\Dictionaries` tem o `pt-BR-3-0.bdic` copiado
+  pelo app; com o Windows em outro idioma, o app continua corrigindo em pt-BR e não aparece outro dicionário lá.

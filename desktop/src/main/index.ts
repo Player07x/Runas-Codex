@@ -11,11 +11,15 @@ import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
 import { assetSchemePrivilege, VttHost } from "./vtt/vtt-host"
 import { checkForUpdate, downloadUpdate, installUpdate, updateTarget } from "./updates"
+import { configureSpellchecker, installDictionary, spellcheckPassed, spellcheckReport } from "./spellcheck"
 import type { UpdateInfo } from "../../../app/src/core/updates"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
 if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(app.getPath("appData"), "runas-codex"))
+
+// O dicionário do corretor vai para o perfil antes de o Chromium procurar (senão ele o baixaria do Google).
+installDictionary()
 
 // Antes de "ready" (uma chamada só): imagens e áudio da mesa vêm por `vtt-asset://`; anexos das notas, por `vault-file://`.
 protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege()])
@@ -177,8 +181,9 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (result.room && master?.key) result.masterCheck = await checkMaster(window, (result.room as { port: number }).port, master.key, String(result.masterScene ?? ""), () => vtt.master.rotate(), argValue("shot-master"))
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
+    result.spellcheck = spellcheckReport()
     console.log(JSON.stringify(result, null, 2))
-    ok = smokePassed(result, vault.rootPath !== null)
+    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport())
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
     const hold = Number(argValue("hold") ?? 0)
     if (hold > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(hold, 600) * 1000))
@@ -191,6 +196,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
 }
 
 void app.whenReady().then(async () => {
+  configureSpellchecker()
   if (smoke) await vault.openForSmoke(argValue("vault"), process.argv.includes("--write"))
   else await vault.load()
   registerIpc()
