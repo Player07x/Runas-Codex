@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { BookOpenText, ChevronLeft, Code2, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
+import { Archive, ArchiveRestore, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
+import { blockRefAt } from "../../core/block-ref"
+import { deepLinkFor } from "../../core/deep-link"
+import { archivePath, NOTE_COLORS, noteFlags, unarchivePath, type NoteColor } from "../../core/note-flags"
 import { scopeOf } from "../../core/spaces"
 import { fillTemplate, insertTemplate } from "../../core/templates"
 import { extname, foldName, noteName, textToSave, toEditorText } from "../../core/text"
@@ -8,13 +11,15 @@ import { splitFrontmatter } from "../../lib/links"
 import { NoteSetContext } from "../../lib/note-set"
 import { navigate } from "../../lib/router"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
-import { vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
+import { copyLinkTarget, copyText, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
+import { useLinkPreview } from "./LinkPreview"
 import type { LivePreviewHost } from "./live-preview"
 import { SourceEditor, type SourceEditorHandle } from "./SourceEditor"
+import "./note-actions.css"
 
 /** Os três modos do Obsidian: leitura, live preview ("Editar") e código-fonte. */
 export type ViewMode = "leitura" | "live" | "fonte"
@@ -83,6 +88,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
+  const [copyMenu, setCopyMenu] = useState(false)
+  const [organizeMenu, setOrganizeMenu] = useState(false)
   const editor = useRef<SourceEditorHandle>(null)
   const reader = useRef<HTMLDivElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -227,6 +234,9 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
     [index, path],
   )
 
+  // Prévia dos links: hover na leitura, Ctrl + hover na edição, toque longo no celular.
+  const linkPreview = useLinkPreview(reader, { index, noteSet, platform: vault.platform, needsModifier: mode !== "leitura" })
+
   useEffect(() => {
     if (!headingRequest) return
     setModeState("leitura")
@@ -234,6 +244,38 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
     const position = headings.findIndex((h) => h.line === headingRequest.line)
     setTimeout(() => reader.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[position]?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
   }, [headingRequest, index, path])
+
+  const copied = (link: string) =>
+    void copyText(link).then((ok) => toast(ok ? `Copiado: ${link}` : "O sistema não deixou copiar."))
+  const copyNoteLink = () => copied(`[[${copyLinkTarget(index, path)}]]`)
+  // Link do parágrafo (ou item, citação, tabela) onde está o cursor; o `^id` é criado se ainda não existe.
+  const copyBlockLink = () => {
+    const cursor = editor.current?.cursor()
+    const ref = cursor === null || cursor === undefined ? null : blockRefAt(draft, cursor)
+    if (!ref) {
+      toast("Ponha o cursor num parágrafo, item de lista, citação ou tabela.")
+      return
+    }
+    if (ref.created) editor.current?.transform(() => ({ text: ref.text, cursor: cursor! }))
+    copied(`[[${copyLinkTarget(index, path)}#^${ref.id}]]`)
+  }
+
+  // Fixar, colorir e arquivar (propriedades `fixada` e `cor`; arquivar move para Notas/Arquivo, com os links).
+  const flags = noteFlags(note)
+  const toArchive = archivePath(path)
+  const fromArchive = unarchivePath(path)
+  const organize = (action: () => Promise<unknown>) => {
+    setOrganizeMenu(false)
+    void flush()
+      .then(action)
+      .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+  }
+  const setColor = (color: NoteColor | undefined) => organize(() => vault.setProperty(path, "cor", color))
+  const move = (to: string) =>
+    organize(async () => {
+      await vault.rename(path, to)
+      navigate(vaultRoute(to))
+    })
 
   const { body } = splitFrontmatter(draft)
   const status: Record<SaveState, string> = { salvo: "Salvo", pendente: "Editando…", salvando: "Salvando…", conflito: "Conflito", erro: "Erro ao salvar" }
@@ -318,6 +360,79 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             </button>
           </>
         )}
+        {!readOnly && (
+          <div className="note-copy">
+            <button className="icon-btn" title="Fixar, colorir e arquivar" aria-label="Organizar a nota" aria-expanded={organizeMenu} onClick={() => setOrganizeMenu(!organizeMenu)}>
+              <Tag size={17} />
+            </button>
+            {organizeMenu && (
+              <div className="note-menu card" role="menu" onMouseLeave={() => setOrganizeMenu(false)}>
+                <button role="menuitem" className="list-item small" onClick={() => organize(() => vault.setProperty(path, "fixada", flags.pinned ? undefined : true))}>
+                  {flags.pinned ? <PinOff size={14} /> : <Pin size={14} />} {flags.pinned ? "Desafixar" : "Fixar no topo da lista"}
+                </button>
+                <div className="note-colors" role="group" aria-label="Cor da nota">
+                  {(Object.keys(NOTE_COLORS) as NoteColor[]).map((color) => (
+                    <button
+                      key={color}
+                      className={`note-swatch ${flags.color === color ? "active" : ""}`}
+                      style={{ ["--swatch" as string]: NOTE_COLORS[color] }}
+                      title={color}
+                      aria-label={`Cor ${color}`}
+                      aria-pressed={flags.color === color}
+                      onClick={() => setColor(flags.color === color ? undefined : color)}
+                    />
+                  ))}
+                  {flags.color && (
+                    <button className="btn sm ghost" onClick={() => setColor(undefined)}>
+                      Sem cor
+                    </button>
+                  )}
+                </div>
+                {toArchive && (
+                  <button role="menuitem" className="list-item small" onClick={() => move(toArchive)}>
+                    <Archive size={14} /> Arquivar (vai para Notas/Arquivo)
+                  </button>
+                )}
+                {fromArchive && (
+                  <button role="menuitem" className="list-item small" onClick={() => move(fromArchive)}>
+                    <ArchiveRestore size={14} /> Desarquivar
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        <div className="note-copy">
+          <button className="icon-btn" title="Copiar link" aria-label="Copiar link" aria-expanded={copyMenu} onClick={() => setCopyMenu(!copyMenu)}>
+            <Copy size={17} />
+          </button>
+          {copyMenu && (
+            <div className="note-menu card" role="menu" onMouseLeave={() => setCopyMenu(false)}>
+              <button role="menuitem" className="list-item small" onClick={() => (setCopyMenu(false), copyNoteLink())}>
+                Link da nota
+              </button>
+              <button
+                role="menuitem"
+                className="list-item small"
+                disabled={readOnly || mode === "leitura"}
+                title={readOnly ? "Libere a gravação para criar o ^id do bloco" : mode === "leitura" ? "No modo Editar ou Código, ponha o cursor no parágrafo" : undefined}
+                onClick={() => (setCopyMenu(false), copyBlockLink())}
+              >
+                Link do bloco no cursor
+              </button>
+              {vault.platform.kind === "electron" && (
+                <button
+                  role="menuitem"
+                  className="list-item small"
+                  title="Abre esta nota a partir de outro programa (um PDF, o calendário, um atalho)"
+                  onClick={() => (setCopyMenu(false), copied(deepLinkFor(path)))}
+                >
+                  Endereço runas://
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <button className="icon-btn" onClick={onShowPanel} title="Links, propriedades e gráfico local" aria-label="Painel da nota">
           <PanelRight size={18} />
         </button>
@@ -351,6 +466,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
           <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
         )}
       </div>
+
+      {linkPreview}
 
       {dialog === "template" && (
         <TemplatePicker

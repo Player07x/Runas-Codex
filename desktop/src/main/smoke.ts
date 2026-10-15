@@ -130,6 +130,14 @@ export const SMOKE_SCRIPT = `(async () => {
   location.hash = "/transferir/obsidian"
   result.migrationFound = (await until(() => document.querySelectorAll(".migrate-kind:not(.empty)").length, 100)) ?? 0
 
+  // Prévia de link (C5a): passar o mouse num link no modo leitura mostra a nota de destino sem abrir.
+  location.hash = "/notas/" + encodeURIComponent("Notas/Caderno.md")
+  ;(await until(() => [...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))))?.click()
+  const previewLink = await until(() => document.querySelector(".editor-body .wikilink[data-href]:not(.broken)"))
+  previewLink?.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }))
+  result.linkPreview = (await until(() => document.querySelector(".link-preview .link-preview-head strong")?.textContent, 30)) ?? ""
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -543,6 +551,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const campaign = result.campaign as Record<string, unknown> | undefined
   if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
   if (result.migrationFound !== 4) return false
+  if (typeof result.linkPreview !== "string" || !result.linkPreview) return false
   if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []

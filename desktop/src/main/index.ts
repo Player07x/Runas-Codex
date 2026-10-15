@@ -11,7 +11,9 @@ import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
 import { assetSchemePrivilege, VttHost } from "./vtt/vtt-host"
 import { checkForUpdate, downloadUpdate, installUpdate, updateTarget } from "./updates"
-import { configureSpellchecker, installDictionary, spellcheckPassed, spellcheckReport } from "./spellcheck"
+import { attachContextMenu, configureSpellchecker, installDictionary, spellcheckPassed, spellcheckReport } from "./spellcheck"
+import { DeepLinks } from "./deep-links"
+import { enableShortcutPortal, registerQuickCapture } from "./quick-capture"
 import type { UpdateInfo } from "../../../app/src/core/updates"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
@@ -20,6 +22,9 @@ if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(ap
 
 // O dicionário do corretor vai para o perfil antes de o Chromium procurar (senão ele o baixaria do Google).
 installDictionary()
+
+// Atalho global de captura rápida no Wayland, pelo portal do desktop (antes de "ready").
+if (!process.argv.includes("--smoke")) enableShortcutPortal()
 
 // Antes de "ready" (uma chamada só): imagens e áudio da mesa vêm por `vtt-asset://`; anexos das notas, por `vault-file://`.
 protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege()])
@@ -35,6 +40,9 @@ let mainWindow: BrowserWindow | null = null
 const vault = new VaultService(() => mainWindow, () => vtt.closeWorld())
 const vtt = new VttHost(() => vault.rootPath, () => vault.info()?.readOnly === false)
 const reminders = new ReminderScheduler(() => mainWindow, (path) => mainWindow?.webContents.send(IPC.agendaOpen, path))
+// `runas://abrir?nota=…` abre a nota pelo mesmo caminho que um lembrete tocado usa. O smoke roda sem a trava de cópia única.
+const deepLinks = new DeepLinks(() => mainWindow, (path) => mainWindow?.webContents.send(IPC.agendaOpen, path))
+if (!smoke && !deepLinks.claim()) app.exit(0)
 
 /** Só a janela do app conversa com o processo principal. */
 function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown): void {
@@ -162,6 +170,9 @@ function createMainWindow(): BrowserWindow {
     if (url.split("#")[0] !== window.webContents.getURL().split("#")[0]) event.preventDefault()
   })
 
+  // Sugestões do corretor e recortar/copiar/colar no clique direito.
+  attachContextMenu(window)
+
   if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void window.loadFile(join(__dirname, "../renderer/index.html"))
   return window
@@ -204,6 +215,11 @@ void app.whenReady().then(async () => {
   protocol.handle(VAULT_FILE_SCHEME, (request) => vaultFileResponse(vault.rootPath, request.url, request.headers.get("range")))
   mainWindow = createMainWindow()
   if (smoke) void runSmoke(mainWindow)
+  else {
+    deepLinks.register()
+    mainWindow.webContents.once("did-finish-load", () => deepLinks.windowReady())
+    if (!registerQuickCapture(() => mainWindow)) console.warn("Atalho global de captura rápida indisponível neste sistema.")
+  }
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow()
   })

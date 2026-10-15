@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, Crosshair, Plus, Search, SlidersHorizontal, X } from "lucide-react"
+import { ChevronLeft, Crosshair, Play, Plus, Search, SlidersHorizontal, Square, X } from "lucide-react"
 import { buildGraph, type GraphGroup, type GraphNode } from "../../core/graph-data"
+import { creationTime, timelapseFrame, timelapseOrder } from "../../core/graph-timelapse"
 import type { VaultIndex } from "../../core/vault-index"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
@@ -48,7 +49,28 @@ export function GraphPage({ index, root, version, onBroken }: { index: VaultInde
   }, [settings])
 
   const { filter, showOrphans, showAttachments, showMissing, groups, forces } = settings
-  const data = useMemo(() => buildGraph(index, { root, filter, showOrphans, showAttachments, showMissing, groups }), [index, version, root, filter, showOrphans, showAttachments, showMissing, groups])
+  const full = useMemo(() => buildGraph(index, { root, filter, showOrphans, showAttachments, showMissing, groups }), [index, version, root, filter, showOrphans, showAttachments, showMissing, groups])
+
+  // Timelapse: as notas aparecem na ordem de criação.
+  const [lapse, setLapse] = useState<{ order: string[]; count: number } | null>(null)
+  const timeOf = (path: string) => {
+    const note = index.note(path)
+    return note ? creationTime(note) : undefined
+  }
+  useEffect(() => {
+    if (!lapse) return
+    if (lapse.count >= lapse.order.length) {
+      const done = setTimeout(() => setLapse(null), 1200)
+      return () => clearTimeout(done)
+    }
+    // Uns 8 a 10 segundos: em cofre grande, vários nós por passo; em cofre pequeno, passos mais lentos.
+    const step = Math.max(1, Math.ceil(lapse.order.length / 80))
+    const delay = Math.min(600, Math.max(125, 8000 / lapse.order.length))
+    const timer = setTimeout(() => setLapse({ ...lapse, count: Math.min(lapse.order.length, lapse.count + step) }), delay)
+    return () => clearTimeout(timer)
+  }, [lapse])
+  const data = useMemo(() => (lapse ? timelapseFrame(full, lapse.order, lapse.count) : full), [full, lapse])
+  const lastShown = lapse ? [...data.nodes].filter((n) => n.kind === "note").map((n) => timeOf(n.path) ?? 0).reduce((a, b) => Math.max(a, b), 0) : 0
 
   const open = (node: GraphNode) => {
     if (node.kind === "missing") onBroken(node.path)
@@ -71,6 +93,15 @@ export function GraphPage({ index, root, version, onBroken }: { index: VaultInde
         <span className="small faint">
           {data.nodes.length} nós · {data.edges.length} ligações
         </span>
+        {lapse && lastShown > 0 && <span className="small graph-lapse-date">até {new Date(lastShown).toLocaleDateString("pt-BR")}</span>}
+        <button
+          className={`icon-btn ${lapse ? "active" : ""}`}
+          onClick={() => setLapse(lapse ? null : { order: timelapseOrder(full, timeOf), count: 1 })}
+          title={lapse ? "Parar o timelapse" : "Timelapse: as notas aparecem na ordem de criação"}
+          aria-label={lapse ? "Parar o timelapse" : "Timelapse do gráfico"}
+        >
+          {lapse ? <Square size={15} /> : <Play size={16} />}
+        </button>
         <button className="icon-btn" onClick={() => setFit((n) => n + 1)} title="Enquadrar tudo" aria-label="Enquadrar o gráfico">
           <Crosshair size={17} />
         </button>

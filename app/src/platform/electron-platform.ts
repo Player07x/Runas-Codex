@@ -50,5 +50,6 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
         stop()
       }
     },
+    onQuickCapture: (listener) => bridge.onQuickCapture(listener),
   }
 }

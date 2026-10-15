@@ -1,0 +1,8 @@
+/* Espaço Notas bloqueado por PIN */
+.notes-lock { display: grid; place-items: center; min-height: 60vh; }
+.notes-lock-card { width: min(380px, 100%); justify-items: center; align-items: center; text-align: center; padding: 28px 22px; }
+.notes-lock-card .notes-lock-input { width: 100%; }
+.notes-lock-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: color-mix(in srgb, var(--violet) 16%, transparent); color: var(--violet); }
+.notes-lock-input { max-width: 220px; text-align: center; font-size: 22px; letter-spacing: 0.4em; min-height: 48px; }
+.notes-lock-error { margin: 0; color: var(--red); }
+.notes-lock-card .btn { min-width: 180px; justify-content: center; }
