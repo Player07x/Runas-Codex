@@ -88,8 +88,9 @@ try {
   await sleep(150)
   await label('Fechar propriedades'); await tool('Selecionar e mover')
   const from = await at(1250, 950), to = await at(1450, 1050)
-  // Enfileira o gesto inteiro: aguardar cada ACK de um emulador lento pode virar um toque longo.
-  await Promise.all([touch('touchStart', [from]), touch('touchMove', [{ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }]), touch('touchMove', [to]), touch('touchEnd', [])])
+  // Enfileira o início e o primeiro movimento: aguardar cada ACK de um emulador lento pode virar um toque longo.
+  await Promise.all([touch('touchStart', [from]), touch('touchMove', [{ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }])])
+  await touch('touchMove', [to]); await touch('touchEnd', [])
   await until(`document.querySelector('.properties')`)
   await until(`Array.from(document.querySelectorAll('.properties label.field')).find(e=>e.querySelector('span')?.textContent==='Posição X')?.querySelector('input')?.value==='1450'`)
   results.token = { x: Number(await field('Posição X')), y: Number(await field('Posição Y')) }
@@ -97,9 +98,9 @@ try {
   await shot('android-propriedades')
   await label('Fechar propriedades'); await tool('Desenhar'); await label('Mão livre')
   const a = await at(700, 1300), b = await at(1700, 1450)
-  const trace = [touch('touchStart', [a])]
-  for (let n = 1; n <= 6; n++) trace.push(touch('touchMove', [{ x: a.x + (b.x - a.x) * n / 6, y: a.y + (b.y - a.y) * n / 6 }]))
-  trace.push(touch('touchEnd', [])); await Promise.all(trace)
+  await Promise.all([touch('touchStart', [a]), touch('touchMove', [{ x: a.x + (b.x - a.x) / 6, y: a.y + (b.y - a.y) / 6 }])])
+  for (let n = 2; n <= 6; n++) await touch('touchMove', [{ x: a.x + (b.x - a.x) * n / 6, y: a.y + (b.y - a.y) * n / 6 }])
+  await touch('touchEnd', [])
   await until(`document.querySelector('[aria-label="Propriedades: Desenho"]')`)
   results.undoEnabled = await run(`!document.querySelector('[aria-label="Desfazer"]').disabled`)
   await label('Desfazer'); await until(`!document.querySelector('[aria-label="Refazer"]').disabled`)
