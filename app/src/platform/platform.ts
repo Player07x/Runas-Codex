@@ -89,4 +89,6 @@ export interface Platform {
   stopRoom(): Promise<void>
   /** Abre o diálogo de impressão do documento atual. */
   printDocument?(): void
+  /** PDF das páginas prontas da prévia (desktop). */
+  exportPdf?(name: string): Promise<string | null>
 }

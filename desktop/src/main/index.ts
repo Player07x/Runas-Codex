@@ -1,3 +1,4 @@
+import { exportBookPdf } from "./books-pdf"
 import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
@@ -75,6 +76,7 @@ function registerIpc(): void {
     await writeFile(result.filePath, text(content, "conteúdo"), "utf8")
     return result.filePath
   })
+  handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
 }
 

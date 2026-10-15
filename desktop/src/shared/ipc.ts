@@ -21,6 +21,7 @@ export const IPC = {
   /** Do processo principal para a janela: clicaram num lembrete. */
   agendaOpen: "agenda:open",
   saveFile: "files:save",
+  booksPdf: "books:pdf",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

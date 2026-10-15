@@ -48,6 +48,7 @@ const bridge: RunasCodexBridge = {
     },
   },
   saveFile: (name, content) => invoke(IPC.saveFile, name, content),
+  exportPdf: (name) => invoke(IPC.booksPdf, name),
   vtt: {
     listWorlds: () => invoke(VTT.listWorlds),
     createWorld: (input) => invoke(VTT.createWorld, input),

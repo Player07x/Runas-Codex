@@ -41,4 +41,5 @@ export interface RunasCodexBridge {
   saveFile(name: string, content: string): Promise<string | null>
   /** A mesa (VTT): mesas do cofre, documentos, sala dos jogadores e áudio. */
   readonly vtt: VttApi
+  exportPdf(name: string): Promise<string | null>
 }
