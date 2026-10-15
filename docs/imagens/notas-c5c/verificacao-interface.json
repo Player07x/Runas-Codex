@@ -11,5 +11,51 @@
     "width": 320,
     "scroll": 320,
     "panes": 1
+  },
+  "layout": {
+    "desktopMenu": {
+      "width": 1536,
+      "height": 795,
+      "box": {
+        "x": 802,
+        "y": 196.60000610351562,
+        "width": 220,
+        "height": 145.60000610351562
+      },
+      "visible": true
+    },
+    "desktopDialog": {
+      "width": 1536,
+      "height": 795,
+      "box": {
+        "x": 338,
+        "y": 103.80000305175781,
+        "width": 860,
+        "height": 587.6000366210938
+      },
+      "visible": true
+    },
+    "mobileMenu": {
+      "width": 320,
+      "height": 844,
+      "box": {
+        "x": 14,
+        "y": 357.20001220703125,
+        "width": 220,
+        "height": 145.60000610351562
+      },
+      "visible": true
+    },
+    "mobileDialog": {
+      "width": 320,
+      "height": 844,
+      "box": {
+        "x": 0,
+        "y": 67.5250015258789,
+        "width": 320,
+        "height": 776.4750366210938
+      },
+      "visible": true
+    }
   }
 }

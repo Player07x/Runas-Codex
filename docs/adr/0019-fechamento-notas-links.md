@@ -129,6 +129,8 @@ O ponto de extensão de arquivos embutidos fica no PR pequeno do leitor #26; est
 painéis, na horizontal ou vertical. Cada painel mantém suas abas. A rota representa a aba do painel em foco.
 O arranjo e os workspaces nomeados ficam no aparelho, por cofre, em `localStorage`. No celular aparece um painel
 por vez, com seletor de painel e botão de ações da aba (não depende de arrastar nem de clique direito).
+Menus e diálogos das ferramentas usam portais no `body`, para a contenção CSS da barra não cortar sua área visível.
+O smoke confere os limites do menu e do diálogo; a verificação da interface também os mede em 320 px.
 
 **Janelas de nota:** `desktop/main/windows.ts` abre outra janela com o mesmo isolamento e preload, aceitando só
 rotas de notas. A autorização do IPC acrescenta exatamente as janelas criadas por esse controlador. As gravações
