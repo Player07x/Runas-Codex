@@ -8,19 +8,21 @@ import { isAndroidApp, onAndroidReminderOpen, scheduleInBrowser, scheduleOnAndro
  * recarregar a página volta ao exemplo. Segue as mesmas regras da plataforma real (versão esperada, lixeira…).
  */
 export function createMemoryPlatform(onNotify?: (title: string, body: string) => void): Platform {
-  const files = new Map<string, { content: string; mtime: number }>([
+  const files = new Map<string, { content: string; mtime: number; bytes?: Uint8Array }>([
     ...ALL_NOTES.map((n) => [n.path, { content: n.markdown, mtime: Date.parse(n.updated) }] as const),
     ...Object.entries(DEMO_TEXT_FILES).map(([path, content]) => [path, { content, mtime: Date.parse("2026-10-14T09:00:00") }] as const),
     // Anexos: só o nome entra no cofre; a imagem vem empacotada com o app (`fileUrl`).
     ...Object.keys(DEMO_ASSETS).map((path) => [path, { content: "", mtime: Date.parse("2026-10-14T09:00:00") }] as const),
   ])
   const listeners = new Set<(changes: VaultChange[]) => void>()
+  // Endereços `blob:` dos anexos gravados nesta aba (a imagem colada aparece na nota sem ir para o disco).
+  const blobUrls = new Map<Uint8Array, string>()
   const backups: BackupInfo[] = []
   let vault: VaultInfo = { name: "Mesa do João (exemplo)", path: "Exemplo em memória — nada é salvo", readOnly: false }
   let clock = Date.now()
   const entry = (path: string): VaultEntry => {
     const file = files.get(path)!
-    return { path, size: new TextEncoder().encode(file.content).length, mtime: file.mtime }
+    return { path, size: file.bytes ? file.bytes.byteLength : new TextEncoder().encode(file.content).length, mtime: file.mtime }
   }
   const hidden = (path: string) => path.split("/").some((part) => part.startsWith("."))
   const ensureWritable = (path: string) => {
@@ -94,7 +96,11 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
       onNotify?.("Backups", "No exemplo em memória os backups não vão para o disco.")
     },
     fileUrl(path) {
-      return DEMO_ASSETS[path] ?? null
+      const bytes = files.get(path)?.bytes
+      if (!bytes) return DEMO_ASSETS[path] ?? null
+      let url = blobUrls.get(bytes)
+      if (!url) blobUrls.set(bytes, (url = URL.createObjectURL(new Blob([bytes as BlobPart]))))
+      return url
     },
     async openFile(path) {
       onNotify?.("Anexos", `No exemplo do navegador, “${path}” não abre fora do app.`)
@@ -125,5 +131,38 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     },
     async stopRoom() {},
     printDocument: () => window.print(),
+    async readBinary(path) {
+      const file = files.get(path)
+      if (!file) throw new Error(`Arquivo não encontrado no cofre: ${path}`)
+      if (file.bytes) return file.bytes.slice()
+      const asset = DEMO_ASSETS[path]
+      if (asset) return new Uint8Array(await (await fetch(asset)).arrayBuffer())
+      return new TextEncoder().encode(file.content)
+    },
+    async writeBinary(path, bytes, expected) {
+      ensureWritable(path)
+      const current = files.has(path) ? entry(path) : null
+      if (expected === null && current) throw new Error(`Já existe “${path}”.`)
+      if (expected && (!current || current.mtime !== expected.mtime || current.size !== expected.size)) {
+        throw new Error(`“${path}” mudou fora do app (por exemplo, no Obsidian). Recarregue antes de gravar.`)
+      }
+      const old = files.get(path)?.bytes
+      if (current && old && old.byteLength === bytes.byteLength && old.every((byte, i) => byte === bytes[i])) return current
+      if (old && blobUrls.has(old)) {
+        URL.revokeObjectURL(blobUrls.get(old)!)
+        blobUrls.delete(old)
+      }
+      files.set(path, { content: "", bytes: bytes.slice(), mtime: (clock = Math.max(clock + 1, Date.now())) })
+      return entry(path)
+    },
+    async saveBytes(name, bytes, mime) {
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime }))
+      const link = document.createElement("a")
+      link.href = url
+      link.download = name
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      return name
+    },
   }
 }

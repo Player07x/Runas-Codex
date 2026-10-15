@@ -36,6 +36,8 @@ const bridge: RunasCodexBridge = {
     revealBackups: () => invoke(IPC.vaultRevealBackups),
     openFile: (path) => invoke(IPC.vaultOpenFile, path),
     installSnippet: (css) => invoke(IPC.vaultInstallSnippet, css),
+    readBinary: (path) => invoke(IPC.vaultReadBinary, path),
+    writeBinary: (path, bytes, expected) => invoke(IPC.vaultWriteBinary, path, bytes, expected === undefined ? undefined : expected && { mtime: expected.mtime, size: expected.size }),
   },
   agenda: {
     schedule: (reminders) => invoke(IPC.agendaSchedule, reminders),
@@ -119,6 +121,7 @@ const bridge: RunasCodexBridge = {
       import: (kind, fileName, bytes) => invoke(VTT.assetsImport, kind, fileName, bytes),
     },
   },
+  saveBytes: (name, bytes) => invoke(IPC.saveBytes, name, bytes),
 }
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

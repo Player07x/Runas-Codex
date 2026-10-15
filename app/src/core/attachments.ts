@@ -1,0 +1,69 @@
+import { nameProblem } from "./names"
+import { basename, dirname, extname, foldName, joinPath } from "./text"
+
+/**
+ * Anexos (imagens, PDFs, áudio) como o Obsidian grava: na pasta de anexos de `.obsidian/app.json`, com nome que não
+ * repete (`mapa.png`, `mapa 1.png`…). Os links seguem o formato de link novo da mesma configuração.
+ */
+export interface AppConfig {
+  /** `attachmentFolderPath`: `/` (raiz), `./` (pasta da nota), `./sub` (subpasta da nota) ou uma pasta do cofre. */
+  attachmentFolder: string
+  newLinkFormat: "shortest" | "relative" | "absolute"
+  useMarkdownLinks: boolean
+}
+
+/** Lê o `app.json` do Obsidian (valores ausentes ou inválidos = padrões do Obsidian). */
+export function appConfig(json: Record<string, unknown>): AppConfig {
+  const format = json.newLinkFormat
+  return {
+    attachmentFolder: typeof json.attachmentFolderPath === "string" ? json.attachmentFolderPath.trim() : "/",
+    newLinkFormat: format === "relative" || format === "absolute" ? format : "shortest",
+    useMarkdownLinks: json.useMarkdownLinks === true,
+  }
+}
+
+/** Pasta (relativa ao cofre, `""` = raiz) onde entra um anexo novo da nota `notePath`; `null` se sai do cofre. */
+export function attachmentFolder(setting: string, notePath?: string): string | null {
+  const value = setting.trim()
+  if (!value || value === "/") return ""
+  if (value === "." || value.startsWith("./")) return joinPath(dirname(notePath ?? ""), value.slice(2))
+  return joinPath(value)
+}
+
+const FORBIDDEN = /[[\]#^|\\/:*?"<>\u0000-\u001f]/g
+
+/** Nome de arquivo que vale no cofre (sem os caracteres que quebram links ou o Windows); extensão em minúsculas. */
+export function cleanAttachmentName(name: string): string {
+  const file = basename(name.replace(/\\/g, "/"))
+  // `.png` sozinho é só extensão (no disco seria um arquivo oculto sem nome).
+  const ext = extname(file) || (/^\.[^.]+$/.test(file) ? file.toLowerCase() : "")
+  const stem = (ext ? file.slice(0, -ext.length) : file).replace(FORBIDDEN, "-").replace(/\s+/g, " ").replace(/^[.\s]+|[.\s]+$/g, "")
+  const cleanExt = ext.replace(FORBIDDEN, "")
+  const candidate = `${stem}${cleanExt}`
+  return stem && !nameProblem(candidate) ? candidate : `anexo${cleanExt}`
+}
+
+/**
+ * Caminho de um anexo novo: a pasta de anexos da configuração (relativa a `nearNote` quando é `./`) e o nome limpo e
+ * livre. Recusa pasta fora do cofre ou com nome que o app não grava (oculta, por exemplo).
+ */
+export function attachmentPath(setting: string, fileName: string, existing: Iterable<string>, nearNote?: string): string {
+  const folder = attachmentFolder(setting, nearNote)
+  if (folder === null) throw new Error(`A pasta de anexos do Obsidian (“${setting}”) fica fora do cofre.`)
+  for (const part of folder ? folder.split("/") : []) {
+    const problem = nameProblem(part)
+    if (problem) throw new Error(`Pasta de anexos “${folder}”: ${problem}`)
+  }
+  return availableAttachmentPath(folder, cleanAttachmentName(fileName), existing)
+}
+
+/** Caminho livre para `fileName` em `folder`: o próprio nome, ou `nome 1.ext`, `nome 2.ext`… (sem diferenciar maiúsculas). */
+export function availableAttachmentPath(folder: string, fileName: string, existing: Iterable<string>): string {
+  const taken = new Set([...existing].map(foldName))
+  const ext = extname(fileName)
+  const stem = ext ? fileName.slice(0, -ext.length) : fileName
+  for (let n = 0; ; n++) {
+    const path = joinPath(folder, n === 0 ? fileName : `${stem} ${n}${ext}`)!
+    if (!taken.has(foldName(path))) return path
+  }
+}
