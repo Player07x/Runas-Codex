@@ -1,0 +1,133 @@
+{
+  "mapMarkers": [
+    {
+      "id": "mapa-valdris",
+      "path": "Mapas/Mapa de Valdris.md",
+      "files": [
+        "Mapas/Mapa de Valdris.md"
+      ],
+      "lastAccessed": 1760000000000,
+      "locked": false,
+      "markers": [
+        {
+          "type": "default",
+          "loc": [
+            -1,
+            2
+          ],
+          "percent": [
+            0.5,
+            0.5
+          ],
+          "id": "m1",
+          "link": "[[Portão do Lago]]",
+          "layer": "valdris.png",
+          "command": false,
+          "mutable": true,
+          "description": null,
+          "minZoom": null,
+          "maxZoom": null,
+          "tooltip": "hover",
+          "zoom": 9
+        },
+        {
+          "type": "dungeon",
+          "loc": [
+            -1.75,
+            0.5
+          ],
+          "percent": null,
+          "id": "m2",
+          "link": "",
+          "layer": "valdris.png",
+          "command": false,
+          "mutable": true,
+          "description": "Covil dos lobos",
+          "minZoom": null,
+          "maxZoom": null,
+          "tooltip": "hover",
+          "zoom": 9
+        },
+        {
+          "type": "default",
+          "loc": [
+            -0.1,
+            0.1
+          ],
+          "percent": [
+            0.02,
+            0.1
+          ],
+          "id": "m3",
+          "link": "app:open-vault",
+          "layer": "valdris.png",
+          "command": true,
+          "mutable": true,
+          "description": null,
+          "minZoom": null,
+          "maxZoom": null,
+          "tooltip": "hover",
+          "zoom": 9
+        }
+      ],
+      "overlays": [
+        {
+          "radius": 30,
+          "loc": [
+            -1,
+            2
+          ],
+          "color": "blue",
+          "unit": "km",
+          "layer": "valdris.png",
+          "desc": "Alcance do farol",
+          "id": "o1",
+          "mutable": true
+        }
+      ],
+      "shapes": []
+    }
+  ],
+  "markerIcons": [
+    {
+      "type": "castle",
+      "iconName": "chess-rook",
+      "color": "#dddddd"
+    },
+    {
+      "type": "dungeon",
+      "iconName": "dungeon",
+      "color": "#aa3333"
+    }
+  ],
+  "defaultMarker": {
+    "type": "default",
+    "iconName": "map-marker",
+    "color": "#dddddd",
+    "transform": {
+      "size": 6,
+      "x": 0,
+      "y": -2
+    }
+  },
+  "color": "#dddddd",
+  "lat": 39.983334,
+  "long": -82.98333,
+  "notePreview": false,
+  "layerMarkers": true,
+  "previousVersion": "6.0.5",
+  "version": {
+    "major": 6,
+    "minor": 0,
+    "patch": 5
+  },
+  "warnedAboutMapMarker": true,
+  "copyOnClick": false,
+  "displayMarkerTooltips": "hover",
+  "displayOverlayTooltips": true,
+  "configDirectory": null,
+  "mapViewEnabled": true,
+  "enableDraw": true,
+  "defaultUnitType": "metric",
+  "defaultTile": "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+}

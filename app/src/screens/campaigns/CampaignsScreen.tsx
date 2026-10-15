@@ -13,6 +13,7 @@ import { CastView } from "./CastView"
 import { BoardsView } from "./CampaignCanvas"
 import { StorytellerScreen } from "./StorytellerScreen"
 import "./campaigns.css"
+import "./register"
 
 const TABS = [
   { id: "", label: "Painel", icon: <LayoutDashboard size={15} /> },

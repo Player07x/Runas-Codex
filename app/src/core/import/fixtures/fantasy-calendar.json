@@ -1,0 +1,54 @@
+{
+  "name": "Calendário do Vale",
+  "static_data": {
+    "year_data": {
+      "first_day": 3,
+      "overflow": true,
+      "global_week": ["Um", "Dois", "Três", "Quatro", "Cinco", "Seis"],
+      "timespans": [
+        { "name": "Primeira Lua", "type": "month", "interval": 1, "offset": 0, "length": 32 },
+        { "name": "Segunda Lua", "type": "month", "interval": 1, "offset": 0, "length": 32 },
+        { "name": "Dias do Meio", "type": "intercalary", "interval": 1, "offset": 0, "length": 4 },
+        { "name": "Terceira Lua", "type": "month", "interval": 1, "offset": 0, "length": 32 },
+        { "name": "Quarta Lua", "type": "month", "interval": 1, "offset": 0, "length": 32 },
+        { "name": "Lua Rara", "type": "month", "interval": 3, "offset": 0, "length": 10 }
+      ],
+      "leap_days": [
+        { "name": "Dia Extra", "intercalary": false, "timespan": 1, "adds_week_day": false, "day": 32, "week_day": "", "interval": "5", "offset": 0, "not_numbered": false, "show_text": false }
+      ]
+    },
+    "moons": [{ "name": "Lua Prata", "cycle": 32, "shift": 4, "granularity": 16, "color": "#ccccff", "hidden": false, "custom_phase": false }],
+    "clock": { "enabled": false, "hours": 24, "minutes": 60, "offset": 0 },
+    "seasons": {
+      "data": [
+        { "name": "Seca", "timespan": 0, "day": 1, "color": ["#e0c070", "#e0c070"], "length": 0, "duration": 0, "transition_length": 0 },
+        { "name": "Chuvas", "timespan": 3, "day": 1, "color": ["#6090e0", "#6090e0"], "length": 0, "duration": 0, "transition_length": 0 }
+      ],
+      "locations": [],
+      "global_settings": { "season_offset": 0, "weather_offset": 0, "seed": 1, "temp_sys": "metric", "wind_sys": "metric", "cinematic": false, "enable_weather": false, "periodic_seasons": false, "color_enabled": true }
+    },
+    "eras": [{ "name": "Era do Vale", "abbreviation": "E.V.", "description": "", "settings": { "show_as_event": false, "use_custom_format": false, "starting_era": false, "event_category_id": -1, "ends_year": false, "restart": false }, "date": { "year": 1, "timespan": 0, "day": 1, "epoch": 0 } }]
+  },
+  "dynamic_data": { "year": 812, "timespan": 3, "day": 7, "epoch": 0, "custom_location": false, "location": "Equatorial", "current_era": 0 },
+  "events": [
+    {
+      "id": 1,
+      "name": "Festival da Colheita",
+      "data": { "has_duration": false, "duration": 1, "show_first_last": false, "limited_repeat": false, "limited_repeat_num": 1, "conditions": [["Month", "0", ["4"]], ["&&"], ["Day", "0", ["10"]]], "connected_events": [], "date": [] },
+      "description": "<p>Danças e <strong>pão doce</strong>.</p>",
+      "event_category_id": "1",
+      "calendar_id": "1",
+      "settings": { "color": "Dark-Solid", "text": "text", "hide": false, "hide_full": false, "print": false }
+    },
+    {
+      "id": 2,
+      "name": "Grande Enchente",
+      "data": { "has_duration": false, "duration": 1, "show_first_last": false, "limited_repeat": false, "limited_repeat_num": 1, "conditions": [], "connected_events": [], "date": [790, 3, 2] },
+      "description": "",
+      "event_category_id": "1",
+      "calendar_id": "1",
+      "settings": { "color": "Dark-Solid", "text": "text", "hide": false, "hide_full": false, "print": false }
+    }
+  ],
+  "categories": [{ "id": 1, "name": "Festas", "calendar_id": "1", "category_settings": { "hide": false, "player_usable": false }, "event_settings": { "color": "#a03030", "text": "text", "hide": false, "print": false } }]
+}

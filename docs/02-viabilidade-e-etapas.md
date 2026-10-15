@@ -201,6 +201,7 @@ Regras que entram nos testes desde a etapa 3a:
 | Rolagem na nota | `` `dice: 2d6+3` `` (sintaxe do plugin Dice Roller; `[[1d20]]` colidiria com wikilink) | Código inline |
 | Posição e tamanho de imagem | `![[mapa.png\|direita\|300]]` ou `![direita\|300](mapa.png)`; posições `esquerda`, `centro`, `direita`, `largo`, **sempre antes do tamanho** (ADR 0012) | O tamanho funciona; a posição vira só o texto alternativo |
 | Homebrewery | `\page`, `\column`, `{{nota}}` **aceitos na importação** e convertidos para a sintaxe acima | — |
+| Blocos desenhados pelo app | ` ```runas-calendario `, ` ```runas-mapa ` ([ADR 0010](adr/0010-wiki.md)) e ` ```runas-encontro ` ([ADR 0014](adr/0014-migracoes.md)), em YAML | Bloco de código |
 
 ## 6. Rede do VTT: Criar Sala e Entrar Sala
 

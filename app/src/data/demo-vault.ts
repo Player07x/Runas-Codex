@@ -89,3 +89,7 @@ DEMO_TEXT_FILES["Livros/Caderno de formatadores/Formatadores.md"] = formatadores
 // Campanhas de exemplo (etapa 7): sessões, missões, personagens e um quadro .canvas.
 import { campaignDemoFiles } from "./campaign-demo"
 Object.assign(DEMO_TEXT_FILES, campaignDemoFiles())
+
+// Dados de plugins de RPG do Obsidian para a migração (etapa 10).
+import { OBSIDIAN_PLUGIN_DEMO } from "./obsidian-plugins-demo"
+Object.assign(DEMO_TEXT_FILES, OBSIDIAN_PLUGIN_DEMO)
