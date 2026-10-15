@@ -255,3 +255,26 @@ automáticos). Falta o uso de verdade:
   sublinhada. (As sugestões no clique direito ainda não existem; entram na C5a.)
 - [ ] Windows: depois de usar o editor, a pasta `%APPDATA%\runas-codex\Dictionaries` tem o `pt-BR-3-0.bdic` copiado
   pelo app; com o Windows em outro idioma, o app continua corrigindo em pt-BR e não aparece outro dicionário lá.
+
+## Notas: links, gráfico e notas pessoais (C5a)
+
+- [ ] Prévia de link: na leitura, passar o mouse num link; no modo Editar, com Ctrl apertado; no celular, tocar e
+  segurar (a prévia sobe do pé da tela e o link não abre). Link para `#título` e `#^bloco` mostra só o trecho.
+- [ ] Digitar `@` e parte do nome de uma nota; escolher; conferir o `[[…]]` no modo Código. Um e-mail não abre a lista.
+- [ ] Painel Links › "Menções sem link" de uma nota citada pelo nome em outras: "Linkar" e conferir no Obsidian que o
+  texto lido não mudou.
+- [ ] Copiar link da nota, de um título (sumário) e do bloco do cursor; colar no Obsidian e conferir que abre o lugar
+  certo (o `^id` criado aparece no fim do parágrafo).
+- [ ] `runas://`: no app **instalado**, "Copiar link" › "Endereço runas://", colar num navegador ou no terminal
+  (`xdg-open 'runas://…'` no Linux) com o app aberto e com o app fechado; a nota abre. Abrir o app duas vezes traz a
+  mesma janela.
+- [ ] Timelapse no gráfico global (botão ▶) num cofre grande.
+- [ ] Fixar, colorir e arquivar pelo menu de etiqueta da barra da nota; conferir as propriedades `fixada`/`cor` e a
+  pasta `Notas/Arquivo/` no Obsidian.
+- [ ] Captura rápida `Ctrl+Alt+N` com o app em segundo plano, no Windows e num Linux com X11. Na sua sessão Wayland o
+  sistema não aceita o atalho global (decidir se ligamos o portal do GNOME, que pede permissão).
+- [ ] PIN: Configurações › Privacidade › "Bloquear o espaço Notas com PIN"; fechar e abrir o app, errar e acertar o
+  PIN; "Bloquear" no topo da lista de Notas.
+- [ ] Clique direito numa palavra errada no editor (app desktop): sugestões, "Adicionar ao dicionário" e
+  recortar/copiar/colar.
+

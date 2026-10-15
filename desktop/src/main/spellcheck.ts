@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import { copyFileSync, mkdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
-import { app, session } from "electron"
+import { app, Menu, session, type BrowserWindow, type MenuItemConstructorOptions } from "electron"
 
 /**
  * Corretor ortográfico sem rede (regra 6). O Chromium baixaria o dicionário pt-BR do servidor do Google na primeira
@@ -78,4 +78,41 @@ export function spellcheckReport(): SpellcheckReport {
 
 export function spellcheckPassed(report: SpellcheckReport): boolean {
   return report.installed && report.downloads.length === 0 && report.languages.join(",") === SPELLCHECK_LANGUAGES.join(",")
+}
+
+export type MenuParams = Pick<Electron.ContextMenuParams, "misspelledWord" | "dictionarySuggestions" | "isEditable" | "editFlags" | "selectionText">
+
+/**
+ * Clique direito: as sugestões do corretor, "Adicionar ao dicionário" (fica no perfil, para nomes do mundo) e as ações
+ * de texto. Sem campo de texto nem seleção, nenhum menu aparece (como antes).
+ */
+export function contextMenuTemplate(params: MenuParams, actions: { replace(word: string): void; addWord(word: string): void }): MenuItemConstructorOptions[] {
+  const items: MenuItemConstructorOptions[] = []
+  if (params.misspelledWord) {
+    for (const suggestion of params.dictionarySuggestions.slice(0, 6)) items.push({ label: suggestion, click: () => actions.replace(suggestion) })
+    if (!params.dictionarySuggestions.length) items.push({ label: "Sem sugestões", enabled: false })
+    items.push({ label: `Adicionar “${params.misspelledWord}” ao dicionário`, click: () => actions.addWord(params.misspelledWord) })
+    items.push({ type: "separator" })
+  }
+  if (params.isEditable) {
+    items.push(
+      { label: "Recortar", role: "cut", enabled: params.editFlags.canCut },
+      { label: "Copiar", role: "copy", enabled: params.editFlags.canCopy },
+      { label: "Colar", role: "paste", enabled: params.editFlags.canPaste },
+      { label: "Selecionar tudo", role: "selectAll" },
+    )
+  } else if (params.selectionText.trim()) {
+    items.push({ label: "Copiar", role: "copy" })
+  }
+  return items
+}
+
+export function attachContextMenu(window: BrowserWindow): void {
+  window.webContents.on("context-menu", (_event, params) => {
+    const items = contextMenuTemplate(params, {
+      replace: (word) => window.webContents.replaceMisspelling(word),
+      addWord: (word) => window.webContents.session.addWordToSpellCheckerDictionary(word),
+    })
+    if (items.length) Menu.buildFromTemplate(items).popup({ window })
+  })
 }

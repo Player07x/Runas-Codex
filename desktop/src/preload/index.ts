@@ -147,6 +147,13 @@ const bridge: RunasCodexBridge = {
       }
     },
   },
+  onQuickCapture: (listener) => {
+    const handler = () => listener()
+    ipcRenderer.on(IPC.quickCapture, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC.quickCapture, handler)
+    }
+  },
 }
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

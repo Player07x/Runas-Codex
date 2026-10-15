@@ -3,7 +3,7 @@ import { autocompletion, type CompletionContext, type CompletionResult } from "@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
 import { markdown } from "@codemirror/lang-markdown"
 import { GFM } from "@lezer/markdown"
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language"
+import { HighlightStyle, syntaxHighlighting, syntaxTree } from "@codemirror/language"
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
 import { Compartment, EditorState } from "@codemirror/state"
 import { EditorView, keymap, placeholder } from "@codemirror/view"
@@ -27,6 +27,8 @@ export interface SourceEditorHandle {
   /** Troca o documento inteiro a partir do texto e do cursor atuais (um passo só no desfazer). */
   transform(change: (doc: string, cursor: number) => { text: string; cursor: number }): void
   focus(): void
+  /** Posição do cursor no documento (`null` sem editor). */
+  cursor(): number | null
 }
 
 interface Props {
@@ -112,6 +114,21 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         options: callbacks.current.suggestLinks(query).map((s) => ({ label: s.label, detail: s.detail, apply: closing ? s.insert : `${s.insert}]]` })),
       }
     }
+    // `@nome` também liga a outra nota (vira `[[Nota]]`), como no World Anvil. Só depois de espaço ou no começo da
+    // linha (e-mail não dispara) e fora de código e do frontmatter.
+    const mentionSource = (context: CompletionContext): CompletionResult | null => {
+      const match = context.matchBefore(/(?<=^|[\s(["'«—])@[^\s@[\]|#]*/)
+      if (!match || !callbacks.current.suggestLinks) return null
+      if ((parseFrontmatter(context.state.doc.toString())?.end ?? 0) > match.from) return null
+      const node = syntaxTree(context.state).resolveInner(match.from, 1)
+      for (let n: typeof node | null = node; n; n = n.parent) if (/Code|Comment/.test(n.name)) return null
+      return {
+        from: match.from,
+        filter: false,
+        // Link com caminho (nota de outro espaço) mostra o nome, não o caminho.
+        options: callbacks.current.suggestLinks(match.text.slice(1)).map((s) => ({ label: s.label, detail: s.detail, apply: s.insert.includes("/") ? `[[${s.insert}|${s.label}]]` : `[[${s.insert}]]` })),
+      }
+    }
     const state = EditorState.create({
       doc: value,
       // O cursor começa depois do frontmatter (no live preview, as propriedades aparecem desenhadas).
@@ -121,10 +138,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         markdown({ extensions: [GFM, obsidianSyntax] }),
         syntaxHighlighting(highlight),
         highlightSelectionMatches(),
-        autocompletion({ override: [linkSource], icons: false }),
+        autocompletion({ override: [linkSource, mentionSource], icons: false }),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ spellcheck: "true", lang: "pt-BR", "aria-label": "Código-fonte Markdown" }),
-        placeholder("Comece a escrever. Use [[ para ligar a outra nota."),
+        placeholder("Comece a escrever. Use [[ ou @ para ligar a outra nota."),
         keymap.of([
           { key: "Mod-s", run: () => (callbacks.current.onSave?.(), true) },
           ...defaultKeymap,
@@ -200,6 +217,9 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     },
     focus() {
       view.current?.focus()
+    },
+    cursor() {
+      return view.current?.state.selection.main.head ?? null
     },
   }))
 

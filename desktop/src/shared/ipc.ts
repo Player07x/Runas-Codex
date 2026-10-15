@@ -30,6 +30,8 @@ export const IPC = {
   updatesInstall: "updates:install",
   /** Do processo principal para a janela: andamento do download da atualização. */
   updatesProgress: "updates:progress",
+  /** Do processo principal para a janela: o atalho global de captura rápida. */
+  quickCapture: "app:quick-capture",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

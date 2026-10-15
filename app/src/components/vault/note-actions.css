@@ -1,0 +1,17 @@
+/* Menu "Copiar link" da barra da nota e cópia de títulos no sumário */
+.note-copy { position: relative; }
+.note-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; display: grid; min-width: 220px; padding: 6px; box-shadow: 0 12px 30px rgb(0 0 0 / 30%); }
+.note-menu .list-item:disabled { opacity: 0.5; cursor: default; }
+.outline-row { display: flex; align-items: center; gap: 2px; }
+.outline-row .icon-btn { opacity: 0.5; flex: none; }
+.outline-row:hover .icon-btn, .outline-row .icon-btn:focus-visible { opacity: 1; }
+@media (max-width: 860px) {
+  .note-menu .list-item { min-height: 44px; }
+  .outline-row .icon-btn { opacity: 1; width: 44px; height: 44px; }
+}
+.note-colors { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; }
+.note-swatch { width: 24px; height: 24px; border: 2px solid transparent; border-radius: 999px; background: var(--swatch); cursor: pointer; }
+.note-swatch.active { border-color: var(--text); }
+@media (max-width: 860px) {
+  .note-swatch { width: 44px; height: 44px; }
+}

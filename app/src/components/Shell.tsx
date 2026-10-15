@@ -90,6 +90,9 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
+  // Captura rápida pelo atalho global do desktop (Ctrl+Alt+N): uma nota nova no espaço Notas.
+  useEffect(() => vault.platform.onQuickCapture?.(() => navigate("/notas/nova")), [vault.platform])
+
   return (
     <div className={`shell ${collapsed ? "collapsed" : ""}`}>
       <nav className="sidebar" aria-label="Espaços">

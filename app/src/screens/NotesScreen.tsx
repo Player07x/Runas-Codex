@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
-import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, Network, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
+import { Archive, CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Search, Unlink, Vault } from "lucide-react"
+import { ARCHIVE_FOLDER, NOTE_COLORS, noteFlags, sortNotes } from "../core/note-flags"
+import { NotesLockScreen } from "../components/vault/NotesLock"
+import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
 import { dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
@@ -19,6 +22,9 @@ const SCOPE_KEY = "runas-codex:notas-escopo"
 
 export function NotesScreen({ noteId }: { noteId?: string }) {
   const vault = useVault()
+  // Espaço Notas bloqueado por PIN neste aparelho: nada da tela aparece antes do PIN.
+  const { locked } = useNotesLock()
+  if (locked) return <NotesLockScreen />
   if (vault.loading && !vault.index) {
     return (
       <div className="page">
@@ -93,6 +99,7 @@ function uniqueName(index: VaultIndex, folder: string, base: string): string {
 
 function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const vault = useVault()
+  const { hasPin } = useNotesLock()
   const toast = useToast()
   const readOnly = vault.info?.readOnly ?? true
   const hasNotesSpace = index.allFiles().some((f) => f.path.startsWith(NOTES_ROOT))
@@ -167,25 +174,33 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     navigate(vaultRoute(created))
   }
 
-  const noteItem = (n: IndexedNote, extra?: ReactNode) => (
-    <a key={n.path} href={href(vaultRoute(n.path))} data-note-path={n.path} className={`list-item note-item ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: "transparent" }}>
+  const noteItem = (n: IndexedNote, extra?: ReactNode) => {
+    const flags = noteFlags(n)
+    return (
+    <a key={n.path} href={href(vaultRoute(n.path))} data-note-path={n.path} className={`list-item note-item ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
       <span className="grow" style={{ minWidth: 0 }}>
-        <span className="truncate" style={{ display: "block", fontWeight: 600 }}>{n.name}</span>
+        <span className="truncate note-item-name" style={{ display: "block", fontWeight: 600 }}>
+          {flags.pinned && <Pin size={12} className="note-pin" aria-label="fixada" />}
+          {n.name}
+        </span>
         <span className="truncate tiny faint" style={{ display: "block" }}>{extra ?? (preview(n) || "Vazia")}</span>
       </span>
     </a>
-  )
+    )
+  }
 
   const renderFolder = (folder: TreeFolder, depth: number): ReactNode => {
-    const subfolders = [...folder.folders.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
-    const items = [...folder.notes].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    // A pasta Arquivo do espaço fica por último e fechada; as notas fixadas vêm antes das outras.
+    const isArchive = (sub: TreeFolder) => sub.path === `${NOTES_ROOT}${ARCHIVE_FOLDER}`
+    const subfolders = [...folder.folders.values()].sort((a, b) => Number(isArchive(a)) - Number(isArchive(b)) || a.name.localeCompare(b.name, "pt-BR"))
+    const items = sortNotes(folder.notes)
     const content = (
       <>
         {subfolders.map((sub) => (
-          <details key={sub.path} open={depth < 1 || Boolean(note?.path.startsWith(sub.path + "/"))} className="vault-folder">
+          <details key={sub.path} open={(depth < 1 && !isArchive(sub)) || Boolean(note?.path.startsWith(sub.path + "/"))} className="vault-folder">
             <summary className="eyebrow row" style={{ gap: 5 }}>
               <ChevronDown size={13} className="folder-chevron" />
-              <Folder size={13} /> <span className="grow truncate">{sub.name}</span>
+              {isArchive(sub) ? <Archive size={13} /> : <Folder size={13} />} <span className="grow truncate">{sub.name}</span>
               {!readOnly && (
                 <span className="folder-actions">
                   <button className="icon-btn sm" title="Nova nota aqui" aria-label={`Nova nota em ${sub.name}`} onClick={(e) => (e.preventDefault(), setDialog({ kind: "note", folder: sub.path }))}>
@@ -216,6 +231,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
                 <Network size={16} />
               </button>
+              {hasPin && (
+                <button className="icon-btn sm" title="Bloquear as Notas (pede o PIN de novo)" aria-label="Bloquear as Notas" onClick={lockNotes}>
+                  <LockKeyhole size={16} />
+                </button>
+              )}
               {!readOnly && (
                 <>
                   <button className="icon-btn sm" title="Nota do dia" aria-label="Nota do dia" onClick={() => navigate("/notas/hoje")}>
@@ -307,7 +327,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       </section>
 
       <aside className="pane-right" hidden={graph}>
-        {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} />}
+        {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} onSaveNote={vault.save} />}
       </aside>
 
       {!readOnly && (

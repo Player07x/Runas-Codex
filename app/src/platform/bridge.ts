@@ -55,4 +55,6 @@ export interface RunasCodexBridge {
     install(): Promise<UpdateInstallResult>
     onProgress(listener: (progress: { received: number; total: number }) => void): () => void
   }
+  /** Atalho global de captura rápida (Ctrl+Alt+N), mesmo com o app em segundo plano. */
+  onQuickCapture(listener: () => void): () => void
 }

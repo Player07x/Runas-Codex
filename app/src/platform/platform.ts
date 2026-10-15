@@ -104,4 +104,6 @@ export interface Platform {
   checkUpdate?(): Promise<UpdateInfo>
   /** Baixa, confere pelo SHA-256 e instala a versão encontrada na última consulta. */
   installUpdate?(onProgress: (received: number, total: number) => void): Promise<UpdateInstallResult>
+  /** Atalho global de captura rápida (desktop): pede uma nota nova, mesmo com o app em segundo plano. */
+  onQuickCapture?(listener: () => void): () => void
 }

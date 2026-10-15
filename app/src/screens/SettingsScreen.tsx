@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { Archive, Bell, FolderOpen, Keyboard, Lock, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
+import { Archive, Bell, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { Modal, Switch, useProtoAction, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
 import type { BackupInfo } from "../platform/platform"
 import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
+import { PinRow } from "../components/vault/PinSettings"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -196,11 +197,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
             <span className="chip green">desligada sempre</span>
           </Row>
           <UpdateRow />
-          <Row title="Bloquear o espaço Notas com PIN" hint="Impede abrir no app; não criptografa os arquivos">
-            <button className="btn sm" onClick={proto("definir PIN")}>
-              <Lock size={14} /> Definir
-            </button>
-          </Row>
+          <PinRow />
         </section>
 
         <section className="card">
