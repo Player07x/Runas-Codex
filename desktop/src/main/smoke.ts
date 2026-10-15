@@ -1,3 +1,6 @@
+import { writeFile } from "node:fs/promises"
+import { BrowserWindow } from "electron"
+
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
  * se o cofre for gravável (cópia temporária com `--write`), as gravações e o renomear com atualização de links.
@@ -279,6 +282,9 @@ export const SMOKE_SCRIPT = `(async () => {
     // Sala: o processo principal confere a página e o WebSocket como um jogador (checkRoom).
     const room = await bridge.vtt.player.start(30000 + Math.floor(Math.random() * 2000), 2)
     result.room = { port: room.port, key: room.key, codes: room.seats.map((seat) => seat.code) }
+    // Mestre remoto (ADR 0016): a chave desta sessão e a cena, para o processo principal entrar como o celular.
+    result.master = await bridge.vtt.master.state()
+    result.masterScene = (await bridge.vtt.documents.list("scene"))[0]?.id ?? null
   }
   return result
 })()`
@@ -306,6 +312,59 @@ export async function checkRoom(room: { port: number; key: string; codes: string
   })
   const join = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[0] }) })
   return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
+}
+
+/**
+ * Entra como o celular do mestre (ADR 0016): a página `/master` numa janela oculta (mostra a mesa aberta no computador),
+ * depois um "celular" por HTTP cria um token na cena; o computador confere que gravou. Trocar a chave invalida o link.
+ */
+export async function checkMaster(main: BrowserWindow, port: number, key: string, sceneId: string, rotate: () => unknown, shot?: string): Promise<Record<string, unknown>> {
+  const base = `http://127.0.0.1:${port}`
+  const out: Record<string, unknown> = {}
+  // Do tamanho de um celular deitado em pé (390 × 844), como o mestre abriria pelo QR.
+  const page = new BrowserWindow({ show: false, width: 390, height: 844, webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, backgroundThrottling: false } })
+  try {
+    await page.loadURL(`${base}/master?m=${key}`)
+    out.page = await page.webContents.executeJavaScript(`(async () => {
+      for (let i = 0; i < 150; i++) {
+        const title = document.querySelector(".table-title strong")?.textContent
+        if (title && document.querySelector(".vtt-root canvas")) return { title, canvas: true, remote: Boolean(document.querySelector(".table-bar .chip")) }
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      return { title: document.body.innerText.slice(0, 200), canvas: false }
+    })()`)
+    if (shot) {
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      await writeFile(shot, (await page.webContents.capturePage()).toPNG())
+    }
+  } finally {
+    page.destroy()
+  }
+  // A janela fechada solta a vaga de mestre.
+  for (let i = 0; i < 30; i++) {
+    const probe = await fetch(`${base}/master/events?m=${key}`)
+    if (probe.status === 200) { await probe.body?.cancel(); break }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  const events = await fetch(`${base}/master/events?m=${key}`)
+  const reader = events.body!.getReader()
+  let text = ""
+  while (!text.includes("\n\n")) {
+    const chunk = await reader.read()
+    if (chunk.done) break
+    text += new TextDecoder().decode(chunk.value)
+  }
+  const session = (JSON.parse(text.split("\n")[1]?.slice(6) ?? "{}") as { session?: string }).session ?? ""
+  out.second = (await fetch(`${base}/master/events?m=${key}`)).status
+  const rpc = (channel: string, args: unknown[]) => fetch(`${base}/master/rpc?m=${key}`, { method: "POST", headers: { "content-type": "application/json", "x-runas-session": session }, body: JSON.stringify({ channel, args }) })
+  out.put = (await rpc("vtt:documents-put", [{ id: "token-do-celular", type: "token", parentId: sceneId, data: { name: "Token do celular", x: 200, y: 200 } }])).status
+  out.blocked = (await rpc("vtt:player-stop", [])).status
+  await reader.cancel()
+  out.desktopToken = await main.webContents.executeJavaScript(`window.runasCodex.vtt.documents.list("token", ${JSON.stringify(sceneId)}).then((list) => list.some((d) => d.id === "token-do-celular" && d.data.name === "Token do celular"))`)
+  rotate()
+  out.oldKey = (await fetch(`${base}/master?m=${key}`)).status
+  return out
 }
 
 /** O resultado do roteiro passou? */
@@ -380,6 +439,15 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.canvas as Record<string, unknown>).text === true &&
     (result.canvas as Record<string, unknown>).unknown === true &&
     (result.canvas as Record<string, unknown>).renamed === true &&
-    (result.canvas as Record<string, unknown>).tabs === true
+    (result.canvas as Record<string, unknown>).tabs === true &&
+    typeof result.masterCheck === "object" &&
+    ((result.masterCheck as Record<string, unknown>).page as Record<string, unknown> | undefined)?.title === "Mesa do Smoke" &&
+    ((result.masterCheck as Record<string, unknown>).page as Record<string, unknown> | undefined)?.canvas === true &&
+    ((result.masterCheck as Record<string, unknown>).page as Record<string, unknown> | undefined)?.remote === true &&
+    (result.masterCheck as Record<string, unknown>).second === 409 &&
+    (result.masterCheck as Record<string, unknown>).put === 200 &&
+    (result.masterCheck as Record<string, unknown>).blocked === 403 &&
+    (result.masterCheck as Record<string, unknown>).desktopToken === true &&
+    (result.masterCheck as Record<string, unknown>).oldKey === 404
   )
 }

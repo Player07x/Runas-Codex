@@ -179,8 +179,14 @@ export class PlayerServer {
   private joinFailures: number[] = []
   private readonly joinFailuresByAddress = new Map<string, number[]>()
   private heartbeat: ReturnType<typeof setInterval> | null = null
+  /** Rotas extras atendidas antes das da sala (a mesa do mestre remoto, `/master…`). */
+  private route: ((request: IncomingMessage, response: ServerResponse, url: URL) => Promise<boolean>) | null = null
 
   constructor(private readonly options: PlayerServerOptions) {}
+
+  setRoute(route: (request: IncomingMessage, response: ServerResponse, url: URL) => Promise<boolean>): void {
+    this.route = route
+  }
 
   get listening(): boolean { return this.server?.listening === true }
   get playerCount(): number { return [...this.clients].filter((client) => client.seat !== null).length }
@@ -243,6 +249,7 @@ export class PlayerServer {
 
   private async handleRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`)
+    if (this.route && (await this.route(request, response, url))) return
     if (request.method === "POST" && url.pathname === "/seat/join") {
       await this.handleJoin(request, response, url)
       return

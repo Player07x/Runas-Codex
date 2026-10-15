@@ -2,6 +2,7 @@ import type { AssetPath } from "./scene"
 import type { PlayerRuler } from "./player"
 import type { AudioState } from "./audio"
 import type { AssetKind, DocumentType, NewWorldInput, WorldDocument, WorldSummary } from "./world"
+import type { MasterState } from "./master"
 
 /** Canais entre a interface da mesa e o processo principal (prefixo `vtt:`, ao lado dos `vault:` do cofre). */
 export const IPC = {
@@ -197,5 +198,13 @@ export interface VttApi {
   assets: {
     /** Copia um arquivo para a mesa aberta e devolve o caminho do asset. */
     import(kind: AssetKind, fileName: string, bytes: Uint8Array): Promise<AssetPath>
+  }
+  /** Mestre remoto (ADR 0016): só existe na mesa do computador da sala. */
+  master?: {
+    state(): Promise<MasterState>
+    onState(listener: (state: MasterState) => void): () => void
+    /** Chave nova: o aparelho conectado cai na hora e o link antigo para de valer. */
+    rotate(): Promise<MasterState>
+    disconnect(): Promise<MasterState>
   }
 }

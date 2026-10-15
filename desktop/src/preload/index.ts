@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron"
 import { IPC, type RunasCodexBridge, type VaultChange } from "../shared/ipc"
 import { IPC as VTT, type DocumentChange, type PlayerState } from "../../../app/src/vtt/shared/ipc"
 import type { AudioState } from "../../../app/src/vtt/shared/audio"
+import { MASTER_IPC, type MasterState } from "../../../app/src/vtt/shared/master"
 
 /** O Electron embrulha erros como "Error invoking remote method 'canal': Error: motivo"; a interface recebe só o motivo. */
 function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -116,6 +117,18 @@ const bridge: RunasCodexBridge = {
     },
     assets: {
       import: (kind, fileName, bytes) => invoke(VTT.assetsImport, kind, fileName, bytes),
+    },
+    master: {
+      state: () => invoke(MASTER_IPC.state),
+      onState: (listener) => {
+        const handler = (_event: unknown, state: MasterState) => listener(state)
+        ipcRenderer.on(MASTER_IPC.stateChanged, handler)
+        return () => {
+          ipcRenderer.removeListener(MASTER_IPC.stateChanged, handler)
+        }
+      },
+      rotate: () => invoke(MASTER_IPC.rotate),
+      disconnect: () => invoke(MASTER_IPC.disconnect),
     },
   },
 }

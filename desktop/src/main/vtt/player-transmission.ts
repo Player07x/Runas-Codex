@@ -75,6 +75,11 @@ export class PlayerTransmission {
     return { enabled: this.enabled, port: this.port, key: this.key, localUrl, publicUrl: this.publicUrl, tunnel: this.tunnel, tunnelLost: this.tunnelLost, sceneId: this.sceneId, audio: this.audioEnabled, moves: this.movesEnabled, bars: this.bars, spectators: this.server.spectatorCount, players: this.playerCount, sessionId: this.session?.id ?? null, seats: this.seatStates() }
   }
 
+  /** Rotas extras no servidor da sala (a mesa do mestre remoto). */
+  setRoute(route: Parameters<PlayerServer["setRoute"]>[0]): void {
+    this.server.setRoute(route)
+  }
+
   /** URL usada pela BrowserWindow local; a página é a mesma dos espectadores. */
   localWindowUrl(): string | null {
     return this.enabled && this.key ? `http://127.0.0.1:${this.port}/?k=${this.key}` : null

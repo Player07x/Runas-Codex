@@ -169,6 +169,17 @@ automáticos). Falta o uso de verdade:
 
 ---
 
+## Etapa 9 — Mestre pelo celular (C3)
+
+- [ ] Ligar a sala no computador, abrir "Controlar pelo celular" no painel Sala e ler o QR com o celular (mesma Wi-Fi): a mesa abre no navegador do celular, com a marca "Mestre remoto".
+- [ ] Mover um token, desenhar, criar parede e trocar a cena transmitida pelo celular; conferir que aparece no computador e na tela dos jogadores.
+- [ ] Mexer ao mesmo tempo no computador e no celular; as mudanças dos dois lados aparecem nos dois.
+- [ ] "Trocar chave" e "Desconectar" no computador: o celular mostra que a conexão caiu; o link antigo não abre mais.
+- [ ] Gerar o link público e abrir a mesa do mestre pelo celular em dados móveis (HTTPS pela Cloudflare).
+- [ ] Importar uma imagem de token pelo celular (galeria ou câmera).
+- [ ] Tablet e celular deitado: até a X3 (layout por toque), a mesa usa o layout do desktop. Captura do celular em pé em `docs/imagens/vtt-9/`.
+- [ ] Windows: firewall pedindo permissão para a porta da sala na primeira vez.
+
 ## Limitações conhecidas (não precisam de teste agora)
 
 - **Android sem cofre real:** o acesso ao cofre no Android é um spike da etapa 2 que ficou para depois; no APK, Notas

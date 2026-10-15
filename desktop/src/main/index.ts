@@ -3,7 +3,7 @@ import { join } from "node:path"
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { ReminderScheduler, validReminders } from "./reminders"
-import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
+import { checkMaster, checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
@@ -117,6 +117,8 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     await new Promise<void>((resolve) => window.webContents.once("did-finish-load", () => resolve()))
     const result = (await window.webContents.executeJavaScript(SMOKE_SCRIPT)) as Record<string, unknown>
     if (result.room) result.roomCheck = await checkRoom(result.room as { port: number; key: string; codes: string[] })
+    const master = result.master as { key?: string | null } | undefined
+    if (result.room && master?.key) result.masterCheck = await checkMaster(window, (result.room as { port: number }).port, master.key, String(result.masterScene ?? ""), () => vtt.master.rotate(), argValue("shot-master"))
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))
