@@ -93,6 +93,7 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 | **7** Canvas + Campanhas | Claude Code | `campanhas/etapa7` | docs/02, seção 8; [ADR 0011](../adr/0011-campanhas.md) | mesclada (PR #11) |
 | **X1** 8c Livros: exportações | Codex (GPT-6 Astra) | `livros/8c-*` | [livros-8c-8d.md](livros-8c-8d.md) | a fazer |
 | **C0** Arquivos binários no cofre | Claude Code | `anexos/binarios` | [anexos-imagens.md](anexos-imagens.md) | a fazer |
+| **X2** 8d Livros: importar Homebrewery, GM Binder e DOCX | Codex | `livros/8d-importacoes` | [livros-8c-8d.md](livros-8c-8d.md) | implementada; em revisão no PR desta branch |
 
 ## Quem mexe em quê
 

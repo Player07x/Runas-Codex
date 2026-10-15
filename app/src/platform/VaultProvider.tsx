@@ -45,8 +45,9 @@ export interface VaultState {
   /**
    * Grava um anexo novo (imagem, PDF…) na pasta de anexos do Obsidian, relativa a `nearNote` quando a configuração é
    * `./`. Nome repetido ganha número (`mapa 1.png`). Devolve o caminho gravado.
+   * Importadores podem informar uma pasta de destino explícita; o padrão continua sendo o do Obsidian.
    */
-  addAttachment(fileName: string, bytes: Uint8Array, nearNote?: string): Promise<string>
+  addAttachment(fileName: string, bytes: Uint8Array, nearNote?: string, folder?: string): Promise<string>
 }
 
 const VaultContext = createContext<VaultState | null>(null)
@@ -232,9 +233,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   )
 
   const addAttachment = useCallback(
-    async (fileName: string, bytes: Uint8Array, nearNote?: string) => {
+    async (fileName: string, bytes: Uint8Array, nearNote?: string, folder?: string) => {
       const current = requireIndex()
-      const path = attachmentPath(config.app.attachmentFolder, fileName, current.allFiles().map((f) => f.path), nearNote)
+      const path = attachmentPath(folder ?? config.app.attachmentFolder, fileName, current.allFiles().map((f) => f.path), nearNote)
       const entry = await platform.writeBinary(path, bytes, null)
       current.set(entry)
       bump()
