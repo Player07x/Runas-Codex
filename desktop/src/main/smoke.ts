@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises"
 import { BrowserWindow } from "electron"
 import { strFromU8, unzipSync } from "fflate"
+import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
 
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
@@ -299,6 +300,8 @@ export const SMOKE_SCRIPT = `(async () => {
     result.bookFiles[format + "Status"] = status
   }
 
+  ${BOOK_IMPORT_SMOKE}
+
   // Campanhas: criar a Sessão 13 pela tela (nota + evento na Agenda, um apontando para o outro).
   location.hash = campaignRoute + "/sessoes"
   ;(await until(() => [...document.querySelectorAll(".page-head button")].find((b) => b.textContent.trim() === "Nova sessão")))?.click()
@@ -585,5 +588,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.masterCheck as Record<string, unknown>).blocked === 403 &&
     (result.masterCheck as Record<string, unknown>).desktopToken === true &&
     (result.masterCheck as Record<string, unknown>).oldKey === 404
+    && result.bookImportPreview === true && result.bookImport === true
   )
 }

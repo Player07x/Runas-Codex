@@ -5,6 +5,7 @@ import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
 import { Progress } from "../../components/ui"
 import { BookEditor } from "./BookEditor"
+import { BookImport } from "./BookImport"
 import "./books.css"
 
 export function BooksScreen({ bookId }: { bookId?: string }) {
@@ -27,6 +28,7 @@ function BookList() {
   const vault = useVault()
   const index = vault.index!
   const [creating, setCreating] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [title, setTitle] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -52,9 +54,13 @@ function BookList() {
         <span className="eyebrow">Cada capítulo é uma nota .md</span>
         <h1 className="page-title">Livros</h1>
       </div>
-      <button className="btn primary" disabled={vault.info?.readOnly} onClick={() => setCreating(!creating)}>Novo livro</button>
+      <div className="row-wrap">
+        <button className="btn" disabled={vault.info?.readOnly} onClick={() => setImporting(true)}>Importar livro</button>
+        <button className="btn primary" disabled={vault.info?.readOnly} onClick={() => setCreating(!creating)}>Novo livro</button>
+      </div>
     </div>
     {vault.info?.readOnly && <p className="proto-note">Cofre em somente leitura. Libere a gravação em Configurações › Cofre para criar ou editar livros.</p>}
+    {importing && <BookImport onClose={() => setImporting(false)} />}
     {creating && <form className="row-wrap" onSubmit={(e) => { e.preventDefault(); if (!busy) void create() }}>
       <label className="field">Título do livro<input className="input" aria-label="Título do livro" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </label>
