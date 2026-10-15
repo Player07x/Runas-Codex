@@ -63,3 +63,11 @@
 /* Notas fixadas e coloridas (propriedades fixada e cor) */
 .note-pin { margin-right: 4px; vertical-align: -1px; color: var(--gold); }
 .list-item.note-item.colored { border-left-color: var(--note); }
+.list-item.favorite-missing .grow { text-decoration: line-through; color: var(--red); }
+/* Arrastar na árvore: a pasta (ou a raiz) que recebe */
+.vault-folder.drop-target > summary { background: color-mix(in srgb, var(--cyan) 18%, transparent); outline: 1px dashed var(--cyan); }
+.pane-body.drop-root { outline: 1px dashed var(--cyan); outline-offset: -4px; }
+.list-item.note-item[draggable="true"] { -webkit-user-drag: element; }
+/* Ordem das notas: lista dentro do cabeçalho do painel (um menu flutuante seria cortado pela borda do painel) */
+.order-menu { display: grid; gap: 0; padding: 4px; }
+@media (max-width: 860px) { .order-menu .list-item { min-height: 44px; } }

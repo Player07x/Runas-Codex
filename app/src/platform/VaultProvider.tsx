@@ -4,6 +4,7 @@ import { caseCollision, nameProblem } from "../core/names"
 import { setProperty as setPropertyText, type PropertyValue } from "../core/properties"
 import { planFolderRename, planRename, type RenamePlan } from "../core/rename"
 import { CONFIG_FILES, obsidianConfig, type ObsidianConfig } from "../core/templates"
+import { renameFavorites } from "../lib/bookmarks"
 import { extname, joinPath } from "../core/text"
 import { VaultIndex, type IndexedNote } from "../core/vault-index"
 import { platform } from "./index"
@@ -190,9 +191,11 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       for (const file of current.allFiles()) if (file.path === from || file.path.startsWith(from + "/")) current.remove(file.path)
       for (const entry of moved) if (entry.path === to || entry.path.startsWith(to + "/")) current.set(entry, movedTexts[entry.path])
       bump()
+      // Os favoritos deste aparelho acompanham a nota ou pasta.
+      renameFavorites(info?.path, from, to)
       return plan
     },
-    [requireIndex, bump],
+    [requireIndex, bump, info],
   )
 
   const trash = useCallback(

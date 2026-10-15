@@ -1,6 +1,8 @@
 import { appConfig, type AppConfig } from "./attachments"
 import { parseFrontmatter } from "./parse"
 import { setProperty, type PropertyValue } from "./properties"
+import { parseBookmarks, type Bookmark } from "./bookmarks"
+import { declaredTypes } from "./property-types"
 
 /**
  * Modelos de nota com as variáveis do plugin Templates do Obsidian (`{{title}}`, `{{date}}`, `{{time}}`,
@@ -27,9 +29,13 @@ export interface ObsidianConfig {
   daily: DailyNotesConfig
   /** Pasta de anexos e formato de link (`.obsidian/app.json`). */
   app: AppConfig
+  /** Tipo de cada propriedade (`.obsidian/types.json`: `date`, `datetime`, `number`…). */
+  types: Record<string, string>
+  /** Marcadores do Obsidian (`.obsidian/bookmarks.json`), só para leitura. */
+  bookmarks: Bookmark[]
 }
 
-export const CONFIG_FILES = [".obsidian/templates.json", ".obsidian/daily-notes.json", ".obsidian/app.json"] as const
+export const CONFIG_FILES = [".obsidian/templates.json", ".obsidian/daily-notes.json", ".obsidian/app.json", ".obsidian/types.json", ".obsidian/bookmarks.json"] as const
 
 const clean = (value: unknown) => (typeof value === "string" ? value.trim().replace(/^\/+|\/+$/g, "") : "")
 
@@ -59,6 +65,8 @@ export function obsidianConfig(files: Record<string, string>): ObsidianConfig {
       template: clean(daily.template).replace(/\.md$/i, ""),
     },
     app: appConfig(json(files[".obsidian/app.json"])),
+    types: declaredTypes(files[".obsidian/types.json"]),
+    bookmarks: parseBookmarks(files[".obsidian/bookmarks.json"]),
   }
 }
 

@@ -15,3 +15,16 @@
 @media (max-width: 860px) {
   .note-swatch { width: 44px; height: 44px; }
 }
+
+/* Buscar e substituir */
+.replace-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: var(--space-field); }
+.replace-list { display: grid; gap: 8px; max-height: 50dvh; overflow: auto; }
+.replace-item { display: grid; gap: 4px; }
+.replace-sample { display: grid; gap: 1px; padding-left: 26px; font-family: var(--font-mono); overflow-wrap: anywhere; }
+.replace-sample .removed { color: var(--red); }
+.replace-sample .added { color: var(--green); }
+/* Voltar/avançar na barra da nota: somem quando a barra fica estreita (seguem no Alt+←/→, no mouse e na paleta). */
+/* Sem espaço (painel da direita aberto), a barra quebra em duas linhas em vez de esconder botões atrás do painel. */
+.editor-bar { container-type: inline-size; flex-wrap: wrap; }
+.note-history { display: inline-flex; }
+@container (max-width: 720px) { .note-history { display: none; } }

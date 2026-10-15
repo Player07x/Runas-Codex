@@ -30,6 +30,8 @@ Pensar em [[Aldren]] e no [[Lago Espelhado]]. #rascunho
 - Uma ponte que só aparece na lua cheia ^ponte
 - Um mercador que vende mapas de lugares que ainda não existem
 `,
+  // Marcadores do Obsidian (plugin Marcadores): aparecem nos Favoritos das Notas, só para leitura.
+  ".obsidian/bookmarks.json": `{\n  "items": [\n    { "type": "group", "ctime": 1, "title": "Mesa", "items": [\n      { "type": "search", "ctime": 2, "query": "tag:rascunho" },\n      { "type": "file", "ctime": 3, "path": "Notas/Caderno.md", "subpath": "#Ideias" }\n    ] }\n  ]\n}\n`,
 }
 
 /** Anexos do exemplo: o caminho no cofre e o arquivo empacotado com o app. */

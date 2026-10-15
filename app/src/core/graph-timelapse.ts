@@ -8,7 +8,7 @@ import type { IndexedNote } from "./vault-index"
  */
 const DATE_KEYS = ["criado", "criada", "created", "date", "data", "criacao"]
 
-export function creationTime(note: IndexedNote): number {
+export function creationTime(note: Pick<IndexedNote, "meta" | "mtime">): number {
   const data = note.meta.frontmatter?.data
   for (const key of DATE_KEYS) {
     const value = data?.[key]

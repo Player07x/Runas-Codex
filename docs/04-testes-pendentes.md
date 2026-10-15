@@ -279,3 +279,22 @@ automáticos). Falta o uso de verdade:
 - [ ] Clique direito numa palavra errada no editor (app desktop): sugestões, "Adicionar ao dicionário" e
   recortar/copiar/colar.
 
+
+## Notas: organização e busca (C5b)
+
+- [ ] Busca da lista de Notas num cofre real: `tag:npc`, `path:Lugares`, `"frase exata"`, `-termo`, `a OR b`,
+  `line:(rei morto)`, `section:(aparência olhos)`, `[local:Valdris]` e `/reg(ex)?/`; comparar com a mesma busca no
+  Obsidian.
+- [ ] Buscar e substituir (botão ao lado do gráfico): prévia, desmarcar uma nota, "Fazer backup e substituir"; conferir
+  o zip novo em Configurações › Backups e o texto no Obsidian. Com uma nota aberta e editando, o que foi digitado entra
+  antes da troca.
+- [ ] Painel "Prop.": criar uma propriedade de cada tipo; conferir no Obsidian que data e data-hora aparecem com o
+  seletor de data dele e o link como link. Uma chave `data_mundo` continua como texto.
+- [ ] Favoritos: estrela na barra da nota, no sumário (título), na pasta (passar o mouse) e no resultado da busca;
+  abrir cada um pela seção Favoritos. Num cofre com marcadores do Obsidian, eles aparecem com a marca "Obsidian".
+  Renomear uma nota favorita e conferir que o favorito acompanha.
+- [ ] Voltar/avançar: botões da barra da nota, `Alt+←`/`Alt+→` fora do editor e os botões laterais do mouse (Windows e
+  Linux). Depois de "Nova nota", voltar não cria outra nota.
+- [ ] Arrastar uma nota e uma pasta para outra pasta (e para a raiz) no app desktop; conferir no Obsidian que os links
+  continuam funcionando. Arrastar uma nota da árvore para dentro do editor insere `[[link]]`.
+- [ ] Ordem da lista (botão de setas): cada opção, e a escolha lembrada depois de fechar o app.

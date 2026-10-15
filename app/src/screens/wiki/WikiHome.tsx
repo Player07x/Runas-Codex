@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { ChevronDown, Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
+import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
 import { dirname, noteName } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
@@ -59,7 +60,7 @@ export function WikiHome() {
   const tree = useMemo(() => folderTree(notes, root, wiki!.home), [notes, root, wiki])
   const recent = useMemo(() => [...notes].filter((n) => n.path !== wiki!.home).sort((a, b) => b.mtime - a.mtime).slice(0, 6), [notes, wiki])
   const toWrite = useMemo(() => index.unresolved(root).slice(0, 12), [index, root, vault.version])
-  const results = useMemo(() => (query.trim() ? index.search(query, root, 40) : null), [index, query, root, vault.version])
+  const results = useMemo(() => (query.trim() ? searchNotes(index, query, root, 40) : null), [index, query, root, vault.version])
   const home = wiki!.home ? index.note(wiki!.home) : undefined
   const noteSet = useMemo(() => vaultNoteSet(index, home?.path ?? root, {}, vault.platform), [index, home, root, vault.platform, vault.version])
   const readOnly = vault.info?.readOnly ?? true
