@@ -239,3 +239,12 @@ automáticos). Falta o uso de verdade:
 - Ainda sem: timelapse do gráfico, prévia de link ao passar o mouse, comandos `/`, abas e painéis divididos,
   enquete de data pela sala, importar/exportar mesas.
 - Campanhas: pacote de campanha (exportar/importar), tesouro, diário dos jogadores e avaliação pela sala ficam para depois (ADR 0011).
+
+## Etapa 8 — Livros: fase 8d (X2), importações
+
+- [ ] Na lista de Livros, importar um documento real do Homebrewery e outro do GM Binder, conferir os avisos e comparar a prévia com o original: caixas, colunas, blocos largos e quebras. CSS próprio não é reproduzido; imagens por URL ficam como links.
+- [ ] Importar um DOCX real do Word e outro do LibreOffice, escolhendo H1 e H2 na prévia: capítulos, negrito, itálico, listas, tabelas (inclusive células mescladas) e imagens raster.
+- [ ] Abrir `Livros/<Livro>/` no Obsidian, com o snippet atualizado: nota do livro, capítulos na ordem e imagens em `Anexos/` como arquivos comuns. Conferir também uma imagem dentro de tabela.
+- [ ] Windows e Android real: seletor de arquivo, cancelamento, prévia e confirmação; no Android, persistência no cofre real depende da C8.
+- [ ] Importar duas vezes o mesmo título: a segunda pasta recebe outro número. Em falha de gravação, conferir a pasta informada e as notas preservadas antes de tentar novamente.
+- [ ] Importar um livro longo com muitas imagens e conferir os limites informados (20 MB de entrada, 30 s por conversão, DOCX até 100 MB descompactados).

@@ -1,6 +1,6 @@
 # ADR 0009 — Livros como conjuntos ordenados de notas
 
-- **Status:** aceita para as fases 8a, 8b e 8c (2026-10-14). Importação (8d) depois.
+- **Status:** aceita para as fases 8a, 8b, 8c e 8d (2026-10-15).
 
 ## Contexto
 
@@ -111,3 +111,39 @@ como ele deixou).
 Validação: Caderno de formatadores em A4 (tema manual): PDF com as 5 páginas da prévia, conferido página a página;
 XHTML e XML do EPUB e do DOCX bem formados; DOCX aberto no LibreOffice (5 páginas). Capturas em
 `docs/imagens/livros-8c/`. EPUBCheck, Word, leitores de EPUB e o diálogo nativo de salvar ficam na conferência manual.
+
+## Fase 8d — importações (2026-10-15)
+
+“Importar livro” na lista abre a escolha de Markdown do Homebrewery/GM Binder (`.md`, `.markdown`, `.txt`) ou DOCX.
+O dono escolhe o título e o nível H1–H6 que inicia capítulos e confere quantidade, ordem, conteúdo convertido e
+avisos antes de confirmar. Texto anterior ao primeiro título vira uma introdução; sem títulos, há um capítulo.
+Uma `\page` sem título continua sendo quebra de página dentro do capítulo, evitando criar capítulos vazios.
+
+Os conversores ficam em `core/books-import/`, em TypeScript sem React, DOM ou plataforma. Homebrewery v3 usa um
+leitor de contêineres `{{…}}` aninhados; o GM Binder legado aceita os contêineres HTML com classes conhecidas.
+Nota, descritivo, statblock, barra lateral, aviso e bloco largo viram callouts do dialeto. Páginas com `\column`
+recebem `[!colunas]`; as quebras usam os mesmos `div.quebra-*` do leitor. Blocos e trechos de código ficam literais.
+Classes e estilos sem equivalente geram avisos, e imagens por URL/referência ficam como links sem download.
+
+DOCX usa **Mammoth 1.13.0**, publicado em 2026-09-26, versão exata e sem scripts de instalação. O bundle browser
+não tem acesso ao sistema de arquivos; `externalFileAccess` fica desligado e mapas de estilo embutidos são ignorados.
+O HTML passa por **hast-util-from-html 2.0.3**, **hast-util-sanitize 5.0.2** e **hast-util-to-html 9.0.5** antes da
+conversão para Markdown. As duas últimas já estavam no lockfile; agora são dependências diretas. É a mesma família
+de sanitização do leitor, com uma lista menor de atributos e CSS: scripts, handlers, URLs executáveis e estilos que
+carregariam recursos não entram. Títulos, negrito, itálico e listas viram Markdown; tabelas ficam em HTML sanitizado
+para preservar células mescladas. PNG, JPEG e outros formatos raster suportados são extraídos; SVG/formatos não
+suportados geram aviso. O estilo exato de páginas do Word não é importado.
+
+Ambos os formatos são convertidos em um worker local, carregado só quando necessário, com limite de 20 MB de entrada,
+30 segundos por conversão e, no DOCX, 100 MB descompactados/2.000 entradas. Não foi necessário alterar a CSP.
+
+A confirmação usa somente `useVault`: escolhe uma pasta livre em `Livros/`, grava anexos e capítulos numerados e
+publica a nota do livro por último, com `tipo: livro` e `estrutura` de wikilinks. `addAttachment` ganhou um quarto
+argumento opcional de pasta explícita, para guardar imagens em `Livros/<Livro>/Anexos/`; chamadas existentes mantêm
+a pasta configurada no Obsidian. Continua usando `writeBinary` com `expected: null`, validando o caminho e evitando
+sobrescrita. Em falha parcial, preserva os arquivos e informa a pasta, sem publicar um livro incompleto.
+
+Validação: exemplos Markdown e DOCX pequenos no repositório, testes dos conversores, sanitização, gravação e
+renderização dos callouts após a quebra de coluna. O smoke gravável importa o exemplo pela tela e confere capítulos
+na ordem. Capturas em `docs/imagens/livros-8d/`; temas escuro/claro, 320 px e prévia com tabela/imagem no Electron.
+A comparação com documentos reais e a compatibilidade visual no Obsidian, Windows e Android continuam manuais.

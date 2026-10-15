@@ -28,6 +28,12 @@
 .books-outside { display: flex; align-items: center; }
 .books-announcement:empty { display: none; }
 .books-editor .input { min-width: 0; max-width: 100%; }
+.book-import { margin-bottom: 24px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); min-width: 0; overflow-wrap: anywhere; }
+.book-import .field { flex: 1 1 220px; min-width: 0; }
+.book-import .input { width: 100%; min-width: 0; min-height: 44px; }
+.book-import .btn, .book-import summary { min-height: 44px; }
+.book-import h2 { margin-right: auto; }
+.book-import details > section { padding-block: 12px; border-bottom: 1px solid var(--line); }
 @media (max-width: 860px) {
   .books-layout { grid-template-columns: minmax(0, 1fr); }
   .books-binder { display: none; }

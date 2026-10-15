@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises"
 import { BrowserWindow } from "electron"
 import { strFromU8, unzipSync } from "fflate"
+import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
 
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
@@ -302,6 +303,8 @@ export const SMOKE_SCRIPT = `(async () => {
     result.bookFiles[format] = /^Arquivo salvo: (.+?\.(?:epub|docx))/.exec(status ?? "")?.[1] ?? null
     result.bookFiles[format + "Status"] = status
   }
+
+  ${BOOK_IMPORT_SMOKE}
 
   // Campanhas: criar a Sessão 13 pela tela (nota + evento na Agenda, um apontando para o outro).
   location.hash = campaignRoute + "/sessoes"
@@ -626,6 +629,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.migration as Record<string, unknown>).date === true &&
     (result.migration as Record<string, unknown>).calendar === true &&
     (result.migration as Record<string, unknown>).encounterRows === 2 &&
-    (result.migration as Record<string, unknown>).again === true
+    (result.migration as Record<string, unknown>).again === true &&
+    result.bookImportPreview === true &&
+    result.bookImport === true
   )
 }
