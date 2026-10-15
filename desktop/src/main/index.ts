@@ -15,6 +15,8 @@ import { attachContextMenu, configureSpellchecker, installDictionary, spellcheck
 import { DeepLinks } from "./deep-links"
 import { enableShortcutPortal, registerQuickCapture } from "./quick-capture"
 import type { UpdateInfo } from "../../../app/src/core/updates"
+import { NoteWindows } from "./windows"
+import { checkNoteWindows } from "./notes-windows-smoke"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -37,7 +39,8 @@ const smoke = process.argv.includes("--smoke")
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
 let mainWindow: BrowserWindow | null = null
-const vault = new VaultService(() => mainWindow, () => vtt.closeWorld())
+const noteWindows = new NoteWindows(() => mainWindow)
+const vault = new VaultService(() => mainWindow, async () => { await noteWindows.flushAll(); noteWindows.closeAll(); vtt.closeWorld() })
 const vtt = new VttHost(() => vault.rootPath, () => vault.info()?.readOnly === false)
 const reminders = new ReminderScheduler(() => mainWindow, (path) => mainWindow?.webContents.send(IPC.agendaOpen, path))
 // `runas://abrir?nota=…` abre a nota pelo mesmo caminho que um lembrete tocado usa. O smoke roda sem a trava de cópia única.
@@ -47,7 +50,7 @@ if (!smoke && !deepLinks.claim()) app.exit(0)
 /** Só a janela do app conversa com o processo principal. */
 function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown): void {
   ipcMain.handle(channel, (event, ...args) => {
-    if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error("Origem não autorizada.")
+    if ((!mainWindow || event.sender !== mainWindow.webContents) && !noteWindows.owns(event.sender)) throw new Error("Origem não autorizada.")
     return listener(event, ...args)
   })
 }
@@ -131,6 +134,9 @@ function registerIpc(): void {
       },
     })
   })
+  handle(IPC.openWindow, (_event, route) => noteWindows.open(text(route, "rota")))
+  handle(IPC.vaultListTrash, () => vault.listTrash())
+  handle(IPC.vaultRestoreTrash, (_event, path, target) => vault.restoreTrash(text(path, "lixeira"), text(target, "destino")))
 }
 
 /** Versão que a interface leu (`null` = só criar; ausente = sem conferência). */
@@ -183,6 +189,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
   try {
     await new Promise<void>((resolve) => window.webContents.once("did-finish-load", () => resolve()))
     const result = (await window.webContents.executeJavaScript(SMOKE_SCRIPT)) as Record<string, unknown>
+    if (result.vault && !(result.vault as { readOnly: boolean }).readOnly) result.noteWindows = await checkNoteWindows(window)
     if (result.room) result.roomCheck = await checkRoom(result.room as { port: number; key: string; codes: string[] })
     const bookPdf = result.bookPdf as { path?: string | null } | undefined
     if (bookPdf?.path) result.bookPdfCheck = await checkPdf(bookPdf.path)

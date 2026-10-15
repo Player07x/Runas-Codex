@@ -7,6 +7,7 @@ import type { BackupInfo } from "../platform/platform"
 import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
+import { CustomizationSettings } from "../components/vault/Customization"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -66,6 +67,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         </div>
       </div>
       <div className="settings-grid">
+        <CustomizationSettings />
         <section className="card">
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Vault size={16} /> Cofre
@@ -336,4 +338,3 @@ function UpdateRow() {
     </div>
   )
 }
-

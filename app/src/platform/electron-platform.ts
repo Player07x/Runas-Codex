@@ -51,5 +51,8 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
       }
     },
     onQuickCapture: (listener) => bridge.onQuickCapture(listener),
+    openWindow: (route) => bridge.openWindow(route),
+    listTrash: () => vault.listTrash(),
+    restoreTrash: (path, target) => vault.restoreTrash(path, target),
   }
 }

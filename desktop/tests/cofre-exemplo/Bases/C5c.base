@@ -1,0 +1,20 @@
+filters:
+  and:
+    - file.hasTag("c5c")
+    - list(note["cidade"]).contains(this)
+formulas:
+  dobro: pontos * 2
+properties:
+  file.name:
+    displayName: Nome
+  formula.dobro:
+    displayName: Pontuação
+views:
+  - type: table
+    name: Habitantes
+    order: [file.name, formula.dobro]
+    sort:
+      - property: file.name
+        direction: ASC
+    summaries:
+      formula.dobro: Sum

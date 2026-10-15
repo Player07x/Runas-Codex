@@ -1,4 +1,4 @@
-# ADR 0019 — Fechamento do núcleo de notas: links, gráfico, notas pessoais (C5a), organização e busca (C5b)
+# ADR 0019 — Fechamento do núcleo de notas: C5a, C5b e C5c
 
 - **Status:** aceita (2026-10-15)
 
@@ -119,3 +119,69 @@ versões, restaurar da lixeira, contagem de palavras, comandos `/`, atalhos conf
 
 [electron#51875]: https://github.com/electron/electron/issues/51875
 [electron#52218]: https://github.com/electron/electron/issues/52218
+
+## C5c — painéis, consultas e ferramentas de notas
+
+Continuação do trabalho parcial do Claude Code pelo Codex, depois de os PRs #24 e #25 entrarem na `main`.
+O ponto de extensão de arquivos embutidos fica no PR pequeno do leitor #26; esta fase apenas o registra para `.base`.
+
+**Abas e workspaces:** o núcleo puro `core/tabs.ts` abre, fixa, fecha, arrasta e empilha abas e divide até três
+painéis, na horizontal ou vertical. Cada painel mantém suas abas. A rota representa a aba do painel em foco.
+O arranjo e os workspaces nomeados ficam no aparelho, por cofre, em `localStorage`. No celular aparece um painel
+por vez, com seletor de painel e botão de ações da aba (não depende de arrastar nem de clique direito).
+Menus e diálogos das ferramentas usam portais no `body`, para a contenção CSS da barra não cortar sua área visível.
+O smoke confere os limites do menu e do diálogo; a verificação da interface também os mede em 320 px.
+
+**Janelas de nota:** `desktop/main/windows.ts` abre outra janela com o mesmo isolamento e preload, aceitando só
+rotas de notas. A autorização do IPC acrescenta exatamente as janelas criadas por esse controlador. As gravações
+são comunicadas a todas as janelas; a fila por arquivo de `write-queue.ts` faz a segunda gravação conferir a versão
+depois da primeira, evitando que duas janelas aceitem simultaneamente a mesma versão antiga. Antes de fechar uma
+janela extra ou trocar de cofre, as edições pendentes são gravadas; um conflito mantém a janela aberta. Ao trocar de cofre,
+as janelas extras fecham. A gravação segura de `vault.ts` permanece igual. A Vista dos Jogadores do VTT já tinha
+sua janela separada; este bloco acrescenta as de notas.
+
+**Bases:** `core/queries` interpreta YAML e expressões, sem `eval` ou funções JavaScript de notas. Aceita arquivos
+`.base`, blocos `base`, `![[arquivo.base#Visão]]`, tabela/cartões/lista, filtros globais e por visão, ordenação,
+fórmulas, agrupamento e resumos. `this` vem da nota que embute a base; links em listas são comparados pelo arquivo
+resolvido. Os filtros `file.hasTag`, `file.inFolder` e `list(note["propriedade"]).contains(this)` têm testes com
+dados sintéticos. As fórmulas aceitam aritmética, comparação, lógica e as funções explícitas de
+`queries/expression.ts` (listas, texto, links, datas e agregações). Métodos não implementados mostram um aviso.
+Expressões têm limites de tamanho e profundidade; fórmulas circulares são recusadas. O YAML é editado como texto,
+sem reserializar e apagar campos que o app não reconhece. Bases novas podem ser criadas na lista de Notas.
+
+**Consultas:** blocos `dataview`/`runas-consulta` aceitam `LIST`, `TABLE`, `WITHOUT ID`, fontes `FROM` (pasta, tag,
+links, combinações e negação), `WHERE`, `SORT` e `LIMIT`. Não é uma implementação de todo o Dataview: `TASK`,
+`CALENDAR`, `GROUP BY`, `FLATTEN` e JavaScript não são executados. Comandos desconhecidos dão aviso, em vez de
+apresentar uma consulta parcial como se estivesse correta. Agrupamento e resumos estão disponíveis nas Bases.
+São exibidas até 1000 linhas; o usuário pode refinar os filtros. Consultas em outras telas respeitam o bloqueio
+por PIN do espaço Notas. Referências da sintaxe: [Bases](https://help.obsidian.md/bases/syntax) e
+[DQL](https://blacksmithgu.github.io/obsidian-dataview/queries/structure/).
+
+**Extrair e mesclar:** extração cria primeiro a nota na mesma pasta, depois substitui a seleção por um wikilink.
+Não extrai o frontmatter. Mesclagem faz backup, grava primeiro o destino e mantém as propriedades da origem num
+bloco YAML no corpo, junto ao conteúdo (o frontmatter do destino continua sendo o dele). Links relativos da origem
+são ajustados; backlinks de notas e cartões de arquivo dos `.canvas` passam ao destino. A origem só vai à lixeira
+depois das gravações. Uma falha pode deixar uma cópia no destino, mas preserva a origem; não apaga conteúdo para
+tentar reverter uma operação parcial. A prévia informa esse comportamento.
+
+**Versões:** antes de editar ou excluir uma nota, o conteúdo anterior fica no IndexedDB do perfil, separado por
+cofre e caminho. Até 40 versões por nota; a digitação é agrupada em janelas de 30 s. Há captura manual, comparação
+do texto completo e do trecho alterado, e restauração pelo `useVault().save`. Restaurar guarda antes a versão atual.
+Renomear/mover leva o histórico junto. As versões são locais, não acompanham o cofre; falha de armazenamento avisa
+na interface e não impede salvar o documento principal.
+
+**Lixeira:** desktop e plataforma em memória listam e restauram arquivos da `.trash`; o usuário escolhe o destino
+porque a lixeira do Obsidian não preserva necessariamente a pasta original. A restauração passa pelo `useVault`,
+cria sem substituir, recusa caminhos externos, arquivos ocultos de destino e links simbólicos. O original da
+lixeira só é removido depois da criação segura. O `vault.ts` não foi alterado.
+
+**Editor e aparência:** contagem Unicode de palavras/caracteres no corpo; comandos `/` para tabela, callout, link,
+imagem, data, tarefa, consulta e Base, fora de código e frontmatter. Nove atalhos frequentes podem ser redefinidos
+em Configurações; combinações repetidas são recusadas. A impressão de Livros mantém precedência sobre a paleta.
+Snippets CSS podem ser colados/importados e ativados por aparelho, sem mudar a CSP nem carregar recursos externos.
+Seletores específicos do Obsidian podem precisar de adaptação. Ícones Lucide são locais: nas notas, `icone` e `cor`
+são propriedades comuns; a aparência de pastas fica por cofre neste aparelho e acompanha mover/renomear.
+
+**Verificação:** núcleo com testes de abas, consulta, extração/mesclagem, versões e atalhos; restauração real de
+arquivos, colisões, caminhos externos e symlinks; smoke com Bases, `this`, fórmulas, DQL, painel, workspace, histórico,
+lixeira e duas janelas concorrentes. Capturas de desktop e celular em `docs/imagens/notas-c5c/`.

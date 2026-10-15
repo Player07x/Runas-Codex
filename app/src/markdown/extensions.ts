@@ -8,6 +8,10 @@ import type { ComponentType } from "react"
  * componente (no modo leitura e como bloco no live preview), em vez de código. Ex.: ```` ```runas-calendario ```` na
  * Wiki. Registre no carregamento do módulo (o arquivo precisa ser importado por `App.tsx` ou por uma tela que ele
  * importa). Nomes em minúsculas; registrar de novo o mesmo nome troca o componente.
+ *
+ * **Arquivos embutidos por extensão:** `![[arquivo.ext#trecho]]` de uma extensão registrada aqui aparece desenhado pelo
+ * componente (no modo leitura e no live preview), em vez de ser lido como nota. Ex.: `![[personagens.base#Tabela]]`
+ * nas Notas (Bases do Obsidian). Mesmas regras de registro dos blocos.
  */
 
 export interface CodeBlockProps {
@@ -30,4 +34,26 @@ export function codeBlockFor(language: string): ComponentType<CodeBlockProps> | 
 /** O live preview desenha este bloco (em vez de mostrar o código)? */
 export function isRenderedCodeBlock(language: string): boolean {
   return codeBlocks.has(language.toLowerCase())
+}
+
+export interface FileEmbedProps {
+  /** Caminho do arquivo no cofre, já resolvido. */
+  path: string
+  /** O que vem depois do nome, com o `#` (`#Tabela`), ou vazio. */
+  subpath: string
+  /** O texto depois de `|`. */
+  alias?: string
+  /** Caminho da nota que embute o arquivo, quando o leitor sabe. */
+  from?: string
+}
+
+const fileEmbeds = new Map<string, ComponentType<FileEmbedProps>>()
+
+/** Extensões com o ponto (`.base`), em minúsculas. */
+export function registerFileEmbed(extensions: string[], component: ComponentType<FileEmbedProps>): void {
+  for (const ext of extensions) fileEmbeds.set(ext.toLowerCase(), component)
+}
+
+export function fileEmbedFor(ext: string): ComponentType<FileEmbedProps> | undefined {
+  return fileEmbeds.get(ext.toLowerCase())
 }

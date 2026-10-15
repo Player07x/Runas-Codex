@@ -5,6 +5,10 @@ import { setProperty as setPropertyText, type PropertyValue } from "../core/prop
 import { planFolderRename, planRename, type RenamePlan } from "../core/rename"
 import { CONFIG_FILES, obsidianConfig, type ObsidianConfig } from "../core/templates"
 import { renameFavorites } from "../lib/bookmarks"
+import { renameTabs } from "../lib/tabs"
+import { recordVersion, renameVersions } from "../lib/note-history"
+import { renameDecorations } from "../lib/customization"
+import { flushOpenNotes } from "../lib/vault-notes"
 import { extname, joinPath } from "../core/text"
 import { VaultIndex, type IndexedNote } from "../core/vault-index"
 import { platform } from "./index"
@@ -43,6 +47,7 @@ export interface VaultState {
   setProperty(path: string, key: string, value: PropertyValue | undefined): Promise<void>
   /** Cria um arquivo de texto que não é nota (ex.: um quadro `.canvas`), pelo caminho completo. */
   createFile(path: string, content: string): Promise<string>
+  restoreTrash(path: string, target: string): Promise<void>
   /**
    * Grava um anexo novo (imagem, PDF…) na pasta de anexos do Obsidian, relativa a `nearNote` quando a configuração é
    * `./`. Nome repetido ganha número (`mapa 1.png`). Devolve o caminho gravado.
@@ -112,6 +117,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     return platform.watch(async (changes: VaultChange[]) => {
       const current = indexRef.current
       if (!current) return
+      // Uma versão que o índice já tem (gravada por esta janela e avisada às outras) não precisa ser lida de novo.
+      const known = (entry: VaultEntry) => {
+        const file = current.allFiles().find((f) => f.path === entry.path)
+        return file !== undefined && file.mtime === entry.mtime && file.size === entry.size
+      }
+      changes = changes.filter((c) => c.type === "deleted" || !known(c.entry))
+      if (!changes.length) return
       const changed = changes.filter((c): c is Extract<VaultChange, { type: "changed" }> => c.type === "changed")
       const texts = await platform.readTexts(changed.filter((c) => isText(c.entry.path) && extname(c.entry.path) === ".md").map((c) => c.entry.path))
       for (const change of changes) {
@@ -136,11 +148,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       const current = requireIndex()
       const expected = entryOf(current, path)
       if (!expected) throw new Error(`“${path}” não está no cofre.`)
+      const previous = current.note(path)?.text
+      if (previous !== undefined && previous !== content) await recordVersion(info!.path, path, previous)
       const entry = await platform.writeText(path, content, expected)
       current.set(entry, content)
       bump()
     },
-    [requireIndex, bump],
+    [requireIndex, bump, info],
   )
 
   const createNote = useCallback(
@@ -191,8 +205,11 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       for (const file of current.allFiles()) if (file.path === from || file.path.startsWith(from + "/")) current.remove(file.path)
       for (const entry of moved) if (entry.path === to || entry.path.startsWith(to + "/")) current.set(entry, movedTexts[entry.path])
       bump()
-      // Os favoritos deste aparelho acompanham a nota ou pasta.
+      // Os favoritos e as abas deste aparelho acompanham a nota ou pasta.
       renameFavorites(info?.path, from, to)
+      renameTabs(info?.path, from, to)
+      if (info) await renameVersions(info.path, from, to)
+      if (info) { try { renameDecorations(info.path, from, to) } catch { /* só a preferência do aparelho deixa de acompanhar */ } }
       return plan
     },
     [requireIndex, bump, info],
@@ -201,11 +218,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const trash = useCallback(
     async (path: string) => {
       const current = requireIndex()
+      for (const note of current.allNotes()) if (note.path === path || note.path.startsWith(path + "/")) await recordVersion(info!.path, note.path, note.text, true)
       await platform.trash(path)
       for (const file of current.allFiles()) if (file.path === path || file.path.startsWith(path + "/")) current.remove(file.path)
       bump()
     },
-    [requireIndex, bump],
+    [requireIndex, bump, info],
   )
 
   const setProperty = useCallback(
@@ -257,13 +275,21 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       .sort((a, b) => a.path.localeCompare(b.path, "pt-BR"))
   }, [config])
 
-  const choose = useCallback(async () => open(await platform.chooseVault()), [open])
-  const create = useCallback(async () => open(await platform.createVault()), [open])
+  const restoreTrash = useCallback(async (path: string, target: string) => {
+    const current = requireIndex()
+    if (!platform.restoreTrash) throw new Error("Esta plataforma ainda não oferece restauração da lixeira.")
+    const entry = await platform.restoreTrash(path, target)
+    const text = /\.md$/i.test(target) ? (await platform.readTexts([target]))[target] : undefined
+    current.set(entry, text); bump()
+  }, [requireIndex, bump])
+
+  const choose = useCallback(async () => { await flushOpenNotes(); await open(await platform.chooseVault()) }, [open])
+  const create = useCallback(async () => { await flushOpenNotes(); await open(await platform.createVault()) }, [open])
   const setWritable = useCallback(async (writable: boolean) => setInfo(await platform.setWritable(writable)), [])
   const reload = useCallback(async () => open(await platform.vault()), [open])
 
   return (
-    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile, addAttachment }}>
+    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile, addAttachment, restoreTrash }}>
       {children}
     </VaultContext.Provider>
   )
