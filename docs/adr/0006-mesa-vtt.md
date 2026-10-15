@@ -59,8 +59,9 @@ sem a ponte do app. Salas recentes ficam neste aparelho.
 ### Medição no Android
 
 O job `android-touch` do workflow Release gera um APK exclusivo de teste com WebView depurável, opera o canvas por
-`Input.dispatchTouchEvent` (mover token, desenhar e toque longo), confere desfazer/refazer pelos botões da interface
-(acionados pelo DOM) e mede 5 s de movimento com dois dedos em cada cena. A segunda usa PNG sintético de 4096 × 4096, névoa ligada, luz do dia desligada, um aliado e duas
+gestos nativos do Android (`adb input tap/swipe`: mover token, desenhar e toque longo), confere desfazer/refazer
+pelos botões da interface (acionados pelo DOM) e mede 5 s de movimento com dois dedos em cada cena. O adb executa
+cada gesto inteiro no aparelho, sem pausas para confirmação de cada evento pelo canal de depuração. A segunda usa PNG sintético de 4096 × 4096, névoa ligada, luz do dia desligada, um aliado e duas
 luzes. `Runas-Codex-android-toque` guarda `metrics.json`, capturas e log do emulador. A opção de depuração é aplicada
 somente ao arquivo gerado do APK de teste; não muda o instalador distribuído.
 

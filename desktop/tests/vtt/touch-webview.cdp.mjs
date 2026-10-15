@@ -1,4 +1,4 @@
-// Verificação do APK em um WebView depurável. Usa só APIs nativas do Node e o protocolo do Chromium.
+// Verificação do APK em um WebView depurável. Usa APIs nativas do Node, o protocolo do Chromium e o adb do SDK.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 const endpoint = process.argv[2] ?? 'http://127.0.0.1:9223'
@@ -41,8 +41,41 @@ const until = async expression => {
   for (let n = 0; n < 200; n++) { const result = await run(`(()=>{const value=(${expression});return value instanceof Node?true:value})()`); if (result) return result; await sleep(100) }
   throw new Error('Não apareceu: ' + expression)
 }
-const touch = (type, points) => send('Input.dispatchTouchEvent', { type, touchPoints: points.map((point, index) => ({ id: index + 1, radiusX: 5, radiusY: 5, force: 1, ...point })) })
-const tapPoint = async point => { await touch('touchStart', [point]); await sleep(100); await touch('touchEnd', []); await sleep(350) }
+let android = false
+let webViewBounds
+const adb = (...args) => execFileSync('adb', args, { timeout: 20000, maxBuffer: 16 * 1024 * 1024 })
+const devicePoint = async point => {
+  if (!webViewBounds) {
+    adb('shell', 'uiautomator', 'dump', '/sdcard/runas-toque.xml')
+    const xml = adb('exec-out', 'cat', '/sdcard/runas-toque.xml').toString()
+    await writeFile(output + '/android-hierarquia.xml', xml)
+    const view = xml.match(/<node[^>]*class="(?:android\.webkit\.WebView|com\.getcapacitor\.BridgeWebView)"[^>]*>/)?.[0]
+    const bounds = view?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/)
+    if (!bounds) throw new Error('O Android não informou os limites do WebView.')
+    webViewBounds = bounds.slice(1).map(Number)
+  }
+  const size = await run(`({width:innerWidth,height:innerHeight})`)
+  const [left, top, right, bottom] = webViewBounds
+  return [String(Math.round(left + point.x * (right - left) / size.width)), String(Math.round(top + point.y * (bottom - top) / size.height))]
+}
+const pointer = (type, point) => run(`document.querySelector('.scene-host canvas').dispatchEvent(new PointerEvent('${type}',{bubbles:true,cancelable:true,pointerType:'touch',pointerId:271,button:0,buttons:${type === 'pointerup' ? 0 : 1},clientX:${point.x},clientY:${point.y}}))`)
+const tapPoint = async point => {
+  if (android) adb('shell', 'input', 'tap', ...await devicePoint(point))
+  else { await pointer('pointerdown', point); await pointer('pointerup', point) }
+  await sleep(150)
+}
+const drag = async (from, to) => {
+  if (android) adb('shell', 'input', 'swipe', ...await devicePoint(from), ...await devicePoint(to), '240')
+  else {
+    await pointer('pointerdown', from)
+    for (let n = 1; n <= 8; n++) await pointer('pointermove', { x: from.x + (to.x - from.x) * n / 8, y: from.y + (to.y - from.y) * n / 8 })
+    await pointer('pointerup', to)
+  }
+}
+const hold = async point => {
+  if (android) { const at = await devicePoint(point); adb('shell', 'input', 'swipe', ...at, ...at, '750') }
+  else { await pointer('pointerdown', point); await sleep(750); await pointer('pointerup', point) }
+}
 // A preparação aciona os controles da interface; no canvas os gestos são ponteiros nativos do WebView.
 const tap = async expression => {
   await until(`!!(${expression})`)
@@ -67,7 +100,8 @@ const benchmark = () => run(`new Promise(resolve=>{const canvas=document.querySe
 const results = {}
 try {
   await send('Runtime.enable'); await send('Log.enable')
-  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  android = await run(`navigator.userAgent.includes('Android')`)
+  if (!android) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   if (process.argv.includes('--mobile')) await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2.75, mobile: true })
   await run(`location.hash='/vtt/criar'`)
   await tap(`document.querySelector('.empty .btn.primary,.mesa-card.new')`)
@@ -88,9 +122,7 @@ try {
   await sleep(150)
   await label('Fechar propriedades'); await tool('Selecionar e mover')
   const from = await at(1250, 950), to = await at(1450, 1050)
-  // Enfileira o início e o primeiro movimento: aguardar cada ACK de um emulador lento pode virar um toque longo.
-  await Promise.all([touch('touchStart', [from]), touch('touchMove', [{ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }])])
-  await touch('touchMove', [to]); await touch('touchEnd', [])
+  await drag(from, to)
   await until(`document.querySelector('.properties')`)
   await until(`Array.from(document.querySelectorAll('.properties label.field')).find(e=>e.querySelector('span')?.textContent==='Posição X')?.querySelector('input')?.value==='1450'`)
   results.token = { x: Number(await field('Posição X')), y: Number(await field('Posição Y')) }
@@ -98,18 +130,16 @@ try {
   await shot('android-propriedades')
   await label('Fechar propriedades'); await tool('Desenhar'); await label('Mão livre')
   const a = await at(700, 1300), b = await at(1700, 1450)
-  await Promise.all([touch('touchStart', [a]), touch('touchMove', [{ x: a.x + (b.x - a.x) / 6, y: a.y + (b.y - a.y) / 6 }])])
-  for (let n = 2; n <= 6; n++) await touch('touchMove', [{ x: a.x + (b.x - a.x) * n / 6, y: a.y + (b.y - a.y) * n / 6 }])
-  await touch('touchEnd', [])
+  await drag(a, b)
   await until(`document.querySelector('[aria-label="Propriedades: Desenho"]')`)
   results.undoEnabled = await run(`!document.querySelector('[aria-label="Desfazer"]').disabled`)
   await label('Desfazer'); await until(`!document.querySelector('[aria-label="Refazer"]').disabled`)
   results.redoEnabled = await run(`!document.querySelector('[aria-label="Refazer"]').disabled`)
   await label('Refazer'); await tool('Selecionar e mover')
   const held = await at(1450, 1050)
-  await touch('touchStart', [held]); await sleep(700)
+  await hold(held)
   results.menu = await run(`!!document.querySelector('[role="menu"][aria-label="Ações do objeto"]')`)
-  await touch('touchEnd', []); await button('Fechar menu')
+  await button('Fechar menu')
   await label('Soltar seleção'); await label('Enquadrar cena'); await sleep(3000)
   console.log("Gestos concluídos; medindo a cena de exemplo.")
   results.example = await benchmark()
@@ -130,6 +160,7 @@ try {
   results.largeMap = await benchmark()
   await shot('android-mapa-4096')
   results.device = await run(`({userAgent:navigator.userAgent,dpr:devicePixelRatio,width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth})`)
+  if (webViewBounds) results.device.webViewBounds = webViewBounds
   await writeFile(output + '/metrics.json', JSON.stringify(results, null, 2))
   console.log(JSON.stringify(results, null, 2))
   if (!results.undoEnabled || !results.redoEnabled || !results.menu || results.device.scrollWidth > results.device.width) throw new Error('A verificação do toque falhou.')
