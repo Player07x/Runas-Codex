@@ -1,11 +1,13 @@
 import { cp, mkdir, mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
-import { app, dialog, shell, type BrowserWindow, type OpenDialogOptions } from "electron"
+import { app, BrowserWindow, dialog, shell, type OpenDialogOptions } from "electron"
 import { IPC, type BackupInfo, type VaultChange, type VaultEntry, type VaultInfo } from "../shared/ipc"
 import { backupFolder, backupVault, createFolder, createVault, listBackups, listVault, readBinary, readTexts, renamePath, trashPath, writeBinarySafe, writeTextSafe } from "./vault"
 import { installSnippet, mediaFile } from "./vault-files"
 import { VaultWatcher } from "./watcher"
+import { listTrash, restoreTrash } from "./trash"
+import { WriteQueue } from "./write-queue"
 
 interface Config {
   vaultPath?: string
@@ -34,11 +36,12 @@ export class VaultService {
   /** No teste, o cofre vem da linha de comando e nada é lembrado. */
   private ephemeral = false
   private ephemeralWritable = false
+  private readonly writes = new WriteQueue()
 
   constructor(
     private readonly window: () => BrowserWindow | null,
     /** Avisa que o cofre vai mudar (a mesa aberta, que mora dentro dele, precisa fechar). */
-    private readonly beforeSwitch: () => void = () => undefined,
+    private readonly beforeSwitch: () => void | Promise<void> = () => undefined,
   ) {}
 
   private get configFile(): string {
@@ -78,13 +81,26 @@ export class VaultService {
   }
 
   private async open(path: string): Promise<void> {
-    this.beforeSwitch()
+    await this.beforeSwitch()
     this.watcher?.stop()
     this.path = path
-    this.watcher = new VaultWatcher(path, (changes: VaultChange[]) => this.window()?.webContents.send(IPC.vaultChanged, changes))
+    // Todas as janelas do app (a principal e as de nota) ficam sabendo do que mudou fora do app.
+    this.watcher = new VaultWatcher(path, (changes: VaultChange[]) => this.send(changes))
     await this.watcher.start().catch(() => {
       this.watcher = null
     })
+  }
+
+  private send(changes: VaultChange[]): void {
+    for (const window of BrowserWindow.getAllWindows()) if (!window.isDestroyed()) window.webContents.send(IPC.vaultChanged, changes)
+  }
+
+  /**
+   * Com uma janela extra de nota aberta, o que o app grava também é avisado às janelas (o observador não avisa as
+   * gravações do próprio app). A janela que gravou já tem aquela versão e ignora o aviso.
+   */
+  private notify(changes: VaultChange[]): void {
+    if (BrowserWindow.getAllWindows().length > 1) this.send(changes)
   }
 
   info(): VaultInfo | null {
@@ -174,10 +190,13 @@ export class VaultService {
 
   async write(path: string, content: string, expected: { mtime: number; size: number } | null | undefined): Promise<VaultEntry> {
     const root = this.writableRoot()
-    await this.dailyBackup()
-    const entry = await writeTextSafe(root, path, content, expected)
-    this.watcher?.remember(entry)
-    return entry
+    return this.writes.run(root + "\0" + path, async () => {
+      await this.dailyBackup()
+      const entry = await writeTextSafe(root, path, content, expected)
+      this.watcher?.remember(entry)
+      this.notify([{ type: "changed", entry }])
+      return entry
+    })
   }
 
   readBinary(path: string): Promise<Uint8Array> {
@@ -186,10 +205,13 @@ export class VaultService {
 
   async writeBinary(path: string, bytes: Uint8Array, expected: { mtime: number; size: number } | null | undefined): Promise<VaultEntry> {
     const root = this.writableRoot()
-    await this.dailyBackup()
-    const entry = await writeBinarySafe(root, path, bytes, expected)
-    this.watcher?.remember(entry)
-    return entry
+    return this.writes.run(root + "\0" + path, async () => {
+      await this.dailyBackup()
+      const entry = await writeBinarySafe(root, path, bytes, expected)
+      this.watcher?.remember(entry)
+      this.notify([{ type: "changed", entry }])
+      return entry
+    })
   }
 
   async createFolder(path: string): Promise<void> {
@@ -203,7 +225,11 @@ export class VaultService {
     await renamePath(root, from, to)
     try {
       const info = await stat(join(root, ...to.split("/")))
-      if (info.isFile()) this.watcher?.remember({ path: to, size: info.size, mtime: info.mtimeMs })
+      if (info.isFile()) {
+        const entry = { path: to, size: info.size, mtime: info.mtimeMs }
+        this.watcher?.remember(entry)
+        this.notify([{ type: "deleted", path: from }, { type: "changed", entry }])
+      }
     } catch {
       /* o observador avisa */
     }
@@ -213,6 +239,7 @@ export class VaultService {
     const root = this.writableRoot()
     this.watcher?.forget(path)
     await trashPath(root, path)
+    this.notify([{ type: "deleted", path }])
   }
 
   backup(): Promise<BackupInfo> {
@@ -242,5 +269,14 @@ export class VaultService {
 
   stop(): void {
     this.watcher?.stop()
+  }
+
+  listTrash(): Promise<VaultEntry[]> { return listTrash(this.root()) }
+  async restoreTrash(path: string, target: string): Promise<VaultEntry> {
+    const root = this.writableRoot()
+    await this.dailyBackup()
+    const entry = await restoreTrash(root, path, target)
+    this.watcher?.remember(entry); this.send([{ type: "changed", entry }])
+    return entry
   }
 }

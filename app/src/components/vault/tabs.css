@@ -1,0 +1,59 @@
+/* Abas e painéis divididos das Notas */
+.pane-center.tabs-host { overflow: hidden; }
+.pane-center > .tab-panes { flex: 1 1 auto; min-height: 0; }
+.tab-panes { display: grid; height: 100%; min-height: 0; }
+.tab-panes.lado { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.tab-panes.baixo { grid-auto-flow: row; grid-auto-rows: minmax(0, 1fr); }
+.tab-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.tab-panes.lado > .tab-pane + .tab-pane { border-left: 1px solid var(--line); }
+.tab-panes.baixo > .tab-pane + .tab-pane { border-top: 1px solid var(--line); }
+.tab-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: auto; }
+.tab-body > * { flex-shrink: 0; }
+
+.tab-strip { display: flex; flex: none; align-items: flex-end; gap: 2px; min-height: 38px; padding: 4px 6px 0; overflow-x: auto; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 60%, transparent); scrollbar-width: thin; }
+.tab-pane.focused .tab-strip { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--cyan) 70%, transparent); }
+.tab { position: relative; display: inline-flex; flex: 0 1 auto; align-items: center; gap: 6px; min-width: 72px; max-width: 200px; height: 32px; padding: 0 6px 0 10px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; color: var(--muted); font-size: 13px; cursor: pointer; user-select: none; }
+.tab:hover { color: var(--text); background: var(--panel-2); }
+.tab.active { border-color: var(--line); background: var(--bg); color: var(--text); }
+.tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.tab.drop-before::before { content: ""; position: absolute; top: 4px; bottom: 4px; left: -2px; width: 2px; border-radius: 2px; background: var(--cyan); }
+.tab-pin { flex: none; color: var(--gold); }
+.tab-close { display: grid; flex: none; place-items: center; width: 20px; height: 20px; margin-left: auto; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; opacity: 0; cursor: pointer; }
+.tab:hover .tab-close, .tab.active .tab-close, .tab-close:focus-visible { opacity: 0.8; }
+.tab-close:hover { background: var(--panel-2); opacity: 1; }
+.tab-strip > .icon-btn, .tab-split { flex: none; align-self: center; }
+.tab-split { display: inline-flex; gap: 2px; }
+.tab-strip .icon-btn.active { color: var(--cyan); }
+
+/* Menu da aba (clique direito ou toque longo) */
+.tab-menu { position: fixed; z-index: 80; display: grid; min-width: 220px; padding: 6px; box-shadow: 0 12px 30px rgb(0 0 0 / 30%); }
+
+/* Abas empilhadas: cada aba é uma coluna; as que saem da tela à esquerda viram lombadas com o título. */
+.tab-stack { display: flex; flex: 1 1 auto; min-height: 0; overflow-x: auto; overflow-y: hidden; }
+.stack-col { position: sticky; left: calc(var(--i) * 40px); display: flex; flex: 0 0 min(760px, 88%); min-height: 0; border-left: 1px solid var(--line); background: var(--bg); box-shadow: -8px 0 16px rgb(0 0 0 / 18%); }
+.stack-spine { flex: 0 0 40px; padding: 12px 0; border: 0; border-right: 1px solid var(--line); background: var(--bg-deep); color: var(--muted); font-size: 13px; text-align: left; writing-mode: vertical-rl; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.stack-col.active .stack-spine { color: var(--cyan); }
+.stack-content { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; overflow: auto; }
+.stack-content > * { flex-shrink: 0; }
+
+@media (max-width: 860px) {
+  .tab-panes.lado, .tab-panes.baixo { grid-auto-flow: row; grid-auto-rows: minmax(0, 1fr); grid-auto-columns: auto; }
+  .tab { height: 44px; min-width: 96px; }
+  .tab-close { width: 32px; height: 32px; opacity: 0.8; }
+  .tab-split { display: none; }
+  .stack-col { flex-basis: 92%; }
+}
+.workspace-menu { width: 260px; gap: 2px; }
+.tab-more { display: grid; flex: none; place-items: center; width: 24px; height: 28px; padding: 0; border: 0; border-radius: 6px; color: var(--muted); background: transparent; }
+.tab-more:hover { background: var(--panel-2); }
+.tab-pane-picker { flex: none; max-width: 110px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+html[data-note-window] .shell { grid-template-columns: minmax(0, 1fr); }
+html[data-note-window] .sidebar, html[data-note-window] .bottom-nav, html[data-note-window] .pane-left { display: none; }
+html[data-note-window] .workspace { grid-template-columns: minmax(0, 1fr) 280px; }
+@media (pointer: coarse), (max-width: 860px) {
+  .tab { height: 48px; max-width: 245px; }
+  .tab-more, .tab-close { width: 44px; height: 44px; min-width: 44px; }
+  .tab-menu button, .tab-menu input, .tab-pane-picker { min-height: 44px; }
+  .tab-strip .icon-btn { min-width: 44px; min-height: 44px; }
+  html[data-note-window] .workspace { grid-template-columns: minmax(0, 1fr); }
+}

@@ -298,3 +298,24 @@ automáticos). Falta o uso de verdade:
 - [ ] Arrastar uma nota e uma pasta para outra pasta (e para a raiz) no app desktop; conferir no Obsidian que os links
   continuam funcionando. Arrastar uma nota da árvore para dentro do editor insere `[[link]]`.
 - [ ] Ordem da lista (botão de setas): cada opção, e a escolha lembrada depois de fechar o app.
+## C5c — painéis e ferramentas de notas
+
+- [ ] Desktop: abrir notas em abas, fixar, arrastar entre painéis, empilhar, dividir para baixo/ao lado e restaurar
+  um workspace após fechar o app. Abrir em outro monitor; editar a mesma nota nas duas janelas e conferir o conflito.
+- [ ] Com edição pendente na janela extra, fechá-la e trocar de cofre pela principal: conferir que a edição foi salva;
+  provocar conflito pelo Obsidian e conferir a opção de continuar editando antes de fechar sem salvar.
+- [ ] Celular/tablet físico, claro e escuro: ações da aba, seletor de painel, workspace, teclado virtual e rolagem de
+  tabelas, sem rolagem lateral da página. Cofre real no Android depende da C8.
+- [ ] Abrir os `.base` do próprio cofre e embeds com `#Visão`; conferir filtros e `this`, fórmulas, agrupamento,
+  resumos e ordenação. Fórmula ou função não suportada deve avisar sem regravar o arquivo.
+- [ ] Blocos `dataview`: testar listas e tabelas com FROM/WHERE/SORT/LIMIT. JavaScript, TASK/CALENDAR e comandos
+  fora desse conjunto não são executados. Conferir também no live preview e com o espaço Notas bloqueado.
+- [ ] Extrair seleção com links e mesclar notas de pastas distintas: conferir a prévia, propriedades preservadas no
+  bloco YAML, imagens, backlinks e cartões de arquivo dos quadros. A origem deve continuar recuperável na lixeira.
+- [ ] Histórico: editar, guardar uma versão, comparar, restaurar, desfazer a restauração pelo histórico e renomear a
+  nota. Fechar e abrir o app: as versões ficam neste aparelho, separadas por cofre.
+- [ ] Recuperar da lixeira uma nota apagada no Obsidian e um anexo; destino existente deve recusar sem substituir.
+- [ ] `/tabela`, `/callout`, `/link`, `/imagem`, `/data`; não devem abrir dentro do YAML ou de código. Contagem com
+  acentos e emoji. Atalhos personalizados, conflitos e restauração dos padrões, incluindo Ctrl+P na prévia de Livros.
+- [ ] Importar um snippet CSS do Obsidian, ativar/desativar e reiniciar. Ícones/cores de notas e pastas, inclusive
+  depois de mover/renomear. Classes exclusivas do Obsidian podem precisar de ajuste no snippet.

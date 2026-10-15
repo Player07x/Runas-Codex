@@ -1,0 +1,15 @@
+{
+  "extract": true,
+  "merge": true,
+  "backlinks": true,
+  "restore": true,
+  "slash": true,
+  "css": true,
+  "shortcutSaved": true,
+  "shortcutRuns": true,
+  "mobile": {
+    "width": 320,
+    "scroll": 320,
+    "panes": 1
+  }
+}

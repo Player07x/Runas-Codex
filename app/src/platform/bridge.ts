@@ -33,6 +33,8 @@ export interface RunasCodexBridge {
     installSnippet(css: string): Promise<string>
     readBinary(path: string): Promise<Uint8Array>
     writeBinary(path: string, bytes: Uint8Array, expected?: { mtime: number; size: number } | null): Promise<VaultEntry>
+    listTrash(): Promise<VaultEntry[]>
+    restoreTrash(path: string, target: string): Promise<VaultEntry>
   }
   /** Lembretes da Agenda (notificações do sistema, agendadas no processo principal). */
   readonly agenda: {
@@ -57,4 +59,6 @@ export interface RunasCodexBridge {
   }
   /** Atalho global de captura rápida (Ctrl+Alt+N), mesmo com o app em segundo plano. */
   onQuickCapture(listener: () => void): () => void
+  /** Abre uma nota (`/notas/<caminho>`) numa janela extra. */
+  openWindow(route: string): Promise<void>
 }
