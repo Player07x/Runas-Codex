@@ -1,0 +1,161 @@
+{
+  "calendars": [
+    {
+      "id": "ID_tharn",
+      "name": "Calendário de Tharn",
+      "description": "O calendário do Império de Tharn, vizinho do condado.",
+      "static": {
+        "firstWeekDay": 2,
+        "overflow": true,
+        "weekdays": [
+          {
+            "type": "day",
+            "name": "Pedra",
+            "id": "ID_w0"
+          },
+          {
+            "type": "day",
+            "name": "Raiz",
+            "id": "ID_w1"
+          },
+          {
+            "type": "day",
+            "name": "Chama",
+            "id": "ID_w2"
+          },
+          {
+            "type": "day",
+            "name": "Vento",
+            "id": "ID_w3"
+          },
+          {
+            "type": "day",
+            "name": "Maré",
+            "id": "ID_w4"
+          }
+        ],
+        "months": [
+          {
+            "name": "Geada",
+            "type": "month",
+            "length": 30,
+            "interval": 1,
+            "offset": 0,
+            "id": "ID_m1"
+          },
+          {
+            "name": "Semeadura",
+            "type": "month",
+            "length": 30,
+            "interval": 1,
+            "offset": 0,
+            "id": "ID_m2"
+          },
+          {
+            "name": "Festival das Cinzas",
+            "type": "intercalary",
+            "length": 5,
+            "interval": 1,
+            "offset": 0,
+            "id": "ID_m3"
+          },
+          {
+            "name": "Colheita",
+            "type": "month",
+            "length": 30,
+            "interval": 1,
+            "offset": 0,
+            "id": "ID_m4"
+          },
+          {
+            "name": "Noite Longa",
+            "type": "month",
+            "length": 28,
+            "interval": 1,
+            "offset": 0,
+            "id": "ID_m5"
+          }
+        ],
+        "moons": [
+          {
+            "name": "Selene",
+            "cycle": 28,
+            "offset": 3,
+            "faceColor": "#bec6ff",
+            "shadowColor": "#000000",
+            "id": "ID_l1"
+          }
+        ],
+        "leapDays": [
+          {
+            "name": "Dia da Vigília",
+            "type": "leapday",
+            "interval": [
+              {
+                "ignore": false,
+                "exclusive": false,
+                "interval": 4
+              }
+            ],
+            "offset": 0,
+            "timespan": 4,
+            "intercalary": false,
+            "id": "ID_b1"
+          }
+        ],
+        "eras": [
+          {
+            "name": "Era dos Caçadores",
+            "format": "{{year}} E.C.",
+            "id": "ID_e1",
+            "endsYear": false,
+            "isEvent": false,
+            "type": "era",
+            "category": null,
+            "isStartingEra": false,
+            "date": {
+              "year": 4027,
+              "month": 0,
+              "day": 1
+            }
+          }
+        ],
+        "offset": 0
+      },
+      "seasonal": {
+        "seasons": [],
+        "offset": 0,
+        "type": "Dated"
+      },
+      "current": {
+        "year": 4031,
+        "month": 3,
+        "day": 15
+      },
+      "events": [
+        {
+          "name": "Festa das Cinzas",
+          "description": "Fogueiras nas praças.",
+          "id": "E1",
+          "note": null,
+          "date": {
+            "day": 1,
+            "month": 2,
+            "year": null
+          },
+          "type": "Date",
+          "category": null
+        }
+      ],
+      "categories": []
+    }
+  ],
+  "defaultCalendar": "ID_tharn",
+  "dateFormat": "YYYY-MM-DD",
+  "paths": [],
+  "version": {
+    "major": 2,
+    "minor": 1,
+    "patch": 0
+  }
+}
