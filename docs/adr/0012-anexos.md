@@ -1,6 +1,6 @@
 # ADR 0012 — Anexos e imagens nas notas
 
-- **Status:** aceita para a C0 e a C1 (2026-10-14). Tamanho e posição (C2) completam esta ADR.
+- **Status:** aceita (C0, C1 e C2, 2026-10-14).
 
 ## Contexto
 
@@ -44,8 +44,34 @@ autorizou mexer na gravação segura (`desktop/src/main/vault.ts`) para isso.
 - **Configurações** mostra o formato de link e a pasta de anexos lidos do `app.json` (somente leitura: muda-se no
   Obsidian).
 
+## Decisão (C2 — tamanho e posição)
+
+- **Formato** (testado no Obsidian 1.14.4 numa cópia isolada, sem tocar nos cofres do dono): a posição vai no apelido
+  do embed, **antes do tamanho**: `![[mapa.png|direita|300]]` ou `![direita|300](mapa.png)`. O Obsidian lê o último
+  trecho como tamanho (`width`) e o resto como texto alternativo (`alt="direita"`); com a ordem trocada
+  (`|300|direita`) o tamanho se perde, por isso o app sempre grava nessa ordem. Posições: `esquerda` e `direita` (a
+  imagem flutua e o texto corre em volta, até 45% da largura), `centro` e `largo` (largura total, ignora o tamanho).
+- **Leitor** (`core/embeds.ts`, `markdown/EmbedImage.tsx`): o apelido é lido como no Obsidian — o que mudou é que
+  `Legenda|300` agora dá texto alternativo "Legenda" e largura 300, como lá (antes virava legenda inteira, sem
+  tamanho). Imagens em link Markdown também ganham tamanho e posição pelo texto alternativo. Classes `pos-*` em
+  `styles/markdown.css` (o dono autorizou esta mudança no leitor).
+- **Snippet do Obsidian** (`runas-codex.css`): regras por `alt` exato (`.image-embed[alt="direita"]`), conferidas no
+  Obsidian nas quatro posições e nos dois formatos de link ([imagem](../imagens/anexos/c2-obsidian-posicoes.png)).
+  Quem já instalou o snippet precisa instalar de novo (Configurações › Snippet).
+- **Editar no live preview:** passar o mouse (ou tocar, no celular) mostra um menu com as quatro posições (clicar na
+  ativa tira a posição) e "tamanho original", e uma alça no canto para arrastar o tamanho (setas do teclado mudam de
+  20 em 20 px). Ao soltar, o app regrava **só o apelido** daquele embed, no mesmo formato e com o mesmo separador
+  (`\|` em tabelas); se o texto mudou no meio, não grava. No editor a imagem fica alinhada, sem o texto em volta (o
+  CodeMirror mede uma linha por vez); o texto em volta aparece na leitura e no Obsidian. No modo leitura não há alças:
+  ele é só para ler, como no Obsidian. Imagens de notas transcluídas não se editam dali (são da outra nota).
+- **Anexos sem uso** (Configurações): lista imagens, áudios, vídeos e PDFs que nenhuma nota nem quadro usa — sem
+  backlink e sem o nome do arquivo em nenhum texto (propriedades, blocos como `runas-mapa`, HTML, `.canvas`) — e manda
+  os escolhidos para a lixeira do cofre.
+
 ## Consequências
 
+- Testes (C2): leitura e escrita do apelido (`core/embeds.test.ts`), troca do embed certo no texto, recusa quando
+  ele sumiu e anexos sem uso; o menu e a alça foram conferidos no navegador (posição e tamanho regravados no link).
 - Testes (C1): nome da imagem colada, extensão pelo tipo, texto do embed nos formatos de link, rótulo da pasta de
   anexos e renomear um anexo mantendo tamanho e posição (`core/rename.test.ts`); o `--smoke --write` cola uma imagem
   numa nota pelo evento de colar do editor e confere o arquivo, o link e a imagem na leitura.

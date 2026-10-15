@@ -179,6 +179,14 @@ automáticos). Falta o uso de verdade:
 - [ ] Cofre em somente leitura: o botão some e colar ou arrastar não grava nada.
 - [ ] Windows: colar e arrastar (Linux/Electron e navegador foram verificados; Android só com o cofre real, na etapa A).
 
+## Tamanho e posição das imagens (C2)
+
+- [ ] No modo Editar, passar o mouse numa imagem: o menu (esquerda, centro, direita, largura total, tamanho original) e a alça do canto mudam o link (`![[mapa.png|direita|300]]`); conferir no modo Código.
+- [ ] Celular: o menu e a alça aparecem ao tocar, com alvos de 44 px; arrastar a alça com o dedo.
+- [ ] Reinstalar o snippet (Configurações › Snippet runas-codex.css) e abrir a mesma nota no Obsidian: posições iguais às do app no modo leitura. Conferido numa cópia isolada do Obsidian 1.14.4 (imagem em `docs/imagens/anexos/`); falta o seu cofre e o seu tema.
+- [ ] Prévia e exportação dos Livros com imagens posicionadas (as classes `pos-*` valem também nas páginas).
+- [ ] Configurações › Anexos sem uso: conferir a lista num cofre real antes de mandar algo para a lixeira.
+
 ---
 
 ## Limitações conhecidas (não precisam de teste agora)
