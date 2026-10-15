@@ -261,6 +261,8 @@ Regras que valem para todas:
 
 Ordem combinada em 14/10/2026 (depois da 8b): **7 → 8c → 8d → 9 → 10 → A (Android) → 11**. O Android completo fica
 para a penúltima etapa, automatizado no emulador do CI.
+Depois da 7, o que falta foi dividido em duas frentes que andam ao mesmo tempo (Codex e Claude Code), cada uma
+seguindo essa ordem: ver [docs/tarefas/README.md](tarefas/README.md).
 
 Por que essa ordem:
 - **Notas antes de tudo:** wiki, campanhas, livros e agenda são notas com regras extras.

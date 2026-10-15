@@ -195,7 +195,7 @@ sistemas, assistente de IA (precisa de internet; IA local fica para o futuro), c
 - [x] **Hospedar sala pelo Android** — rede local primeiro, internet depois. _(PROJ)_
 - [x] **Túnel alternativo** — funciona em redes que bloqueiam a porta 7844 (porta 443 ou retransmissor). _(pendência do RunasVTT)_
 - [x] **Sincronização incremental** — enviar só o que mudou em vez da cena inteira (melhor no 4G). _(FVTT, OBR)_
-- [x] **Voz e vídeo na sala** — exige retransmissor (TURN) para funcionar pela internet. _(FVTT, R20, ALC)_
+- [ ] **Voz e vídeo na sala** — exige retransmissor (TURN) para funcionar pela internet. _(FVTT, R20, ALC)_ — **desmarcado pelo dono em 14/10/2026.**
 
 ### D.2 Dados e comunicação
 
@@ -414,7 +414,7 @@ _O DOCX já existe no Runas Book e será portado, sem item próprio._
 
 - [x] **Pacote `.runas`** — formato único com manifesto e versão; ao importar: mesclar, substituir ou duplicar. _(PROJ)_
 - [x] **Backup automático local e snapshots** do cofre inteiro, agendados (hoje: backup na nuvem no DM e snapshots só no VTT). _(OBS, FVTT)_
-- [x] **Sincronizar aparelhos pela rede local** — PC ↔ celular sem nuvem. _(PROJ)_
+- [ ] **Sincronizar aparelhos pela rede local** — PC ↔ celular sem nuvem. _(PROJ)_ — **desmarcado pelo dono em 14/10/2026.**
 - [x] **Convivência com Syncthing e Obsidian Sync** — reconhecer e tratar arquivos de conflito. _(OBS)_
 
 ---

@@ -72,7 +72,9 @@ Vários agentes trabalham ao mesmo tempo em módulos diferentes. Nestes arquivos
 blocos), sem reescrever nem reordenar o que existe: `package.json`, `package-lock.json`, `app/src/App.tsx`,
 `app/src/components/Shell.tsx`, `app/src/platform/platform.ts`, `bridge.ts`, `electron-platform.ts`,
 `memory-platform.ts`, `desktop/src/main/index.ts`, `desktop/src/preload/index.ts`, `desktop/src/shared/ipc.ts`,
-`desktop/src/main/smoke.ts`, `app/src/data/demo-vault.ts`, `README.md`, `docs/04-testes-pendentes.md`.
+`desktop/src/main/smoke.ts`, `app/src/data/demo-vault.ts`, `README.md`, `docs/04-testes-pendentes.md`,
+`app/src/screens/TransferScreen.tsx`, `.github/workflows/release.yml`, `mobile/capacitor.config.ts`,
+`mobile/android/app/src/main/AndroidManifest.xml`, `MainActivity.java`.
 
 ## Fluxo de trabalho
 
