@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { BookOpenText, ChevronLeft, Code2, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
+import { BookOpenText, ChevronLeft, Code2, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Trash2, TriangleAlert, Type } from "lucide-react"
+import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { scopeOf } from "../../core/spaces"
 import { fillTemplate, insertTemplate } from "../../core/templates"
-import { foldName, noteName, textToSave, toEditorText } from "../../core/text"
+import { extname, foldName, noteName, textToSave, toEditorText } from "../../core/text"
 import { splitFrontmatter } from "../../lib/links"
 import { NoteSetContext } from "../../lib/note-set"
 import { navigate } from "../../lib/router"
+import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
@@ -30,6 +32,12 @@ function savedMode(): ViewMode {
 type SaveState = "salvo" | "pendente" | "salvando" | "conflito" | "erro"
 
 const AUTOSAVE_MS = 800
+
+/** O que o leitor sabe mostrar dentro da nota (os outros tipos não viram anexo pelo editor). */
+const isMedia = (name: string) => {
+  const ext = extname(name)
+  return IMAGE_EXT.has(ext) || AUDIO_EXT.has(ext) || VIDEO_EXT.has(ext) || ext === ".pdf"
+}
 
 interface Props {
   path: string
@@ -77,6 +85,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
   const editor = useRef<SourceEditorHandle>(null)
   const reader = useRef<HTMLDivElement>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   // Referências para gravar fora do ciclo do React (troca de nota, saída da tela).
   const latest = useRef({ path, base, draft, readOnly, save: vault.save })
@@ -153,6 +162,29 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
     setError(undefined)
     setTimeout(() => void flush())
   }
+
+  // Imagem importada, colada ou solta na nota: o arquivo vai para a pasta de anexos do Obsidian e o link entra no texto.
+  const addFiles = useCallback(
+    async (files: File[], at: number | null, pasted: boolean) => {
+      const links: string[] = []
+      for (const file of files) {
+        const ext = imageExtension(file.type) ?? extname(file.name)
+        const name = pasted || !file.name ? pastedImageName(new Date(), ext) : file.name
+        if (!isMedia(name)) {
+          toast(`“${file.name || "Arquivo colado"}” não é imagem, áudio, vídeo nem PDF; o app não anexa esse tipo na nota.`)
+          continue
+        }
+        try {
+          const saved = await vault.addAttachment(name, new Uint8Array(await file.arrayBuffer()), path)
+          links.push(attachmentEmbed(saved, path, vault.config.app, vault.index!))
+        } catch (err) {
+          toast(err instanceof Error ? err.message : String(err))
+        }
+      }
+      if (links.length) setTimeout(() => editor.current?.insertBlock(links.join("\n"), at ?? undefined))
+    },
+    [vault, path, toast],
+  )
 
   const noteSet = useMemo(() => vaultNoteSet(index, path, { onBroken: onCreate, onTag }, vault.platform), [index, path, onCreate, onTag, vault.version, vault.platform])
   const previewHost = useMemo<LivePreviewHost>(
@@ -245,6 +277,30 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             </button>
             <button
               className="icon-btn"
+              title="Inserir imagem (também dá para colar com Ctrl+V ou arrastar para a nota)"
+              aria-label="Inserir imagem"
+              onClick={() => {
+                if (mode === "leitura") setMode("live")
+                fileInput.current?.click()
+              }}
+            >
+              <ImagePlus size={17} />
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              aria-label="Escolher imagens"
+              onChange={(event) => {
+                const files = [...(event.target.files ?? [])]
+                event.target.value = ""
+                void addFiles(files, null, false)
+              }}
+            />
+            <button
+              className="icon-btn"
               title="Inserir modelo"
               aria-label="Inserir modelo"
               onClick={() => {
@@ -292,7 +348,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} showSecrets={showSecrets} /> : <p className="muted">Nota vazia.</p>}
           </NoteSetContext.Provider>
         ) : (
-          <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} />
+          <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
         )}
       </div>
 

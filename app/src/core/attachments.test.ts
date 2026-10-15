@@ -1,4 +1,5 @@
-import { appConfig, attachmentFolder, attachmentPath, availableAttachmentPath, cleanAttachmentName } from "./attachments"
+import { appConfig, attachmentEmbed, attachmentFolder, attachmentFolderLabel, attachmentPath, availableAttachmentPath, cleanAttachmentName, imageExtension, pastedImageName } from "./attachments"
+import { VaultIndex } from "./vault-index"
 
 describe("appConfig", () => {
   it("lê a pasta de anexos e o formato de link do app.json, com os padrões do Obsidian", () => {
@@ -65,5 +66,41 @@ describe("attachmentPath", () => {
   it("explica quando a pasta de anexos sai do cofre ou é oculta", () => {
     expect(() => attachmentPath("../fora", "a.png", [])).toThrow("fora do cofre")
     expect(() => attachmentPath(".anexos", "a.png", [])).toThrow("Pasta de anexos “.anexos”")
+  })
+})
+
+describe("imagem colada", () => {
+  it("dá nome com data e hora e extensão pelo tipo", () => {
+    expect(pastedImageName(new Date(2026, 9, 14, 9, 5, 7), ".png")).toBe("Imagem colada 20261014090507.png")
+    expect(imageExtension("image/jpeg")).toBe(".jpg")
+    expect(imageExtension("IMAGE/PNG")).toBe(".png")
+    expect(imageExtension("image/tiff")).toBeNull()
+  })
+})
+
+describe("attachmentEmbed", () => {
+  const entry = (path: string) => ({ path, size: 1, mtime: 1 })
+  const index = new VaultIndex([entry("Notas/Sessão.md"), entry("Notas/mapa.png"), entry("Anexos/Imagem colada 1.png"), entry("Wikis/mapa.png")], { "Notas/Sessão.md": "" })
+  const app = appConfig({})
+
+  it("wikilink com o nome curto quando é único, e caminho completo quando não é", () => {
+    expect(attachmentEmbed("Anexos/Imagem colada 1.png", "Anexos/Nota.md", app, index)).toBe("![[Imagem colada 1.png]]")
+    expect(attachmentEmbed("Notas/mapa.png", "Notas/Sessão.md", app, index)).toBe("![[Notas/mapa.png]]")
+    expect(attachmentEmbed("Notas/mapa.png", "Notas/Sessão.md", { ...app, newLinkFormat: "absolute" }, index)).toBe("![[Notas/mapa.png]]")
+  })
+
+  it("links em Markdown: relativo e com espaços codificados", () => {
+    const markdown = { ...app, useMarkdownLinks: true }
+    expect(attachmentEmbed("Anexos/Imagem colada 1.png", "Notas/Sessão.md", { ...markdown, newLinkFormat: "relative" }, index)).toBe("![](../Anexos/Imagem%20colada%201.png)")
+    expect(attachmentEmbed("Anexos/Imagem colada 1.png", "Notas/Sessão.md", { ...markdown, newLinkFormat: "absolute" }, index)).toBe("![](Anexos/Imagem%20colada%201.png)")
+  })
+})
+
+describe("attachmentFolderLabel", () => {
+  it("descreve a configuração do Obsidian", () => {
+    expect(attachmentFolderLabel("/")).toBe("Raiz do cofre")
+    expect(attachmentFolderLabel("./")).toBe("Mesma pasta da nota")
+    expect(attachmentFolderLabel("./img")).toBe("Subpasta “img” da nota")
+    expect(attachmentFolderLabel("Anexos/")).toBe("Pasta “Anexos”")
   })
 })

@@ -169,6 +169,18 @@ automáticos). Falta o uso de verdade:
 
 ---
 
+## Imagens nas notas (C1)
+
+- [ ] Copiar uma imagem de verdade (captura de tela com Print Screen, "Copiar imagem" no navegador) e colar com Ctrl+V numa nota no modo Editar e no Código: o arquivo `Imagem colada AAAAMMDDHHmmss.png` aparece na pasta de anexos do Obsidian e a imagem aparece na nota.
+- [ ] Arrastar uma foto do gerenciador de arquivos para o meio de uma nota: entra numa linha própria, no lugar onde soltou.
+- [ ] Botão "Inserir imagem" da barra do editor: escolher várias imagens de uma vez.
+- [ ] Colar texto copiado de uma planilha ou de um documento (que também leva uma "foto" do trecho): tem que colar o texto, não uma imagem.
+- [ ] No Obsidian, mudar "Local padrão para novos anexos" (Arquivos e links) para "Mesma pasta do arquivo atual" e para uma pasta fixa, reabrir o cofre no app e colar de novo: o arquivo vai para o lugar certo e o Obsidian mostra a imagem.
+- [ ] Cofre em somente leitura: o botão some e colar ou arrastar não grava nada.
+- [ ] Windows: colar e arrastar (Linux/Electron e navegador foram verificados; Android só com o cofre real, na etapa A).
+
+---
+
 ## Limitações conhecidas (não precisam de teste agora)
 
 - **Android sem cofre real:** o acesso ao cofre no Android é um spike da etapa 2 que ficou para depois; no APK, Notas

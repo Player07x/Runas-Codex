@@ -112,3 +112,12 @@ describe("renomear e os blocos da Wiki", () => {
     expect(image.after).toContain('imagem: "[[condado.png]]"')
   })
 })
+
+describe("renomear anexo", () => {
+  it("atualiza o embed da imagem e mantém tamanho e posição", () => {
+    const files: Record<string, string> = { "Notas/Sessão.md": "Antes\n![[foto.png]]\n![[foto.png|300]]\n![[foto.png|direita|300]]\n![foto](foto.png)\n" }
+    const index = new VaultIndex([...Object.keys(files), "Notas/foto.png"].map((path) => ({ path, size: 1, mtime: 1 })), files)
+    const edit = planRename(index, "Notas/foto.png", "Notas/Retrato do conde.png").edits.find((e) => e.path === "Notas/Sessão.md")!
+    expect(edit.after).toBe("Antes\n![[Retrato do conde.png]]\n![[Retrato do conde.png|300]]\n![[Retrato do conde.png|direita|300]]\n![foto](Retrato%20do%20conde.png)\n")
+  })
+})
