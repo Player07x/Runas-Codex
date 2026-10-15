@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises"
 import { BrowserWindow } from "electron"
 import { strFromU8, unzipSync } from "fflate"
 import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
+import { VTT_TOUCH_SMOKE } from "./vtt-touch-smoke"
 
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
@@ -394,6 +395,7 @@ export const SMOKE_SCRIPT = `(async () => {
     await until(() => document.querySelector(".vtt-root canvas"))
     await wait(1600)
     result.mesaCanvas = Boolean(document.querySelector(".vtt-root canvas"))
+    ${VTT_TOUCH_SMOKE}
     result.mesas = (await bridge.vtt.listWorlds()).map((m) => m.title + ":" + m.scenes)
     // Sala: o processo principal confere a página e o WebSocket como um jogador (checkRoom).
     const room = await bridge.vtt.player.start(30000 + Math.floor(Math.random() * 2000), 2)
@@ -632,5 +634,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.migration as Record<string, unknown>).again === true &&
     result.bookImportPreview === true &&
     result.bookImport === true
+    && typeof result.touch === "object" && Object.values(result.touch as Record<string, unknown>).length === 6 && Object.values(result.touch as Record<string, unknown>).every(value => value === true)
   )
 }

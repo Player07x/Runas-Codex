@@ -160,3 +160,74 @@ jobs:
             --generate-notes \
             --verify-tag \
             $prerelease
+
+  android-touch:
+    # APK de teste em emulador: a cópia com depuração do WebView nunca é publicada como instalador.
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run sync -w @runas-codex/mobile
+      - name: Habilitar depuração só no APK desta verificação
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs'
+          const path='mobile/android/app/src/main/assets/capacitor.config.json'
+          const config=JSON.parse(readFileSync(path,'utf8'))
+          config.android={...config.android,webContentsDebuggingEnabled:true}
+          writeFileSync(path,JSON.stringify(config))
+          JS
+      - name: Gerar o APK de teste
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Preparar emulador Android 35
+        run: |
+          sudo chmod 666 /dev/kvm
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-toque -k 'system-images;android-35;google_apis;x86_64' --device pixel_2
+          mkdir -p /tmp/runas-touch-webview
+          "$ANDROID_HOME/emulator/emulator" -avd runas-toque -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-touch-webview/emulator.log 2>&1 &
+          timeout 120 adb wait-for-device
+          for i in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          adb shell input keyevent 82
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+      - name: Operar a mesa por toque e medir o WebView
+        run: |
+          adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          adb shell am start -n dev.runas.codex/.MainActivity
+          for i in $(seq 1 60); do
+            runas_pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r')
+            if [ -n "$runas_pid" ]; then
+              adb forward tcp:9223 "localabstract:webview_devtools_remote_$runas_pid"
+              if curl --silent --fail http://127.0.0.1:9223/json > /tmp/runas-touch-webview/targets.json; then break; fi
+            fi
+            sleep 1
+          done
+          node desktop/tests/vtt/touch-webview.cdp.mjs http://127.0.0.1:9223 /tmp/runas-touch-webview
+      - name: Guardar métricas e capturas do Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-android-toque
+          path: /tmp/runas-touch-webview
+          if-no-files-found: warn
+          retention-days: 14

@@ -132,6 +132,7 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
   const [sceneId, setSceneId] = useState<string | null>(null)
   const [tab, setTab] = useState<SideTab>("scenes")
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const audio = useMasterAudio()
   const root = useRef<HTMLElement>(null)
 
@@ -147,6 +148,7 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
 
   function openScene(id: string | null) {
     setSceneId(id)
+    setPanelOpen(false)
     try {
       if (id) localStorage.setItem(lastSceneKey(world.id), id)
     } catch {
@@ -190,7 +192,7 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
 
   return (
     <main ref={root} className="vtt-root">
-      <div className="table" style={{ gridTemplateColumns: `minmax(${CANVAS_MIN}px, 1fr) ${width}px` }}>
+      <div className={`table ${panelOpen ? "panel-open" : ""}`} style={{ gridTemplateColumns: `minmax(${CANVAS_MIN}px, 1fr) ${width}px` }}>
         <header className="table-bar">
           {remote ? (
             <span className="chip" title="As mudanças são gravadas no computador da sala">
@@ -205,23 +207,24 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
             <strong>{world.title}</strong>
           </div>
           <div className="table-actions">
-            <button className="ghost" onClick={() => setTab("players")} title="Sala dos jogadores">
+            <button className="ghost" onClick={() => { setTab("players"); setPanelOpen(true) }} title="Sala dos jogadores">
               <MonitorPlay size={16} /> Sala
             </button>
             <button className="icon" onClick={() => setSettingsOpen(true)} title="Configurações da mesa" aria-label="Configurações da mesa">
               <Settings size={16} />
             </button>
           </div>
+          <button className="mesa-panel-toggle ghost" aria-label="Abrir ou fechar painéis" aria-expanded={panelOpen} onClick={() => setPanelOpen(value => !value)}>Painéis</button>
         </header>
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         <section className="canvas-area" aria-label="Cena">
           {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} />}
         </section>
-        <aside className="side-panel">
+        <aside className="side-panel" aria-label="Painel da mesa">
           <div className="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionar painel" onPointerDown={startResize} onPointerMove={resize} onPointerUp={endResize} onPointerCancel={endResize} />
           <nav className="side-tabs" aria-label="Painéis">
             {SIDE_TABS.map(({ id, label, icon: Icon }) => (
-              <button key={id} className={id === tab ? "active" : ""} onClick={() => setTab(id)} title={label} aria-label={label}>
+              <button key={id} className={id === tab ? "active" : ""} onClick={() => { setTab(id); setPanelOpen(tab !== id || !panelOpen) }} aria-expanded={tab === id && panelOpen} title={label} aria-label={label}>
                 <Icon size={17} />
               </button>
             ))}

@@ -248,3 +248,20 @@ automáticos). Falta o uso de verdade:
 - [ ] Windows e Android real: seletor de arquivo, cancelamento, prévia e confirmação; no Android, persistência no cofre real depende da C8.
 - [ ] Importar duas vezes o mesmo título: a segunda pasta recebe outro número. Em falha de gravação, conferir a pasta informada e as notas preservadas antes de tentar novamente.
 - [ ] Importar um livro longo com muitas imagens e conferir os limites informados (20 MB de entrada, 30 s por conversão, DOCX até 100 MB descompactados).
+
+## Etapa 9 — VTT no toque (X3)
+
+- [ ] Celular Android real: criar uma mesa em memória no APK, mover tokens, desenhar à mão livre, usar régua,
+  criar paredes/portas, regiões e luzes só por toque. Tocar no vazio desmarca; arrastar no vazio seleciona em retângulo.
+- [ ] Começar um traço ou arrasto e acrescentar o segundo dedo: o mapa move/aproxima, sem deixar desenho ou edição.
+  Soltar um dedo antes do outro não cria objeto. Interromper com troca de aplicativo também cancela a prévia.
+- [ ] Toque longo num objeto abre editar/ocultar/apagar; testar alças de tamanho e giro de token/imagem e os dois
+  raios da luz. Conferir encaixe e botão “Ignorar grade”.
+- [ ] Conferir desfazer/refazer, mover uma casa, espelhar, ocultar e apagar pelos botões. Editar no desktop enquanto
+  o mestre remoto está conectado: desfazer no celular deve recusar sobrescrever uma alteração posterior do desktop.
+- [ ] Celular de 320 px, tablet em pé/deitado, temas claro/escuro: gavetas, folha de propriedades, teclado virtual,
+  seleção de arquivos e rolagem interna, sem rolagem lateral da página.
+- [ ] Tela de toque no desktop: gestos e alças; depois repetir com mouse, roda, botão direito e atalhos.
+- [ ] Com sala no desktop, abrir o link do mestre no celular e operar só por toque enquanto um jogador acompanha.
+  Hospedar a sala no Android permanece na X7; a mesa em memória não persiste após fechar o APK.
+- [ ] Repetir o mapa de 4096 px com névoa e luzes num aparelho físico e comparar fluidez com o artefato do CI.
