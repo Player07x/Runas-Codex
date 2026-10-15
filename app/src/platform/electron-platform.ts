@@ -36,5 +36,15 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     },
     async stopRoom() {},
     printDocument: () => window.print(),
+    appVersion: () => bridge.updates.version(),
+    checkUpdate: () => bridge.updates.check(),
+    async installUpdate(onProgress) {
+      const stop = bridge.updates.onProgress(({ received, total }) => onProgress(received, total))
+      try {
+        return await bridge.updates.install()
+      } finally {
+        stop()
+      }
+    },
   }
 }

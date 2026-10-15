@@ -1,4 +1,5 @@
 import type { Reminder } from "../core/agenda"
+import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 
 /**
  * Fronteira entre o app (igual nas três plataformas) e a casca nativa.
@@ -89,4 +90,10 @@ export interface Platform {
   stopRoom(): Promise<void>
   /** Abre o diálogo de impressão do documento atual. */
   printDocument?(): void
+  /** Versão instalada do app (desktop). */
+  appVersion?(): Promise<string>
+  /** "Verificar atualizações" (ADR 0017): consulta as releases do GitHub, só quando o usuário clica. */
+  checkUpdate?(): Promise<UpdateInfo>
+  /** Baixa, confere pelo SHA-256 e instala a versão encontrada na última consulta. */
+  installUpdate?(onProgress: (received: number, total: number) => void): Promise<UpdateInstallResult>
 }

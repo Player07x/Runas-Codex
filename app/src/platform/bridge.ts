@@ -1,3 +1,4 @@
+import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 import type { VttApi } from "../vtt/shared/ipc"
 import type { BackupInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
 
@@ -41,4 +42,11 @@ export interface RunasCodexBridge {
   saveFile(name: string, content: string): Promise<string | null>
   /** A mesa (VTT): mesas do cofre, documentos, sala dos jogadores e áudio. */
   readonly vtt: VttApi
+  /** Versão instalada e "Verificar atualizações" (ADR 0017). */
+  readonly updates: {
+    version(): Promise<string>
+    check(): Promise<UpdateInfo>
+    install(): Promise<UpdateInstallResult>
+    onProgress(listener: (progress: { received: number; total: number }) => void): () => void
+  }
 }

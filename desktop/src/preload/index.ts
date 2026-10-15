@@ -118,6 +118,18 @@ const bridge: RunasCodexBridge = {
       import: (kind, fileName, bytes) => invoke(VTT.assetsImport, kind, fileName, bytes),
     },
   },
+  updates: {
+    version: () => invoke(IPC.appVersion),
+    check: () => invoke(IPC.updatesCheck),
+    install: () => invoke(IPC.updatesInstall),
+    onProgress: (listener) => {
+      const handler = (_event: unknown, progress: { received: number; total: number }) => listener(progress)
+      ipcRenderer.on(IPC.updatesProgress, handler)
+      return () => {
+        ipcRenderer.removeListener(IPC.updatesProgress, handler)
+      }
+    },
+  },
 }
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

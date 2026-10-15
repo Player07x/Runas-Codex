@@ -169,6 +169,13 @@ automáticos). Falta o uso de verdade:
 
 ---
 
+## Atualizações (botão "Verificar atualizações")
+
+- [ ] Instalar a pré-release `v0.1.0-beta.1` (Windows `.exe`, Linux AppImage e `.deb`), abrir Configurações › Verificar atualizações: aparece a `v0.1.0-beta.2`, com "O que mudou".
+- [ ] "Baixar e instalar": no Windows o instalador abre e o app fecha; no AppImage o app reinicia já na beta.2; no `.deb` o pacote abre no instalador do sistema (pede a senha). Conferir a versão nova em Configurações.
+- [ ] Sem internet, ou com o GitHub fora: a mensagem de erro aparece e nada muda.
+- [ ] Android: a linha explica que o APK novo se baixa pela página de versões.
+
 ## Limitações conhecidas (não precisam de teste agora)
 
 - **Android sem cofre real:** o acesso ao cofre no Android é um spike da etapa 2 que ficou para depois; no APK, Notas

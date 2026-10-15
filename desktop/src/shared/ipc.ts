@@ -21,6 +21,11 @@ export const IPC = {
   /** Do processo principal para a janela: clicaram num lembrete. */
   agendaOpen: "agenda:open",
   saveFile: "files:save",
+  appVersion: "app:version",
+  updatesCheck: "updates:check",
+  updatesInstall: "updates:install",
+  /** Do processo principal para a janela: andamento do download da atualização. */
+  updatesProgress: "updates:progress",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

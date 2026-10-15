@@ -430,5 +430,5 @@ _O DOCX já existe no Runas Book e será portado, sem item próprio._
 - [x] **Ajuda offline embutida**. _(WA)_
 - [x] **Desempenho com cofres grandes** — 10 mil notas sem travar no celular. _(lição do estudo)_
 - [x] **Zero telemetria e nenhuma chamada de rede fora do VTT**. _(PROJ)_ **(obrigatório)**
-- [x] **Atualização manual** — o app não busca atualizações sozinho. _(PROJ)_
+- [x] **Atualização manual** — o app não busca atualizações sozinho; o botão "Verificar atualizações" consulta só quando você clica (ADR 0017). _(PROJ)_
 - [x] **API de extensões** (futuro). _(FVTT, OBR, OBS)_
