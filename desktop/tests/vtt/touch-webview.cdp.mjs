@@ -1,5 +1,6 @@
 // Verificação do APK em um WebView depurável. Usa só APIs nativas do Node e o protocolo do Chromium.
 import { mkdir, writeFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
 const endpoint = process.argv[2] ?? 'http://127.0.0.1:9223'
 const output = process.argv[3] ?? '/tmp/runas-touch-webview'
 await mkdir(output, { recursive: true })
@@ -21,12 +22,14 @@ socket.onmessage = event => {
   if (!message.id) return
   const action = pending.get(message.id)
   pending.delete(message.id)
+  if (action) clearTimeout(action.timer)
   if (message.error) action?.reject(new Error(message.error.message))
   else action?.resolve(message.result)
 }
 const send = (method, params = {}) => new Promise((resolve, reject) => {
   const id = ++sequence
-  pending.set(id, { resolve, reject })
+  const timer = setTimeout(() => { pending.delete(id); reject(new Error('Tempo excedido: ' + method)) }, 20000)
+  pending.set(id, { resolve, reject, timer })
   socket.send(JSON.stringify({ id, method, params }))
 })
 const run = async expression => {
@@ -54,7 +57,11 @@ const tool = async text => {
 }
 const input = async (name, value) => { await run(`(()=>{const e=Array.from(document.querySelectorAll('label.field')).find(e=>e.querySelector('span')?.textContent===${JSON.stringify(name)})?.querySelector('input,select');if(!e)throw new Error('Campo: '+${JSON.stringify(name)});const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,${JSON.stringify(String(value))});e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{bubbles:true}))})()`);await sleep(100);await run(`(()=>{const e=Array.from(document.querySelectorAll('label.field')).find(e=>e.querySelector('span')?.textContent===${JSON.stringify(name)})?.querySelector('input,select');e?.dispatchEvent(new FocusEvent('focusout',{bubbles:true}))})()`) }
 const field = name => run(`Array.from(document.querySelectorAll('.properties label.field')).find(e=>e.querySelector('span')?.textContent===${JSON.stringify(name)})?.querySelector('input')?.value`)
-const shot = async name => { const image = await send('Page.captureScreenshot', { format: 'png' }); await writeFile(output + '/' + name + '.png', Buffer.from(image.data, 'base64')); const canvas = await run(`new Promise(resolve=>requestAnimationFrame(()=>resolve(document.querySelector('.scene-host canvas')?.toDataURL('image/png'))))`); if (canvas) await writeFile(output + '/' + name + '-canvas.png', Buffer.from(canvas.split(',')[1], 'base64')) }
+const shot = async name => {
+  // captureScreenshot do DevTools pode alterar a viewport do WebView antigo. No Android, captura a tela nativa.
+  if (await run(`navigator.userAgent.includes('Android')`)) await writeFile(output + '/' + name + '.png', execFileSync('adb', ['exec-out', 'screencap', '-p'], { timeout: 15000, maxBuffer: 16 * 1024 * 1024 }))
+  else { const image = await send('Page.captureScreenshot', { format: 'png' }); await writeFile(output + '/' + name + '.png', Buffer.from(image.data, 'base64')) }
+}
 const at = (x, y, size = 3000, height = 2000) => run(`(()=>{const r=document.querySelector('.scene-host canvas').getBoundingClientRect(),z=Math.min(r.width/${size},r.height/${height})*.92;return{x:r.x+(r.width-${size}*z)/2+${x}*z,y:r.y+(r.height-${height}*z)/2+${y}*z}})()`)
 const benchmark = () => run(`new Promise(resolve=>{const canvas=document.querySelector('.scene-host canvas'),r=canvas.getBoundingClientRect();const start=performance.now(),times=[];let previous=start;const emit=(type,id,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:id,button:0,buttons:type==='pointerup'?0:1,clientX:r.x+x,clientY:r.y+y}));emit('pointerdown',101,r.width*.35,r.height*.45);emit('pointerdown',102,r.width*.65,r.height*.45);function frame(now){times.push(now-previous);previous=now;const shift=Math.sin((now-start)/500)*20;emit('pointermove',101,r.width*.35+shift,r.height*.45);emit('pointermove',102,r.width*.65+shift,r.height*.45);if(now-start<5000){requestAnimationFrame(frame);return}emit('pointerup',101,r.width*.35,r.height*.45);emit('pointerup',102,r.width*.65,r.height*.45);times.sort((a,b)=>a-b);resolve({fps:Math.round(times.length*10000/(now-start))/10,p95ms:Math.round(times[Math.floor(times.length*.95)]*10)/10,resolution:canvas.dataset.renderResolution,zoom:canvas.dataset.viewZoom,cameraX:canvas.dataset.viewX,cameraY:canvas.dataset.viewY,physicalWidth:canvas.width,physicalHeight:canvas.height,frames:times.length})}requestAnimationFrame(frame)})`)
 const results = {}
