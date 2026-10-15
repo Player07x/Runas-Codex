@@ -202,6 +202,13 @@ jobs:
           sudo chmod 666 /dev/kvm
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-toque -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --path "$ANDROID_AVD_HOME/runas-toque.avd"
+          # Ferramentas de versões diferentes podem escrever o índice do AVD em pastas distintas.
+          test -f "$ANDROID_AVD_HOME/runas-toque.avd/config.ini"
+          cat > "$ANDROID_AVD_HOME/runas-toque.ini" <<EOF
+          avd.ini.encoding=UTF-8
+          path=$ANDROID_AVD_HOME/runas-toque.avd
+          target=android-35
+          EOF
           mkdir -p /tmp/runas-touch-webview
           "$ANDROID_HOME/emulator/emulator" -avd runas-toque -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-touch-webview/emulator.log 2>&1 &
           timeout 120 adb wait-for-device
