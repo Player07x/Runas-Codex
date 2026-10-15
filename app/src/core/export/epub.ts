@@ -14,6 +14,7 @@ export function generateEpub(book: ExportBook, modified = new Date()): Uint8Arra
     files[`EPUB/section-${i}.xhtml`] = strToU8(page(section.title, section.nodes.map(nodeXml).join("")))
   })
   book.assets.forEach((asset, i) => {
+    if (asset.docxOnly) return
     if (!/^assets\/[a-zA-Z0-9_.-]+$/.test(asset.name)) throw new Error("Nome de recurso inválido.")
     files[`EPUB/${asset.name}`] = asset.bytes
     manifest.push(`<item id="a${i}" href="${xml(asset.name)}" media-type="${xml(asset.mime)}"/>`)

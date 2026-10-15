@@ -8,15 +8,6 @@ import garamond from "@fontsource-variable/eb-garamond/files/eb-garamond-latin-w
 import geist from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url"
 import cinzel from "@fontsource/cinzel/files/cinzel-latin-400-normal.woff2?url"
 
-/** Contrato C0: não cria um segundo caminho de leitura/gravação de bytes. */
-export type BinaryPlatform = Platform & {
-  readBinary(path: string): Promise<Uint8Array>
-  saveBytes(name: string, bytes: Uint8Array, mime: string): Promise<string | null>
-}
-export function binaryPlatform(platform: Platform): BinaryPlatform {
-  if (!("readBinary" in platform) || !("saveBytes" in platform)) throw new Error("A exportação de EPUB e DOCX precisa do suporte a arquivos binários (C0).")
-  return platform as BinaryPlatform
-}
 const safeAttrs = new Set(["id", "class", "style", "title", "alt", "width", "height", "colspan", "rowspan", "align", "open", "start", "checked", "type", "role", "aria-label", "xmlns", "viewBox"])
 const styles = ["color", "background-color", "font-family", "font-size", "font-variant", "text-align", "column-count"]
 const mimeFor = (path: string) => ({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" })[path.split(".").at(-1)?.toLowerCase() ?? ""]
@@ -34,7 +25,7 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
     if (imageNames.has(src)) return imageNames.get(src)!
     let bytes: Uint8Array, mime: string
     const path = urlPaths.get(src)
-    if (path) { bytes = await binaryPlatform(platform).readBinary(path); mime = mimeFor(path) ?? "image/png" }
+    if (path) { bytes = await platform.readBinary(path); mime = mimeFor(path) ?? "image/png" }
     else if (src.startsWith("data:image/")) {
       const response = await fetch(src); bytes = new Uint8Array(await response.arrayBuffer()); mime = response.headers.get("content-type")?.split(";")[0] ?? "image/png"
     } else throw new Error(`Não foi possível incluir a imagem local: ${img.alt || src}`)
@@ -59,6 +50,9 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
       // SVG de diagramas precisa conservar namespaces e atributos; já saiu do Mermaid sanitizado.
       const attrs = Object.fromEntries([...node.attributes].filter((a) => !a.name.startsWith("on")).map((a) => [a.name, a.value]))
       attrs.xmlns = "http://www.w3.org/2000/svg"
+      const fallback = await svgFallback(node as SVGSVGElement)
+      if (fallback) attrs["data-fallback"] = fallback
+      else warnings.add("No DOCX, diagramas com rótulos em HTML entram como aviso (no PDF e no EPUB eles saem iguais à prévia).")
       return [{ tag: "svg", attrs, children: await captureSvgChildren(node) }]
     }
     const attrs: Record<string, string> = {}
@@ -80,6 +74,32 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
     }
     const tag = node.tagName.toLowerCase()
     return [{ tag: tag === "input" ? "span" : tag, attrs: tag === "input" ? {} : attrs, children: tag === "input" ? [node.hasAttribute("checked") ? "☑" : "☐"] : (await Promise.all([...node.childNodes].map(capture))).flat() }]
+  }
+  /** PNG do diagrama para o DOCX. Rótulos em HTML (`foreignObject`) "sujam" o canvas e não deixam converter: `null`. */
+  async function svgFallback(svg: SVGSVGElement): Promise<string | null> {
+    const rect = svg.getBoundingClientRect()
+    const width = Math.ceil(rect.width), height = Math.ceil(rect.height)
+    if (!width || !height || svg.querySelector("foreignObject")) return null
+    const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" }))
+    try {
+      const image = new Image()
+      image.src = url
+      await image.decode()
+      const canvas = document.createElement("canvas")
+      canvas.width = width * 2; canvas.height = height * 2
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return null
+      ctx.scale(2, 2)
+      ctx.drawImage(image, 0, 0, width, height)
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error("Falha na conversão do diagrama.")), "image/png"))
+      const name = `assets/diagram-${assets.length}.png`
+      assets.push({ name, mime: "image/png", bytes: new Uint8Array(await blob.arrayBuffer()), width, height, docxOnly: true })
+      return name
+    } catch {
+      return null
+    } finally {
+      URL.revokeObjectURL(url)
+    }
   }
   // SVG conserva também os descendentes: a conversão não precisa executar o conteúdo.
   async function svgTree(el: Element): Promise<ExportNode> {

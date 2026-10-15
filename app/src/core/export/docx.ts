@@ -10,8 +10,10 @@ const classes = (node: Exclude<ExportNode, string>) => (node.attrs.class ?? "").
 const color = (value?: string) => {
   const hex = /^#([a-f\d]{6})$/i.exec(value ?? "")
   if (hex) return hex[1]
-  const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(value ?? "")
-  return rgb ? rgb.slice(1, 4).map((v) => Number(v).toString(16).padStart(2, "0")).join("") : undefined
+  // O estilo calculado de quem não tem fundo é `rgba(0, 0, 0, 0)`: transparente, não preto.
+  const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(value ?? "")
+  if (!rgb || (rgb[4] !== undefined && Number(rgb[4]) === 0)) return undefined
+  return rgb.slice(1, 4).map((v) => Number(v).toString(16).padStart(2, "0")).join("")
 }
 export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
   const page = BOOK_SIZES[book.size]
@@ -22,6 +24,14 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
     return nodes.flatMap((node): ParagraphChild[] => {
       if (typeof node === "string") return [new TextRun({ ...style, text: node })]
       if (node.tag === "br") return [new TextRun({ break: 1 })]
+      // Diagrama: entra a versão em PNG, se a captura conseguiu fazer; o SVG (e o CSS dele) nunca vira texto.
+      if (node.tag === "svg") {
+        const fallback = assets.get(node.attrs["data-fallback"] ?? "")
+        if (!fallback) return [new TextRun({ text: "[Diagrama: veja a versão em PDF ou EPUB]", italics: true })]
+        const w = Math.min(width, fallback.width || width)
+        const h = w * ((fallback.height || 1) / (fallback.width || 1))
+        return [new ImageRun({ data: fallback.bytes, type: "png", transformation: { width: w, height: h }, altText: { title: "Diagrama", description: "Diagrama", name: "Diagrama" } })]
+      }
       if (node.tag === "img") {
         const asset = assets.get(node.attrs.src)
         if (!asset || !["image/png", "image/jpeg", "image/gif", "image/bmp"].includes(asset.mime)) return [new TextRun(node.attrs.alt || "[Imagem]")]
@@ -65,6 +75,11 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
       if (typeof node === "string") { if (node.trim()) out.push(new Paragraph({ children: inline([node]) })); continue }
       const cls = classes(node)
       if (cls.includes("quebra-pagina")) { out.push(new Paragraph({ children: [new PageBreak()] })); continue }
+      // Fórmula em bloco e diagrama: um parágrafo só (antes cada pedaço do HTML do KaTeX virava uma linha).
+      if (cls.includes("math-display") || cls.includes("katex-display") || cls.includes("mermaid") || node.tag === "svg") {
+        out.push(new Paragraph({ alignment: AlignmentType.CENTER, children: inline([node]), spacing: { after: 140 } }))
+        continue
+      }
       if (cls.includes("quebra-coluna")) { out.push(new Paragraph({ children: [new ColumnBreak()] })); continue }
       if (node.tag === "table") {
         const rows = elements(node.children).flatMap((n) => n.tag === "tr" ? [n] : elements(n.children).filter((r) => r.tag === "tr"))

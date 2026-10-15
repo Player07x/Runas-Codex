@@ -43,4 +43,22 @@ describe("Exportação de livros", () => {
     expect(Object.keys(zip).some((path) => path.startsWith("word/media/") && path.endsWith(".png"))).toBe(true)
     expect(strFromU8(zip["word/_rels/document.xml.rels"])).toContain("relationships/image")
   })
+  it("DOCX: diagrama vira imagem (ou aviso), fórmula em bloco fica num parágrafo e fundo transparente não fica preto", async () => {
+    const png = book.assets[0]!.bytes
+    const svg = (fallback?: string) => el("div", [el("svg", [el("style", ["#mermaid-1{font-family:x}"]), el("text", ["Taverna"])], { ...(fallback ? { "data-fallback": fallback } : {}) })], { class: "mermaid" })
+    const math = el("div", [el("span", [el("span", [el("span", [el("math", [el("semantics", [el("annotation", ["\\int_0^1 x^2 dx"])])])], { class: "katex-mathml" }), el("span", ["∫", "0", "1"], { class: "katex-html" })], { class: "katex" })], { class: "katex-display" })], { class: "math math-display" })
+    const colored = el("p", [el("span", ["texto"], { style: "color:rgb(139, 30, 30);background-color:rgba(0, 0, 0, 0)" })])
+    const withDiagrams: ExportBook = { ...book, assets: [...book.assets, { name: "assets/diagram-1.png", mime: "image/png", width: 1, height: 1, bytes: png, docxOnly: true }], sections: [{ title: "Cap", kind: "capitulo", path: "C.md", nodes: [svg("assets/diagram-1.png"), svg(), math, colored] }] }
+    const doc = strFromU8(unzipSync(await generateDocx(withDiagrams))["word/document.xml"])
+    expect(doc).not.toContain("mermaid-1")
+    expect(doc).toContain("Diagrama: veja a versão em PDF ou EPUB")
+    expect(doc).toContain("\\int_0^1 x^2 dx")
+    expect(doc.match(/<w:p>|<w:p /g)!.length).toBeLessThan(8)
+    expect(doc).toContain('w:color w:val="8b1e1e"')
+    expect(doc).not.toContain('w:fill="000000"')
+    // No EPUB o diagrama é o próprio SVG: o PNG do DOCX não entra.
+    const epub = unzipSync(generateEpub(withDiagrams))
+    expect(Object.keys(epub).some((name) => name.includes("diagram-1"))).toBe(false)
+    expect(strFromU8(epub["EPUB/section-0.xhtml"])).not.toContain("data-fallback")
+  })
 })

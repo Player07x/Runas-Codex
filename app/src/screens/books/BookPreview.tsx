@@ -1,4 +1,3 @@
-import { binaryPlatform, captureBook } from "./export-snapshot"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Markdown } from "../../components/Markdown"
 import { bookProperties, bookRoute } from "../../core/books"
@@ -104,10 +103,10 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
           setExportStatus(path ? `PDF salvo: ${path}` : "Exportação cancelada.")
         } else { vault.platform.printDocument?.(); setExportStatus("Escolha Salvar como PDF no diálogo de impressão.") }
       } else {
-        const platform = binaryPlatform(vault.platform)
+        const { captureBook } = await import("./export-snapshot")
         const snapshot = await captureBook(source.current, index, book, vault.platform, draft)
         const bytes = format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
-        const path = await platform.saveBytes(`${book.name}.${format}`, bytes, format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        const path = await vault.platform.saveBytes(`${book.name}.${format}`, bytes, format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         setExportStatus(path ? `Arquivo salvo: ${path}. ${snapshot.warnings.join(" ")}` : "Exportação cancelada.")
       }
     } catch (err) { setExportStatus(`Não foi possível exportar: ${err instanceof Error ? err.message : String(err)}`) }

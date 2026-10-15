@@ -4,7 +4,11 @@ import type { IndexedNote, VaultIndex } from "../vault-index"
 
 /** Árvore já desenhada pelo leitor compartilhado. Não depende de DOM, React ou da plataforma. */
 export type ExportNode = string | { tag: string; attrs: Record<string, string>; children: ExportNode[] }
-export interface ExportAsset { name: string; mime: string; bytes: Uint8Array; width?: number; height?: number }
+export interface ExportAsset {
+  name: string; mime: string; bytes: Uint8Array; width?: number; height?: number
+  /** Só para o DOCX (ex.: diagrama SVG convertido em PNG; o EPUB usa o próprio SVG). */
+  docxOnly?: boolean
+}
 export interface ExportSection { title: string; kind: string; path: string; nodes: ExportNode[] }
 export interface ExportBook {
   title: string; author: string; language: string; identifier: string
@@ -32,7 +36,8 @@ export const xml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "
 export const plainText = (node: ExportNode): string => typeof node === "string" ? node : node.children.map(plainText).join("")
 export function nodeXml(node: ExportNode): string {
   if (typeof node === "string") return xml(node)
-  const attrs = Object.entries(node.attrs).map(([key, value]) => ` ${key}="${xml(value)}"`).join("")
+  // `data-fallback` é só para o DOCX (o PNG do diagrama); no XHTML do EPUB ele não entra.
+  const attrs = Object.entries(node.attrs).filter(([key]) => key !== "data-fallback").map(([key, value]) => ` ${key}="${xml(value)}"`).join("")
   if (["img", "br", "hr", "input", "wbr", "source", "col"].includes(node.tag)) return `<${node.tag}${attrs} />`
   return `<${node.tag}${attrs}>${node.children.map(nodeXml).join("")}</${node.tag}>`
 }

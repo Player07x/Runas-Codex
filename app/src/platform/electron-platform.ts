@@ -6,7 +6,6 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
   const { vault } = bridge
   return {
     kind: "electron",
-    exportPdf: (name) => bridge.exportPdf(name),
     vault: () => vault.current(),
     chooseVault: () => vault.choose(),
     createVault: () => vault.create(),
@@ -40,5 +39,6 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     readBinary: (path) => vault.readBinary(path),
     writeBinary: (path, bytes, expected) => vault.writeBinary(path, bytes, expected),
     saveBytes: (name, bytes) => bridge.saveBytes(name, bytes),
+    exportPdf: (name) => bridge.exportPdf(name),
   }
 }
