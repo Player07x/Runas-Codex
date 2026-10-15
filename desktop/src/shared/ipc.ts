@@ -24,6 +24,7 @@ export const IPC = {
   vaultReadBinary: "vault:read-binary",
   vaultWriteBinary: "vault:write-binary",
   saveBytes: "files:save-bytes",
+  booksPdf: "books:pdf",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

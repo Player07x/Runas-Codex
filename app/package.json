@@ -27,6 +27,8 @@
     "@lezer/highlight": "1.2.5",
     "@lezer/markdown": "1.8.0",
     "d3-force": "3.0.0",
+    "docx": "9.7.1",
+    "fflate": "0.8.3",
     "ical.js": "2.2.1",
     "katex": "0.18.9",
     "lucide-react": "^1.56.0",

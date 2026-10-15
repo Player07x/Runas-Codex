@@ -1,9 +1,11 @@
-import { writeFile } from "node:fs/promises"
+import { exportBookPdf } from "./books-pdf"
+import { mkdtemp, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { ReminderScheduler, validReminders } from "./reminders"
-import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
+import { checkBookFiles, checkPdf, checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
@@ -75,6 +77,7 @@ function registerIpc(): void {
     await writeFile(result.filePath, text(content, "conteúdo"), "utf8")
     return result.filePath
   })
+  handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
   handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
   handle(IPC.vaultWriteBinary, (_event, path, content, expected) => {
@@ -84,7 +87,10 @@ function registerIpc(): void {
   handle(IPC.saveBytes, async (_event, name, content) => {
     if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
     const fileName = text(name, "nome").replace(/[\\/:*?"<>|]/g, "-").slice(0, 120)
-    const result = await dialog.showSaveDialog(mainWindow!, { defaultPath: join(app.getPath("documents"), fileName) })
+    // No `--smoke --write`, as exportações vão para uma pasta temporária, sem diálogo (como o PDF do livro).
+    const result = smoke && process.argv.includes("--write")
+      ? { canceled: false, filePath: join(await mkdtemp(join(tmpdir(), "runas-export-")), fileName) }
+      : await dialog.showSaveDialog(mainWindow!, { defaultPath: join(app.getPath("documents"), fileName) })
     if (result.canceled || !result.filePath) return null
     await writeFile(result.filePath, content)
     return result.filePath
@@ -139,6 +145,10 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     await new Promise<void>((resolve) => window.webContents.once("did-finish-load", () => resolve()))
     const result = (await window.webContents.executeJavaScript(SMOKE_SCRIPT)) as Record<string, unknown>
     if (result.room) result.roomCheck = await checkRoom(result.room as { port: number; key: string; codes: string[] })
+    const bookPdf = result.bookPdf as { path?: string | null } | undefined
+    if (bookPdf?.path) result.bookPdfCheck = await checkPdf(bookPdf.path)
+    const bookFiles = result.bookFiles as { epub?: string | null; docx?: string | null } | undefined
+    if (bookFiles?.epub && bookFiles.docx) result.bookFilesCheck = await checkBookFiles(bookFiles.epub, bookFiles.docx)
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))

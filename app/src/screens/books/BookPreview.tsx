@@ -25,6 +25,9 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
   const [ready, setReady] = useState(false)
   const [error, setError] = useState("")
   const [metadata, setMetadata] = useState(false)
+  const [format, setFormat] = useState("pdf")
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState("")
   const [zoom, setZoom] = useState(1)
   const chapters = previewChapters(index, book, draft)
   // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
@@ -90,6 +93,26 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
     return () => { document.removeEventListener("keydown", print); document.body.classList.remove("book-preview-open") }
   }, [vault.platform])
 
+  async function exportFile() {
+    if (!ready || exporting || !source.current) return
+    setExporting(true); setExportStatus("")
+    try {
+      if (format === "pdf") {
+        if (vault.platform.exportPdf) {
+          const path = await vault.platform.exportPdf(`${book.name}.pdf`)
+          setExportStatus(path ? `PDF salvo: ${path}` : "Exportação cancelada.")
+        } else { vault.platform.printDocument?.(); setExportStatus("Escolha Salvar como PDF no diálogo de impressão.") }
+      } else {
+        const { captureBook } = await import("./export-snapshot")
+        const snapshot = await captureBook(source.current, index, book, vault.platform, draft)
+        const bytes = format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
+        const path = await vault.platform.saveBytes(`${book.name}.${format}`, bytes, format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        setExportStatus(path ? `Arquivo salvo: ${path}. ${snapshot.warnings.join(" ")}` : "Exportação cancelada.")
+      }
+    } catch (err) { setExportStatus(`Não foi possível exportar: ${err instanceof Error ? err.message : String(err)}`) }
+    finally { setExporting(false) }
+  }
+
   async function change(key: string, value: string | boolean) {
     try { await vault.setProperty(book.path, key, value) } catch (err) { setError(String(err)) }
   }
@@ -101,6 +124,10 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
       <label className="check"><input type="checkbox" checked={settings.newChapter} disabled={vault.info?.readOnly} onChange={(e) => void change("capitulos_nova_pagina", e.target.checked)} />Capítulos em página nova</label>
       <button className="btn" onClick={() => setMetadata(!metadata)} disabled={vault.info?.readOnly}>Editar capa e créditos</button>
       <button className="btn" disabled={!ready || !vault.platform.printDocument} onClick={() => vault.platform.printDocument?.()}>Imprimir (Ctrl+P)</button>
+      <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option></select></label>
+      <button className="btn primary" disabled={!ready || exporting} onClick={() => void exportFile()}>{exporting ? "Exportando…" : "Exportar arquivo"}</button>
+      {format !== "pdf" && <p className="small">{format === "epub" ? "EPUB ajusta a paginação ao leitor; colunas viram texto corrido." : "DOCX é editável; a paginação e as fontes dependem do Word ou LibreOffice. Fórmulas ficam em LaTeX."}</p>}
+      {exportStatus && <p role="status" data-book-export-status>{exportStatus}</p>}
       <span className="small muted" role="status" data-book-pagination-status>{status}</span>
     </div>
     {error && <p className="proto-note" role="alert">{error}</p>}

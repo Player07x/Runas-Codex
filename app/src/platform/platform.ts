@@ -95,4 +95,6 @@ export interface Platform {
   writeBinary(path: string, bytes: Uint8Array, expected?: VaultEntry | null): Promise<VaultEntry>
   /** Salva bytes onde o usuário escolher (exportações); devolve o nome, ou `null` se cancelou. */
   saveBytes(name: string, bytes: Uint8Array, mime: string): Promise<string | null>
+  /** PDF das páginas prontas da prévia (desktop). */
+  exportPdf?(name: string): Promise<string | null>
 }

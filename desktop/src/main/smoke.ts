@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises"
+import { strFromU8, unzipSync } from "fflate"
+
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
  * se o cofre for gravável (cópia temporária com `--write`), as gravações e o renomear com atualização de links.
@@ -264,6 +267,32 @@ export const SMOKE_SCRIPT = `(async () => {
     result.books = Boolean(bookTexts[chapterPath]?.includes("tipo: capitulo") && bookTexts[bookPath]?.includes("[[Capítulo do smoke]]"))
   }
 
+  // Livros 8c: exportar o PDF pela prévia (no smoke ele vai para uma pasta temporária, sem diálogo); o processo
+  // principal confere depois que o PDF tem as páginas da prévia (checkPdf).
+  // Passa pela lista antes: o botão "Prévia" do livro anterior ainda estaria na tela.
+  location.hash = "/livros"
+  await until(() => ![...document.querySelectorAll("button")].some((b) => b.textContent === "Prévia"))
+  location.hash = "/livros/" + encodeURIComponent("Livros/Caderno de formatadores/Caderno de formatadores.md")
+  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Prévia")))?.click()
+  await until(() => Number(document.querySelector(".book-preview-output[aria-busy=false]")?.dataset.pages) > 1, 200)
+  const previewPages = Number(document.querySelector(".book-preview-output")?.dataset.pages ?? 0)
+  ;(await until(() => [...document.querySelectorAll(".book-preview-controls button")].find((b) => b.textContent === "Exportar arquivo" && !b.disabled)))?.click()
+  const pdfStatus = await until(() => document.querySelector("[data-book-export-status]")?.textContent, 300)
+  result.bookPdf = { pages: previewPages, path: /^PDF salvo: (.+)$/.exec(pdfStatus ?? "")?.[1] ?? null, status: pdfStatus }
+  // EPUB e DOCX pela mesma tela (capturam a prévia desenhada); o processo principal abre os arquivos (checkBookFiles).
+  result.bookFiles = {}
+  for (const format of ["epub", "docx"]) {
+    const select = document.querySelector("[aria-label='Formato de exportação']")
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(select, format)
+    select.dispatchEvent(new Event("change", { bubbles: true }))
+    await wait(100)
+    const before = document.querySelector("[data-book-export-status]")?.textContent ?? ""
+    ;[...document.querySelectorAll(".book-preview-controls button")].find((b) => b.textContent === "Exportar arquivo" && !b.disabled)?.click()
+    const status = await until(() => { const text = document.querySelector("[data-book-export-status]")?.textContent ?? ""; return text && text !== before && !text.includes("Exportando") ? text : null }, 300)
+    result.bookFiles[format] = /^Arquivo salvo: (.+?\.(?:epub|docx))/.exec(status ?? "")?.[1] ?? null
+    result.bookFiles[format + "Status"] = status
+  }
+
   // Campanhas: criar a Sessão 13 pela tela (nota + evento na Agenda, um apontando para o outro).
   location.hash = campaignRoute + "/sessoes"
   ;(await until(() => [...document.querySelectorAll(".page-head button")].find((b) => b.textContent.trim() === "Nova sessão")))?.click()
@@ -357,6 +386,33 @@ export async function checkRoom(room: { port: number; key: string; codes: string
   return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
 }
 
+/** Páginas de um PDF gerado pelo Chromium (o número do nó `/Pages` da raiz). */
+export async function checkPdf(path: string): Promise<{ pages: number; bytes: number }> {
+  const bytes = await readFile(path)
+  const text = bytes.toString("latin1")
+  const counts = [...text.matchAll(/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)|\/Count\s+(\d+)[^>]*?\/Type\s*\/Pages\b/g)].map((m) => Number(m[1] ?? m[2]))
+  return { pages: counts.length ? Math.max(...counts) : (text.match(/\/Type\s*\/Page\b(?!s)/g) ?? []).length, bytes: bytes.length }
+}
+
+/** Abre o EPUB e o DOCX exportados e confere as partes principais: capítulos na ordem, sumário e imagens. */
+export async function checkBookFiles(epubPath: string, docxPath: string): Promise<Record<string, unknown>> {
+  const epub = unzipSync(new Uint8Array(await readFile(epubPath)))
+  const opf = strFromU8(epub["EPUB/package.opf"] ?? new Uint8Array())
+  const docx = unzipSync(new Uint8Array(await readFile(docxPath)))
+  const document = strFromU8(docx["word/document.xml"] ?? new Uint8Array())
+  const names = Object.keys(epub)
+  return {
+    epubFirst: names[0] === "mimetype" && strFromU8(epub.mimetype!) === "application/epub+zip",
+    epubSections: names.filter((name) => /^EPUB\/section-\d+\.xhtml$/.test(name)).length,
+    epubSpine: (opf.match(/<itemref /g) ?? []).length,
+    epubNav: strFromU8(epub["EPUB/nav.xhtml"] ?? new Uint8Array()).includes("Formatadores"),
+    epubImages: names.filter((name) => /^EPUB\/assets\/image-/.test(name)).length,
+    epubFonts: names.filter((name) => name.endsWith(".woff2")).length,
+    docxText: document.includes("Formatadores do Runas-Codex") && document.includes("Notas de rodapé"),
+    docxImages: Object.keys(docx).filter((name) => name.startsWith("word/media/")).length,
+  }
+}
+
 /** O resultado do roteiro passou? */
 export function smokePassed(result: Record<string, unknown>, hasVault: boolean): boolean {
   if (result.bridge !== true) return false
@@ -442,6 +498,20 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.paste as Record<string, unknown>).shown === true &&
     typeof result.position === "object" &&
     (result.position as Record<string, unknown>).link === true &&
-    (result.position as Record<string, unknown>).float === "right"
+    (result.position as Record<string, unknown>).float === "right" &&
+    typeof result.bookPdf === "object" &&
+    typeof (result.bookPdf as Record<string, unknown>).path === "string" &&
+    typeof result.bookPdfCheck === "object" &&
+    Number((result.bookPdf as Record<string, unknown>).pages) > 1 &&
+    (result.bookPdfCheck as Record<string, unknown>).pages === (result.bookPdf as Record<string, unknown>).pages &&
+    typeof result.bookFilesCheck === "object" &&
+    (result.bookFilesCheck as Record<string, unknown>).epubFirst === true &&
+    Number((result.bookFilesCheck as Record<string, unknown>).epubSections) > 1 &&
+    (result.bookFilesCheck as Record<string, unknown>).epubSpine === (result.bookFilesCheck as Record<string, unknown>).epubSections &&
+    (result.bookFilesCheck as Record<string, unknown>).epubNav === true &&
+    Number((result.bookFilesCheck as Record<string, unknown>).epubImages) > 0 &&
+    (result.bookFilesCheck as Record<string, unknown>).epubFonts === 3 &&
+    (result.bookFilesCheck as Record<string, unknown>).docxText === true &&
+    Number((result.bookFilesCheck as Record<string, unknown>).docxImages) > 0
   )
 }

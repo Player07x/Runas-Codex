@@ -158,6 +158,14 @@ automáticos). Falta o uso de verdade:
 - [ ] Testar livros reais longos e imagens grandes; a medição atual cobre o exemplo de 9 páginas e o corpus de formatadores.
 - [ ] Android real: alternar Escrever/Prévia com teclado aberto; a largura de 320 px foi validada no navegador.
 
+### Fase 8c — exportações
+
+- [ ] Exportar um livro em PDF pelo diálogo de salvar do desktop (Linux e Windows) e comparar com a prévia nos quatro temas e tamanhos; o PDF A4 do Caderno de formatadores foi conferido no Linux, pelo smoke.
+- [ ] Abrir o EPUB num leitor (Calibre, Thorium, Livros do celular) e, se der, passar no EPUBCheck: capa, sumário, imagens, fontes e capítulos na ordem.
+- [ ] Abrir o DOCX no Word e no LibreOffice: títulos, caixas, colunas, tabelas, imagens e quebras de página; fórmulas aparecem em LaTeX e diagramas Mermaid como aviso.
+- [ ] Exportar um livro real longo, com muitas imagens grandes, e medir o tempo.
+- [ ] Navegador e Android: o PDF sai pelo diálogo de impressão ("Salvar como PDF"); EPUB e DOCX são baixados.
+
 ## Etapa 7 — Campanhas e quadros
 
 - [ ] Abrir `Campanhas/Cinzas de Valdris/Quadro.canvas` do cofre de teste no Obsidian depois de editar no app: cartões, cores, grupo e ligações iguais; campos desconhecidos mantidos.

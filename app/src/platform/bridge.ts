@@ -45,4 +45,6 @@ export interface RunasCodexBridge {
   readonly vtt: VttApi
   /** Salva bytes onde o usuário escolher (exportações). Devolve o caminho, ou `null` se cancelou. */
   saveBytes(name: string, bytes: Uint8Array): Promise<string | null>
+  /** PDF das páginas prontas da prévia do livro (`printToPDF`); devolve o caminho, ou `null` se cancelou. */
+  exportPdf(name: string): Promise<string | null>
 }
