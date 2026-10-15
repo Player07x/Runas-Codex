@@ -48,3 +48,26 @@
 .graph-panel { position: absolute; top: 56px; margin: 0; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 8px; width: min(300px, calc(100% - 24px)); overflow-y: auto; }
 .graph-slider input[type="range"] { width: 100%; accent-color: var(--cyan); }
 .graph-color { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; }
+
+/* Menções sem link (painel de Links) */
+.mentions-toggle { display: flex; align-items: center; gap: 4px; min-height: 30px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; text-align: left; }
+.mentions-toggle:hover { color: var(--cyan); }
+.mention-card mark { padding: 0 2px; border-radius: 3px; background: color-mix(in srgb, var(--gold) 30%, transparent); color: inherit; }
+.link-button { min-width: 0; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; text-align: left; }
+.link-button:hover { color: var(--cyan); }
+@media (max-width: 860px) {
+  .mentions-toggle { min-height: 44px; }
+}
+.graph-lapse-date { padding: 2px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--gold); white-space: nowrap; }
+
+/* Notas fixadas e coloridas (propriedades fixada e cor) */
+.note-pin { margin-right: 4px; vertical-align: -1px; color: var(--gold); }
+.list-item.note-item.colored { border-left-color: var(--note); }
+.list-item.favorite-missing .grow { text-decoration: line-through; color: var(--red); }
+/* Arrastar na árvore: a pasta (ou a raiz) que recebe */
+.vault-folder.drop-target > summary { background: color-mix(in srgb, var(--cyan) 18%, transparent); outline: 1px dashed var(--cyan); }
+.pane-body.drop-root { outline: 1px dashed var(--cyan); outline-offset: -4px; }
+.list-item.note-item[draggable="true"] { -webkit-user-drag: element; }
+/* Ordem das notas: lista dentro do cabeçalho do painel (um menu flutuante seria cortado pela borda do painel) */
+.order-menu { display: grid; gap: 0; padding: 4px; }
+@media (max-width: 860px) { .order-menu .list-item { min-height: 44px; } }

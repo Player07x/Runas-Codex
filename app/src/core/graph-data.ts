@@ -1,3 +1,4 @@
+import { searchNotes } from "./search"
 import { basename, extname, foldName, noteName } from "./text"
 import type { VaultIndex } from "./vault-index"
 
@@ -60,7 +61,7 @@ const ALL = 1_000_000
 export function buildGraph(index: VaultIndex, options: GraphOptions): GraphData {
   const { root } = options
   const filter = options.filter.trim()
-  const notes = filter ? index.search(filter, root, ALL).map((hit) => hit.path) : index.notesIn(root).map((note) => note.path)
+  const notes = filter ? searchNotes(index, filter, root, ALL).map((hit) => hit.path) : index.notesIn(root).map((note) => note.path)
   const inScope = new Set(notes)
   if (options.center && index.note(options.center)) inScope.add(options.center)
 
@@ -131,7 +132,7 @@ export function buildGraph(index: VaultIndex, options: GraphOptions): GraphData 
   edgeList = edgeList.filter((edge) => keep.has(edge.source) && keep.has(edge.target))
 
   if (options.groups.length) {
-    const members = options.groups.map((group) => new Set(group.query.trim() ? index.search(group.query, "", ALL).map((hit) => hit.path) : []))
+    const members = options.groups.map((group) => new Set(group.query.trim() ? searchNotes(index, group.query, "", ALL).map((hit) => hit.path) : []))
     for (const node of nodes.values()) {
       if (node.kind !== "note" && node.kind !== "portal") continue
       const group = members.findIndex((set) => set.has(node.path))

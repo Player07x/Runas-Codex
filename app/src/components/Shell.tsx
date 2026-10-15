@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
   PanelLeftClose, PanelLeftOpen, Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
+  ArrowLeft, ArrowRight, Shuffle,
 } from "lucide-react"
 import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
@@ -17,6 +18,7 @@ import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
 import { AGENDA_ROOT } from "../core/agenda"
 import { Modal, useToast } from "./ui"
+import { goBack, goForward } from "../lib/router"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -89,6 +91,9 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [])
+
+  // Captura rápida pelo atalho global do desktop (Ctrl+Alt+N): uma nota nova no espaço Notas.
+  useEffect(() => vault.platform.onQuickCapture?.(() => navigate("/notas/nova")), [vault.platform])
 
   return (
     <div className={`shell ${collapsed ? "collapsed" : ""}`}>
@@ -207,6 +212,9 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Gráfico da wiki", icon: <Library size={16} />, hint: "Wiki", run: () => navigate("/wiki/grafico") },
       { label: "Importar / Exportar", icon: <ArrowDownUp size={16} />, hint: "", run: () => navigate("/transferir") },
       { label: "Alternar tema", icon: <Sun size={16} />, hint: "", run: onToggleTheme },
+      { label: "Voltar", icon: <ArrowLeft size={16} />, hint: "Alt ←", run: goBack },
+      { label: "Avançar", icon: <ArrowRight size={16} />, hint: "Alt →", run: goForward },
+      { label: "Nota aleatória", icon: <Shuffle size={16} />, hint: "Notas", run: () => navigate("/notas/aleatoria") },
     ],
     [onToggleTheme],
   )

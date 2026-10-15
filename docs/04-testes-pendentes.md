@@ -276,3 +276,45 @@ automáticos). Falta o uso de verdade:
 A X3 foi conferida no emulador Android 15 (CI): 31,8 FPS na cena simples e 24 FPS no mapa de 4096 px com névoa e
 luzes, com resolução adaptada para 1 e GPU por software. Os números e capturas estão na ADR 0006; a conferência em
 aparelho físico acima continua necessária.
+## Notas: links, gráfico e notas pessoais (C5a)
+
+- [ ] Prévia de link: na leitura, passar o mouse num link; no modo Editar, com Ctrl apertado; no celular, tocar e
+  segurar (a prévia sobe do pé da tela e o link não abre). Link para `#título` e `#^bloco` mostra só o trecho.
+- [ ] Digitar `@` e parte do nome de uma nota; escolher; conferir o `[[…]]` no modo Código. Um e-mail não abre a lista.
+- [ ] Painel Links › "Menções sem link" de uma nota citada pelo nome em outras: "Linkar" e conferir no Obsidian que o
+  texto lido não mudou.
+- [ ] Copiar link da nota, de um título (sumário) e do bloco do cursor; colar no Obsidian e conferir que abre o lugar
+  certo (o `^id` criado aparece no fim do parágrafo).
+- [ ] `runas://`: no app **instalado**, "Copiar link" › "Endereço runas://", colar num navegador ou no terminal
+  (`xdg-open 'runas://…'` no Linux) com o app aberto e com o app fechado; a nota abre. Abrir o app duas vezes traz a
+  mesma janela.
+- [ ] Timelapse no gráfico global (botão ▶) num cofre grande.
+- [ ] Fixar, colorir e arquivar pelo menu de etiqueta da barra da nota; conferir as propriedades `fixada`/`cor` e a
+  pasta `Notas/Arquivo/` no Obsidian.
+- [ ] Captura rápida `Ctrl+Alt+N` com o app em segundo plano, no Windows e num Linux com X11. No Wayland (GNOME 50.1)
+  o portal já está ligado, mas o Electron 44 ainda não abre a sessão de atalhos (ADR 0019); conferir de novo quando
+  o Electron for atualizado.
+- [ ] PIN: Configurações › Privacidade › "Bloquear o espaço Notas com PIN"; fechar e abrir o app, errar e acertar o
+  PIN; "Bloquear" no topo da lista de Notas.
+- [ ] Clique direito numa palavra errada no editor (app desktop): sugestões, "Adicionar ao dicionário" e
+  recortar/copiar/colar.
+
+
+## Notas: organização e busca (C5b)
+
+- [ ] Busca da lista de Notas num cofre real: `tag:npc`, `path:Lugares`, `"frase exata"`, `-termo`, `a OR b`,
+  `line:(rei morto)`, `section:(aparência olhos)`, `[local:Valdris]` e `/reg(ex)?/`; comparar com a mesma busca no
+  Obsidian.
+- [ ] Buscar e substituir (botão ao lado do gráfico): prévia, desmarcar uma nota, "Fazer backup e substituir"; conferir
+  o zip novo em Configurações › Backups e o texto no Obsidian. Com uma nota aberta e editando, o que foi digitado entra
+  antes da troca.
+- [ ] Painel "Prop.": criar uma propriedade de cada tipo; conferir no Obsidian que data e data-hora aparecem com o
+  seletor de data dele e o link como link. Uma chave `data_mundo` continua como texto.
+- [ ] Favoritos: estrela na barra da nota, no sumário (título), na pasta (passar o mouse) e no resultado da busca;
+  abrir cada um pela seção Favoritos. Num cofre com marcadores do Obsidian, eles aparecem com a marca "Obsidian".
+  Renomear uma nota favorita e conferir que o favorito acompanha.
+- [ ] Voltar/avançar: botões da barra da nota, `Alt+←`/`Alt+→` fora do editor e os botões laterais do mouse (Windows e
+  Linux). Depois de "Nova nota", voltar não cria outra nota.
+- [ ] Arrastar uma nota e uma pasta para outra pasta (e para a raiz) no app desktop; conferir no Obsidian que os links
+  continuam funcionando. Arrastar uma nota da árvore para dentro do editor insere `[[link]]`.
+- [ ] Ordem da lista (botão de setas): cada opção, e a escolha lembrada depois de fechar o app.

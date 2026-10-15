@@ -32,3 +32,56 @@ export function vaultNoteSet(index: VaultIndex, from: string, handlers: Pick<Not
     ...handlers,
   }
 }
+
+/** O alvo de um link para colar em qualquer nota: o nome quando é único no cofre; senão, o caminho sem `.md`. */
+export function copyLinkTarget(index: VaultIndex, path: string): string {
+  return index.isNameUnique(path) ? path.slice(path.lastIndexOf("/") + 1).replace(/\.md$/i, "") : path.replace(/\.md$/i, "")
+}
+
+/** Título como o Obsidian aceita depois do `#` (sem os caracteres que quebram o link). */
+export function headingLinkText(heading: string): string {
+  return heading.replace(/[#|^[\]]|%%/g, " ").replace(/\s+/g, " ").trim()
+}
+
+/** Copia um texto; devolve `false` se o sistema não deixou. Sem permissão da área de transferência, usa o jeito antigo. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    const area = document.createElement("textarea")
+    area.value = text
+    area.setAttribute("readonly", "")
+    area.style.position = "fixed"
+    area.style.opacity = "0"
+    document.body.append(area)
+    area.select()
+    try {
+      return document.execCommand("copy")
+    } catch {
+      return false
+    } finally {
+      area.remove()
+    }
+  }
+}
+
+
+const FLUSH_EVENT = "runas-codex:gravar-notas"
+
+/**
+ * Pede às notas abertas que gravem agora o que está pendente (antes de mover ou substituir pela árvore, para a
+ * edição em andamento não ir para o caminho antigo). Cada editor aberto responde com a promessa da gravação dele.
+ */
+export async function flushOpenNotes(): Promise<void> {
+  const pending: Promise<void>[] = []
+  window.dispatchEvent(new CustomEvent<Promise<void>[]>(FLUSH_EVENT, { detail: pending }))
+  await Promise.all(pending)
+}
+
+/** Usado pelo editor de nota: responde aos pedidos de `flushOpenNotes`. */
+export function onFlushRequest(flush: () => Promise<void>): () => void {
+  const listener = (event: Event) => (event as CustomEvent<Promise<void>[]>).detail.push(flush())
+  window.addEventListener(FLUSH_EVENT, listener)
+  return () => window.removeEventListener(FLUSH_EVENT, listener)
+}

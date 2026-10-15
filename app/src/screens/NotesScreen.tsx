@@ -1,10 +1,19 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
-import { CalendarCheck, ChevronDown, FilePlus2, Folder, FolderPlus, Hash, Lock, Network, PenLine, Plus, Search, Unlink, Vault } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react"
+import { Archive, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
+import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
+import { randomNote } from "../core/nav-history"
+import { ARCHIVE_FOLDER, isArchived, moveDestination, NOTE_COLORS, NOTE_ORDERS, noteFlags, sortNotes, type NoteOrder } from "../core/note-flags"
+import { searchNotes } from "../core/search"
+import { NotesLockScreen } from "../components/vault/NotesLock"
+import { ReplaceDialog } from "../components/vault/ReplaceDialog"
+import "../components/vault/note-actions.css"
+import { toggleFavorite, useFavorites } from "../lib/bookmarks"
+import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
 import { dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
-import { vaultRoute } from "../lib/vault-notes"
+import { flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
 import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
 import { fillTemplate, formatDate } from "../core/templates"
 import { GraphPage } from "../components/vault/GraphPage"
@@ -16,9 +25,15 @@ import "./notes.css"
 
 const NOTES_ROOT = "Notas/"
 const SCOPE_KEY = "runas-codex:notas-escopo"
+const ORDER_KEY = "runas-codex:notas-ordem"
+/** Tipo dos dados do arrastar na árvore (o caminho da nota ou pasta). */
+const DRAG_TYPE = "application/x-runas-codex-path"
 
 export function NotesScreen({ noteId }: { noteId?: string }) {
   const vault = useVault()
+  // Espaço Notas bloqueado por PIN neste aparelho: nada da tela aparece antes do PIN.
+  const { locked } = useNotesLock()
+  if (locked) return <NotesLockScreen />
   if (vault.loading && !vault.index) {
     return (
       <div className="page">
@@ -93,6 +108,7 @@ function uniqueName(index: VaultIndex, folder: string, base: string): string {
 
 function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const vault = useVault()
+  const { hasPin } = useNotesLock()
   const toast = useToast()
   const readOnly = vault.info?.readOnly ?? true
   const hasNotesSpace = index.allFiles().some((f) => f.path.startsWith(NOTES_ROOT))
@@ -109,10 +125,21 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [dialog, setDialog] = useState<Dialog | null>(null)
   const [heading, setHeading] = useState<{ line: number; at: number }>()
   const [createdFolders, setCreatedFolders] = useState<string[]>([])
+  const [replacing, setReplacing] = useState(false)
+  const [order, setOrder] = useState<NoteOrder>(() => {
+    try {
+      const saved = localStorage.getItem(ORDER_KEY)
+      return NOTE_ORDERS.some((o) => o.order === saved) ? (saved as NoteOrder) : "nome"
+    } catch {
+      return "nome"
+    }
+  })
+  const [orderMenu, setOrderMenu] = useState(false)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
   const fail = useCallback((error: unknown) => toast(error instanceof Error ? error.message : String(error)), [toast])
 
   const graph = noteId === "grafico"
-  const path = noteId && noteId !== "nova" && noteId !== "hoje" && !graph ? noteId : undefined
+  const path = noteId && noteId !== "nova" && noteId !== "hoje" && noteId !== "aleatoria" && !graph ? noteId : undefined
   const note = path ? index.note(path) : undefined
   const currentFolder = note ? dirname(note.path) : root.replace(/\/$/, "")
 
@@ -124,28 +151,36 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     }
   }, [wholeVault])
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORDER_KEY, order)
+    } catch {
+      /* só não é lembrada */
+    }
+  }, [order])
+
   // Rotas de ação: /notas/nova e /notas/hoje.
   useEffect(() => {
     if (noteId !== "nova" && noteId !== "hoje") return
     if (readOnly) {
       toast("Cofre em somente leitura: libere a gravação para criar notas.")
-      navigate("/notas")
+      navigate("/notas", { replace: true })
       return
     }
     if (noteId === "nova") {
       const folder = root.replace(/\/$/, "")
-      vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => navigate(vaultRoute(created)), fail)
+      vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => navigate(vaultRoute(created), { replace: true }), fail)
     } else {
       // Como o plugin Notas diárias do Obsidian: pasta, formato do nome e modelo de `.obsidian/daily-notes.json`.
       const { daily, templates } = vault.config
       const now = new Date()
       const relative = formatDate(now, daily.format)
       const daily_ = joinPath(daily.folder || (hasNotesSpace ? "Notas/Diário" : "Diário"), relative + ".md")!
-      if (index.note(daily_)) navigate(vaultRoute(daily_))
+      if (index.note(daily_)) navigate(vaultRoute(daily_), { replace: true })
       else {
         const template = daily.template ? index.note(daily.template + ".md")?.text : undefined
         const content = template !== undefined ? fillTemplate(template, { title: noteName(daily_), date: now, config: templates }) : `# ${now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n`
-        vault.createNote(dirname(daily_), noteName(daily_), content).then((created) => navigate(vaultRoute(created)), fail)
+        vault.createNote(dirname(daily_), noteName(daily_), content).then((created) => navigate(vaultRoute(created), { replace: true }), fail)
       }
     }
   }, [noteId])
@@ -153,9 +188,116 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
   const folders = useMemo(() => [...new Set([...index.allFiles().map((f) => dirname(f.path)), ...createdFolders])].filter(Boolean), [index, createdFolders, vault.version])
   const tree = useMemo(() => buildTree(notes, root, createdFolders), [notes, root, createdFolders])
-  const results = useMemo(() => (query.trim() ? index.search(query, root, 80) : null), [index, query, root, vault.version])
+  const results = useMemo(() => (query.trim() ? searchNotes(index, query, root, 80) : null), [index, query, root, vault.version])
   const tags = useMemo(() => index.tags(root), [index, root, vault.version])
   const toWrite = useMemo(() => index.unresolved(root).slice(0, 30), [index, root, vault.version])
+  const vaultId = vault.info?.path
+  const favorites = useFavorites(vaultId)
+  const fromObsidian = vault.config.bookmarks.filter((b) => !hasBookmark(favorites, b))
+
+  // Nota aleatória do espaço (as arquivadas ficam de fora); a rota /notas/aleatoria é a da paleta de comandos.
+  const pickRandom = useCallback(() => randomNote(index.notesIn(root).map((n) => n.path).filter((p) => !isArchived(p)), path), [index, root, path])
+  useEffect(() => {
+    if (noteId !== "aleatoria") return
+    const picked = pickRandom()
+    if (!picked) toast("Não há notas para sortear.")
+    navigate(picked ? vaultRoute(picked) : "/notas", { replace: true })
+  }, [noteId])
+
+  // Arrastar nota ou pasta para outra pasta (ou para a raiz do espaço): move com os links, como "Renomear ou mover".
+  const moveInto = async (from: string, folder: string) => {
+    const isFolder = !index.hasFile(from)
+    const result = moveDestination(from, folder, isFolder, (p) => index.hasFile(p) || folders.includes(p))
+    if (!result) return
+    if ("error" in result) return toast(result.error)
+    try {
+      await flushOpenNotes()
+      const plan = await vault.rename(from, result.to)
+      const changed = plan.edits.length ? ` Links atualizados em ${plan.edits.length} arquivo(s).` : ""
+      toast(`${isFolder ? "Pasta movida" : "Nota movida"} para ${folder || "a raiz do cofre"}.${changed}`)
+      // A nota aberta foi junto: a rota acompanha o caminho novo.
+      if (note && (note.path === from || note.path.startsWith(from + "/"))) navigate(vaultRoute(result.to + note.path.slice(from.length)), { replace: true })
+    } catch (error) {
+      fail(error)
+    }
+  }
+  const dragSource = (path: string) =>
+    readOnly
+      ? {}
+      : {
+          draggable: true,
+          onDragStart: (event: DragEvent) => {
+            event.stopPropagation()
+            // Solta no editor como `[[link]]` (como no Obsidian), em vez do endereço da página.
+            if (index.hasFile(path)) {
+              event.dataTransfer.clearData()
+              event.dataTransfer.setData("text/plain", `[[${index.linkTarget(path, note?.path ?? path)}]]`)
+            }
+            event.dataTransfer.setData(DRAG_TYPE, path)
+            event.dataTransfer.effectAllowed = "copyMove"
+          },
+        }
+  const dropZone = (folder: string) =>
+    readOnly
+      ? {}
+      : {
+          onDragOver: (event: DragEvent) => {
+            if (!event.dataTransfer.types.includes(DRAG_TYPE)) return
+            event.preventDefault()
+            event.stopPropagation()
+            event.dataTransfer.dropEffect = "move"
+            if (dropTarget !== folder) setDropTarget(folder)
+          },
+          onDragLeave: (event: DragEvent) => {
+            if (!(event.currentTarget as Node).contains(event.relatedTarget as Node | null)) setDropTarget((current) => (current === folder ? null : current))
+          },
+          onDrop: (event: DragEvent) => {
+            const from = event.dataTransfer.getData(DRAG_TYPE)
+            if (!from) return
+            event.preventDefault()
+            event.stopPropagation()
+            setDropTarget(null)
+            void moveInto(from, folder)
+          },
+        }
+
+  const openFavorite = (b: Bookmark) => {
+    if (b.type === "search") return setQuery(b.query)
+    if (b.type === "folder") return setQuery(`path:"${b.path}/"`)
+    if (!index.hasFile(b.path)) return toast(`“${bookmarkLabel(b)}” não existe mais no cofre.`)
+    if (!/\.md$/i.test(b.path)) return navigate(noteRoute(b.path))
+    navigate(vaultRoute(b.path))
+    const wanted = b.subpath?.replace(/^#/, "").split("#").pop()
+    const target = wanted ? index.note(b.path)?.meta.headings.find((h) => headingLinkText(h.text) === headingLinkText(wanted)) : undefined
+    if (target) setHeading({ line: target.line, at: Date.now() })
+  }
+  const favoriteItem = (b: Bookmark, obsidian: boolean) => {
+    const label = bookmarkLabel(b)
+    const missing = b.type === "file" ? !index.hasFile(b.path) : b.type === "folder" ? Boolean(b.path) && !folders.includes(b.path) : false
+    const Icon = b.type === "search" ? Search : b.type === "folder" ? Folder : b.subpath ? Heading : FileText
+    return (
+      <div key={(obsidian ? "obsidian:" : "") + bookmarkKey(b)} className="outline-row">
+        <button className={`list-item small grow ${missing ? "favorite-missing" : ""}`} onClick={() => openFavorite(b)} title={missing ? "Não existe mais no cofre" : b.type === "search" ? `Buscar: ${b.query}` : b.path}>
+          <Icon size={14} />
+          <span className="grow truncate">{label}</span>
+          {obsidian && <span className="chip" title="Marcador do Obsidian (.obsidian/bookmarks.json): mude por lá">Obsidian</span>}
+        </button>
+        {!obsidian && (
+          <button className="icon-btn sm" title="Tirar dos favoritos" aria-label={`Tirar ${label} dos favoritos`} onClick={() => toggleFavorite(vaultId, b)}>
+            <StarOff size={13} />
+          </button>
+        )}
+      </div>
+    )
+  }
+  const starButton = (b: Bookmark, name: string) => {
+    const on = hasBookmark(favorites, b)
+    return (
+      <button className="icon-btn sm" title={on ? "Tirar dos favoritos" : "Favoritar"} aria-label={on ? `Tirar ${name} dos favoritos` : `Favoritar ${name}`} aria-pressed={on} onClick={(e) => (e.preventDefault(), toggleFavorite(vaultId, b))}>
+        <Star size={13} fill={on ? "currentColor" : "none"} color={on ? "var(--gold)" : undefined} />
+      </button>
+    )
+  }
 
   const openBroken = useCallback((target: string, from?: string) => (readOnly ? toast(`“${target}” ainda não existe.`) : setDialog({ kind: "broken", target, from })), [readOnly, toast])
   const onTag = useCallback((tag: string) => setQuery(`tag:${tag}`), [])
@@ -167,35 +309,48 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     navigate(vaultRoute(created))
   }
 
-  const noteItem = (n: IndexedNote, extra?: ReactNode) => (
-    <a key={n.path} href={href(vaultRoute(n.path))} data-note-path={n.path} className={`list-item note-item ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: "transparent" }}>
+  const noteItem = (n: IndexedNote, extra?: ReactNode) => {
+    const flags = noteFlags(n)
+    return (
+    <a key={n.path} href={href(vaultRoute(n.path))} data-note-path={n.path} {...dragSource(n.path)} className={`list-item note-item ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
       <span className="grow" style={{ minWidth: 0 }}>
-        <span className="truncate" style={{ display: "block", fontWeight: 600 }}>{n.name}</span>
+        <span className="truncate note-item-name" style={{ display: "block", fontWeight: 600 }}>
+          {flags.pinned && <Pin size={12} className="note-pin" aria-label="fixada" />}
+          {n.name}
+        </span>
         <span className="truncate tiny faint" style={{ display: "block" }}>{extra ?? (preview(n) || "Vazia")}</span>
       </span>
     </a>
-  )
+    )
+  }
 
   const renderFolder = (folder: TreeFolder, depth: number): ReactNode => {
-    const subfolders = [...folder.folders.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
-    const items = [...folder.notes].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    // A pasta Arquivo do espaço fica por último e fechada; as notas fixadas vêm antes das outras.
+    const isArchive = (sub: TreeFolder) => sub.path === `${NOTES_ROOT}${ARCHIVE_FOLDER}`
+    // Pastas pelo nome (de Z a A só na ordem "Nome (Z a A)", como no Obsidian).
+    const sign = order === "nome-desc" ? -1 : 1
+    const subfolders = [...folder.folders.values()].sort((a, b) => Number(isArchive(a)) - Number(isArchive(b)) || sign * a.name.localeCompare(b.name, "pt-BR"))
+    const items = sortNotes(folder.notes, order)
     const content = (
       <>
         {subfolders.map((sub) => (
-          <details key={sub.path} open={depth < 1 || Boolean(note?.path.startsWith(sub.path + "/"))} className="vault-folder">
-            <summary className="eyebrow row" style={{ gap: 5 }}>
+          <details key={sub.path} open={(depth < 1 && !isArchive(sub)) || Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} {...dropZone(sub.path)}>
+            <summary className="eyebrow row" style={{ gap: 5 }} {...dragSource(sub.path)}>
               <ChevronDown size={13} className="folder-chevron" />
-              <Folder size={13} /> <span className="grow truncate">{sub.name}</span>
-              {!readOnly && (
-                <span className="folder-actions">
-                  <button className="icon-btn sm" title="Nova nota aqui" aria-label={`Nova nota em ${sub.name}`} onClick={(e) => (e.preventDefault(), setDialog({ kind: "note", folder: sub.path }))}>
-                    <FilePlus2 size={13} />
-                  </button>
-                  <button className="icon-btn sm" title="Renomear ou mover pasta" aria-label="Renomear pasta" onClick={(e) => (e.preventDefault(), setDialog({ kind: "rename-folder", path: sub.path }))}>
-                    <PenLine size={13} />
-                  </button>
-                </span>
-              )}
+              {isArchive(sub) ? <Archive size={13} /> : <Folder size={13} />} <span className="grow truncate">{sub.name}</span>
+              <span className="folder-actions">
+                {starButton({ type: "folder", path: sub.path }, `a pasta ${sub.name}`)}
+                {!readOnly && (
+                  <>
+                    <button className="icon-btn sm" title="Nova nota aqui" aria-label={`Nova nota em ${sub.name}`} onClick={(e) => (e.preventDefault(), setDialog({ kind: "note", folder: sub.path }))}>
+                      <FilePlus2 size={13} />
+                    </button>
+                    <button className="icon-btn sm" title="Renomear ou mover pasta" aria-label="Renomear pasta" onClick={(e) => (e.preventDefault(), setDialog({ kind: "rename-folder", path: sub.path }))}>
+                      <PenLine size={13} />
+                    </button>
+                  </>
+                )}
+              </span>
             </summary>
             <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>
           </details>
@@ -216,6 +371,31 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
                 <Network size={16} />
               </button>
+              <button
+                className="icon-btn sm"
+                title="Nota aleatória"
+                aria-label="Abrir uma nota aleatória"
+                onClick={() => {
+                  const picked = pickRandom()
+                  if (picked) navigate(vaultRoute(picked))
+                  else toast("Não há notas para sortear.")
+                }}
+              >
+                <Shuffle size={16} />
+              </button>
+              <button className="icon-btn sm" title={`Ordem: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-label="Ordem das notas" aria-expanded={orderMenu} onClick={() => setOrderMenu(!orderMenu)}>
+                <ArrowUpDown size={16} />
+              </button>
+              {!readOnly && (
+                <button className="icon-btn sm" title="Buscar e substituir em várias notas" aria-label="Buscar e substituir" onClick={() => void flushOpenNotes().then(() => setReplacing(true))}>
+                  <Replace size={16} />
+                </button>
+              )}
+              {hasPin && (
+                <button className="icon-btn sm" title="Bloquear as Notas (pede o PIN de novo)" aria-label="Bloquear as Notas" onClick={lockNotes}>
+                  <LockKeyhole size={16} />
+                </button>
+              )}
               {!readOnly && (
                 <>
                   <button className="icon-btn sm" title="Nota do dia" aria-label="Nota do dia" onClick={() => navigate("/notas/hoje")}>
@@ -231,9 +411,18 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               )}
             </div>
           </div>
+          {orderMenu && (
+            <div className="card tight order-menu" role="menu" aria-label="Ordem das notas">
+              {NOTE_ORDERS.map((o) => (
+                <button key={o.order} role="menuitemradio" aria-checked={o.order === order} className="list-item small" onClick={() => (setOrder(o.order), setOrderMenu(false))}>
+                  <Check size={14} style={{ visibility: o.order === order ? "visible" : "hidden" }} /> {o.label}
+                </button>
+              ))}
+            </div>
+          )}
           <label className="search">
             <Search size={15} />
-            <input className="input" placeholder="Buscar (tag:, path:, file:, “frase”)" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
+            <input className="input" placeholder="Buscar (tag:, path:, line:, [prop:valor], /regex/)" title="Termos, “frase”, -excluir, OR, path:, file:, tag:, content:, line:(…), section:(…), [propriedade], [propriedade:valor] e /regex/" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
           </label>
           {hasNotesSpace && (
             <div className="segmented" role="tablist" aria-label="Onde mostrar">
@@ -251,13 +440,29 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
             </button>
           )}
         </div>
-        <div className="pane-body" data-vault-tree style={{ gap: 12 }}>
+        <div className={`pane-body ${dropTarget === root.replace(/\/$/, "") ? "drop-root" : ""}`} data-vault-tree style={{ gap: 12 }} {...dropZone(root.replace(/\/$/, ""))}>
           {results ? (
             <div className="stack" style={{ gap: 4 }}>
-              <span className="eyebrow">{results.length} resultado(s)</span>
+              <span className="eyebrow row between">
+                {results.length} resultado(s)
+                {starButton({ type: "search", query: query.trim() }, "esta busca")}
+              </span>
+              {results.error && <span className="small" role="alert" style={{ color: "var(--red)" }}>{results.error}</span>}
               <div className="list">{results.map((hit) => noteItem(index.note(hit.path)!, hit.snippet || hit.path))}</div>
             </div>
-          ) : notes.length === 0 ? (
+          ) : null}
+          {!results && favorites.length + fromObsidian.length > 0 && (
+            <details className="vault-folder" open>
+              <summary className="eyebrow row" style={{ gap: 5 }}>
+                <ChevronDown size={13} className="folder-chevron" /> <Star size={13} /> Favoritos · {favorites.length + fromObsidian.length}
+              </summary>
+              <div className="list">
+                {favorites.map((b) => favoriteItem(b, false))}
+                {fromObsidian.map((b) => favoriteItem(b, true))}
+              </div>
+            </details>
+          )}
+          {results ? null : notes.length === 0 ? (
             <span className="muted small">{root ? "O espaço Notas está vazio." : "Nenhuma nota .md neste cofre."}</span>
           ) : (
             renderFolder(tree, 0)
@@ -307,7 +512,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       </section>
 
       <aside className="pane-right" hidden={graph}>
-        {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} />}
+        {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} onSaveNote={vault.save} />}
       </aside>
 
       {!readOnly && (
@@ -316,6 +521,14 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         </button>
       )}
 
+      {replacing && (
+        <ReplaceDialog
+          index={index}
+          paths={results ? results.map((hit) => hit.path) : notes.map((n) => n.path)}
+          scopeLabel={results ? `as ${results.length} notas da busca “${query}”` : root ? "o espaço Notas" : "o cofre inteiro"}
+          onClose={() => setReplacing(false)}
+        />
+      )}
       {dialog?.kind === "note" && (
         <NewNoteDialog
           initial={uniqueName(index, dialog.folder, "Sem título")}

@@ -113,6 +113,14 @@
         "from": "resources/dicionarios",
         "to": "dicionarios"
       }
+    ],
+    "protocols": [
+      {
+        "name": "Runas-Codex",
+        "schemes": [
+          "runas"
+        ]
+      }
     ]
   },
   "desktopName": "runas-codex.desktop"
