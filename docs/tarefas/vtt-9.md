@@ -79,7 +79,7 @@ deixa de funcionar; os comandos de sempre e os dois `--smoke` passam.
 `MesaTable.tsx`, `desktop/src/main/vtt/master-remote.ts` e ganchos em `player-server.ts`, `player-transmission.ts` e
 `vtt-host.ts`.
 
-**Pronto quando (C3):** a sala aberta no desktop é controlada pelo celular (APK do CI ou emulador) com a chave do
+**Pronto quando (C3):** a sala aberta no desktop é controlada pelo celular (navegador) com a chave do
 mestre, e um jogador no navegador vê as mudanças; a chave trocada derruba o celular antigo; os comandos de sempre e
 os dois `--smoke` passam.
 
