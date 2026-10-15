@@ -4,7 +4,7 @@ import { VaultIndex } from "../core/vault-index"
 import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
 import { NoteSetContext } from "../lib/note-set"
 import { vaultNoteSet } from "../lib/vault-notes"
-import { isRenderedCodeBlock, registerCodeBlock } from "./extensions"
+import { isRenderedCodeBlock, registerCodeBlock, registerFileEmbed } from "./extensions"
 
 const FROM = "Notas/Formatadores.md"
 const index = new VaultIndex(
@@ -146,5 +146,17 @@ describe("Markdown (dialeto)", () => {
     expect(isRenderedCodeBlock("Teste-Bloco")).toBe(true)
     expect(render("```teste-bloco\nlinha 1\nlinha 2\n```")).toContain('<div class="bloco-teste">teste-bloco: linha 1\nlinha 2</div>')
     expect(render("```ts\nconst a = 1\n```")).toContain("<pre>")
+  })
+
+  it("arquivos embutidos de extensão registrada são desenhados pelo componente, com quem embute", () => {
+    registerFileEmbed([".teste"], ({ path, subpath, from }) => <div className="embed-teste">{`${path} ${subpath} de ${from}`}</div>)
+    const withFile = new VaultIndex([...Object.keys(DEMO_TEXT_FILES), "Notas/lista.teste"].map((path) => ({ path, size: 1, mtime: 1 })), DEMO_TEXT_FILES)
+    const html = renderToStaticMarkup(
+      <NoteSetContext.Provider value={vaultNoteSet(withFile, FROM)}>
+        <Markdown source={"![[lista.teste#Tabela]] e ![[sumiu.teste]]"} space="notas" />
+      </NoteSetContext.Provider>,
+    )
+    expect(html).toContain(`<div class="embed-teste">Notas/lista.teste #Tabela de ${FROM}</div>`)
+    expect(html).toContain('class="embed-missing broken"')
   })
 })

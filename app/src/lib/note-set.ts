@@ -31,6 +31,8 @@ export interface NoteSet {
   fileUrl?: (path: string) => string | undefined
   /** Abre um anexo no programa padrão do sistema (PDF, por exemplo). */
   openFile?: (path: string) => void
+  /** Caminho da nota mostrada (para os arquivos embutidos saberem quem os embute, como o `this` das Bases). */
+  from?: string
 }
 
 export const NoteSetContext = createContext<NoteSet>({ notes: ALL_NOTES, routeOf: routeOfNote })
