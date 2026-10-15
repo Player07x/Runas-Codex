@@ -28,3 +28,17 @@
 .editor-bar { container-type: inline-size; flex-wrap: wrap; }
 .note-history { display: inline-flex; }
 @container (max-width: 720px) { .note-history { display: none; } }
+/* Histórico e ferramentas da C5c: rolagem dentro da comparação, inclusive no celular. */
+.version-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.version-compare section { min-width: 0; }
+.version-compare > section:nth-child(3) { grid-column: 1 / -1; }
+.version-compare pre, .note-tool-preview { max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.version-removed { color: var(--red); }
+.version-added { color: var(--green); }
+.note-word-count { margin-left: auto; white-space: nowrap; }
+.note-tools-menu button { min-height: 44px; }
+.customization-settings { min-width: 0; }
+.customization-settings .settings-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-block: 6px; }
+.customization-settings input, .customization-settings textarea { max-width: 100%; min-width: 0; }
+.customization-settings textarea { width: 100%; font-family: var(--font-mono); }
+@media (max-width: 600px) { .version-compare { grid-template-columns: minmax(0, 1fr); } .note-word-count { flex-basis: 100%; text-align: right; } }

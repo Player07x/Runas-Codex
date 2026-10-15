@@ -32,6 +32,10 @@ export const IPC = {
   updatesProgress: "updates:progress",
   /** Do processo principal para a janela: o atalho global de captura rápida. */
   quickCapture: "app:quick-capture",
+  /** Abre uma nota numa janela extra (segundo monitor). */
+  openWindow: "app:open-window",
+  vaultListTrash: "vault:list-trash",
+  vaultRestoreTrash: "vault:restore-trash",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

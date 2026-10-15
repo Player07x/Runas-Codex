@@ -106,4 +106,8 @@ export interface Platform {
   installUpdate?(onProgress: (received: number, total: number) => void): Promise<UpdateInstallResult>
   /** Atalho global de captura rápida (desktop): pede uma nota nova, mesmo com o app em segundo plano. */
   onQuickCapture?(listener: () => void): () => void
+  /** Abre uma rota de nota (`/notas/<caminho>`) numa janela extra (desktop: segundo monitor). */
+  openWindow?(route: string): Promise<void>
+  listTrash?(): Promise<VaultEntry[]>
+  restoreTrash?(path: string, target: string): Promise<VaultEntry>
 }

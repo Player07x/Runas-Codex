@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
 import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
@@ -12,16 +12,19 @@ import { NoteSetContext } from "../../lib/note-set"
 import { goBack, goForward, navigate, useNavHistory } from "../../lib/router"
 import { hasBookmark } from "../../core/bookmarks"
 import { toggleFavorite, useFavorites } from "../../lib/bookmarks"
+import { useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
-import { useLinkPreview } from "./LinkPreview"
+import { LINK_SELECTOR, targetOf, useLinkPreview } from "./LinkPreview"
 import type { LivePreviewHost } from "./live-preview"
 import { SourceEditor, type SourceEditorHandle } from "./SourceEditor"
 import "./note-actions.css"
+import { NoteTools } from "./NoteTools"
+import { ICON_LABELS, NOTE_ICONS } from "./Customization"
 
 /** Os três modos do Obsidian: leitura, live preview ("Editar") e código-fonte. */
 export type ViewMode = "leitura" | "live" | "fonte"
@@ -47,6 +50,7 @@ const isMedia = (name: string) => {
 }
 
 interface Props {
+  focused?: boolean
   path: string
   folders: string[]
   onShowPanel(): void
@@ -67,10 +71,11 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true, onDraftChange }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true, onDraftChange, focused = true }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
+  const openNote = useOpenNote()
   const favorites = useFavorites(vault.info?.path)
   const favorite = hasBookmark(favorites, { type: "file", path })
   const index = vault.index!
@@ -100,40 +105,52 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const fileInput = useRef<HTMLInputElement>(null)
 
   // Referências para gravar fora do ciclo do React (troca de nota, saída da tela).
-  const latest = useRef({ path, base, draft, readOnly, save: vault.save })
-  latest.current = { path, base, draft, readOnly, save: vault.save }
+  const latest = useRef({ path, base, draft, readOnly, save: vault.save, index })
+  latest.current = { path, base, draft, readOnly, save: vault.save, index }
   const saving = useRef<Promise<void> | null>(null)
+  const saveError = useRef<string | null>(null)
 
   const flush = useCallback(async () => {
+    if (saving.current) await saving.current
     const { path: target, base: original, draft: content, readOnly: locked, save } = latest.current
     if (locked) return
     const next = textToSave(original, content)
     if (next === null) {
+      saveError.current = null
       setState("salvo")
       return
     }
+    const onDisk = latest.current.index.note(target)?.text
+    if (onDisk !== original && onDisk !== next) {
+      saveError.current = "Esta nota mudou fora do app enquanto você editava."
+      setState("conflito"); setError(saveError.current); return
+    }
+    saveError.current = null
     setState("salvando")
     const run = save(target, next).then(
       () => {
         if (latest.current.path === target) {
+          latest.current.base = next
           setBase(next)
           setState(toEditorText(next) === latest.current.draft ? "salvo" : "pendente")
         }
       },
       (err: unknown) => {
         const message = err instanceof Error ? err.message : String(err)
+        saveError.current = message
         setError(message)
         setState(message.includes("mudou fora do app") ? "conflito" : "erro")
       },
     )
     saving.current = run
-    await run
+    try { await run } finally { if (saving.current === run) saving.current = null }
   }, [])
+  const flushChecked = useCallback(async () => { await flush(); if (saveError.current) throw new Error(saveError.current) }, [flush])
 
   // Grava ao sair da nota (a tela monta um NoteView por nota, com `key={path}`).
   useEffect(() => () => void flush(), [path, flush])
   // Grava quando a árvore vai mover ou substituir notas (lib/vault-notes.ts).
-  useEffect(() => onFlushRequest(flush), [flush])
+  useEffect(() => onFlushRequest(flushChecked), [flushChecked])
 
   // Pausa na digitação → grava.
   useEffect(() => {
@@ -163,6 +180,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   }, [note.text])
 
   const reloadFromDisk = () => {
+    saveError.current = null
     setBase(note.text)
     setDraft(toEditorText(note.text))
     setDocKey((k) => k + 1)
@@ -284,11 +302,27 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
       navigate(vaultRoute(to))
     })
 
+  const openLinkInTab = (event: ReactMouseEvent) => {
+    if (mode !== "leitura" || !(event.target instanceof Element)) return
+    const link = event.target.closest<HTMLElement>(LINK_SELECTOR)
+    const target = link ? targetOf(link, noteSet, index) : null
+    if (!target) return
+    event.preventDefault()
+    event.stopPropagation()
+    openNote(target.path, "aba")
+  }
+
   const { body } = splitFrontmatter(draft)
   const status: Record<SaveState, string> = { salvo: "Salvo", pendente: "Editando…", salvando: "Salvando…", conflito: "Conflito", erro: "Erro ao salvar" }
 
   return (
-    <article className="note-editor">
+    <article
+      className="note-editor"
+      // No modo leitura, Ctrl+clique e botão do meio num link abrem a nota numa aba nova (o leitor não muda: o clique é
+      // pego aqui antes de chegar ao link). No live preview o botão do meio é colar, no Linux; lá fica como está.
+      onClickCapture={(event) => (event.ctrlKey || event.metaKey) && openLinkInTab(event)}
+      onAuxClick={(event) => event.button === 1 && openLinkInTab(event)}
+    >
       <div className="editor-bar">
         <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
           <ChevronLeft size={18} />
@@ -403,6 +437,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
                     </button>
                   )}
                 </div>
+                <label className="field"><span>Ícone da nota</span><select className="input" aria-label="Ícone da nota" value={String(note.meta.frontmatter?.data?.icone ?? "file")} onChange={event => organize(() => vault.setProperty(path, "icone", event.target.value))}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
                 {toArchive && (
                   <button role="menuitem" className="list-item small" onClick={() => move(toArchive)}>
                     <Archive size={14} /> Arquivar (vai para Notas/Arquivo)
@@ -454,6 +489,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
         <button className="icon-btn" onClick={onShowPanel} title="Links, propriedades e gráfico local" aria-label="Painel da nota">
           <PanelRight size={18} />
         </button>
+        <NoteTools active={focused} path={path} draft={draft} selection={() => editor.current?.selection() ?? null} replace={(text, cursor) => editor.current?.transform(() => ({ text, cursor }))} flush={flushChecked} />
       </div>
 
       {(state === "conflito" || state === "erro") && (

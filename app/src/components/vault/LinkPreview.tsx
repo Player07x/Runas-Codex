@@ -16,7 +16,7 @@ import "./link-preview.css"
 const HOVER_MS = 450
 const HIDE_MS = 250
 const LONG_PRESS_MS = 500
-const LINK_SELECTOR = "[data-href], [data-lp-wiki], [data-lp-href], a.wikilink"
+export const LINK_SELECTOR = "[data-href], [data-lp-wiki], [data-lp-href], a.wikilink"
 
 interface Shown {
   path: string
@@ -25,7 +25,7 @@ interface Shown {
 }
 
 /** O destino de um link do leitor (`data-href`, ou o caminho no `title` dos links Markdown) ou do live preview. */
-function targetOf(el: HTMLElement, noteSet: NoteSet, index: VaultIndex): { path: string; subpath?: string } | null {
+export function targetOf(el: HTMLElement, noteSet: NoteSet, index: VaultIndex): { path: string; subpath?: string } | null {
   if (el.classList.contains("broken")) return null
   const wiki = el.dataset.href ?? el.dataset.lpWiki
   const href = el.dataset.lpHref

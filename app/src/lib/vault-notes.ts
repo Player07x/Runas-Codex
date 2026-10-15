@@ -29,6 +29,7 @@ export function vaultNoteSet(index: VaultIndex, from: string, handlers: Pick<Not
     readNote: (path) => index.note(path)?.text,
     fileUrl: (path) => platform?.fileUrl(path) ?? undefined,
     openFile: (path) => void platform?.openFile(path),
+    from,
     ...handlers,
   }
 }

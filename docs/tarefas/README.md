@@ -106,8 +106,8 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 | **C4** 10 Migrações do Obsidian | Claude Code | `migracoes/etapa10` | [migracoes-10.md](migracoes-10.md) | mesclada (PR #21) |
 | Corretor ortográfico sem rede | Claude Code | `desktop/corretor-offline` | [ADR 0018](../adr/0018-corretor-offline.md) | mesclada (PR #22) |
 | **C5a** Notas: links, gráfico e notas pessoais (A.1, A.2, F.1) | Claude Code | `notas/c5a-links-grafico` | [fechamento-modulos.md](fechamento-modulos.md) | mesclada (PR #24) |
-| **C5b** Notas: organização e busca (A.3, primeira parte) | Claude Code | `notas/c5b-organizacao` | [fechamento-modulos.md](fechamento-modulos.md) | em revisão (PR #25) |
-| **C5c** Notas: o resto do A.3 | Claude Code | `notas/c5c-*` | [fechamento-modulos.md](fechamento-modulos.md) | a fazer |
+| **C5b** Notas: organização e busca (A.3, primeira parte) | Claude Code | `notas/c5b-organizacao` | [fechamento-modulos.md](fechamento-modulos.md) | mesclada (PR #25) |
+| **C5c** Notas: o resto do A.3 | Claude Code, continuada pelo Codex | `notas/c5c-conclusao` | [fechamento-modulos.md](fechamento-modulos.md) | em revisão (PR #27); depende do leitor #26 |
 
 ## Quem mexe em quê
 

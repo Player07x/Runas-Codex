@@ -19,6 +19,7 @@ import { MESAS } from "../data/mesas"
 import { AGENDA_ROOT } from "../core/agenda"
 import { Modal, useToast } from "./ui"
 import { goBack, goForward } from "../lib/router"
+import type { ShortcutAction } from "../core/shortcuts"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -83,6 +84,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
       if ((event.ctrlKey || event.metaKey) && ["k", "p", "o"].includes(event.key.toLowerCase())) {
         event.preventDefault()
         setPalette(true)
@@ -93,6 +95,17 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   }, [])
 
   // Captura rápida pelo atalho global do desktop (Ctrl+Alt+N): uma nota nova no espaço Notas.
+  useEffect(() => {
+    const command = (event: Event) => {
+      const action = (event as CustomEvent<ShortcutAction>).detail
+      if (action === "palette" || action === "switcher") setPalette(true)
+      if (action === "newNote") navigate("/notas/nova")
+      if (action === "daily") navigate("/notas/hoje")
+      if (action === "theme") onToggleTheme()
+    }
+    window.addEventListener("runas-codex:comando", command)
+    return () => window.removeEventListener("runas-codex:comando", command)
+  }, [onToggleTheme])
   useEffect(() => vault.platform.onQuickCapture?.(() => navigate("/notas/nova")), [vault.platform])
 
   return (
@@ -215,6 +228,7 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Voltar", icon: <ArrowLeft size={16} />, hint: "Alt ←", run: goBack },
       { label: "Avançar", icon: <ArrowRight size={16} />, hint: "Alt →", run: goForward },
       { label: "Nota aleatória", icon: <Shuffle size={16} />, hint: "Notas", run: () => navigate("/notas/aleatoria") },
+      ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
     ],
     [onToggleTheme],
   )

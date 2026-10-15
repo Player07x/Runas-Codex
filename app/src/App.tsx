@@ -14,6 +14,7 @@ import { VttScreen } from "./screens/vtt/VttScreen"
 import { TransferScreen } from "./screens/TransferScreen"
 import { SettingsScreen } from "./screens/SettingsScreen"
 import { CanvasScreen } from "./components/canvas/CanvasScreen"
+import { CustomizationRuntime } from "./components/vault/Customization"
 
 function readTheme(): string {
   try {
@@ -92,6 +93,7 @@ export function App() {
         <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
           {screen}
         </Shell>
+        <CustomizationRuntime />
       </ToastProvider>
     </VaultProvider>
   )

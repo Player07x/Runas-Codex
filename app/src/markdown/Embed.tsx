@@ -9,6 +9,7 @@ import { navigate } from "../lib/router"
 import { wikiLabel } from "./remark-obsidian"
 import { Markdown } from "../components/Markdown"
 import { EmbedImage, ImageEditContext } from "./EmbedImage"
+import { fileEmbedFor } from "./extensions"
 
 export const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp"])
 export const AUDIO_EXT = new Set([".mp3", ".wav", ".ogg", ".m4a", ".flac", ".opus", ".3gp"])
@@ -39,6 +40,19 @@ export function Embed({ target, alias, space }: { target: string; alias?: string
   const found = set.resolve ? set.resolve(name, "wiki") : name ? demoResolve(name, space, set) : undefined
   const options = parseEmbedOptions(alias)
   const { width, height, caption } = options
+
+  // Extensões que um módulo desenha (markdown/extensions.ts), como as Bases.
+  const Custom = fileEmbedFor(ext)
+  if (Custom) {
+    if (!found) {
+      return (
+        <span className="embed-missing broken" title={`“${name}” não está no cofre`}>
+          <FileText size={14} /> {name}
+        </span>
+      )
+    }
+    return <Custom path={found.path} subpath={subpath} alias={alias} from={set.from} />
+  }
 
   if (IMAGE_EXT.has(ext) || AUDIO_EXT.has(ext) || VIDEO_EXT.has(ext) || ext === ".pdf") {
     const url = found ? set.fileUrl?.(found.path) : undefined

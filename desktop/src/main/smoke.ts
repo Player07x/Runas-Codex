@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises"
 import { BrowserWindow } from "electron"
 import { strFromU8, unzipSync } from "fflate"
 import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
+import { NOTES_C5C_SMOKE } from "./notes-c5c-smoke"
 
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
@@ -389,6 +390,7 @@ export const SMOKE_SCRIPT = `(async () => {
   }
 
   // A sala do VTT fecha ao sair da mesa: o bloco da Mesa fica por último.
+  ${NOTES_C5C_SMOKE}
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
   ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
@@ -555,6 +557,10 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
+  const notesC5c = result.notesC5c as Record<string, unknown> | undefined
+  if (!notesC5c || !Object.values(notesC5c).every(value => value === true)) return false
+  const noteWindows = result.noteWindows as Record<string, unknown> | undefined
+  if (!noteWindows || !Object.values(noteWindows).every(value => value === true)) return false
   return (
     result.create === "OK" &&
     String(result.createAgain).startsWith("Já existe") &&

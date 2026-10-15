@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
 import { autocompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
+import { defaultKeymap, history, historyKeymap, indentWithTab, redo, undo } from "@codemirror/commands"
 import { markdown } from "@codemirror/lang-markdown"
 import { GFM } from "@lezer/markdown"
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from "@codemirror/language"
@@ -9,6 +9,7 @@ import { Compartment, EditorState } from "@codemirror/state"
 import { EditorView, keymap, placeholder } from "@codemirror/view"
 import { tags } from "@lezer/highlight"
 import { parseFrontmatter } from "../../core/parse"
+import { SLASH_COMMANDS } from "../../core/note-tools"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import { livePreview as livePreviewExtension, livePreviewHost, type LivePreviewHost } from "./live-preview"
 
@@ -29,6 +30,7 @@ export interface SourceEditorHandle {
   focus(): void
   /** Posição do cursor no documento (`null` sem editor). */
   cursor(): number | null
+  selection(): { from: number; to: number } | null
 }
 
 interface Props {
@@ -129,6 +131,13 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         options: callbacks.current.suggestLinks(match.text.slice(1)).map((s) => ({ label: s.label, detail: s.detail, apply: s.insert.includes("/") ? `[[${s.insert}|${s.label}]]` : `[[${s.insert}]]` })),
       }
     }
+    const slashSource = (context: CompletionContext): CompletionResult | null => {
+      const match = context.matchBefore(/(?:^|(?<=\s))\/[\p{L}-]*/u)
+      if (!match || (parseFrontmatter(context.state.doc.toString())?.end ?? 0) > match.from) return null
+      const node = syntaxTree(context.state).resolveInner(match.from, 1)
+      for (let n: typeof node | null = node; n; n = n.parent) if (/Code|Comment/.test(n.name)) return null
+      return { from: match.from, options: SLASH_COMMANDS.map(command => ({ label: `/${command.label}`, detail: command.detail, apply: command.label === "data" ? new Date().toLocaleDateString("sv-SE") : command.insert })) }
+    }
     const state = EditorState.create({
       doc: value,
       // O cursor começa depois do frontmatter (no live preview, as propriedades aparecem desenhadas).
@@ -138,7 +147,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         markdown({ extensions: [GFM, obsidianSyntax] }),
         syntaxHighlighting(highlight),
         highlightSelectionMatches(),
-        autocompletion({ override: [linkSource, mentionSource], icons: false }),
+        autocompletion({ override: [linkSource, mentionSource, slashSource], icons: false }),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ spellcheck: "true", lang: "pt-BR", "aria-label": "Código-fonte Markdown" }),
         placeholder("Comece a escrever. Use [[ ou @ para ligar a outra nota."),
@@ -190,6 +199,18 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     view.current?.dispatch({ effects: previewConf.current.reconfigure(previewExtensions(Boolean(livePreview))) })
   }, [Boolean(livePreview)])
 
+  useEffect(() => {
+    const command = (event: Event) => {
+      if (!view.current || !host.current?.contains(document.activeElement)) return
+      const action = (event as CustomEvent<string>).detail
+      if (action === "save") callbacks.current.onSave?.()
+      if (action === "undo" && !view.current.state.readOnly) undo(view.current)
+      if (action === "redo" && !view.current.state.readOnly) redo(view.current)
+    }
+    window.addEventListener("runas-codex:comando", command)
+    return () => window.removeEventListener("runas-codex:comando", command)
+  }, [])
+
   useImperativeHandle(ref, () => ({
     insert(text: string, at?: number) {
       const v = view.current
@@ -220,6 +241,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     },
     cursor() {
       return view.current?.state.selection.main.head ?? null
+    },
+    selection() {
+      const selected = view.current?.state.selection.main
+      return selected && !selected.empty ? { from: selected.from, to: selected.to } : null
     },
   }))
 
