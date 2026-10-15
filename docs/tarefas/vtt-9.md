@@ -63,28 +63,21 @@ deixa de funcionar; os comandos de sempre e os dois `--smoke` passam.
 
 ## C3 — mestre pelo celular com a sala no desktop (Claude Code)
 
-**Como funciona:**
-1. Com a sala aberta no desktop, o painel **Jogadores** ganha **"Controlar pelo celular"**: um QR code e um link com
-   uma **chave do mestre**, separada da chave dos jogadores, criada a cada sessão e que dá para trocar a qualquer
-   momento (a anterior para de valer na hora).
-2. No celular, **Entrar Sala** (ler o QR ou colar o link) reconhece a chave do mestre e abre a **mesa do mestre**
-   completa, não a vista do jogador: cenas, tokens, paredes, luzes, névoa, áudio e registro.
-3. O desktop continua sendo a autoridade: guarda a mesa no cofre, aplica as mudanças e transmite aos jogadores. O
-   celular fala com ele por uma implementação **remota** da `VttApi` (`app/src/vtt/remote-api.ts`) sobre o mesmo
-   servidor da sala (WebSocket para os documentos e os eventos, HTTP com a chave para imagens e para enviar imagens
-   novas).
-4. Um celular de mestre por vez. O desktop mostra "Mestre conectado pelo celular" com um botão para desconectar, e
-   continua podendo mexer na mesa ao mesmo tempo (as mudanças dos dois lados aparecem nos dois).
-5. Funciona na rede local e pelo link da internet (túnel), sempre com a chave. No Android, liberar `ws://` e `http://`
-   **só para endereços da rede local** (pelo link da internet já é `https`/`wss`).
-6. **Testes:** o protocolo do mestre remoto (autorizar a chave, trocar a chave, aplicar mudanças, recusar o segundo
-   celular) em TS puro com testes; no `--smoke --write`, uma segunda janela entra como mestre remoto, cria um token e
-   o desktop confere que ele foi gravado na mesa.
+**Como funciona** (feito no PR #17; decisões na ADR 0016):
+1. Com a sala aberta no desktop, o painel **Sala** ganha **"Controlar pelo celular"**: QR code e link com uma **chave
+   do mestre**, separada da chave dos jogadores, nova a cada sessão e que dá para trocar a qualquer momento.
+2. A **própria sala serve a mesa do mestre** em `/master?m=<chave>`: o celular (ou tablet) abre no navegador, pela
+   mesma rede ou pelo link público. Sem instalar nada, sem mudar a CSP do app e sem liberar tráfego sem TLS no Android.
+3. O desktop continua sendo a autoridade: a página usa uma `VttApi` remota (`app/src/vtt/remote-api.ts`) que chama, por
+   HTTP, os mesmos canais do IPC (só os de `MASTER_CHANNELS`), e as mudanças voltam por Server-Sent Events.
+4. Um aparelho de mestre por vez; o desktop mostra se há um conectado, com "Desconectar" e "Trocar chave".
+5. **Testes:** `desktop/tests/vtt/master-remote.test.ts` e, no `--smoke --write`, a página do mestre numa janela oculta
+   do tamanho de um celular, mais um "celular" por HTTP que cria um token conferido no desktop.
 
-**Arquivos da C3:** `app/src/vtt/remote-api.ts` (novo), `app/src/vtt/api.ts` (escolher a implementação),
-`app/src/vtt/panels/PlayerPanel.tsx`, `app/src/screens/vtt/VttScreen.tsx` (Entrar Sala),
-`desktop/src/main/vtt/player-server.ts`, `player-session.ts` e um arquivo novo para o mestre remoto
-(`desktop/src/main/vtt/master-remote.ts`); no `vtt-host.ts`, só acrescentando. Decisões na ADR 0016.
+**Arquivos da C3:** `app/src/vtt/shared/master.ts`, `app/src/vtt/remote-api.ts`, `app/master.html`,
+`app/src/vtt/master-main.tsx`, `app/src/vtt/api.ts` (escolher a implementação), `PlayerPanel.tsx`, `RemoteMesa` em
+`MesaTable.tsx`, `desktop/src/main/vtt/master-remote.ts` e ganchos em `player-server.ts`, `player-transmission.ts` e
+`vtt-host.ts`.
 
 **Pronto quando (C3):** a sala aberta no desktop é controlada pelo celular (APK do CI ou emulador) com a chave do
 mestre, e um jogador no navegador vê as mudanças; a chave trocada derruba o celular antigo; os comandos de sempre e
