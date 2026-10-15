@@ -13,7 +13,7 @@ import { assetSchemePrivilege, VttHost } from "./vtt/vtt-host"
 import { checkForUpdate, downloadUpdate, installUpdate, updateTarget } from "./updates"
 import { attachContextMenu, configureSpellchecker, installDictionary, spellcheckPassed, spellcheckReport } from "./spellcheck"
 import { DeepLinks } from "./deep-links"
-import { registerQuickCapture } from "./quick-capture"
+import { enableShortcutPortal, registerQuickCapture } from "./quick-capture"
 import type { UpdateInfo } from "../../../app/src/core/updates"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
@@ -22,6 +22,9 @@ if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(ap
 
 // O dicionário do corretor vai para o perfil antes de o Chromium procurar (senão ele o baixaria do Google).
 installDictionary()
+
+// Atalho global de captura rápida no Wayland, pelo portal do desktop (antes de "ready").
+if (!process.argv.includes("--smoke")) enableShortcutPortal()
 
 // Antes de "ready" (uma chamada só): imagens e áudio da mesa vêm por `vtt-asset://`; anexos das notas, por `vault-file://`.
 protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege()])

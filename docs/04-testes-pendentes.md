@@ -271,8 +271,9 @@ automáticos). Falta o uso de verdade:
 - [ ] Timelapse no gráfico global (botão ▶) num cofre grande.
 - [ ] Fixar, colorir e arquivar pelo menu de etiqueta da barra da nota; conferir as propriedades `fixada`/`cor` e a
   pasta `Notas/Arquivo/` no Obsidian.
-- [ ] Captura rápida `Ctrl+Alt+N` com o app em segundo plano, no Windows e num Linux com X11. Na sua sessão Wayland o
-  sistema não aceita o atalho global (decidir se ligamos o portal do GNOME, que pede permissão).
+- [ ] Captura rápida `Ctrl+Alt+N` com o app em segundo plano, no Windows e num Linux com X11. No Wayland (GNOME 50.1)
+  o portal já está ligado, mas o Electron 44 ainda não abre a sessão de atalhos (ADR 0019); conferir de novo quando
+  o Electron for atualizado.
 - [ ] PIN: Configurações › Privacidade › "Bloquear o espaço Notas com PIN"; fechar e abrir o app, errar e acertar o
   PIN; "Bloquear" no topo da lista de Notas.
 - [ ] Clique direito numa palavra errada no editor (app desktop): sugestões, "Adicionar ao dicionário" e

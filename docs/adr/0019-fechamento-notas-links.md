@@ -44,8 +44,11 @@ essa trava.
   aparelhos e aparecem no Obsidian como propriedades comuns. As fixadas vêm primeiro na pasta; a cor marca a borda.
 - *Arquivar* move para `Notas/Arquivo/` (mantendo as subpastas), com os links atualizados, como se faz no Obsidian;
   desarquivar devolve. A pasta Arquivo fica por último e fechada.
-- *Captura rápida:* `Ctrl+Alt+N` (atalho global) traz a janela numa nota nova. Funciona no Windows e no Linux com X11;
-  na sessão Wayland o sistema não aceita atalho global do jeito clássico (o app avisa no log).
+- *Captura rápida:* `Ctrl+Alt+N` (atalho global) traz a janela numa nota nova. Funciona no Windows e no Linux com X11.
+  No Wayland, só pelo portal `GlobalShortcuts`: o app liga a opção do Electron, mas em 15/10/2026 (Electron 44.4.2,
+  GNOME 50.1) o Electron registra o app no portal e não abre a sessão de atalhos — o `register` falha, inclusive com o
+  identificador no formato `dev.runas.codex` que o GNOME 50.0/50.1 exige ([electron#51875], [electron#52218]). O app
+  avisa no log e o atalho volta a funcionar quando o Electron resolver (talvez com a troca do identificador).
 - *PIN do espaço Notas* (`core/pin.ts`, `lib/notes-lock.ts`): de 4 a 8 algarismos, guardado só neste aparelho
   (`localStorage`, PBKDF2 com sal); pede o PIN ao abrir as Notas até o app fechar ou alguém tocar em "Bloquear"; depois
   de 5 erros, 30 s de espera. Não criptografa os arquivos, e a prévia de link de outras telas não mostra notas do espaço
@@ -59,5 +62,8 @@ perfil do Chromium, para nomes do mundo) e recortar/copiar/colar (complementa a 
   linkar sem mudar o texto), `^id` (parágrafo, item, citação, tabela, CRLF, id repetido), endereço `runas://` (ida e
   volta, recusa de caminho fora do cofre), timelapse, fixar/cor/arquivar e PIN. O `--smoke` abre a prévia de um link
   com a CSP real; o menu do corretor é testado pela montagem dos itens.
-- Ficam para depois: atalho global no Wayland pelo portal `GlobalShortcuts` (o GNOME pede permissão; decidir), PDF
+- Ficam para depois: atalho global no Wayland (depende do Electron; ver acima), PDF
   dentro da nota (a CSP proíbe moldura; hoje abre no leitor do sistema, na página certa) e o resto do A.3 (C5b e C5c).
+
+[electron#51875]: https://github.com/electron/electron/issues/51875
+[electron#52218]: https://github.com/electron/electron/issues/52218
