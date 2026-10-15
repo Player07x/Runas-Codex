@@ -104,10 +104,11 @@ try {
   if (!android) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   if (process.argv.includes('--mobile')) await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2.75, mobile: true })
   await run(`location.hash='/vtt/criar'`)
+  await until(`document.querySelector('.empty .btn.primary,.mesa-card.new')`)
+  // Leia a janela ociosa antes do canvas e do formulário que pode abrir o teclado virtual.
+  if (android) await devicePoint({ x: 0, y: 0 })
   await tap(`document.querySelector('.empty .btn.primary,.mesa-card.new')`)
   await until(`document.querySelector('input[aria-label="Nome da mesa"]')`)
-  // O UiAutomator exige uma janela ociosa: leia os limites antes do loop de renderização do Pixi.
-  if (android) await devicePoint({ x: 0, y: 0 })
   await run(`(()=>{const e=document.querySelector('input[aria-label="Nome da mesa"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'Toque no Android');e.dispatchEvent(new Event('input',{bubbles:true}))})()`)
   await label('Confirmar criar mesa')
   await until(`document.querySelector('.vtt-root .side-tabs')`)
