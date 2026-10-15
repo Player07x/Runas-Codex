@@ -1,0 +1,169 @@
+{
+  "autoParse": true,
+  "askedToMoveFC": true,
+  "askedAboutSync": true,
+  "calendars": [
+    {
+      "id": "ID_gregoriano",
+      "name": "Gregorian Calendar",
+      "description": "A calendar for the real world.",
+      "path": [],
+      "supportInlineEvents": false,
+      "showIntercalarySeparately": true,
+      "static": {
+        "displayDayNumber": false,
+        "incrementDay": true,
+        "displayMoons": true,
+        "firstWeekDay": 1,
+        "overflow": true,
+        "weekdays": [
+          { "type": "day", "name": "Sunday", "id": "ID_19ea684b4a08" },
+          { "type": "day", "name": "Monday", "id": "ID_2928b90ab949" },
+          { "type": "day", "name": "Tuesday", "id": "ID_084aa8a99ae9" },
+          { "type": "day", "name": "Wednesday", "id": "ID_c9ab78497afb" },
+          { "type": "day", "name": "Thursday", "id": "ID_4bba49a9ca28" },
+          { "type": "day", "name": "Friday", "id": "ID_f99a1b2a2bb9" },
+          { "type": "day", "name": "Saturday", "id": "ID_3b6a38a8db6a" }
+        ],
+        "months": [
+          { "name": "January", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m01" },
+          { "name": "February", "type": "month", "length": 28, "interval": 1, "offset": 0, "id": "ID_m02" },
+          { "name": "March", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m03" },
+          { "name": "April", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_m04" },
+          { "name": "May", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m05" },
+          { "name": "June", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_m06" },
+          { "name": "July", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m07" },
+          { "name": "August", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m08" },
+          { "name": "September", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_m09" },
+          { "name": "October", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m10" },
+          { "name": "November", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_m11" },
+          { "name": "December", "type": "month", "length": 31, "interval": 1, "offset": 0, "id": "ID_m12" }
+        ],
+        "moons": [
+          { "name": "Moon", "cycle": 29.530588853, "offset": 9.24953, "faceColor": "#ffffff", "shadowColor": "#000000", "id": "ID_a9ab186b1819" }
+        ],
+        "leapDays": [
+          {
+            "name": "Leap Day",
+            "type": "leapday",
+            "interval": [
+              { "ignore": false, "exclusive": false, "interval": 400 },
+              { "ignore": false, "exclusive": true, "interval": 100 },
+              { "ignore": false, "exclusive": false, "interval": 4 }
+            ],
+            "offset": 0,
+            "timespan": 1,
+            "intercalary": false,
+            "id": "ID_b91ad86a887a"
+          }
+        ],
+        "eras": [
+          { "name": "Before Christ", "format": "{{era_name}}", "id": "ID_9a2978c92baa", "endsYear": false, "isEvent": false, "type": "era", "category": null, "isStartingEra": true, "date": { "year": 1, "month": 0, "day": 1 } },
+          { "name": "Anno Domini", "format": "{{era_name}}", "date": { "year": 1, "month": 0, "day": 1 }, "id": "ID_a8db38899a2b", "endsYear": false, "isEvent": false, "type": "era", "category": null, "isStartingEra": false }
+        ],
+        "offset": 0,
+        "padDays": 2,
+        "padMonths": 2
+      },
+      "seasonal": {
+        "seasons": [
+          { "id": "STANDARD_WINTER", "name": "Winter", "color": "#ADD8E6", "kind": "Winter", "type": "Periodic", "duration": 91.310625, "weatherOffset": 56, "weatherPeak": 5 },
+          { "id": "STANDARD_SPRING", "name": "Spring", "kind": "Spring", "color": "#90EE90", "type": "Periodic", "duration": 91.310625, "weatherOffset": 56, "weatherPeak": 5 },
+          { "id": "STANDARD_SUMMER", "name": "Summer", "kind": "Summer", "color": "#FFFF00", "type": "Periodic", "duration": 91.310625, "weatherOffset": 56, "weatherPeak": 5 },
+          { "id": "STANDARD_AUTUMN", "name": "Autumn", "kind": "Autumn", "color": "#DAA520", "type": "Periodic", "duration": 91.310625, "weatherOffset": 56, "weatherPeak": 5 }
+        ],
+        "offset": -12.5,
+        "type": "Periodic",
+        "displayColors": true,
+        "interpolateColors": true,
+        "weather": { "enabled": false, "seed": 1, "tempUnits": "Imperial", "windUnits": "Metric", "primaryWindDirection": "E", "freezingPoint": 0 }
+      },
+      "locations": { "locations": [] },
+      "current": { "year": 2026, "month": 9, "day": 15 },
+      "events": [
+        { "name": "Christmas", "description": "Christmas is a holiday celebrating the birth of Jesus.", "id": "824601", "note": null, "date": { "day": 25, "month": 11, "year": null }, "type": "Date", "category": null, "sort": { "timestamp": 0, "order": "" } },
+        { "name": "Summer Solstice", "description": "The longest day of the year.", "id": "824599", "note": null, "date": { "day": null, "year": null, "month": null }, "type": "Undated", "category": null, "sort": { "timestamp": 0, "order": "" } }
+      ],
+      "categories": []
+    },
+    {
+      "id": "ID_tharn",
+      "name": "Calendário de Tharn",
+      "description": "O calendário do Império de Tharn, contado desde a fundação.",
+      "path": [],
+      "supportInlineEvents": false,
+      "showIntercalarySeparately": true,
+      "static": {
+        "displayDayNumber": false,
+        "incrementDay": false,
+        "displayMoons": true,
+        "firstWeekDay": 2,
+        "overflow": true,
+        "weekdays": [
+          { "type": "day", "name": "Pedra", "id": "ID_w1" },
+          { "type": "day", "name": "Raiz", "id": "ID_w2" },
+          { "type": "day", "name": "Chama", "id": "ID_w3" },
+          { "type": "day", "name": "Vento", "id": "ID_w4" },
+          { "type": "day", "name": "Maré", "id": "ID_w5" }
+        ],
+        "months": [
+          { "name": "Geada", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_t1" },
+          { "name": "Degelo", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_t2" },
+          { "name": "Semeadura", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_t3" },
+          { "name": "Festival das Cinzas", "type": "intercalary", "length": 5, "interval": 1, "offset": 0, "id": "ID_t4" },
+          { "name": "Colheita", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_t5" },
+          { "name": "Bruma", "type": "month", "length": 30, "interval": 1, "offset": 0, "id": "ID_t6" },
+          { "name": "Noite Longa", "type": "month", "length": 28, "interval": 1, "offset": 0, "id": "ID_t7" }
+        ],
+        "moons": [
+          { "name": "Selene", "cycle": 28, "offset": 3, "faceColor": "#bec6ff", "shadowColor": "#000000", "id": "ID_l1" },
+          { "name": "Morr", "cycle": 41.5, "offset": 10, "faceColor": "#c06060", "shadowColor": "#000000", "id": "ID_l2" }
+        ],
+        "leapDays": [
+          { "name": "Dia da Vigília", "type": "leapday", "interval": [{ "ignore": false, "exclusive": false, "interval": 4 }], "offset": 0, "timespan": 6, "intercalary": false, "id": "ID_b1" }
+        ],
+        "eras": [
+          { "name": "Tempos Antigos", "format": "{{era_name}}", "id": "ID_e0", "endsYear": false, "isEvent": false, "type": "era", "category": null, "isStartingEra": true, "date": { "year": 1, "month": 0, "day": 1 } },
+          { "name": "Era das Brasas", "format": "Ano {{era_year}} das Brasas", "id": "ID_e1", "endsYear": false, "isEvent": false, "type": "era", "category": null, "isStartingEra": false, "date": { "year": 1000, "month": 0, "day": 1 } },
+          { "name": "Era dos Caçadores", "format": "{{year}} E.C.", "id": "ID_e2", "endsYear": false, "isEvent": false, "type": "era", "category": null, "isStartingEra": false, "date": { "year": 4027, "month": 2, "day": 10 } }
+        ],
+        "offset": 0
+      },
+      "seasonal": {
+        "seasons": [
+          { "id": "S1", "name": "Inverno", "color": "#ADD8E6", "kind": "Winter", "type": "Dated", "month": 0, "day": 1, "weatherOffset": 56, "weatherPeak": 5 },
+          { "id": "S2", "name": "Primavera", "color": "#90EE90", "kind": "Spring", "type": "Dated", "month": 2, "day": 1, "weatherOffset": 56, "weatherPeak": 5 },
+          { "id": "S3", "name": "Verão", "color": "#FFFF00", "kind": "Summer", "type": "Dated", "month": 4, "day": 10, "weatherOffset": 56, "weatherPeak": 5 },
+          { "id": "S4", "name": "Outono", "color": "#DAA520", "kind": "Autumn", "type": "Dated", "month": 5, "day": 20, "weatherOffset": 56, "weatherPeak": 5 }
+        ],
+        "offset": 0,
+        "type": "Dated",
+        "displayColors": true,
+        "interpolateColors": true,
+        "weather": { "enabled": false, "seed": 1, "tempUnits": "Metric", "windUnits": "Metric", "primaryWindDirection": "N", "freezingPoint": 0 }
+      },
+      "locations": { "locations": [] },
+      "current": { "year": 4031, "month": 4, "day": 15 },
+      "events": [
+        { "name": "Festa das Cinzas", "description": "Fogueiras nas praças e máscaras de cinza.", "id": "E1", "note": null, "date": { "day": 1, "month": 3, "year": null }, "type": "Date", "category": "festa", "sort": { "timestamp": 0, "order": "" } },
+        { "name": "Eclipse de Morr", "description": "", "id": "E2", "note": null, "date": { "day": 12, "month": 1, "year": 4030 }, "type": "Date", "category": null, "sort": { "timestamp": 0, "order": "" } },
+        { "name": "A Coroação", "description": "", "id": "E3", "note": "Crônicas/A Coroação.md", "date": { "day": 12, "month": 2, "year": 4031 }, "type": "Date", "category": null, "sort": { "timestamp": 0, "order": "" } },
+        { "name": "Lenda do Lobo de Cinzas", "description": "Ninguém sabe quando foi.", "id": "E4", "note": null, "date": { "day": null, "month": null, "year": null }, "type": "Undated", "category": null, "sort": { "timestamp": 0, "order": "" } },
+        { "name": "Cerco de Myrr", "description": "Três dias de fogo.", "id": "E5", "note": null, "date": { "day": 1, "month": 4, "year": 4012 }, "end": { "day": 3, "month": 4, "year": 4012 }, "type": "Range", "category": null, "sort": { "timestamp": 0, "order": "" } }
+      ],
+      "categories": [{ "id": "festa", "name": "Festas", "color": "#d4a017" }]
+    }
+  ],
+  "configDirectory": null,
+  "dailyNotes": false,
+  "dateFormat": "YYYY-MM-DD",
+  "debug": false,
+  "defaultCalendar": "ID_tharn",
+  "eventFrontmatter": false,
+  "eventPreview": false,
+  "exit": { "saving": false, "savingEvent": true, "event": true, "calendar": true },
+  "parseDates": false,
+  "syncBehavior": "Ask",
+  "paths": [["/", "Calendário de Tharn"]],
+  "version": { "major": 2, "minor": 1, "patch": 0 }
+}

@@ -38,3 +38,17 @@ Full Calendar (Agenda) e Dice Roller (`dice:`) já usam o mesmo formato e não p
 - os exemplos de cada plugin convertem sem perder dado (testes) e o resultado abre no app e no Obsidian;
 - a migração numa cópia do cofre real termina sem erro e só mexe nas notas que tinham os blocos;
 - os comandos de sempre e os dois `--smoke` passam; ADR nova `0014-migracoes.md`.
+
+## Como ficou (15/10/2026)
+
+Feito no branch `migracoes/etapa10`, com a [ADR 0014](../adr/0014-migracoes.md):
+
+- Conversores em `app/src/core/import/` (`calendarium.ts`, `leaflet.ts`, `statblock.ts`, `encounter.ts`) e o plano
+  em `obsidian.ts`; exemplos no formato de cada plugin em `fixtures/cofre/` e `fixtures/fantasy-calendar.json`.
+- Initiative Tracker → bloco novo ` ```runas-encontro ` (`core/encounters.ts`), desenhado como tabela em qualquer nota.
+  É o formato dos "Encontros genéricos" das Campanhas; a mesa (X6) importa por ele.
+- Tela em Importar / Exportar › "Plugins de RPG do Obsidian" (`screens/import/ObsidianMigration.tsx`): prévia por
+  nota, escolha do que migrar, comentário `%% … %%` opcional, backup antes e gravação pelo `useVault()`.
+- Ida e volta: o "Ordem x Caos" (776 notas) não tem dados de plugin de RPG, e a migração não muda nada nele; numa
+  cópia com os exemplos dos plugins juntos (789 notas), mudam só as 7 notas com blocos ou `fc-date`, e só neles.
+

@@ -2,7 +2,14 @@ import { useState } from "react"
 import { ArrowDownToLine, ArrowUpFromLine, BookOpen, CalendarDays, Dices, FolderInput, History, Library, Package, ScrollText, ShieldCheck } from "lucide-react"
 import { MESAS } from "../data/mesas"
 import { Modal, Segmented, useToast } from "../components/ui"
+import { navigate, useRoute } from "../lib/router"
+import { ObsidianMigration } from "./import/ObsidianMigration"
 import "./transfer.css"
+
+/** Itens que já funcionam de verdade: abrem a tela deles em vez do protótipo. */
+const WORKING: Record<string, string> = {
+  "Plugins de RPG do Obsidian (calendários, mapas, statblocks, encontros)": "/transferir/obsidian",
+}
 
 const DOMAINS = [
   {
@@ -19,7 +26,7 @@ const DOMAINS = [
     icon: <Library size={20} />,
     color: "var(--violet)",
     exports: ["Pasta / ZIP Markdown (Obsidian)", "Site HTML offline", "Versão dos jogadores (sem segredos)", "PDF / DOCX de uma nota"],
-    imports: ["Cofre do Obsidian", "Runas DM (wiki + JSON)", "Notion (Markdown + CSV)", "Kanka (JSON)", "World Anvil", "LegendKeeper", "Calendário (Fantasy-Calendar / Calendarium)"],
+    imports: ["Cofre do Obsidian", "Runas DM (wiki + JSON)", "Notion (Markdown + CSV)", "Kanka (JSON)", "World Anvil", "LegendKeeper", "Plugins de RPG do Obsidian (calendários, mapas, statblocks, encontros)"],
   },
   {
     id: "livros",
@@ -48,6 +55,12 @@ const DOMAINS = [
 ]
 
 export function TransferScreen() {
+  const [, section] = useRoute()
+  if (section === "obsidian") return <ObsidianMigration />
+  return <TransferHome />
+}
+
+function TransferHome() {
   const toast = useToast()
   const [mode, setMode] = useState<"exportar" | "importar">("exportar")
   const [mesaDialog, setMesaDialog] = useState(false)
@@ -84,7 +97,8 @@ export function TransferScreen() {
                   key={item}
                   className="list-item small"
                   onClick={() => {
-                    if (d.id === "mesa" && mode === "exportar") setMesaDialog(true)
+                    if (WORKING[item]) navigate(WORKING[item])
+                    else if (d.id === "mesa" && mode === "exportar") setMesaDialog(true)
                     else if (mode === "importar" && item.startsWith("Pacote")) setConflict(true)
                     else toast(`Protótipo: ${mode === "exportar" ? "exportaria" : "importaria"} ${item}`)
                   }}

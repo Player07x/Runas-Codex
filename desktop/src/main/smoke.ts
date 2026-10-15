@@ -125,6 +125,10 @@ export const SMOKE_SCRIPT = `(async () => {
   location.hash = "/config"
   result.updatesRow = Boolean(await until(() => document.querySelector("[data-updates] button")))
 
+  // Migração do Obsidian (etapa 10): a tela acha os dados dos plugins de RPG do cofre de teste (só lendo).
+  location.hash = "/transferir/obsidian"
+  result.migrationFound = (await until(() => document.querySelectorAll(".migrate-kind:not(.empty)").length, 100)) ?? 0
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -345,6 +349,34 @@ export const SMOKE_SCRIPT = `(async () => {
     }
   }
 
+  // Migração do Obsidian (etapa 10): backup e gravação pela tela; os blocos viram os do app, a data vira data_mundo e
+  // o bloco runas-encontro aparece desenhado. Migrar de novo não tem mais o que mudar.
+  location.hash = "/transferir/obsidian"
+  const migrate = await until(() => [...document.querySelectorAll(".migrate-foot button")].find((b) => b.textContent.startsWith("Fazer backup e migrar")), 100)
+  if (migrate) {
+    const fence = "\\x60\\x60\\x60"
+    migrate.click()
+    const outcome = await until(() => document.querySelector(".migrate-outcome .section-title"), 100)
+    const dir = "Notas/Do Obsidian/"
+    const [mapPath, wolfPath, ambushPath, crownPath, calendarPath] = [dir + "Mapa do condado.md", dir + "Lobo de Cinzas.md", dir + "Emboscada na estrada.md", dir + "Coroação de Ormund.md", "Calendários/Calendário de Tharn.md"]
+    const migrated = await bridge.vault.read([mapPath, wolfPath, ambushPath, crownPath, calendarPath])
+    result.migration = {
+      outcome: outcome?.textContent?.trim() ?? "",
+      map: (migrated[mapPath] ?? "").includes(fence + "runas-mapa") && !(migrated[mapPath] ?? "").includes(fence + "leaflet"),
+      statblock: (migrated[wolfPath] ?? "").includes("> [!statblock] Lobo de Cinzas"),
+      encounter: (migrated[ambushPath] ?? "").includes(fence + "runas-encontro"),
+      date: (migrated[crownPath] ?? "").includes('data_mundo: "4031-02-12"') && (migrated[crownPath] ?? "").includes("fc-date: 4031-02-12"),
+      calendar: (migrated[calendarPath] ?? "").includes(fence + "runas-calendario"),
+    }
+    location.hash = "/notas/" + encodeURIComponent(ambushPath)
+    ;(await until(() => [...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))))?.click()
+    result.migration.encounterRows = (await until(() => document.querySelectorAll(".editor-body .encounter-block tbody tr").length, 50)) ?? 0
+    location.hash = "/transferir/obsidian"
+    await until(() => document.querySelector(".migrate-kinds"), 50)
+    await wait(500)
+    result.migration.again = !document.querySelector(".migrate-foot")
+  }
+
   // A sala do VTT fecha ao sair da mesa: o bloco da Mesa fica por último.
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
@@ -507,6 +539,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
   if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
+  if (result.migrationFound !== 4) return false
   if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
@@ -584,6 +617,15 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.masterCheck as Record<string, unknown>).put === 200 &&
     (result.masterCheck as Record<string, unknown>).blocked === 403 &&
     (result.masterCheck as Record<string, unknown>).desktopToken === true &&
-    (result.masterCheck as Record<string, unknown>).oldKey === 404
+    (result.masterCheck as Record<string, unknown>).oldKey === 404 &&
+    typeof result.migration === "object" &&
+    (result.migration as Record<string, unknown>).outcome === "Migração concluída" &&
+    (result.migration as Record<string, unknown>).map === true &&
+    (result.migration as Record<string, unknown>).statblock === true &&
+    (result.migration as Record<string, unknown>).encounter === true &&
+    (result.migration as Record<string, unknown>).date === true &&
+    (result.migration as Record<string, unknown>).calendar === true &&
+    (result.migration as Record<string, unknown>).encounterRows === 2 &&
+    (result.migration as Record<string, unknown>).again === true
   )
 }

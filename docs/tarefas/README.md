@@ -68,6 +68,11 @@ Estes pontos de contato ficam definidos desde já, para uma frente não ficar es
   arquivos, sem depender do pacote de mesa da X6.
 - **Android (C8 → X7).** A C8 cria a `Platform` do Capacitor e o plugin nativo do cofre; a X7 põe o servidor da sala
   por cima, em arquivos próprios.
+- **Encontros (C4 → X6).** A migração do Initiative Tracker grava os encontros num bloco ` ```runas-encontro ` (YAML com
+  `nome`, `jogadores` e `combatentes` com `nome`, `quantidade`, `pv`, `ca`, `iniciativa`, `nota`, `aliado`, `oculto`).
+  O leitor é `app/src/core/encounters.ts` (`parseEncounter`, do Claude Code); o formato está na
+  [ADR 0014](../adr/0014-migracoes.md). Quando a mesa ganhar a iniciativa (X6), ela importa o encontro por esse leitor,
+  sem mexer nele; se precisar de um campo novo, o pedido vai no PR.
 
 ### Números de ADR reservados
 
@@ -91,8 +96,13 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 | **8b** Livros: prévia paginada e temas | Codex (GPT-6 Astra), terminada pelo Claude Code | `livros/8b` | [livros-8a-8b.md](livros-8a-8b.md) | mesclada (PR #10) |
 | **6** Wiki | Claude Code | `wiki/*` | docs/02, seção 8; [ADR 0010](../adr/0010-wiki.md) | mesclada (PR #9) |
 | **7** Canvas + Campanhas | Claude Code | `campanhas/etapa7` | docs/02, seção 8; [ADR 0011](../adr/0011-campanhas.md) | mesclada (PR #11) |
-| **X1** 8c Livros: exportações | Codex (GPT-6 Astra) | `livros/8c-*` | [livros-8c-8d.md](livros-8c-8d.md) | a fazer |
-| **C0** Arquivos binários no cofre | Claude Code | `anexos/binarios` | [anexos-imagens.md](anexos-imagens.md) | a fazer |
+| **X1** 8c Livros: exportações | Codex (GPT-6 Astra), terminada pelo Claude Code | `livros/8c-exportacoes` | [livros-8c-8d.md](livros-8c-8d.md) | mesclada (PR #15, pelo #19) |
+| **C0** Arquivos binários no cofre | Claude Code | `anexos/binarios` | [anexos-imagens.md](anexos-imagens.md) | mesclada (PR #13, pelo #19) |
+| **C1** Imagens: importar, colar e arrastar | Claude Code | `anexos/imagens` | [anexos-imagens.md](anexos-imagens.md) | mesclada (PR #14, pelo #19) |
+| **C2** Imagens: tamanho e posição | Claude Code | `anexos/tamanho-posicao` | [anexos-imagens.md](anexos-imagens.md) | mesclada (PR #16, pelo #19) |
+| **C3** Mestre pelo celular | Claude Code | `vtt/etapa9-mestre-remoto` | [vtt-9.md](vtt-9.md) | mesclada (PR #17, pelo #19) |
+| Verificar atualizações | Claude Code | `atualizacoes/verificar` | [ADR 0017](../adr/0017-atualizacoes.md) | mesclada (PR #18, pelo #19) |
+| **C4** 10 Migrações do Obsidian | Claude Code | `migracoes/etapa10` | [migracoes-10.md](migracoes-10.md) | em revisão |
 
 ## Quem mexe em quê
 

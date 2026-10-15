@@ -214,6 +214,22 @@ automáticos). Falta o uso de verdade:
 - [ ] Sem internet, ou com o GitHub fora: a mensagem de erro aparece e nada muda.
 - [ ] Android: a linha explica que o APK novo se baixa pela página de versões.
 
+## Etapa 10 — Migração dos plugins de RPG do Obsidian (C4)
+
+- [ ] Numa **cópia** de um cofre que use Calendarium, Leaflet, Fantasy Statblocks ou Initiative Tracker: abrir no app,
+  liberar a gravação e ir em Importar / Exportar › "Plugins de RPG do Obsidian". Conferir as contagens, abrir a prévia
+  de algumas notas e migrar.
+- [ ] Depois de migrar, abrir a mesma cópia no Obsidian (com o snippet `runas-codex.css`): statblocks como callout, o
+  bloco original some quando guardado em `%% … %%`, e os blocos `runas-*` aparecem como código. Conferido numa cópia
+  isolada do Obsidian 1.14.4 com os exemplos; falta o seu cofre e o seu tema.
+- [ ] Calendário convertido: o dia da semana e a fase da lua de hoje batem com o que o Calendarium mostrava.
+- [ ] Mapa convertido: os pinos ficam no mesmo lugar que os marcadores do Leaflet (os testes conferem a conta; falta
+  um mapa de verdade com imagem grande).
+- [ ] Calendário do site Fantasy-Calendar: exportar o JSON de um calendário seu e escolher na tela.
+- [ ] Backup: Configurações › Backups mostra o backup feito antes da migração.
+- [ ] No Obsidian, `data_mundo` aparece com o campo de data (o Obsidian deduz pelo formato; o arquivo continua com o
+  texto entre aspas). É assim desde a Wiki (ADR 0010); vale decidir se fica.
+
 ## Limitações conhecidas (não precisam de teste agora)
 
 - **Android sem cofre real:** o acesso ao cofre no Android é um spike da etapa 2 que ficou para depois; no APK, Notas

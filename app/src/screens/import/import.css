@@ -1,0 +1,40 @@
+/* Migração dos plugins de RPG do Obsidian (etapa 10) */
+.migrate { display: grid; gap: var(--space-column); }
+.migrate-back { gap: 4px; text-decoration: none; color: var(--muted); }
+.migrate-back:hover { color: var(--cyan); }
+.migrate-intro { max-width: 72ch; margin: 0; }
+
+.migrate-kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: var(--space-field); }
+.migrate-kind { display: flex; align-items: center; gap: 10px; min-height: 52px; cursor: pointer; }
+.migrate-kind input { accent-color: var(--cyan); width: 18px; height: 18px; flex: none; }
+.migrate-kind > .grow { display: grid; gap: 2px; min-width: 0; }
+.migrate-kind.empty { opacity: 0.55; cursor: default; }
+.migrate-kind-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; flex: none; background: color-mix(in srgb, var(--violet) 16%, transparent); color: var(--violet); }
+.migrate-options { display: grid; gap: var(--space-field); }
+.migrate-options .field { max-width: 420px; }
+.migrate-options .check { align-items: flex-start; }
+.migrate-options .check input { margin-top: 2px; flex: none; }
+
+.migrate-item { display: grid; gap: 4px; }
+.migrate-item .list-item { flex-wrap: nowrap; align-items: flex-start; }
+.migrate-item .list-item > svg { flex: none; margin-top: 2px; }
+.migrate-item .list-item > .grow { display: grid; gap: 2px; min-width: 0; text-align: left; }
+.migrate-item .mono { overflow-wrap: anywhere; }
+.migrate-warnings { margin: 0 0 4px 34px; padding-left: 16px; color: var(--gold); }
+.migrate-notices { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.migrate-notices .wikilink, .migrate-notices .mono { overflow-wrap: anywhere; }
+
+.migrate-diff { max-height: 320px; overflow: auto; margin: 0 0 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-deep); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.migrate-diff .removed { color: var(--red); }
+.migrate-diff .added { color: var(--green); }
+
+.migrate-foot { position: sticky; bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-field); box-shadow: 0 8px 28px rgb(0 0 0 / 25%); }
+.migrate-foot .row { gap: 6px; }
+.migrate-outcome { border-left: 3px solid var(--green); }
+.migrate-outcome.with-errors { border-left-color: var(--gold); }
+
+@media (max-width: 860px) {
+  .migrate-foot { bottom: calc(var(--bottomnav-height) + 12px); }
+  .migrate-foot .btn { width: 100%; justify-content: center; }
+  .migrate-item .list-item { min-height: 44px; flex-wrap: nowrap; }
+}
