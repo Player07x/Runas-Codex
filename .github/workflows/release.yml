@@ -224,6 +224,7 @@ jobs:
       - name: Operar a mesa por toque e medir o WebView
         run: |
           adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
           adb shell am start -n dev.runas.codex/.MainActivity
           for i in $(seq 1 60); do
             runas_pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r')
