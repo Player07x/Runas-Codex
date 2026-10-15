@@ -1102,6 +1102,9 @@ export class SceneView {
   }
 
   private updateOverlayScale(): void {
+    this.app.canvas.dataset.viewZoom = String(this.world.scale.x)
+    this.app.canvas.dataset.viewX = String(this.world.x)
+    this.app.canvas.dataset.viewY = String(this.world.y)
     this.rulerLabel.scale.set(1 / this.world.scale.x)
     if (this.remoteRuler) this.drawRemoteRuler()
     for (const item of this.items.values()) item.onZoom?.()

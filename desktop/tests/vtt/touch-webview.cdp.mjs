@@ -14,8 +14,10 @@ const socket = new WebSocket(page.webSocketDebuggerUrl)
 await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject })
 let sequence = 0
 const pending = new Map()
+const browserErrors = []
 socket.onmessage = event => {
   const message = JSON.parse(event.data)
+  if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params?.entry?.level === 'error') browserErrors.push(message.params)
   if (!message.id) return
   const action = pending.get(message.id)
   pending.delete(message.id)
@@ -52,11 +54,12 @@ const tool = async text => {
 }
 const input = async (name, value) => { await run(`(()=>{const e=Array.from(document.querySelectorAll('label.field')).find(e=>e.querySelector('span')?.textContent===${JSON.stringify(name)})?.querySelector('input,select');if(!e)throw new Error('Campo: '+${JSON.stringify(name)});const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,${JSON.stringify(String(value))});e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{bubbles:true}))})()`);await sleep(100);await run(`(()=>{const e=Array.from(document.querySelectorAll('label.field')).find(e=>e.querySelector('span')?.textContent===${JSON.stringify(name)})?.querySelector('input,select');e?.dispatchEvent(new FocusEvent('focusout',{bubbles:true}))})()`) }
 const field = name => run(`Array.from(document.querySelectorAll('.properties label.field')).find(e=>e.querySelector('span')?.textContent===${JSON.stringify(name)})?.querySelector('input')?.value`)
-const shot = async name => { const image = await send('Page.captureScreenshot', { format: 'png' }); await writeFile(output + '/' + name + '.png', Buffer.from(image.data, 'base64')) }
+const shot = async name => { const image = await send('Page.captureScreenshot', { format: 'png' }); await writeFile(output + '/' + name + '.png', Buffer.from(image.data, 'base64')); const canvas = await run(`new Promise(resolve=>requestAnimationFrame(()=>resolve(document.querySelector('.scene-host canvas')?.toDataURL('image/png'))))`); if (canvas) await writeFile(output + '/' + name + '-canvas.png', Buffer.from(canvas.split(',')[1], 'base64')) }
 const at = (x, y, size = 3000, height = 2000) => run(`(()=>{const r=document.querySelector('.scene-host canvas').getBoundingClientRect(),z=Math.min(r.width/${size},r.height/${height})*.92;return{x:r.x+(r.width-${size}*z)/2+${x}*z,y:r.y+(r.height-${height}*z)/2+${y}*z}})()`)
-const benchmark = () => run(`new Promise(resolve=>{const canvas=document.querySelector('.scene-host canvas'),r=canvas.getBoundingClientRect();const start=performance.now(),times=[];let previous=start;const emit=(type,id,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:id,button:0,buttons:type==='pointerup'?0:1,clientX:r.x+x,clientY:r.y+y}));emit('pointerdown',101,r.width*.35,r.height*.45);emit('pointerdown',102,r.width*.65,r.height*.45);function frame(now){times.push(now-previous);previous=now;const shift=Math.sin((now-start)/500)*20;emit('pointermove',101,r.width*.35+shift,r.height*.45);emit('pointermove',102,r.width*.65+shift,r.height*.45);if(now-start<5000){requestAnimationFrame(frame);return}emit('pointerup',101,r.width*.35,r.height*.45);emit('pointerup',102,r.width*.65,r.height*.45);times.sort((a,b)=>a-b);resolve({fps:Math.round(times.length*10000/(now-start))/10,p95ms:Math.round(times[Math.floor(times.length*.95)]*10)/10,resolution:canvas.dataset.renderResolution,physicalWidth:canvas.width,physicalHeight:canvas.height,frames:times.length})}requestAnimationFrame(frame)})`)
+const benchmark = () => run(`new Promise(resolve=>{const canvas=document.querySelector('.scene-host canvas'),r=canvas.getBoundingClientRect();const start=performance.now(),times=[];let previous=start;const emit=(type,id,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:id,button:0,buttons:type==='pointerup'?0:1,clientX:r.x+x,clientY:r.y+y}));emit('pointerdown',101,r.width*.35,r.height*.45);emit('pointerdown',102,r.width*.65,r.height*.45);function frame(now){times.push(now-previous);previous=now;const shift=Math.sin((now-start)/500)*20;emit('pointermove',101,r.width*.35+shift,r.height*.45);emit('pointermove',102,r.width*.65+shift,r.height*.45);if(now-start<5000){requestAnimationFrame(frame);return}emit('pointerup',101,r.width*.35,r.height*.45);emit('pointerup',102,r.width*.65,r.height*.45);times.sort((a,b)=>a-b);resolve({fps:Math.round(times.length*10000/(now-start))/10,p95ms:Math.round(times[Math.floor(times.length*.95)]*10)/10,resolution:canvas.dataset.renderResolution,zoom:canvas.dataset.viewZoom,cameraX:canvas.dataset.viewX,cameraY:canvas.dataset.viewY,physicalWidth:canvas.width,physicalHeight:canvas.height,frames:times.length})}requestAnimationFrame(frame)})`)
 const results = {}
 try {
+  await send('Runtime.enable'); await send('Log.enable')
   await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   if (process.argv.includes('--mobile')) await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2.75, mobile: true })
   await run(`location.hash='/vtt/criar'`)
@@ -68,8 +71,12 @@ try {
   await label('Cenas'); await button('Nova cena')
   await until(`document.querySelector('.scene-host canvas')`); await sleep(700)
   console.log('Mesa criada; movendo token por toque nativo.')
+  if (process.argv.includes('--slow')) await run(`new Promise(resolve=>{const interval=setInterval(()=>{const end=performance.now()+90;while(performance.now()<end){}},120);setTimeout(()=>{clearInterval(interval);resolve(true)},4000)})`)
+  await label('Enquadrar cena')
   await tool('Novo token'); await tapPoint(await at(1250, 950))
   await until(`document.querySelector('.properties')`)
+  results.initialToken = { x: Number(await field('Posição X')), y: Number(await field('Posição Y')) }
+  if (results.initialToken.x !== 1250 || results.initialToken.y !== 950) throw new Error('O enquadramento não corresponde ao tamanho CSS do canvas: '+JSON.stringify(results.initialToken))
   await input('Disposição', 'friendly')
   await sleep(150)
   await label('Fechar propriedades'); await tool('Selecionar e mover')
@@ -101,7 +108,7 @@ try {
   await label('Cenas')
   // Imagem sintética local: textura real de 4096 x 4096, sem rede nem material do cofre do dono.
   await run(`new Promise(resolve=>{const c=document.createElement('canvas');c.width=c.height=4096;const g=c.getContext('2d');g.fillStyle='#383b43';g.fillRect(0,0,4096,4096);g.strokeStyle='#999079';g.lineWidth=8;for(let x=0;x<4096;x+=256){g.strokeRect(x,128,220,1800);g.strokeRect(128,x,1800,220)}c.toBlob(blob=>{const data=new DataTransfer();data.items.add(new File([blob],'Mapa 4096.png',{type:'image/png'}));const e=document.querySelector('.scene-config .background-picker input[type=file]');e.files=data.files;e.dispatchEvent(new Event('change',{bubbles:true}));resolve()},'image/png')})`)
-  await until(`document.querySelector('.background-picker img')?.complete`)
+  await until(`document.querySelector('.background-picker img')?.complete && document.querySelector('.background-picker img')?.naturalWidth === 4096`)
   await tap(`Array.from(document.querySelectorAll('.scene-config label.check')).find(e=>e.textContent.includes('Névoa de guerra'))`)
   await tap(`Array.from(document.querySelectorAll('.scene-config label.check')).find(e=>e.textContent.includes('Luz do dia'))`)
   results.vision = await run(`(()=>{const fields=Array.from(document.querySelectorAll('.scene-config label.check'));return {fog:fields.find(e=>e.textContent.includes('Névoa de guerra'))?.querySelector('input').checked,daylight:fields.find(e=>e.textContent.includes('Luz do dia'))?.querySelector('input').checked}})()`)
@@ -111,6 +118,7 @@ try {
   await tapPoint(await at(2000, 1700, 4096, 4096)); await label('Fechar propriedades')
   await tool('Selecionar e mover'); if (await run(`!!document.querySelector('[aria-label="Soltar seleção"]')`)) await label('Soltar seleção'); await label('Enquadrar cena'); await sleep(3000)
   console.log("Medindo o mapa de 4096 px com névoa e duas luzes.")
+  await tool('Ver como os jogadores'); if (await run(`document.querySelector('[aria-label="Mostrar ferramentas"]')?.getAttribute('aria-expanded')==='true'`)) await label('Mostrar ferramentas'); await sleep(1000)
   results.largeMap = await benchmark()
   await shot('android-mapa-4096')
   results.device = await run(`({userAgent:navigator.userAgent,dpr:devicePixelRatio,width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth})`)
@@ -121,4 +129,4 @@ try {
   await shot('erro').catch(() => {})
   await writeFile(output + '/error.txt', String(error))
   throw error
-} finally { socket.close() }
+} finally { await writeFile(output + '/browser-errors.json', JSON.stringify(browserErrors, null, 2)); socket.close() }
