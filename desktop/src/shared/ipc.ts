@@ -21,6 +21,9 @@ export const IPC = {
   /** Do processo principal para a janela: clicaram num lembrete. */
   agendaOpen: "agenda:open",
   saveFile: "files:save",
+  vaultReadBinary: "vault:read-binary",
+  vaultWriteBinary: "vault:write-binary",
+  saveBytes: "files:save-bytes",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

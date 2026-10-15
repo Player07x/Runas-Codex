@@ -1,3 +1,4 @@
+import { appConfig, type AppConfig } from "./attachments"
 import { parseFrontmatter } from "./parse"
 import { setProperty, type PropertyValue } from "./properties"
 
@@ -24,9 +25,11 @@ export interface DailyNotesConfig {
 export interface ObsidianConfig {
   templates: TemplatesConfig
   daily: DailyNotesConfig
+  /** Pasta de anexos e formato de link (`.obsidian/app.json`). */
+  app: AppConfig
 }
 
-export const CONFIG_FILES = [".obsidian/templates.json", ".obsidian/daily-notes.json"] as const
+export const CONFIG_FILES = [".obsidian/templates.json", ".obsidian/daily-notes.json", ".obsidian/app.json"] as const
 
 const clean = (value: unknown) => (typeof value === "string" ? value.trim().replace(/^\/+|\/+$/g, "") : "")
 
@@ -55,6 +58,7 @@ export function obsidianConfig(files: Record<string, string>): ObsidianConfig {
       format: typeof daily.format === "string" && daily.format.trim() ? daily.format : "YYYY-MM-DD",
       template: clean(daily.template).replace(/\.md$/i, ""),
     },
+    app: appConfig(json(files[".obsidian/app.json"])),
   }
 }
 

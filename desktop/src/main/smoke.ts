@@ -119,6 +119,7 @@ export const SMOKE_SCRIPT = `(async () => {
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
+    result.binaryWrite = await errorOf(bridge.vault.writeBinary("Notas/smoke.png", new Uint8Array([1]), null))
     return result
   }
   // Gravações (só numa cópia temporária do cofre).
@@ -133,6 +134,18 @@ export const SMOKE_SCRIPT = `(async () => {
   result.backup = (await bridge.vault.backup()).files
   await bridge.vault.installSnippet("/* smoke */")
   result.snippet = (await bridge.vault.read([".obsidian/snippets/runas-codex.css"]))[".obsidian/snippets/runas-codex.css"] === "/* smoke */" ? "OK" : "não gravou"
+
+  // Anexos: os bytes vão e voltam iguais, com as recusas do texto, e a imagem nova aparece por vault-file://.
+  const pngBytes = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="), (c) => c.charCodeAt(0))
+  const binary = await bridge.vault.writeBinary("Notas/Anexos/smoke.png", pngBytes, null)
+  const readBack = await bridge.vault.readBinary("Notas/Anexos/smoke.png")
+  result.binary = {
+    create: binary.size === pngBytes.length ? "OK" : "tamanho " + binary.size,
+    same: readBack.length === pngBytes.length && readBack.every((b, i) => b === pngBytes[i]),
+    again: await errorOf(bridge.vault.writeBinary("Notas/Anexos/smoke.png", pngBytes, null)),
+    hidden: await errorOf(bridge.vault.writeBinary(".obsidian/smoke.png", pngBytes, null)),
+    shown: await new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img.naturalWidth); img.onerror = () => resolve(0); img.src = "vault-file://cofre/Notas/Anexos/smoke.png" }),
+  }
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
@@ -340,7 +353,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
   if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
-  if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
+  if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (
     result.create === "OK" &&
@@ -380,6 +393,12 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.canvas as Record<string, unknown>).text === true &&
     (result.canvas as Record<string, unknown>).unknown === true &&
     (result.canvas as Record<string, unknown>).renamed === true &&
-    (result.canvas as Record<string, unknown>).tabs === true
+    (result.canvas as Record<string, unknown>).tabs === true &&
+    typeof result.binary === "object" &&
+    (result.binary as Record<string, unknown>).create === "OK" &&
+    (result.binary as Record<string, unknown>).same === true &&
+    String((result.binary as Record<string, unknown>).again).startsWith("Já existe") &&
+    String((result.binary as Record<string, unknown>).hidden).includes("ocultos") &&
+    (result.binary as Record<string, unknown>).shown === 1
   )
 }
