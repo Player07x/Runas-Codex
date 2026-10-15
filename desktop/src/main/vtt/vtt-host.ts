@@ -1,12 +1,14 @@
 import { join } from "node:path"
 import { app, BrowserWindow, protocol, screen, type IpcMainInvokeEvent } from "electron"
 import { ASSET_SCHEME, IPC, type DocumentChange, type DocumentInput, type LinkTestResult, type PlayerBarVisibility, type TableReport } from "../../../../app/src/vtt/shared/ipc"
+import { MASTER_CHANNELS, MASTER_IPC } from "../../../../app/src/vtt/shared/master"
 import { ASSET_KINDS, type AssetKind, type DocumentType, type NewWorldInput } from "../../../../app/src/vtt/shared/world"
 import { AudioService } from "./audio-service"
 import { ensureCloudflared, publicPlayerUrl, startCloudflared } from "./cloudflared"
 import { PlayerTransmission } from "./player-transmission"
 import { RegionService } from "./region-service"
 import { VisionService } from "./vision-service"
+import { MasterRemote } from "./master-remote"
 import { assetResponse, importAsset } from "./world-assets"
 import { clearLog, deleteDocument, listDocuments, putDocument } from "./world-documents"
 import { WorldStore } from "./world-store"
@@ -16,7 +18,8 @@ export function assetSchemePrivilege() {
   return { scheme: ASSET_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }
 }
 
-type Handle = (channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown) => void
+type Listener = (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown
+type Handle = (channel: string, listener: Listener) => void
 
 const audioId = (value: unknown) => {
   if (typeof value !== "string" || !/^[A-Za-z0-9_:.-]{1,80}$/.test(value)) throw new Error("Identificador de áudio inválido.")
@@ -36,6 +39,9 @@ export class VttHost {
   private readonly listeners: ((change: DocumentChange) => void)[] = []
   private tunnel: ReturnType<typeof startCloudflared> | null = null
   private playerWindow: BrowserWindow | null = null
+  /** Os mesmos tratadores do IPC, para o mestre remoto chamar (só os canais de `MASTER_CHANNELS`). */
+  private readonly handlers = new Map<string, Listener>()
+  readonly master: MasterRemote
 
   constructor(
     vaultRoot: () => string | null,
@@ -61,10 +67,23 @@ export class VttHost {
     this.listeners.push((change) => this.audio.onDocumentChange(change))
     this.listeners.push((change) => this.regions.onDocumentChange(change))
     this.listeners.push((change) => this.transmission.onDocumentChange(change))
+    // Mestre remoto (ADR 0016): a mesa do mestre servida pela sala, para o celular.
+    this.master = new MasterRemote({
+      staticRoot: join(__dirname, "../renderer"),
+      world: () => this.store.openWorld,
+      invoke: async (channel, args) => {
+        const listener = this.handlers.get(channel)
+        if (!listener || !MASTER_CHANNELS.includes(channel)) throw new Error("Isto só pelo computador da sala.")
+        return listener({} as IpcMainInvokeEvent, ...args)
+      },
+      onState: (state) => this.send(MASTER_IPC.stateChanged, state),
+    })
+    this.transmission.setRoute((request, response, url) => this.master.handle(request, response, url))
   }
 
   private send(channel: string, payload: unknown): void {
     for (const window of BrowserWindow.getAllWindows()) window.webContents.send(channel, payload)
+    this.master?.emit(channel, payload)
   }
 
   private broadcast(change: DocumentChange): void {
@@ -94,6 +113,7 @@ export class VttHost {
   }
 
   private async closeServices(): Promise<void> {
+    this.master?.stop()
     this.stopTunnel()
     this.closePlayerWindow()
     this.vision.clear()
@@ -156,6 +176,12 @@ export class VttHost {
   }
 
   register(handle: Handle): void {
+    // Guarda cada tratador também para o mestre remoto.
+    const ipc = handle
+    handle = (channel, listener) => {
+      this.handlers.set(channel, listener)
+      ipc(channel, listener)
+    }
     handle(IPC.listWorlds, () => this.store.list())
     handle(IPC.createWorld, (_event, input) => {
       this.requireWritable()
@@ -214,8 +240,13 @@ export class VttHost {
     }
     handle(IPC.playerState, () => t.state())
     handle(IPC.playerDisplays, () => screen.getAllDisplays().map((display) => ({ id: String(display.id), label: `Tela ${display.id}`, bounds: display.bounds, workArea: display.workArea })))
-    handle(IPC.playerStart, (_event, port, seatCount) => t.start(port === undefined ? 30000 : Number(port), seatCount === undefined ? 1 : Number(seatCount)))
+    handle(IPC.playerStart, async (_event, port, seatCount) => {
+      const state = await t.start(port === undefined ? 30000 : Number(port), seatCount === undefined ? 1 : Number(seatCount))
+      this.master.start()
+      return state
+    })
     handle(IPC.playerStop, async () => {
+      this.master.stop()
       this.stopTunnel()
       await t.stop()
       this.closePlayerWindow()
@@ -285,5 +316,8 @@ export class VttHost {
     handle(IPC.playerDownloadCloudflared, async () => {
       await ensureCloudflared(app.getPath("userData"))
     })
+    handle(MASTER_IPC.state, () => this.master.state())
+    handle(MASTER_IPC.rotate, () => this.master.rotate())
+    handle(MASTER_IPC.disconnect, () => this.master.disconnect())
   }
 }

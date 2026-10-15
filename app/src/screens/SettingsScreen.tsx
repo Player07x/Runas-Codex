@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Archive, Bell, FolderOpen, Keyboard, Lock, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
-import { Switch, useProtoAction, useToast } from "../components/ui"
+import { Modal, Switch, useProtoAction, useToast } from "../components/ui"
+import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
 import type { BackupInfo } from "../platform/platform"
+import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import "./transfer.css"
 
@@ -37,6 +39,23 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   const vaultHint = vault.info ? vault.info.path : "Nenhum cofre aberto"
   const notesHint = vault.loading ? "Lendo o cofre…" : vault.error ? `Erro: ${vault.error}` : vault.index ? `${vault.index.size} notas Markdown no índice` : "—"
   const lastBackup = backups[0]
+  const [unused, setUnused] = useState<string[] | null>(null)
+  const [chosen, setChosen] = useState<Set<string>>(new Set())
+  async function findUnused() {
+    const index = vault.index
+    if (!index) return
+    // Os quadros (.canvas) também usam anexos; o índice só guarda o texto das notas.
+    const canvases = index.allFiles().filter((f) => f.path.toLowerCase().endsWith(".canvas")).map((f) => f.path)
+    const texts = canvases.length ? Object.values(await vault.platform.readTexts(canvases)) : []
+    setUnused(unusedAttachments(index, texts))
+    setChosen(new Set())
+  }
+  async function trashChosen() {
+    for (const path of chosen) await vault.trash(path)
+    toast(`${chosen.size} ${chosen.size === 1 ? "anexo foi" : "anexos foram"} para a lixeira do cofre (.trash)`)
+    setUnused((list) => list?.filter((path) => !chosen.has(path)) ?? null)
+    setChosen(new Set())
+  }
   return (
     <div className="page">
       <div className="page-head">
@@ -89,15 +108,19 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Network size={16} /> Compatibilidade com o Obsidian
           </span>
-          <Row title="Formato de link novo" hint="Lido de .obsidian/app.json">
-            <select className="select" defaultValue="curto">
-              <option value="curto">Mais curto possível</option>
-              <option value="relativo">Relativo</option>
-              <option value="absoluto">Caminho completo</option>
-            </select>
+          <Row title="Formato de link novo" hint="Lido de .obsidian/app.json (mude no Obsidian, em Arquivos e links)">
+            <span className="small">
+              {{ shortest: "Mais curto possível", relative: "Relativo", absolute: "Caminho completo" }[vault.config.app.newLinkFormat]}
+              {vault.config.app.useMarkdownLinks ? " · links em Markdown" : " · wikilinks"}
+            </span>
           </Row>
-          <Row title="Pasta de anexos" hint="Lida de .obsidian/app.json">
-            <input className="input mono small" defaultValue="./Anexos" />
+          <Row title="Pasta de anexos" hint="Imagens coladas, arrastadas ou importadas nas notas vão para cá. Lida de .obsidian/app.json (mude no Obsidian).">
+            <span className="small">{attachmentFolderLabel(vault.config.app.attachmentFolder)}</span>
+          </Row>
+          <Row title="Anexos sem uso" hint="Imagens, áudios, vídeos e PDFs que nenhuma nota nem quadro usa.">
+            <button className="btn sm" disabled={!vault.index || busy} onClick={run(findUnused)}>
+              Procurar
+            </button>
           </Row>
           <Row title="Snippet runas-codex.css" hint="Faz callouts, colunas e capitulares aparecerem iguais no Obsidian. Depois de instalar, ligue em Obsidian › Aparência › Trechos de CSS.">
             <button
@@ -172,9 +195,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <Row title="Telemetria" hint="Não existe. O app não chama a internet fora da sala.">
             <span className="chip green">desligada sempre</span>
           </Row>
-          <Row title="Verificar atualizações" hint="Só quando você pedir">
-            <button className="btn sm" onClick={proto("abriria a página de versões")}>Verificar</button>
-          </Row>
+          <UpdateRow />
           <Row title="Bloquear o espaço Notas com PIN" hint="Impede abrir no app; não criptografa os arquivos">
             <button className="btn sm" onClick={proto("definir PIN")}>
               <Lock size={14} /> Definir
@@ -199,6 +220,123 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           ))}
         </section>
       </div>
+      {unused && (
+        <Modal
+          title="Anexos sem uso"
+          onClose={() => setUnused(null)}
+          footer={
+            <>
+              <button className="btn" onClick={() => setUnused(null)}>Fechar</button>
+              <button className="btn danger" disabled={!chosen.size || busy || vault.info?.readOnly} title={vault.info?.readOnly ? "Libere a gravação no cofre primeiro" : undefined} onClick={run(trashChosen)}>
+                Mandar {chosen.size || ""} para a lixeira
+              </button>
+            </>
+          }
+        >
+          {unused.length === 0 ? (
+            <p className="muted">Todos os anexos do cofre são usados por alguma nota ou quadro.</p>
+          ) : (
+            <>
+              <p className="small muted" style={{ marginBottom: 8 }}>
+                Nenhuma nota nem quadro cita estes arquivos. Os escolhidos vão para a lixeira do cofre (<code>.trash</code>), a mesma do Obsidian.
+              </p>
+              <label className="check" style={{ marginBottom: 6 }}>
+                <input type="checkbox" checked={chosen.size === unused.length} onChange={(event) => setChosen(event.target.checked ? new Set(unused) : new Set())} /> Escolher todos ({unused.length})
+              </label>
+              {unused.map((path) => (
+                <label key={path} className="check mono small">
+                  <input
+                    type="checkbox"
+                    checked={chosen.has(path)}
+                    onChange={(event) => setChosen((set) => { const next = new Set(set); if (event.target.checked) next.add(path); else next.delete(path); return next })}
+                  />{" "}
+                  {path}
+                </label>
+              ))}
+            </>
+          )}
+        </Modal>
+      )}
     </div>
   )
 }
+
+const formatBytes = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`)
+
+/**
+ * "Verificar atualizações" (ADR 0017): o app só vai à internet quando você clica. Mostra a versão nova, baixa o
+ * instalador deste sistema da release do GitHub, confere a soma SHA-256 e instala.
+ */
+function UpdateRow() {
+  const vault = useVault()
+  const toast = useToast()
+  const platform = vault.platform
+  const [version, setVersion] = useState("")
+  const [info, setInfo] = useState<UpdateInfo | null>(null)
+  const [state, setState] = useState<"parado" | "verificando" | "baixando">("parado")
+  const [progress, setProgress] = useState<{ received: number; total: number } | null>(null)
+  const [error, setError] = useState("")
+  useEffect(() => {
+    platform.appVersion?.().then(setVersion, () => setVersion(""))
+  }, [platform])
+
+  if (!platform.checkUpdate || !platform.installUpdate) {
+    return (
+      <Row title="Atualizações" hint="No navegador o app já é a versão publicada. No Android, baixe o APK novo na página de versões: github.com/Player07x/Runas-Codex/releases">
+        <span className="small muted">—</span>
+      </Row>
+    )
+  }
+  const check = () => {
+    setState("verificando")
+    setError("")
+    platform.checkUpdate!().then(setInfo, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))).finally(() => setState("parado"))
+  }
+  const install = () => {
+    setState("baixando")
+    setError("")
+    setProgress(null)
+    platform.installUpdate!((received, total) => setProgress({ received, total })).then(
+      (result) => {
+        if (result === "instalador-aberto") toast("O instalador abriu. O Runas-Codex vai fechar para ele trocar os arquivos.")
+        else if (result === "reiniciar") toast("Atualizado. O Runas-Codex está reiniciando.")
+        else toast("O pacote abriu no instalador do sistema; conclua a instalação por lá e abra o app de novo.")
+      },
+      (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)),
+    ).finally(() => setState("parado"))
+  }
+  const latest = info?.latest
+  const hint = !info
+    ? `Versão instalada: ${version || "…"}. O app só consulta a internet (as versões publicadas no GitHub) quando você clica.`
+    : !info.newer
+      ? `Você está na versão mais nova (${info.current}).`
+      : `Versão ${latest!.version} disponível${latest!.publishedAt ? `, publicada em ${new Date(latest!.publishedAt).toLocaleDateString("pt-BR")}` : ""}. Instalada: ${info.current}.`
+  return (
+    <div className="setting-row" style={{ flexWrap: "wrap" }} data-updates>
+      <div>
+        <span className="small" style={{ fontWeight: 650 }}>Verificar atualizações</span>
+        <span className="tiny faint">{hint}</span>
+        {info?.newer && !info.asset && <span className="tiny" style={{ color: "var(--gold)" }}>Esta versão não tem instalador para este sistema.</span>}
+        {state === "baixando" && <span className="tiny">{progress ? `Baixando ${formatBytes(progress.received)} de ${formatBytes(progress.total)}…` : "Baixando…"}</span>}
+        {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
+        {info?.newer && latest?.notes && (
+          <details className="tiny" style={{ marginTop: 4 }}>
+            <summary>O que mudou</summary>
+            <pre style={{ whiteSpace: "pre-wrap", margin: "4px 0 0", maxHeight: 180, overflow: "auto" }}>{latest.notes.slice(0, 2000)}</pre>
+          </details>
+        )}
+      </div>
+      <div className="row-wrap">
+        <button className="btn sm" disabled={state !== "parado"} onClick={check}>
+          {state === "verificando" ? "Verificando…" : "Verificar"}
+        </button>
+        {info?.newer && info.asset && (
+          <button className="btn sm primary" disabled={state !== "parado"} onClick={install}>
+            Baixar e instalar ({formatBytes(info.asset.size)})
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+

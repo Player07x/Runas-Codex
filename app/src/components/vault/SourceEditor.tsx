@@ -20,8 +20,10 @@ export interface LinkSuggestion {
 }
 
 export interface SourceEditorHandle {
-  /** Insere texto no cursor (ou no lugar da seleção). */
-  insert(text: string): void
+  /** Insere texto no cursor (ou no lugar da seleção); com `at`, naquela posição do documento. */
+  insert(text: string, at?: number): void
+  /** Como `insert`, mas numa linha só sua (quebra a linha antes e depois, se precisar): imagens e outros blocos. */
+  insertBlock(text: string, at?: number): void
   /** Troca o documento inteiro a partir do texto e do cursor atuais (um passo só no desfazer). */
   transform(change: (doc: string, cursor: number) => { text: string; cursor: number }): void
   focus(): void
@@ -37,6 +39,17 @@ interface Props {
   suggestLinks?(query: string): LinkSuggestion[]
   /** Com isto, o editor fica em live preview (marcação escondida fora do cursor, blocos desenhados). */
   livePreview?: LivePreviewHost | null
+  /**
+   * Arquivos colados (Ctrl+V) ou soltos no editor. `at` é a posição onde soltaram; `null` = no cursor. Sem isto, o
+   * editor não aceita arquivos (o CodeMirror colaria o conteúdo como texto).
+   */
+  onFiles?(files: File[], at: number | null, how: "colar" | "soltar"): void
+}
+
+/** Colar com texto junto (célula de planilha, trecho de documento) é colar texto; só a imagem sozinha vira arquivo. */
+function pastedFiles(data: DataTransfer | null): File[] {
+  if (!data || data.getData("text/plain").trim()) return []
+  return [...data.files]
 }
 
 /** Cores pelas variáveis do tema: o editor acompanha o claro/escuro do Órbita. */
@@ -70,14 +83,14 @@ const highlight = HighlightStyle.define([
   { tag: tags.list, color: "var(--violet)" },
 ])
 
-export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview }, ref) {
+export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles }, ref) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const readOnlyConf = useRef(new Compartment())
   const previewConf = useRef(new Compartment())
   // As funções mudam a cada render; o editor lê sempre a versão atual por estas referências.
-  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview })
-  callbacks.current = { onChange, onSave, suggestLinks, livePreview }
+  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles })
+  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles }
   // Anfitrião estável para o live preview (o editor não é recriado quando as funções mudam).
   const previewHost = useRef<LivePreviewHost>({
     noteSet: () => callbacks.current.livePreview!.noteSet(),
@@ -124,6 +137,23 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         EditorView.updateListener.of((update) => {
           if (update.docChanged) callbacks.current.onChange(update.state.doc.toString())
         }),
+        EditorView.domEventHandlers({
+          paste(event, editorView) {
+            const files = pastedFiles(event.clipboardData)
+            if (!files.length || !callbacks.current.onFiles || editorView.state.readOnly) return false
+            event.preventDefault()
+            callbacks.current.onFiles(files, null, "colar")
+            return true
+          },
+          drop(event, editorView) {
+            const files = [...(event.dataTransfer?.files ?? [])]
+            if (!files.length || !callbacks.current.onFiles) return false
+            event.preventDefault()
+            if (editorView.state.readOnly) return true
+            callbacks.current.onFiles(files, editorView.posAtCoords({ x: event.clientX, y: event.clientY }), "soltar")
+            return true
+          },
+        }),
         theme,
       ],
     })
@@ -144,11 +174,21 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
   }, [Boolean(livePreview)])
 
   useImperativeHandle(ref, () => ({
-    insert(text: string) {
+    insert(text: string, at?: number) {
       const v = view.current
       if (!v) return
-      const { from, to } = v.state.selection.main
+      const { from, to } = at === undefined ? v.state.selection.main : { from: Math.min(at, v.state.doc.length), to: Math.min(at, v.state.doc.length) }
       v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } })
+      v.focus()
+    },
+    insertBlock(text: string, at?: number) {
+      const v = view.current
+      if (!v) return
+      const { from, to } = at === undefined ? v.state.selection.main : { from: Math.min(at, v.state.doc.length), to: Math.min(at, v.state.doc.length) }
+      const before = from > 0 && v.state.sliceDoc(from - 1, from) !== "\n" ? "\n" : ""
+      const after = to < v.state.doc.length && v.state.sliceDoc(to, to + 1) !== "\n" ? "\n" : ""
+      const insert = `${before}${text}${after}`
+      v.dispatch({ changes: { from, to, insert }, selection: { anchor: from + before.length + text.length } })
       v.focus()
     },
     transform(change) {

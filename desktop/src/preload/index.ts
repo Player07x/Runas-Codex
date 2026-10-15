@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron"
 import { IPC, type RunasCodexBridge, type VaultChange } from "../shared/ipc"
 import { IPC as VTT, type DocumentChange, type PlayerState } from "../../../app/src/vtt/shared/ipc"
 import type { AudioState } from "../../../app/src/vtt/shared/audio"
+import { MASTER_IPC, type MasterState } from "../../../app/src/vtt/shared/master"
 
 /** O Electron embrulha erros como "Error invoking remote method 'canal': Error: motivo"; a interface recebe só o motivo. */
 function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -36,6 +37,8 @@ const bridge: RunasCodexBridge = {
     revealBackups: () => invoke(IPC.vaultRevealBackups),
     openFile: (path) => invoke(IPC.vaultOpenFile, path),
     installSnippet: (css) => invoke(IPC.vaultInstallSnippet, css),
+    readBinary: (path) => invoke(IPC.vaultReadBinary, path),
+    writeBinary: (path, bytes, expected) => invoke(IPC.vaultWriteBinary, path, bytes, expected === undefined ? undefined : expected && { mtime: expected.mtime, size: expected.size }),
   },
   agenda: {
     schedule: (reminders) => invoke(IPC.agendaSchedule, reminders),
@@ -48,6 +51,7 @@ const bridge: RunasCodexBridge = {
     },
   },
   saveFile: (name, content) => invoke(IPC.saveFile, name, content),
+  exportPdf: (name) => invoke(IPC.booksPdf, name),
   vtt: {
     listWorlds: () => invoke(VTT.listWorlds),
     createWorld: (input) => invoke(VTT.createWorld, input),
@@ -116,6 +120,31 @@ const bridge: RunasCodexBridge = {
     },
     assets: {
       import: (kind, fileName, bytes) => invoke(VTT.assetsImport, kind, fileName, bytes),
+    },
+    master: {
+      state: () => invoke(MASTER_IPC.state),
+      onState: (listener) => {
+        const handler = (_event: unknown, state: MasterState) => listener(state)
+        ipcRenderer.on(MASTER_IPC.stateChanged, handler)
+        return () => {
+          ipcRenderer.removeListener(MASTER_IPC.stateChanged, handler)
+        }
+      },
+      rotate: () => invoke(MASTER_IPC.rotate),
+      disconnect: () => invoke(MASTER_IPC.disconnect),
+    },
+  },
+  saveBytes: (name, bytes) => invoke(IPC.saveBytes, name, bytes),
+  updates: {
+    version: () => invoke(IPC.appVersion),
+    check: () => invoke(IPC.updatesCheck),
+    install: () => invoke(IPC.updatesInstall),
+    onProgress: (listener) => {
+      const handler = (_event: unknown, progress: { received: number; total: number }) => listener(progress)
+      ipcRenderer.on(IPC.updatesProgress, handler)
+      return () => {
+        ipcRenderer.removeListener(IPC.updatesProgress, handler)
+      }
     },
   },
 }

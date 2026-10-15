@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [react(), contentSecurityPolicy()],
   // Duas páginas: o app e a sala dos jogadores (servida pelo computador do mestre). Caminhos relativos à pasta
   // `app/`, de onde os scripts do projeto rodam o build.
-  build: { rollupOptions: { input: { main: "index.html", player: "player.html" } } },
+  // `master.html`: a mesa do mestre remoto, que a sala serve ao celular (ADR 0016).
+  build: { rollupOptions: { input: { main: "index.html", player: "player.html", master: "master.html" } } },
   server: { port: 5180 },
   preview: { port: 5181 },
 })

@@ -1,13 +1,17 @@
-import { writeFile } from "node:fs/promises"
+import { exportBookPdf } from "./books-pdf"
+import { mkdtemp, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { ReminderScheduler, validReminders } from "./reminders"
-import { checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
+import { checkBookFiles, checkMaster, checkPdf, checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
 import { assetSchemePrivilege, VttHost } from "./vtt/vtt-host"
+import { checkForUpdate, downloadUpdate, installUpdate, updateTarget } from "./updates"
+import type { UpdateInfo } from "../../../app/src/core/updates"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -75,7 +79,55 @@ function registerIpc(): void {
     await writeFile(result.filePath, text(content, "conteúdo"), "utf8")
     return result.filePath
   })
+  handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
+  handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
+  handle(IPC.vaultWriteBinary, (_event, path, content, expected) => {
+    if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
+    return vault.writeBinary(text(path, "caminho"), content, versionOf(expected))
+  })
+  handle(IPC.saveBytes, async (_event, name, content) => {
+    if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
+    const fileName = text(name, "nome").replace(/[\\/:*?"<>|]/g, "-").slice(0, 120)
+    // No `--smoke --write`, as exportações vão para uma pasta temporária, sem diálogo (como o PDF do livro).
+    const result = smoke && process.argv.includes("--write")
+      ? { canceled: false, filePath: join(await mkdtemp(join(tmpdir(), "runas-export-")), fileName) }
+      : await dialog.showSaveDialog(mainWindow!, { defaultPath: join(app.getPath("documents"), fileName) })
+    if (result.canceled || !result.filePath) return null
+    await writeFile(result.filePath, content)
+    return result.filePath
+  })
+  // "Verificar atualizações" (ADR 0017): só quando o usuário clica. Instala só o que a última consulta encontrou.
+  let lastUpdate: UpdateInfo | null = null
+  handle(IPC.appVersion, () => app.getVersion())
+  handle(IPC.updatesCheck, async () => {
+    const target = updateTarget()
+    if (!target) throw new Error("A atualização pelo app existe no Windows e no Linux.")
+    lastUpdate = await checkForUpdate(app.getVersion(), target)
+    return lastUpdate
+  })
+  handle(IPC.updatesInstall, async () => {
+    const target = updateTarget()
+    if (!target || !lastUpdate?.newer) throw new Error("Verifique as atualizações primeiro.")
+    const file = await downloadUpdate(lastUpdate, join(app.getPath("downloads"), "Runas-Codex"), (received, total) => mainWindow?.webContents.send(IPC.updatesProgress, { received, total }))
+    return installUpdate(file, target, {
+      openPath: (path) => shell.openPath(path),
+      quit: () => app.quit(),
+      relaunch: (execPath) => {
+        app.relaunch({ execPath })
+        app.exit(0)
+      },
+    })
+  })
+}
+
+/** Versão que a interface leu (`null` = só criar; ausente = sem conferência). */
+function versionOf(expected: unknown): { mtime: number; size: number } | null | undefined {
+  if (expected === null) return null
+  if (expected && typeof expected === "object" && typeof (expected as { mtime?: unknown }).mtime === "number" && typeof (expected as { size?: unknown }).size === "number") {
+    return { mtime: (expected as { mtime: number }).mtime, size: (expected as { size: number }).size }
+  }
+  return undefined
 }
 
 function createMainWindow(): BrowserWindow {
@@ -117,6 +169,12 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     await new Promise<void>((resolve) => window.webContents.once("did-finish-load", () => resolve()))
     const result = (await window.webContents.executeJavaScript(SMOKE_SCRIPT)) as Record<string, unknown>
     if (result.room) result.roomCheck = await checkRoom(result.room as { port: number; key: string; codes: string[] })
+    const bookPdf = result.bookPdf as { path?: string | null } | undefined
+    if (bookPdf?.path) result.bookPdfCheck = await checkPdf(bookPdf.path)
+    const bookFiles = result.bookFiles as { epub?: string | null; docx?: string | null } | undefined
+    if (bookFiles?.epub && bookFiles.docx) result.bookFilesCheck = await checkBookFiles(bookFiles.epub, bookFiles.docx)
+    const master = result.master as { key?: string | null } | undefined
+    if (result.room && master?.key) result.masterCheck = await checkMaster(window, (result.room as { port: number }).port, master.key, String(result.masterScene ?? ""), () => vtt.master.rotate(), argValue("shot-master"))
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))

@@ -57,6 +57,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
         <Progress value={structure.words} max={goal} />
       </div>}<nav className="row-wrap" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
       <button className="btn" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+      <button className="btn" onClick={() => { setPreview(true); setView("previa") }}>Exportar…</button>
     </header>
     {vault.info?.readOnly && <p className="proto-note">Somente leitura. Libere a gravação em Configurações › Cofre.</p>}
     {(error || structure.error) && <p role="alert">{error || structure.error}</p>}

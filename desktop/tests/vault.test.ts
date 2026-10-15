@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, utimes, writeFile
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { unzipSync } from "fflate"
-import { backupVault, createVault, listBackups, listVault, readTexts, renamePath, resolveInside, trashPath, VaultError, writeTextSafe } from "../src/main/vault"
+import { backupVault, createVault, listBackups, listVault, MAX_BINARY_SIZE, readBinary, readTexts, renamePath, resolveInside, trashPath, VaultError, writeBinarySafe, writeTextSafe } from "../src/main/vault"
 
 let base: string
 let root: string
@@ -90,6 +90,38 @@ describe("writeTextSafe", () => {
 
   it("recusa gravar através de link simbólico", async () => {
     await expect(writeTextSafe(root, "atalho.md", "x")).rejects.toThrow("simbólico")
+  })
+})
+
+describe("writeBinarySafe e readBinary", () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 255, 128])
+
+  it("cria o anexo com a pasta, lê os mesmos bytes, recusa criar de novo e atualiza só com a versão certa", async () => {
+    const created = await writeBinarySafe(root, "Anexos/mapa.png", png, null)
+    expect(created).toMatchObject({ path: "Anexos/mapa.png", size: png.length })
+    expect(await readBinary(root, "Anexos/mapa.png")).toEqual(png)
+    await expect(writeBinarySafe(root, "Anexos/mapa.png", png, null)).rejects.toThrow("Já existe")
+    await expect(writeBinarySafe(root, "Anexos/mapa.png", png, { mtime: 1, size: png.length })).rejects.toThrow("mudou fora do app")
+    const updated = await writeBinarySafe(root, "Anexos/mapa.png", png.slice(0, 4), created)
+    expect(updated.size).toBe(4)
+    expect((await readdir(join(root, "Anexos"))).filter((name) => name.includes("runas-tmp"))).toEqual([])
+  })
+
+  it("não regrava bytes iguais (a data do arquivo não muda)", async () => {
+    const created = await writeBinarySafe(root, "capa.png", png, null)
+    await utimes(join(root, "capa.png"), new Date(2020, 0, 1), new Date(2020, 0, 1))
+    const before = (await stat(join(root, "capa.png"))).mtimeMs
+    const entry = await writeBinarySafe(root, "capa.png", png.slice(), { mtime: before, size: created.size })
+    expect(entry.mtime).toBe(before)
+  })
+
+  it.each([".obsidian/x.png", "Anexos/.oculta.png", "../fora.png", "/tmp/x.png", "atalho.md"])("recusa gravar em %j", async (path) => {
+    await expect(writeBinarySafe(root, path, png)).rejects.toBeInstanceOf(VaultError)
+  })
+
+  it("recusa ler fora do cofre e anexo grande demais", async () => {
+    await expect(readBinary(root, "../segredo.md")).rejects.toBeInstanceOf(VaultError)
+    await expect(writeBinarySafe(root, "grande.bin", new Uint8Array(MAX_BINARY_SIZE + 1))).rejects.toThrow("MB")
   })
 })
 

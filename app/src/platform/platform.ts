@@ -1,4 +1,5 @@
 import type { Reminder } from "../core/agenda"
+import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 
 /**
  * Fronteira entre o app (igual nas três plataformas) e a casca nativa.
@@ -89,4 +90,18 @@ export interface Platform {
   stopRoom(): Promise<void>
   /** Abre o diálogo de impressão do documento atual. */
   printDocument?(): void
+  /** Lê um arquivo do cofre como bytes (imagem, PDF…). */
+  readBinary(path: string): Promise<Uint8Array>
+  /** Grava bytes no cofre com as mesmas regras do `writeText` (versão esperada, `null` só cria, nada oculto). */
+  writeBinary(path: string, bytes: Uint8Array, expected?: VaultEntry | null): Promise<VaultEntry>
+  /** Salva bytes onde o usuário escolher (exportações); devolve o nome, ou `null` se cancelou. */
+  saveBytes(name: string, bytes: Uint8Array, mime: string): Promise<string | null>
+  /** PDF das páginas prontas da prévia (desktop). */
+  exportPdf?(name: string): Promise<string | null>
+  /** Versão instalada do app (desktop). */
+  appVersion?(): Promise<string>
+  /** "Verificar atualizações" (ADR 0017): consulta as releases do GitHub, só quando o usuário clica. */
+  checkUpdate?(): Promise<UpdateInfo>
+  /** Baixa, confere pelo SHA-256 e instala a versão encontrada na última consulta. */
+  installUpdate?(onProgress: (received: number, total: number) => void): Promise<UpdateInstallResult>
 }

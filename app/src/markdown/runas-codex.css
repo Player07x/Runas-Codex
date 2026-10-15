@@ -86,3 +86,11 @@ figcaption { margin-top: 4px; font-size: 0.88em; font-style: italic; opacity: 0.
 figcaption::before { counter-increment: figura; content: "Figura " counter(figura) " — "; font-style: normal; font-weight: 600; }
 .flutuar-esquerda { float: left; max-width: 45%; margin: 4px 16px 8px 0; }
 .flutuar-direita { float: right; max-width: 45%; margin: 4px 0 8px 16px; }
+
+/* Posição de imagem pela marca no link: `![[mapa.png|direita|300]]` e `![direita|300](mapa.png)` (também `esquerda`,
+   `centro` e `largo`). O Obsidian põe a marca no texto alternativo e o tamanho na largura. */
+.image-embed[alt="esquerda"], img[alt="esquerda"] { float: left; max-width: 45%; margin: 4px 16px 8px 0; }
+.image-embed[alt="direita"], img[alt="direita"] { float: right; max-width: 45%; margin: 4px 0 8px 16px; }
+.image-embed[alt="esquerda"] img, .image-embed[alt="direita"] img { float: none; max-width: 100%; margin: 0; }
+.image-embed[alt="centro"], img[alt="centro"] { display: block; margin-inline: auto; text-align: center; }
+.image-embed[alt="largo"], .image-embed[alt="largo"] img, img[alt="largo"] { display: block; width: 100%; }

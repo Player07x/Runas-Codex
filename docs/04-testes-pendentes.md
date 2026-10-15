@@ -158,6 +158,14 @@ automáticos). Falta o uso de verdade:
 - [ ] Testar livros reais longos e imagens grandes; a medição atual cobre o exemplo de 9 páginas e o corpus de formatadores.
 - [ ] Android real: alternar Escrever/Prévia com teclado aberto; a largura de 320 px foi validada no navegador.
 
+### Fase 8c — exportações
+
+- [ ] Exportar um livro em PDF pelo diálogo de salvar do desktop (Linux e Windows) e comparar com a prévia nos quatro temas e tamanhos; o PDF A4 do Caderno de formatadores foi conferido no Linux, pelo smoke.
+- [ ] Abrir o EPUB num leitor (Calibre, Thorium, Livros do celular) e, se der, passar no EPUBCheck: capa, sumário, imagens, fontes e capítulos na ordem.
+- [ ] Abrir o DOCX no Word e no LibreOffice: títulos, caixas, colunas, tabelas, imagens e quebras de página; fórmulas aparecem em LaTeX e diagramas Mermaid como aviso.
+- [ ] Exportar um livro real longo, com muitas imagens grandes, e medir o tempo.
+- [ ] Navegador e Android: o PDF sai pelo diálogo de impressão ("Salvar como PDF"); EPUB e DOCX são baixados.
+
 ## Etapa 7 — Campanhas e quadros
 
 - [ ] Abrir `Campanhas/Cinzas de Valdris/Quadro.canvas` do cofre de teste no Obsidian depois de editar no app: cartões, cores, grupo e ligações iguais; campos desconhecidos mantidos.
@@ -168,6 +176,43 @@ automáticos). Falta o uso de verdade:
 - [ ] Windows e Obsidian não foram executados nesta fase; Linux/Electron (smoke com e sem `--write`) e navegador em 390 px foram verificados.
 
 ---
+
+## Imagens nas notas (C1)
+
+- [ ] Copiar uma imagem de verdade (captura de tela com Print Screen, "Copiar imagem" no navegador) e colar com Ctrl+V numa nota no modo Editar e no Código: o arquivo `Imagem colada AAAAMMDDHHmmss.png` aparece na pasta de anexos do Obsidian e a imagem aparece na nota.
+- [ ] Arrastar uma foto do gerenciador de arquivos para o meio de uma nota: entra numa linha própria, no lugar onde soltou.
+- [ ] Botão "Inserir imagem" da barra do editor: escolher várias imagens de uma vez.
+- [ ] Colar texto copiado de uma planilha ou de um documento (que também leva uma "foto" do trecho): tem que colar o texto, não uma imagem.
+- [ ] No Obsidian, mudar "Local padrão para novos anexos" (Arquivos e links) para "Mesma pasta do arquivo atual" e para uma pasta fixa, reabrir o cofre no app e colar de novo: o arquivo vai para o lugar certo e o Obsidian mostra a imagem.
+- [ ] Cofre em somente leitura: o botão some e colar ou arrastar não grava nada.
+- [ ] Windows: colar e arrastar (Linux/Electron e navegador foram verificados; Android só com o cofre real, na etapa A).
+
+## Tamanho e posição das imagens (C2)
+
+- [ ] No modo Editar, passar o mouse numa imagem: o menu (esquerda, centro, direita, largura total, tamanho original) e a alça do canto mudam o link (`![[mapa.png|direita|300]]`); conferir no modo Código.
+- [ ] Celular: o menu e a alça aparecem ao tocar, com alvos de 44 px; arrastar a alça com o dedo.
+- [ ] Reinstalar o snippet (Configurações › Snippet runas-codex.css) e abrir a mesma nota no Obsidian: posições iguais às do app no modo leitura. Conferido numa cópia isolada do Obsidian 1.14.4 (imagem em `docs/imagens/anexos/`); falta o seu cofre e o seu tema.
+- [ ] Prévia e exportação dos Livros com imagens posicionadas (as classes `pos-*` valem também nas páginas).
+- [ ] Configurações › Anexos sem uso: conferir a lista num cofre real antes de mandar algo para a lixeira.
+
+---
+
+## Etapa 9 — Mestre pelo celular (C3)
+
+- [ ] Ligar a sala no computador, abrir "Controlar pelo celular" no painel Sala e ler o QR com o celular (mesma Wi-Fi): a mesa abre no navegador do celular, com a marca "Mestre remoto".
+- [ ] Mover um token, desenhar, criar parede e trocar a cena transmitida pelo celular; conferir que aparece no computador e na tela dos jogadores.
+- [ ] Mexer ao mesmo tempo no computador e no celular; as mudanças dos dois lados aparecem nos dois.
+- [ ] "Trocar chave" e "Desconectar" no computador: o celular mostra que a conexão caiu; o link antigo não abre mais.
+- [ ] Gerar o link público e abrir a mesa do mestre pelo celular em dados móveis (HTTPS pela Cloudflare).
+- [ ] Importar uma imagem de token pelo celular (galeria ou câmera).
+- [ ] Tablet e celular deitado: até a X3 (layout por toque), a mesa usa o layout do desktop. Captura do celular em pé em `docs/imagens/vtt-9/`.
+- [ ] Windows: firewall pedindo permissão para a porta da sala na primeira vez.
+## Atualizações (botão "Verificar atualizações")
+
+- [ ] Instalar a pré-release `v0.1.0-beta.1` (Windows `.exe`, Linux AppImage e `.deb`), abrir Configurações › Verificar atualizações: aparece a `v0.1.0-beta.2`, com "O que mudou".
+- [ ] "Baixar e instalar": no Windows o instalador abre e o app fecha; no AppImage o app reinicia já na beta.2; no `.deb` o pacote abre no instalador do sistema (pede a senha). Conferir a versão nova em Configurações.
+- [ ] Sem internet, ou com o GitHub fora: a mensagem de erro aparece e nada muda.
+- [ ] Android: a linha explica que o APK novo se baixa pela página de versões.
 
 ## Limitações conhecidas (não precisam de teste agora)
 

@@ -28,6 +28,8 @@ describe("obsidianConfig", () => {
     })
     expect(config.templates).toEqual({ folder: "Modelos", dateFormat: "DD/MM/YYYY", timeFormat: "HH:mm" })
     expect(config.daily).toEqual({ folder: "Notas/Diário", format: "YYYY-MM-DD", template: "Modelos/Dia" })
+    expect(config.app).toEqual({ attachmentFolder: "/", newLinkFormat: "shortest", useMarkdownLinks: false })
+    expect(obsidianConfig({ ".obsidian/app.json": JSON.stringify({ attachmentFolderPath: "./anexos" }) }).app.attachmentFolder).toBe("./anexos")
     expect(obsidianConfig({ ".obsidian/templates.json": "{quebrado" }).templates.folder).toBe("")
   })
 })

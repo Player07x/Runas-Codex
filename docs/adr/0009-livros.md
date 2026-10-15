@@ -1,6 +1,6 @@
 # ADR 0009 — Livros como conjuntos ordenados de notas
 
-- **Status:** aceita para a fase 8a (2026-10-14). Paginação: decisão pendente da fase 8b.
+- **Status:** aceita para as fases 8a, 8b e 8c (2026-10-14). Importação (8d) depois.
 
 ## Contexto
 
@@ -77,3 +77,37 @@ desktop); corpus em 5 páginas (0,20 s no Electron visível). Smokes ocultos sof
 portanto seu tempo não serve como benchmark. Impressão A4 via motor Chromium conferida em PDF temporário,
 com as mesmas cinco páginas e inspeção visual. Diálogo nativo, impressora física, Windows e Android real continuam
 na lista de conferência manual. As capturas estão em `docs/imagens/livros-8b/`.
+
+## Fase 8c — exportações (2026-10-14)
+
+Feita pelo Codex e terminada pelo Claude Code (o Codex parou sem créditos; o primeiro commit do PR é o trabalho dele
+como ele deixou).
+
+- **PDF fiel à prévia:** o botão "Exportar arquivo" da prévia chama `Platform.exportPdf` (opcional, só no desktop),
+  que imprime as páginas prontas do Paged.js com `webContents.printToPDF` (`preferCSSPageSize`, fundos ligados, sem
+  margens nem cabeçalhos do Chromium). O processo principal não recebe HTML nem caminhos da interface: confere que a
+  prévia está pronta, pergunta onde salvar e confere de novo antes de imprimir (`desktop/src/main/books-pdf.ts`). No
+  navegador e no Android, o PDF sai pelo diálogo de impressão ("Salvar como PDF"), como estava no plano.
+- **EPUB e DOCX a partir da prévia desenhada:** `screens/books/export-snapshot.ts` lê a árvore que o leitor
+  compartilhado já desenhou (o mesmo HTML sanitizado da prévia), guarda só atributos seguros e os estilos que importam
+  e junta as imagens do cofre pelo `readBinary` (C0). WebP e SVG viram PNG para o DOCX. `core/export/` monta o livro
+  (capa, créditos, partes e capítulos na ordem da `estrutura`, contracapa; o rascunho aberto entra no lugar do arquivo)
+  e gera os arquivos sem React nem plataforma.
+- **EPUB 3** (`fflate`): `mimetype` primeiro e sem compressão, um XHTML por parte ou capítulo, sumário `nav`,
+  metadados (título, autor, `pt-BR`), imagens e as três fontes do app embutidas (são OFL). O CSS é o do leitor e do
+  livro; colunas viram texto corrido, porque o leitor de EPUB pagina do jeito dele.
+- **DOCX** (`docx`, portado do `toDocx.ts` do Runas Book, que a ADR 0004 permite reaproveitar): títulos viram os estilos
+  de título do Word, callouts e citações viram caixas com fundo, `[!colunas]` vira seção com colunas, quebras de página
+  e de coluna, tabelas, listas, cores, versalete e imagens embutidas. Fórmulas ficam em LaTeX (texto editável).
+  Diagramas: o SVG vira PNG quando dá; diagramas com rótulos em HTML (`foreignObject`, o padrão do Mermaid) não podem
+  ser convertidos no navegador sem "sujar" o canvas, então entram como aviso no texto (no PDF e no EPUB saem iguais à
+  prévia). O CSS interno dos diagramas nunca vira texto, e fundo transparente (`rgba(0, 0, 0, 0)`) não vira preto.
+- **Dependências:** `docx` 9.7.1 (publicada em 2026-05-27, sem script de instalação; traz `jszip`, `xml` e `xml-js`) e
+  `fflate` 0.8.3, a mesma versão que o desktop já usava (o rascunho do Codex tinha a 0.8.2, que duplicaria o pacote).
+- **Smoke:** no `--smoke --write`, o PDF e o `saveBytes` gravam numa pasta temporária, sem diálogo. O roteiro exporta os
+  três formatos pela tela da prévia; o processo principal confere que o PDF tem as mesmas páginas da prévia e abre o
+  EPUB e o DOCX (`mimetype` primeiro, capítulos e sumário, imagens, fontes, texto do capítulo).
+
+Validação: Caderno de formatadores em A4 (tema manual): PDF com as 5 páginas da prévia, conferido página a página;
+XHTML e XML do EPUB e do DOCX bem formados; DOCX aberto no LibreOffice (5 páginas). Capturas em
+`docs/imagens/livros-8c/`. EPUBCheck, Word, leitores de EPUB e o diálogo nativo de salvar ficam na conferência manual.

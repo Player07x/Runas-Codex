@@ -1,3 +1,7 @@
+import { readFile, writeFile } from "node:fs/promises"
+import { BrowserWindow } from "electron"
+import { strFromU8, unzipSync } from "fflate"
+
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
  * se o cofre for gravável (cópia temporária com `--write`), as gravações e o renomear com atualização de links.
@@ -116,9 +120,15 @@ export const SMOKE_SCRIPT = `(async () => {
     edges: document.querySelectorAll(".canvas-edge").length,
   }
 
+  // Atualizações (ADR 0017): a versão vem do app e Configurações tem o botão; o smoke não vai à internet.
+  result.version = await bridge.updates.version()
+  location.hash = "/config"
+  result.updatesRow = Boolean(await until(() => document.querySelector("[data-updates] button")))
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
+    result.binaryWrite = await errorOf(bridge.vault.writeBinary("Notas/smoke.png", new Uint8Array([1]), null))
     return result
   }
   // Gravações (só numa cópia temporária do cofre).
@@ -133,6 +143,54 @@ export const SMOKE_SCRIPT = `(async () => {
   result.backup = (await bridge.vault.backup()).files
   await bridge.vault.installSnippet("/* smoke */")
   result.snippet = (await bridge.vault.read([".obsidian/snippets/runas-codex.css"]))[".obsidian/snippets/runas-codex.css"] === "/* smoke */" ? "OK" : "não gravou"
+
+  // Anexos: os bytes vão e voltam iguais, com as recusas do texto, e a imagem nova aparece por vault-file://.
+  const pngBytes = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="), (c) => c.charCodeAt(0))
+  const binary = await bridge.vault.writeBinary("Notas/Anexos/smoke.png", pngBytes, null)
+  const readBack = await bridge.vault.readBinary("Notas/Anexos/smoke.png")
+  result.binary = {
+    create: binary.size === pngBytes.length ? "OK" : "tamanho " + binary.size,
+    same: readBack.length === pngBytes.length && readBack.every((b, i) => b === pngBytes[i]),
+    again: await errorOf(bridge.vault.writeBinary("Notas/Anexos/smoke.png", pngBytes, null)),
+    hidden: await errorOf(bridge.vault.writeBinary(".obsidian/smoke.png", pngBytes, null)),
+    shown: await new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img.naturalWidth); img.onerror = () => resolve(0); img.src = "vault-file://cofre/Notas/Anexos/smoke.png" }),
+  }
+
+  // Imagem colada (Ctrl+V) numa nota: o arquivo vai para a pasta de anexos (aqui, a raiz) e o link entra no texto.
+  location.hash = "/notas/" + encodeURIComponent("Notas/Caderno.md")
+  await until(() => document.querySelector(".editor-status")?.getAttribute("title") === "Notas/Caderno.md")
+  ;(await until(() => [...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))))?.click()
+  const cm = await until(() => document.querySelector(".cm-content"))
+  const clip = new DataTransfer()
+  clip.items.add(new File([pngBytes], "image.png", { type: "image/png" }))
+  cm?.dispatchEvent(new ClipboardEvent("paste", { clipboardData: clip, bubbles: true, cancelable: true }))
+  let pastedPath = null
+  for (let i = 0; i < 50 && !pastedPath; i++) {
+    await wait(100)
+    pastedPath = (await bridge.vault.list()).find((e) => /^Imagem colada \\d{14}\\.png$/.test(e.path))?.path ?? null
+  }
+  await wait(1500)
+  const caderno = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
+  const pastedImg = await until(() => [...document.querySelectorAll(".editor-body .md img")].find((img) => img.src.includes("Imagem%20colada")))
+  if (pastedImg) { pastedImg.loading = "eager"; await until(() => pastedImg.complete, 30) }
+  result.paste = { file: pastedPath, link: Boolean(pastedPath && caderno.includes("![[" + pastedPath + "]]")), shown: Boolean(pastedImg && pastedImg.naturalWidth > 0) }
+
+  // Posição pelo menu da imagem no live preview (C2): só o apelido do link muda, e na leitura a imagem flutua.
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
+  const lastLine = await until(() => [...document.querySelectorAll(".cm-line")].at(-1))
+  if (lastLine) {
+    // O cursor sai da linha da imagem (senão o editor mostra o código dela).
+    const box = lastLine.getBoundingClientRect()
+    lastLine.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX: box.left + 2, clientY: box.top + 4, button: 0 }))
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }))
+  }
+  ;(await until(() => document.querySelector(".img-edit [aria-label='À direita, com o texto em volta']")))?.click()
+  await wait(1500)
+  const positioned = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
+  const floated = await until(() => document.querySelector(".editor-body .md img.pos-direita"))
+  result.position = { link: Boolean(pastedPath && positioned.includes("![[" + pastedPath + "|direita]]")), float: floated ? getComputedStyle(floated).float : null }
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
@@ -215,6 +273,32 @@ export const SMOKE_SCRIPT = `(async () => {
     result.books = Boolean(bookTexts[chapterPath]?.includes("tipo: capitulo") && bookTexts[bookPath]?.includes("[[Capítulo do smoke]]"))
   }
 
+  // Livros 8c: exportar o PDF pela prévia (no smoke ele vai para uma pasta temporária, sem diálogo); o processo
+  // principal confere depois que o PDF tem as páginas da prévia (checkPdf).
+  // Passa pela lista antes: o botão "Prévia" do livro anterior ainda estaria na tela.
+  location.hash = "/livros"
+  await until(() => ![...document.querySelectorAll("button")].some((b) => b.textContent === "Prévia"))
+  location.hash = "/livros/" + encodeURIComponent("Livros/Caderno de formatadores/Caderno de formatadores.md")
+  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Prévia")))?.click()
+  await until(() => Number(document.querySelector(".book-preview-output[aria-busy=false]")?.dataset.pages) > 1, 200)
+  const previewPages = Number(document.querySelector(".book-preview-output")?.dataset.pages ?? 0)
+  ;(await until(() => [...document.querySelectorAll(".book-preview-controls button")].find((b) => b.textContent === "Exportar arquivo" && !b.disabled)))?.click()
+  const pdfStatus = await until(() => document.querySelector("[data-book-export-status]")?.textContent, 300)
+  result.bookPdf = { pages: previewPages, path: /^PDF salvo: (.+)$/.exec(pdfStatus ?? "")?.[1] ?? null, status: pdfStatus }
+  // EPUB e DOCX pela mesma tela (capturam a prévia desenhada); o processo principal abre os arquivos (checkBookFiles).
+  result.bookFiles = {}
+  for (const format of ["epub", "docx"]) {
+    const select = document.querySelector("[aria-label='Formato de exportação']")
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(select, format)
+    select.dispatchEvent(new Event("change", { bubbles: true }))
+    await wait(100)
+    const before = document.querySelector("[data-book-export-status]")?.textContent ?? ""
+    ;[...document.querySelectorAll(".book-preview-controls button")].find((b) => b.textContent === "Exportar arquivo" && !b.disabled)?.click()
+    const status = await until(() => { const text = document.querySelector("[data-book-export-status]")?.textContent ?? ""; return text && text !== before && !text.includes("Exportando") ? text : null }, 300)
+    result.bookFiles[format] = /^Arquivo salvo: (.+?\.(?:epub|docx))/.exec(status ?? "")?.[1] ?? null
+    result.bookFiles[format + "Status"] = status
+  }
+
   // Campanhas: criar a Sessão 13 pela tela (nota + evento na Agenda, um apontando para o outro).
   location.hash = campaignRoute + "/sessoes"
   ;(await until(() => [...document.querySelectorAll(".page-head button")].find((b) => b.textContent.trim() === "Nova sessão")))?.click()
@@ -279,6 +363,9 @@ export const SMOKE_SCRIPT = `(async () => {
     // Sala: o processo principal confere a página e o WebSocket como um jogador (checkRoom).
     const room = await bridge.vtt.player.start(30000 + Math.floor(Math.random() * 2000), 2)
     result.room = { port: room.port, key: room.key, codes: room.seats.map((seat) => seat.code) }
+    // Mestre remoto (ADR 0016): a chave desta sessão e a cena, para o processo principal entrar como o celular.
+    result.master = await bridge.vtt.master.state()
+    result.masterScene = (await bridge.vtt.documents.list("scene"))[0]?.id ?? null
   }
   return result
 })()`
@@ -306,6 +393,86 @@ export async function checkRoom(room: { port: number; key: string; codes: string
   })
   const join = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[0] }) })
   return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
+}
+
+/** Páginas de um PDF gerado pelo Chromium (o número do nó `/Pages` da raiz). */
+export async function checkPdf(path: string): Promise<{ pages: number; bytes: number }> {
+  const bytes = await readFile(path)
+  const text = bytes.toString("latin1")
+  const counts = [...text.matchAll(/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)|\/Count\s+(\d+)[^>]*?\/Type\s*\/Pages\b/g)].map((m) => Number(m[1] ?? m[2]))
+  return { pages: counts.length ? Math.max(...counts) : (text.match(/\/Type\s*\/Page\b(?!s)/g) ?? []).length, bytes: bytes.length }
+}
+
+/** Abre o EPUB e o DOCX exportados e confere as partes principais: capítulos na ordem, sumário e imagens. */
+export async function checkBookFiles(epubPath: string, docxPath: string): Promise<Record<string, unknown>> {
+  const epub = unzipSync(new Uint8Array(await readFile(epubPath)))
+  const opf = strFromU8(epub["EPUB/package.opf"] ?? new Uint8Array())
+  const docx = unzipSync(new Uint8Array(await readFile(docxPath)))
+  const document = strFromU8(docx["word/document.xml"] ?? new Uint8Array())
+  const names = Object.keys(epub)
+  return {
+    epubFirst: names[0] === "mimetype" && strFromU8(epub.mimetype!) === "application/epub+zip",
+    epubSections: names.filter((name) => /^EPUB\/section-\d+\.xhtml$/.test(name)).length,
+    epubSpine: (opf.match(/<itemref /g) ?? []).length,
+    epubNav: strFromU8(epub["EPUB/nav.xhtml"] ?? new Uint8Array()).includes("Formatadores"),
+    epubImages: names.filter((name) => /^EPUB\/assets\/image-/.test(name)).length,
+    epubFonts: names.filter((name) => name.endsWith(".woff2")).length,
+    docxText: document.includes("Formatadores do Runas-Codex") && document.includes("Notas de rodapé"),
+    docxImages: Object.keys(docx).filter((name) => name.startsWith("word/media/")).length,
+  }
+}
+
+/**
+ * Entra como o celular do mestre (ADR 0016): a página `/master` numa janela oculta (mostra a mesa aberta no computador),
+ * depois um "celular" por HTTP cria um token na cena; o computador confere que gravou. Trocar a chave invalida o link.
+ */
+export async function checkMaster(main: BrowserWindow, port: number, key: string, sceneId: string, rotate: () => unknown, shot?: string): Promise<Record<string, unknown>> {
+  const base = `http://127.0.0.1:${port}`
+  const out: Record<string, unknown> = {}
+  // Do tamanho de um celular deitado em pé (390 × 844), como o mestre abriria pelo QR.
+  const page = new BrowserWindow({ show: false, width: 390, height: 844, webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, backgroundThrottling: false } })
+  try {
+    await page.loadURL(`${base}/master?m=${key}`)
+    out.page = await page.webContents.executeJavaScript(`(async () => {
+      for (let i = 0; i < 150; i++) {
+        const title = document.querySelector(".table-title strong")?.textContent
+        if (title && document.querySelector(".vtt-root canvas")) return { title, canvas: true, remote: Boolean(document.querySelector(".table-bar .chip")) }
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      return { title: document.body.innerText.slice(0, 200), canvas: false }
+    })()`)
+    if (shot) {
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      await writeFile(shot, (await page.webContents.capturePage()).toPNG())
+    }
+  } finally {
+    page.destroy()
+  }
+  // A janela fechada solta a vaga de mestre.
+  for (let i = 0; i < 30; i++) {
+    const probe = await fetch(`${base}/master/events?m=${key}`)
+    if (probe.status === 200) { await probe.body?.cancel(); break }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  const events = await fetch(`${base}/master/events?m=${key}`)
+  const reader = events.body!.getReader()
+  let text = ""
+  while (!text.includes("\n\n")) {
+    const chunk = await reader.read()
+    if (chunk.done) break
+    text += new TextDecoder().decode(chunk.value)
+  }
+  const session = (JSON.parse(text.split("\n")[1]?.slice(6) ?? "{}") as { session?: string }).session ?? ""
+  out.second = (await fetch(`${base}/master/events?m=${key}`)).status
+  const rpc = (channel: string, args: unknown[]) => fetch(`${base}/master/rpc?m=${key}`, { method: "POST", headers: { "content-type": "application/json", "x-runas-session": session }, body: JSON.stringify({ channel, args }) })
+  out.put = (await rpc("vtt:documents-put", [{ id: "token-do-celular", type: "token", parentId: sceneId, data: { name: "Token do celular", x: 200, y: 200 } }])).status
+  out.blocked = (await rpc("vtt:player-stop", [])).status
+  await reader.cancel()
+  out.desktopToken = await main.webContents.executeJavaScript(`window.runasCodex.vtt.documents.list("token", ${JSON.stringify(sceneId)}).then((list) => list.some((d) => d.id === "token-do-celular" && d.data.name === "Token do celular"))`)
+  rotate()
+  out.oldKey = (await fetch(`${base}/master?m=${key}`)).status
+  return out
 }
 
 /** O resultado do roteiro passou? */
@@ -340,7 +507,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
   if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
-  if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura")
+  if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
+  if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   return (
     result.create === "OK" &&
@@ -380,6 +548,42 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.canvas as Record<string, unknown>).text === true &&
     (result.canvas as Record<string, unknown>).unknown === true &&
     (result.canvas as Record<string, unknown>).renamed === true &&
-    (result.canvas as Record<string, unknown>).tabs === true
+    (result.canvas as Record<string, unknown>).tabs === true &&
+    typeof result.binary === "object" &&
+    (result.binary as Record<string, unknown>).create === "OK" &&
+    (result.binary as Record<string, unknown>).same === true &&
+    String((result.binary as Record<string, unknown>).again).startsWith("Já existe") &&
+    String((result.binary as Record<string, unknown>).hidden).includes("ocultos") &&
+    (result.binary as Record<string, unknown>).shown === 1 &&
+    typeof result.paste === "object" &&
+    typeof (result.paste as Record<string, unknown>).file === "string" &&
+    (result.paste as Record<string, unknown>).link === true &&
+    (result.paste as Record<string, unknown>).shown === true &&
+    typeof result.position === "object" &&
+    (result.position as Record<string, unknown>).link === true &&
+    (result.position as Record<string, unknown>).float === "right" &&
+    typeof result.bookPdf === "object" &&
+    typeof (result.bookPdf as Record<string, unknown>).path === "string" &&
+    typeof result.bookPdfCheck === "object" &&
+    Number((result.bookPdf as Record<string, unknown>).pages) > 1 &&
+    (result.bookPdfCheck as Record<string, unknown>).pages === (result.bookPdf as Record<string, unknown>).pages &&
+    typeof result.bookFilesCheck === "object" &&
+    (result.bookFilesCheck as Record<string, unknown>).epubFirst === true &&
+    Number((result.bookFilesCheck as Record<string, unknown>).epubSections) > 1 &&
+    (result.bookFilesCheck as Record<string, unknown>).epubSpine === (result.bookFilesCheck as Record<string, unknown>).epubSections &&
+    (result.bookFilesCheck as Record<string, unknown>).epubNav === true &&
+    Number((result.bookFilesCheck as Record<string, unknown>).epubImages) > 0 &&
+    (result.bookFilesCheck as Record<string, unknown>).epubFonts === 3 &&
+    (result.bookFilesCheck as Record<string, unknown>).docxText === true &&
+    Number((result.bookFilesCheck as Record<string, unknown>).docxImages) > 0 &&
+    typeof result.masterCheck === "object" &&
+    ((result.masterCheck as Record<string, unknown>).page as Record<string, unknown> | undefined)?.title === "Mesa do Smoke" &&
+    ((result.masterCheck as Record<string, unknown>).page as Record<string, unknown> | undefined)?.canvas === true &&
+    ((result.masterCheck as Record<string, unknown>).page as Record<string, unknown> | undefined)?.remote === true &&
+    (result.masterCheck as Record<string, unknown>).second === 409 &&
+    (result.masterCheck as Record<string, unknown>).put === 200 &&
+    (result.masterCheck as Record<string, unknown>).blocked === 403 &&
+    (result.masterCheck as Record<string, unknown>).desktopToken === true &&
+    (result.masterCheck as Record<string, unknown>).oldKey === 404
   )
 }

@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react"
 import { FileAudio, FileText, FileVideo, ImageOff, Repeat } from "lucide-react"
+import { parseEmbedOptions } from "../core/embeds"
 import { extractSection, noteBody } from "../core/sections"
 import { extname, noteName } from "../core/text"
 import { resolveLink } from "../lib/links"
@@ -7,6 +8,7 @@ import { useNoteSet } from "../lib/note-set"
 import { navigate } from "../lib/router"
 import { wikiLabel } from "./remark-obsidian"
 import { Markdown } from "../components/Markdown"
+import { EmbedImage, ImageEditContext } from "./EmbedImage"
 
 export const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp"])
 export const AUDIO_EXT = new Set([".mp3", ".wav", ".ogg", ".m4a", ".flac", ".opus", ".3gp"])
@@ -16,11 +18,13 @@ export const VIDEO_EXT = new Set([".mp4", ".webm", ".ogv", ".mov", ".mkv"])
 const EmbedChain = createContext<string[]>([])
 const MAX_DEPTH = 4
 
-/** `|400` ou `|400x300` no embed é tamanho; outro texto vira legenda/descrição. */
+/**
+ * `|400` ou `|400x300` no fim do apelido é tamanho; antes dele, a posição (`direita|300`, ver `core/embeds.ts`) ou o
+ * texto alternativo, como o Obsidian lê.
+ */
 export function embedSize(alias: string | undefined): { width?: number; height?: number; caption?: string } {
-  const size = alias ? /^\s*(\d+)(?:\s*x\s*(\d+))?\s*$/.exec(alias) : null
-  if (size) return { width: Number(size[1]), ...(size[2] ? { height: Number(size[2]) } : {}) }
-  return alias ? { caption: alias } : {}
+  const { width, height, caption } = parseEmbedOptions(alias)
+  return { ...(width ? { width } : {}), ...(height ? { height } : {}), ...(caption ? { caption } : {}) }
 }
 
 /** `![[alvo#sub|apelido]]`: imagem, áudio, vídeo, PDF ou o texto de outra nota (transclusão). */
@@ -33,7 +37,8 @@ export function Embed({ target, alias, space }: { target: string; alias?: string
   const ext = extname(name).toLowerCase()
   // Sem nome (`![[#Título]]`), o trecho é da própria nota.
   const found = set.resolve ? set.resolve(name, "wiki") : name ? demoResolve(name, space, set) : undefined
-  const { width, height, caption } = embedSize(alias)
+  const options = parseEmbedOptions(alias)
+  const { width, height, caption } = options
 
   if (IMAGE_EXT.has(ext) || AUDIO_EXT.has(ext) || VIDEO_EXT.has(ext) || ext === ".pdf") {
     const url = found ? set.fileUrl?.(found.path) : undefined
@@ -45,7 +50,7 @@ export function Embed({ target, alias, space }: { target: string; alias?: string
         </span>
       )
     }
-    if (IMAGE_EXT.has(ext)) return <img className="embed-image" src={url} alt={caption ?? noteName(name)} width={width} height={height} loading="lazy" />
+    if (IMAGE_EXT.has(ext)) return <EmbedImage src={url} alt={caption ?? noteName(name)} options={options} target={target} alias={alias} />
     if (AUDIO_EXT.has(ext)) return <audio className="embed-audio" src={url} controls preload="metadata" />
     if (VIDEO_EXT.has(ext)) return <video className="embed-video" src={url} controls preload="metadata" width={width} height={height} />
     const page = /page=(\d+)/.exec(subpath)?.[1]
@@ -88,7 +93,10 @@ export function Embed({ target, alias, space }: { target: string; alias?: string
         </a>
       </div>
       <EmbedChain.Provider value={[...chain, found.path + subpath]}>
-        {section === null ? <p className="muted small">Trecho “{subpath.slice(1)}” não encontrado na nota.</p> : section.trim() ? <Markdown source={section} space={space} /> : <p className="muted small">Vazio.</p>}
+        {/* As imagens da nota transcluída são da outra nota: aqui não se editam. */}
+        <ImageEditContext.Provider value={null}>
+          {section === null ? <p className="muted small">Trecho “{subpath.slice(1)}” não encontrado na nota.</p> : section.trim() ? <Markdown source={section} space={space} /> : <p className="muted small">Vazio.</p>}
+        </ImageEditContext.Provider>
       </EmbedChain.Provider>
     </div>
   )

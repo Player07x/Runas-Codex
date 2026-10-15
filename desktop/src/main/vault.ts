@@ -115,14 +115,17 @@ export function sameVersion(current: { mtime: number; size: number }, expected: 
   return current.size === expected.size && Math.abs(current.mtime - expected.mtime) < 2
 }
 
+/** Anexos (imagens, PDFs) maiores que isto não passam pela ponte da interface de uma vez. */
+export const MAX_BINARY_SIZE = 100 * 1024 * 1024
+
 /**
- * Grava um arquivo de texto com segurança:
+ * Grava um arquivo com segurança (texto ou bytes):
  * - `expected` = versão lida pelo app; se o arquivo mudou desde então, recusa (nada se perde);
  * - `expected === null` = só cria, recusa se já existir;
  * - conteúdo igual ao do disco não é regravado;
  * - grava num temporário e troca de uma vez (sem arquivo pela metade se faltar energia).
  */
-export async function writeTextSafe(root: string, path: string, content: string, expected?: { mtime: number; size: number } | null): Promise<VaultEntry> {
+async function writeSafe(root: string, path: string, content: string | Uint8Array, expected?: { mtime: number; size: number } | null): Promise<VaultEntry> {
   const full = await resolveForWrite(root, path)
   let current: VaultEntry | null = null
   try {
@@ -132,17 +135,39 @@ export async function writeTextSafe(root: string, path: string, content: string,
   }
   if (expected === null && current) throw new VaultError(`Já existe “${path}”.`)
   if (expected && (!current || !sameVersion(current, expected))) throw new VaultError(`“${path}” mudou fora do app (por exemplo, no Obsidian). Recarregue antes de gravar.`)
-  if (current && (await readFile(full, "utf8")) === content) return current
+  if (current) {
+    const same = typeof content === "string" ? (await readFile(full, "utf8")) === content : current.size === content.byteLength && Buffer.from(content).equals(await readFile(full))
+    if (same) return current
+  }
   await mkdir(dirname(full), { recursive: true })
   const temp = join(dirname(full), `.${basename(full)}.${randomBytes(4).toString("hex")}.runas-tmp`)
   try {
-    await writeFile(temp, content, "utf8")
+    if (typeof content === "string") await writeFile(temp, content, "utf8")
+    else await writeFile(temp, content)
     await rename(temp, full)
   } catch (error) {
     await rm(temp, { force: true })
     throw error
   }
   return entryOf(full, path)
+}
+
+/** Grava um arquivo de texto com segurança (as regras de `writeSafe`). */
+export function writeTextSafe(root: string, path: string, content: string, expected?: { mtime: number; size: number } | null): Promise<VaultEntry> {
+  return writeSafe(root, path, content, expected)
+}
+
+/** Grava um anexo (imagem, PDF…) com as mesmas regras do texto. */
+export async function writeBinarySafe(root: string, path: string, bytes: Uint8Array, expected?: { mtime: number; size: number } | null): Promise<VaultEntry> {
+  if (bytes.byteLength > MAX_BINARY_SIZE) throw new VaultError(`“${path}” passa de ${MAX_BINARY_SIZE / 1024 / 1024} MB.`)
+  return writeSafe(root, path, bytes, expected)
+}
+
+/** Lê um arquivo do cofre como bytes (as mesmas regras de leitura do texto). */
+export async function readBinary(root: string, path: string): Promise<Uint8Array> {
+  const real = await resolveInside(root, path)
+  if ((await stat(real)).size > MAX_BINARY_SIZE) throw new VaultError(`“${path}” passa de ${MAX_BINARY_SIZE / 1024 / 1024} MB.`)
+  return new Uint8Array(await readFile(real))
 }
 
 export async function createFolder(root: string, path: string): Promise<void> {
