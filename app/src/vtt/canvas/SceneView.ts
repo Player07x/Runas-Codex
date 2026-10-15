@@ -1204,7 +1204,9 @@ export class SceneView {
   }
 
   private hitAt(point: Point): { item?: Item; action?: (event: ScenePointer) => void; door?: () => void } {
-    let target: Container | null = this.app.renderer.events.rootBoundary.hitTest(point.x, point.y)
+    const boundary = this.app.renderer.events.rootBoundary
+    boundary.rootTarget = this.app.stage
+    let target: Container | null = boundary.hitTest(point.x, point.y)
     let doorAction: (() => void) | undefined
     while (target && target !== this.app.stage) {
       const action = this.handleActions.get(target)

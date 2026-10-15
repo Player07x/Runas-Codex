@@ -104,6 +104,8 @@ try {
   await until(`document.querySelector('.background-picker img')?.complete`)
   await tap(`Array.from(document.querySelectorAll('.scene-config label.check')).find(e=>e.textContent.includes('Névoa de guerra'))`)
   await tap(`Array.from(document.querySelectorAll('.scene-config label.check')).find(e=>e.textContent.includes('Luz do dia'))`)
+  results.vision = await run(`(()=>{const fields=Array.from(document.querySelectorAll('.scene-config label.check'));return {fog:fields.find(e=>e.textContent.includes('Névoa de guerra'))?.querySelector('input').checked,daylight:fields.find(e=>e.textContent.includes('Luz do dia'))?.querySelector('input').checked}})()`)
+  if (!results.vision.fog || results.vision.daylight) throw new Error('A cena grande precisa de névoa e luz do dia desligada.')
   await label('Cenas'); await label('Enquadrar cena'); await tool('Luzes')
   await tapPoint(await at(1200, 1200, 4096, 4096)); await label('Fechar propriedades')
   await tapPoint(await at(2000, 1700, 4096, 4096)); await label('Fechar propriedades')
