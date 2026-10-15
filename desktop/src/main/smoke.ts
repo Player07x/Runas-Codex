@@ -147,6 +147,26 @@ export const SMOKE_SCRIPT = `(async () => {
     shown: await new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img.naturalWidth); img.onerror = () => resolve(0); img.src = "vault-file://cofre/Notas/Anexos/smoke.png" }),
   }
 
+  // Imagem colada (Ctrl+V) numa nota: o arquivo vai para a pasta de anexos (aqui, a raiz) e o link entra no texto.
+  location.hash = "/notas/" + encodeURIComponent("Notas/Caderno.md")
+  await until(() => document.querySelector(".editor-status")?.getAttribute("title") === "Notas/Caderno.md")
+  ;(await until(() => [...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))))?.click()
+  const cm = await until(() => document.querySelector(".cm-content"))
+  const clip = new DataTransfer()
+  clip.items.add(new File([pngBytes], "image.png", { type: "image/png" }))
+  cm?.dispatchEvent(new ClipboardEvent("paste", { clipboardData: clip, bubbles: true, cancelable: true }))
+  let pastedPath = null
+  for (let i = 0; i < 50 && !pastedPath; i++) {
+    await wait(100)
+    pastedPath = (await bridge.vault.list()).find((e) => /^Imagem colada \\d{14}\\.png$/.test(e.path))?.path ?? null
+  }
+  await wait(1500)
+  const caderno = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
+  const pastedImg = await until(() => [...document.querySelectorAll(".editor-body .md img")].find((img) => img.src.includes("Imagem%20colada")))
+  if (pastedImg) { pastedImg.loading = "eager"; await until(() => pastedImg.complete, 30) }
+  result.paste = { file: pastedPath, link: Boolean(pastedPath && caderno.includes("![[" + pastedPath + "]]")), shown: Boolean(pastedImg && pastedImg.naturalWidth > 0) }
+
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
     location.hash = "/notas/" + encodeURIComponent(aldren.path)
@@ -399,6 +419,10 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.binary as Record<string, unknown>).same === true &&
     String((result.binary as Record<string, unknown>).again).startsWith("Já existe") &&
     String((result.binary as Record<string, unknown>).hidden).includes("ocultos") &&
-    (result.binary as Record<string, unknown>).shown === 1
+    (result.binary as Record<string, unknown>).shown === 1 &&
+    typeof result.paste === "object" &&
+    typeof (result.paste as Record<string, unknown>).file === "string" &&
+    (result.paste as Record<string, unknown>).link === true &&
+    (result.paste as Record<string, unknown>).shown === true
   )
 }

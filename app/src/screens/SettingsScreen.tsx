@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Archive, Bell, FolderOpen, Keyboard, Lock, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { Switch, useProtoAction, useToast } from "../components/ui"
+import { attachmentFolderLabel } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
 import type { BackupInfo } from "../platform/platform"
 import snippetCss from "../markdown/runas-codex.css?raw"
@@ -89,15 +90,14 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Network size={16} /> Compatibilidade com o Obsidian
           </span>
-          <Row title="Formato de link novo" hint="Lido de .obsidian/app.json">
-            <select className="select" defaultValue="curto">
-              <option value="curto">Mais curto possível</option>
-              <option value="relativo">Relativo</option>
-              <option value="absoluto">Caminho completo</option>
-            </select>
+          <Row title="Formato de link novo" hint="Lido de .obsidian/app.json (mude no Obsidian, em Arquivos e links)">
+            <span className="small">
+              {{ shortest: "Mais curto possível", relative: "Relativo", absolute: "Caminho completo" }[vault.config.app.newLinkFormat]}
+              {vault.config.app.useMarkdownLinks ? " · links em Markdown" : " · wikilinks"}
+            </span>
           </Row>
-          <Row title="Pasta de anexos" hint="Lida de .obsidian/app.json">
-            <input className="input mono small" defaultValue="./Anexos" />
+          <Row title="Pasta de anexos" hint="Imagens coladas, arrastadas ou importadas nas notas vão para cá. Lida de .obsidian/app.json (mude no Obsidian).">
+            <span className="small">{attachmentFolderLabel(vault.config.app.attachmentFolder)}</span>
           </Row>
           <Row title="Snippet runas-codex.css" hint="Faz callouts, colunas e capitulares aparecerem iguais no Obsidian. Depois de instalar, ligue em Obsidian › Aparência › Trechos de CSS.">
             <button

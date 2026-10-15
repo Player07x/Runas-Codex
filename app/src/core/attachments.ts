@@ -1,5 +1,6 @@
 import { nameProblem } from "./names"
-import { basename, dirname, extname, foldName, joinPath } from "./text"
+import { basename, dirname, extname, foldName, joinPath, relativePath } from "./text"
+import type { VaultIndex } from "./vault-index"
 
 /**
  * Anexos (imagens, PDFs, áudio) como o Obsidian grava: na pasta de anexos de `.obsidian/app.json`, com nome que não
@@ -66,4 +67,51 @@ export function availableAttachmentPath(folder: string, fileName: string, existi
     const path = joinPath(folder, n === 0 ? fileName : `${stem} ${n}${ext}`)!
     if (!taken.has(foldName(path))) return path
   }
+}
+
+const IMAGE_TYPES: Record<string, string> = {
+  "image/png": ".png",
+  "image/jpeg": ".jpg",
+  "image/gif": ".gif",
+  "image/webp": ".webp",
+  "image/avif": ".avif",
+  "image/svg+xml": ".svg",
+  "image/bmp": ".bmp",
+}
+
+/** Extensão de uma imagem pelo tipo (`image/png` → `.png`); `null` se o app não mostra esse formato. */
+export function imageExtension(mime: string): string | null {
+  return IMAGE_TYPES[mime.toLowerCase()] ?? null
+}
+
+const pad = (n: number) => String(n).padStart(2, "0")
+
+/** Nome da imagem colada, como o Obsidian faz, em português: `Imagem colada 20261014153012.png`. */
+export function pastedImageName(date: Date, extension: string): string {
+  const stamp = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+  return `Imagem colada ${stamp}${extension}`
+}
+
+/** Destino de link Markdown: espaços e parênteses codificados (`Imagem%20colada.png`), como o Obsidian grava. */
+function markdownDestination(target: string): string {
+  return target.replace(/%/g, "%25").replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29")
+}
+
+/**
+ * Texto do embed de um anexo novo na nota, no formato de link do `app.json`: `![[mapa.png]]` (wikilink) ou
+ * `![](mapa.png)` (links em Markdown). "Mais curto" usa o nome quando ele é único; "relativo" vale para links em
+ * Markdown (wikilinks relativos não existem no Obsidian, então caem no mais curto).
+ */
+export function attachmentEmbed(path: string, notePath: string, app: AppConfig, index: Pick<VaultIndex, "linkTarget">): string {
+  const target = app.newLinkFormat === "absolute" ? path : app.newLinkFormat === "relative" && app.useMarkdownLinks ? relativePath(dirname(notePath), path) : index.linkTarget(path, notePath)
+  return app.useMarkdownLinks ? `![](${markdownDestination(target)})` : `![[${target}]]`
+}
+
+/** Descrição da pasta de anexos para a tela de Configurações. */
+export function attachmentFolderLabel(setting: string): string {
+  const value = setting.trim()
+  if (!value || value === "/") return "Raiz do cofre"
+  if (value === "." || value === "./") return "Mesma pasta da nota"
+  if (value.startsWith("./")) return `Subpasta “${value.slice(2)}” da nota`
+  return `Pasta “${value.replace(/^\/+|\/+$/g, "")}”`
 }
