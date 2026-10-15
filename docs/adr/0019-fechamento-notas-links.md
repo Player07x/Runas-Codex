@@ -1,4 +1,4 @@
-# ADR 0019 — Fechamento do núcleo de notas: links, gráfico e notas pessoais (C5a)
+# ADR 0019 — Fechamento do núcleo de notas: links, gráfico, notas pessoais (C5a), organização e busca (C5b)
 
 - **Status:** aceita (2026-10-15)
 
@@ -64,6 +64,58 @@ perfil do Chromium, para nomes do mundo) e recortar/copiar/colar (complementa a 
   com a CSP real; o menu do corretor é testado pela montagem dos itens.
 - Ficam para depois: atalho global no Wayland (depende do Electron; ver acima), PDF
   dentro da nota (a CSP proíbe moldura; hoje abre no leitor do sistema, na página certa) e o resto do A.3 (C5b e C5c).
+
+## C5b — organização e busca (A.3, primeira parte)
+
+**Busca com operadores** (`core/search.ts`): a sintaxe do Obsidian — termos (todos precisam aparecer), `"frase"`,
+`-termo`, `OR`, `path:`, `file:`, `tag:`, `content:`, `line:(…)`, `section:(…)`, `[propriedade]`,
+`[propriedade:valor]` e `/regex/`. Sem diferenciar maiúsculas nem acentos, como a busca que já existia; a regex segue as
+regras do JavaScript (`(?i:…)` para ignorar maiúsculas nela). Uma regex inválida mostra o aviso em vez de quebrar a
+lista. Vale na lista de Notas, na Wiki e nos filtros e grupos do gráfico. O `index.search` do `vault-index.ts`
+(protegido) não muda; ele segue servindo o alternador rápido e o autocompletar.
+
+**Buscar e substituir** (`core/replace.ts`, `components/vault/ReplaceDialog.tsx`): nas notas da busca atual (ou do
+espaço inteiro), texto literal ou regex com `$1`…, palavra inteira e maiúsculas. Por padrão o frontmatter fica de fora
+(para não quebrar o YAML). A prévia mostra as linhas de antes e depois por nota, e dá para desmarcar notas. Antes de
+gravar, o app faz um **backup** do cofre; cada nota passa pelo `useVault().save` com a versão lida, e uma nota que mudou
+desde a prévia fica de fora (com aviso). Regex que acha texto vazio é recusada.
+
+**Propriedades tipadas** (`core/property-types.ts`, painel "Prop."): texto, lista, número, caixa, data, data e hora e
+link, como o Obsidian. O tipo vem do `.obsidian/types.json` quando ele declara a chave; senão, do valor (`2026-10-17`
+é data, `[[Nota]]` é link). Um valor que não cabe no tipo declarado aparece pelo tipo dele, para não ser apagado.
+Chaves `*_mundo` (datas do calendário do mundo, ADR 0010) são sempre texto: o seletor de data usaria o calendário
+gregoriano. Datas são gravadas entre aspas (o `setProperty` já fazia isso). O app **não grava** o `types.json`: o
+Obsidian deduz o tipo pelo valor na primeira vez que vê a chave. O link ganha um botão para abrir a nota (ou criá-la).
+
+**Favoritos** (`core/bookmarks.ts`, `lib/bookmarks.ts`): notas, títulos (pelo sumário), pastas e buscas, no formato
+do `.obsidian/bookmarks.json` (plugin Marcadores). O app **não grava no `.obsidian`** — a gravação segura recusa pastas
+ocultas e é protegida —, então os favoritos do app são **deste aparelho** (`localStorage`, um conjunto por cofre) e os
+marcadores do Obsidian aparecem junto, só para leitura (com a marca "Obsidian"; os grupos viram uma lista). Renomear
+ou mover nota ou pasta leva os favoritos junto. Se o dono quiser os favoritos do app sincronizados pelo cofre, o
+caminho é liberar a gravação de `.obsidian/bookmarks.json` num PR pequeno da gravação segura.
+
+**Voltar/avançar** (`core/nav-history.ts`, `lib/router.ts`): o histórico é o do navegador (o roteador é por hash);
+cada entrada ganha um número no `history.state`, para o app saber se dá para voltar ou avançar. Botões na barra da nota
+(somem quando a barra fica estreita), `Alt+←`/`Alt+→` (também com Ctrl, como no Obsidian — no GNOME o Ctrl+Alt+setas
+troca de área de trabalho), os botões laterais do mouse e a paleta. No editor, `Alt+←` continua andando pelo texto. As
+rotas de ação (`/notas/nova`, `/notas/hoje`, `/notas/aleatoria`) trocam a entrada atual em vez de criar outra: antes,
+voltar para `/notas/nova` criava mais uma nota.
+
+**Nota aleatória:** botão na lista de Notas e comando na paleta; sorteia no espaço aberto, fora as arquivadas e a nota
+aberta.
+
+**Árvore:** arrastar nota ou pasta para outra pasta (ou para fora delas, para a raiz do espaço) move com os links
+atualizados — o mesmo caminho de "Renomear ou mover" —, e a nota aberta acompanha. Antes de mover (e de abrir o
+buscar e substituir), o editor grava o que estava pendente (`flushOpenNotes`). Soltar uma nota da árvore dentro do
+editor insere `[[link]]`, como no Obsidian. A ordem (nome A–Z e Z–A, editadas e criadas por último ou há mais tempo) é
+preferência do aparelho; as fixadas continuam primeiro e as pastas ficam por nome. No celular não há arrastar (o
+Android não arrasta a partir do toque nesse tipo de lista): mover é pelo "Renomear ou mover".
+
+**Consequências (C5b):** testes do núcleo para a busca (cada operador, OR, exclusão, regex inválida), substituir
+(literal com `$`, palavra inteira, regex com olhar à frente e grupos, frontmatter, amostras), tipos de propriedade,
+favoritos (bookmarks.json com grupos, renomear), histórico e nota aleatória, ordem e destino ao arrastar. Ficam para a
+C5c: abas e painéis divididos, workspaces, várias janelas, Bases, consultas dinâmicas, extrair/mesclar, histórico de
+versões, restaurar da lixeira, contagem de palavras, comandos `/`, atalhos configuráveis, trechos CSS e ícones.
 
 [electron#51875]: https://github.com/electron/electron/issues/51875
 [electron#52218]: https://github.com/electron/electron/issues/52218

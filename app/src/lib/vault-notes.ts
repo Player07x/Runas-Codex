@@ -67,3 +67,22 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
+
+const FLUSH_EVENT = "runas-codex:gravar-notas"
+
+/**
+ * Pede às notas abertas que gravem agora o que está pendente (antes de mover ou substituir pela árvore, para a
+ * edição em andamento não ir para o caminho antigo). Cada editor aberto responde com a promessa da gravação dele.
+ */
+export async function flushOpenNotes(): Promise<void> {
+  const pending: Promise<void>[] = []
+  window.dispatchEvent(new CustomEvent<Promise<void>[]>(FLUSH_EVENT, { detail: pending }))
+  await Promise.all(pending)
+}
+
+/** Usado pelo editor de nota: responde aos pedidos de `flushOpenNotes`. */
+export function onFlushRequest(flush: () => Promise<void>): () => void {
+  const listener = (event: Event) => (event as CustomEvent<Promise<void>[]>).detail.push(flush())
+  window.addEventListener(FLUSH_EVENT, listener)
+  return () => window.removeEventListener(FLUSH_EVENT, listener)
+}

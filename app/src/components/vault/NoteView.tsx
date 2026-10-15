@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { Archive, ArchiveRestore, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -9,9 +9,11 @@ import { fillTemplate, insertTemplate } from "../../core/templates"
 import { extname, foldName, noteName, textToSave, toEditorText } from "../../core/text"
 import { splitFrontmatter } from "../../lib/links"
 import { NoteSetContext } from "../../lib/note-set"
-import { navigate } from "../../lib/router"
+import { goBack, goForward, navigate, useNavHistory } from "../../lib/router"
+import { hasBookmark } from "../../core/bookmarks"
+import { toggleFavorite, useFavorites } from "../../lib/bookmarks"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
-import { copyLinkTarget, copyText, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
+import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { Segmented, useToast } from "../ui"
@@ -68,6 +70,9 @@ interface Props {
 export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true, onDraftChange }: Props) {
   const vault = useVault()
   const toast = useToast()
+  const history = useNavHistory()
+  const favorites = useFavorites(vault.info?.path)
+  const favorite = hasBookmark(favorites, { type: "file", path })
   const index = vault.index!
   const note = index.note(path)!
   const readOnly = vault.info?.readOnly ?? true
@@ -127,6 +132,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
 
   // Grava ao sair da nota (a tela monta um NoteView por nota, com `key={path}`).
   useEffect(() => () => void flush(), [path, flush])
+  // Grava quando a árvore vai mover ou substituir notas (lib/vault-notes.ts).
+  useEffect(() => onFlushRequest(flush), [flush])
 
   // Pausa na digitação → grava.
   useEffect(() => {
@@ -286,6 +293,14 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
         <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
           <ChevronLeft size={18} />
         </button>
+        <span className="note-history">
+          <button className="icon-btn" title="Voltar (Alt ←)" aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
+            <ArrowLeft size={17} />
+          </button>
+          <button className="icon-btn" title="Avançar (Alt →)" aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
+            <ArrowRight size={17} />
+          </button>
+        </span>
         <Segmented<ViewMode>
           label="Modo da nota"
           value={mode}
@@ -402,6 +417,9 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             )}
           </div>
         )}
+        <button className="icon-btn" title={favorite ? "Tirar dos favoritos" : "Favoritar a nota"} aria-label={favorite ? "Tirar dos favoritos" : "Favoritar a nota"} aria-pressed={favorite} onClick={() => toggleFavorite(vault.info?.path, { type: "file", path })}>
+          <Star size={17} fill={favorite ? "currentColor" : "none"} color={favorite ? "var(--gold)" : undefined} />
+        </button>
         <div className="note-copy">
           <button className="icon-btn" title="Copiar link" aria-label="Copiar link" aria-expanded={copyMenu} onClick={() => setCopyMenu(!copyMenu)}>
             <Copy size={17} />

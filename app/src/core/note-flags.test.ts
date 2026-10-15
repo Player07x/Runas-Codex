@@ -1,4 +1,4 @@
-import { archivePath, isArchived, noteFlags, sortNotes, unarchivePath } from "./note-flags"
+import { archivePath, isArchived, moveDestination, noteFlags, sortNotes, unarchivePath } from "./note-flags"
 import { VaultIndex } from "./vault-index"
 
 const texts: Record<string, string> = {
@@ -18,6 +18,30 @@ describe("fixar, colorir e arquivar notas", () => {
 
   it("as fixadas vêm primeiro, cada grupo em ordem de nome", () => {
     expect(sortNotes(index.allNotes()).map((n) => n.name)).toEqual(["Bravo", "Delta", "Alfa", "Charlie"])
+  })
+
+  it("ordena por nome ao contrário, por edição e por criação, com as fixadas sempre antes", () => {
+    const notes = [
+      { name: "Alfa", mtime: 30, meta: { frontmatter: { data: { criado: "2026-01-02" } } } },
+      { name: "Bravo", mtime: 10, meta: { frontmatter: { data: { criado: "2026-03-01" } } } },
+      { name: "Charlie", mtime: 20, meta: { frontmatter: { data: { fixada: true } } } },
+    ] as unknown as Parameters<typeof sortNotes>[0]
+    const names = (order: Parameters<typeof sortNotes>[1]) => sortNotes(notes, order).map((n) => n.name)
+    expect(names("nome-desc")).toEqual(["Charlie", "Bravo", "Alfa"])
+    expect(names("modificada")).toEqual(["Charlie", "Alfa", "Bravo"])
+    expect(names("modificada-antiga")).toEqual(["Charlie", "Bravo", "Alfa"])
+    expect(names("criada")).toEqual(["Charlie", "Bravo", "Alfa"])
+    expect(names("criada-antiga")).toEqual(["Charlie", "Alfa", "Bravo"])
+  })
+
+  it("arrastar para uma pasta: destino, nada a fazer ou recusa", () => {
+    const exists = (p: string) => p === "Notas/Lugares/Ponte.md"
+    expect(moveDestination("Notas/Ideias/Lago.md", "Notas/Lugares", false, exists)).toEqual({ to: "Notas/Lugares/Lago.md" })
+    expect(moveDestination("Notas/Ideias/Lago.md", "", false, exists)).toEqual({ to: "Lago.md" })
+    expect(moveDestination("Notas/Ideias/Lago.md", "Notas/Ideias", false, exists)).toBeNull()
+    expect(moveDestination("Notas/Ideias/Ponte.md", "Notas/Lugares", false, exists)).toMatchObject({ error: expect.stringContaining("Já existe") })
+    expect(moveDestination("Notas/Ideias", "Notas/Ideias/Velhas", true, exists)).toMatchObject({ error: expect.stringContaining("dentro dela mesma") })
+    expect(moveDestination("Notas/Ideias", "Notas/Lugares", true, exists)).toEqual({ to: "Notas/Lugares/Ideias" })
   })
 
   it("arquivar move para a pasta Arquivo do espaço e desarquivar devolve", () => {
