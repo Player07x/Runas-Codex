@@ -1,4 +1,4 @@
-# Tarefa: fechamento dos módulos (X5, X6, C4, C5, C6)
+# Tarefa: fechamento dos módulos (X5, X6, C5, C6, C7)
 
 **Para:** as duas frentes, cada uma nos seus módulos (a [divisão](README.md) diz quem mexe em quê). **Leia antes:**
 [`AGENTS.md`](../../AGENTS.md) e a [checklist](../01-checklist-recursos.md).
@@ -31,34 +31,33 @@ Seções **D.1 a D.4 e G.1** (menos "Hospedar sala pelo Android", que é a X7). 
 checklist): pacote da mesa inteira e de partes (cena, tokens, mapas, playlists, paredes e luzes); importar Universal
 VTT (`.dd2vtt`/`.uvtt`), cenas do Foundry e tokens em lote; pinos do mapa ligados às notas do cofre; handouts (imagem
 ou nota em tela cheia para os jogadores, que a Wiki vai usar para "mostrar artigo pela sala"); túnel alternativo e
-sincronização incremental. Na varredura, confira também os itens de combate, dados e cena (D.2 a D.4). Precisam do
-dono: voz e vídeo (fora até a 1.0, ver README) e "tabelas roláveis na mesa — as mesmas da wiki", que depende dos
-geradores da Wiki (C5): combine o formato com o Claude Code pelo PR.
+sincronização incremental. Na varredura, confira também os itens de combate, dados e cena (D.2 a D.4). Voz e vídeo
+estão fora do plano (decisão do dono). "Tabelas roláveis na mesa — as mesmas da wiki" depende dos geradores da Wiki
+(C6): combine o formato com o Claude Code pelo PR.
 
-## C4 — Núcleo de notas e editor (Claude Code)
+## C5 — Núcleo de notas e editor (Claude Code)
 
 Seções **A.1, A.2, A.3 e F.1**, menos a gestão de anexos (já feita na C1 e na C2). Já se sabe que falta (ADR 0007):
 prévia de link por hover e toque longo, comandos `/`, linkar com `@`, abas e painéis divididos, timelapse do gráfico.
 
-## C5 — Wiki, Campanhas e Agenda (Claude Code)
+## C6 — Wiki, Campanhas e Agenda (Claude Code)
 
 Seções **B, C, F.2 e G.5**. Já se sabe que falta:
 - **Wiki** (ADR 0010): galeria e áudio no artigo, spoilers inline, eventos fictícios recorrentes além dos feriados,
   crônicas (mapa por era), zonas e desenhos no mapa, mapa com várias camadas, geradores, idiomas com dicionário,
   metas de palavras, mostrar artigo pela sala (usa os handouts da X6). Importar Fantasy-Calendar e Calendarium é da
-  C3 (etapa 10).
+  C4 (etapa 10).
 - **Campanhas** (ADR 0011): pinça para zoom e seleção de vários cartões no quadro, cartões de imagem com recorte,
   tesouro do grupo, diário dos jogadores, avaliação anônima pela sala, gerador de aventuras, iniciativa presencial.
   O diário em PDF/HTML é da X4.
 - **Agenda** (ADR 0008): enquete de data pela sala, criar sessão cria o evento, bandeja do desktop, widget do
-  Android (este fica para a C7, com o Android completo).
+  Android (este fica para a C8, com o Android completo).
 
-## C6 — Pacotes e sincronização (Claude Code)
+## C7 — Pacotes (Claude Code)
 
 Seções **G.2** (o que não é documento nem migração), **G.4** (pacote de campanha) e **G.6**: pacote `.runas` com
 manifesto e versão (mesclar, substituir ou duplicar ao importar), pacote de campanha (notas, sessões, mesas de
 `.runas/mesas/` e eventos ligados), exportar pasta ou ZIP compatível com o Obsidian, exportação seletiva com
-dependências, backups agendados, arquivos de conflito do Syncthing e do Obsidian Sync e **sincronizar aparelhos pela
-rede local** (PC ↔ celular, sem nuvem; o lado do celular termina na C7). A sincronização é rede fora da sala do
-VTT: antes de começar, o dono decide se abre essa exceção na regra 6 do `AGENTS.md` (só rede local, nunca internet). A tela **Transferir** deixa de ser protótipo
-aqui; o Codex acrescenta as entradas de Mesa e de Livros.
+dependências, backups agendados e arquivos de conflito do Syncthing e do Obsidian Sync. Sincronizar aparelhos pela
+rede local está fora do plano (decisão do dono). A tela **Transferir** deixa de ser protótipo aqui; o Codex
+acrescenta as entradas de Mesa e de Livros.

@@ -1,6 +1,6 @@
-# Tarefa: etapa 10 — migrações (C3)
+# Tarefa: etapa 10 — migrações (C4)
 
-**Para:** Claude Code, depois das imagens nas notas. **Leia antes:** [`AGENTS.md`](../../AGENTS.md), a
+**Para:** Claude Code, depois do mestre pelo celular (C3). **Leia antes:** [`AGENTS.md`](../../AGENTS.md), a
 [divisão](README.md), a [ADR 0004](../adr/0004-independente-da-runas-suite.md) e a seção 5 de
 [docs/02](../02-viabilidade-e-etapas.md).
 

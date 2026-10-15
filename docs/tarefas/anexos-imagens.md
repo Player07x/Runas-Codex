@@ -41,17 +41,20 @@ addAttachment(fileName: string, bytes: Uint8Array, nearNote?: string): Promise<s
 - **Arrastar** um ou mais arquivos de imagem para a nota (no lugar onde soltou).
 - O link segue o "formato de link novo" e "links em Markdown" do `app.json` (`![[nome.png]]` ou
   `![](caminho.png)`).
-- Cofre em somente leitura: explica e não grava. No Android, só a partir da C7 (cofre real).
+- Cofre em somente leitura: explica e não grava. No Android, só a partir da C8 (cofre real).
 - **Renomear um anexo atualiza os links** (conferir que já acontece e cobrir com teste).
 
 ## C2 — tamanho e posição (`anexos/tamanho-posicao`)
 
 - **Tamanho:** alças na imagem no live preview e no modo leitura; ao soltar, o app regrava só o `|largura` do link
   (`![[mapa.png|400]]`, formato que o Obsidian já entende).
-- **Posição:** menu da imagem com esquerda, centro, direita e largura total. Formato proposto:
-  `![[mapa.png|direita|300]]`. **Antes de fechar o formato, conferir no Obsidian** como ele trata a marca junto com
-  o tamanho; se ele não aceitar os dois juntos, escolher a alternativa com o dono no PR. O snippet `runas-codex.css`
-  ganha as regras para o Obsidian mostrar igual, e a tabela do dialeto (docs/02, seção 5) ganha a linha nova.
+- **Posição:** menu da imagem com esquerda, centro, direita e largura total. **Formato (testado no Obsidian 1.14.4
+  em 14/10/2026):** `![[mapa.png|direita|300]]`, com a marca **antes** do tamanho. O Obsidian põe a marca em `alt` e
+  o tamanho em `width` (`.image-embed[alt="direita"][width="300"]`), no modo leitura e no live preview; no Markdown
+  padrão vale o mesmo (`![direita|300](mapa.png)`). Com a ordem trocada (`|300|direita`) o tamanho se perde. O
+  snippet `runas-codex.css` ganha as regras (`.image-embed[alt~="direita"] { float: right }` e as outras), que já
+  foram conferidas no Obsidian ([imagem](../imagens/anexos/obsidian-posicao-imagem.png)), e a tabela do dialeto
+  (docs/02, seção 5) ganha a linha nova.
 - **Anexos órfãos:** lista de anexos que nenhuma nota usa, com a opção de mandar para a lixeira.
 - Avisar o Codex no PR: os temas dos livros (`screens/books/`) precisam respeitar as classes novas de posição na
   prévia e na exportação.

@@ -1,6 +1,6 @@
-# Tarefa: etapa A — Android completo (C7 e X7)
+# Tarefa: etapa A — Android completo (C8 e X7)
 
-**Para:** Claude Code (A1, fase C7) e depois Codex (A2, fase X7). **Leia antes:** [`AGENTS.md`](../../AGENTS.md), a
+**Para:** Claude Code (A1, fase C8) e depois Codex (A2, fase X7). **Leia antes:** [`AGENTS.md`](../../AGENTS.md), a
 [divisão](README.md), a [ADR 0003](../adr/0003-instaladores-e-android.md) (Capacitor, APK só no GitHub Actions), as
 seções 3, 6 e 7 de [docs/02](../02-viabilidade-e-etapas.md) e a [ADR 0008](../adr/0008-agenda.md) (lembretes no
 Android).
@@ -22,7 +22,7 @@ automáticos no emulador do CI. Esta etapa é a penúltima de propósito: a `Pla
    dono:** ele cria o keystore e cadastra os segredos; o PR explica o passo a passo e funciona sem eles (cai no APK
    de depuração).
 5. O que ficou para o Android nas outras etapas: "Compartilhar com" (texto, imagem ou link de outro app vira nota),
-   widget da Agenda, lembretes com o cofre real e o lado do celular da sincronização pela rede local (C6).
+   widget da Agenda e lembretes com o cofre real.
 
 ## A2 — sala hospedada pelo celular (Codex, `android/a2-sala`, depende da A1)
 
@@ -32,8 +32,8 @@ automáticos no emulador do CI. Esta etapa é a penúltima de propósito: a `Pla
 2. **Servidor da sala no Android** (`mobile/android/…/room/**`): serviço em primeiro plano, travas de Wi-Fi e de
    tela, HTTP estático, WebSocket e entrega de arquivos com Range; **só rede local** (internet pelo `cloudflared`
    fica para depois). A notificação do serviço mostra o link e o código da sala.
-3. **Android como jogador:** conectar a `ws://` na rede local (liberar conteúdo misto e tráfego sem TLS só para a
-   LAN).
+3. **Android como jogador:** conectar a `ws://` na rede local já vem da C3 (mestre pelo celular); confira que
+   continua funcionando com a sala no próprio aparelho.
 4. **Testes:** a autoridade em TS com testes; no emulador do CI, abrir uma sala e conectar um jogador pelo navegador
    do próprio job.
 
