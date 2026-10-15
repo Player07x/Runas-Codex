@@ -261,10 +261,10 @@ export class SceneView {
 
     app.stage.eventMode = "static"
     app.stage.hitArea = new Rectangle(-1e7, -1e7, 2e7, 2e7)
-    app.stage.on("pointerdown", (event) => this.onStagePointerDown(event))
-    app.stage.on("globalpointermove", (event) => this.onPointerMove(event))
-    app.stage.on("pointerup", (event) => this.onPointerUp(event))
-    app.stage.on("pointerupoutside", (event) => this.onPointerUp(event))
+    app.stage.on("pointerdown", (event) => { if (event.pointerType !== "touch") this.onStagePointerDown(event) })
+    app.stage.on("globalpointermove", (event) => { if (event.pointerType !== "touch") this.onPointerMove(event) })
+    app.stage.on("pointerup", (event) => { if (event.pointerType !== "touch") this.onPointerUp(event) })
+    app.stage.on("pointerupoutside", (event) => { if (event.pointerType !== "touch") this.onPointerUp(event) })
   }
 
   static async create(container: HTMLElement, handlers: SceneViewHandlers, options: SceneViewOptions): Promise<SceneView> {

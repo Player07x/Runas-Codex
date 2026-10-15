@@ -37,10 +37,12 @@ const until = async expression => {
   throw new Error('Não apareceu: ' + expression)
 }
 const touch = (type, points) => send('Input.dispatchTouchEvent', { type, touchPoints: points.map((point, index) => ({ id: index + 1, radiusX: 5, radiusY: 5, force: 1, ...point })) })
-const tapPoint = async point => { await touch('touchStart', [point]); await sleep(40); await touch('touchEnd', []); await sleep(350) }
+const tapPoint = async point => { await touch('touchStart', [point]); await sleep(100); await touch('touchEnd', []); await sleep(350) }
+// A preparação aciona os controles da interface; no canvas os gestos são ponteiros nativos do WebView.
 const tap = async expression => {
-  const point = await until(`(()=>{const e=${expression};if(!e)return null;e.scrollIntoView({block:'nearest'});const r=e.getBoundingClientRect();return r.width&&r.height?{x:r.x+r.width/2,y:r.y+r.height/2}:null})()`)
-  await tapPoint(point)
+  await until(`!!(${expression})`)
+  await run(`(${expression}).click()`)
+  await sleep(150)
 }
 const label = text => tap(`Array.from(document.querySelectorAll('[aria-label]')).find(e=>e.getAttribute('aria-label')===${JSON.stringify(text)}&&e.getClientRects().length)`)
 const button = text => tap(`Array.from(document.querySelectorAll('button')).find(e=>e.textContent.trim()===${JSON.stringify(text)}&&e.getClientRects().length)`)
@@ -59,7 +61,8 @@ try {
   if (process.argv.includes('--mobile')) await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2.75, mobile: true })
   await run(`location.hash='/vtt/criar'`)
   await tap(`document.querySelector('.empty .btn.primary,.mesa-card.new')`)
-  await run(`(()=>{const e=document.querySelector('[aria-label="Nome da mesa"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'Toque no Android');e.dispatchEvent(new Event('input',{bubbles:true}))})()`)
+  await until(`document.querySelector('input[aria-label="Nome da mesa"]')`)
+  await run(`(()=>{const e=document.querySelector('input[aria-label="Nome da mesa"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'Toque no Android');e.dispatchEvent(new Event('input',{bubbles:true}))})()`)
   await label('Confirmar criar mesa')
   await until(`document.querySelector('.vtt-root .side-tabs')`)
   await label('Cenas'); await button('Nova cena')
