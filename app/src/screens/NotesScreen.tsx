@@ -2,15 +2,21 @@ import { useCallback, useEffect, useMemo, useState, type DragEvent, type ReactNo
 import { Archive, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
+import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
+import { BaseScreen } from "../components/vault/QueryView"
+import { TrashDialog } from "../components/vault/TrashDialog"
+import { FolderAppearance, NoteIcon } from "../components/vault/Customization"
+import { folderKey, usePreferences } from "../lib/customization"
 import { ARCHIVE_FOLDER, isArchived, moveDestination, NOTE_COLORS, NOTE_ORDERS, noteFlags, sortNotes, type NoteOrder } from "../core/note-flags"
 import { searchNotes } from "../core/search"
 import { NotesLockScreen } from "../components/vault/NotesLock"
 import { ReplaceDialog } from "../components/vault/ReplaceDialog"
 import "../components/vault/note-actions.css"
 import { toggleFavorite, useFavorites } from "../lib/bookmarks"
+import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorkspace, setLayout, useSinglePane, useTabLayout, useWorkspaces, type OpenHow } from "../lib/tabs"
 import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
-import { dirname, joinPath, noteName } from "../core/text"
+import { basename, dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
 import { flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
@@ -19,6 +25,8 @@ import { fillTemplate, formatDate } from "../core/templates"
 import { GraphPage } from "../components/vault/GraphPage"
 import { NoteView } from "../components/vault/NoteView"
 import { VaultPanels } from "../components/vault/VaultPanels"
+import { TabPanes } from "../components/vault/TabPanes"
+import { WorkspaceMenu } from "../components/vault/WorkspaceMenu"
 import { Empty, useToast } from "../components/ui"
 import { useVault } from "../platform/VaultProvider"
 import "./notes.css"
@@ -108,6 +116,8 @@ function uniqueName(index: VaultIndex, folder: string, base: string): string {
 
 function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const vault = useVault()
+  const preferences = usePreferences()
+  const [trashOpen, setTrashOpen] = useState(false)
   const { hasPin } = useNotesLock()
   const toast = useToast()
   const readOnly = vault.info?.readOnly ?? true
@@ -193,6 +203,49 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const toWrite = useMemo(() => index.unresolved(root).slice(0, 30), [index, root, vault.version])
   const vaultId = vault.info?.path
   const favorites = useFavorites(vaultId)
+  const layout = useTabLayout(vaultId)
+  const workspaces = useWorkspaces(vaultId)
+  const single = useSinglePane()
+
+  // Abas e painéis (core/tabs.ts): a rota é a aba ativa do painel em foco. Abrir uma nota pela rota (lista, link,
+  // favorito, paleta) troca essa aba; mexer nas abas muda a rota.
+  const changeTabs = useCallback(
+    (next: TabLayout, options?: { replace?: boolean }) => {
+      setLayout(vaultId, next)
+      const target = currentPath(next)
+      if (target !== path) navigate(target ? vaultRoute(target) : "/notas", options)
+    },
+    [vaultId, path],
+  )
+  const openNote = useCallback(
+    (target: string, how: OpenHow) => {
+      if (how === "aba") setLayout(vaultId, (l) => openInNewTab(l, target))
+      else if (how === "lado" || how === "baixo") setLayout(vaultId, (l) => split(l, target, how))
+      navigate(vaultRoute(target))
+    },
+    [vaultId],
+  )
+  useEffect(() => {
+    if (path) setLayout(vaultId, (l) => (currentPath(l) === path ? l : openHere(l, path)))
+  }, [path, vaultId])
+  // Sem nota na rota (/notas), o computador mostra a aba em foco; o celular mostra a lista.
+  useEffect(() => {
+    const target = currentPath(layout)
+    if (!noteId && !single && target && index.hasFile(target)) navigate(vaultRoute(target), { replace: true })
+  }, [noteId, single])
+  // Abas de arquivos que sumiram (lixeira, apagados fora do app) fecham.
+  useEffect(() => pruneTabs(vaultId, (p) => index.hasFile(p)), [vault.version, vaultId])
+  useEffect(() => {
+    const action = (event: Event) => {
+      const kind = (event as CustomEvent<string>).detail, current = currentPath(layout)
+      if (kind === "trash") setTrashOpen(true)
+      if (kind === "workspace") document.querySelector<HTMLButtonElement>('button[aria-label="Workspaces"]')?.click()
+      if (kind === "newbase") document.querySelector<HTMLButtonElement>('button[aria-label="Nova base"]')?.click()
+      if (current && (kind === "split-right" || kind === "split-below")) changeTabs(split(layout, current, kind === "split-right" ? "lado" : "baixo"))
+    }
+    window.addEventListener("runas-codex:nota-acao", action)
+    return () => window.removeEventListener("runas-codex:nota-acao", action)
+  }, [layout, changeTabs])
   const fromObsidian = vault.config.bookmarks.filter((b) => !hasBookmark(favorites, b))
 
   // Nota aleatória do espaço (as arquivadas ficam de fora); a rota /notas/aleatoria é a da paleta de comandos.
@@ -312,10 +365,19 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const noteItem = (n: IndexedNote, extra?: ReactNode) => {
     const flags = noteFlags(n)
     return (
-    <a key={n.path} href={href(vaultRoute(n.path))} data-note-path={n.path} {...dragSource(n.path)} className={`list-item note-item ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
+    <a
+      key={n.path}
+      href={href(vaultRoute(n.path))}
+      data-note-path={n.path}
+      {...dragSource(n.path)}
+      // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian).
+      onClick={(event) => (event.ctrlKey || event.metaKey) && (event.preventDefault(), openNote(n.path, "aba"))}
+      onAuxClick={(event) => event.button === 1 && (event.preventDefault(), openNote(n.path, "aba"))}
+      className={`list-item note-item ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
       <span className="grow" style={{ minWidth: 0 }}>
         <span className="truncate note-item-name" style={{ display: "block", fontWeight: 600 }}>
           {flags.pinned && <Pin size={12} className="note-pin" aria-label="fixada" />}
+          <NoteIcon icon={String(n.meta.frontmatter?.data?.icone ?? "file")} color={flags.color} />{" "}
           {n.name}
         </span>
         <span className="truncate tiny faint" style={{ display: "block" }}>{extra ?? (preview(n) || "Vazia")}</span>
@@ -337,8 +399,9 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           <details key={sub.path} open={(depth < 1 && !isArchive(sub)) || Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} {...dropZone(sub.path)}>
             <summary className="eyebrow row" style={{ gap: 5 }} {...dragSource(sub.path)}>
               <ChevronDown size={13} className="folder-chevron" />
-              {isArchive(sub) ? <Archive size={13} /> : <Folder size={13} />} <span className="grow truncate">{sub.name}</span>
+              {isArchive(sub) ? <Archive size={13} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />} <span className="grow truncate">{sub.name}</span>
               <span className="folder-actions">
+                <FolderAppearance path={sub.path} />
                 {starButton({ type: "folder", path: sub.path }, `a pasta ${sub.name}`)}
                 {!readOnly && (
                   <>
@@ -368,6 +431,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           <div className="row between">
             <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong>
             <div className="row" style={{ gap: 2 }}>
+              <button className="icon-btn sm" title="Lixeira" aria-label="Abrir lixeira" onClick={() => setTrashOpen(true)}><Archive size={16} /></button>
               <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
                 <Network size={16} />
               </button>
@@ -467,6 +531,17 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           ) : (
             renderFolder(tree, 0)
           )}
+          {!results && <details className="vault-folder">
+            <summary className="eyebrow">Bases · {index.allFiles().filter(f => /\.base$/i.test(f.path)).length}</summary>
+            <div className="list">
+              {index.allFiles().filter(f => /\.base$/i.test(f.path)).map(file => <button key={file.path} className="list-item small" onClick={() => openNote(file.path, "aba")}>{basename(file.path)}</button>)}
+              {!readOnly && <button className="btn sm" aria-label="Nova base" onClick={() => {
+                let n = 0, target: string
+                do { target = joinPath(currentFolder, `Base de notas${n ? ` ${n}` : ""}.base`)!; n++ } while (index.hasFile(target))
+                void vault.createFile(target, `filters:\n  and:\n    - file.inFolder(${JSON.stringify(root.replace(/\/$/, ""))})\nviews:\n  - type: table\n    name: Notas\n    order: [file.name, file.tags]\n    sort:\n      - property: file.name\n        direction: ASC\n`).then(p => openNote(p, "aba"), fail)
+              }}>Nova base</button>}
+            </div>
+          </details>}
           {!results && tags.length > 0 && (
             <details className="vault-folder">
               <summary className="eyebrow row" style={{ gap: 5 }}>
@@ -499,15 +574,48 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         </div>
       </aside>
 
-      <section className={`pane-center ${graph ? "graph" : ""}`}>
+      <section className={`pane-center ${graph ? "graph" : "tabs-host"}`}>
         {graph ? (
           <GraphPage index={index} root={root} version={vault.version} onBroken={(target) => openBroken(target)} />
-        ) : note ? (
-          <NoteView key={note.path} path={note.path} folders={folders} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, note.path)} onTag={onTag} headingRequest={heading} />
-        ) : (
+        ) : path && !index.hasFile(path) ? (
           <div className="page">
-            <p className="muted">{path ? "Nota não encontrada no cofre (foi renomeada ou apagada?)." : "Escolha uma nota na lista ou crie uma nova."}</p>
+            <p className="muted">Nota não encontrada no cofre (foi renomeada ou apagada?).</p>
           </div>
+        ) : (
+          <OpenNoteContext.Provider value={openNote}>
+            <TabPanes
+              layout={layout}
+              onChange={changeTabs}
+              label={(p) => (/\.md$/i.test(p) ? noteName(p) : basename(p))}
+              treeDragType={DRAG_TYPE}
+              single={single}
+              onOpenWindow={vault.platform.openWindow ? (p) => void vault.platform.openWindow!(vaultRoute(p)).catch(fail) : undefined}
+              stripEnd={
+                !IS_NOTE_WINDOW && (
+                  <WorkspaceMenu
+                    workspaces={workspaces}
+                    onSave={(name) => (saveWorkspace(vaultId, name, showRight), toast(`Workspace “${name}” guardado neste aparelho.`))}
+                    onOpen={(name) => {
+                      const saved = workspaces[name]
+                      if (!saved) return
+                      changeTabs(pruneLayout(saved.layout, (p) => index.hasFile(p)))
+                      setShowRight(saved.rightPanel)
+                    }}
+                    onDelete={(name) => deleteWorkspace(vaultId, name)}
+                  />
+                )
+              }
+              renderTab={(tabPath, _pane, focused) =>
+                /\.base$/i.test(tabPath) && index.hasFile(tabPath) ? <BaseScreen key={tabPath} path={tabPath} /> : index.note(tabPath) ? (
+                  <NoteView focused={focused} key={tabPath} path={tabPath} folders={folders} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, tabPath)} onTag={onTag} headingRequest={focused ? heading : undefined} />
+                ) : (
+                  <div className="page">
+                    <p className="muted">“{basename(tabPath)}” não abre aqui.</p>
+                  </div>
+                )
+              }
+            />
+          </OpenNoteContext.Provider>
         )}
       </section>
 
@@ -529,6 +637,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           onClose={() => setReplacing(false)}
         />
       )}
+      {trashOpen && <TrashDialog root={root.replace(/\/$/, "")} onClose={() => setTrashOpen(false)} />}
       {dialog?.kind === "note" && (
         <NewNoteDialog
           initial={uniqueName(index, dialog.folder, "Sem título")}
@@ -585,4 +694,3 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     </div>
   )
 }
-

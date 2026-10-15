@@ -39,6 +39,8 @@ const bridge: RunasCodexBridge = {
     installSnippet: (css) => invoke(IPC.vaultInstallSnippet, css),
     readBinary: (path) => invoke(IPC.vaultReadBinary, path),
     writeBinary: (path, bytes, expected) => invoke(IPC.vaultWriteBinary, path, bytes, expected === undefined ? undefined : expected && { mtime: expected.mtime, size: expected.size }),
+    listTrash: () => invoke(IPC.vaultListTrash),
+    restoreTrash: (path, target) => invoke(IPC.vaultRestoreTrash, path, target),
   },
   agenda: {
     schedule: (reminders) => invoke(IPC.agendaSchedule, reminders),
@@ -154,6 +156,7 @@ const bridge: RunasCodexBridge = {
       ipcRenderer.removeListener(IPC.quickCapture, handler)
     }
   },
+  openWindow: (route) => invoke(IPC.openWindow, route),
 }
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

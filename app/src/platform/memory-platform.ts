@@ -78,7 +78,20 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     },
     async trash(path) {
       ensureWritable(path)
+      for (const p of [...files.keys()]) if (p === path || p.startsWith(path + "/")) {
+        const name = p.slice(p.lastIndexOf("/") + 1); let destination = `.trash/${name}`, n = 1
+        while (files.has(destination)) destination = `.trash/${n++}-${name}`
+        files.set(destination, files.get(p)!)
+      }
       for (const p of [...files.keys()]) if (p === path || p.startsWith(path + "/")) files.delete(p)
+    },
+    async listTrash() { return [...files.keys()].filter(p => p.startsWith(".trash/")).map(entry) },
+    async restoreTrash(path, target) {
+      ensureWritable(target)
+      if (!path.startsWith(".trash/") || !files.has(path)) throw new Error("Arquivo não encontrado na lixeira.")
+      if (files.has(target)) throw new Error(`Já existe “${target}”.`)
+      files.set(target, { ...files.get(path)!, mtime: ++clock }); files.delete(path)
+      return entry(target)
     },
     watch(listener) {
       listeners.add(listener)
