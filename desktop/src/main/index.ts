@@ -76,6 +76,28 @@ function registerIpc(): void {
     return result.filePath
   })
   vtt.register(handle)
+  handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
+  handle(IPC.vaultWriteBinary, (_event, path, content, expected) => {
+    if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
+    return vault.writeBinary(text(path, "caminho"), content, versionOf(expected))
+  })
+  handle(IPC.saveBytes, async (_event, name, content) => {
+    if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
+    const fileName = text(name, "nome").replace(/[\\/:*?"<>|]/g, "-").slice(0, 120)
+    const result = await dialog.showSaveDialog(mainWindow!, { defaultPath: join(app.getPath("documents"), fileName) })
+    if (result.canceled || !result.filePath) return null
+    await writeFile(result.filePath, content)
+    return result.filePath
+  })
+}
+
+/** Versão que a interface leu (`null` = só criar; ausente = sem conferência). */
+function versionOf(expected: unknown): { mtime: number; size: number } | null | undefined {
+  if (expected === null) return null
+  if (expected && typeof expected === "object" && typeof (expected as { mtime?: unknown }).mtime === "number" && typeof (expected as { size?: unknown }).size === "number") {
+    return { mtime: (expected as { mtime: number }).mtime, size: (expected as { size: number }).size }
+  }
+  return undefined
 }
 
 function createMainWindow(): BrowserWindow {

@@ -89,4 +89,10 @@ export interface Platform {
   stopRoom(): Promise<void>
   /** Abre o diálogo de impressão do documento atual. */
   printDocument?(): void
+  /** Lê um arquivo do cofre como bytes (imagem, PDF…). */
+  readBinary(path: string): Promise<Uint8Array>
+  /** Grava bytes no cofre com as mesmas regras do `writeText` (versão esperada, `null` só cria, nada oculto). */
+  writeBinary(path: string, bytes: Uint8Array, expected?: VaultEntry | null): Promise<VaultEntry>
+  /** Salva bytes onde o usuário escolher (exportações); devolve o nome, ou `null` se cancelou. */
+  saveBytes(name: string, bytes: Uint8Array, mime: string): Promise<string | null>
 }

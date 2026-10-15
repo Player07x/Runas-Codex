@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
+import { attachmentPath } from "../core/attachments"
 import { caseCollision, nameProblem } from "../core/names"
 import { setProperty as setPropertyText, type PropertyValue } from "../core/properties"
 import { planFolderRename, planRename, type RenamePlan } from "../core/rename"
@@ -41,6 +42,11 @@ export interface VaultState {
   setProperty(path: string, key: string, value: PropertyValue | undefined): Promise<void>
   /** Cria um arquivo de texto que não é nota (ex.: um quadro `.canvas`), pelo caminho completo. */
   createFile(path: string, content: string): Promise<string>
+  /**
+   * Grava um anexo novo (imagem, PDF…) na pasta de anexos do Obsidian, relativa a `nearNote` quando a configuração é
+   * `./`. Nome repetido ganha número (`mapa 1.png`). Devolve o caminho gravado.
+   */
+  addAttachment(fileName: string, bytes: Uint8Array, nearNote?: string): Promise<string>
 }
 
 const VaultContext = createContext<VaultState | null>(null)
@@ -225,6 +231,18 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [requireIndex, bump],
   )
 
+  const addAttachment = useCallback(
+    async (fileName: string, bytes: Uint8Array, nearNote?: string) => {
+      const current = requireIndex()
+      const path = attachmentPath(config.app.attachmentFolder, fileName, current.allFiles().map((f) => f.path), nearNote)
+      const entry = await platform.writeBinary(path, bytes, null)
+      current.set(entry)
+      bump()
+      return path
+    },
+    [requireIndex, bump, config],
+  )
+
   const templates = useCallback((): IndexedNote[] => {
     const current = indexRef.current
     if (!current) return []
@@ -241,7 +259,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => open(await platform.vault()), [open])
 
   return (
-    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile }}>
+    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile, addAttachment }}>
       {children}
     </VaultContext.Provider>
   )

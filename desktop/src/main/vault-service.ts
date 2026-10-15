@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { app, dialog, shell, type BrowserWindow, type OpenDialogOptions } from "electron"
 import { IPC, type BackupInfo, type VaultChange, type VaultEntry, type VaultInfo } from "../shared/ipc"
-import { backupFolder, backupVault, createFolder, createVault, listBackups, listVault, readTexts, renamePath, trashPath, writeTextSafe } from "./vault"
+import { backupFolder, backupVault, createFolder, createVault, listBackups, listVault, readBinary, readTexts, renamePath, trashPath, writeBinarySafe, writeTextSafe } from "./vault"
 import { installSnippet, mediaFile } from "./vault-files"
 import { VaultWatcher } from "./watcher"
 
@@ -176,6 +176,18 @@ export class VaultService {
     const root = this.writableRoot()
     await this.dailyBackup()
     const entry = await writeTextSafe(root, path, content, expected)
+    this.watcher?.remember(entry)
+    return entry
+  }
+
+  readBinary(path: string): Promise<Uint8Array> {
+    return readBinary(this.root(), path)
+  }
+
+  async writeBinary(path: string, bytes: Uint8Array, expected: { mtime: number; size: number } | null | undefined): Promise<VaultEntry> {
+    const root = this.writableRoot()
+    await this.dailyBackup()
+    const entry = await writeBinarySafe(root, path, bytes, expected)
     this.watcher?.remember(entry)
     return entry
   }
