@@ -22,8 +22,11 @@ export const NOTES_C5C_SMOKE = `
   await until(() => document.querySelectorAll('.tab-pane').length === 1)
   clickC5('Ferramentas da nota')
   await until(() => [...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'Histórico de versões'))
+  const c5Visible = (element) => { const r = element?.getBoundingClientRect(); return Boolean(r && r.top >= -1 && r.left >= -1 && r.bottom <= innerHeight + 1 && r.right <= innerWidth + 1) }
+  result.notesC5c.menuBounds = c5Visible(document.querySelector('.note-tools-menu'))
   clickC5('Histórico de versões')
   await until(() => document.querySelector('[aria-label="Versão da nota"]'))
+  result.notesC5c.dialogBounds = c5Visible(document.querySelector('.modal'))
   await until(() => [...document.querySelectorAll('.modal button')].some(button => button.textContent.trim() === 'Guardar versão agora' && !button.disabled))
   clickC5('Guardar versão agora')
   await until(() => document.querySelector('[aria-label="Versão da nota"] option'))

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { BookOpen, FileText, Flag, Folder, Gem, Heart, Map, ScrollText, Shield, Skull, Sparkles, Star, Sword, Users } from "lucide-react"
 import { SHORTCUTS, eventShortcut, shortcutAction, type ShortcutAction } from "../../core/shortcuts"
 import { NOTE_COLORS, type NoteColor } from "../../core/note-flags"
@@ -14,11 +15,11 @@ export function NoteIcon({ icon, color, folder = false }: { icon?: string; color
 export function FolderAppearance({ path }: { path: string }) {
   const vault = useVault(), prefs = usePreferences(), toast = useToast(), [open, setOpen] = useState(false)
   const key = folderKey(vault.info!.path, path), current = prefs.folders[key] ?? {}
-  return <><button className="icon-btn sm" aria-label={`Aparência da pasta ${path}`} title="Ícone e cor da pasta" onClick={e => { e.preventDefault(); setOpen(true) }}><Sparkles size={13} /></button>{open && <Modal title="Ícone e cor da pasta" onClose={() => setOpen(false)}>
+  return <><button className="icon-btn sm" aria-label={`Aparência da pasta ${path}`} title="Ícone e cor da pasta" onClick={e => { e.preventDefault(); setOpen(true) }}><Sparkles size={13} /></button>{open && createPortal(<Modal title="Ícone e cor da pasta" onClose={() => setOpen(false)}>
     <p className="small muted">Preferências deste aparelho para {path}.</p>
     <label className="field"><span>Ícone</span><select className="input" aria-label="Ícone da pasta" value={current.icon ?? "folder"} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, icon: e.target.value } } })) } catch (error) { toast(String(error)) } }}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
     <label className="field"><span>Cor</span><select className="input" aria-label="Cor da pasta" value={current.color ?? ""} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, color: e.target.value } } })) } catch (error) { toast(String(error)) } }}><option value="">Padrão</option>{Object.keys(NOTE_COLORS).map(color => <option key={color}>{color}</option>)}</select></label>
-  </Modal>}</>
+  </Modal>, document.body)}</>
 }
 /** Estilos locais e atalhos são carregados uma vez para todas as telas. A CSP continua bloqueando recursos externos. */
 export function CustomizationRuntime() {
