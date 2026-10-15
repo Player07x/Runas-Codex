@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { ArrowLeft, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, ScrollText, Settings } from "lucide-react"
 import { href, navigate } from "../lib/router"
-import { resolveAssetUrl, vtt } from "./api"
+import { remoteMaster, resolveAssetUrl, vtt } from "./api"
 import { AudioEngine } from "./audio-engine"
 import { SceneCanvas } from "./canvas/SceneCanvas"
 import { DocumentStore } from "./document-store"
@@ -56,6 +56,12 @@ function useMasterAudio(): AudioState {
   const [state, setState] = useState<AudioState>({ now: 0, sounds: [] })
   const engine = useRef<AudioEngine | null>(null)
   useEffect(() => {
+    // No celular do mestre remoto quem toca é o computador da sala; aqui só se acompanha o estado.
+    if (remoteMaster) {
+      const unsubscribe = vtt.audio.onState(setState)
+      void vtt.audio.state().then(setState)
+      return unsubscribe
+    }
     const created = new AudioEngine(resolveAssetUrl, settings.audio)
     // Só a mesa avisa o fim das faixas: é ela que faz a playlist avançar.
     created.onEnded = (key) => void vtt.audio.ended(key)
@@ -115,7 +121,12 @@ export function MesaTable({ id }: { id: string }) {
   return <TableShell key={world.id} world={world} />
 }
 
-function TableShell({ world }: { world: WorldSummary }) {
+/** Mesa já aberta no computador da sala, controlada pelo celular do mestre (página `/master`, ADR 0016). */
+export function RemoteMesa({ world }: { world: WorldSummary }) {
+  return <TableShell key={world.id} world={world} remote />
+}
+
+function TableShell({ world, remote = false }: { world: WorldSummary; remote?: boolean }) {
   const [store] = useState(() => new DocumentStore())
   const [loaded, setLoaded] = useState(false)
   const [sceneId, setSceneId] = useState<string | null>(null)
@@ -181,9 +192,15 @@ function TableShell({ world }: { world: WorldSummary }) {
     <main ref={root} className="vtt-root">
       <div className="table" style={{ gridTemplateColumns: `minmax(${CANVAS_MIN}px, 1fr) ${width}px` }}>
         <header className="table-bar">
-          <button className="ghost" onClick={() => navigate("/vtt/criar")}>
-            <ArrowLeft size={16} /> Mesas
-          </button>
+          {remote ? (
+            <span className="chip" title="As mudanças são gravadas no computador da sala">
+              <MonitorPlay size={14} /> Mestre remoto
+            </span>
+          ) : (
+            <button className="ghost" onClick={() => navigate("/vtt/criar")}>
+              <ArrowLeft size={16} /> Mesas
+            </button>
+          )}
           <div className="table-title">
             <strong>{world.title}</strong>
           </div>

@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { ReminderScheduler, validReminders } from "./reminders"
-import { checkBookFiles, checkPdf, checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
+import { checkBookFiles, checkMaster, checkPdf, checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
 import { VaultService } from "./vault-service"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { vaultFilePrivilege, vaultFileResponse } from "./vault-files"
@@ -149,6 +149,8 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (bookPdf?.path) result.bookPdfCheck = await checkPdf(bookPdf.path)
     const bookFiles = result.bookFiles as { epub?: string | null; docx?: string | null } | undefined
     if (bookFiles?.epub && bookFiles.docx) result.bookFilesCheck = await checkBookFiles(bookFiles.epub, bookFiles.docx)
+    const master = result.master as { key?: string | null } | undefined
+    if (result.room && master?.key) result.masterCheck = await checkMaster(window, (result.room as { port: number }).port, master.key, String(result.masterScene ?? ""), () => vtt.master.rotate(), argValue("shot-master"))
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     console.log(JSON.stringify(result, null, 2))
