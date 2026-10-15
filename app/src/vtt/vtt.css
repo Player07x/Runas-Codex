@@ -349,6 +349,9 @@
   .scene-context-menu button:hover { background: var(--panel-hover); }
   .draw-options { top: 62px; flex-wrap: wrap; max-width: calc(100% - 74px); }
   .scene-host { touch-action: none; }
+  /* O toque longo pertence à mesa; o WebView não deve selecionar o texto do botão mais próximo. */
+  .scene-canvas { -webkit-user-select: none; user-select: none; }
+  .scene-canvas input, .scene-canvas textarea { -webkit-user-select: text; user-select: text; }
 }
 
 @media (pointer: coarse), (max-width: 900px) {

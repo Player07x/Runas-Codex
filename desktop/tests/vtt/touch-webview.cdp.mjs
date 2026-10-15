@@ -139,6 +139,8 @@ try {
   const held = await at(1450, 1050)
   await hold(held)
   results.menu = await run(`!!document.querySelector('[role="menu"][aria-label="Ações do objeto"]')`)
+  results.textSelection = await run(`window.getSelection()?.toString() ?? ''`)
+  if (results.textSelection) throw new Error('O toque longo selecionou texto da interface: ' + results.textSelection)
   await button('Fechar menu')
   await label('Soltar seleção'); await label('Enquadrar cena'); await sleep(3000)
   console.log("Gestos concluídos; medindo a cena de exemplo.")
