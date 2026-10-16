@@ -69,7 +69,7 @@ describe("atualizações", () => {
     expect((await checkForUpdate("0.1.0-beta.2", "windows", `${origin}/api`)).newer).toBe(false)
   })
 
-  it("AppImage: troca o próprio arquivo do app e reinicia; .deb: abre no instalador do sistema", async () => {
+  it("AppImage: troca o próprio arquivo do app e reinicia", async () => {
     const current = join(base, "Runas-Codex.AppImage")
     await writeFile(current, "versão velha")
     const downloaded = join(base, "novo.AppImage")
@@ -81,7 +81,33 @@ describe("atualizações", () => {
     expect(await readFile(current)).toEqual(installer)
     expect((await stat(current)).mode & 0o111).not.toBe(0)
     expect(relaunched).toEqual([current])
-    expect(await installUpdate(downloaded, "deb", actions)).toBe("pacote-aberto")
-    expect(opened).toEqual([downloaded])
+    expect(opened).toEqual([])
+  })
+
+  it("Ubuntu: aguarda a instalação, salva as notas e só então reinicia", async () => {
+    const order: string[] = []
+    let installed!: () => void
+    const pending = new Promise<void>(resolve => { installed = resolve })
+    const actions = { openPath: vi.fn(async () => ""), quit: vi.fn(), beforeRestart: async () => { order.push("salvou") }, relaunch: () => { order.push("reiniciou") } }
+    const result = installUpdate("/tmp/novo.deb", "deb", actions, {}, async () => { await pending; order.push("instalou") })
+    expect(order).toEqual([])
+    installed()
+    expect(await result).toBe("reiniciar")
+    expect(order).toEqual(["instalou", "salvou", "reiniciou"])
+    expect(actions.openPath).not.toHaveBeenCalled()
+  })
+
+  it("Ubuntu: cancelamento ou falha não fecha nem reinicia o aplicativo", async () => {
+    const actions = { openPath: vi.fn(async () => ""), quit: vi.fn(), relaunch: vi.fn() }
+    await expect(installUpdate("/tmp/novo.deb", "deb", actions, {}, async () => { throw new Error("Instalação cancelada") })).rejects.toThrow("cancelada")
+    expect(actions.quit).not.toHaveBeenCalled()
+    expect(actions.relaunch).not.toHaveBeenCalled()
+    expect(actions.openPath).not.toHaveBeenCalled()
+  })
+
+  it("mantém o aplicativo aberto se as notas não puderem ser salvas antes de reiniciar", async () => {
+    const actions = { openPath: vi.fn(async () => ""), quit: vi.fn(), relaunch: vi.fn(), beforeRestart: async () => { throw new Error("Conflito ao salvar") } }
+    await expect(installUpdate("/tmp/novo.deb", "deb", actions, {}, async () => undefined)).rejects.toThrow("Conflito")
+    expect(actions.relaunch).not.toHaveBeenCalled()
   })
 })

@@ -25,7 +25,7 @@ export interface Release {
 /** Qual instalador serve para este app: o `.exe` (NSIS), o AppImage (troca o próprio arquivo) ou o `.deb`. */
 export type UpdateTarget = "windows" | "appimage" | "deb"
 
-/** Depois de baixar: o instalador do Windows abriu (o app fecha), o AppImage foi trocado (reinicia) ou o `.deb` abriu no instalador do sistema. */
+/** Depois de baixar: o instalador do Windows abriu ou a instalação terminou e o aplicativo reinicia. `pacote-aberto` é mantido para pontes antigas. */
 export type UpdateInstallResult = "instalador-aberto" | "reiniciar" | "pacote-aberto"
 
 export interface UpdateInfo {

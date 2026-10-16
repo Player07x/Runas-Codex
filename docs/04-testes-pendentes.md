@@ -339,3 +339,12 @@ aparelho físico acima continua necessária.
   acentos e emoji. Atalhos personalizados, conflitos e restauração dos padrões, incluindo Ctrl+P na prévia de Livros.
 - [ ] Importar um snippet CSS do Obsidian, ativar/desativar e reiniciar. Ícones/cores de notas e pastas, inclusive
   depois de mover/renomear. Classes exclusivas do Obsidian podem precisar de ajuste no snippet.
+
+## Atualização Ubuntu pelo aplicativo
+
+- [ ] Instalar uma vez a versão corrigida e, quando houver uma posterior, usar Configurações › Verificar › Baixar e
+  instalar: conferir o diálogo de autorização do Ubuntu, atualização pelo APT sem abrir o Centro de Aplicativos e
+  reinício com a versão nova. Confirmar que notas em edição, inclusive janelas extras, foram salvas.
+- [ ] Cancelar a autorização: o app mostra o cancelamento e permanece aberto, sem anunciar sucesso.
+- [ ] Com outro gerenciador de pacotes aberto, conferir espera/erro legível sem fechar o app. Se houver conflito ao
+  salvar uma nota, o app permanece aberto para resolver antes de reiniciar.
