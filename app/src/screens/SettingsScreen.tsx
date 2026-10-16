@@ -316,7 +316,7 @@ function UpdateRow() {
         <span className="small" style={{ fontWeight: 650 }}>Verificar atualizações</span>
         <span className="tiny faint">{hint}</span>
         {info?.newer && !info.asset && <span className="tiny" style={{ color: "var(--gold)" }}>Esta versão não tem instalador para este sistema.</span>}
-        {state === "baixando" && <span className="tiny">{progress ? `Baixando ${formatBytes(progress.received)} de ${formatBytes(progress.total)}…` : "Baixando…"}</span>}
+        {state === "baixando" && <span className="tiny">{progress && progress.total > 0 && progress.received >= progress.total ? info?.asset?.name.endsWith(".deb") ? "Instalando… Confirme a autorização do sistema. O app reinicia após atualizar." : "Preparando a instalação…" : progress ? `Baixando ${formatBytes(progress.received)} de ${formatBytes(progress.total)}…` : "Baixando…"}</span>}
         {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
         {info?.newer && latest?.notes && (
           <details className="tiny" style={{ marginTop: 4 }}>

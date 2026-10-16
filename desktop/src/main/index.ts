@@ -114,6 +114,7 @@ function registerIpc(): void {
   })
   // "Verificar atualizações" (ADR 0017): só quando o usuário clica. Instala só o que a última consulta encontrou.
   let lastUpdate: UpdateInfo | null = null
+  let installingUpdate = false
   handle(IPC.appVersion, () => app.getVersion())
   handle(IPC.updatesCheck, async () => {
     const target = updateTarget()
@@ -122,17 +123,27 @@ function registerIpc(): void {
     return lastUpdate
   })
   handle(IPC.updatesInstall, async () => {
+    if (installingUpdate) throw new Error("Uma atualização já está em andamento.")
     const target = updateTarget()
     if (!target || !lastUpdate?.newer) throw new Error("Verifique as atualizações primeiro.")
-    const file = await downloadUpdate(lastUpdate, join(app.getPath("downloads"), "Runas-Codex"), (received, total) => mainWindow?.webContents.send(IPC.updatesProgress, { received, total }))
-    return installUpdate(file, target, {
-      openPath: (path) => shell.openPath(path),
-      quit: () => app.quit(),
-      relaunch: (execPath) => {
-        app.relaunch({ execPath })
-        app.exit(0)
-      },
-    })
+    installingUpdate = true
+    try {
+      const file = await downloadUpdate(lastUpdate, join(app.getPath("downloads"), "Runas-Codex"), (received, total) => mainWindow?.webContents.send(IPC.updatesProgress, { received, total }))
+      return await installUpdate(file, target, {
+        openPath: (path) => shell.openPath(path),
+        beforeRestart: async () => {
+          await noteWindows.flushAll()
+          await mainWindow?.webContents.executeJavaScript(`(async()=>{const pending=[];window.dispatchEvent(new CustomEvent('runas-codex:gravar-notas',{detail:pending}));await Promise.all(pending)})()`)
+        },
+        quit: () => app.quit(),
+        relaunch: (execPath) => {
+          app.relaunch({ execPath })
+          app.exit(0)
+        },
+      })
+    } finally {
+      installingUpdate = false
+    }
   })
   handle(IPC.openWindow, (_event, route) => noteWindows.open(text(route, "rota")))
   handle(IPC.vaultListTrash, () => vault.listTrash())

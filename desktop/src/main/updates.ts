@@ -6,6 +6,7 @@ import { join } from "node:path"
 import { Readable } from "node:stream"
 import { pipeline } from "node:stream/promises"
 import type { ReadableStream as WebReadableStream } from "node:stream/web"
+import { installDeb } from "./deb-update"
 import { checksumFor, parseReleases, pickUpdate, RELEASES_REPO, type UpdateInfo, type UpdateInstallResult, type UpdateTarget } from "../../../app/src/core/updates"
 
 /**
@@ -75,9 +76,9 @@ export async function downloadUpdate(info: UpdateInfo, folder: string, onProgres
  * Instala o arquivo baixado:
  * - Windows: abre o instalador (NSIS) e o app fecha para ele trocar os arquivos;
  * - AppImage: troca o próprio arquivo do app (cópia ao lado e troca de uma vez) e reinicia;
- * - `.deb`: abre o pacote no instalador do sistema (instalar pede a senha do administrador).
+ * - `.deb`: instala pelo APT, com autorização gráfica do polkit, e só reinicia se a instalação terminar.
  */
-export async function installUpdate(file: string, target: UpdateTarget, actions: { openPath(path: string): Promise<string>; quit(): void; relaunch(execPath: string): void }, env = process.env): Promise<UpdateInstallResult> {
+export async function installUpdate(file: string, target: UpdateTarget, actions: { openPath(path: string): Promise<string>; quit(): void; relaunch(execPath: string): void; beforeRestart?(): Promise<void> }, env = process.env, debInstaller = installDeb): Promise<UpdateInstallResult> {
   if (target === "windows") {
     spawn(file, [], { detached: true, stdio: "ignore" }).unref()
     setTimeout(() => actions.quit(), 800)
@@ -90,10 +91,12 @@ export async function installUpdate(file: string, target: UpdateTarget, actions:
     await copyFile(file, next)
     await chmod(next, 0o755)
     await rename(next, current)
+    await actions.beforeRestart?.()
     actions.relaunch(current)
     return "reiniciar"
   }
-  const error = await actions.openPath(file)
-  if (error) throw new Error(error)
-  return "pacote-aberto"
+  await debInstaller(file)
+  await actions.beforeRestart?.()
+  actions.relaunch(process.execPath)
+  return "reiniciar"
 }
