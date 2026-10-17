@@ -99,3 +99,7 @@ Object.assign(DEMO_TEXT_FILES, OBSIDIAN_PLUGIN_DEMO)
 // C6: ferramentas do mundo, idioma, recorrência e crônicas.
 import { WIKI_FINISH_DEMO } from "./wiki-finish-demo"
 Object.assign(DEMO_TEXT_FILES, WIKI_FINISH_DEMO)
+
+// C6b: tesouro e iniciativa genéricos, em notas comuns.
+import { CAMPAIGN_TOOLS_DEMO } from "./campaign-tools-demo"
+Object.assign(DEMO_TEXT_FILES,CAMPAIGN_TOOLS_DEMO)

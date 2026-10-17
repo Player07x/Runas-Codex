@@ -362,3 +362,16 @@ aparelho físico acima continua necessária.
 - [ ] Crônicas: trocar era na linha do tempo e abrir o mapa; conferir imagens, zonas, rotas, rótulos e camadas
   secretas. Criar/remover desenhos por pontos e camadas de imagem, inclusive depois de fechar e abrir o cofre.
 - [ ] Windows, Obsidian e áudio real ficam na conferência manual; Android ficou para a tarefa complementar.
+
+## C6 — Wiki, Campanhas e Agenda (Codex, 17/10/2026)
+
+- Em Linux e Windows, ligar a bandeja, fechar a janela, reabrir pelo ícone e sair pelo menu; conferir lembrete
+  agendado com a janela escondida. Autorun permanece C9.
+- Com dois jogadores reais e um espectador, apresentar artigo público e privado, enviar diário, avaliar uma sessão,
+  responder enquete de data e sinalizar Carta X. Só o mestre deve ver resultados privados; só o destinatário deve
+  ver o artigo privado. Gravar diários/resultados antes de abrir outra atividade ou fechar o mundo.
+- Navegar Wiki → Campanhas → Mesa mantendo sala; encerrar no banner e trocar de cofre. Conferir importação de
+  encontros para iniciativa presencial, tesouro e gerador de aventuras.
+- Conferir camadas/eras do mapa, recorrência fictícia, dicionários e tabelas encadeadas com um cofre real.
+- Em tela touch física, testar pinça, seleção de cartões, arrasto conjunto e recorte/restauração. Capturas e testes
+  automatizados não substituem multitouch físico nem revisão por leitor de tela. Android vai para a tarefa posterior.

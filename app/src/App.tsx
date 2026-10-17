@@ -94,7 +94,12 @@ export function App() {
           {screen}
         </Shell>
         <CustomizationRuntime />
+        <ActiveRoom />
+        <DesktopTrayRuntime />
       </ToastProvider>
     </VaultProvider>
   )
 }
+
+import { ActiveRoom } from "./vtt/ActiveRoom"
+import { DesktopTrayRuntime } from "./platform/DesktopTray"

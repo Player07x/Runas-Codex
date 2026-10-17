@@ -65,3 +65,15 @@ nota média.
 - Ficam para depois: pinça para zoom e seleção de vários cartões no quadro, cartões de imagem com recorte, tesouro do
   grupo, diário dos jogadores, avaliação anônima pela sala, gerador de aventuras, iniciativa presencial, diário em
   PDF/HTML e o pacote de campanha (exportar e importar com mesas e eventos; as migrações de outros apps são da etapa 10).
+
+## C6b — fechamento de Campanhas (17/10/2026)
+
+Tesouro e iniciativa presencial ficam em blocos YAML de notas comuns. O gerador de aventuras é local e reutiliza as
+ferramentas da Wiki. O quadro mantém JSON Canvas: seleção retangular/movimento conjunto, pinça e recorte por PNG
+derivado, com referência ao original para desfazer. Não muda nem remove a imagem original.
+
+A sala ganha atividades autenticadas por assento: diário identificado, avaliação e enquete com resultados anônimos
+na interface. Cada assento responde uma vez por atividade. Resultados ficam privados no mestre e podem virar notas;
+diários são consumidos somente depois da gravação. Carta X é sinal coletivo sem identidade. A projeção enviada aos
+jogadores contém só a atividade, o texto apresentado autorizado e o sinal de pausa. Sair de uma tela mantém a sala;
+trocar de mundo/cofre ou encerrar explicitamente fecha os serviços. O banner permite voltar e encerrar.

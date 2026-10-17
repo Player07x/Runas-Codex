@@ -1,3 +1,4 @@
+import type { PublicCollaboration, CollaborationReply } from "./collaboration"
 import type { PlayerBarVisibility } from "./ipc"
 import type { NoteData, SceneData, TileData, TokenData, DrawingData, AssetPath } from "./scene"
 import { isAlly, isAssetPath } from "./scene"
@@ -35,7 +36,9 @@ export interface PlayerRuler { sceneId: string; from: { x: number; y: number }; 
  * deles: só muda quando o mestre usa "Puxar a câmera" (`camera`).
  */
 export type PlayerWireMessage =
-  | { type: "snapshot"; projection: PlayerProjection; ruler: PlayerRuler | null; audio: AudioState | null; moves: boolean }
+  | { type:"collaboration"; collaboration:PublicCollaboration }
+  | { type:"collaboration-result"; requestType?:"safety"|"reply"; ok:boolean; reason?:string }
+  | { type: "snapshot"; collaboration?:PublicCollaboration; projection: PlayerProjection; ruler: PlayerRuler | null; audio: AudioState | null; moves: boolean }
   /** Resposta ao espectador que pediu para mover um token (só para ele). */
   | { type: "move-result"; tokenId: string; ok: boolean; reason?: string }
   /** O mestre ligou ou desligou o movimento de tokens Jogador pelos espectadores. */
@@ -52,6 +55,7 @@ export type PlayerWireMessage =
 
 /** Mensagens que a página dos jogadores pode enviar. */
 export type PlayerClientMessage =
+  | CollaborationReply
   | { type: "ping" }
   | { type: "move"; tokenId: string; x: number; y: number }
 

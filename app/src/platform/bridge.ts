@@ -61,4 +61,5 @@ export interface RunasCodexBridge {
   onQuickCapture(listener: () => void): () => void
   /** Abre uma nota (`/notas/<caminho>`) numa janela extra. */
   openWindow(route: string): Promise<void>
+  setTrayEnabled?(enabled:boolean):Promise<boolean>
 }

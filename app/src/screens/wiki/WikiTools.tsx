@@ -19,6 +19,7 @@ export function DictionaryBlock({code}:{code:string}) {
  return <section className="card wiki-dictionary"><h3>{dictionary.name}</h3><Markdown source={dictionary.rules}/><label>Buscar no dicionário<input className="input" value={query} onChange={e=>setQuery(e.target.value)}/></label><p className="small">{words.length} palavras</p><div className="table-wrap"><table><thead><tr><th>Palavra</th><th>Tradução</th><th>Pronúncia</th></tr></thead><tbody>{words.slice(0,200).map((word,i)=><tr key={i}><td>{word.word}</td><td>{word.translation}</td><td>{word.pronunciation}</td></tr>)}</tbody></table></div></section>
 }
 export const WIKI_INSERTS=[
+ ["Segredo de jogador",'> [!segredo|Jogador 1] Informação reservada\n> Só o destinatário indicado recebe este trecho pela sala.'],
  ["Spoiler",'<details class="spoiler"><summary>Revelar spoiler</summary>Texto oculto até abrir.</details>'],
  ["Galeria",'![[Anexos/imagem-1.png]]\n\n![[Anexos/imagem-2.png]]'],
  ["Áudio",'![[Anexos/trilha.mp3]]'],

@@ -1,3 +1,4 @@
+import type { CollaborationCommand, RoomCollaboration } from "./collaboration"
 import type { AssetPath } from "./scene"
 import type { PlayerRuler } from "./player"
 import type { AudioState } from "./audio"
@@ -7,6 +8,8 @@ import type { MasterState } from "./master"
 /** Canais entre a interface da mesa e o processo principal (prefixo `vtt:`, ao lado dos `vault:` do cofre). */
 export const IPC = {
   listWorlds: "vtt:worlds-list",
+  collaborationState: "vtt:collaboration-state",
+  collaborationCommand: "vtt:collaboration-command",
   createWorld: "vtt:worlds-create",
   openWorld: "vtt:worlds-open",
   closeWorld: "vtt:worlds-close",
@@ -143,6 +146,7 @@ export interface PlayerState {
 
 /** API da mesa para a interface (no desktop, `window.runasCodex.vtt`; no navegador, uma prévia em memória). */
 export interface VttApi {
+  collaboration?: { state():Promise<RoomCollaboration>; command(command:CollaborationCommand):Promise<RoomCollaboration> }
   listWorlds(): Promise<WorldSummary[]>
   createWorld(input: NewWorldInput): Promise<WorldSummary>
   openWorld(id: string): Promise<WorldSummary>

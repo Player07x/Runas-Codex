@@ -1,3 +1,4 @@
+import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
 import { Archive, Bell, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { Modal, Switch, useProtoAction, useToast } from "../components/ui"
@@ -68,6 +69,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
       </div>
       <div className="settings-grid">
         <CustomizationSettings />
+        <DesktopTraySettings />
         <section className="card">
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Vault size={16} /> Cofre

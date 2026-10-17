@@ -134,7 +134,7 @@ Por pedido do dono, Codex assume a C6 e executa X5 → C6 → X8, sem Android ne
 
 | Parte | Responsável | Branch | Situação |
 |---|---|---|---|
-| C6a — Wiki: conteúdo, ferramentas e crônicas | Codex | `wiki/c6a-fechamento` | implementada; conferência do Electron em andamento |
-| C6b — Campanhas, Agenda e colaboração pela sala | Codex | `campanhas/c6b-fechamento` | próxima; reutiliza as ferramentas da C6a |
+| C6a — Wiki: conteúdo, ferramentas e crônicas | Codex | `wiki/c6a-fechamento` | implementada e validada localmente; publicação pendente |
+| C6b — Campanhas, Agenda e colaboração pela sala | Codex | `campanhas/c6b-fechamento` | implementada e validada localmente; baseada na C6a |
 
 A revisão de Android será especificada em tarefa complementar depois da X8.

@@ -1,3 +1,4 @@
+import { DesktopTray } from "./tray"
 import { exportBookPdf } from "./books-pdf"
 import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -38,6 +39,7 @@ protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege
 const smoke = process.argv.includes("--smoke")
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
+const desktopTray=new DesktopTray()
 let mainWindow: BrowserWindow | null = null
 const noteWindows = new NoteWindows(() => mainWindow)
 const vault = new VaultService(() => mainWindow, async () => { await noteWindows.flushAll(); noteWindows.closeAll(); vtt.closeWorld() })
@@ -94,6 +96,7 @@ function registerIpc(): void {
     await writeFile(result.filePath, text(content, "conteúdo"), "utf8")
     return result.filePath
   })
+  handle(IPC.trayEnabled,(_event,enabled)=>desktopTray.set(enabled===true))
   handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
   handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
@@ -186,6 +189,8 @@ function createMainWindow(): BrowserWindow {
   window.webContents.on("will-navigate", (event, url) => {
     if (url.split("#")[0] !== window.webContents.getURL().split("#")[0]) event.preventDefault()
   })
+
+  if(!smoke)desktopTray.attach(window)
 
   // Sugestões do corretor e recortar/copiar/colar no clique direito.
   attachContextMenu(window)

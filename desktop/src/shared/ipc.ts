@@ -36,6 +36,7 @@ export const IPC = {
   openWindow: "app:open-window",
   vaultListTrash: "vault:list-trash",
   vaultRestoreTrash: "vault:restore-trash",
+  trayEnabled: "desktop:tray-enabled",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

@@ -30,6 +30,8 @@ export const MASTER_CHANNELS: readonly string[] = [
   IPC.playerSetMoves,
   IPC.playerRotateSeatCode,
   IPC.playerClearSeat,
+  IPC.collaborationState,
+  IPC.collaborationCommand,
 ]
 
 /** Eventos que o computador repassa ao celular do mestre. */

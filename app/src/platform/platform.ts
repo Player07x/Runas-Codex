@@ -110,4 +110,5 @@ export interface Platform {
   openWindow?(route: string): Promise<void>
   listTrash?(): Promise<VaultEntry[]>
   restoreTrash?(path: string, target: string): Promise<VaultEntry>
+  setTrayEnabled?(enabled:boolean):Promise<boolean>
 }

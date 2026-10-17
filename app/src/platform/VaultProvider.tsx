@@ -300,3 +300,6 @@ export function useVault(): VaultState {
   if (!state) throw new Error("useVault fora do VaultProvider")
   return state
 }
+
+/** Visão derivada para leitura (ex.: prévia pública da Wiki), sem outro fluxo de gravação. */
+export function VaultView({value,children}:{value:VaultState;children:ReactNode}) {return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>}

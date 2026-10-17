@@ -45,3 +45,7 @@
 /* Dentro do cartão, títulos menores (a nota inteira é só uma prévia). */
 .canvas-md h1, .canvas-md h2 { font-size: 15px; margin-top: 0.2em; padding-bottom: 0; border: 0; }
 .canvas-md h3, .canvas-md h4, .canvas-md h5, .canvas-md h6 { font-size: 13px; }
+
+.canvas-selection { position:absolute;z-index:3;border:2px solid var(--cyan);background:color-mix(in srgb,var(--cyan) 12%,transparent);pointer-events:none; }
+.canvas-crop { padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);max-height:35vh;overflow:auto; }
+.canvas-crop summary { min-height:44px;cursor:pointer; }.canvas-crop label { display:grid;gap:4px; }.canvas-crop .input { width:110px; }

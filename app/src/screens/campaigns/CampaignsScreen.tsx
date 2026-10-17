@@ -1,3 +1,4 @@
+import { CampaignTools } from "./CampaignTools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Plus, ScrollText, Shapes, Users } from "lucide-react"
 import { CAMPAIGN_STATUS, listCampaigns, listPlayers, listSessions, upcomingSession } from "../../core/campaigns"
@@ -20,6 +21,7 @@ const TABS = [
   { id: "sessoes", label: "Sessões", icon: <CalendarDays size={15} /> },
   { id: "missoes", label: "Missões", icon: <ListTodo size={15} /> },
   { id: "elenco", label: "Elenco", icon: <Users size={15} /> },
+  { id: "ferramentas", label: "Ferramentas", icon: <Plus size={15} /> },
   { id: "quadro", label: "Quadro", icon: <Shapes size={15} /> },
 ]
 
@@ -60,6 +62,7 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
       {section === "sessoes" && <SessionsView data={data} path={id} />}
       {section === "missoes" && <QuestBoard data={data} />}
       {section === "elenco" && <CastView data={data} />}
+      {section === "ferramentas" && <CampaignTools data={data} />}
       {section === "quadro" && <BoardsView data={data} path={id} />}
       {screen && <StorytellerScreen data={data} onClose={() => setScreen(false)} />}
     </div>

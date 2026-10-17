@@ -1,3 +1,5 @@
+import { pinchCanvas, selectCanvasBox, type CanvasPoint } from "../../core/canvas-tools"
+import { CanvasImageCrop, CanvasImagePicker } from "./CanvasImageTools"
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { Cable, FileText, Group, Link2, Maximize, Minus, Palette, Plus, StickyNote, Trash, Type } from "lucide-react"
 import {
@@ -22,6 +24,7 @@ import "./canvas.css"
  */
 
 type Drag =
+  | {kind:"select";startX:number;startY:number;from:CanvasPoint;to:CanvasPoint}
   | { kind: "pan"; startX: number; startY: number; panX: number; panY: number }
   | { kind: "move"; ids: string[]; startX: number; startY: number; dx: number; dy: number }
   | { kind: "resize"; id: string; startX: number; startY: number; width: number; height: number }
@@ -38,6 +41,15 @@ export function CanvasBoard({ path }: { path: string }) {
   const [original, setOriginal] = useState<string | null>(null)
   const [doc, setDoc] = useState<CanvasDoc | null>(null)
   const [error, setError] = useState<string>()
+  const [selectedIds,setSelectedIds]=useState<string[]>([])
+  const [multi,setMulti]=useState(false)
+  const [imagePicker,setImagePicker]=useState(false)
+  const fingers=useRef(new Map<number,CanvasPoint>())
+  const pinch=useRef<{first:CanvasPoint;second:CanvasPoint;view:{x:number;y:number;zoom:number}}|null>(null)
+  const suppressed=useRef(false)
+  const touchBase=useRef<CanvasDoc|null>(null)
+  const currentDoc=useRef<CanvasDoc|null>(null)
+  currentDoc.current=doc
   const [selected, setSelected] = useState<string | null>(null)
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -147,7 +159,7 @@ export function CanvasBoard({ path }: { path: string }) {
     const c = centerOfView()
     const { doc: next, id } = addNode(doc, { ...node, x: node.x ?? c.x - node.width / 2, y: node.y ?? c.y - node.height / 2 })
     change(next)
-    setSelected(id)
+    setSelected(id);setSelectedIds([id])
     if (node.type === "text") setEditing(id)
   }
 
@@ -169,19 +181,29 @@ export function CanvasBoard({ path }: { path: string }) {
     if (editing) (document.activeElement as HTMLElement | null)?.blur()
   }
 
+  const onTouchDown=(event:ReactPointerEvent)=>{
+    if(event.pointerType!=="touch")return
+    const rect=boardRef.current!.getBoundingClientRect()
+    fingers.current.set(event.pointerId,{x:event.clientX-rect.left,y:event.clientY-rect.top})
+    if(fingers.current.size===1){touchBase.current=doc;suppressed.current=false}
+    if(fingers.current.size===2){const [first,second]=[...fingers.current.values()];pinch.current={first:first!,second:second!,view};suppressed.current=true;if(drag?.kind==="resize"&&touchBase.current)setDoc(touchBase.current);setDrag(null);boardRef.current!.setPointerCapture(event.pointerId)}
+  }
   const onBoardDown = (event: ReactPointerEvent) => {
+    if(suppressed.current)return
     if (event.target !== event.currentTarget && !(event.target as HTMLElement).classList.contains("canvas-world")) return
     commitEditing()
-    setSelected(null)
+    setSelected(null);setSelectedIds([])
     setSelectedEdge(null)
     setEditing(null)
     setLinking(null)
     boardRef.current!.setPointerCapture(event.pointerId)
+    if(multi||event.shiftKey){const from=toWorld(event.clientX,event.clientY);setDrag({kind:"select",startX:event.clientX,startY:event.clientY,from,to:from});return}
     setDrag({ kind: "pan", startX: event.clientX, startY: event.clientY, panX: view.x, panY: view.y })
   }
 
   const onNodeDown = (event: ReactPointerEvent, node: CanvasNode) => {
     event.stopPropagation()
+    if(suppressed.current)return
     if (editing === node.id) return
     commitEditing()
     if (linking && linking !== node.id && doc) {
@@ -192,15 +214,19 @@ export function CanvasBoard({ path }: { path: string }) {
       setSelected(node.id)
       return
     }
-    setSelected(node.id)
+    const ids=multi||event.shiftKey ? selectedIds.includes(node.id)?selectedIds.filter(id=>id!==node.id):[...selectedIds,node.id] : selectedIds.includes(node.id)?selectedIds:[node.id]
+    setSelectedIds(ids);setSelected(ids.at(-1)??null)
     setSelectedEdge(null)
+    if(!ids.includes(node.id))return
     if (readOnly) return
     boardRef.current!.setPointerCapture(event.pointerId)
-    setDrag({ kind: "move", ids: [node.id], startX: event.clientX, startY: event.clientY, dx: 0, dy: 0 })
+    setDrag({ kind: "move", ids: ids, startX: event.clientX, startY: event.clientY, dx: 0, dy: 0 })
   }
 
   const onResizeDown = (event: ReactPointerEvent, node: CanvasNode) => {
     event.stopPropagation()
+    if(suppressed.current)return
+    touchBase.current=doc
     if (readOnly) return
     boardRef.current!.setPointerCapture(event.pointerId)
     setSelected(node.id)
@@ -208,6 +234,9 @@ export function CanvasBoard({ path }: { path: string }) {
   }
 
   const onMove = (event: ReactPointerEvent) => {
+    if(fingers.current.has(event.pointerId)){const rect=boardRef.current!.getBoundingClientRect();fingers.current.set(event.pointerId,{x:event.clientX-rect.left,y:event.clientY-rect.top});if(pinch.current&&fingers.current.size===2){const [first,second]=[...fingers.current.values()];setView(pinchCanvas(pinch.current.view,pinch.current.first,pinch.current.second,first!,second!));return}}
+    if(suppressed.current)return
+    if(drag?.kind==="select"){setDrag({...drag,to:toWorld(event.clientX,event.clientY)});return}
     if (!drag) return
     const dx = (event.clientX - drag.startX) / (drag.kind === "pan" ? 1 : view.zoom)
     const dy = (event.clientY - drag.startY) / (drag.kind === "pan" ? 1 : view.zoom)
@@ -216,7 +245,10 @@ export function CanvasBoard({ path }: { path: string }) {
     else if (doc) setDoc(updateNode(doc, drag.id, { width: Math.max(80, drag.width + dx), height: Math.max(50, drag.height + dy) }))
   }
 
-  const onUp = () => {
+  const onUp = (event?:ReactPointerEvent) => {
+    if(event)fingers.current.delete(event.pointerId)
+    if(suppressed.current){if(!fingers.current.size){pinch.current=null;suppressed.current=false}setDrag(null);return}
+    if(drag?.kind==="select"&&doc){const ids=selectCanvasBox(doc.nodes,drag.from,drag.to);setSelectedIds(ids);setSelected(ids.at(-1)??null);setDrag(null);return}
     if (!drag || !doc) return setDrag(null)
     if (drag.kind === "move" && (Math.abs(drag.dx) > 1 || Math.abs(drag.dy) > 1)) change(moveNodes(doc, drag.ids, drag.dx, drag.dy))
     if (drag.kind === "resize") change(doc)
@@ -237,13 +269,13 @@ export function CanvasBoard({ path }: { path: string }) {
   const removeSelected = useCallback(() => {
     if (!doc || readOnly) return
     if (selected) {
-      change(removeNodes(doc, [selected]))
-      setSelected(null)
+      change(removeNodes(doc, selectedIds.length?selectedIds:[selected]))
+      setSelected(null);setSelectedIds([])
     } else if (selectedEdge) {
       change(removeEdge(doc, selectedEdge))
       setSelectedEdge(null)
     }
-  }, [doc, readOnly, selected, selectedEdge, change])
+  }, [doc, readOnly, selected, selectedIds, selectedEdge, change])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -252,7 +284,7 @@ export function CanvasBoard({ path }: { path: string }) {
       if (event.key === "Delete" || event.key === "Backspace") removeSelected()
       if (event.key === "Escape") {
         setLinking(null)
-        setSelected(null)
+        setSelected(null);setSelectedIds([])
       }
     }
     window.addEventListener("keydown", onKey)
@@ -281,6 +313,8 @@ export function CanvasBoard({ path }: { path: string }) {
     <NoteSetContext.Provider value={noteSet}>
       <div className="canvas-shell">
         <div className="canvas-toolbar" role="toolbar" aria-label="Quadro">
+          <button className="btn sm" aria-pressed={multi} onClick={()=>setMulti(!multi)}>Selecionar vários</button><span className="small">{selectedIds.length>1?`${selectedIds.length} cartões selecionados`:""}</span>
+          <button className="btn sm" disabled={readOnly} onClick={()=>setImagePicker(true)}>Imagem do cofre</button>
           <button className="btn sm" disabled={readOnly} onClick={() => create({ type: "text", text: "", width: 260, height: 120 })}>
             <Type size={14} /> Texto
           </button>
@@ -331,6 +365,7 @@ export function CanvasBoard({ path }: { path: string }) {
           </button>
         </div>
 
+        {current?.type==="file" && IMAGE.test(current.file??"") && !readOnly && <CanvasImageCrop key={current.id} node={current} path={path} onCrop={(file,original)=>{const latest=currentDoc.current;if(!latest||latest.nodes.find(n=>n.id===current.id)?.file!==original){toast("A imagem mudou durante o recorte. O anexo criado foi preservado.");return}change(updateNode(latest,current.id,{file,runas_original:typeof current.runas_original==="string"?current.runas_original:original}))}}/>}
         {current && current.type === "group" && !readOnly && (
           <div className="canvas-inspector">
             <label className="field">
@@ -351,10 +386,11 @@ export function CanvasBoard({ path }: { path: string }) {
         <div
           ref={boardRef}
           className={`canvas-board ${drag?.kind === "pan" ? "panning" : ""} ${linking ? "linking" : ""}`}
+          onPointerDownCapture={onTouchDown}
           onPointerDown={onBoardDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
-          onPointerCancel={onUp}
+          onPointerCancel={()=>{if(drag?.kind==="resize"&&touchBase.current)setDoc(touchBase.current);fingers.current.clear();pinch.current=null;suppressed.current=false;setDrag(null)}}
           onWheel={onWheel}
           onDoubleClick={onDoubleClick}
           aria-label={`Quadro ${noteName(path)}`}
@@ -379,7 +415,7 @@ export function CanvasBoard({ path }: { path: string }) {
                 const d = `M${a.x} ${a.y} C ${ca.x} ${ca.y}, ${cb.x} ${cb.y}, ${b.x} ${b.y}`
                 return (
                   <g key={edge.id} className={`canvas-edge ${selectedEdge === edge.id ? "selected" : ""}`}>
-                    <path d={d} className="canvas-edge-hit" onPointerDown={(e) => { e.stopPropagation(); setSelectedEdge(edge.id); setSelected(null) }} />
+                    <path d={d} className="canvas-edge-hit" onPointerDown={(e) => { e.stopPropagation(); setSelectedEdge(edge.id); setSelected(null);setSelectedIds([]) }} />
                     <path d={d} fill="none" stroke={color} strokeWidth={2} markerEnd={edge.toEnd === "none" ? undefined : "url(#canvas-arrow)"} markerStart={edge.fromEnd === "arrow" ? "url(#canvas-arrow)" : undefined} />
                     {edge.label && (
                       <text x={mid.x} y={mid.y - 6} textAnchor="middle" className="canvas-edge-label">
@@ -394,7 +430,7 @@ export function CanvasBoard({ path }: { path: string }) {
               <CanvasCard
                 key={node.id}
                 node={node}
-                selected={selected === node.id}
+                selected={selected === node.id || selectedIds.includes(node.id)}
                 editing={editing === node.id}
                 readOnly={readOnly}
                 onDown={(e) => onNodeDown(e, node)}
@@ -405,9 +441,11 @@ export function CanvasBoard({ path }: { path: string }) {
               />
             ))}
           </div>
+          {drag?.kind==="select"&&<div className="canvas-selection" style={{left:view.x+Math.min(drag.from.x,drag.to.x)*view.zoom,top:view.y+Math.min(drag.from.y,drag.to.y)*view.zoom,width:Math.abs(drag.from.x-drag.to.x)*view.zoom,height:Math.abs(drag.from.y-drag.to.y)*view.zoom}}/>}
           {!doc.nodes.length && <div className="canvas-hint">Quadro vazio. Dê dois cliques para criar um cartão de texto, ou use os botões acima.</div>}
         </div>
       </div>
+      {imagePicker&&<CanvasImagePicker onClose={()=>setImagePicker(false)} onPick={file=>{create({type:"file",file,width:300,height:220});setImagePicker(false)}}/>}
       {picker && (
         <LinkPicker
           index={index}

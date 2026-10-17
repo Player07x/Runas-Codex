@@ -1,3 +1,5 @@
+import { PlayerActivity } from "./PlayerActivity"
+import type { PublicCollaboration } from "./shared/collaboration"
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Hand, KeyRound, LoaderCircle, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
 import type { SceneChildren } from "./document-store"
@@ -46,6 +48,8 @@ function childrenOf(projection: PlayerProjection): { scene: WorldDocument<SceneD
  * mestre usa "Puxar a câmera". A régua do espectador fica só na tela dele.
  */
 export function PlayerView() {
+  const [activity,setActivity]=useState<PublicCollaboration>({prompt:null,handout:null,safetySignals:0})
+  const [activityStatus,setActivityStatus]=useState("")
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<SceneView | null>(null)
   const projection = useRef<PlayerProjection>({ scene: null, children: [], assets: [], vision: null, regions: [] })
@@ -97,7 +101,9 @@ export function PlayerView() {
       lastMessageAt = Date.now()
       let message: PlayerWireMessage
       try { message = JSON.parse(String(event.data)) as PlayerWireMessage } catch { return }
-      if (message.type === "snapshot") { projection.current = message.projection; ruler.current = message.ruler; audio.current = message.audio; setMoves(message.moves) }
+      if (message.type === "snapshot") { setActivity(message.collaboration??{prompt:null,handout:null,safetySignals:0}); projection.current = message.projection; ruler.current = message.ruler; audio.current = message.audio; setMoves(message.moves) }
+      else if(message.type === "collaboration"){setActivity(message.collaboration);setActivityStatus("")}
+      else if(message.type === "collaboration-result"){if(message.requestType==="safety")setNotice(message.ok?"Carta X enviada sem identificação.":message.reason??"Não foi possível enviar.");else setActivityStatus(message.ok?"Resposta recebida.":message.reason??"Não foi possível enviar.")}
       else if (message.type === "moves") setMoves(message.moves)
       else if (message.type === "move-result") { if (!message.ok) pendingRejects.current.push({ tokenId: message.tokenId, reason: message.reason ?? "Movimento recusado." }) }
       else if (message.type === "audio") audio.current = message.audio
@@ -266,6 +272,7 @@ export function PlayerView() {
   const shortcut = (action: "toolSelect" | "toolRuler") => BINDINGS[action].map(keyLabel).join(" / ")
 
   return <main className="player-page" aria-label="Sala dos jogadores">
+    <PlayerActivity key={`${activity.prompt?.id??""}:${activity.handout?.id??""}`} activity={activity} canReply={Boolean(seat&&connected)} status={activityStatus} onReply={reply=>{if(socket.current?.readyState===WebSocket.OPEN){socket.current.send(JSON.stringify(reply));if(reply.type!=="safety")setActivityStatus("Enviando…")}else setActivityStatus("Aguarde a reconexão para enviar.")}}/>
     <div ref={host} className="player-host" />
     {(connected || reconnecting) && <nav className="player-tools" aria-label="Ferramentas do espectador">
       <button className={tool === "select" ? "active" : ""} title={`Mover o mapa (${shortcut("toolSelect")})`} aria-label="Mover o mapa" onClick={() => setTool("select")}><Hand size={17} /></button>
