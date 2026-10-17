@@ -413,3 +413,11 @@ aparelho físico acima continua necessária.
   alterado fora do app deve atualizar os resultados após releitura.
 - [ ] Criar a partir de subcategoria e conferir tipo/pasta sugeridos; tema claro/escuro, 320 px e fontes ampliadas.
 - [ ] Personalizar Nova nota e conferir ajuda de Configurações, dica do botão e paleta com a combinação efetiva.
+
+
+## Atualizador Ubuntu — beta.6
+
+- [ ] Instalar manualmente a beta.6 sobre beta.4/5 (elas ainda executam o comando APT antigo).
+- [ ] Da beta.6 para uma versão posterior, testar o botão Baixar e instalar, autorização gráfica, senha cancelada,
+  bloqueio do APT, dependência ausente e reabertura. Os testes não instalam pacotes no sistema do desenvolvedor.
+- [ ] Conferir que o perfil de fontes é removido após sucesso/falha e que não houve download de dependências.

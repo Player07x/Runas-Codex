@@ -47,3 +47,25 @@ A correção só passa a funcionar depois de instalada: as betas 2 e 3 ainda abr
 instalar a versão corrigida uma vez por outro caminho. Testes automatizados simulam autorização, cancelamento,
 falha do APT e a sequência instalar/salvar/reiniciar. A autenticação gráfica e a troca real do pacote exigem a
 conferência manual abaixo; os testes não instalam pacotes nem pedem privilégios.
+
+
+## Correção do preparo do pacote local — beta.6 (17/10/2026)
+
+O dono reproduziu na beta.4 o erro `Pathname to install is not absolute` ao instalar a beta.5. O caminho passado
+pelo app já era absoluto; `--no-download` impedia a etapa de aquisição/preparo do arquivo local do APT, deixando
+internamente o nome relativo `runas-codex_<versão>_amd64.deb`. O erro foi reproduzido com APT 3.2, um pacote mínimo,
+estado temporário e `Debug::pkgDPkgPM=true` (sem executar dpkg nem instalar no host).
+
+A beta.6 retira essa opção e fornece uma lista de fontes vazia e um diretório de fontes vazio, ambos temporários.
+O APT pode preparar o arquivo já conferido, mas não tem repositórios para buscar dependências. `--no-remove`,
+autorização gráfica e o reinício somente após sucesso continuam. O perfil temporário é removido ao concluir ou
+falhar. O teste de integração usa o APT real, imprime o comando dpkg sem executá-lo e confere caminho absoluto,
+aquisição de zero bytes de rede e recusa de dependência ausente; no Windows esse teste específico é ignorado.
+
+Betas 4 e 5 ainda têm o comando antigo: precisam instalar a beta.6 uma vez manualmente. Uma release nova não pode
+alterar o instalador que já está em execução na versão anterior. Salvar as notas, fechar o app e instalar o `.deb`
+baixado pelo APT sem `--no-download` é o caminho de recuperação. Não há alteração no cofre.
+
+Conferência adicional com o `.deb` oficial beta.5 (SHA-256 igual ao publicado) e uma cópia do status dpkg da máquina
+com beta.4: o APT com fontes vazias e dpkg em diagnóstico planejou um upgrade, zero remoções e `Need to get 0 B/106 MB`.
+O status copiado e o status do host permaneceram iguais; nenhuma instalação real foi feita nessa conferência.

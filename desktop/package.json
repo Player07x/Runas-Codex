@@ -1,6 +1,6 @@
 {
   "name": "@runas-codex/desktop",
-  "version": "0.1.0-beta.5",
+  "version": "0.1.0-beta.6",
   "private": true,
   "description": "Casca desktop (Electron) do Runas-Codex para Windows e Linux",
   "main": "out/main/index.js",
