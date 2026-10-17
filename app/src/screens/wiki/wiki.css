@@ -24,7 +24,6 @@
 .infobox dl { display: grid; gap: 0; margin: 0; }
 .infobox dl > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); }
 .infobox dd > .row > .input { flex: 1; min-width: 0; }
-.infobox-calendar { width: 86px; min-width: 0; flex: none; }
 .infobox dt { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; }
 .infobox dd { display: grid; gap: 3px; margin: 0; font-size: calc(13px * var(--font-scale, 1)); }
 .infobox .computed { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--gold); font-size: calc(11.5px * var(--font-scale, 1)); }

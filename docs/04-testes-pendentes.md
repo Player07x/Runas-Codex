@@ -439,8 +439,8 @@ aparelho físico acima continua necessária.
 
 ## Beta.9 — datas com a sigla do calendário
 
-- [ ] Ficha de um personagem (Editar): a data de nascimento tem a lista de calendários; trocar o calendário regrava
-  `nascimento_mundo: "ANO-MM-DD SIGLA"`. Idade, dia da semana e era conferem com o calendário escolhido.
+- [ ] Ficha de um personagem (Editar): escrever `ANO-MM-DD SIGLA` grava `nascimento_mundo` assim; sem sigla ou com
+  sigla inexistente, a ficha recusa. Idade, dia da semana e era conferem com o calendário da sigla.
 - [ ] Wiki com dois calendários: nascimento num e morte no outro; cada um aparece na linha do tempo do seu calendário.
 - [ ] Cofre com datas antigas (sem sigla): Wiki › Calendário mostra o aviso; "Acrescentar a sigla" regrava as datas e
   o aviso some. No Obsidian, as datas aparecem como texto com a sigla.

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Check, Pencil } from "lucide-react"
-import { dateProblem, eraOf, formatDate, moons, noteDateText, parseWorldDate, relative, sameAbbr, season, weekday, worldDateText, yearsBetween, type Calendar, type WorldDate } from "../../core/calendar"
+import { dateProblem, eraOf, formatDate, moons, noteDateText, parseWorldDate, relative, sameAbbr, season, weekday, yearsBetween, type Calendar, type WorldDate } from "../../core/calendar"
 import type { PropertyValue } from "../../core/properties"
 import type { IndexedNote } from "../../core/vault-index"
 import { articleKind, noteDates, RELATION_TYPES, type FieldDef } from "../../core/wiki"
@@ -139,22 +139,18 @@ export function Infobox({ note, calendar, calendars, calendarError, readOnly, on
 }
 
 function FieldEditor({ field, value, calendar, calendars, onSet }: { field: FieldDef; value: unknown; calendar: Calendar | null; calendars: Calendar[]; onSet(key: string, value: PropertyValue | undefined): Promise<void> }) {
-  const parsed = field.kind === "data" ? parseWorldDate(value) : null
-  const initial = field.kind === "links" ? (Array.isArray(value) ? value.map(String) : value ? [String(value)] : []).map((v) => v.replace(/^\[\[|\]\]$/g, "")).join(", ") : field.kind === "link" || field.kind === "imagem" ? asText(value).replace(/^!?\[\[|\]\]$/g, "") : parsed ? worldDateText(parsed) : asText(value)
-  // A data é gravada com a sigla do calendário escolhido: "3999-02-12 OC".
-  const initialAbbr = (parsed?.calendar && calendars.find((c) => sameAbbr(c.abbr, parsed.calendar!))?.abbr) ?? parsed?.calendar ?? calendar?.abbr ?? calendars[0]?.abbr ?? ""
+  const initial = field.kind === "links" ? (Array.isArray(value) ? value.map(String) : value ? [String(value)] : []).map((v) => v.replace(/^\[\[|\]\]$/g, "")).join(", ") : field.kind === "link" || field.kind === "imagem" ? asText(value).replace(/^!?\[\[|\]\]$/g, "") : asText(value)
   const [text, setText] = useState(initial)
-  const [abbr, setAbbr] = useState(initialAbbr)
   const [error, setError] = useState<string>()
-  const save = async (chosen = abbr) => {
+  const save = async () => {
     const trimmed = text.trim()
     let next: PropertyValue | undefined
     if (field.kind === "data") {
+      // A data é escrita com a sigla do calendário no fim: "3999-02-12 OC".
       const date = parseWorldDate(trimmed)
-      if (trimmed && !date) return setError("Use ANO-MM-DD (ex.: 4031-07-15).")
-      const sigla = date?.calendar ?? chosen
-      const target = calendars.find((c) => sameAbbr(c.abbr, sigla))
-      if (date && !target) return setError(sigla ? `Nenhum calendário com a sigla “${sigla}”.` : "Crie um calendário na wiki para datar artigos.")
+      if (trimmed && (!date || !date.calendar)) return setError(`Escreva a sigla do calendário no fim (ex.: 3999-02-12 ${calendar?.abbr ?? calendars[0]?.abbr ?? "OC"}).`)
+      const target = date && calendars.find((c) => sameAbbr(c.abbr, date.calendar!))
+      if (date && !target) return setError(`Nenhum calendário com a sigla “${date.calendar}”.`)
       const problem = date && target ? dateProblem(target, date) : null
       if (problem) return setError(problem)
       next = date && target ? noteDateText(date, target) : null
@@ -177,18 +173,12 @@ function FieldEditor({ field, value, calendar, calendars, onSet }: { field: Fiel
           <input
             className="input sm"
             value={text}
-            placeholder={field.kind === "data" ? "ANO-MM-DD" : field.kind === "links" ? "Nota 1, Nota 2" : field.kind === "link" || field.kind === "imagem" ? "Nome da nota ou do arquivo" : ""}
+            placeholder={field.kind === "data" ? `ANO-MM-DD ${calendar?.abbr ?? calendars[0]?.abbr ?? "SIGLA"}` : field.kind === "links" ? "Nota 1, Nota 2" : field.kind === "link" || field.kind === "imagem" ? "Nome da nota ou do arquivo" : ""}
             onChange={(e) => setText(e.target.value)}
             onBlur={() => void save()}
             onKeyDown={(e) => e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()}
             aria-label={field.label}
           />
-          {field.kind === "data" && calendars.length > 0 && (
-            <select className="select sm infobox-calendar" value={abbr} aria-label={`Calendário de ${field.label}`} title="Calendário desta data" onChange={(e) => { setAbbr(e.target.value); if (text.trim()) void save(e.target.value) }}>
-              {!calendars.some((c) => c.abbr === abbr) && <option value={abbr}>{abbr || "—"}</option>}
-              {calendars.map((c) => <option key={c.abbr + c.name} value={c.abbr}>{c.abbr} · {c.name}</option>)}
-            </select>
-          )}
         </div>
         {error && <span className="tiny" style={{ color: "var(--red)" }}>{error}</span>}
       </dd>
