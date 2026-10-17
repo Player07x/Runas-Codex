@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { History, Users } from "lucide-react"
 import { dayNumber, formatDate, formatYear, fromDayNumber, type Calendar } from "../../core/calendar"
-import { timelineEvents, type TimelineEvent } from "../../core/wiki"
-import { href } from "../../lib/router"
+import { listMaps, timelineEvents, type TimelineEvent } from "../../core/wiki"
+import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, KindIcon, useWiki } from "./wiki-state"
 
@@ -39,6 +39,8 @@ export function WikiTimeline() {
   const [zoom, setZoom] = useState(1)
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const [tag, setTag] = useState("")
+  const [eraYear,setEraYear]=useState(ref?.calendar.today?.year??0)
+  const [mapPath,setMapPath]=useState("")
   const scroller = useRef<HTMLDivElement>(null)
   const todayX = useRef<number | null>(null)
   // Abre com o "hoje" do mundo no meio da tela (os acontecimentos recentes costumam ser os que importam).
@@ -119,6 +121,7 @@ export function WikiTimeline() {
           </label>
         </div>
       </div>
+      <section className="card row-wrap"><strong>Crônicas: mapa por era</strong><label>Era<select className="input" value={eraYear} onChange={e=>setEraYear(Number(e.target.value))}>{calendar.eras.map(era=><option key={era.start} value={era.start}>{era.name} ({era.start})</option>)}<option value={calendar.today?.year??0}>Hoje ({calendar.today?.year??0})</option></select></label><label>Mapa<select className="input" value={mapPath} onChange={e=>setMapPath(e.target.value)}><option value="">Escolha um mapa…</option>{listMaps(index,wiki!.root).filter(n=>!players||n.meta.frontmatter?.data?.segredo!==true).map(n=><option key={n.path} value={n.path}>{n.name}</option>)}</select></label><button className="btn" disabled={!mapPath} onClick={()=>{try{sessionStorage.setItem("runas-codex:era-mapa",String(eraYear))}catch{}navigate(`/wiki/mapa/${encodeURIComponent(mapPath)}`)}}>Ver mapa nesta era</button></section>
       {tracks.length > 1 && (
         <div className="row-wrap" role="group" aria-label="Trilhas">
           {tracks.map((t, i) => (

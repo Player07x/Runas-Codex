@@ -11,7 +11,7 @@ export function generateEpub(book: ExportBook, modified = new Date()): Uint8Arra
   book.sections.forEach((section, i) => {
     const properties = [hasTag(section.nodes, "svg") ? "svg" : "", hasTag(section.nodes, "math") ? "mathml" : ""].filter(Boolean).join(" ")
     manifest.push(`<item id="s${i}" href="section-${i}.xhtml" media-type="application/xhtml+xml"${properties ? ` properties="${properties}"` : ""}/>`)
-    files[`EPUB/section-${i}.xhtml`] = strToU8(page(section.title, section.nodes.map(nodeXml).join("")))
+    files[`EPUB/section-${i}.xhtml`] = strToU8(page(section.title, section.nodes.map(nodeXml).join("").replace(/href="#(book-chapter-\d+)"/g, (_match, id: string) => { const target = book.sections.findIndex(s => s.nodes.some(n => typeof n !== "string" && n.attrs.id === id)); return target < 0 ? `href="#${id}"` : `href="section-${target}.xhtml#${id}"` })))
   })
   book.assets.forEach((asset, i) => {
     if (asset.docxOnly) return

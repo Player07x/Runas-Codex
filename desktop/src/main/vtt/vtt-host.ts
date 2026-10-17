@@ -189,6 +189,7 @@ export class VttHost {
     })
     handle(IPC.openWorld, async (_event, id) => {
       this.requireWritable()
+      if(this.store.openWorld?.summary.id===String(id))return this.store.openWorld.summary
       await this.closeServices()
       return (await this.store.open(String(id))).summary
     })
@@ -234,6 +235,8 @@ export class VttHost {
 
     // Sala dos jogadores (código do RunasVTT, sem fichas nem sites da suíte).
     const t = this.transmission
+    handle(IPC.collaborationState,()=>t.collaboration.snapshot())
+    handle(IPC.collaborationCommand,(_event,value)=>{this.requireWritable();return t.collaborationCommand(value)})
     const slot = (value: unknown) => {
       if (typeof value !== "string") throw new Error("Assento inválido.")
       return value

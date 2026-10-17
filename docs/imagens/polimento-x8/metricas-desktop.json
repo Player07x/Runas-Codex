@@ -1,0 +1,65 @@
+[
+  {
+    "route": "/",
+    "available": 1182,
+    "document": 1440,
+    "main": 1182,
+    "width": 1440
+  },
+  {
+    "route": "/notas",
+    "available": 1192,
+    "document": 1440,
+    "main": 1192,
+    "width": 1440
+  },
+  {
+    "route": "/agenda",
+    "available": 1192,
+    "document": 1440,
+    "main": 1192,
+    "width": 1440
+  },
+  {
+    "route": "/wiki",
+    "available": 1182,
+    "document": 1440,
+    "main": 1182,
+    "width": 1440
+  },
+  {
+    "route": "/campanhas",
+    "available": 1192,
+    "document": 1440,
+    "main": 1192,
+    "width": 1440
+  },
+  {
+    "route": "/livros",
+    "available": 1192,
+    "document": 1440,
+    "main": 1192,
+    "width": 1440
+  },
+  {
+    "route": "/vtt",
+    "available": 1192,
+    "document": 1440,
+    "main": 1192,
+    "width": 1440
+  },
+  {
+    "route": "/transferir",
+    "available": 1192,
+    "document": 1440,
+    "main": 1192,
+    "width": 1440
+  },
+  {
+    "route": "/config",
+    "available": 1182,
+    "document": 1440,
+    "main": 1182,
+    "width": 1440
+  }
+]

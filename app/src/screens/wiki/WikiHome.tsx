@@ -1,5 +1,7 @@
+import { ArticleArt } from "./ArticleArt"
+import { categoryRoute } from "../../core/wiki-category"
 import { useMemo, useState } from "react"
-import { ChevronDown, Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
+import { Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
 import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
@@ -164,72 +166,36 @@ export function WikiHome() {
 }
 
 function Category({ folder }: { folder: FolderNode }) {
-  const [open, setOpen] = useState(false)
-  const kinds = folder.notes.map((n) => articleKind(n.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
-  const main = ARTICLE_KINDS.find((k) => k.folder === folder.name) ?? kinds[0]
-  const Icon = iconByName(main?.icon ?? "")
-  return (
-    <section className="card category-card" style={{ ["--cat" as string]: "var(--violet)" }}>
-      <button className="row category-head" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="cat-icon">{main ? <Icon size={18} /> : <Folder size={18} />}</span>
-        <strong className="grow truncate">{folder.name}</strong>
-        <span className="chip">{countNotes(folder)}</span>
-        <ChevronDown size={15} className={open ? "rot" : ""} />
-      </button>
-      {!open && (
-        <span className="tiny muted truncate">
-          {folder.notes
-            .slice(0, 4)
-            .map((n) => n.name)
-            .join(" · ")}
-          {folder.notes.length > 4 ? " …" : ""}
-        </span>
-      )}
-      {open && <FolderList folder={folder} />}
-    </section>
-  )
-}
-
-function FolderList({ folder }: { folder: FolderNode }) {
-  return (
-    <div className="list">
-      {folder.notes.map((n) => (
-        <a key={n.path} className="list-item small" href={href(articleRoute(n.path))}>
-          <KindIcon tipo={n.meta.frontmatter?.data?.tipo} size={14} />
-          <span className="grow truncate">{n.name}</span>
-        </a>
-      ))}
-      {folder.folders.map((sub) => (
-        <details key={sub.path} className="wiki-subfolder">
-          <summary className="eyebrow row" style={{ gap: 5 }}>
-            <Folder size={13} /> {sub.name} · {countNotes(sub)}
-          </summary>
-          <FolderList folder={sub} />
-        </details>
-      ))}
-    </div>
-  )
+  const collect = (node: FolderNode): IndexedNote[] => [...node.notes,...node.folders.flatMap(collect)]
+  const notes = collect(folder).sort((a,b)=>b.mtime-a.mtime || a.name.localeCompare(b.name,"pt-BR"))
+  const kinds = notes.map(note => articleKind(note.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
+  const main = ARTICLE_KINDS.find(kind=>kind.folder === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
+  return <section className="card category-card" style={{["--cat" as string]:"var(--violet)"}}>
+    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{countNotes(folder)}</span></a>
+    <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
+    <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>Ver todos os {notes.length}</a>
+  </section>
 }
 
 const IMAGE = /\.(png|jpe?g|webp|gif|avif|svg)$/i
 
 /** Novo artigo: tipo (com modelo e perguntas-guia), nome e pasta. Calendário e mapa têm o bloco pronto. */
-export function NewArticleDialog({ onClose, initialName = "" }: { onClose(): void; initialName?: string }) {
+export function NewArticleDialog({ onClose, initialName = "", initialKind, initialFolder }: { onClose(): void; initialName?: string; initialKind?: string; initialFolder?: string }) {
   const vault = useVault()
   const { wiki, calendar } = useWiki()
   const index = vault.index!
-  const [kind, setKind] = useState<ArticleKind>(ARTICLE_KINDS[0]!)
+  const [kind, setKind] = useState<ArticleKind>(() => articleKind(initialKind) ?? ARTICLE_KINDS[0]!)
   const [name, setName] = useState(initialName)
-  const [folder, setFolder] = useState(ARTICLE_KINDS[0]!.folder)
+  const [folder, setFolder] = useState(initialFolder ?? (articleKind(initialKind) ?? ARTICLE_KINDS[0]!).folder)
   const [image, setImage] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
   const root = wiki!.root.replace(/\/$/, "")
-  const images = useMemo(() => index.allFiles().filter((f) => f.path.startsWith(wiki!.root) && IMAGE.test(f.path)).map((f) => f.path), [index, wiki])
+  const images = useMemo(() => index.allFiles().filter((f) => IMAGE.test(f.path)).map((f) => f.path), [index, wiki])
 
   const create = async () => {
     if (!name.trim()) return setError("Dê um nome ao artigo.")
-    if (kind.id === "mapa" && !image) return setError("Escolha a imagem do mapa (ponha a imagem na pasta da wiki antes).")
+    if (kind.id === "mapa" && !image) return setError("Escolha a imagem do mapa no cofre.")
     setBusy(true)
     setError(undefined)
     try {
@@ -308,11 +274,11 @@ export function NewArticleDialog({ onClose, initialName = "" }: { onClose(): voi
               <option value="">Escolha…</option>
               {images.map((path) => (
                 <option key={path} value={path}>
-                  {path.slice(wiki!.root.length)}
+                  {path.startsWith(wiki!.root) ? path.slice(wiki!.root.length) : path}
                 </option>
               ))}
             </select>
-            {!images.length && <span className="tiny faint">Nenhuma imagem na pasta da wiki. Copie o arquivo do mapa para lá (pelo gerenciador de arquivos) e reabra.</span>}
+            {!images.length && <span className="tiny faint">Nenhuma imagem no cofre. Importe uma imagem numa nota e volte aqui.</span>}
           </label>
         )}
         {kind.questions.length > 0 && (

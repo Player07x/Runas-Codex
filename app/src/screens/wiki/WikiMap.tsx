@@ -1,3 +1,4 @@
+import { MapImageSettings, useMapDecoration } from "./MapImageSettings"
 import { useMemo, useState } from "react"
 import { ChevronLeft, Map as MapIcon, Pencil, Plus } from "lucide-react"
 import { findCodeBlocks, replaceCodeBlock, setBlockKeys } from "../../core/codeblocks"
@@ -36,6 +37,7 @@ export function MapBlock({ code }: { code: string }) {
         compact
         spec={spec}
         imageUrl={image ? set.fileUrl?.(image.path) : undefined}
+        resolveImage={target=>{const image=set.resolve?.(target,"wiki");return image?set.fileUrl?.(image.path):undefined}}
         showSecrets={showSecrets}
         resolvePin={(note) => {
           const found = set.resolve?.(note, "wiki")
@@ -104,6 +106,7 @@ function MapEditor({ path }: { path: string }) {
   const vault = useVault()
   const toast = useToast()
   const { wiki, players, calendar } = useWiki()
+  const decorate = useMapDecoration(path)
   const index = vault.index!
   const note = index.note(path)
   const readOnly = vault.info?.readOnly ?? true
@@ -175,8 +178,12 @@ function MapEditor({ path }: { path: string }) {
           <Pencil size={14} /> Nota
         </a>
       </div>
+      {!players && <MapImageSettings path={path} />}
       <MapView
         spec={spec}
+        year={calendar?.calendar.today?.year ?? 0}
+        resolveImage={target=>{const dest=resolve(target);return dest?vault.platform.fileUrl(dest)??undefined:undefined}}
+        onDecorate={readOnly || players ? undefined : extras=>void decorate(extras).catch(fail)}
         imageUrl={image ? (vault.platform.fileUrl(image) ?? undefined) : undefined}
         showSecrets={!players}
         notes={notes}

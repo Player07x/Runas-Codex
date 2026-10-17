@@ -56,7 +56,7 @@ interface PlayerServerOptions {
   projection: () => PlayerProjection
   /** Assets que os espectadores podem baixar: os da projeção e os áudios tocando. */
   allowedAssets?: () => readonly AssetPath[]
-  snapshot: () => PlayerWireMessage
+  snapshot: (seat:PlayerSeatConnection|null) => PlayerWireMessage
   onSpectators(count: number): void
   onPlayers?(count: number): void
   joinSeat?(code: string): JoinedPlayerSeat | null
@@ -234,6 +234,8 @@ export class PlayerServer {
     await new Promise<void>((resolvePromise) => server.close(() => resolvePromise()))
   }
 
+  publishTo(message:(seat:PlayerSeatConnection|null)=>PlayerWireMessage):void {for(const client of this.clients)client.send(message(client.seat))}
+
   publish(message: PlayerWireMessage): void {
     for (const client of this.clients) client.send(message)
   }
@@ -390,7 +392,7 @@ export class PlayerServer {
     if (seat) this.options.onSeatConnected?.(seat)
     // Quem chega recebe o estado completo agora, e não a última mensagem
     // enviada (que pode ser só uma régua ou um movimento de câmera).
-    client.send(this.options.snapshot())
+    client.send(this.options.snapshot(client.seat))
     if (seat) client.send({ type: "seat-status", seat })
     socket.on("data", (chunk) => this.readFrames(client, chunk))
     const remove = () => { this.release(client) }

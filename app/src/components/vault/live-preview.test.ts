@@ -7,8 +7,9 @@ import { frontmatterRange, renderableBlocks } from "./live-preview"
 
 function state(doc: string) {
   const s = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM, obsidianSyntax] })] })
-  ensureSyntaxTree(s, s.doc.length, 5000)
-  return s
+  expect(ensureSyntaxTree(s, s.doc.length, 5000)).not.toBeNull()
+  // ensureSyntaxTree avança o contexto; a transação publica a árvore completa no estado imutável.
+  return s.update({}).state
 }
 
 describe("live preview", () => {

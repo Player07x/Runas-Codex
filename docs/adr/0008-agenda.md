@@ -44,3 +44,10 @@ notas de `Agenda/` mudam:
   cofre de exemplo em memória. Os lembretes agendados continuam no sistema, mas eventos criados somem ao fechar o app.
 - Ficam para depois: enquete de data pela sala, "criar uma sessão cria o evento" pelo lado de Campanhas (etapa 7),
   bandeja do desktop e widget do Android.
+
+## C6b — enquete e bandeja desktop (17/10/2026)
+
+A Agenda abre uma enquete de data pela sala existente do VTT, com uma resposta por assento e resultado gravável em
+nota. A sala não é aberta automaticamente. No Electron, a bandeja é opcional por aparelho: fechar a janela a
+esconde enquanto ligada; o menu Sair encerra. Lembretes continuam no processo principal. Inicialização automática
+é C9; widget e servidor Android permanecem C8/X7, fora desta execução por pedido do dono.

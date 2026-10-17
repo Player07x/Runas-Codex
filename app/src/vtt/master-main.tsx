@@ -1,3 +1,4 @@
+import { RoomAppearance } from "../components/Appearance"
 import { StrictMode, useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
 import "@fontsource-variable/geist"
@@ -45,6 +46,7 @@ function MasterApp() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <RoomAppearance />
     <div style={{ height: "100dvh" }}>
       <MasterApp />
     </div>

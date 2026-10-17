@@ -65,9 +65,9 @@ describe("Importação de livros", () => {
     await expect(importDocx(strToU8("não é um DOCX"), options)).rejects.toThrow()
     const zip = unzipSync(fixture("exemplo.docx"))
     zip["grande.bin"] = new Uint8Array(101 * 1024 * 1024)
-    await expect(importDocx(zipSync(zip), options)).rejects.toThrow("grande demais")
+    await expect(importDocx(zipSync(zip, { level: 1 }), options)).rejects.toThrow("grande demais")
     expect(() => importHomebrewery("", options)).toThrow("não contém texto")
-  })
+  }, 15000) // A fixture compacta 101 MiB reais; o limite não depende da velocidade da máquina.
   it("grava um livro Obsidian na ordem, com imagens em Anexos e sem sobrescrever pastas", async () => {
     const book = await importDocx(fixture("exemplo.docx"), options)
     book.chapters[0].markdown += '\n\n<table><tr><td><img src="import-image:1" alt="Cristal"></td></tr></table>'

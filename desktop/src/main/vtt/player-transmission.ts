@@ -1,3 +1,4 @@
+import { CollaborationRoom } from "../../../../app/src/vtt/shared/collaboration"
 import { networkInterfaces } from "node:os"
 import { randomBytes } from "node:crypto"
 import type { DocumentChange, PlayerBarVisibility, PlayerSeatState, PlayerState, PlayerTunnelInfo, TableReport } from "../../../../app/src/vtt/shared/ipc"
@@ -32,6 +33,7 @@ export interface MasterCamera {
 
 /** Coordena o servidor de transmissão e mantém a projeção longe da rede. */
 export class PlayerTransmission {
+  readonly collaboration = new CollaborationRoom()
   private readonly server: PlayerServer
   private enabled = false
   private port = DEFAULT_PORT
@@ -61,7 +63,7 @@ export class PlayerTransmission {
       worldPath: () => this.store.openWorld?.summary.path ?? null,
       projection: () => this.lastProjection,
       allowedAssets: () => [...this.lastProjection.assets, ...(this.audioEnabled ? this.audio.sounds.map((sound) => sound.audio) : [])],
-      snapshot: () => this.snapshotMessage(),
+      snapshot: seat => this.snapshotMessage(seat),
       onSpectators: (spectators) => { this.emit(spectators) },
       onPlayers: (players) => { this.playerCount = players; this.emit() },
       joinSeat: (code) => this.joinSeat(code),
@@ -105,6 +107,9 @@ export class PlayerTransmission {
   }
 
   async stop(): Promise<void> {
+    this.collaboration.command({type:"prompt",prompt:null})
+    this.collaboration.command({type:"handout",handout:null})
+    this.collaboration.command({type:"ack-safety"})
     await this.server.stop()
     this.enabled = false
     this.key = null
@@ -168,6 +173,7 @@ export class PlayerTransmission {
   }
 
   async closeWorld(): Promise<void> {
+    this.collaboration.reset()
     if (this.enabled) await this.stop()
     this.sceneId = null
     this.table = { sceneId: null, selection: [], center: null, zoom: null }
@@ -305,6 +311,11 @@ export class PlayerTransmission {
 
   /** Único pedido que um espectador pode fazer: mover um token "Jogador". */
   handleClientMessage(value: unknown, seat?: PlayerSeatConnection | null): PlayerWireMessage | null {
+    if(value && typeof value === "object" && ["reply","safety"].includes(String((value as {type?:unknown}).type))) {
+      const requestType=(value as {type:string}).type === "safety"?"safety" as const:"reply" as const
+      try { if(!this.enabled)throw new Error("Sala encerrada.");this.collaboration.reply(value,seat??null,randomBytes(12).toString("hex"));this.server.publishTo(client=>({type:"collaboration",collaboration:this.collaboration.publicSnapshot(client?.slotId)}));return {type:"collaboration-result",requestType,ok:true} }
+      catch(e){return {type:"collaboration-result",requestType,ok:false,reason:e instanceof Error?e.message:String(e)}}
+    }
     const request = normalizeMoveRequest(value)
     if (!request) return null
     const reject = (reason: string): PlayerWireMessage => ({ type: "move-result", tokenId: request.tokenId, ok: false, reason })
@@ -336,11 +347,18 @@ export class PlayerTransmission {
   private publishSnapshot(): void {
     this.refreshProjection()
     if (this.ruler && this.ruler.sceneId !== this.lastProjection.scene?.id) this.ruler = null
-    this.server.publish(this.snapshotMessage())
+    this.server.publishTo(seat=>this.snapshotMessage(seat))
   }
 
-  private snapshotMessage(): PlayerWireMessage {
-    return { type: "snapshot", projection: this.lastProjection, ruler: this.ruler, audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null, moves: this.movesEnabled }
+  private snapshotMessage(seat?:PlayerSeatConnection|null): PlayerWireMessage {
+    return { type: "snapshot", collaboration:this.collaboration.publicSnapshot(seat?.slotId), projection: this.lastProjection, ruler: this.ruler, audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null, moves: this.movesEnabled }
+  }
+
+  collaborationCommand(value:unknown) {
+    if(!this.enabled && !(value && typeof value === "object" && (value as {type?:unknown}).type === "consume-diary"))throw new Error("Abra uma sala do VTT para iniciar esta atividade.")
+    const result=this.collaboration.command(value)
+    this.server.publishTo(seat=>({type:"collaboration",collaboration:this.collaboration.publicSnapshot(seat?.slotId)}))
+    return result
   }
 
   private emit(spectators = this.server.spectatorCount): void {

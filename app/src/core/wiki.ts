@@ -1,8 +1,9 @@
+import { parseMapExtras, type MapExtras } from "./wiki-map-extras"
 import { parse as parseYaml } from "yaml"
 import { findCodeBlocks } from "./codeblocks"
 import { CalendarError, dayNumber, parseCalendar, parseWorldDate, type Calendar, type WorldDate } from "./calendar"
 import type { LinkRef } from "./parse"
-import { noteName } from "./text"
+import { extname, noteName } from "./text"
 import type { IndexedNote, VaultIndex } from "./vault-index"
 
 /**
@@ -77,6 +78,19 @@ export function articleKind(tipo: unknown): ArticleKind | undefined {
   return ARTICLE_KINDS.find((k) => k.id === (KIND_ALIASES[key] ?? key))
 }
 
+const ARTICLE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp"])
+
+/** Arte representativa: campo do tipo, ou primeiro embed de imagem do corpo já indexado. */
+export function articleImage(note: IndexedNote): string | null {
+  const data = note.meta.frontmatter?.data ?? {}
+  for (const field of articleKind(data.tipo)?.fields ?? []) {
+    if (field.kind !== "imagem") continue
+    const value = values(data[field.key]).find(value => value.trim())?.trim()
+    if (value) return linkTargetOf(value.replace(/^!/, ""))?.target ?? value
+  }
+  return note.meta.links.find(link => link.embed && !link.inFrontmatter && ARTICLE_IMAGE_EXTENSIONS.has(extname(link.target)))?.target ?? null
+}
+
 // ---------- Wikis ----------
 
 export interface WikiInfo {
@@ -120,6 +134,7 @@ export function newArticleNote(kind: ArticleKind, title: string, calendarLink?: 
   lines.push("---", `# ${title}`, "")
   if (kind.questions.length) lines.push(...kind.questions.map((q) => `%% ${q} %%`), "")
   for (const section of kind.sections) lines.push(`## ${section}`, "", "")
+  if (kind.id === "idioma") lines.push('```runas-idioma', `nome: ${yamlString(title)}`, 'regras: ""', 'palavras:', '  - palavra: exemplo', '    traducao: significado', '    pronuncia: pronúncia', '```', '')
   return lines.join("\n").replace(/\n{3,}$/, "\n\n")
 }
 
@@ -514,7 +529,7 @@ export interface MapPin {
   secret?: boolean
 }
 
-export interface MapSpec {
+export interface MapSpec extends MapExtras {
   image: string
   layers: string[]
   pins: MapPin[]
@@ -547,6 +562,7 @@ export function parseMap(content: string): MapSpec {
   const viagem = d.viagem && typeof d.viagem === "object" ? (d.viagem as Record<string, unknown>) : null
   return {
     image,
+    ...parseMapExtras(d),
     layers: Array.isArray(d.camadas) ? d.camadas.map(String) : [],
     pins,
     ...(scale && typeof scale.pixels === "number" && typeof scale.distancia === "number" ? { scale: { pixels: scale.pixels, distance: scale.distancia, unit: typeof scale.unidade === "string" ? scale.unidade : "km" } } : {}),

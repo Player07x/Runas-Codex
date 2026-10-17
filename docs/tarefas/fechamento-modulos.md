@@ -45,7 +45,7 @@ prévia de link por hover e toque longo, comandos `/`, linkar com `@`, abas e pa
 Seções **B, C, F.2 e G.5**. Já se sabe que falta:
 - **Wiki** (ADR 0010): galeria e áudio no artigo, spoilers inline, eventos fictícios recorrentes além dos feriados,
   crônicas (mapa por era), zonas e desenhos no mapa, mapa com várias camadas, geradores, idiomas com dicionário,
-  metas de palavras, mostrar artigo pela sala (usa os handouts da X6). Importar Fantasy-Calendar e Calendarium é da
+  mostrar artigo pela sala (usa os handouts da X6). Importar Fantasy-Calendar e Calendarium é da
   C4 (etapa 10).
 - **Campanhas** (ADR 0011): pinça para zoom e seleção de vários cartões no quadro, cartões de imagem com recorte,
   tesouro do grupo, diário dos jogadores, avaliação anônima pela sala, gerador de aventuras, iniciativa presencial.

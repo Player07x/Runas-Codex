@@ -40,7 +40,7 @@ Cada linha é **um PR**, nesta ordem. Uma frente não espera a outra, a não ser
 | C3 | **9** Mestre pelo celular com a sala aberta no desktop | [vtt-9.md](vtt-9.md) |
 | C4 | **10** Migrações: Obsidian (calendários, mapas e fichas dos plugins de RPG) | [migracoes-10.md](migracoes-10.md) |
 | C5 | Fechamento do núcleo de notas e do editor (seções A e F.1) | [fechamento-modulos.md](fechamento-modulos.md) |
-| C6 | Fechamento da Wiki, das Campanhas e da Agenda (seções B, C, F.2 e G.5) | [fechamento-modulos.md](fechamento-modulos.md) |
+| C6 | Fechamento da Wiki, das Campanhas e da Agenda — **Codex assume em 17/10/2026** (seções B, C, F.2 e G.5) | [fechamento-modulos.md](fechamento-modulos.md) |
 | C7 | Pacotes: pacote `.runas`, pacote de campanha, exportar pasta/ZIP, backups agendados | [fechamento-modulos.md](fechamento-modulos.md) |
 | C8 | **A1** Android completo: cofre real, spikes que sobraram da etapa 2, testes no emulador, APK assinado | [android-a.md](android-a.md) |
 | C9 | **11** Polimento: desempenho com cofres grandes, instaladores, ajuda offline, beta | [polimento-11.md](polimento-11.md) |
@@ -127,3 +127,47 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 Os arquivos compartilhados (lista no `AGENTS.md`) podem ser mexidos pelos dois, só acrescentando.
 
 Ninguém mexe no que é do outro. Se precisar, o pedido vai no PR ("precisa de X em `screens/wiki`") e o dono decide.
+
+## C6 dividida em duas partes (17/10/2026)
+
+Por pedido do dono, Codex assume a C6 e executa X5 → C6 → X8, sem Android nesta rodada. A auditoria está em
+[auditoria-c6.md](auditoria-c6.md).
+
+| Parte | Responsável | Branch | Situação |
+|---|---|---|---|
+| C6a — Wiki: conteúdo, ferramentas e crônicas | Codex | `wiki/c6a-fechamento` | implementada e validada localmente; publicação pendente |
+| C6b — Campanhas, Agenda e colaboração pela sala | Codex | `campanhas/c6b-fechamento` | implementada e validada localmente; baseada na C6a |
+
+A revisão de Android será especificada em tarefa complementar depois da X8.
+
+## Atualização de responsáveis — 17/10/2026
+
+Por pedido do dono: Codex assume **X5 → C6 → X8**, nessa ordem, em PRs separados. A revisão Android fica fora
+desta rodada; será especificada em tarefa complementar depois da X8, para executar com C8/X7 disponíveis.
+
+- X5: implementação e conferência na branch `livros/x5-fechamento`.
+- C6: atribuída ao Codex. Mostrar artigo pela sala conserva a dependência dos handouts da X6.
+- X8: vem imediatamente depois da C6, com revisão web/desktop e larguras de 320 px, tablet e desktop.
+
+
+## Entrega local X5 → C6 → X8 e revisão complementar
+
+| Fase | Responsável | Branch/snapshot local | Situação |
+|---|---|---|---|
+| X5 — fechamento de Livros | Codex | `livros/x5-fechamento` | implementada e validada |
+| C6a — Wiki | Codex | `wiki/c6a-fechamento` | implementada e validada |
+| C6b — Campanhas/Agenda/sala | Codex | `campanhas/c6b-fechamento` | implementada e validada; depende da C6a |
+| X8 — visual/acessibilidade/primeiros passos, mais imagens e contadores pedidos pelo dono | Codex | `polimento/visual` | implementada e validada localmente; integra X5 e C6 |
+| Revisão completa posterior, incluindo Android | Codex | [revisao-completa-complementar.md](revisao-completa-complementar.md) | especificada para tarefa complementar |
+
+As fases estão em commits locais. O snapshot integrado preserva as duas frentes; publicações e mesclagem da main
+continuam separadas. Consulte [auditoria-x8.md](auditoria-x8.md) para a matriz e os limites da validação.
+
+
+## Entrega beta.5 — W1 e release desktop
+
+W1 implementada em `wiki/pagina-categoria` sobre X5/C6/X8; ver [auditoria-w1.md](auditoria-w1.md).
+Por pedido posterior do dono, a entrega é reunida num PR integrado e numa nova release Windows/Linux, sem Android.
+As branches de fase e os commits continuam preservados para revisão. A mesclagem na main continua a cargo do dono.
+A revisão complementar foi criada em chat próprio e concluiu a auditoria do snapshot d6ea6bd; seus três achados de
+interface/confiabilidade dos testes foram tratados na beta.5. Validação física e C8/X7 continuam pendentes.

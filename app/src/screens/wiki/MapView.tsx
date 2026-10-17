@@ -1,3 +1,4 @@
+import { inEra, type MapDrawing, type MapExtras } from "../../core/wiki-map-extras"
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { Crosshair, Layers, MapPin, Minus, Plus, Ruler, Trash2, X } from "lucide-react"
 import type { MapPin as Pin, MapSpec } from "../../core/wiki"
@@ -13,6 +14,9 @@ export interface PinTarget {
 interface Props {
   spec: MapSpec
   imageUrl?: string
+  resolveImage?(target:string):string|undefined
+  year?:number
+  onDecorate?(extras:MapExtras):void
   resolvePin(note: string): PinTarget | undefined
   showSecrets: boolean
   /** Com isto, dá para pôr, mover e apagar pinos. */
@@ -27,7 +31,14 @@ interface Props {
 const SECRET_LAYER = /^segredos?$/i
 
 /** Mapa com zoom, camadas, categorias, régua e pinos ligados a notas. */
-export function MapView({ spec, imageUrl, resolvePin, showSecrets, onChange, onNewPin, onOpen, notes = [], compact }: Props) {
+export function MapView({ spec, imageUrl, resolvePin, showSecrets, onChange, onNewPin, onOpen, notes = [], compact, resolveImage, year:initialYear=0, onDecorate }: Props) {
+  const [year,setYear]=useState(()=>{try{const saved=sessionStorage.getItem("runas-codex:era-mapa");return saved===null?initialYear:Number(saved)}catch{return initialYear}})
+  const [drawKind,setDrawKind]=useState<MapDrawing["kind"]|"">("")
+  const [points,setPoints]=useState<{x:number;y:number}[]>([])
+  const [drawText,setDrawText]=useState("")
+  const [drawColor,setDrawColor]=useState("#76558f")
+  const [drawLayer,setDrawLayer]=useState("")
+  const [drawSecret,setDrawSecret]=useState(false)
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState<{ w: number; h: number } | null>(null)
   const [view, setView] = useState({ k: 1, x: 0, y: 0 })
@@ -42,7 +53,7 @@ export function MapView({ spec, imageUrl, resolvePin, showSecrets, onChange, onN
     if (!showSecrets && (pin.secret || (pin.layer && SECRET_LAYER.test(pin.layer)))) return false
     return !hiddenLayers.has(pin.layer ?? "")
   }
-  const layers = useMemo(() => [...new Set([...spec.layers, ...spec.pins.map((p) => p.layer ?? "")])].filter((l) => l !== "" || spec.pins.some((p) => !p.layer)).filter((l) => showSecrets || !SECRET_LAYER.test(l)), [spec, showSecrets])
+  const layers = useMemo(() => [...new Set([...spec.layers, ...spec.pins.map((p) => p.layer ?? ""), ...(spec.images??[]).filter(i=>showSecrets||!i.secret).map(i=>i.name), ...(spec.drawings??[]).filter(d=>showSecrets||!d.secret).map(d=>d.layer)])].filter((l) => l !== "" || spec.pins.some((p) => !p.layer)).filter((l) => showSecrets || !SECRET_LAYER.test(l)), [spec, showSecrets])
 
   // Enquadra a imagem ao carregar.
   const fit = (w = size?.w, h = size?.h) => {
@@ -83,6 +94,7 @@ export function MapView({ spec, imageUrl, resolvePin, showSecrets, onChange, onN
     if ((event.target as Element).closest(".map-pin, .map-popup, button")) return
     if (!size) return
     const point = toImage(event)
+    if(drawKind && onDecorate){setPoints(p=>[...p,{x:Math.max(0,Math.min(1,point.x/size.w)),y:Math.max(0,Math.min(1,point.y/size.h))}]);return}
     if (tool === "regua") {
       setRuler((r) => (r.length >= 2 ? [point] : [...r, point]))
       return
@@ -131,6 +143,14 @@ export function MapView({ spec, imageUrl, resolvePin, showSecrets, onChange, onN
   return (
     <div className={`map-view ${compact ? "compact" : ""}`}>
       <div className="map-toolbar">
+        {((spec.images?.length??0)>0 || (spec.drawings?.length??0)>0) && <label>Ano / era<input className="input sm" type="number" aria-label="Ano do mapa" value={year} onChange={e=>setYear(Number(e.target.value))} /></label>}
+        {onDecorate && <details className="map-drawing-tools"><summary>Zonas, rotas e rótulos</summary><div className="row-wrap">
+          <label>Desenho<select className="input" value={drawKind} onChange={e=>{setDrawKind(e.target.value as typeof drawKind);setPoints([])}}><option value="">Mover mapa</option><option value="zona">Zona</option><option value="rota">Rota</option><option value="rotulo">Rótulo</option></select></label>
+          <label>Texto<input className="input" value={drawText} onChange={e=>setDrawText(e.target.value)} /></label><label>Cor<input type="color" value={drawColor} onChange={e=>setDrawColor(e.target.value)} /></label><label>Camada<input className="input" value={drawLayer} onChange={e=>setDrawLayer(e.target.value)} /></label><label className="check"><input type="checkbox" checked={drawSecret} onChange={e=>setDrawSecret(e.target.checked)} />Segredo do mestre</label>
+          <span>{points.length} pontos; toque no mapa para acrescentar.</span><button className="btn" disabled={!drawKind||points.length<(drawKind==="zona"?3:drawKind==="rota"?2:1)} onClick={()=>{if(!drawKind)return;onDecorate({...spec,drawings:[...(spec.drawings??[]),{kind:drawKind,points,color:drawColor,text:drawText,layer:drawLayer,secret:drawSecret}]});setPoints([]);setDrawKind("")}}>Salvar desenho</button><button className="btn" onClick={()=>{setPoints([]);setDrawKind("")}}>Cancelar desenho</button>
+          {(spec.drawings??[]).map((d,i)=><button className="btn" key={i} onClick={()=>onDecorate({...spec,drawings:spec.drawings!.filter((_,n)=>n!==i)})}>Remover {d.text||d.kind} ({i+1})</button>)}
+        </div></details>}
+
         <button className="icon-btn sm" onClick={() => zoom(1.3)} aria-label="Aproximar">
           <Plus size={15} />
         </button>
@@ -166,6 +186,13 @@ export function MapView({ spec, imageUrl, resolvePin, showSecrets, onChange, onN
         {!imageUrl && <div className="map-missing">Imagem “{spec.image}” não encontrada no cofre{typeof window !== "undefined" && !window.runasCodex ? " (no navegador, só as imagens do exemplo aparecem)" : ""}.</div>}
         <div className="map-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})`, width: size?.w, height: size?.h }}>
           {imageUrl && <img src={imageUrl} alt={spec.image} draggable={false} onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth || 1000, h: e.currentTarget.naturalHeight || 700 })} />}
+          {size && <>
+            {(spec.images??[]).filter(layer=>inEra(layer,year,!showSecrets)&&!hiddenLayers.has(layer.name)).map((layer,i)=>{const url=resolveImage?.(layer.image);return url?<img key={i} className="map-image-layer" src={url} alt={layer.name} style={{position:"absolute",inset:0,width:size.w,height:size.h,opacity:layer.opacity}}/>:null})}
+            <svg className="map-drawings" width={size.w} height={size.h} viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"visible"}}>
+              {(spec.drawings??[]).filter(d=>inEra(d,year,!showSecrets)&&!hiddenLayers.has(d.layer)).map((d,i)=>d.kind==="rotulo"?<text key={i} x={d.points[0]!.x*1000} y={d.points[0]!.y*1000} fill={d.color} fontSize={18}>{d.text}</text>:<g key={i}>{d.kind==="zona"?<polygon points={d.points.map(p=>`${p.x*1000},${p.y*1000}`).join(" ")} fill={d.color} fillOpacity={.2} stroke={d.color} strokeWidth={2}/>:<polyline points={d.points.map(p=>`${p.x*1000},${p.y*1000}`).join(" ")} fill="none" stroke={d.color} strokeWidth={3}/ >}{d.text&&<text x={d.points[0]!.x*1000} y={d.points[0]!.y*1000} fill={d.color} fontSize={18}>{d.text}</text>}</g>)}
+              {points.length>0 && <polyline points={points.map(p=>`${p.x*1000},${p.y*1000}`).join(" ")} fill="none" stroke={drawColor} strokeWidth={3}/ >}
+            </svg>
+          </>}
           {size &&
             pins.map((pin, i) =>
               visible(pin) ? (

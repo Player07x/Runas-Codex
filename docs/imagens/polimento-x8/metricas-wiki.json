@@ -1,0 +1,44 @@
+[
+  {
+    "route": "/wiki/calendario",
+    "available": 310,
+    "document": 320,
+    "main": 310
+  },
+  {
+    "route": "/wiki/linha-do-tempo",
+    "available": 310,
+    "document": 320,
+    "main": 310
+  },
+  {
+    "route": "/wiki/mapa",
+    "available": 320,
+    "document": 320,
+    "main": 320
+  },
+  {
+    "route": "/wiki/relacoes",
+    "available": 310,
+    "document": 320,
+    "main": 310
+  },
+  {
+    "route": "/wiki/ferramentas",
+    "available": 310,
+    "document": 320,
+    "main": 310
+  },
+  {
+    "route": "/wiki/grafico",
+    "available": 320,
+    "document": 320,
+    "main": 320
+  },
+  {
+    "route": "/wiki/artigo/Wikis%2FOrdem%20x%20Caos%2FIdiomas%2F%C3%89lfico.md",
+    "available": 320,
+    "document": 320,
+    "main": 320
+  }
+]

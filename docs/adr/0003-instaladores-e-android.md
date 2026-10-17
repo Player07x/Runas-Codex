@@ -42,3 +42,12 @@ do app, `data:` e `blob:`; `style-src` aceita inline por causa do dialeto (`<spa
 - O `npm audit` aponta dois avisos moderados só em ferramentas de build que não entram nos instaladores
   (`sprintf-js` via `electron-builder`, `uuid` via ferramentas de iOS do `@capacitor/cli`); a "correção" sugerida
   rebaixaria as versões.
+
+
+## Escopo da beta.5 — Windows/Linux (17/10/2026)
+
+O dono pediu instaladores Windows/Linux e excluiu Android desta rodada. `.github/release-targets.json` versiona
+`android: false`; os jobs APK e emulador ficam pulados. O job de publicação exige Linux e Windows aprovados e aceita
+Android pulado somente quando explicitamente desabilitado nessa configuração. Para uma futura release Android,
+reativar o booleano após C8/X7 e a revisão complementar. O código Android não foi ampliado; só a versão comum dos
+workspaces foi sincronizada. As somas incluem apenas os instaladores realmente produzidos nesta release.

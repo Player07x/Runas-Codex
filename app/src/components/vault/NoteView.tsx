@@ -1,3 +1,6 @@
+import { imageLinkAt, linkedImages } from "../../core/images"
+import { ImageRenameDialog, NoteImages } from "./NoteImages"
+import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
 import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
@@ -50,6 +53,7 @@ const isMedia = (name: string) => {
 }
 
 interface Props {
+  typewriter?: boolean
   focused?: boolean
   path: string
   folders: string[]
@@ -60,6 +64,7 @@ interface Props {
   /** Observação do rascunho para prévias; não grava nem substitui o autosave. */
   onDraftChange?: (text: string) => void
   /** Barra opcional que insere no cursor do editor, sem outro fluxo de gravação. */
+  sidebar?: (insert: (text: string) => void) => ReactNode
   toolbar?: (insert: (text: string) => void) => ReactNode
   /** Pedido de rolar até um título (linha), vindo do sumário. */
   headingRequest?: { line: number; at: number }
@@ -71,7 +76,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true, onDraftChange, focused = true }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -98,6 +103,9 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
+  const [expandedTools, setExpandedTools] = useState(false)
+  const [imageRename, setImageRename] = useState<string | null>(null)
+  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
   const [copyMenu, setCopyMenu] = useState(false)
   const [organizeMenu, setOrganizeMenu] = useState(false)
   const editor = useRef<SourceEditorHandle>(null)
@@ -195,7 +203,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
     setTimeout(() => void flush())
   }
 
-  // Imagem importada, colada ou solta na nota: o arquivo vai para a pasta de anexos do Obsidian e o link entra no texto.
+  // Imagem importada, colada ou solta vai para a pasta comum; demais anexos seguem a configuração do Obsidian.
   const addFiles = useCallback(
     async (files: File[], at: number | null, pasted: boolean) => {
       const links: string[] = []
@@ -318,15 +326,22 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   return (
     <article
       className="note-editor"
+      onContextMenuCapture={event => {
+        if (readOnly || !(event.target instanceof HTMLImageElement)) return
+        const src = event.target.src
+        const image = linkedImages(index, path, draft).find(image => { const url = vault.platform.fileUrl(image); return url && new URL(url, window.location.href).href === src })
+        if (image) { event.preventDefault(); event.stopPropagation(); renameImage(image) }
+      }}
       // No modo leitura, Ctrl+clique e botão do meio num link abrem a nota numa aba nova (o leitor não muda: o clique é
       // pego aqui antes de chegar ao link). No live preview o botão do meio é colar, no Linux; lá fica como está.
       onClickCapture={(event) => (event.ctrlKey || event.metaKey) && openLinkInTab(event)}
       onAuxClick={(event) => event.button === 1 && openLinkInTab(event)}
     >
-      <div className="editor-bar">
+      <div className={`editor-bar ${expandedTools ? "tools-expanded" : ""}`}>
         <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
           <ChevronLeft size={18} />
         </button>
+        <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
         <span className="note-history">
           <button className="icon-btn" title="Voltar (Alt ←)" aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
             <ArrowLeft size={17} />
@@ -335,6 +350,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             <ArrowRight size={17} />
           </button>
         </span>
+        <NoteImages path={path} text={draft} onRename={renameImage} />
         <Segmented<ViewMode>
           label="Modo da nota"
           value={mode}
@@ -511,17 +527,22 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
 
       {!readOnly && mode !== "leitura" && toolbar?.((text) => editor.current?.insert(text))}
 
+      <div className={sidebar ? "books-writing-area" : undefined} style={sidebar ? undefined : { display: "contents" }}>
       <div className="editor-body" ref={reader}>
         {mode === "leitura" ? (
           <NoteSetContext.Provider value={noteSet}>
             {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} showSecrets={showSecrets} /> : <p className="muted">Nota vazia.</p>}
           </NoteSetContext.Provider>
         ) : (
-          <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
+          <SourceEditor onImageLinkContext={at => { const image = imageLinkAt(index,path,draft,at); if (!image) return false; renameImage(image); return true }} typewriter={typewriter} ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
         )}
       </div>
 
+      {mode !== "leitura" && sidebar?.((text) => editor.current?.insert(text))}
+      </div>
+
       {linkPreview}
+      {imageRename && <ImageRenameDialog path={imageRename} onClose={() => setImageRename(null)} />}
 
       {dialog === "template" && (
         <TemplatePicker

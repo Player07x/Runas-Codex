@@ -114,3 +114,10 @@ desktop/                  casca Electron (Windows/Linux): processo principal, pr
 mobile/                   casca Android (Capacitor): projeto Gradle em mobile/android/
 docs/                     estudo, checklist, plano e ADRs
 ```
+
+
+### Nova versão desktop — beta.5
+
+X5, C6, X8 e W1 integradas, com pasta comum e renomeação de imagens, contadores reais e categorias da Wiki com arte,
+busca, filtros e grade/lista. [Novidades e limites da beta.5](docs/releases/v0.1.0-beta.5.md).
+O escopo desta entrega é Windows/Linux; Android permanece na tarefa complementar de revisão e nas frentes C8/X7.

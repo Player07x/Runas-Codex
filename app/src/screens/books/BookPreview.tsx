@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Markdown } from "../../components/Markdown"
 import { bookProperties, bookRoute } from "../../core/books"
 import { BOOK_SIZES, BOOK_THEMES, previewChapters, previewSettings, type BookSize, type BookTheme } from "../../core/books-preview"
+import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
+import { BookFinishSettings } from "./BookFinishSettings"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteSetContext } from "../../lib/note-set"
@@ -15,6 +17,8 @@ import "./book-preview.css"
 export default function BookPreview({ book, draft, onClose }: { book: IndexedNote; draft?: { path: string; text: string }; onClose(): void }) {
   const vault = useVault(), index = vault.index!
   const settings = previewSettings(book)
+  let decoration = "", cssError = ""
+  try { decoration = bookDecorationCss(book) } catch (e) { cssError = String(e) }
   const data = bookProperties(book)
   const source = useRef<HTMLDivElement>(null)
   const output = useRef<HTMLDivElement>(null)
@@ -48,7 +52,7 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
         let next: Pagination | null = null
         try {
           await readyForPagination(source.current, controller.signal)
-          next = await paginate(source.current, stage, settings.size)
+          next = await paginate(source.current, stage, settings.size, printOptions(book))
           if (controller.signal.aborted || !output.current) { next.dispose(); return }
           const top = scroll.current?.scrollTop ?? 0
           active.current?.dispose()
@@ -97,16 +101,23 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
     if (!ready || exporting || !source.current) return
     setExporting(true); setExportStatus("")
     try {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      if (source.current) await readyForPagination(source.current, new AbortController().signal)
       if (format === "pdf") {
         if (vault.platform.exportPdf) {
           const path = await vault.platform.exportPdf(`${book.name}.pdf`)
           setExportStatus(path ? `PDF salvo: ${path}` : "Exportação cancelada.")
         } else { vault.platform.printDocument?.(); setExportStatus("Escolha Salvar como PDF no diálogo de impressão.") }
+      } else if (format === "md" || format === "zip") {
+        const { generateMarkdown, generateMarkdownZip } = await import("../../core/export/book-extra")
+        const bytes = format === "md" ? new TextEncoder().encode(generateMarkdown(index,book,draft)) : await generateMarkdownZip(index,book,p=>vault.platform.readBinary(p),draft)
+        const path = await vault.platform.saveBytes(`${book.name}.${format}`,bytes,format === "md" ? "text/markdown" : "application/zip")
+        setExportStatus(path ? `Arquivo salvo: ${path}` : "Exportação cancelada.")
       } else {
         const { captureBook } = await import("./export-snapshot")
         const snapshot = await captureBook(source.current, index, book, vault.platform, draft)
-        const bytes = format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
-        const path = await vault.platform.saveBytes(`${book.name}.${format}`, bytes, format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        const bytes = format === "html" ? (await import("../../core/export/book-extra")).generateHtml(snapshot) : format === "rtf" ? (await import("../../core/export/book-extra")).generateRtf(snapshot) : format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
+        const path = await vault.platform.saveBytes(`${book.name}.${format}`, bytes, format === "html" ? "text/html" : format === "rtf" ? "application/rtf" : format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         setExportStatus(path ? `Arquivo salvo: ${path}. ${snapshot.warnings.join(" ")}` : "Exportação cancelada.")
       }
     } catch (err) { setExportStatus(`Não foi possível exportar: ${err instanceof Error ? err.message : String(err)}`) }
@@ -124,13 +135,15 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
       <label className="check"><input type="checkbox" checked={settings.newChapter} disabled={vault.info?.readOnly} onChange={(e) => void change("capitulos_nova_pagina", e.target.checked)} />Capítulos em página nova</label>
       <button className="btn" onClick={() => setMetadata(!metadata)} disabled={vault.info?.readOnly}>Editar capa e créditos</button>
       <button className="btn" disabled={!ready || !vault.platform.printDocument} onClick={() => vault.platform.printDocument?.()}>Imprimir (Ctrl+P)</button>
-      <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option></select></label>
+      <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option><option value="html">HTML offline</option><option value="rtf">RTF</option><option value="md">Markdown único</option><option value="zip">Pasta Markdown (ZIP)</option></select></label>
       <button className="btn primary" disabled={!ready || exporting} onClick={() => void exportFile()}>{exporting ? "Exportando…" : "Exportar arquivo"}</button>
-      {format !== "pdf" && <p className="small">{format === "epub" ? "EPUB ajusta a paginação ao leitor; colunas viram texto corrido." : "DOCX é editável; a paginação e as fontes dependem do Word ou LibreOffice. Fórmulas ficam em LaTeX."}</p>}
+      {["epub","docx"].includes(format) && <p className="small">{format === "epub" ? "EPUB ajusta a paginação ao leitor; colunas viram texto corrido." : "DOCX é editável; a paginação e as fontes dependem do Word ou LibreOffice. Fórmulas ficam em LaTeX."}</p>}
       {exportStatus && <p role="status" data-book-export-status>{exportStatus}</p>}
       <span className="small muted" role="status" data-book-pagination-status>{status}</span>
     </div>
-    {error && <p className="proto-note" role="alert">{error}</p>}
+    {(error || cssError) && <p className="proto-note" role="alert">{error || cssError}</p>}
+    {decoration && <style>{decoration}</style>}
+    <BookFinishSettings key={book.path} book={book} />
     {metadata && <BookMetadata book={book} onClose={() => setMetadata(false)} />}
     <div className="book-preview-scroll" ref={scroll}>
       <div className={`book-preview-output ${paperClass}`} ref={output} style={{ zoom }} aria-busy={!ready} />
@@ -144,9 +157,9 @@ export default function BookPreview({ book, draft, onClose }: { book: IndexedNot
           {typeof data.autor === "string" && <p className="book-print-author">{data.autor}</p>}
         </section>
         {typeof data.creditos === "string" && data.creditos.trim() && <section className="book-print-credits"><h1>Créditos</h1><p>{data.creditos}</p></section>}
-        {chapters.map((chapter, i) => <section key={`${chapter.path}:${i}`} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
+        {chapters.map((chapter, i) => <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
           <h2 className="book-chapter-heading">{chapter.title}</h2>
-          <PreviewMarkdown path={chapter.path} text={chapter.body} />
+          {chapter.kind === "indice" ? <ul>{indexEntries(index,book,draft).map(entry=><li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number,i)=><span key={number}>{i>0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number+1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={chapter.body} />}
         </section>)}
         {typeof data.contracapa === "string" && data.contracapa.trim() && <section className="book-print-back"><h1>{book.name}</h1><p>{data.contracapa}</p></section>}
       </div>

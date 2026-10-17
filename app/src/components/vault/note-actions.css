@@ -32,7 +32,7 @@
 .version-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .version-compare section { min-width: 0; }
 .version-compare > section:nth-child(3) { grid-column: 1 / -1; }
-.version-compare pre, .note-tool-preview { max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.version-compare pre, .note-tool-preview { max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: calc(12px * var(--font-scale, 1)); padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
 .version-removed { color: var(--red); }
 .version-added { color: var(--green); }
 .note-word-count { margin-left: auto; white-space: nowrap; }

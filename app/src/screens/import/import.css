@@ -24,7 +24,7 @@
 .migrate-notices { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .migrate-notices .wikilink, .migrate-notices .mono { overflow-wrap: anywhere; }
 
-.migrate-diff { max-height: 320px; overflow: auto; margin: 0 0 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-deep); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.migrate-diff { max-height: 320px; overflow: auto; margin: 0 0 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-deep); font-family: var(--font-mono); font-size: calc(12px * var(--font-scale, 1)); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .migrate-diff .removed { color: var(--red); }
 .migrate-diff .added { color: var(--green); }
 

@@ -162,7 +162,7 @@ export function planRename(index: VaultIndex, from: string, to: string, texts: R
 
   // `.canvas` (JSON Canvas): troca só o valor dos campos "file" que apontam para o arquivo.
   const escaped = JSON.stringify(from).slice(1, -1).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const pattern = new RegExp(`("file"\\s*:\\s*")${escaped}(")`, "g")
+  const pattern = new RegExp(`("(?:file|runas_original)"\\s*:\\s*")${escaped}(")`, "g")
   for (const [path, before] of Object.entries(texts)) {
     if (extname(path) !== ".canvas") continue
     const after = before.replace(pattern, (_m, open: string, close: string) => open + JSON.stringify(to).slice(1, -1) + close)

@@ -16,10 +16,10 @@ import { ARTICLES } from "../data/wiki"
 import { CAMPAIGNS } from "../data/campaigns"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
-import { AGENDA_ROOT } from "../core/agenda"
 import { Modal, useToast } from "./ui"
 import { goBack, goForward } from "../lib/router"
-import type { ShortcutAction } from "../core/shortcuts"
+import { shortcutLabel, type ShortcutAction } from "../core/shortcuts"
+import { usePreferences } from "../lib/customization"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -47,11 +47,11 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
   if (first === "notas" && second) crumbs.push({ label: second === "nova" ? "Nova nota" : second === "hoje" ? "Nota do dia" : second === "grafico" ? "Gráfico" : noteName(second) })
   if (first === "wiki" && second) {
     // Artigos, mapas e calendários abertos levam o caminho da nota na rota.
-    const path = third ? decodeURIComponent(third) : ""
-    const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapas", relacoes: "Relações", grafico: "Gráfico" }
+    const path = third ?? ""
+    const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapas", categoria: "Categoria", relacoes: "Relações", grafico: "Gráfico" }
     if (second === "artigo") crumbs.push({ label: path ? noteName(path) : "Artigo" })
     else {
-      crumbs.push({ label: labels[second] ?? second, ...(path ? { to: `/wiki/${second}` } : {}) })
+      crumbs.push({ label: labels[second] ?? second, ...(path && second !== "categoria" ? { to: `/wiki/${second}` } : {}) })
       if (path) crumbs.push({ label: noteName(path) })
     }
   }
@@ -78,9 +78,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
   const crumbs = crumbsFor(route)
-  const notesCount = vault.index ? vault.index.notesIn("Notas/").length || vault.index.size : NOTES.length
-  const agendaCount = vault.index ? vault.index.notesIn(AGENDA_ROOT).length : 0
-  const wikiCount = vault.index ? vault.index.notesIn("Wikis/").length : ARTICLES.length
+  const counts = useVaultCounts()
+  const prefs = usePreferences()
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -123,7 +122,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.match === "agenda" ? agendaCount : item.match === "wiki" ? wikiCount : item.count}</span>}
+              {item.count !== undefined && <span className="count">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
             </a>
           ))}
         </div>
@@ -164,7 +163,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <kbd>Ctrl K</kbd>
           </button>
           <div className="top-actions">
-            <button className="icon-btn hide-mobile" onClick={() => navigate("/notas/nova")} title="Nova nota (Ctrl N)">
+            <button className="icon-btn hide-mobile" onClick={() => navigate("/notas/nova")} title={`Nova nota (${shortcutLabel("newNote", prefs.shortcuts)})`}>
               <Plus size={18} />
             </button>
             <button className="icon-btn" onClick={onToggleTheme} title={theme === "dark" ? "Tema claro" : "Tema escuro"}>
@@ -172,7 +171,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             </button>
           </div>
         </header>
-        <main className={`content ${fill ? "fill" : ""}`}>{children}</main>
+        <main id="runas-main" tabIndex={-1} className={`content ${fill ? "fill" : ""}`}>{children}</main>
       </div>
 
       <nav className="bottom-nav" aria-label="Navegação">
@@ -210,13 +209,16 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
 }
 
 function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
+  const prefs = usePreferences()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialogFocus(dialogRef, onClose)
   const vault = useVault()
   const toast = useToast()
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
     () => [
-      { label: "Nova nota", icon: <Plus size={16} />, hint: "Ctrl N", run: () => navigate("/notas/nova") },
+      { label: "Nova nota", icon: <Plus size={16} />, hint: shortcutLabel("newNote", prefs.shortcuts), run: () => navigate("/notas/nova") },
       { label: "Nota do dia", icon: <CalendarDays size={16} />, hint: "Notas", run: () => navigate("/notas/hoje") },
       { label: "Criar Sala", icon: <DoorOpen size={16} />, hint: "VTT", run: () => navigate("/vtt/criar") },
       { label: "Entrar Sala", icon: <LogIn size={16} />, hint: "VTT", run: () => navigate("/vtt/entrar") },
@@ -230,7 +232,7 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Nota aleatória", icon: <Shuffle size={16} />, hint: "Notas", run: () => navigate("/notas/aleatoria") },
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
     ],
-    [onToggleTheme],
+    [onToggleTheme, prefs.shortcuts],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
   // Notas do cofre (pelo índice); no exemplo do navegador, as que têm tela própria (wiki, campanhas) abrem nela.
@@ -262,10 +264,11 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
 
   return (
     <div className="palette-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="palette" role="dialog" aria-label="Paleta de comandos">
+      <div className="palette" ref={dialogRef} tabIndex={-1} aria-modal="true" role="dialog" aria-label="Paleta de comandos">
         <div className="palette-input">
           <Search size={18} color="var(--muted)" />
           <input
+            aria-label="Buscar notas e comandos"
             autoFocus
             placeholder="Buscar nota (nome, apelido, tag:, path:) ou um comando…"
             value={query}
@@ -303,3 +306,8 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
     </div>
   )
 }
+
+import { useDialogFocus } from "./useDialogFocus"
+import { useRef } from "react"
+
+import { useVaultCounts } from "../lib/vault-counts"

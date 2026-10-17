@@ -2,13 +2,12 @@
 .book-card { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--panel); color: var(--text); text-decoration: none; }
 .book-card:hover { border-color: var(--line-strong); }
 .book-cover { display: grid; align-content: center; justify-items: center; gap: 6px; aspect-ratio: 3 / 4; padding: 10px; border-radius: 4px 10px 10px 4px; background: linear-gradient(90deg, rgb(0 0 0 / 35%) 0 6px, transparent 6px), radial-gradient(circle at 50% 35%, #7a2620, #2a0d0b); color: #f3e2c4; text-align: center; box-shadow: var(--shadow-sm); }
-.book-cover .display { font-size: 13px; line-height: 1.2; }
-.book-cover small { font-size: 9px; opacity: 0.8; }
+.book-cover .display { font-size: calc(13px * var(--font-scale, 1)); line-height: 1.2; }
+.book-cover small { font-size: calc(9px * var(--font-scale, 1)); opacity: 0.8; }
 
 .books-editor { height: 100%; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .books-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 16px; border-bottom: 1px solid var(--line); }
 .books-header > strong { font-family: var(--font-cinzel); margin-right: auto; }
-.books-progress { width: 120px; }
 .books-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); flex: 1; min-height: 0; }
 .books-binder { padding: 16px; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); }
 .books-binder h2, .books-binder h3 { margin: 12px 0; }
@@ -45,4 +44,25 @@
   .books-main .editor-bar { flex-wrap: wrap; }
   .books-formatters { padding: 8px; }
   .books-formatters label, .books-formatters select { width: 100%; }
+}
+
+.books-focus .books-binder { display:none; }
+.books-focus .books-layout { grid-template-columns:minmax(0,1fr); }
+.books-focus .books-header > :not(button) { display:none; }
+.book-writing-tools { padding-block:8px; max-width:100%; }
+.book-writing-tools .stack { padding-block:12px; }
+.book-wiki-reference { max-height:35vh; overflow:auto; padding:12px; border:1px solid var(--line); border-radius:var(--radius); }
+.book-finish-settings { border-bottom:1px solid var(--line); }
+.book-finish-settings summary { padding:12px; cursor:pointer; min-height:44px; }
+.book-finish-settings .book-metadata { max-height:45vh; }
+.book-print .book-section a[href^="#book-chapter-"]::after { content: " (p. " target-counter(attr(href),page) ")"; }
+.books-focus .books-layout.has-preview { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+@media(max-width:860px) { .books-focus .books-layout.has-preview { grid-template-columns:minmax(0,1fr); } }
+
+.books-writing-area { min-height:0; min-width:0; }
+.books-writing-area > .book-writing-tools { padding:12px; border-top:1px solid var(--line); }
+.books-writing-area .book-writing-tools input,.books-writing-area .book-writing-tools select { width:100%; }
+@media(min-width:1200px) {
+ .books-layout:not(.has-preview) .books-writing-area { display:grid;grid-template-columns:minmax(0,1fr) 300px;flex:1; }
+ .books-layout:not(.has-preview) .books-writing-area > .book-writing-tools { border-left:1px solid var(--line);border-top:0;overflow:auto; }
 }

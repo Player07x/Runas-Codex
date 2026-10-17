@@ -1,13 +1,8 @@
+import { useVaultCounts } from "../lib/vault-counts"
 import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, Dices, Feather, FileText, Library, Plus, ScrollText, Users } from "lucide-react"
 import { href } from "../lib/router"
-import { ALL_NOTES } from "../lib/links"
-import { formatDate, routeOfNote } from "../lib/navigation"
-import { CAMPAIGNS } from "../data/campaigns"
-import { NOTES } from "../data/notes"
-import { ARTICLES } from "../data/wiki"
-import { BOOKS } from "../data/books"
-import { MESAS } from "../data/mesas"
+import { formatDate } from "../lib/navigation"
 import { expandEvents, nextSession, type AgendaEvent, type Occurrence } from "../core/agenda"
 import { agendaEvents } from "../lib/agenda-data"
 import { vaultRoute } from "../lib/vault-notes"
@@ -16,25 +11,24 @@ import { nextCampaignSession } from "../core/campaigns"
 import { sessionRoute } from "./campaigns/campaign-state"
 import "./home.css"
 
-const recent = [...ALL_NOTES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 4)
 const spaces = [
-  { title: "Notas", sub: "Capture suas ideias", count: NOTES.length, unit: "notas", icon: Feather, path: "/notas" },
-  { title: "Agenda", sub: "Dê tempo às histórias", count: -1, unit: "eventos", icon: CalendarDays, path: "/agenda" },
-  { title: "Wiki", sub: "Construa seu universo", count: ARTICLES.length, unit: "artigos", icon: Library, path: "/wiki" },
-  { title: "Campanhas", sub: "Conecte os capítulos", count: CAMPAIGNS.length, unit: "campanhas", icon: ScrollText, path: "/campanhas" },
-  { title: "Livros", sub: "Escreva a próxima página", count: BOOKS.length, unit: "livros", icon: BookOpen, path: "/livros" },
-  { title: "VTT", sub: "Reúna seu grupo", count: MESAS.length, unit: "mesas", icon: Dices, path: "/vtt" },
+  { title: "Notas", sub: "Capture suas ideias", unit: "notas", icon: Feather, path: "/notas" },
+  { title: "Agenda", sub: "Dê tempo às histórias", unit: "eventos", icon: CalendarDays, path: "/agenda" },
+  { title: "Wiki", sub: "Construa seu universo", unit: "artigos", icon: Library, path: "/wiki" },
+  { title: "Campanhas", sub: "Conecte os capítulos", unit: "campanhas", icon: ScrollText, path: "/campanhas" },
+  { title: "Livros", sub: "Escreva a próxima página", unit: "livros", icon: BookOpen, path: "/livros" },
+  { title: "VTT", sub: "Reúna seu grupo", unit: "mesas", icon: Dices, path: "/vtt" },
 ]
-const spaceLabel: Record<string, string> = { wiki: "Wiki", campanhas: "Campanhas" }
 const TODAY = new Date()
 const weekday = formatDate(TODAY.toISOString(), { weekday: "long" })
 
 export function Home() {
+  const vault = useVault()
   return (
     <div className="home">
       <header className="home-heading">
         <div>
-          <span className="home-kicker">MESA DO JOÃO / PAINEL DO MESTRE</span>
+          <span className="home-kicker">{vault.info?.name ?? "Seu universo"} / PAINEL DO MESTRE</span>
           <h1>Seu próximo capítulo.</h1>
         </div>
         <span className="home-date">
@@ -62,7 +56,7 @@ export function Home() {
           <p>Guarde aquele personagem, lugar ou reviravolta que acabou de surgir.</p>
           <Capture />
           <a href={href("/wiki")} className="quick-link">
-            Explorar Ordem x Caos <ArrowUpRight size={17} />
+            Explorar a Wiki <ArrowUpRight size={17} />
           </a>
         </div>
       </div>
@@ -156,7 +150,7 @@ function NextSession() {
 }
 
 function Spaces() {
-  const agendaCount = useAgendaEvents().length
+  const counts = useVaultCounts()
   return (
     <section className="home-spaces" aria-label="Seus espaços">
       {spaces.map((s, i) => (
@@ -169,7 +163,7 @@ function Spaces() {
           <p>{s.sub}</p>
           <footer>
             <span>
-              {s.count < 0 ? agendaCount : s.count} {s.unit}
+              {counts[s.path === "/vtt" ? "mesas" : s.path.slice(1) as keyof typeof counts]} {counts[s.path === "/vtt" ? "mesas" : s.path.slice(1) as keyof typeof counts] === 1 ? s.unit.slice(0,-1) : s.unit}
             </span>
             <ArrowUpRight size={18} />
           </footer>
@@ -180,26 +174,12 @@ function Spaces() {
 }
 
 function Recent() {
-  return (
-    <section>
-      <div className="home-section-head">
-        <h2>Retome o fio</h2>
-        <span>Últimas edições</span>
-      </div>
-      {recent.map((n) => (
-        <a className="home-note" key={n.id} href={href(routeOfNote(n))}>
-          <FileText size={19} />
-          <div>
-            <h3>{n.title}</h3>
-            <small>
-              {spaceLabel[n.space] ?? "Notas"} · {formatDate(n.updated, { day: "numeric", month: "short" })}
-            </small>
-          </div>
-          <ArrowUpRight size={16} />
-        </a>
-      ))}
-    </section>
-  )
+  const vault = useVault()
+  const recent = useMemo(() => vault.index?.allNotes().sort((a,b) => b.mtime - a.mtime).slice(0,4) ?? [], [vault.index, vault.version])
+  return <section><div className="home-section-head"><h2>Retome o fio</h2><span>Últimas edições</span></div>
+    {recent.length === 0 && <p className="small muted">Nenhuma nota escrita neste cofre.</p>}
+    {recent.map(note => <a className="home-note" key={note.path} href={href(vaultRoute(note.path))}><FileText size={19}/><div><h3>{note.name}</h3><small>{note.path.split("/")[0]} · {new Date(note.mtime).toLocaleDateString("pt-BR",{day:"numeric",month:"short"})}</small></div><ArrowUpRight size={16}/></a>)}
+  </section>
 }
 
 function Horizon() {
