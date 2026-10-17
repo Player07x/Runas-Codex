@@ -109,6 +109,7 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 | **C5a** Notas: links, gráfico e notas pessoais (A.1, A.2, F.1) | Claude Code | `notas/c5a-links-grafico` | [fechamento-modulos.md](fechamento-modulos.md) | mesclada (PR #24) |
 | **C5b** Notas: organização e busca (A.3, primeira parte) | Claude Code | `notas/c5b-organizacao` | [fechamento-modulos.md](fechamento-modulos.md) | mesclada (PR #25) |
 | **C5c** Notas: o resto do A.3 | Claude Code, continuada pelo Codex | `notas/c5c-conclusao` | [fechamento-modulos.md](fechamento-modulos.md) | em revisão (PR #27); depende do leitor #26 |
+| **W1** Wiki: página de categoria com a arte dos artigos | Codex (exceção autorizada pelo dono em 17/10) | `wiki/pagina-categoria` | [wiki-categorias.md](wiki-categorias.md) | a fazer, depois de `integracao/x5-c6-x8` |
 
 ## Quem mexe em quê
 
