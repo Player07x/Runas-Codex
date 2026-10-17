@@ -348,3 +348,17 @@ aparelho físico acima continua necessária.
 - [ ] Cancelar a autorização: o app mostra o cancelamento e permanece aberto, sem anunciar sucesso.
 - [ ] Com outro gerenciador de pacotes aberto, conferir espera/erro legível sem fechar o app. Se houver conflito ao
   salvar uma nota, o app permanece aberto para resolver antes de reiniciar.
+
+## C6a — fechamento da Wiki
+
+- [ ] Geradores: criar resultado, editar e guardar como nota; conferir sem rede e no Obsidian.
+- [ ] Tabelas: pesos, encadeamento de outra nota, erro de ciclo e destino inexistente; leitura e live preview.
+- [ ] Idioma: traduções, pronúncia, regras e filtro nos dois sentidos; novo artigo traz exemplo editável.
+- [ ] Definir meta de palavras na página inicial, editar artigos e conferir progresso. Wiki sem página inicial deve
+  oferecer criá-la.
+- [ ] Galeria e áudio com anexos reais; spoiler abre por clique/teclado também no Obsidian.
+- [ ] Repetições de eventos por dias/meses/anos no calendário fictício, com data final e dias inexistentes. Na visão
+  dos jogadores, eventos secretos não aparecem.
+- [ ] Crônicas: trocar era na linha do tempo e abrir o mapa; conferir imagens, zonas, rotas, rótulos e camadas
+  secretas. Criar/remover desenhos por pontos e camadas de imagem, inclusive depois de fechar e abrir o cofre.
+- [ ] Windows, Obsidian e áudio real ficam na conferência manual; Android ficou para a tarefa complementar.

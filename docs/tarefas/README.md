@@ -40,7 +40,7 @@ Cada linha é **um PR**, nesta ordem. Uma frente não espera a outra, a não ser
 | C3 | **9** Mestre pelo celular com a sala aberta no desktop | [vtt-9.md](vtt-9.md) |
 | C4 | **10** Migrações: Obsidian (calendários, mapas e fichas dos plugins de RPG) | [migracoes-10.md](migracoes-10.md) |
 | C5 | Fechamento do núcleo de notas e do editor (seções A e F.1) | [fechamento-modulos.md](fechamento-modulos.md) |
-| C6 | Fechamento da Wiki, das Campanhas e da Agenda (seções B, C, F.2 e G.5) | [fechamento-modulos.md](fechamento-modulos.md) |
+| C6 | Fechamento da Wiki, das Campanhas e da Agenda — **Codex assume em 17/10/2026** (seções B, C, F.2 e G.5) | [fechamento-modulos.md](fechamento-modulos.md) |
 | C7 | Pacotes: pacote `.runas`, pacote de campanha, exportar pasta/ZIP, backups agendados | [fechamento-modulos.md](fechamento-modulos.md) |
 | C8 | **A1** Android completo: cofre real, spikes que sobraram da etapa 2, testes no emulador, APK assinado | [android-a.md](android-a.md) |
 | C9 | **11** Polimento: desempenho com cofres grandes, instaladores, ajuda offline, beta | [polimento-11.md](polimento-11.md) |
@@ -126,3 +126,15 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 Os arquivos compartilhados (lista no `AGENTS.md`) podem ser mexidos pelos dois, só acrescentando.
 
 Ninguém mexe no que é do outro. Se precisar, o pedido vai no PR ("precisa de X em `screens/wiki`") e o dono decide.
+
+## C6 dividida em duas partes (17/10/2026)
+
+Por pedido do dono, Codex assume a C6 e executa X5 → C6 → X8, sem Android nesta rodada. A auditoria está em
+[auditoria-c6.md](auditoria-c6.md).
+
+| Parte | Responsável | Branch | Situação |
+|---|---|---|---|
+| C6a — Wiki: conteúdo, ferramentas e crônicas | Codex | `wiki/c6a-fechamento` | implementada; conferência do Electron em andamento |
+| C6b — Campanhas, Agenda e colaboração pela sala | Codex | `campanhas/c6b-fechamento` | próxima; reutiliza as ferramentas da C6a |
+
+A revisão de Android será especificada em tarefa complementar depois da X8.

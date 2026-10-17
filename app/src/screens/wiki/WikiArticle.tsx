@@ -8,6 +8,8 @@ import { noteRoute, vaultNoteSet } from "../../lib/vault-notes"
 import { useToast } from "../../components/ui"
 import { NoteView } from "../../components/vault/NoteView"
 import { useVault } from "../../platform/VaultProvider"
+import { WikiArticleExtras } from "./WikiArticleExtras"
+import { WIKI_INSERTS } from "./WikiTools"
 import { Infobox } from "./Infobox"
 import { NewArticleDialog } from "./WikiHome"
 import { askWikiSearch, useWiki } from "./wiki-state"
@@ -41,7 +43,7 @@ export function WikiArticleView({ path }: { path: string }) {
   return (
     <div className={`wiki-article-layout ${panel ? "show-panel" : ""}`}>
       <section className="wiki-article-main">
-        <NoteView key={path} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} />
+        <NoteView key={path} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} toolbar={insert=><label className="wiki-resource-insert">Inserir recurso da Wiki<select className="input" value="" onChange={e=>{if(e.target.value)insert(e.target.value)}}><option value="">Escolha um recurso…</option>{WIKI_INSERTS.map(([label,syntax])=><option key={label} value={syntax}>{label}</option>)}</select></label>} />
       </section>
       <aside className="wiki-article-side">
         <NoteSetContext.Provider value={noteSet}>
@@ -52,6 +54,7 @@ export function WikiArticleView({ path }: { path: string }) {
             readOnly={readOnly}
             onSet={(key, value) => vault.setProperty(path, key, value)}
           />
+          <WikiArticleExtras key={note.path} note={note} players={players} />
           <Relations path={path} root={wiki?.root ?? ""} readOnly={readOnly} />
           <Mentions path={path} />
         </NoteSetContext.Provider>

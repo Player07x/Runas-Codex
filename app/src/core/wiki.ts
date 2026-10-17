@@ -1,3 +1,4 @@
+import { parseMapExtras, type MapExtras } from "./wiki-map-extras"
 import { parse as parseYaml } from "yaml"
 import { findCodeBlocks } from "./codeblocks"
 import { CalendarError, dayNumber, parseCalendar, parseWorldDate, type Calendar, type WorldDate } from "./calendar"
@@ -120,6 +121,7 @@ export function newArticleNote(kind: ArticleKind, title: string, calendarLink?: 
   lines.push("---", `# ${title}`, "")
   if (kind.questions.length) lines.push(...kind.questions.map((q) => `%% ${q} %%`), "")
   for (const section of kind.sections) lines.push(`## ${section}`, "", "")
+  if (kind.id === "idioma") lines.push('```runas-idioma', `nome: ${yamlString(title)}`, 'regras: ""', 'palavras:', '  - palavra: exemplo', '    traducao: significado', '    pronuncia: pronúncia', '```', '')
   return lines.join("\n").replace(/\n{3,}$/, "\n\n")
 }
 
@@ -514,7 +516,7 @@ export interface MapPin {
   secret?: boolean
 }
 
-export interface MapSpec {
+export interface MapSpec extends MapExtras {
   image: string
   layers: string[]
   pins: MapPin[]
@@ -547,6 +549,7 @@ export function parseMap(content: string): MapSpec {
   const viagem = d.viagem && typeof d.viagem === "object" ? (d.viagem as Record<string, unknown>) : null
   return {
     image,
+    ...parseMapExtras(d),
     layers: Array.isArray(d.camadas) ? d.camadas.map(String) : [],
     pins,
     ...(scale && typeof scale.pixels === "number" && typeof scale.distancia === "number" ? { scale: { pixels: scale.pixels, distance: scale.distancia, unit: typeof scale.unidade === "string" ? scale.unidade : "km" } } : {}),

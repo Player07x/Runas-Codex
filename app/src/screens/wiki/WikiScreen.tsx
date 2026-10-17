@@ -11,6 +11,7 @@ import { WikiGraph } from "./WikiGraph"
 import { WikiHome } from "./WikiHome"
 import { WikiMap } from "./WikiMap"
 import { WikiRelations } from "./WikiRelations"
+import { WikiTools } from "./WikiTools"
 import { WikiTimeline } from "./WikiTimeline"
 import { WikiProvider, useWiki } from "./wiki-state"
 import "./register"
@@ -22,6 +23,7 @@ const TABS = [
   { id: "linha-do-tempo", label: "Linha do tempo", icon: <History size={15} /> },
   { id: "mapa", label: "Mapas", icon: <Map size={15} /> },
   { id: "relacoes", label: "Relações", icon: <GitFork size={15} /> },
+  { id: "ferramentas", label: "Ferramentas", icon: <Plus size={15} /> },
   { id: "grafico", label: "Gráfico", icon: <Network size={15} /> },
 ]
 
@@ -58,6 +60,7 @@ function WikiBody({ section, id }: { section: string; id?: string }) {
       {section === "linha-do-tempo" && <WikiTimeline />}
       {section === "mapa" && <WikiMap path={id} />}
       {section === "relacoes" && <WikiRelations path={id} />}
+      {section === "ferramentas" && <WikiTools />}
       {section === "grafico" && <WikiGraph />}
     </div>
   )

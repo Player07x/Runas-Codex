@@ -95,3 +95,7 @@ Object.assign(DEMO_TEXT_FILES, campaignDemoFiles())
 // Dados de plugins de RPG do Obsidian para a migração (etapa 10).
 import { OBSIDIAN_PLUGIN_DEMO } from "./obsidian-plugins-demo"
 Object.assign(DEMO_TEXT_FILES, OBSIDIAN_PLUGIN_DEMO)
+
+// C6: ferramentas do mundo, idioma, recorrência e crônicas.
+import { WIKI_FINISH_DEMO } from "./wiki-finish-demo"
+Object.assign(DEMO_TEXT_FILES, WIKI_FINISH_DEMO)
