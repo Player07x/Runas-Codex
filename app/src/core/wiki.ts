@@ -1,7 +1,7 @@
 import { parseMapExtras, type MapExtras } from "./wiki-map-extras"
 import { parse as parseYaml } from "yaml"
 import { findCodeBlocks } from "./codeblocks"
-import { CalendarError, dayNumber, parseCalendar, parseWorldDate, type Calendar, type WorldDate } from "./calendar"
+import { CalendarError, dayNumber, defaultAbbr, noteDateText, parseCalendar, parseWorldDate, sameAbbr, type Calendar, type WorldDate } from "./calendar"
 import type { LinkRef } from "./parse"
 import { extname, noteName } from "./text"
 import type { IndexedNote, VaultIndex } from "./vault-index"
@@ -126,10 +126,10 @@ export function wikiRootOf(path: string): string | null {
 
 const yamlString = (value: string) => JSON.stringify(value)
 
-/** Texto de um artigo novo: `tipo`, os campos vazios da ficha, o calendário da wiki, seções e perguntas-guia. */
-export function newArticleNote(kind: ArticleKind, title: string, calendarLink?: string): string {
+/** Texto de um artigo novo: `tipo`, os campos vazios da ficha, seções e perguntas-guia. O calendário de cada data vem
+ * da sigla escrita nela (`"3999-02-12 OC"`). */
+export function newArticleNote(kind: ArticleKind, title: string): string {
   const lines = ["---", `tipo: ${kind.id}`]
-  if (calendarLink && kind.fields.some((field) => field.kind === "data")) lines.push(`calendario: ${yamlString(`[[${calendarLink}]]`)}`)
   for (const field of kind.fields) lines.push(field.kind === "links" ? `${field.key}: []` : `${field.key}:`)
   lines.push("---", `# ${title}`, "")
   if (kind.questions.length) lines.push(...kind.questions.map((q) => `%% ${q} %%`), "")
@@ -143,6 +143,7 @@ export function newWikiNote(name: string): string {
 }
 
 export const CALENDAR_EXAMPLE = `nome: Calendário
+sigla: CAL
 sufixo: D.R.
 semana: [Lua, Fogo, Água, Madeira, Ouro, Terra, Sol]
 meses:
@@ -160,7 +161,7 @@ eras:
 hoje: "1000-01-01"`
 
 export function newCalendarNote(name: string): string {
-  return `---\ntipo: calendario\n---\n# ${name}\n\nMeses, semana, luas e eras do mundo. Edite o bloco abaixo (a ajuda está no app, em Wiki › Calendário).\n\n\`\`\`runas-calendario\n${CALENDAR_EXAMPLE.replace(/^nome: Calendário$/m, `nome: ${name}`)}\n\`\`\`\n`
+  return `---\ntipo: calendario\n---\n# ${name}\n\nMeses, semana, luas e eras do mundo. Edite o bloco abaixo (a ajuda está no app, em Wiki › Calendário).\n\n\`\`\`runas-calendario\n${CALENDAR_EXAMPLE.replace(/^nome: Calendário$/m, `nome: ${name}`).replace(/^sigla: CAL$/m, `sigla: ${defaultAbbr(name)}`)}\n\`\`\`\n`
 }
 
 export function newMapNote(name: string, image: string): string {
@@ -225,15 +226,25 @@ export function listCalendars(index: VaultIndex, root = ""): (CalendarRef | { pa
     })
 }
 
+/** O calendário com esta sigla: primeiro na wiki da nota, depois no cofre todo. */
+export function calendarByAbbr(index: VaultIndex, abbr: string, from = ""): CalendarRef | { error: string } {
+  const root = wikiRootOf(from)
+  const found = (list: ReturnType<typeof listCalendars>) => list.find((c): c is CalendarRef => "calendar" in c && sameAbbr(c.calendar.abbr, abbr))
+  return (root ? found(listCalendars(index, root)) : undefined) ?? found(listCalendars(index)) ?? { error: `Nenhum calendário tem a sigla “${abbr}” (ponha sigla: ${abbr} no bloco runas-calendario).` }
+}
+
 /**
- * O calendário de uma nota: o da propriedade `calendario` (link para a nota com o bloco) ou, sem ela, o da wiki — se a
- * wiki tem um calendário só.
+ * O calendário de uma data de uma nota: o da sigla escrita na data (`"3999-02-12 OC"`). Sem `date`, vale a sigla da
+ * primeira data da nota que tiver uma. Datas antigas, sem sigla, usam a propriedade `calendario` (link para a nota com
+ * o bloco) ou, sem ela, o da wiki — se a wiki tem um calendário só.
  */
-export function calendarFor(index: VaultIndex, path: string): CalendarRef | { error: string } | null {
+export function calendarFor(index: VaultIndex, path: string, date?: WorldDate): CalendarRef | { error: string } | null {
   const note = index.note(path)
   if (!note) return null
   const own = calendarInNote(note)
   if (own) return own
+  const abbr = date ? date.calendar : noteDates(note.meta.frontmatter?.data).find((d) => d.date.calendar)?.date.calendar
+  if (abbr) return calendarByAbbr(index, abbr, path)
   const link = note.meta.frontmatter?.data?.calendario
   if (typeof link === "string" && link.trim()) {
     const target = linkTargetOf(link)?.target ?? link.trim()
@@ -266,6 +277,20 @@ export function noteDates(data: Record<string, unknown> | null | undefined): Not
     if (!date) return []
     const label = DATE_LABELS[key] ?? key.replace(/_mundo$/, "").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())
     return [{ key, label, date }]
+  })
+}
+
+/**
+ * Datas `_mundo` da nota ainda sem sigla, já com a do calendário que valia para elas (para regravar no formato novo).
+ * Datas cujo calendário não se descobre ficam de fora.
+ */
+export function datesMissingAbbr(index: VaultIndex, path: string): { key: string; text: string }[] {
+  const note = index.note(path)
+  if (!note) return []
+  return noteDates(note.meta.frontmatter?.data).flatMap((d) => {
+    if (d.date.calendar) return []
+    const found = calendarFor(index, path, d.date)
+    return found && "calendar" in found ? [{ key: d.key, text: noteDateText(d.date, found.calendar) }] : []
   })
 }
 
@@ -491,13 +516,12 @@ export function timelineEvents(index: VaultIndex, root: string, ref: CalendarRef
     if (!data) continue
     const dates = noteDates(data)
     if (!dates.length) continue
-    const calendar = calendarFor(index, note.path)
-    if (!calendar || "error" in calendar || calendar.path !== ref.path) continue
+    const inRef = (date: WorldDate) => { const found = calendarFor(index, note.path, date); return Boolean(found && "calendar" in found && found.path === ref.path) }
     const kind = articleKind(data.tipo)
     const trackValue = typeof data.trilha === "string" ? data.trilha : Array.isArray(data.trilha) ? String(data.trilha[0] ?? "") : ""
     const track = (linkTargetOf(trackValue)?.target ?? trackValue.trim()) || kind?.label || "Outros"
-    const start = dates.find((d) => d.key === "data_mundo")?.date
-    const end = dates.find((d) => d.key === "data_fim_mundo")?.date
+    const start = dates.find((d) => d.key === "data_mundo" && inRef(d.date))?.date
+    const end = dates.find((d) => d.key === "data_fim_mundo" && inRef(d.date))?.date
     const base = { path: note.path, kind, track: track.split("/").pop()!, tags: note.meta.tags }
     if (start) {
       const startDay = dayNumber(ref.calendar, start)
@@ -507,7 +531,7 @@ export function timelineEvents(index: VaultIndex, root: string, ref: CalendarRef
     if (options.people) {
       for (const life of ["nascimento", "morte"] as const) {
         const date = dates.find((d) => d.key === `${life}_mundo`)?.date
-        if (!date) continue
+        if (!date || !inRef(date)) continue
         const day = dayNumber(ref.calendar, date)
         events.push({ ...base, title: `${life === "nascimento" ? "Nasce" : "Morre"} ${noteName(note.path)}`, start: date, startDay: day, endDay: day, life })
       }

@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { formatDate as formatWorld, parseWorldDate, type Calendar } from "../../core/calendar"
+import { formatDate as formatWorld, parseWorldDate, sameAbbr, type Calendar } from "../../core/calendar"
 import {
   campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks, upcomingSession,
   type CampaignInfo, type CampaignStats, type Clock, type PlayerCharacter, type QuestInfo, type SecretItem, type SessionInfo, type TrackedLink,
@@ -79,7 +79,7 @@ export function useCampaignData(name: string): CampaignData {
 export function worldDateLabel(calendar: Calendar | null, text: string | undefined): string | undefined {
   if (!text) return undefined
   const date = parseWorldDate(text)
-  if (!calendar || !date) return text
+  if (!calendar || !date || (date.calendar && !sameAbbr(date.calendar, calendar.abbr))) return text
   return formatWorld(calendar, date)
 }
 

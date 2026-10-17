@@ -138,9 +138,10 @@ describe("Calendarium → runas-calendario", () => {
     })
 
     it("o YAML gerado é o do estilo do app", () => {
-      expect(result.yaml.split("\n").slice(0, 6)).toEqual([
+      expect(result.yaml.split("\n").slice(0, 7)).toEqual([
         "# Convertido do Calendarium pela migração do Runas-Codex.",
         "nome: Calendário de Tharn",
+        "sigla: T",
         "semana: [Pedra, Raiz, Chama, Vento, Maré]",
         `primeiro_dia: ${parseCalendar(result.yaml).firstWeekday}`,
         "meses:",

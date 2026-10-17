@@ -385,7 +385,7 @@ export const SMOKE_SCRIPT = `(async () => {
       map: (migrated[mapPath] ?? "").includes(fence + "runas-mapa") && !(migrated[mapPath] ?? "").includes(fence + "leaflet"),
       statblock: (migrated[wolfPath] ?? "").includes("> [!statblock] Lobo de Cinzas"),
       encounter: (migrated[ambushPath] ?? "").includes(fence + "runas-encontro"),
-      date: (migrated[crownPath] ?? "").includes('data_mundo: "4031-02-12"') && (migrated[crownPath] ?? "").includes("fc-date: 4031-02-12"),
+      date: (migrated[crownPath] ?? "").includes('data_mundo: "4031-02-12 T"') && (migrated[crownPath] ?? "").includes("fc-date: 4031-02-12"),
       calendar: (migrated[calendarPath] ?? "").includes(fence + "runas-calendario"),
     }
     location.hash = "/notas/" + encodeURIComponent(ambushPath)

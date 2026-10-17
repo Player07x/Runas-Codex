@@ -18,7 +18,7 @@ import { askWikiSearch, useWiki } from "./wiki-state"
 export function WikiArticleView({ path }: { path: string }) {
   const vault = useVault()
   const toast = useToast()
-  const { wiki, players } = useWiki()
+  const { wiki, players, calendars } = useWiki()
   const index = vault.index!
   const note = index.note(path)
   const [panel, setPanel] = useState(false)
@@ -51,6 +51,7 @@ export function WikiArticleView({ path }: { path: string }) {
           <Infobox
             note={note}
             calendar={calendarRef && "calendar" in calendarRef ? calendarRef.calendar : null}
+            calendars={[...calendars.map((c) => c.calendar), ...(calendarRef && "calendar" in calendarRef && !calendars.some((c) => c.path === calendarRef.path) ? [calendarRef.calendar] : [])]}
             {...(calendarRef && "error" in calendarRef ? { calendarError: calendarRef.error } : {})}
             readOnly={readOnly}
             onSet={(key, value) => vault.setProperty(path, key, value)}

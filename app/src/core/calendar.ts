@@ -5,6 +5,7 @@ import { parse as parseYaml } from "yaml"
  *
  * ```yaml
  * nome: Calendário de Ordem x Caos
+ * sigla: OC                         # vai depois das datas nas notas: nascimento_mundo: "3999-02-12 OC"
  * sufixo: C.E.                       # depois do ano ("4031 C.E."); sufixo_negativo para anos antes do 0
  * semana: [Pedra, Raiz, Chama, Vento, Maré, Sombra]
  * primeiro_dia: 0                    # dia da semana (índice) de 1/1 do ano 0
@@ -26,7 +27,8 @@ import { parse as parseYaml } from "yaml"
  *   - { calendario: "[[Calendário élfico]]", data: "4031-01-01", data_no_outro: "0812-01-01" }
  * ```
  *
- * Datas são `ANO-MM-DD` (o ano pode ser 0 ou negativo, com sinal: `-120-03-01`). Tudo é contado em "dias absolutos"
+ * Datas são `ANO-MM-DD` (o ano pode ser 0 ou negativo, com sinal: `-120-03-01`). Nas propriedades das notas, a data
+ * leva a sigla do calendário: `ANO-MM-DD SIGLA` (`"3999-02-12 OC"`); é a sigla que diz em qual calendário ela está. Tudo é contado em "dias absolutos"
  * desde 1/1 do ano 0 — é o que permite somar dias, comparar datas e converter entre calendários.
  */
 
@@ -72,6 +74,8 @@ export interface Holiday {
 
 export interface Calendar {
   name: string
+  /** Sigla que acompanha as datas nas notas (`sigla:`; sem ela, as iniciais do nome). */
+  abbr: string
   suffix: string
   negativeSuffix?: string
   weekdays: string[]
@@ -91,18 +95,37 @@ export interface WorldDate {
   year: number
   month: number
   day: number
+  /** Sigla do calendário escrita depois da data (`3999-02-12 OC`). */
+  calendar?: string
 }
 
 const mod = (n: number, m: number) => ((n % m) + m) % m
 
 // ---------- Datas em texto ----------
 
-const DATE = /^\s*(-?\d+)-(\d{1,2})-(\d{1,2})\s*$/
+const DATE = /^\s*(-?\d+)-(\d{1,2})-(\d{1,2})(?:\s+([^\s].*?))?\s*$/
 
+/** `ANO-MM-DD`, com ou sem a sigla do calendário depois (`3999-02-12 OC`). */
 export function parseWorldDate(text: unknown): WorldDate | null {
   if (typeof text !== "string" && typeof text !== "number") return null
   const m = DATE.exec(String(text))
-  return m ? { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) } : null
+  if (!m) return null
+  return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]), ...(m[4] ? { calendar: m[4] } : {}) }
+}
+
+/** Compara siglas sem diferenciar maiúsculas, pontos e espaços (`O.C.` = `oc`). */
+export const sameAbbr = (a: string, b: string) => a.replace(/[.\s]/g, "").toLocaleUpperCase("pt-BR") === b.replace(/[.\s]/g, "").toLocaleUpperCase("pt-BR")
+
+/** Sigla padrão: as iniciais das palavras com maiúscula, sem "Calendário" (`Calendário de Ordem x Caos` → `OC`). */
+export function defaultAbbr(name: string): string {
+  const words = name.split(/\s+/).filter((w) => /^\p{Lu}/u.test(w) && !/^calend[áa]rio$/i.test(w))
+  const initials = words.map((w) => w[0]!).join("")
+  return initials || name.replace(/[^\p{L}\p{N}]/gu, "").slice(0, 3).toLocaleUpperCase("pt-BR") || "CAL"
+}
+
+/** A data como vai na nota: `ANO-MM-DD SIGLA`. */
+export function noteDateText(date: WorldDate, calendar: Pick<Calendar, "abbr">): string {
+  return `${worldDateText(date)} ${calendar.abbr}`
 }
 
 export function worldDateText(date: WorldDate): string {
@@ -170,6 +193,7 @@ export function parseCalendar(source: string): Calendar {
 
   const calendar: Calendar = {
     name: str(d.nome) || "Calendário",
+    abbr: str(d.sigla) || defaultAbbr(str(d.nome) || "Calendário"),
     suffix: str(d.sufixo),
     ...(str(d.sufixo_negativo) ? { negativeSuffix: str(d.sufixo_negativo) } : {}),
     weekdays,

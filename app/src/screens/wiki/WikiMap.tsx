@@ -2,7 +2,6 @@ import { MapImageSettings, useMapDecoration } from "./MapImageSettings"
 import { useMemo, useState } from "react"
 import { ChevronLeft, Map as MapIcon, Pencil, Plus } from "lucide-react"
 import { findCodeBlocks, replaceCodeBlock, setBlockKeys } from "../../core/codeblocks"
-import { noteName } from "../../core/text"
 import { articleKind, isMapNote, listMaps, newArticleNote, parseMap, pinsToYaml, type MapPin, type MapSpec } from "../../core/wiki"
 import { useNoteSet } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
@@ -157,7 +156,7 @@ function MapEditor({ path }: { path: string }) {
       else {
         // Nota nova a partir do pino: um Local da wiki.
         const local = articleKind("local")!
-        const created = await vault.createNote(`${wiki!.root}${local.folder}`, pin.note, newArticleNote(local, pin.note, calendar ? noteName(calendar.path) : undefined))
+        const created = await vault.createNote(`${wiki!.root}${local.folder}`, pin.note, newArticleNote(local, pin.note))
         next = { ...pin, note: index.linkTarget(created, path) }
         toast(`Nota criada: ${created}`)
       }

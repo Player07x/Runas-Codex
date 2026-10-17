@@ -1,4 +1,4 @@
-import { dateProblem, dayNumber, fromDayNumber, parseCalendar, weekdayIndex, worldDateText, type Calendar, type WorldDate } from "../calendar"
+import { dateProblem, dayNumber, defaultAbbr, fromDayNumber, parseCalendar, weekdayIndex, worldDateText, type Calendar, type WorldDate } from "../calendar"
 import { flowList, flowMap, yamlDate, yamlScalar } from "./yaml-out"
 
 /**
@@ -301,7 +301,7 @@ const MONTH_DAY = (month: number, day: number) => `${String(month).padStart(2, "
 /** Converte um calendário do Calendarium (ou do Fantasy-Calendar, já lido) para o bloco do app. */
 export function convertCalendar(cal: CmCalendar, origin = "Calendarium"): CalendarConversion {
   const warnings: string[] = []
-  const lines: string[] = [`# Convertido do ${origin} pela migração do Runas-Codex.`, `nome: ${yamlScalar(cal.name)}`]
+  const lines: string[] = [`# Convertido do ${origin} pela migração do Runas-Codex.`, `nome: ${yamlScalar(cal.name)}`, `sigla: ${yamlScalar(defaultAbbr(cal.name))}`]
   if (!cal.months.length) throw new Error(`O calendário “${cal.name}” não tem meses.`)
 
   if (cal.weekdays.length) lines.push(`semana: ${flowList(cal.weekdays)}`)
@@ -348,7 +348,7 @@ export function convertCalendar(cal: CmCalendar, origin = "Calendarium"): Calend
   if (cal.weekdays.length && firstWeekMonth >= 0) {
     const w0 = weekdayIndex(draft, { year: 1, month: firstWeekMonth + 1, day: 1 }) ?? 0
     const first = mod(cal.firstWeekDay - w0, cal.weekdays.length)
-    lines.splice(3, 0, `primeiro_dia: ${first}`)
+    lines.splice(lines.findIndex((l) => l.startsWith("semana:")) + 1, 0, `primeiro_dia: ${first}`)
   }
 
   // Data atual da campanha (o Calendarium conta o mês a partir de 0).

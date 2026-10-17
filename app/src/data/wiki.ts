@@ -48,8 +48,7 @@ export const ARTICLES: WikiArticle[] = [
     ],
     markdown: `---
 tipo: personagem
-calendario: "[[Calendário de Ordem x Caos]]"
-nascimento_mundo: "3999-02-12"
+nascimento_mundo: "3999-02-12 OC"
 especie: Humano
 ocupacao: Cavaleiro renegado
 residencia: "[[Valdris]]"
@@ -108,11 +107,10 @@ Nascido numa família de ferreiros, Aldren entrou para a Ordem aos 14 anos. Carr
     ],
     markdown: `---
 tipo: cidade
-calendario: "[[Calendário de Ordem x Caos]]"
 localizado_em: "[[Lago Espelhado]]"
 governante: "[[Conde Ormund]]"
 populacao: 12000
-fundacao_mundo: "3712-05-10"
+fundacao_mundo: "3712-05-10 OC"
 aliados: ["[[Ordem da Chama Cinzenta]]"]
 ---
 # Valdris
@@ -148,9 +146,8 @@ Capital do condado, erguida sobre a fortaleza de um mago da [[Era dos Magos]]. A
     ],
     markdown: `---
 tipo: organizacao
-calendario: "[[Calendário de Ordem x Caos]]"
 sede: "[[Valdris]]"
-fundacao_mundo: "3895-02-01"
+fundacao_mundo: "3895-02-01 OC"
 objetivo: Guardar as lâminas forjadas em Myrr
 em_guerra_com: ["[[Culto de Morr]]"]
 ---
@@ -182,10 +179,9 @@ Relíquias sob guarda: [[Lâmina de Obsidiana]] (perdida).
     ],
     markdown: `---
 tipo: item
-calendario: "[[Calendário de Ordem x Caos]]"
 dono_atual: "[[Aldren Vael]]"
 raridade: Lendária
-criacao_mundo: "3880-11-02"
+criacao_mundo: "3880-11-02 OC"
 ---
 # Lâmina de Obsidiana
 
@@ -214,9 +210,8 @@ Forjada na [[Era dos Magos]] com vidro de Myrr. Hoje com [[Aldren Vael]].
     ],
     markdown: `---
 tipo: acontecimento
-calendario: "[[Calendário de Ordem x Caos]]"
-data_mundo: "4027-07-01"
-data_fim_mundo: "4027-07-03"
+data_mundo: "4027-07-01 OC"
+data_fim_mundo: "4027-07-03 OC"
 trilha: "[[Ordem da Chama Cinzenta]]"
 envolvidos: ["[[Aldren Vael]]", "[[Conde Ormund]]"]
 ---
@@ -244,8 +239,7 @@ Em 9 de Semeadura de 4012 C.E. o vulcão sob Myrr despertou. A [[Ordem da Chama 
     ],
     markdown: `---
 tipo: personagem
-calendario: "[[Calendário de Ordem x Caos]]"
-nascimento_mundo: "3975-09-03"
+nascimento_mundo: "3975-09-03 OC"
 ocupacao: Conde de Valdris
 residencia: "[[Valdris]]"
 filhos: ["[[Edric Ormund]]"]
@@ -323,9 +317,8 @@ Ao norte de [[Valdris]]. Dizem que na cheia de Morr o reflexo mostra Myrr antes 
     ],
     markdown: `---
 tipo: era
-calendario: "[[Calendário de Ordem x Caos]]"
-data_mundo: "3122-01-01"
-data_fim_mundo: "3887-10-36"
+data_mundo: "3122-01-01 OC"
+data_fim_mundo: "3887-10-36 OC"
 trilha: Eras
 ---
 # Era dos Magos
@@ -358,6 +351,7 @@ Dez meses de 36 dias, os cinco Dias de Logi fora da semana (seis no ano bissexto
 
 \`\`\`runas-calendario
 nome: Calendário de Ordem x Caos
+sigla: OC
 sufixo: C.E.
 semana: [Pedra, Raiz, Chama, Vento, Maré, Sombra]
 meses:
@@ -402,8 +396,7 @@ hoje: "4031-07-15"
     infobox: [],
     markdown: `---
 tipo: personagem
-calendario: "[[Calendário de Ordem x Caos]]"
-nascimento_mundo: "4010-04-18"
+nascimento_mundo: "4010-04-18 OC"
 pais: ["[[Conde Ormund]]"]
 membro_de: ["[[Ordem da Chama Cinzenta]]"]
 subordinado_a: "[[Conde Ormund]]"

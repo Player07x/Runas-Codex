@@ -1,7 +1,6 @@
 ---
 tipo: evento
-calendario: "[[Calendário de Ordem x Caos]]"
-data_mundo: "4031-01-01"
+data_mundo: "4031-01-01 OC"
 recorrencia_mundo: meses
 intervalo_mundo: 1
 ---

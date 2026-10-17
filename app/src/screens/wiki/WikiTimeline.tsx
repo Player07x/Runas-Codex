@@ -67,7 +67,7 @@ export function WikiTimeline() {
       <div className="page">
         <div className="card stack">
           <strong>A linha do tempo precisa de um calendário</strong>
-          <span className="muted small">Crie um artigo do tipo Calendário e use datas nas propriedades dos artigos (<code>data_mundo: "4031-03-15"</code>, <code>data_fim_mundo</code> para períodos).</span>
+          <span className="muted small">Crie um artigo do tipo Calendário e use datas nas propriedades dos artigos (<code>data_mundo: "4031-03-15 SIGLA"</code>, com a sigla do calendário; <code>data_fim_mundo</code> para períodos).</span>
         </div>
       </div>
     )
@@ -132,7 +132,7 @@ export function WikiTimeline() {
         </div>
       )}
       {events.length === 0 ? (
-        <p className="muted">Nenhum acontecimento com data. Ponha <code>data_mundo: "AAAA-MM-DD"</code> (e <code>data_fim_mundo</code>) nos artigos; a propriedade <code>trilha</code> escolhe a faixa (um país, um personagem…).</p>
+        <p className="muted">Nenhum acontecimento com data. Ponha <code>data_mundo: "AAAA-MM-DD SIGLA"</code> (e <code>data_fim_mundo</code>) nos artigos; a propriedade <code>trilha</code> escolhe a faixa (um país, um personagem…).</p>
       ) : (
         <div className="card timeline">
           <div className="timeline-scroll" ref={scroller}>
