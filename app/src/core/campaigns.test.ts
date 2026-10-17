@@ -1,8 +1,9 @@
 import {
   appendToSection, campaignJournal, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
   nextCampaignSession, npcSightings, PREP_STEPS, prepItems, previousSession, reputationOf, secretsOf, sectionText, setClocks, setPrepDetail, setSecretRevealed, setSectionText, setTaskLine,
-  trackedLinks, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink,
+  withCampaignPlayer, trackedLinks, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink,
 } from "./campaigns"
+import { setProperty } from "./properties"
 import { parseFrontmatter } from "./parse"
 import { VaultIndex } from "./vault-index"
 
@@ -260,5 +261,73 @@ describe("exportar", () => {
     expect(journal).not.toContain("Sessão 12")
     expect(journal.endsWith("\n")).toBe(true)
     expect(flattenLinks("Com [[Wikis/Mundo/Aldren Vael|Aldren]], [[Wikis/Mundo/Valdris#Distritos]] e ![[mapa.png]].")).toBe("Com Aldren, Valdris e mapa.png.")
+  })
+})
+
+
+describe("personagens da wiki vinculados à campanha", () => {
+  const path = "Wikis/Mundo/Personagens/Aldren.md"
+  function setup() {
+    const texts = { ...files, [path]: "---\ntipo: personagem\njogador: Nome antigo\nconceito: Explorador\ncor: '#abcdef'\n---\n# Aldren Vael\n" }
+    const vault = new VaultIndex(Object.keys(texts).map(path => ({ path, size: 1, mtime: 1 })), texts)
+    const campaign = listCampaigns(vault).find(c => c.name === "Cinzas")!
+    const save = (target: string, player: string | null) => {
+      const links = withCampaignPlayer(vault, campaign, target, player)
+      const text = setProperty(vault.note(HOME)!.text, "personagens", links)
+      vault.set({ path: HOME, size: text.length, mtime: 2 }, text)
+      return links
+    }
+    return { vault, campaign, save }
+  }
+
+  it("vincula o artigo sem duplicá-lo e mantém os perfis antigos na primeira edição", () => {
+    const { vault, campaign, save } = setup()
+    const before = vault.note(path)!.text
+    save(path, ' Ana (mestra) ')
+    const players = listPlayers(vault, campaign)
+    expect(players).toHaveLength(3)
+    expect(players.find(p => p.path === path)).toMatchObject({ name: "Aldren Vael", player: "Ana (mestra)", concept: "Explorador", color: "#abcdef" })
+    expect(vault.note(path)!.text).toBe(before)
+    expect(vault.notesIn(`${C}Personagens/`)).toHaveLength(2)
+    expect(vault.note(HOME)!.text).toContain("[[Wikis/Mundo/Personagens/Aldren]]")
+  })
+
+  it("troca e limpa o jogador só nesta campanha, sem repetir o personagem", () => {
+    const { vault, campaign, save } = setup()
+    save(path, "Ana")
+    save(path, 'Bia "B"')
+    expect(listPlayers(vault, campaign).find(p => p.path === path)?.player).toBe('Bia "B"')
+    save(path, "")
+    expect(listPlayers(vault, campaign).find(p => p.path === path)?.player).toBeUndefined()
+    const otherHome = "Campanhas/Outra/Outra.md"
+    vault.set({ path: otherHome, size: 1, mtime: 1 }, `---\ntipo: campanha\npersonagens: ['[[${path}]] (Carla)']\n---\n`)
+    const other = listCampaigns(vault).find(c => c.name === "Outra")!
+    expect(listPlayers(vault, other)[0]?.player).toBe("Carla")
+    expect(listPlayers(vault, campaign).filter(p => p.path === path)).toHaveLength(1)
+    expect(vault.note(path)!.text).toContain("jogador: Nome antigo")
+  })
+
+  it("desvincula todos sem apagar artigos, perfis antigos ou presenças", () => {
+    const { vault, campaign, save } = setup()
+    const session = vault.note(`${C}Sessões/Sessão 11.md`)!.text
+    save(path, "Ana")
+    for (const p of listPlayers(vault, campaign)) save(p.path, null)
+    expect(listPlayers(vault, campaign)).toEqual([])
+    expect(vault.note(path)).toBeDefined()
+    expect(vault.note(`${C}Personagens/Ilsa.md`)).toBeDefined()
+    expect(vault.note(`${C}Sessões/Sessão 11.md`)!.text).toBe(session)
+  })
+
+  it("preserva vínculos quebrados e resolve a presença por wikilinks", () => {
+    const { vault, campaign } = setup()
+    const text = setProperty(vault.note(HOME)!.text, "personagens", [`[[${path}]] (Ana)`, "[[Não existe]] (Bruno)", `[[${path}]] (Ana)`])
+    vault.set({ path: HOME, size: text.length, mtime: 2 }, text)
+    expect(listPlayers(vault, campaign)).toHaveLength(1)
+    expect(withCampaignPlayer(vault, campaign, path, "Bia")).toEqual(["[[Não existe]] (Bruno)", "[[Wikis/Mundo/Personagens/Aldren]] (Bia)"])
+    const sessionPath = `${C}Sessões/Sessão 14.md`
+    vault.set({ path: sessionPath, size: 1, mtime: 1 }, `---\ntipo: sessao\npresentes: ['[[${path}]]']\n---\n`)
+    expect(listSessions(vault, campaign, TODAY).find(s => s.path === sessionPath)?.present).toEqual([path])
+    // O mesmo mecanismo de links usado para presenças e renomeação lê a propriedade da campanha.
+    expect(vault.note(HOME)!.meta.links.some(link => link.target === path && link.inFrontmatter)).toBe(true)
   })
 })

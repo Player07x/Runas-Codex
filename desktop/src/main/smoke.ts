@@ -5,6 +5,7 @@ import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
 import { VTT_TOUCH_SMOKE } from "./vtt-touch-smoke"
 import { NOTES_C5C_SMOKE } from "./notes-c5c-smoke"
 import { WIKI_CATEGORY_SMOKE } from "./wiki-category-smoke"
+import { CAMPAIGN_PLAYERS_SMOKE } from "./campaign-players-smoke"
 
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
@@ -345,6 +346,8 @@ export const SMOKE_SCRIPT = `(async () => {
     }
   }
 
+  ${CAMPAIGN_PLAYERS_SMOKE}
+
   // Quadro: um cartão novo pela barra; o JSON continua válido, com os campos desconhecidos e o link renomeado.
   location.hash = "/quadro/" + encodeURIComponent(canvasPath)
   await until(() => document.querySelectorAll(".canvas-card").length > 0)
@@ -570,6 +573,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []
   const notesC5c = result.notesC5c as Record<string, unknown> | undefined
   if (!notesC5c || !Object.values(notesC5c).every(value => value === true)) return false
+  const campaignPlayers = result.campaignPlayers as Record<string, unknown> | undefined
+  if (!campaignPlayers || Object.keys(campaignPlayers).length !== 7 || !Object.values(campaignPlayers).every(value => value === true)) return false
   const noteWindows = result.noteWindows as Record<string, unknown> | undefined
   if (!noteWindows || !Object.values(noteWindows).every(value => value === true)) return false
   return (

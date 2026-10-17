@@ -2,13 +2,14 @@ import { useMemo, useState, type ReactNode } from "react"
 import { FileText, Search } from "lucide-react"
 import { eventFileName, eventNote, type EventInput } from "../../core/agenda"
 import {
-  CAMPAIGN_ROOT, newCampaignNote, newPlayerNote, newQuestNote, newSessionNote, QUEST_STATUS, sessionFileName, uniqueNoteName,
-  type CampaignInfo, type QuestStatus,
+  CAMPAIGN_ROOT, isPlayerNote, listPlayers, newCampaignNote, newQuestNote, newSessionNote, noteTitle, QUEST_STATUS, sessionFileName, uniqueNoteName, withCampaignPlayer,
+  type CampaignInfo, type PlayerCharacter, type QuestStatus,
 } from "../../core/campaigns"
 import { emptyCanvasText } from "../../core/canvas"
 import { noteDateText, parseWorldDate } from "../../core/calendar"
 import { dirname, noteName } from "../../core/text"
-import { listWikis } from "../../core/wiki"
+import { articleKind, listWikis, newArticleNote } from "../../core/wiki"
+import { setProperty } from "../../core/properties"
 import { useVault } from "../../platform/VaultProvider"
 import { Modal } from "../../components/ui"
 import type { CampaignData } from "./campaign-state"
@@ -246,33 +247,102 @@ export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: {
 
 export function NewPlayerDialog({ campaign, onClose }: { campaign: CampaignInfo; onClose(): void }) {
   const vault = useVault()
+  const index = vault.index!
+  const wikis = listWikis(index)
+  const [wiki, setWiki] = useState(campaign.wiki ?? wikis[0]?.name ?? "")
+  const [mode, setMode] = useState("existente")
+  const [selected, setSelected] = useState("")
+  const [query, setQuery] = useState("")
   const [name, setName] = useState("")
   const [player, setPlayer] = useState("")
   const [concept, setConcept] = useState("")
+  // Se o vínculo falhar depois da criação, tentar de novo reutiliza o artigo já salvo.
+  const [createdPath, setCreatedPath] = useState<string>()
+  const root = `Wikis/${wiki}/`
+  const linked = new Set(listPlayers(index, campaign).map(p => p.path))
+  const characters = index.notesIn(root).filter(n => (articleKind(n.meta.frontmatter?.data?.tipo)?.id === "personagem" || isPlayerNote(n, root)) && !linked.has(n.path))
+    .sort((a, b) => noteTitle(a).localeCompare(noteTitle(b), "pt-BR"))
+  const filtered = characters.filter(n => `${noteTitle(n)} ${n.path}`.toLocaleLowerCase("pt-BR").includes(query.trim().toLocaleLowerCase("pt-BR")))
+  const existing = mode === "existente"
   return (
     <FormDialog
       title="Personagem de jogador"
-      confirmLabel="Criar personagem"
-      disabled={!name.trim()}
+      confirmLabel={createdPath ? "Vincular personagem criado" : existing ? "Vincular personagem" : "Criar e vincular"}
+      disabled={!campaign.home || !wiki || (existing && !createdPath ? !characters.some(n => n.path === selected) : !createdPath && !name.trim())}
       onClose={onClose}
       onConfirm={async () => {
-        const folder = `${campaign.root}Personagens`
-        await vault.createNote(folder, uniqueNoteName(vault.index!, folder, name.trim()), newPlayerNote(name.trim(), { ...(player.trim() ? { player: player.trim() } : {}), ...(concept.trim() ? { concept: concept.trim() } : {}) }))
+        if (!campaign.home) throw new Error("Falta a nota inicial da campanha.")
+        let path = createdPath ?? selected
+        if (!existing && !createdPath) {
+          const folder = `${root}Personagens`
+          const text = setProperty(newArticleNote(articleKind("personagem")!, name.trim()), "conceito", concept.trim() || undefined)
+          path = await vault.createNote(folder, uniqueNoteName(index, folder, name.trim()), text)
+          setCreatedPath(path)
+        }
+        if (!index.note(path)) throw new Error("O personagem não existe mais. Selecione outro.")
+        await vault.setProperty(campaign.home, "personagens", withCampaignPlayer(index, campaign, path, player))
       }}
     >
       <label className="field">
-        <span>Personagem</span>
-        <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do personagem" />
+        <span>Wiki</span>
+        <select className="select" value={wiki} disabled={!!createdPath} onChange={e => { setWiki(e.target.value); setSelected("") }} aria-label="Wiki do personagem">
+          <option value="">Escolha uma wiki…</option>
+          {wikis.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}
+        </select>
       </label>
+      {wikis.length === 0 && <p className="small muted">Crie uma wiki na seção Wiki para guardar os personagens.</p>}
+      <label className="field">
+        <span>Personagem</span>
+        <select className="select" value={mode} disabled={!!createdPath} onChange={e => setMode(e.target.value)} aria-label="Origem do personagem">
+          <option value="existente">Selecionar da wiki</option>
+          <option value="novo">Criar na wiki</option>
+        </select>
+      </label>
+      {existing ? <>
+        <label className="field">
+          <span>Buscar personagem</span>
+          <input className="input" autoFocus value={query} onChange={e => { setQuery(e.target.value); setSelected("") }} aria-label="Buscar personagem da wiki" />
+        </label>
+        <label className="field">
+          <span>Personagem da wiki</span>
+          <select className="select" value={selected} onChange={e => setSelected(e.target.value)} aria-label="Personagem da wiki">
+            <option value="">Selecione um personagem…</option>
+            {filtered.map(n => <option key={n.path} value={n.path}>{noteTitle(n)} — {dirname(n.path).slice(root.length) || wiki}</option>)}
+          </select>
+        </label>
+        {filtered.length === 0 && <p className="small muted">Nenhum personagem disponível. Você pode criar um na wiki.</p>}
+      </> : <>
+        <label className="field">
+          <span>Nome do personagem</span>
+          <input className="input" autoFocus disabled={!!createdPath} value={name} onChange={e => setName(e.target.value)} aria-label="Nome do personagem" />
+        </label>
+        <label className="field">
+          <span>Conceito</span>
+          <input className="input" disabled={!!createdPath} value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ladina de rua" aria-label="Conceito do personagem" />
+        </label>
+      </>}
       <label className="field">
         <span>Jogador(a)</span>
-        <input className="input" value={player} onChange={(e) => setPlayer(e.target.value)} aria-label="Nome de quem joga" />
+        <input className="input" value={player} onChange={e => setPlayer(e.target.value)} aria-label="Nome de quem joga" />
       </label>
+      <span className="small muted">O personagem fica na wiki. O vínculo e o nome de quem joga ficam nesta campanha.</span>
+    </FormDialog>
+  )
+}
+
+export function EditPlayerDialog({ campaign, character, onClose }: { campaign: CampaignInfo; character: PlayerCharacter; onClose(): void }) {
+  const vault = useVault()
+  const [player, setPlayer] = useState(character.player ?? "")
+  return (
+    <FormDialog title={`Jogador de ${character.name}`} confirmLabel="Salvar jogador" onClose={onClose} onConfirm={async () => {
+      if (!campaign.home) throw new Error("Falta a nota inicial da campanha.")
+      await vault.setProperty(campaign.home, "personagens", withCampaignPlayer(vault.index!, campaign, character.path, player))
+    }}>
       <label className="field">
-        <span>Conceito</span>
-        <input className="input" value={concept} onChange={(e) => setConcept(e.target.value)} placeholder="Ladina de rua" aria-label="Conceito do personagem" />
+        <span>Jogador(a)</span>
+        <input className="input" autoFocus value={player} onChange={e => setPlayer(e.target.value)} aria-label="Nome de quem joga" />
       </label>
-      <span className="small muted">Perfil sem ficha (as fichas ficam para depois). Vai para {campaign.root}Personagens/.</span>
+      <span className="small muted">Deixe vazio para remover o nome de quem joga nesta campanha.</span>
     </FormDialog>
   )
 }
