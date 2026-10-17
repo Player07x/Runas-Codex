@@ -49,6 +49,6 @@ export function moveBookItem<T>(items: readonly T[], from: number, to: number): 
   next.splice(to, 0, item!)
   return next
 }
-export function newBookText(title: string, links: string[] = [], subtitle = "", goal = 40000): string {
-  return `---\n${stringify({ tipo: "livro", subtitulo: subtitle, autor: "", meta_palavras: goal, estrutura: links })}---\n# ${title}\n\nAnotações do livro.\n`
+export function newBookText(title: string, links: string[] = [], subtitle = ""): string {
+  return `---\n${stringify({ tipo: "livro", subtitulo: subtitle, autor: "", estrutura: links })}---\n# ${title}\n\nAnotações do livro.\n`
 }

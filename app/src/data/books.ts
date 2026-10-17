@@ -55,7 +55,6 @@ export const BOOKS: Book[] = [
     subtitle: "Suplemento para Ordem x Caos",
     theme: "Manual de RPG",
     page: "A4",
-    goal: 40000,
     chapters: [
       { id: "c0", title: "Créditos e sumário", part: "Abertura", words: 320, status: "pronto", markdown: "# Créditos" },
       { id: "c1", title: "O Condado de Valdris", part: "Parte I — O lugar", words: 4820, status: "revisão", markdown: capitulo1 },
@@ -71,7 +70,6 @@ export const BOOKS: Book[] = [
     subtitle: "Ajustes usados na mesa",
     theme: "Minimalista",
     page: "A5",
-    goal: 5000,
     chapters: [
       { id: "h1", title: "Combate", part: "Regras", words: 1200, status: "pronto", markdown: "# Combate" },
       { id: "h2", title: "Descanso e viagem", part: "Regras", words: 900, status: "rascunho", markdown: "# Descanso" },

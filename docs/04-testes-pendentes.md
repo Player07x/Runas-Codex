@@ -354,8 +354,6 @@ aparelho físico acima continua necessária.
 - [ ] Geradores: criar resultado, editar e guardar como nota; conferir sem rede e no Obsidian.
 - [ ] Tabelas: pesos, encadeamento de outra nota, erro de ciclo e destino inexistente; leitura e live preview.
 - [ ] Idioma: traduções, pronúncia, regras e filtro nos dois sentidos; novo artigo traz exemplo editável.
-- [ ] Definir meta de palavras na página inicial, editar artigos e conferir progresso. Wiki sem página inicial deve
-  oferecer criá-la.
 - [ ] Galeria e áudio com anexos reais; spoiler abre por clique/teclado também no Obsidian.
 - [ ] Repetições de eventos por dias/meses/anos no calendário fictício, com data final e dias inexistentes. Na visão
   dos jogadores, eventos secretos não aparecem.
@@ -421,3 +419,14 @@ aparelho físico acima continua necessária.
 - [ ] Da beta.6 para uma versão posterior, testar o botão Baixar e instalar, autorização gráfica, senha cancelada,
   bloqueio do APT, dependência ausente e reabertura. Os testes não instalam pacotes no sistema do desenvolvedor.
 - [ ] Conferir que o perfil de fontes é removido após sucesso/falha e que não houve download de dependências.
+
+## Beta.7 — sem metas de palavras e Configurações compactas
+
+- [ ] Livros: estante e editor mostram só palavras e capítulos; criar livro novo não grava `meta_palavras`. Um livro
+  antigo com `meta_palavras` abre normalmente.
+- [ ] Wiki: a página inicial não mostra mais o cartão de progresso/meta.
+- [ ] Configurações no desktop (janela larga e estreita) e no celular: duas colunas sem buracos; tudo cabe a partir de
+  320 px. Conferir Aparência (tema, paleta, tamanho, animações, tablet, restaurar), Primeiros passos (tour, adicionar
+  e remover exemplos), Imagens (criar pasta, reunir), bandeja do desktop dentro de Agenda e lembretes, atalhos
+  editáveis e restaurar, trechos CSS (adicionar, importar, cancelar, ligar/desligar, remover).
+- [ ] A aparência da sala do VTT (botão de paleta na mesa) continua abrindo e mudando tema e tamanho.

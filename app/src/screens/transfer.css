@@ -1,8 +1,18 @@
 .transfer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: var(--space-column); align-items: start; }
 .transfer-card { border-top: 3px solid var(--dom); }
 .transfer-card .cat-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--cat) 16%, transparent); color: var(--cat); }
-.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr)); gap: var(--space-column); align-items: start; }
+/* Duas colunas que empilham os cartões: nenhum buraco entre um cartão curto e um longo. */
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: var(--space-column); align-items: start; max-width: 1180px; }
+.settings-column { display: grid; gap: var(--space-column); min-width: 0; }
+.settings-card-head { margin-bottom: 4px; }
+.settings-card-head > .btn { margin-left: auto; }
+.setting-row > div:not(:first-child) { flex: 0 1 auto; }
+.setting-row.settings-details { display: block; }
+.settings-details > summary { min-height: 30px; cursor: pointer; }
+.settings-column .card > .tiny { display: block; margin-bottom: 4px; }
+.shortcut-input { width: 150px; min-width: 0 !important; text-align: center; }
+@media (pointer: fine) { .shortcut-input { min-height: 30px; height: 30px; } }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
-.setting-row:first-of-type { border-top: 0; }
+.setting-row:first-of-type, .settings-card-head + .setting-row { border-top: 0; }
 .setting-row > div { display: grid; gap: 2px; min-width: 0; }
 .setting-row .select, .setting-row .input { width: auto; min-width: 140px; }

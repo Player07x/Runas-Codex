@@ -17,7 +17,8 @@ A ordem é linear: `tipo: parte | capitulo | secao` identifica cada item, sem ac
 com a lista decidida. Sem `tipo`, o item é capítulo. `status` e `resumo` alimentam o binder e os cartões; podem ser
 editados nas propriedades em Notas ou no código da nota. Notas da pasta ausentes da lista aparecem em “Fora do livro”.
 
-`subtitulo`, `autor` e `meta_palavras` pertencem à nota do livro. `tema`, `pagina`, `capa`, `contracapa` e `creditos`
+`subtitulo` e `autor` pertencem à nota do livro. (A meta de palavras foi retirada na beta.7: não ajudava a
+escrever; um `meta_palavras` antigo fica como propriedade comum.) `tema`, `pagina`, `capa`, `contracapa` e `creditos`
 ficam reservados para a 8b. O corpo da nota do livro guarda anotações e não entra na contagem dos capítulos.
 
 O núcleo `core/books.ts` descobre livros, resolve a estrutura, conta palavras e move itens sem depender de React.

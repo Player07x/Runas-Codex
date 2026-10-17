@@ -2,8 +2,7 @@
 .skip-link { position:fixed;left:12px;top:-100px;z-index:200;padding:12px 18px;border-radius:var(--radius);background:var(--cyan);color:var(--on-accent); }
 .skip-link:focus { top:12px; }
 #runas-main:focus { outline:none; }
-.appearance-settings { display:grid;gap:14px; }
-.appearance-settings input[type=range] { width:100%;min-height:44px;accent-color:var(--cyan); }
+.appearance-settings input[type=range] { width:180px;max-width:100%;min-height:44px;accent-color:var(--cyan); }
 .tour-step { display:grid;gap:18px;justify-items:start; }
 .tour-step > svg { color:var(--cyan); }
 .tour-step h2 { font-size:calc(24px * var(--font-scale,1)); }
