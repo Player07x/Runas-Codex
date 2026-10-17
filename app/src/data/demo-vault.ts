@@ -81,11 +81,11 @@ for (const book of BOOKS) {
     links.push(`[[${folder}/${title}]]`)
     DEMO_TEXT_FILES[`${folder}/${title}.md`] = `---\n${stringify({ tipo: "capitulo", status: chapter.status === "revisão" ? "revisao" : chapter.status, resumo: chapter.part })}---\n${chapter.markdown}\n`
   }
-  DEMO_TEXT_FILES[`${folder}/${book.title}.md`] = newBookText(book.title, links, book.subtitle, book.goal)
+  DEMO_TEXT_FILES[`${folder}/${book.title}.md`] = newBookText(book.title, links, book.subtitle)
 }
 
 // Corpus visual da fase 8b, usando exatamente o leitor e o dialeto das Notas.
-DEMO_TEXT_FILES["Livros/Caderno de formatadores/Caderno de formatadores.md"] = newBookText("Caderno de formatadores", ["[[Livros/Caderno de formatadores/Formatadores]]"], "O dialeto completo em páginas", 5000)
+DEMO_TEXT_FILES["Livros/Caderno de formatadores/Caderno de formatadores.md"] = newBookText("Caderno de formatadores", ["[[Livros/Caderno de formatadores/Formatadores]]"], "O dialeto completo em páginas")
 DEMO_TEXT_FILES["Livros/Caderno de formatadores/Formatadores.md"] = formatadores
 
 // Campanhas de exemplo (etapa 7): sessões, missões, personagens e um quadro .canvas.

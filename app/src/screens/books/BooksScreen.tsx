@@ -3,7 +3,6 @@ import { bookProperties, bookRoute, findBooks, newBookText, readBook } from "../
 import { nameProblem } from "../../core/names"
 import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
-import { Progress } from "../../components/ui"
 import { BookEditor } from "./BookEditor"
 import { BookImport } from "./BookImport"
 import "./books.css"
@@ -69,7 +68,6 @@ function BookList() {
     {error && <p role="alert">{error} Se houve criação parcial, as notas permanecem disponíveis em Notas.</p>}
     <div className="book-shelf">{findBooks(index).map((book) => {
       const stats = readBook(index, book), data = bookProperties(book)
-      const goal = typeof data.meta_palavras === "number" && data.meta_palavras > 0 ? data.meta_palavras : 0
       return <a key={book.path} className="book-card" href={href(bookRoute(book.path))}>
         <div className="book-cover">
           <span className="display">{book.name}</span>
@@ -77,8 +75,7 @@ function BookList() {
         <div className="stack">
           <strong>{book.name}</strong>
           <span>{String(data.subtitulo ?? "")}</span>
-          <span className="small muted">{stats.chapters} capítulos · {stats.words.toLocaleString("pt-BR")} palavras</span>
-          <span className="small">Meta: {goal ? goal.toLocaleString("pt-BR") : "não definida"}</span>{goal > 0 && <Progress value={stats.words} max={goal} />}</div>
+          <span className="small muted">{stats.chapters} capítulos · {stats.words.toLocaleString("pt-BR")} palavras</span></div>
       </a>
     })}</div>
     {!findBooks(index).length && <p>Nenhum livro neste cofre. Crie seu primeiro livro.</p>}

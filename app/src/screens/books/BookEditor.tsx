@@ -1,9 +1,8 @@
 import { lazy, Suspense, useCallback, useRef, useState } from "react"
-import { bookProperties, countWords, moveBookItem, readBook } from "../../core/books"
+import { countWords, moveBookItem, readBook } from "../../core/books"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteView } from "../../components/vault/NoteView"
-import { Progress } from "../../components/ui"
 import { href, navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
@@ -32,7 +31,6 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const drag = useRef<number | null>(null)
   const locked = Boolean(vault.info?.readOnly || busy || structure.error)
   const current = selected ? index.note(selected) : undefined
-  const goal = Number(bookProperties(book).meta_palavras) || 0
   const run = async (action: () => Promise<void>) => {
     if (locked) return
     setBusy(true); setError("")
@@ -57,9 +55,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     <header className="books-header">
       <a className="btn" href={href("/livros")}>Livros</a>
       <strong>{book.name}</strong>
-      <span>{structure.words.toLocaleString("pt-BR")} / {goal || "sem meta"} palavras</span>{goal > 0 && <div className="books-progress" aria-label={`Progresso: ${Math.round(structure.words / goal * 100)}%`}>
-        <Progress value={structure.words} max={goal} />
-      </div>}<select className="select mobile-space-nav" aria-label="Visão do livro" value={view} onChange={event => { setView(event.target.value); if (event.target.value === "previa") setPreview(true) }}>{[["estrutura","Estrutura"],["escrever","Escrever"],["cortica","Cortiça"],["previa","Prévia"]].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><nav className="row-wrap book-view-tabs" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
+      <span>{structure.words.toLocaleString("pt-BR")} palavras</span><select className="select mobile-space-nav" aria-label="Visão do livro" value={view} onChange={event => { setView(event.target.value); if (event.target.value === "previa") setPreview(true) }}>{[["estrutura","Estrutura"],["escrever","Escrever"],["cortica","Cortiça"],["previa","Prévia"]].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><nav className="row-wrap book-view-tabs" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
       <button className="btn book-writing-option book-focus-toggle" aria-pressed={focus} onClick={()=>setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
       <button className="btn book-writing-option" aria-pressed={typewriter} onClick={()=>setTypewriter(!typewriter)}>Máquina de escrever</button>
       <button className="btn book-writing-option" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>

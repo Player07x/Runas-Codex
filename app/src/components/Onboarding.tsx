@@ -59,11 +59,11 @@ export function OnboardingSettings() {
       }
     } catch (error) { toast(String(error)) } finally { setBusy(false) }
   }
-  return <section className="card stack" aria-labelledby="onboarding-title"><h2 id="onboarding-title" className="section-title row"><BookOpen size={16} /> Primeiros passos</h2>
-    <p className="small muted">Um tour curto e exemplos para Notas, Agenda, Wiki, Campanhas, Livros e Mesa. {count > 0 ? `${count} notas de exemplo neste cofre.` : "Nenhuma nota de exemplo marcada neste cofre."}</p>
-    <button className="btn" onClick={() => window.dispatchEvent(new Event(EVENT))}>Rever o tour</button>
-    <button className="btn" disabled={busy || !vault.index || vault.info?.readOnly} onClick={() => void run(false)}>Adicionar exemplos que faltam</button>
-    <button className="btn danger" disabled={busy || !count || vault.info?.readOnly} onClick={() => void run(true)}>Remover todas as notas de exemplo ({count})</button>
-    <p className="tiny muted">A remoção usa a lixeira recuperável do cofre e só inclui notas com a propriedade exemplo_runas: true. Para conservar uma nota, retire essa propriedade antes.</p>
+  return <section className="card" aria-labelledby="onboarding-title"><h2 id="onboarding-title" className="section-title row settings-card-head"><BookOpen size={16} /> Primeiros passos</h2>
+    <div className="setting-row"><div><strong className="small">Tour</strong><span className="tiny muted">Um passeio curto por Notas, Agenda, Wiki, Campanhas, Livros e Mesa.</span></div>
+      <button className="btn sm" onClick={() => window.dispatchEvent(new Event(EVENT))}>Rever o tour</button></div>
+    <div className="setting-row"><div><strong className="small">Notas de exemplo</strong><span className="tiny muted">{count > 0 ? `${count} neste cofre.` : "Nenhuma neste cofre."} Remover usa a lixeira do cofre e só leva notas com exemplo_runas: true.</span></div>
+      <div className="row-wrap"><button className="btn sm" disabled={busy || !vault.index || vault.info?.readOnly} onClick={() => void run(false)}>Adicionar as que faltam</button>
+        <button className="btn sm danger" disabled={busy || !count || vault.info?.readOnly} onClick={() => void run(true)}>Remover ({count})</button></div></div>
   </section>
 }

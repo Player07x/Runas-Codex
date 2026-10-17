@@ -1,6 +1,5 @@
 import { ArticleArt } from "./ArticleArt"
 import { categoryRoute } from "../../core/wiki-category"
-import { WikiWordGoal } from "./WikiArticleExtras"
 import { useMemo, useState } from "react"
 import { Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
@@ -70,7 +69,6 @@ export function WikiHome() {
 
   return (
     <div className="page wiki-home">
-      <WikiWordGoal home={home} root={root} />
       <section className="wiki-cover card">
         <div className="stack" style={{ gap: 6, minWidth: 0 }}>
           <span className="eyebrow" style={{ color: "var(--violet)" }}>Wiki · {root}</span>

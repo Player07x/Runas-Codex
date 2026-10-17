@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { Palette } from "lucide-react"
 import { useAppearance, updateAppearance } from "../lib/appearance"
 import { Modal, Switch } from "./ui"
@@ -16,16 +16,17 @@ export function AppearanceRuntime({ skipLink = true }: { skipLink?: boolean }) {
 }
 export function AppearanceSettings({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
   const prefs = useAppearance()
+  const row = (title: string, control: ReactNode, hint?: string) => <div className="setting-row"><div><strong className="small">{title}</strong>{hint && <span className="tiny muted">{hint}</span>}</div>{control}</div>
   return <section className="card appearance-settings" aria-labelledby="appearance-title">
-    <h2 id="appearance-title" className="section-title row"><Palette size={16} /> Aparência e acessibilidade</h2>
-    <p className="small muted">Ajustes deste aparelho, aplicados a todos os espaços. A prévia impressa mantém o tamanho do papel.</p>
-    <label className="field"><span>Luminosidade</span><select className="select" value={theme} onChange={e => onTheme(e.target.value)}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
-    <label className="field"><span>Paleta temática</span><select className="select" value={prefs.palette} onChange={e => updateAppearance({ palette: e.target.value as typeof prefs.palette })}><option value="orbita">Órbita · lavanda e grafite</option><option value="floresta">Floresta · musgo e névoa</option><option value="brasa">Brasa · cobre e carvão</option></select></label>
-    <label className="field"><span>Tamanho do texto: {prefs.scale}%</span><input type="range" min="85" max="140" step="5" value={prefs.scale} aria-label="Tamanho do texto" aria-valuetext={`${prefs.scale}%`} onChange={e => updateAppearance({ scale: Number(e.target.value) })} /></label>
-    <div className="setting-row"><div><strong className="small">Reduzir animações</strong><span className="tiny muted">A preferência do sistema também é respeitada.</span></div><Switch label="Reduzir animações" on={prefs.motion === "reduce"} onChange={on => updateAppearance({ motion: on ? "reduce" : "system" })} /></div>
-    <div className="setting-row"><div><strong className="small">Modo tablet</strong><span className="tiny muted">Navegação compacta e controles maiores, mesmo em telas largas.</span></div><Switch label="Modo tablet" on={prefs.tablet} onChange={tablet => updateAppearance({ tablet })} /></div>
-    <p className="small" aria-live="polite">O tamanho e as cores desta frase mostram sua preferência atual.</p>
-    <button className="btn sm" onClick={() => updateAppearance({ scale: 100, palette: "orbita", motion: "system", tablet: false })}>Restaurar aparência padrão</button>
+    <h2 id="appearance-title" className="section-title row settings-card-head"><Palette size={16} /> Aparência e acessibilidade
+      <button className="btn sm ghost" onClick={() => updateAppearance({ scale: 100, palette: "orbita", motion: "system", tablet: false })}>Restaurar padrão</button>
+    </h2>
+    <p className="tiny muted">Ajustes deste aparelho, em todos os espaços. A prévia impressa mantém o tamanho do papel.</p>
+    {row("Luminosidade", <select className="select" aria-label="Luminosidade" value={theme} onChange={e => onTheme(e.target.value)}><option value="dark">Escuro</option><option value="light">Claro</option></select>)}
+    {row("Paleta temática", <select className="select" aria-label="Paleta temática" value={prefs.palette} onChange={e => updateAppearance({ palette: e.target.value as typeof prefs.palette })}><option value="orbita">Órbita · lavanda e grafite</option><option value="floresta">Floresta · musgo e névoa</option><option value="brasa">Brasa · cobre e carvão</option></select>)}
+    {row(`Tamanho do texto: ${prefs.scale}%`, <input type="range" min="85" max="140" step="5" value={prefs.scale} aria-label="Tamanho do texto" aria-valuetext={`${prefs.scale}%`} onChange={e => updateAppearance({ scale: Number(e.target.value) })} />)}
+    {row("Reduzir animações", <Switch label="Reduzir animações" on={prefs.motion === "reduce"} onChange={on => updateAppearance({ motion: on ? "reduce" : "system" })} />, "A preferência do sistema também é respeitada.")}
+    {row("Modo tablet", <Switch label="Modo tablet" on={prefs.tablet} onChange={tablet => updateAppearance({ tablet })} />, "Navegação compacta e controles maiores, mesmo em telas largas.")}
   </section>
 }
 
