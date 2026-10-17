@@ -281,6 +281,24 @@ export function noteDates(data: Record<string, unknown> | null | undefined): Not
 }
 
 /**
+ * O calendário principal de uma wiki: o da nota inicial (propriedade `calendario`), senão o que mais datas da wiki
+ * usam, senão o primeiro. Assim um calendário novo, ainda sem datas, não toma o lugar do que já está em uso.
+ */
+export function mainCalendar(index: VaultIndex, root: string, home?: string): CalendarRef | null {
+  const list = listCalendars(index, root).filter((c): c is CalendarRef => "calendar" in c)
+  const fromHome = home ? calendarFor(index, home) : null
+  if (fromHome && "calendar" in fromHome) return fromHome
+  const uses = new Map<string, number>()
+  for (const note of index.notesIn(root)) {
+    for (const d of noteDates(note.meta.frontmatter?.data)) {
+      const found = calendarFor(index, note.path, d.date)
+      if (found && "calendar" in found) uses.set(found.path, (uses.get(found.path) ?? 0) + 1)
+    }
+  }
+  return [...list].sort((a, b) => (uses.get(b.path) ?? 0) - (uses.get(a.path) ?? 0))[0] ?? null
+}
+
+/**
  * Datas `_mundo` da nota ainda sem sigla, já com a do calendário que valia para elas (para regravar no formato novo).
  * Datas cujo calendário não se descobre ficam de fora.
  */

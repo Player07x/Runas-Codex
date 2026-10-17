@@ -1,4 +1,4 @@
-import { CALENDAR_EXAMPLE, datesMissingAbbr, articleImage, articleKind, ARTICLE_KINDS, calendarFor, diplomacy, familyTree, listCalendars, listWikis, newArticleNote, newCalendarNote, noteDates, orgChart, parseMap, pinsToYaml, relationsOf, timelineEvents, type CalendarRef } from "./wiki"
+import { CALENDAR_EXAMPLE, datesMissingAbbr, mainCalendar, articleImage, articleKind, ARTICLE_KINDS, calendarFor, diplomacy, familyTree, listCalendars, listWikis, newArticleNote, newCalendarNote, noteDates, orgChart, parseMap, pinsToYaml, relationsOf, timelineEvents, type CalendarRef } from "./wiki"
 import { parseCalendar } from "./calendar"
 import { VaultIndex } from "./vault-index"
 import { parseFrontmatter } from "./parse"
@@ -161,5 +161,12 @@ describe("arte do artigo", () => {
     expect(datesMissingAbbr(idx, "Wikis/M/Antiga.md")).toEqual([{ key: "data_mundo", text: "1005-01-01 CC" }])
     expect(datesMissingAbbr(idx, "Wikis/M/Ilsa.md")).toEqual([])
     expect(newCalendarNote("Calendário de Ordem x Caos")).toContain("sigla: OC")
+    // O principal é o que as datas mais usam (aqui o Élfico, mesmo vindo depois na pasta), salvo se a nota inicial disser.
+    const more = { ...two, "Wikis/M/Outra.md": "---\ntipo: evento\ndata_mundo: \"1006-01-01 EL\"\n---", "Wikis/M/M.md": "---\ntipo: wiki\n---" }
+    const idx2 = new VaultIndex(Object.keys(more).map((path) => ({ path, size: 1, mtime: 1 })), more)
+    expect(mainCalendar(idx2, "Wikis/M/")?.path).toBe(elfico.path)
+    const home = { ...more, "Wikis/M/M.md": "---\ntipo: wiki\ncalendario: \"[[Comum]]\"\n---" }
+    const idx3 = new VaultIndex(Object.keys(home).map((path) => ({ path, size: 1, mtime: 1 })), home)
+    expect(mainCalendar(idx3, "Wikis/M/", "Wikis/M/M.md")?.path).toBe(comum.path)
   })
 })
