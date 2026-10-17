@@ -260,7 +260,20 @@ export function CanvasBoard({ path }: { path: string }) {
     else setView((v) => ({ ...v, x: v.x - event.deltaX, y: v.y - event.deltaY }))
   }
 
+  // Dois cliques num cartão: texto abre a edição; nota abre em Notas.
+  const editNode = (node: CanvasNode) => {
+    if (readOnly) return
+    if (node.type === "text") setEditing(node.id)
+    else if (node.type === "file" && node.file && vault.index?.note(node.file)) navigate(noteRoute(node.file))
+  }
+
   const onDoubleClick = (event: React.MouseEvent) => {
+    // O quadro captura o ponteiro ao clicar num cartão (para arrastar), e o navegador entrega o `dblclick` ao quadro.
+    // Por isso confere o que está sob o cursor antes de criar um cartão novo.
+    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-node-id]")
+    const node = hit && doc?.nodes.find((n) => n.id === hit.dataset.nodeId)
+    if (node) return editNode(node)
+    if (hit) return
     if (readOnly || (event.target !== event.currentTarget && !(event.target as HTMLElement).classList.contains("canvas-world"))) return
     const p = toWorld(event.clientX, event.clientY)
     create({ type: "text", text: "", width: 260, height: 120, x: p.x - 130, y: p.y - 60 })
@@ -435,7 +448,7 @@ export function CanvasBoard({ path }: { path: string }) {
                 readOnly={readOnly}
                 onDown={(e) => onNodeDown(e, node)}
                 onResize={(e) => onResizeDown(e, node)}
-                onEdit={() => !readOnly && node.type === "text" && setEditing(node.id)}
+                onEdit={() => editNode(node)}
                 onText={(text) => change(updateNode(doc, node.id, { text }))}
                 onDone={() => setEditing(null)}
               />
@@ -533,7 +546,7 @@ function CanvasCard({ node, selected, editing, readOnly, onDown, onResize, onEdi
 
   if (node.type === "group") {
     return (
-      <div className={className} style={style} onPointerDown={onDown}>
+      <div className={className} style={style} onPointerDown={onDown} data-node-id={node.id}>
         <span className="canvas-group-label">{node.label || "Grupo"}</span>
         {resize}
       </div>
@@ -588,7 +601,7 @@ function CanvasCard({ node, selected, editing, readOnly, onDown, onResize, onEdi
   }
 
   return (
-    <div className={className} style={style} onPointerDown={onDown} onDoubleClick={(e) => { e.stopPropagation(); onEdit() }}>
+    <div className={className} style={style} onPointerDown={onDown} onDoubleClick={(e) => { e.stopPropagation(); onEdit() }} data-node-id={node.id}>
       <div className="canvas-card-body">{body}</div>
       {resize}
     </div>

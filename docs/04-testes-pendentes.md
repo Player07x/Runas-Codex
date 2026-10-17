@@ -430,3 +430,9 @@ aparelho físico acima continua necessária.
   e remover exemplos), Imagens (criar pasta, reunir), bandeja do desktop dentro de Agenda e lembretes, atalhos
   editáveis e restaurar, trechos CSS (adicionar, importar, cancelar, ligar/desligar, remover).
 - [ ] A aparência da sala do VTT (botão de paleta na mesa) continua abrindo e mudando tema e tamanho.
+
+## Beta.8 — dois cliques no quadro
+
+- [ ] No quadro (Canvas e Campanhas › Quadro), com mouse: dois cliques num cartão de texto abrem a edição dele, sem
+  criar outro; dois cliques num cartão de nota abrem a nota; dois cliques no vazio criam um cartão de texto.
+- [ ] O mesmo no celular/tablet com toque (dois toques).
