@@ -453,3 +453,13 @@ aparelho físico acima continua necessária.
 - [ ] Calendário › Sincronizar: gravar "este dia = aquele dia"; o bloco ganha `correspondencias`; o Dia escolhido
   mostra a data no outro calendário; "Alinhar o hoje" e "Definir hoje" (digitado) atualizam os dois.
 - [ ] Digitar uma data inexistente em "Definir hoje" mostra o erro e não grava.
+
+
+## beta.12 — Personagens da campanha na wiki
+
+- No Elenco, criar um personagem em uma wiki e selecionar um já existente; abrir o artigo pelo cartão.
+- Trocar/limpar o jogador e desvincular; conferir que o artigo permanece na Wiki e pode ser vinculado novamente.
+- Usar o mesmo artigo em duas campanhas com jogadores diferentes; conferir que alterar um não afeta o outro.
+- Em campanha antiga, adicionar um artigo e desvincular perfis antigos até esvaziar o elenco; reabrir a campanha e
+  conferir os vínculos e as presenças históricas. Não há migração automática de arquivos antigos.
+- Conferir o formulário e os botões em 320 px, tablet e desktop, nos temas claro/escuro e em dispositivos físicos.

@@ -1,17 +1,20 @@
 import { useMemo, useState } from "react"
-import { Minus, Plus, Trash, UserPlus } from "lucide-react"
-import { ATTITUDES, npcSightings, reputationOf, withoutPosition, withTrackedLink, type TrackedLink } from "../../core/campaigns"
+import { Minus, Plus, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
+import { ATTITUDES, withCampaignPlayer, type PlayerCharacter, npcSightings, reputationOf, withoutPosition, withTrackedLink, type TrackedLink } from "../../core/campaigns"
 import { noteName } from "../../core/text"
 import { href } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
-import { NewPlayerDialog, WikiNotePicker } from "./campaign-dialogs"
+import { EditPlayerDialog, NewPlayerDialog, WikiNotePicker } from "./campaign-dialogs"
 import { useCampaignEdits } from "./campaign-edits"
 import { sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
 
 export function CastView({ data }: { data: CampaignData }) {
   const [newPlayer, setNewPlayer] = useState(false)
+  const [editing, setEditing] = useState<PlayerCharacter>()
+  const vault = useVault()
+  const { setHome } = useCampaignEdits(data)
   return (
     <div className="page">
       <div className="page-head">
@@ -23,27 +26,34 @@ export function CastView({ data }: { data: CampaignData }) {
       <section className="card stack">
         <div className="row between">
           <span className="section-title">Personagens dos jogadores</span>
-          {!data.readOnly && (
+          {!data.readOnly && data.campaign.home && (
             <button className="btn sm" onClick={() => setNewPlayer(true)}>
               <UserPlus size={14} /> Personagem
             </button>
           )}
         </div>
-        {data.players.length === 0 && <span className="muted small">Nenhum personagem em {data.campaign.root}Personagens/.</span>}
+        {data.players.length === 0 && <span className="muted small">Nenhum personagem vinculado. Crie ou selecione um personagem da wiki.</span>}
         <div className="campaign-cast-grid">
           {data.players.map((p) => (
-            <a key={p.path} className="card tight link campaign-person" href={href(noteRoute(p.path))}>
-              <span className="campaign-avatar" style={p.color ? { background: p.color } : undefined}>{p.name[0]}</span>
-              <span className="grow">
-                <strong className="small">{p.name}</strong>
-                <span className="tiny faint" style={{ display: "block" }}>{[p.player, p.concept].filter(Boolean).join(" · ") || "Sem jogador anotado"}</span>
-              </span>
-            </a>
+            <div key={p.path} className="card tight stack">
+              <a className="row link campaign-person" href={href(noteRoute(p.path))}>
+                <span className="campaign-avatar" style={p.color ? { background: p.color } : undefined}>{p.name[0]}</span>
+                <span className="grow">
+                  <strong className="small">{p.name}</strong>
+                  <span className="tiny faint" style={{ display: "block" }}>{[p.player, p.concept].filter(Boolean).join(" · ") || "Sem jogador anotado"}</span>
+                </span>
+              </a>
+              {!data.readOnly && data.campaign.home && <div className="row-wrap">
+                <button className="btn sm" onClick={() => setEditing(p)} aria-label={`Trocar jogador de ${p.name}`}><Pencil size={14} /> Jogador</button>
+                <button className="btn sm ghost" onClick={() => setHome("personagens", withCampaignPlayer(vault.index!, data.campaign, p.path, null))} aria-label={`Desvincular ${p.name} da campanha`}><Unlink size={14} /> Desvincular</button>
+              </div>}
+            </div>
           ))}
         </div>
       </section>
       <TrackedSection data={data} kind="npcs" />
       <TrackedSection data={data} kind="faccoes" />
+      {editing && <EditPlayerDialog campaign={data.campaign} character={editing} onClose={() => setEditing(undefined)} />}
       {newPlayer && <NewPlayerDialog campaign={data.campaign} onClose={() => setNewPlayer(false)} />}
     </div>
   )

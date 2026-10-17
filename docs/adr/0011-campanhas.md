@@ -77,3 +77,17 @@ na interface. Cada assento responde uma vez por atividade. Resultados ficam priv
 diários são consumidos somente depois da gravação. Carta X é sinal coletivo sem identidade. A projeção enviada aos
 jogadores contém só a atividade, o texto apresentado autorizado e o sinal de pausa. Sair de uma tela mantém a sala;
 trocar de mundo/cofre ou encerrar explicitamente fecha os serviços. O banner permite voltar e encerrar.
+
+
+## Personagens vinculados à wiki (beta.12)
+
+Novos personagens de jogador são artigos `tipo: personagem` em `Wikis/<wiki>/Personagens/`, com o modelo normal da
+Wiki. No Elenco, pode-se criar um artigo ou selecionar um personagem existente de uma wiki. A campanha guarda
+`personagens: ["[[Wikis/Mundo/Personagens/Aldren]] (Ana)"]`: caminho completo, sem copiar o artigo, e o nome de quem
+joga restrito à campanha. Trocar/limpar o jogador ou desvincular altera só essa lista; não apaga o artigo nem muda
+presenças de sessões já salvas. O mesmo artigo pode participar de campanhas diferentes.
+
+Sem a propriedade `personagens`, continuam aparecendo os perfis antigos (`tipo: personagem-jogador` ou pasta
+`Personagens/` da campanha). Na primeira edição do elenco, eles viram vínculos explícitos junto com os novos,
+sem mover ou regravar os arquivos. `personagens: []` representa elenco vazio, inclusive após desvincular todos os
+perfis antigos. Vínculos quebrados são preservados ao editar os demais.

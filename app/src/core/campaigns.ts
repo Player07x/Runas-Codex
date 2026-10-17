@@ -7,8 +7,8 @@ import type { IndexedNote, VaultIndex } from "./vault-index"
 
 /**
  * Campanhas (etapa 7): cada campanha é uma pasta `Campanhas/<nome>/` com uma nota inicial `<nome>.md`
- * (`tipo: campanha`). Sessões, missões e personagens dos jogadores são notas comuns, achadas pela propriedade `tipo`
- * ou pela pasta (`Sessões/`, `Missões/`, `Personagens/`). NPCs moram na wiki: a campanha só guarda a atitude deles
+ * (`tipo: campanha`). Sessões e missões são notas comuns, achadas pelo `tipo` ou pela pasta. Personagens e NPCs
+ * moram na wiki: a campanha guarda os vínculos dos personagens e a atitude dos NPCs
  * (`npcs: ["[[Aldren Vael]] (aliado)"]`, o mesmo formato das relações da wiki). Segredos são uma checklist, relógios
  * são um bloco ` ```runas-relogios `. Tudo continua sendo Markdown que o Obsidian abre.
  */
@@ -441,20 +441,48 @@ export function isPlayerNote(note: IndexedNote, root: string): boolean {
 }
 
 export function listPlayers(index: VaultIndex, campaign: CampaignInfo): PlayerCharacter[] {
-  return index
-    .notesIn(campaign.root)
-    .filter((note) => isPlayerNote(note, campaign.root))
-    .map((note) => {
-      const data = dataOf(note)
-      return {
-        path: note.path,
-        name: noteTitle(note),
-        ...(str(data.jogador) ? { player: str(data.jogador) } : {}),
-        ...(str(data.conceito) ? { concept: str(data.conceito) } : {}),
-        ...(str(data.cor) ? { color: str(data.cor) } : {}),
-      }
+  const links = dataOf(campaign.home ? index.note(campaign.home) : undefined).personagens
+  // Sem a propriedade, mantém os perfis antigos. Uma lista vazia significa nenhum vínculo.
+  const entries = links === undefined
+    ? index.notesIn(campaign.root).filter((note) => isPlayerNote(note, campaign.root)).map((note) => ({ note, player: str(dataOf(note).jogador) }))
+    : listValue(links).flatMap((value) => {
+      const link = linkItem(value)
+      const path = link && campaign.home ? resolveTarget(index, link.target, campaign.home) : null
+      const note = path ? index.note(path) : undefined
+      return note && link ? [{ note, player: str(link.extra) }] : []
     })
+  const seen = new Set<string>()
+  return entries.filter(({ note }) => {
+    if (seen.has(note.path)) return false
+    seen.add(note.path)
+    return true
+  }).map(({ note, player }) => {
+    const data = dataOf(note)
+    return {
+      path: note.path,
+      name: noteTitle(note),
+      ...(player ? { player } : {}),
+      ...(str(data.conceito) ? { concept: str(data.conceito) } : {}),
+      ...(str(data.cor) ? { color: str(data.cor) } : {}),
+    }
+  })
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+}
+
+/** Atualiza só o vínculo na campanha; `null` desvincula e preserva a nota e as presenças antigas. */
+export function withCampaignPlayer(index: VaultIndex, campaign: CampaignInfo, path: string, player: string | null): string[] {
+  if (!campaign.home) throw new Error("Falta a nota inicial da campanha.")
+  const current = dataOf(index.note(campaign.home)).personagens
+  // Converte a lista antiga em vínculos explícitos na primeira edição, sem mover arquivos.
+  const links = current === undefined
+    ? listPlayers(index, campaign).map((p) => `[[${p.path.replace(/\.md$/i, "")}]]${p.player ? ` (${p.player})` : ""}`)
+    : listValue(current)
+  const remaining = links.filter((value) => {
+    const link = linkItem(value)
+    return !link || resolveTarget(index, link.target, campaign.home!) !== path
+  })
+  if (player !== null) remaining.push(`[[${path.replace(/\.md$/i, "")}]]${player.trim() ? ` (${player.trim()})` : ""}`)
+  return remaining
 }
 
 // ---------- NPCs e facções (atitude/reputação ao lado do link) ----------

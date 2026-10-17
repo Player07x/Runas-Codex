@@ -138,7 +138,7 @@ function CampaignList() {
       </div>
       {campaigns.length === 0 ? (
         <Empty title="Nenhuma campanha neste cofre" action={<button className="btn primary" onClick={create}><Plus size={16} /> Criar campanha</button>}>
-          Uma campanha é uma pasta em Campanhas/ com sessões, missões, os personagens dos jogadores e um quadro. Os NPCs vêm da wiki do mundo.
+          Uma campanha é uma pasta em Campanhas/ com sessões, missões e um quadro. Os personagens dos jogadores e os NPCs são vinculados à wiki.
         </Empty>
       ) : (
         <div className="grid-cards">

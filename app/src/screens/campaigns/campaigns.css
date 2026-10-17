@@ -124,3 +124,5 @@
 
 .active-room { position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:45;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:calc(100vw - 24px);padding:10px;background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--radius);box-shadow:var(--shadow); }
 @media(max-width:860px){.active-room{bottom:calc(var(--bottomnav-height) + 8px);width:calc(100vw - 24px)}}
+
+.campaign-person .grow { min-width: 0; overflow-wrap: anywhere; }
