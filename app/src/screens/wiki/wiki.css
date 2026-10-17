@@ -205,7 +205,6 @@
 .wiki-article-main details.spoiler { display:inline-block;padding:.15em .4em;border:1px solid var(--line);border-radius:var(--radius-sm); }
 .wiki-article-main details.spoiler[open] { display:inline-block; }
 .wiki-article-main details.spoiler summary { cursor:pointer;color:var(--cyan); }
-.wiki-goal { margin-bottom:16px; }
 .wiki-table { display:grid;gap:10px; }
 
 .map-images-settings { padding:8px 14px;border-bottom:1px solid var(--line);max-height:40vh;overflow:auto; }

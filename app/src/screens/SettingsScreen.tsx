@@ -3,7 +3,7 @@ import { AppearanceSettings } from "../components/Appearance"
 import { OnboardingSettings } from "../components/Onboarding"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
-import { Archive, Bell, FolderOpen, Keyboard, Network, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
+import { Archive, Bell, Dices, FolderOpen, Network, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { Modal, Switch, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
@@ -11,9 +11,7 @@ import type { BackupInfo } from "../platform/platform"
 import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
-import { CustomizationSettings } from "../components/vault/Customization"
-import { shortcutLabel } from "../core/shortcuts"
-import { usePreferences } from "../lib/customization"
+import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -28,8 +26,18 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
   )
 }
 
+function SettingsCard({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <section className="card">
+      <span className="section-title row settings-card-head">
+        {icon} {title}
+      </span>
+      {children}
+    </section>
+  )
+}
+
 export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
-  const prefs = usePreferences()
   const toast = useToast()
   const vault = useVault()
   const desktop = vault.platform.kind !== "memory"
@@ -73,131 +81,100 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         </div>
       </div>
       <div className="settings-grid">
-        <AppearanceSettings theme={theme} onTheme={onTheme} />
-        <OnboardingSettings />
-        <ImageFolderSettings />
-        <CustomizationSettings />
-        <DesktopTraySettings />
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <Vault size={16} /> Cofre
-          </span>
-          <Row title={vault.info?.name ?? "Pasta do cofre"} hint={vaultHint}>
-            <div className="row" style={{ gap: 6 }}>
-              <button className="btn sm" onClick={run(vault.choose)} disabled={!desktop || busy} title={desktop ? "Abrir um cofre que já existe" : "Disponível no app desktop"}>
-                <FolderOpen size={14} /> Abrir pasta…
-              </button>
-              <button className="btn sm" onClick={run(vault.create)} disabled={!desktop || busy} title={desktop ? "Criar um cofre novo numa pasta vazia" : "Disponível no app desktop"}>
-                <Plus size={14} /> Criar cofre
-              </button>
-            </div>
-          </Row>
-          <Row title="Notas" hint={notesHint}>
-            <button className="btn sm" onClick={run(vault.reload)} disabled={!vault.info || busy}>
-              <RefreshCw size={14} /> Reler
-            </button>
-          </Row>
-          <Row title="Permitir gravação" hint={vault.info?.readOnly ? "Desligado: o app só lê este cofre. Ao ligar, ele faz um backup antes." : "Ligado: o app cria, edita, renomeia e manda notas para a lixeira (.trash)."}>
-            <Switch on={Boolean(vault.info && !vault.info.readOnly)} label="Permitir gravação" onChange={(on) => run(() => vault.setWritable(on).then(() => vault.platform.listBackups().then(setBackups)))()} />
-          </Row>
-          <Row title="Backups" hint={lastBackup ? `Último: ${new Date(lastBackup.createdAt).toLocaleString("pt-BR")} · ${backups.length} guardado(s), até 15. Automático antes da 1ª gravação do dia.` : "Nenhum ainda. Feitos antes da 1ª gravação de cada dia (só o texto das notas, fora do cofre)."}>
-            <div className="row" style={{ gap: 6 }}>
-              <button className="btn sm" onClick={run(() => vault.platform.backup().then(() => vault.platform.listBackups().then(setBackups)).then(() => toast("Backup feito")))} disabled={!vault.info || busy}>
-                <Archive size={14} /> Fazer agora
-              </button>
-              {desktop && (
-                <button className="btn sm ghost" onClick={run(vault.platform.revealBackups)} disabled={!vault.info}>
-                  Abrir pasta
+        <div className="settings-column">
+          <SettingsCard icon={<Vault size={16} />} title="Cofre">
+            <Row title={vault.info?.name ?? "Pasta do cofre"} hint={vaultHint}>
+              <div className="row" style={{ gap: 6 }}>
+                <button className="btn sm" onClick={run(vault.choose)} disabled={!desktop || busy} title={desktop ? "Abrir um cofre que já existe" : "Disponível no app desktop"}>
+                  <FolderOpen size={14} /> Abrir pasta…
                 </button>
-              )}
-            </div>
-          </Row>
-          <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
-            <span className="small muted">Pastas padrão do cofre</span>
-          </Row>
-        </section>
-
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <Network size={16} /> Compatibilidade com o Obsidian
-          </span>
-          <Row title="Formato de link novo" hint="Lido de .obsidian/app.json (mude no Obsidian, em Arquivos e links)">
-            <span className="small">
-              {{ shortest: "Mais curto possível", relative: "Relativo", absolute: "Caminho completo" }[vault.config.app.newLinkFormat]}
-              {vault.config.app.useMarkdownLinks ? " · links em Markdown" : " · wikilinks"}
-            </span>
-          </Row>
-          <Row title="Pasta dos demais anexos" hint="Áudios, vídeos e PDFs seguem a pasta de .obsidian/app.json. Imagens usam Anexos/Imagens.">
-            <span className="small">{attachmentFolderLabel(vault.config.app.attachmentFolder)}</span>
-          </Row>
-          <Row title="Anexos sem uso" hint="Imagens, áudios, vídeos e PDFs que nenhuma nota nem quadro usa.">
-            <button className="btn sm" disabled={!vault.index || busy} onClick={run(findUnused)}>
-              Procurar
-            </button>
-          </Row>
-          <Row title="Snippet runas-codex.css" hint="Faz callouts, colunas e capitulares aparecerem iguais no Obsidian. Depois de instalar, ligue em Obsidian › Aparência › Trechos de CSS.">
-            <button
-              className="btn sm"
-              disabled={!desktop || !vault.info || vault.info.readOnly || busy}
-              title={!desktop ? "Disponível no app desktop" : vault.info?.readOnly ? "Libere a gravação no cofre primeiro" : "Grava .obsidian/snippets/runas-codex.css"}
-              onClick={run(() => vault.platform.installSnippet(snippetCss).then((path) => toast(`Snippet gravado em ${path}`)))}
-            >
-              Instalar
-            </button>
-          </Row>
-          <Row title="Avisar quando um link resolveria diferente no Obsidian">
-            <span className="small muted">Avisos no editor</span>
-          </Row>
-        </section>
-
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <Bell size={16} /> Agenda e lembretes
-          </span>
-          <Row title="Lembretes" hint="Configure cada lembrete no evento da Agenda. O app precisa continuar aberto ou na bandeja.">
-            <a className="btn sm" href="#/agenda">Abrir Agenda</a>
-          </Row>
-          <Row title="Iniciar com o sistema (desktop)" hint="Necessário para lembrar com o app fechado">
-            <span className="small muted">Em preparação para o lançamento</span>
-          </Row>
-        </section>
-
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <Network size={16} /> Sala do VTT
-          </span>
-          <Row title="Conexão dos jogadores" hint="Abra uma mesa e configure o acesso no painel Sala. O endereço e o código só existem com a sala aberta.">
-            <a className="btn sm" href="#/vtt/criar">Abrir minhas mesas</a>
-          </Row>
-        </section>
-
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <ShieldCheck size={16} /> Privacidade
-          </span>
-          <Row title="Telemetria" hint="Não existe. O app não chama a internet fora da sala.">
-            <span className="chip green">desligada sempre</span>
-          </Row>
-          <UpdateRow />
-          <PinRow />
-        </section>
-
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <Keyboard size={16} /> Atalhos
-          </span>
-          {[
-            ["Buscar / paleta de comandos", shortcutLabel("palette", prefs.shortcuts)],
-            ["Nova nota", shortcutLabel("newNote", prefs.shortcuts)],
-            ["Alternar modo de edição", "Ctrl E"],
-            ["Régua (VTT)", "R"],
-            ["Selecionar (VTT)", "V"],
-          ].map(([label, keys]) => (
-            <Row key={label} title={label}>
-              <kbd>{keys}</kbd>
+                <button className="btn sm" onClick={run(vault.create)} disabled={!desktop || busy} title={desktop ? "Criar um cofre novo numa pasta vazia" : "Disponível no app desktop"}>
+                  <Plus size={14} /> Criar cofre
+                </button>
+              </div>
             </Row>
-          ))}
-        </section>
+            <Row title="Notas" hint={notesHint}>
+              <button className="btn sm" onClick={run(vault.reload)} disabled={!vault.info || busy}>
+                <RefreshCw size={14} /> Reler
+              </button>
+            </Row>
+            <Row title="Permitir gravação" hint={vault.info?.readOnly ? "Desligado: o app só lê este cofre. Ao ligar, ele faz um backup antes." : "Ligado: o app cria, edita, renomeia e manda notas para a lixeira (.trash)."}>
+              <Switch on={Boolean(vault.info && !vault.info.readOnly)} label="Permitir gravação" onChange={(on) => run(() => vault.setWritable(on).then(() => vault.platform.listBackups().then(setBackups)))()} />
+            </Row>
+            <Row title="Backups" hint={lastBackup ? `Último: ${new Date(lastBackup.createdAt).toLocaleString("pt-BR")} · ${backups.length} guardado(s), até 15. Automático antes da 1ª gravação do dia.` : "Nenhum ainda. Feitos antes da 1ª gravação de cada dia (só o texto das notas, fora do cofre)."}>
+              <div className="row" style={{ gap: 6 }}>
+                <button className="btn sm" onClick={run(() => vault.platform.backup().then(() => vault.platform.listBackups().then(setBackups)).then(() => toast("Backup feito")))} disabled={!vault.info || busy}>
+                  <Archive size={14} /> Fazer agora
+                </button>
+                {desktop && (
+                  <button className="btn sm ghost" onClick={run(vault.platform.revealBackups)} disabled={!vault.info}>
+                    Abrir pasta
+                  </button>
+                )}
+              </div>
+            </Row>
+            <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
+              <span className="small muted">Pastas padrão do cofre</span>
+            </Row>
+          </SettingsCard>
+          <SettingsCard icon={<Network size={16} />} title="Compatibilidade com o Obsidian">
+            <Row title="Formato de link novo" hint="Lido de .obsidian/app.json (mude no Obsidian, em Arquivos e links)">
+              <span className="small">
+                {{ shortest: "Mais curto possível", relative: "Relativo", absolute: "Caminho completo" }[vault.config.app.newLinkFormat]}
+                {vault.config.app.useMarkdownLinks ? " · links em Markdown" : " · wikilinks"}
+              </span>
+            </Row>
+            <Row title="Pasta dos demais anexos" hint="Áudios, vídeos e PDFs seguem a pasta de .obsidian/app.json. Imagens usam Anexos/Imagens.">
+              <span className="small">{attachmentFolderLabel(vault.config.app.attachmentFolder)}</span>
+            </Row>
+            <Row title="Anexos sem uso" hint="Imagens, áudios, vídeos e PDFs que nenhuma nota nem quadro usa.">
+              <button className="btn sm" disabled={!vault.index || busy} onClick={run(findUnused)}>
+                Procurar
+              </button>
+            </Row>
+            <Row title="Snippet runas-codex.css" hint="Faz callouts, colunas e capitulares aparecerem iguais no Obsidian. Depois de instalar, ligue em Obsidian › Aparência › Trechos de CSS.">
+              <button
+                className="btn sm"
+                disabled={!desktop || !vault.info || vault.info.readOnly || busy}
+                title={!desktop ? "Disponível no app desktop" : vault.info?.readOnly ? "Libere a gravação no cofre primeiro" : "Grava .obsidian/snippets/runas-codex.css"}
+                onClick={run(() => vault.platform.installSnippet(snippetCss).then((path) => toast(`Snippet gravado em ${path}`)))}
+              >
+                Instalar
+              </button>
+            </Row>
+            <Row title="Avisar quando um link resolveria diferente no Obsidian">
+              <span className="small muted">Avisos no editor</span>
+            </Row>
+          </SettingsCard>
+          <ImageFolderSettings />
+          <SettingsCard icon={<Bell size={16} />} title="Agenda e lembretes">
+            <Row title="Lembretes" hint="Configure cada lembrete no evento da Agenda. O app precisa continuar aberto ou na bandeja.">
+              <a className="btn sm" href="#/agenda">Abrir Agenda</a>
+            </Row>
+            <Row title="Iniciar com o sistema (desktop)" hint="Necessário para lembrar com o app fechado">
+              <span className="small muted">Em preparação para o lançamento</span>
+            </Row>
+            <DesktopTraySettings />
+          </SettingsCard>
+          <OnboardingSettings />
+          <SettingsCard icon={<Dices size={16} />} title="Sala do VTT">
+            <Row title="Conexão dos jogadores" hint="Abra uma mesa e configure o acesso no painel Sala. O endereço e o código só existem com a sala aberta.">
+              <a className="btn sm" href="#/vtt/criar">Abrir minhas mesas</a>
+            </Row>
+          </SettingsCard>
+        </div>
+        <div className="settings-column">
+          <AppearanceSettings theme={theme} onTheme={onTheme} />
+          <SettingsCard icon={<ShieldCheck size={16} />} title="Privacidade e atualizações">
+            <Row title="Telemetria" hint="Não existe. O app não chama a internet fora da sala.">
+              <span className="chip green">desligada sempre</span>
+            </Row>
+            <UpdateRow />
+            <PinRow />
+          </SettingsCard>
+          <ShortcutSettings />
+          <SnippetSettings />
+        </div>
       </div>
       {unused && (
         <Modal
