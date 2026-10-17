@@ -375,3 +375,18 @@ aparelho físico acima continua necessária.
 - Conferir camadas/eras do mapa, recorrência fictícia, dicionários e tabelas encadeadas com um cofre real.
 - Em tela touch física, testar pinça, seleção de cartões, arrasto conjunto e recorte/restauração. Capturas e testes
   automatizados não substituem multitouch físico nem revisão por leitor de tela. Android vai para a tarefa posterior.
+
+## X5 — fechamento dos Livros
+
+- [ ] Em um livro real: citar personagens/locais pelo painel da Wiki, transcluir um artigo e conferir no Obsidian.
+- [ ] Ligar índice/glossário no acabamento, preencher termos e os resumos dos artigos. Conferir ordem e referências
+  de capítulo/página na prévia/PDF e os links do EPUB em um leitor.
+- [ ] A4/Carta/A5/6x9: margens, sangria e marcas de corte em impressora física; fundos, texturas e marca d’água.
+- [ ] CSS de tipografia/cores modifica só o papel. CSS inválido mostra o erro e não é aplicado.
+- [ ] Exportar HTML e abri-lo sem internet; abrir RTF no Word/LibreOffice. Conferir acentos e imagens. RTF usa
+  tabulações para tabelas e avisos para diagramas; para fidelidade de página, usar PDF.
+- [ ] Markdown único mantém a ordem e caminhos do cofre. Extrair o ZIP e abrir como cofre no Obsidian, incluindo
+  transclusões e anexos.
+- [ ] Modo foco, máquina de escrever, comentários no cursor e histórico de versões do capítulo: guardar, comparar e
+  restaurar, inclusive com alterações externas para conferir a recusa de conflito.
+- [ ] Android: conferir na tarefa complementar da revisão completa, após C8/X7 (fora desta rodada).

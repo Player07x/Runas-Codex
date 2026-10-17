@@ -1,3 +1,4 @@
+import { bookDecorationCss } from "../../core/books-finish"
 import type { ExportAsset, ExportBook, ExportNode } from "../../core/export/book"
 import { bookExportPlan } from "../../core/export/book"
 import type { IndexedNote, VaultIndex } from "../../core/vault-index"
@@ -19,7 +20,7 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
   const assets: ExportAsset[] = [], warnings = new Set<string>()
   const imageNames = new Map<string, string>()
   const entries = await platform.listVault()
-  const urlPaths = new Map(entries.map((e) => [platform.fileUrl(e.path), e.path]))
+  const urlPaths = new Map(entries.flatMap((e) => { const url = platform.fileUrl(e.path); return url ? [[new URL(url, location.href).href, e.path]] : [] }))
   async function imageAsset(img: HTMLImageElement): Promise<string> {
     const src = img.currentSrc || img.src
     if (imageNames.has(src)) return imageNames.get(src)!
@@ -109,7 +110,7 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
   const captureSvgChildren = async (el: Element) => (await Promise.all([...el.childNodes].map(async (n): Promise<ExportNode | null> => n instanceof Element ? svgTree(n) : n.nodeType === Node.TEXT_NODE ? n.textContent ?? "" : null))).filter((n): n is ExportNode => n !== null)
   const rendered = []
   for (let i = 0; i < sections.length; i++) rendered.push({ ...plan.sections[i], nodes: await capture(sections[i]) })
-  let css = `${markdownCss}\n${paperCss}`
+  let css = `${markdownCss}\n${paperCss}\n${bookDecorationCss(book)}`
   for (const [name, family, url] of [["garamond", "EB Garamond Variable", garamond], ["geist", "Geist Variable", geist], ["cinzel", "Cinzel", cinzel]]) {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Não foi possível incluir a fonte ${family}.`)

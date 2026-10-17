@@ -138,3 +138,12 @@ Por pedido do dono, Codex assume a C6 e executa X5 → C6 → X8, sem Android ne
 | C6b — Campanhas, Agenda e colaboração pela sala | Codex | `campanhas/c6b-fechamento` | implementada e validada localmente; baseada na C6a |
 
 A revisão de Android será especificada em tarefa complementar depois da X8.
+
+## Atualização de responsáveis — 17/10/2026
+
+Por pedido do dono: Codex assume **X5 → C6 → X8**, nessa ordem, em PRs separados. A revisão Android fica fora
+desta rodada; será especificada em tarefa complementar depois da X8, para executar com C8/X7 disponíveis.
+
+- X5: implementação e conferência na branch `livros/x5-fechamento`.
+- C6: atribuída ao Codex. Mostrar artigo pela sala conserva a dependência dos handouts da X6.
+- X8: vem imediatamente depois da C6, com revisão web/desktop e larguras de 320 px, tablet e desktop.

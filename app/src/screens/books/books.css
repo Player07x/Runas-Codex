@@ -46,3 +46,24 @@
   .books-formatters { padding: 8px; }
   .books-formatters label, .books-formatters select { width: 100%; }
 }
+
+.books-focus .books-binder { display:none; }
+.books-focus .books-layout { grid-template-columns:minmax(0,1fr); }
+.books-focus .books-header > :not(button) { display:none; }
+.book-writing-tools { padding-block:8px; max-width:100%; }
+.book-writing-tools .stack { padding-block:12px; }
+.book-wiki-reference { max-height:35vh; overflow:auto; padding:12px; border:1px solid var(--line); border-radius:var(--radius); }
+.book-finish-settings { border-bottom:1px solid var(--line); }
+.book-finish-settings summary { padding:12px; cursor:pointer; min-height:44px; }
+.book-finish-settings .book-metadata { max-height:45vh; }
+.book-print .book-section a[href^="#book-chapter-"]::after { content: " (p. " target-counter(attr(href),page) ")"; }
+.books-focus .books-layout.has-preview { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+@media(max-width:860px) { .books-focus .books-layout.has-preview { grid-template-columns:minmax(0,1fr); } }
+
+.books-writing-area { min-height:0; min-width:0; }
+.books-writing-area > .book-writing-tools { padding:12px; border-top:1px solid var(--line); }
+.books-writing-area .book-writing-tools input,.books-writing-area .book-writing-tools select { width:100%; }
+@media(min-width:1200px) {
+ .books-layout:not(.has-preview) .books-writing-area { display:grid;grid-template-columns:minmax(0,1fr) 300px;flex:1; }
+ .books-layout:not(.has-preview) .books-writing-area > .book-writing-tools { border-left:1px solid var(--line);border-top:0;overflow:auto; }
+}
