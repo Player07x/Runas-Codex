@@ -1,4 +1,4 @@
-import { CALENDAR_EXAMPLE, articleKind, ARTICLE_KINDS, calendarFor, diplomacy, familyTree, listCalendars, listWikis, newArticleNote, newCalendarNote, noteDates, orgChart, parseMap, pinsToYaml, relationsOf, timelineEvents, type CalendarRef } from "./wiki"
+import { CALENDAR_EXAMPLE, articleImage, articleKind, ARTICLE_KINDS, calendarFor, diplomacy, familyTree, listCalendars, listWikis, newArticleNote, newCalendarNote, noteDates, orgChart, parseMap, pinsToYaml, relationsOf, timelineEvents, type CalendarRef } from "./wiki"
 import { parseCalendar } from "./calendar"
 import { VaultIndex } from "./vault-index"
 import { parseFrontmatter } from "./parse"
@@ -115,5 +115,24 @@ describe("wiki", () => {
     expect(map.travelPerDay).toBe(30)
     expect(pinsToYaml(map.pins)[0]).toEqual({ nota: "[[Reino]]", x: 0.4, y: 0.25, camada: "Locais" })
     expect(() => parseMap("pinos: []")).toThrow("imagem")
+  })
+})
+
+
+describe("arte do artigo", () => {
+  const note = (text: string) => new VaultIndex([{path:"Wikis/Mundo/Artigo.md",mtime:1,size:text.length}],{"Wikis/Mundo/Artigo.md":text}).note("Wikis/Mundo/Artigo.md")!
+  it("prefere o campo de imagem do tipo, sem delimitadores ou legenda", () => {
+    expect(articleImage(note('---\ntipo: personagem\nretrato: "[[Retrato.png|Guardiã]]"\n---\n![[Outra.png]]'))).toBe("Retrato.png")
+    expect(articleImage(note('---\ntipo: organizacao\nsimbolo: "simbolo.svg"\n---'))).toBe("simbolo.svg")
+    expect(articleImage(note('---\ntipo: pais\nbandeira: "[[paises/bandeira.webp]]"\n---'))).toBe("paises/bandeira.webp")
+  })
+  it("usa a primeira imagem embutida no corpo e ignora frontmatter e embeds de notas", () => {
+    const text='---\ntipo: personagem\nreferencia: "![[Ignorar.png]]"\n---\n![[Outra nota]]\n![Primeira](../Imagens/Primeira.PNG)\n![[Segunda.png]]'
+    expect(articleImage(note(text))).toBe("../Imagens/Primeira.PNG")
+  })
+  it("devolve null quando não há arte", () => { expect(articleImage(note('---\ntipo: local\nimagem: ""\n---\n# Local'))).toBeNull() })
+  it("funciona sem tipo e com tipos desconhecidos", () => {
+    expect(articleImage(note('# Sem tipo\n![[imagem.png|300]]'))).toBe("imagem.png")
+    expect(articleImage(note('---\ntipo: inventado\n---\n![[arquivo.pdf]]'))).toBeNull()
   })
 })

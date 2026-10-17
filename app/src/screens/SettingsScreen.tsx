@@ -12,6 +12,8 @@ import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
 import { CustomizationSettings } from "../components/vault/Customization"
+import { shortcutLabel } from "../core/shortcuts"
+import { usePreferences } from "../lib/customization"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -27,6 +29,7 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
 }
 
 export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
+  const prefs = usePreferences()
   const toast = useToast()
   const vault = useVault()
   const desktop = vault.platform.kind !== "memory"
@@ -184,8 +187,8 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
             <Keyboard size={16} /> Atalhos
           </span>
           {[
-            ["Buscar / paleta de comandos", "Ctrl K"],
-            ["Nova nota", "Ctrl N"],
+            ["Buscar / paleta de comandos", shortcutLabel("palette", prefs.shortcuts)],
+            ["Nova nota", shortcutLabel("newNote", prefs.shortcuts)],
             ["Alternar modo de edição", "Ctrl E"],
             ["Régua (VTT)", "R"],
             ["Selecionar (VTT)", "V"],

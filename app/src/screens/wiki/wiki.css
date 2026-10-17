@@ -216,3 +216,42 @@
 .map-toolbar label { display:grid;gap:4px;max-width:100%; }
 .map-toolbar .input { width:150px;max-width:100%; }
 .map-toolbar .map-layers { flex-wrap:wrap; }
+
+/* W1 — categorias resumidas e navegação por arte, sem estilos no leitor compartilhado. */
+.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px; }
+.wiki-category-heading h2 { font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere; }
+.wiki-category-preview { display:grid;gap:2px; }
+.wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }
+.wiki-category-all,.wiki-category-back { display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:calc(13px * var(--font-scale,1)); }
+.wiki-article-art { display:grid;place-items:center;overflow:hidden;flex:0 0 auto;background:var(--bg-deep);color:var(--gold);border-radius:var(--radius-sm);font-weight:700; }
+.wiki-article-art img { display:block;width:100%;height:100%;object-fit:cover; }
+.wiki-article-art.thumb { width:28px;height:28px;font-size:calc(16px * var(--font-scale,1)); }
+.wiki-article-art.list { width:40px;height:40px;font-size:calc(22px * var(--font-scale,1)); }
+.wiki-article-art.cover { width:100%;aspect-ratio:4/3;border-radius:0;font-size:calc(42px * var(--font-scale,1)); }
+.wiki-category-controls { display:flex;align-items:end;flex-wrap:wrap;gap:12px; }
+.wiki-category-controls .search { flex:1 1 240px;min-width:0; }
+.wiki-category-controls .field { flex:0 1 210px;min-width:0; }
+.wiki-category-filters { border:1px solid var(--line);padding:12px;border-radius:var(--radius); }
+.wiki-category-filters summary { display:flex;align-items:center;min-height:44px;font-weight:650;cursor:pointer; }
+.wiki-category-filters fieldset { border:0;min-width:0;margin:0;padding:8px 0; }
+.wiki-category-filters legend { color:var(--muted);font-size:calc(12px * var(--font-scale,1));font-weight:650; }
+.wiki-category-filters .chip { min-height:44px;white-space:normal;overflow-wrap:anywhere;cursor:pointer; }
+.wiki-category-results.grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px; }
+.wiki-category-article { display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--text);text-decoration:none;overflow:hidden; }
+.wiki-category-article:hover { border-color:var(--line-strong); }
+.wiki-category-copy { display:grid;align-content:start;gap:6px;min-width:0;padding:12px; }
+.wiki-category-copy h2 { font-size:calc(14px * var(--font-scale,1));line-height:1.35;overflow-wrap:anywhere; }
+.wiki-category-summary { font-size:calc(12px * var(--font-scale,1));color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.wiki-category-badges { display:flex;flex-wrap:wrap;gap:5px;min-width:0; }
+.wiki-category-badges .chip { max-width:100%;overflow:hidden;text-overflow:ellipsis;display:block;line-height:24px; }
+.wiki-category-results.list { display:grid;gap:6px; }
+.wiki-category-results.list .wiki-category-article { flex-direction:row;align-items:center;gap:12px;padding:8px; }
+.wiki-category-results.list .wiki-category-copy { flex:1;padding:0; }
+.wiki-category-more { justify-self:center;min-height:44px; }
+@media(max-width:560px) {
+ .wiki-category-results.grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }
+ .wiki-category-copy { padding:9px; }
+ .wiki-category-controls .field { flex:1 1 100%; }
+ .wiki-category-controls>[role=group] { width:100%; }
+ .wiki-category-controls>[role=group] .btn { flex:1; }
+}

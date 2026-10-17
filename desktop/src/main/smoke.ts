@@ -4,6 +4,7 @@ import { strFromU8, unzipSync } from "fflate"
 import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
 import { VTT_TOUCH_SMOKE } from "./vtt-touch-smoke"
 import { NOTES_C5C_SMOKE } from "./notes-c5c-smoke"
+import { WIKI_CATEGORY_SMOKE } from "./wiki-category-smoke"
 
 /**
  * Roteiro do `--smoke`, executado dentro da janela: confere a ponte, as recusas de segurança, o leitor de Notas e,
@@ -86,6 +87,8 @@ export const SMOKE_SCRIPT = `(async () => {
     await until(() => mapImage && mapImage.complete, 30)
     result.wiki = { age: /32 anos/.test(infobox), weekdays, pins: document.querySelectorAll(".map-pin").length, image: Boolean(mapImage && mapImage.naturalWidth > 0) }
   }
+
+  ${WIKI_CATEGORY_SMOKE}
 
   // Livros 8b: a prévia lazy precisa paginar com a CSP real, inclusive em somente leitura.
   location.hash = "/livros/" + encodeURIComponent("Livros/Caderno de formatadores/Caderno de formatadores.md")
@@ -554,6 +557,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const wiki = result.wiki as { age?: boolean; weekdays?: number; pins?: number; image?: boolean } | undefined
   const wikiOk = wiki?.age === true && wiki.weekdays === 6 && (wiki.pins ?? 0) >= 2 && wiki.image === true
   if (!readOk || !formattersOk || !graphOk || !wikiOk) return false
+  const wikiCategory = result.wikiCategory as Record<string, unknown> | undefined
+  if (!wikiCategory || Object.keys(wikiCategory).length !== 7 || !Object.values(wikiCategory).every(value => value === true)) return false
   const bookPreview = result.bookPreview as Record<string, unknown> | undefined
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined

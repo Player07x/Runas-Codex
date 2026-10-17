@@ -103,3 +103,9 @@ Object.assign(DEMO_TEXT_FILES, WIKI_FINISH_DEMO)
 // C6b: tesouro e iniciativa genéricos, em notas comuns.
 import { CAMPAIGN_TOOLS_DEMO } from "./campaign-tools-demo"
 Object.assign(DEMO_TEXT_FILES,CAMPAIGN_TOOLS_DEMO)
+
+import { WIKI_CATEGORY_DEMO } from "./wiki-category-demo"
+Object.assign(DEMO_TEXT_FILES, WIKI_CATEGORY_DEMO)
+
+// A grade da Wiki usa iniciais no navegador; o anexo continua resolvido no índice.
+Object.assign(DEMO_ASSETS, { "Anexos/Imagens/exemplo-retrato.png": runa })

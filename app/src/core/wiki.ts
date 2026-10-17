@@ -3,7 +3,7 @@ import { parse as parseYaml } from "yaml"
 import { findCodeBlocks } from "./codeblocks"
 import { CalendarError, dayNumber, parseCalendar, parseWorldDate, type Calendar, type WorldDate } from "./calendar"
 import type { LinkRef } from "./parse"
-import { noteName } from "./text"
+import { extname, noteName } from "./text"
 import type { IndexedNote, VaultIndex } from "./vault-index"
 
 /**
@@ -76,6 +76,19 @@ export function articleKind(tipo: unknown): ArticleKind | undefined {
   if (typeof tipo !== "string") return undefined
   const key = tipo.trim().toLocaleLowerCase("pt-BR")
   return ARTICLE_KINDS.find((k) => k.id === (KIND_ALIASES[key] ?? key))
+}
+
+const ARTICLE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp"])
+
+/** Arte representativa: campo do tipo, ou primeiro embed de imagem do corpo já indexado. */
+export function articleImage(note: IndexedNote): string | null {
+  const data = note.meta.frontmatter?.data ?? {}
+  for (const field of articleKind(data.tipo)?.fields ?? []) {
+    if (field.kind !== "imagem") continue
+    const value = values(data[field.key]).find(value => value.trim())?.trim()
+    if (value) return linkTargetOf(value.replace(/^!/, ""))?.target ?? value
+  }
+  return note.meta.links.find(link => link.embed && !link.inFrontmatter && ARTICLE_IMAGE_EXTENSIONS.has(extname(link.target)))?.target ?? null
 }
 
 // ---------- Wikis ----------

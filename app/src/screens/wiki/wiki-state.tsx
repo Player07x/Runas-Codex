@@ -79,7 +79,7 @@ export function WikiProvider({ children, articlePath }: { children: ReactNode; a
   const wikis = useMemo(() => (index ? listWikis(index) : []), [index, vault.version])
   const [chosen, setChosen] = useState(() => stored(CURRENT_KEY))
   const [players, setPlayersState] = useState(() => stored(PLAYERS_KEY) === "1")
-  const fromArticle = articlePath ? wikis.find((w) => articlePath.startsWith(w.root)) : undefined
+  const fromArticle = articlePath ? wikis.find((w) => (articlePath === w.root.slice(0,-1) || articlePath.startsWith(w.root))) : undefined
   const wiki = fromArticle ?? wikis.find((w) => w.name === chosen) ?? wikis[0] ?? null
   useEffect(() => {
     if (fromArticle && fromArticle.name !== chosen) setChosen(fromArticle.name)

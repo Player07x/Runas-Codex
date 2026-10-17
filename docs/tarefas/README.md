@@ -162,3 +162,12 @@ desta rodada; será especificada em tarefa complementar depois da X8, para execu
 
 As fases estão em commits locais. O snapshot integrado preserva as duas frentes; publicações e mesclagem da main
 continuam separadas. Consulte [auditoria-x8.md](auditoria-x8.md) para a matriz e os limites da validação.
+
+
+## Entrega beta.5 — W1 e release desktop
+
+W1 implementada em `wiki/pagina-categoria` sobre X5/C6/X8; ver [auditoria-w1.md](auditoria-w1.md).
+Por pedido posterior do dono, a entrega é reunida num PR integrado e numa nova release Windows/Linux, sem Android.
+As branches de fase e os commits continuam preservados para revisão. A mesclagem na main continua a cargo do dono.
+A revisão complementar foi criada em chat próprio e concluiu a auditoria do snapshot d6ea6bd; seus três achados de
+interface/confiabilidade dos testes foram tratados na beta.5. Validação física e C8/X7 continuam pendentes.

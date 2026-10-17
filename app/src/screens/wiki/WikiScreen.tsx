@@ -1,3 +1,4 @@
+import { WikiCategory } from "./WikiCategory"
 import { useState } from "react"
 import { CalendarDays, ChevronDown, Eye, EyeOff, GitFork, History, Library, Map, Network, Plus } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
@@ -31,7 +32,7 @@ const TABS = [
 export function WikiScreen({ route }: { route: string[] }) {
   const vault = useVault()
   const [section = "", rawId] = route
-  const id = rawId ? decodeURIComponent(rawId) : undefined
+  const id = rawId // O roteador já decodifica cada segmento uma vez.
   if (vault.loading && !vault.index) return <div className="page"><p className="muted">Abrindo o cofre…</p></div>
   if (!vault.index) {
     return (
@@ -41,7 +42,7 @@ export function WikiScreen({ route }: { route: string[] }) {
     )
   }
   return (
-    <WikiProvider articlePath={section === "artigo" || section === "mapa" || section === "calendario" ? id : undefined}>
+    <WikiProvider articlePath={section === "artigo" || section === "mapa" || section === "calendario" || section === "categoria" ? id : undefined}>
       <WikiBody section={section} id={id} />
     </WikiProvider>
   )
@@ -53,8 +54,9 @@ function WikiBody({ section, id }: { section: string; id?: string }) {
   if (!wiki) return <NoWiki />
   return (
     <div className={fill ? "wiki-fill" : ""}>
-      <WikiHeader current={section === "artigo" ? "" : section} />
+      <WikiHeader current={section === "artigo" || section === "categoria" ? "" : section} />
       {section === "" && <WikiHome />}
+      {section === "categoria" && id && <WikiCategory key={`${wiki.root}:${id}`} path={id}/>}
       {section === "artigo" && id && <WikiArticleView key={id} path={id} />}
       {section === "calendario" && <WikiCalendar path={id} />}
       {section === "linha-do-tempo" && <WikiTimeline />}

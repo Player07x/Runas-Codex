@@ -401,3 +401,15 @@ aparelho físico acima continua necessária.
   repetir o mesmo arquivo em duas notas e num quadro/mapa. Reunir arquivos com nomes iguais e conferir no Obsidian.
 - Conferir fonte/zoom e menus no teclado virtual e multitouch físicos. Android não foi implementado/testado nesta
   rodada. O roteiro completo está em `docs/tarefas/revisao-completa-complementar.md`.
+
+
+## W1 — categorias da Wiki
+
+- [ ] Categoria real com 100+ artigos: início limita cinco recentes, abrir categoria mostra 24, “Mostrar mais” amplia
+  por 24; rolar com retratos pesados e conferir carregamento lazy, busca por apelidos/campos, ordem e persistência da lista.
+- [ ] Retrato em propriedade e primeira imagem no corpo, sem tipo e sem imagem: conferir no Windows/Linux e no
+  Obsidian, inclusive imagens em `Anexos/Imagens`, nomes duplicados e caminhos com acento/porcentagem.
+- [ ] Alternar visão dos jogadores: notas secretas não entram na contagem, busca, filtros ou cards; artigo recém
+  alterado fora do app deve atualizar os resultados após releitura.
+- [ ] Criar a partir de subcategoria e conferir tipo/pasta sugeridos; tema claro/escuro, 320 px e fontes ampliadas.
+- [ ] Personalizar Nova nota e conferir ajuda de Configurações, dica do botão e paleta com a combinação efetiva.
