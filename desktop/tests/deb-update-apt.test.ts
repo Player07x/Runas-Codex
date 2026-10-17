@@ -19,14 +19,21 @@ it.runIf(aptAvailable)("o APT real prepara o caminho local sem repositórios e r
     await writeFile(join(base,"empty.conf"), "")
     const options = ["-o",`Dir::State=${base}`,"-o",`Dir::Cache=${join(base,"cache")}`,"-o",`Dir::State::status=${status}`,"-o",`Dir::State::lists=${join(base,"lists")}`,"-o",`Dir::Cache::archives=${join(base,"archives")}`,"-o",`Dir::Log=${join(base,"log")}`,"-o","Debug::NoLocking=true","-o","Debug::pkgDPkgPM=true"]
     const control = (depends = "") => `Package: runas-update-probe\nVersion: 0.1.0\nArchitecture: all\nMaintainer: Runas <teste@example.invalid>\nDescription: Teste sem instalação real\n${depends ? `Depends: ${depends}\n` : ""}`
-    let output = ""
+    let output = "", failureCode: number | string | undefined
     const build = async (depends = "") => {
       await writeFile(join(base,"pkg/DEBIAN/control"), control(depends))
       await execute("/usr/bin/dpkg-deb",["--build",join(base,"pkg"),packageFile])
     }
     const run = async (_command: string, args: string[]) => {
-      const result = await execute("/usr/bin/apt-get", [...options,...args.slice(2)], { env:{...process.env, APT_CONFIG:config, LC_ALL:"C"} })
-      output = result.stdout + result.stderr
+      try {
+        const result = await execute("/usr/bin/apt-get", [...options,...args.slice(2)], { env:{...process.env, APT_CONFIG:config, LC_ALL:"C"} })
+        output = result.stdout + result.stderr
+      } catch (error) {
+        const failure = error as { code?: number | string; stdout?: string; stderr?: string }
+        failureCode = failure.code
+        output = (failure.stdout ?? "") + (failure.stderr ?? "")
+        throw error
+      }
     }
     await build()
     await installDeb(packageFile, run)
@@ -36,7 +43,10 @@ it.runIf(aptAvailable)("o APT real prepara o caminho local sem repositórios e r
     expect(output).toContain("Need to get 0 B/")
     expect(await readFile(status,"utf8")).toBe("")
     await build("runas-dependencia-inexistente (>= 1)")
-    await expect(installDeb(packageFile, run)).rejects.toThrow(/not installable|unmet dependencies|Unable to satisfy dependencies/)
+    await expect(installDeb(packageFile, run)).rejects.toThrow("não concluiu")
+    expect(failureCode).toBe(100)
+    expect(output).toContain("runas-dependencia-inexistente")
+    expect(output).not.toContain("--unpack")
     expect(await readFile(status,"utf8")).toBe("")
   } finally {
     await rm(base, { recursive:true, force:true })
