@@ -9,6 +9,8 @@ import { vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { FORMATTER_GROUPS } from "./formatters"
 
+import { BookWritingTools } from "./BookWritingTools"
+
 const BookPreview = lazy(() => import("./BookPreview"))
 
 export function BookEditor({ book }: { book: IndexedNote }) {
@@ -16,6 +18,8 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const structure = readBook(index, book)
   const [selected, setSelected] = useState<string | undefined>(() => structure.items.find((i) => i.note)?.note?.path)
   const [view, setView] = useState("escrever")
+  const [focus,setFocus] = useState(false)
+  const [typewriter,setTypewriter] = useState(false)
   const [preview, setPreview] = useState(false)
   const [draft, setDraft] = useState<{ path: string; text: string }>()
   const onDraftChange = useCallback((text: string) => { if (selected) setDraft({ path: selected, text }) }, [selected])
@@ -49,13 +53,15 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     setAnnouncement(`Item movido para a posição ${to + 1}.`)
   })
   const open = (path: string) => { setSelected(path); setView("escrever") }
-  return <div className={`books-editor books-view-${view}`}>
+  return <div className={`books-editor books-view-${view} ${focus ? "books-focus" : ""}`}>
     <header className="books-header">
       <a className="btn" href={href("/livros")}>Livros</a>
       <strong>{book.name}</strong>
       <span>{structure.words.toLocaleString("pt-BR")} / {goal || "sem meta"} palavras</span>{goal > 0 && <div className="books-progress" aria-label={`Progresso: ${Math.round(structure.words / goal * 100)}%`}>
         <Progress value={structure.words} max={goal} />
       </div>}<nav className="row-wrap" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
+      <button className="btn" aria-pressed={focus} onClick={()=>setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
+      <button className="btn" aria-pressed={typewriter} onClick={()=>setTypewriter(!typewriter)}>Máquina de escrever</button>
       <button className="btn" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
       <button className="btn" onClick={() => { setPreview(true); setView("previa") }}>Exportar…</button>
     </header>
@@ -116,7 +122,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
             <span>{countWords(current.text)} palavras</span>
             <button className="btn" onClick={() => navigate(vaultRoute(current.path))}>Propriedades e resumo</button>
           </div>
-          <NoteView onDraftChange={onDraftChange} key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => setView("estrutura")} onCreate={(target) => { setName(target); setCreating(true); setView("estrutura") }} onTag={() => navigate("/notas")} toolbar={(insert) => <div className="books-formatters">
+          <NoteView sidebar={insert => <BookWritingTools book={book} draft={draft} insert={insert} />} typewriter={typewriter} onDraftChange={onDraftChange} key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => setView("estrutura")} onCreate={(target) => { setName(target); setCreating(true); setView("estrutura") }} onTag={() => navigate("/notas")} toolbar={(insert) => <div className="books-formatters">
             <label>Inserir formatador<select className="input" aria-label="Inserir formatador" value="" onChange={(e) => { if (e.target.value) insert(e.target.value) }}>
               <option value="">Escolha uma formatação…</option>{FORMATTER_GROUPS.map((group) => <optgroup key={group.title} label={group.title}>{group.items.map((f) => <option key={f.label} value={f.syntax}>{f.label}</option>)}</optgroup>)}</select>
             </label>

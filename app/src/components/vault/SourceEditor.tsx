@@ -35,6 +35,7 @@ export interface SourceEditorHandle {
 
 interface Props {
   /** Texto inicial; para trocar o documento por fora (outra nota, recarregar), mude `docKey`. */
+  typewriter?: boolean
   value: string
   docKey: string
   readOnly: boolean
@@ -87,14 +88,14 @@ const highlight = HighlightStyle.define([
   { tag: tags.list, color: "var(--violet)" },
 ])
 
-export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles }, ref) {
+export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles, typewriter }, ref) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const readOnlyConf = useRef(new Compartment())
   const previewConf = useRef(new Compartment())
   // As funções mudam a cada render; o editor lê sempre a versão atual por estas referências.
-  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles })
-  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles }
+  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles, typewriter })
+  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles, typewriter }
   // Anfitrião estável para o live preview (o editor não é recriado quando as funções mudam).
   const previewHost = useRef<LivePreviewHost>({
     noteSet: () => callbacks.current.livePreview!.noteSet(),
@@ -162,6 +163,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         previewConf.current.of(previewExtensions(Boolean(livePreview))),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) callbacks.current.onChange(update.state.doc.toString())
+          if ((update.docChanged || update.selectionSet) && callbacks.current.typewriter) {
+            const pos = update.state.selection.main.head
+            requestAnimationFrame(() => { if (view.current === update.view) update.view.dispatch({ effects: EditorView.scrollIntoView(Math.min(pos, update.view.state.doc.length), { y: "center" }) }) })
+          }
         }),
         EditorView.domEventHandlers({
           paste(event, editorView) {

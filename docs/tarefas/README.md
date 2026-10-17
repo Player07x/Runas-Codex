@@ -126,3 +126,12 @@ celular (C3). O toque (X3) e o fechamento dos módulos atualizam a ADR de cada m
 Os arquivos compartilhados (lista no `AGENTS.md`) podem ser mexidos pelos dois, só acrescentando.
 
 Ninguém mexe no que é do outro. Se precisar, o pedido vai no PR ("precisa de X em `screens/wiki`") e o dono decide.
+
+## Atualização de responsáveis — 17/10/2026
+
+Por pedido do dono: Codex assume **X5 → C6 → X8**, nessa ordem, em PRs separados. A revisão Android fica fora
+desta rodada; será especificada em tarefa complementar depois da X8, para executar com C8/X7 disponíveis.
+
+- X5: implementação e conferência na branch `livros/x5-fechamento`.
+- C6: atribuída ao Codex. Mostrar artigo pela sala conserva a dependência dos handouts da X6.
+- X8: vem imediatamente depois da C6, com revisão web/desktop e larguras de 320 px, tablet e desktop.

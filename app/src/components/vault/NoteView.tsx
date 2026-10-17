@@ -50,6 +50,7 @@ const isMedia = (name: string) => {
 }
 
 interface Props {
+  typewriter?: boolean
   focused?: boolean
   path: string
   folders: string[]
@@ -60,6 +61,7 @@ interface Props {
   /** Observação do rascunho para prévias; não grava nem substitui o autosave. */
   onDraftChange?: (text: string) => void
   /** Barra opcional que insere no cursor do editor, sem outro fluxo de gravação. */
+  sidebar?: (insert: (text: string) => void) => ReactNode
   toolbar?: (insert: (text: string) => void) => ReactNode
   /** Pedido de rolar até um título (linha), vindo do sumário. */
   headingRequest?: { line: number; at: number }
@@ -71,7 +73,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, showSecrets = true, onDraftChange, focused = true }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -511,14 +513,18 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
 
       {!readOnly && mode !== "leitura" && toolbar?.((text) => editor.current?.insert(text))}
 
+      <div className={sidebar ? "books-writing-area" : undefined} style={sidebar ? undefined : { display: "contents" }}>
       <div className="editor-body" ref={reader}>
         {mode === "leitura" ? (
           <NoteSetContext.Provider value={noteSet}>
             {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} showSecrets={showSecrets} /> : <p className="muted">Nota vazia.</p>}
           </NoteSetContext.Provider>
         ) : (
-          <SourceEditor ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
+          <SourceEditor typewriter={typewriter} ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
         )}
+      </div>
+
+      {mode !== "leitura" && sidebar?.((text) => editor.current?.insert(text))}
       </div>
 
       {linkPreview}
