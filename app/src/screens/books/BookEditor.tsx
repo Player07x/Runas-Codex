@@ -59,10 +59,15 @@ export function BookEditor({ book }: { book: IndexedNote }) {
       <strong>{book.name}</strong>
       <span>{structure.words.toLocaleString("pt-BR")} / {goal || "sem meta"} palavras</span>{goal > 0 && <div className="books-progress" aria-label={`Progresso: ${Math.round(structure.words / goal * 100)}%`}>
         <Progress value={structure.words} max={goal} />
-      </div>}<nav className="row-wrap" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
-      <button className="btn" aria-pressed={focus} onClick={()=>setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
-      <button className="btn" aria-pressed={typewriter} onClick={()=>setTypewriter(!typewriter)}>Máquina de escrever</button>
-      <button className="btn" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+      </div>}<select className="select mobile-space-nav" aria-label="Visão do livro" value={view} onChange={event => { setView(event.target.value); if (event.target.value === "previa") setPreview(true) }}>{[["estrutura","Estrutura"],["escrever","Escrever"],["cortica","Cortiça"],["previa","Prévia"]].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><nav className="row-wrap book-view-tabs" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
+      <button className="btn book-writing-option book-focus-toggle" aria-pressed={focus} onClick={()=>setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
+      <button className="btn book-writing-option" aria-pressed={typewriter} onClick={()=>setTypewriter(!typewriter)}>Máquina de escrever</button>
+      <button className="btn book-writing-option" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+      <details className="book-mobile-controls"><summary>Opções de escrita</summary><div className="row-wrap">
+        <button className="btn" aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
+        <button className="btn" aria-pressed={typewriter} onClick={() => setTypewriter(!typewriter)}>Máquina de escrever</button>
+        <button className="btn" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+      </div></details>
       <button className="btn" onClick={() => { setPreview(true); setView("previa") }}>Exportar…</button>
     </header>
     {vault.info?.readOnly && <p className="proto-note">Somente leitura. Libere a gravação em Configurações › Cofre.</p>}

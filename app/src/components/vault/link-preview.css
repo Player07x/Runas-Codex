@@ -3,8 +3,8 @@
 .link-preview-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .link-preview-head strong { flex: 1; min-width: 0; font-family: var(--font-display); }
 .link-preview-warning { margin: 0; color: var(--gold); }
-.link-preview-body { min-height: 0; overflow: auto; font-size: 14px; }
-.link-preview-body > .md { font-size: 14px; }
+.link-preview-body { min-height: 0; overflow: auto; font-size: calc(14px * var(--font-scale, 1)); }
+.link-preview-body > .md { font-size: calc(14px * var(--font-scale, 1)); }
 .link-preview.sheet { left: 8px; right: 8px; bottom: calc(var(--bottomnav-height, 0px) + 8px); max-height: 60dvh; border-radius: 16px; }
 @media (max-width: 860px) {
   .link-preview .btn.sm, .link-preview .icon-btn.sm { min-height: 44px; min-width: 44px; }

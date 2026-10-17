@@ -96,6 +96,7 @@ function CampaignHeader({ name, current, onScreen }: { name: string; current: st
           </div>
         )}
       </div>
+      <select className="select mobile-space-nav" aria-label="Tela da campanha" value={current} onChange={event => navigate(campaignRoute(name, event.target.value))}>{TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select>
       <nav className="tabs campaign-tabs">
         {TABS.map((tab) => (
           <a key={tab.id} href={href(campaignRoute(name, tab.id))} className={current === tab.id ? "active" : ""}>

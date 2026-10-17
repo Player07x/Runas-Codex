@@ -21,3 +21,10 @@ O Lab de design, o Atlas e o visual original saem do código.
 - Cor de destaque única (`--cyan`, a lavanda) para item ativo, abas e barra inferior; `--red` volta a significar
   só dano/perigo.
 - O código das outras propostas fica recuperável no primeiro commit (`git show 02db20c`).
+
+## X8 — acessibilidade e variações temáticas
+
+Órbita continua sendo o padrão. Floresta e Brasa variam somente os tokens e preservam cores semânticas. Preferências
+locais guardam escala de fonte, redução de movimento e modo tablet; o sistema também pode reduzir movimento. A
+escala afeta leitura e edição, sem alterar páginas físicas de Livros. Diálogos contêm o foco e o devolvem à origem.
+As telas menores usam seleção compacta de seção e ações recolhíveis, mantendo alvos de toque de 44 px.

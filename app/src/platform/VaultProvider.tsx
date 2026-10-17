@@ -1,3 +1,4 @@
+import { DEFAULT_IMAGE_FOLDER, folderForAttachment } from "../core/images"
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { attachmentPath } from "../core/attachments"
 import { caseCollision, nameProblem } from "../core/names"
@@ -256,7 +257,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const addAttachment = useCallback(
     async (fileName: string, bytes: Uint8Array, nearNote?: string, folder?: string) => {
       const current = requireIndex()
-      const path = attachmentPath(folder ?? config.app.attachmentFolder, fileName, current.allFiles().map((f) => f.path), nearNote)
+      const path = attachmentPath(folderForAttachment(fileName, folder ?? config.app.attachmentFolder), fileName, current.allFiles().map((f) => f.path), nearNote)
       const entry = await platform.writeBinary(path, bytes, null)
       current.set(entry)
       bump()
@@ -284,7 +285,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   }, [requireIndex, bump])
 
   const choose = useCallback(async () => { await flushOpenNotes(); await open(await platform.chooseVault()) }, [open])
-  const create = useCallback(async () => { await flushOpenNotes(); await open(await platform.createVault()) }, [open])
+  const create = useCallback(async () => { await flushOpenNotes(); const next = await platform.createVault(); if (next && !next.readOnly) await platform.createFolder(DEFAULT_IMAGE_FOLDER); await open(next) }, [open])
   const setWritable = useCallback(async (writable: boolean) => setInfo(await platform.setWritable(writable)), [])
   const reload = useCallback(async () => open(await platform.vault()), [open])
 

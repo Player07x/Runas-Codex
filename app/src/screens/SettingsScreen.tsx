@@ -1,7 +1,10 @@
+import { ImageFolderSettings } from "../components/vault/NoteImages"
+import { AppearanceSettings } from "../components/Appearance"
+import { OnboardingSettings } from "../components/Onboarding"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
-import { Archive, Bell, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
-import { Modal, Switch, useProtoAction, useToast } from "../components/ui"
+import { Archive, Bell, FolderOpen, Keyboard, Network, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
+import { Modal, Switch, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
 import type { BackupInfo } from "../platform/platform"
@@ -24,7 +27,6 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
 }
 
 export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
-  const proto = useProtoAction()
   const toast = useToast()
   const vault = useVault()
   const desktop = vault.platform.kind !== "memory"
@@ -68,6 +70,9 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         </div>
       </div>
       <div className="settings-grid">
+        <AppearanceSettings theme={theme} onTheme={onTheme} />
+        <OnboardingSettings />
+        <ImageFolderSettings />
         <CustomizationSettings />
         <DesktopTraySettings />
         <section className="card">
@@ -105,7 +110,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
             </div>
           </Row>
           <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
-            <button className="btn sm" onClick={proto("renomear pastas dos espaços")}>Ajustar</button>
+            <span className="small muted">Pastas padrão do cofre</span>
           </Row>
         </section>
 
@@ -119,7 +124,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
               {vault.config.app.useMarkdownLinks ? " · links em Markdown" : " · wikilinks"}
             </span>
           </Row>
-          <Row title="Pasta de anexos" hint="Imagens coladas, arrastadas ou importadas nas notas vão para cá. Lida de .obsidian/app.json (mude no Obsidian).">
+          <Row title="Pasta dos demais anexos" hint="Áudios, vídeos e PDFs seguem a pasta de .obsidian/app.json. Imagens usam Anexos/Imagens.">
             <span className="small">{attachmentFolderLabel(vault.config.app.attachmentFolder)}</span>
           </Row>
           <Row title="Anexos sem uso" hint="Imagens, áudios, vídeos e PDFs que nenhuma nota nem quadro usa.">
@@ -138,31 +143,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
             </button>
           </Row>
           <Row title="Avisar quando um link resolveria diferente no Obsidian">
-            <Switch on label="Aviso de link" />
-          </Row>
-        </section>
-
-        <section className="card">
-          <span className="section-title row" style={{ marginBottom: 8 }}>
-            <Palette size={16} /> Aparência
-          </span>
-          <Row title="Tema">
-            <select className="select" value={theme} onChange={(e) => onTheme(e.target.value)}>
-              <option value="dark">Escuro (Livro Vermelho)</option>
-              <option value="light">Claro (papel)</option>
-            </select>
-          </Row>
-          <Row title="Tamanho do texto">
-            <input type="range" defaultValue={50} style={{ accentColor: "var(--cyan)" }} />
-          </Row>
-          <Row title="Idioma">
-            <select className="select">
-              <option>Português (Brasil)</option>
-              <option>English</option>
-            </select>
-          </Row>
-          <Row title="Reduzir animações">
-            <Switch on={false} label="Reduzir animações" />
+            <span className="small muted">Avisos no editor</span>
           </Row>
         </section>
 
@@ -170,11 +151,11 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Bell size={16} /> Agenda e lembretes
           </span>
-          <Row title="Notificações" hint="Android: notificação local · Desktop: bandeja">
-            <Switch on label="Notificações" />
+          <Row title="Lembretes" hint="Configure cada lembrete no evento da Agenda. O app precisa continuar aberto ou na bandeja.">
+            <a className="btn sm" href="#/agenda">Abrir Agenda</a>
           </Row>
           <Row title="Iniciar com o sistema (desktop)" hint="Necessário para lembrar com o app fechado">
-            <Switch on={false} label="Iniciar com o sistema" />
+            <span className="small muted">Em preparação para o lançamento</span>
           </Row>
         </section>
 
@@ -182,14 +163,8 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <span className="section-title row" style={{ marginBottom: 8 }}>
             <Network size={16} /> Sala do VTT
           </span>
-          <Row title="Porta na rede local">
-            <input className="input mono small" defaultValue="30000" style={{ width: 100, minWidth: 0 }} />
-          </Row>
-          <Row title="Túnel para a internet" hint="Baixado e verificado só quando você ligar">
-            <select className="select">
-              <option>Cloudflare (padrão)</option>
-              <option>Porta 443 (redes restritas)</option>
-            </select>
+          <Row title="Conexão dos jogadores" hint="Abra uma mesa e configure o acesso no painel Sala. O endereço e o código só existem com a sala aberta.">
+            <a className="btn sm" href="#/vtt/criar">Abrir minhas mesas</a>
           </Row>
         </section>
 

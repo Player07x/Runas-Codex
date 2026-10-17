@@ -16,7 +16,6 @@ import { ARTICLES } from "../data/wiki"
 import { CAMPAIGNS } from "../data/campaigns"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
-import { AGENDA_ROOT } from "../core/agenda"
 import { Modal, useToast } from "./ui"
 import { goBack, goForward } from "../lib/router"
 import type { ShortcutAction } from "../core/shortcuts"
@@ -78,9 +77,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
   const crumbs = crumbsFor(route)
-  const notesCount = vault.index ? vault.index.notesIn("Notas/").length || vault.index.size : NOTES.length
-  const agendaCount = vault.index ? vault.index.notesIn(AGENDA_ROOT).length : 0
-  const wikiCount = vault.index ? vault.index.notesIn("Wikis/").length : ARTICLES.length
+  const counts = useVaultCounts()
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -123,7 +120,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{item.match === "notas" ? notesCount : item.match === "agenda" ? agendaCount : item.match === "wiki" ? wikiCount : item.count}</span>}
+              {item.count !== undefined && <span className="count">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
             </a>
           ))}
         </div>
@@ -172,7 +169,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             </button>
           </div>
         </header>
-        <main className={`content ${fill ? "fill" : ""}`}>{children}</main>
+        <main id="runas-main" tabIndex={-1} className={`content ${fill ? "fill" : ""}`}>{children}</main>
       </div>
 
       <nav className="bottom-nav" aria-label="Navegação">
@@ -210,6 +207,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
 }
 
 function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialogFocus(dialogRef, onClose)
   const vault = useVault()
   const toast = useToast()
   const [query, setQuery] = useState("")
@@ -262,10 +261,11 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
 
   return (
     <div className="palette-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="palette" role="dialog" aria-label="Paleta de comandos">
+      <div className="palette" ref={dialogRef} tabIndex={-1} aria-modal="true" role="dialog" aria-label="Paleta de comandos">
         <div className="palette-input">
           <Search size={18} color="var(--muted)" />
           <input
+            aria-label="Buscar notas e comandos"
             autoFocus
             placeholder="Buscar nota (nome, apelido, tag:, path:) ou um comando…"
             value={query}
@@ -303,3 +303,8 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
     </div>
   )
 }
+
+import { useDialogFocus } from "./useDialogFocus"
+import { useRef } from "react"
+
+import { useVaultCounts } from "../lib/vault-counts"

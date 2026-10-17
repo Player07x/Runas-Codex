@@ -1,3 +1,4 @@
+import { useDialogFocus } from "../../components/useDialogFocus"
 import { useEffect, useRef, useState } from "react"
 import { Keyboard, RotateCcw, X } from "lucide-react"
 import { bindKey, defaultKeyBindings, isBindableKey, KEY_ACTION_GROUPS, KEY_ACTIONS, keyLabel, MAX_KEYS_PER_ACTION, PAN_SPEED, unbindKey, type AppSettings, type KeyAction } from "../shared/settings"
@@ -15,6 +16,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("")
   const dialog = useRef<HTMLDivElement>(null)
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved)
+  useDialogFocus(dialog, () => { if (capturing) setCapturing(null); else close() })
 
   useEffect(() => { dialog.current?.focus() }, [])
   // As configurações chegam do processo principal depois da primeira pintura.

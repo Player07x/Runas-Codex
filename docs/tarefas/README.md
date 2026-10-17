@@ -147,3 +147,17 @@ desta rodada; será especificada em tarefa complementar depois da X8, para execu
 - X5: implementação e conferência na branch `livros/x5-fechamento`.
 - C6: atribuída ao Codex. Mostrar artigo pela sala conserva a dependência dos handouts da X6.
 - X8: vem imediatamente depois da C6, com revisão web/desktop e larguras de 320 px, tablet e desktop.
+
+
+## Entrega local X5 → C6 → X8 e revisão complementar
+
+| Fase | Responsável | Branch/snapshot local | Situação |
+|---|---|---|---|
+| X5 — fechamento de Livros | Codex | `livros/x5-fechamento` | implementada e validada |
+| C6a — Wiki | Codex | `wiki/c6a-fechamento` | implementada e validada |
+| C6b — Campanhas/Agenda/sala | Codex | `campanhas/c6b-fechamento` | implementada e validada; depende da C6a |
+| X8 — visual/acessibilidade/primeiros passos, mais imagens e contadores pedidos pelo dono | Codex | `polimento/visual` | implementada e validada localmente; integra X5 e C6 |
+| Revisão completa posterior, incluindo Android | Codex | [revisao-completa-complementar.md](revisao-completa-complementar.md) | especificada para tarefa complementar |
+
+As fases estão em commits locais. O snapshot integrado preserva as duas frentes; publicações e mesclagem da main
+continuam separadas. Consulte [auditoria-x8.md](auditoria-x8.md) para a matriz e os limites da validação.

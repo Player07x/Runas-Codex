@@ -40,6 +40,7 @@ interface Props {
   docKey: string
   readOnly: boolean
   onChange(value: string): void
+  onImageLinkContext?(at: number): boolean
   onSave?(): void
   suggestLinks?(query: string): LinkSuggestion[]
   /** Com isto, o editor fica em live preview (marcação escondida fora do cursor, blocos desenhados). */
@@ -59,7 +60,7 @@ function pastedFiles(data: DataTransfer | null): File[] {
 
 /** Cores pelas variáveis do tema: o editor acompanha o claro/escuro do Órbita. */
 const theme = EditorView.theme({
-  "&": { color: "var(--text)", backgroundColor: "transparent", fontSize: "14px", height: "100%" },
+  "&": { color: "var(--text)", backgroundColor: "transparent", fontSize: "calc(14px * var(--font-scale, 1))", height: "100%" },
   ".cm-content": { fontFamily: "var(--font-mono)", lineHeight: "1.7", caretColor: "var(--cyan)", padding: "0 0 40vh" },
   ".cm-cursor": { borderLeftColor: "var(--cyan)" },
   "&.cm-focused": { outline: "none" },
@@ -88,14 +89,14 @@ const highlight = HighlightStyle.define([
   { tag: tags.list, color: "var(--violet)" },
 ])
 
-export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles, typewriter }, ref) {
+export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext }, ref) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const readOnlyConf = useRef(new Compartment())
   const previewConf = useRef(new Compartment())
   // As funções mudam a cada render; o editor lê sempre a versão atual por estas referências.
-  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles, typewriter })
-  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles, typewriter }
+  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext })
+  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext }
   // Anfitrião estável para o live preview (o editor não é recriado quando as funções mudam).
   const previewHost = useRef<LivePreviewHost>({
     noteSet: () => callbacks.current.livePreview!.noteSet(),
@@ -169,6 +170,11 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
           }
         }),
         EditorView.domEventHandlers({
+          contextmenu(event, editorView) {
+            const at = editorView.posAtCoords({ x: event.clientX, y: event.clientY }) ?? editorView.state.selection.main.head
+            if (!editorView.state.readOnly && callbacks.current.onImageLinkContext?.(at)) { event.preventDefault(); return true }
+            return false
+          },
           paste(event, editorView) {
             const files = pastedFiles(event.clipboardData)
             if (!files.length || !callbacks.current.onFiles || editorView.state.readOnly) return false

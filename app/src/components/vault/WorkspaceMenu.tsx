@@ -1,3 +1,4 @@
+import { useDialogFocus } from "../useDialogFocus"
 import { useEffect, useRef, useState } from "react"
 import { LayoutDashboard, Trash2 } from "lucide-react"
 import { workspaceNames, type Workspace } from "../../core/tabs"
@@ -14,6 +15,7 @@ export function WorkspaceMenu({ workspaces, onSave, onOpen, onDelete }: Props) {
   const [open, setOpen] = useState<{ x: number; y: number } | null>(null)
   const [name, setName] = useState("")
   const box = useRef<HTMLDivElement>(null)
+  useDialogFocus(box, () => setOpen(null), Boolean(open))
   const names = workspaceNames(workspaces)
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function WorkspaceMenu({ workspaces, onSave, onOpen, onDelete }: Props) {
         <LayoutDashboard size={14} />
       </button>
       {open && (
-        <div ref={box} className="tab-menu card workspace-menu" role="dialog" aria-label="Workspaces" style={{ left: open.x, top: open.y }}>
+        <div ref={box} className="tab-menu card workspace-menu" tabIndex={-1} aria-modal="true" role="dialog" aria-label="Workspaces" style={{ left: open.x, top: open.y }}>
           <span className="eyebrow">Workspaces</span>
           {names.length === 0 && <span className="small muted">Nenhum guardado ainda.</span>}
           {names.map((n) => (

@@ -15,7 +15,7 @@
 .canvas-edges { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; }
 .canvas-edge-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; pointer-events: stroke; }
 .canvas-edge.selected path:not(.canvas-edge-hit) { stroke: var(--cyan); }
-.canvas-edge-label { fill: var(--muted); font-size: 13px; paint-order: stroke; stroke: var(--bg-deep); stroke-width: 4px; }
+.canvas-edge-label { fill: var(--muted); font-size: calc(13px * var(--font-scale, 1)); paint-order: stroke; stroke: var(--bg-deep); stroke-width: 4px; }
 .canvas-hint { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); max-width: 320px; color: var(--faint); text-align: center; pointer-events: none; }
 .canvas-message { padding: 24px; color: var(--muted); }
 
@@ -23,13 +23,13 @@
 .canvas-card.colored { border-color: var(--card); background: color-mix(in srgb, var(--card) 10%, var(--panel)); }
 .canvas-card.selected { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .canvas-card.type-group { border-style: dashed; border-width: 1.5px; border-color: color-mix(in srgb, var(--card) 70%, var(--line)); background: color-mix(in srgb, var(--card) 6%, transparent); box-shadow: none; }
-.canvas-group-label { position: absolute; top: -26px; left: 4px; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); color: var(--text); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.canvas-group-label { position: absolute; top: -26px; left: 4px; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; white-space: nowrap; }
 .canvas-card-body { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; }
-.canvas-md { font-size: 13px; line-height: 1.5; }
+.canvas-md { font-size: calc(13px * var(--font-scale, 1)); line-height: 1.5; }
 .canvas-md > * + * { margin-top: 0.4em; }
-.canvas-file-title { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--cyan); font-size: 13px; font-weight: 700; text-decoration: none; word-break: break-all; }
+.canvas-file-title { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--cyan); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; text-decoration: none; word-break: break-all; }
 .canvas-image { display: block; width: 100%; height: calc(100% - 26px); object-fit: contain; border-radius: 8px; }
-.canvas-textarea { width: 100%; height: 100%; padding: 0; border: 0; outline: 0; resize: none; background: transparent; color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; user-select: text; }
+.canvas-textarea { width: 100%; height: 100%; padding: 0; border: 0; outline: 0; resize: none; background: transparent; color: var(--text); font: inherit; font-size: calc(13px * var(--font-scale, 1)); line-height: 1.5; user-select: text; }
 .canvas-resize { position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border: 2px solid var(--panel); border-radius: 4px; background: var(--cyan); cursor: nwse-resize; touch-action: none; }
 
 @media (max-width: 860px) {
@@ -43,8 +43,8 @@
 .canvas-page-head { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); }
 
 /* Dentro do cartão, títulos menores (a nota inteira é só uma prévia). */
-.canvas-md h1, .canvas-md h2 { font-size: 15px; margin-top: 0.2em; padding-bottom: 0; border: 0; }
-.canvas-md h3, .canvas-md h4, .canvas-md h5, .canvas-md h6 { font-size: 13px; }
+.canvas-md h1, .canvas-md h2 { font-size: calc(15px * var(--font-scale, 1)); margin-top: 0.2em; padding-bottom: 0; border: 0; }
+.canvas-md h3, .canvas-md h4, .canvas-md h5, .canvas-md h6 { font-size: calc(13px * var(--font-scale, 1)); }
 
 .canvas-selection { position:absolute;z-index:3;border:2px solid var(--cyan);background:color-mix(in srgb,var(--cyan) 12%,transparent);pointer-events:none; }
 .canvas-crop { padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);max-height:35vh;overflow:auto; }

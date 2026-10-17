@@ -171,7 +171,7 @@ export const SMOKE_SCRIPT = `(async () => {
     shown: await new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img.naturalWidth); img.onerror = () => resolve(0); img.src = "vault-file://cofre/Notas/Anexos/smoke.png" }),
   }
 
-  // Imagem colada (Ctrl+V) numa nota: o arquivo vai para a pasta de anexos (aqui, a raiz) e o link entra no texto.
+  // Imagem colada (Ctrl+V): a pasta comum mantém o link e a posição da imagem.
   location.hash = "/notas/" + encodeURIComponent("Notas/Caderno.md")
   await until(() => document.querySelector(".editor-status")?.getAttribute("title") === "Notas/Caderno.md")
   ;(await until(() => [...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))))?.click()
@@ -183,6 +183,7 @@ export const SMOKE_SCRIPT = `(async () => {
   for (let i = 0; i < 50 && !pastedPath; i++) {
     await wait(100)
     pastedPath = (await bridge.vault.list()).find((e) => /^Imagem colada \\d{14}\\.png$/.test(e.path))?.path ?? null
+    if (!pastedPath) pastedPath = (await bridge.vault.list()).find((e) => /^Anexos\\/Imagens\\/Imagem colada \\d{14}\\.png$/.test(e.path))?.path ?? null
   }
   await wait(1500)
   const caderno = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
@@ -190,6 +191,8 @@ export const SMOKE_SCRIPT = `(async () => {
   const pastedImg = await until(() => [...document.querySelectorAll(".editor-body .md img")].find((img) => img.src.includes("Imagem%20colada")))
   if (pastedImg) { pastedImg.loading = "eager"; await until(() => pastedImg.complete, 30) }
   result.paste = { file: pastedPath, link: Boolean(pastedPath && caderno.includes("![[" + pastedPath + "]]")), shown: Boolean(pastedImg && pastedImg.naturalWidth > 0) }
+  if (pastedPath?.startsWith("Anexos/Imagens/")) result.paste.link ||= caderno.includes("![[" + pastedPath.split("/").at(-1) + "]]")
+  result.defaultImageFolder = Boolean(pastedPath?.startsWith("Anexos/Imagens/"))
 
   // Posição pelo menu da imagem no live preview (C2): só o apelido do link muda, e na leitura a imagem flutua.
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
@@ -206,6 +209,7 @@ export const SMOKE_SCRIPT = `(async () => {
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
   const floated = await until(() => document.querySelector(".editor-body .md img.pos-direita"))
   result.position = { link: Boolean(pastedPath && positioned.includes("![[" + pastedPath + "|direita]]")), float: floated ? getComputedStyle(floated).float : null }
+  if (pastedPath?.startsWith("Anexos/Imagens/")) result.position.link ||= positioned.includes("![[" + pastedPath.split("/").at(-1) + "|direita]]")
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
@@ -612,6 +616,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     typeof (result.paste as Record<string, unknown>).file === "string" &&
     (result.paste as Record<string, unknown>).link === true &&
     (result.paste as Record<string, unknown>).shown === true &&
+    result.defaultImageFolder === true &&
     typeof result.position === "object" &&
     (result.position as Record<string, unknown>).link === true &&
     (result.position as Record<string, unknown>).float === "right" &&

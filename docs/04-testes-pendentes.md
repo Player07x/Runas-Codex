@@ -390,3 +390,14 @@ aparelho físico acima continua necessária.
 - [ ] Modo foco, máquina de escrever, comentários no cursor e histórico de versões do capítulo: guardar, comparar e
   restaurar, inclusive com alterações externas para conferir a recusa de conflito.
 - [ ] Android: conferir na tarefa complementar da revisão completa, após C8/X7 (fora desta rodada).
+
+## X8 e pedido adicional de imagens/contadores
+
+- Conferir preferências 85–140%, três paletas, claro/escuro, modo tablet e movimento reduzido em Linux/Windows e com
+  Orca/NVDA. Testar Tab/Escape/retorno de foco nos diálogos e na paleta, inclusive diálogos sobrepostos.
+- Criar cofre vazio: tour, oito exemplos, pasta `Anexos/Imagens`; remover exemplos para `.trash`, preservar notas sem
+  marca e recuperar pela lixeira. Conferir zero artigos sem página escrita e zero mesas sem manifesto.
+- Colar/arrastar/importar imagens em vários espaços, renomear pelo link, pelo botão da nota e pelo botão direito;
+  repetir o mesmo arquivo em duas notas e num quadro/mapa. Reunir arquivos com nomes iguais e conferir no Obsidian.
+- Conferir fonte/zoom e menus no teclado virtual e multitouch físicos. Android não foi implementado/testado nesta
+  rodada. O roteiro completo está em `docs/tarefas/revisao-completa-complementar.md`.
