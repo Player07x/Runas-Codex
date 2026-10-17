@@ -5,6 +5,7 @@ tipo: calendario
 
 ```runas-calendario
 nome: Calendário de Ordem x Caos
+sigla: OC
 sufixo: C.E.
 semana: [Pedra, Raiz, Chama, Vento, Maré, Sombra]
 meses:

@@ -4,7 +4,8 @@ import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { addDays, addMonths, CalendarError, convert, dateProblem, dayNumber, equivalentYears, eraOf, formatDate, formatYear, holidaysOn, monthLength, moons, parseCalendar, relative, season, weekday, weekdayIndex, worldDateText, type Calendar, type MoonState, type WorldDate } from "../../core/calendar"
 import { findCodeBlocks, replaceCodeBlock, setBlockLine } from "../../core/codeblocks"
 import { noteName } from "../../core/text"
-import { calendarFor, calendarInNote, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
+import { calendarFor, calendarInNote, datesMissingAbbr, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
+import { flushOpenNotes } from "../../lib/vault-notes"
 import { useNoteSet } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
@@ -143,10 +144,11 @@ export function WikiCalendar({ path }: { path?: string }) {
     if (!ref) return []
     return index.notesIn(wiki!.root).flatMap((note) => {
       const born = noteDates(note.meta.frontmatter?.data).find((d) => d.key === "nascimento_mundo")?.date
-      return born ? [{ path: note.path, born }] : []
+      const found = born && calendarFor(index, note.path, born)
+      return born && found && "calendar" in found && found.path === ref.path ? [{ path: note.path, born }] : []
     })
   }, [index, wiki, ref, vault.version])
-  const calendarForForRecurrence = (path:string) => { const found=calendarFor(index,path); return found && "calendar" in found && found.path===ref?.path }
+  const calendarForForRecurrence = (path:string) => { const start=noteDates(index.note(path)?.meta.frontmatter?.data).find(d=>d.key==="data_mundo")?.date; const found=calendarFor(index,path,start); return found && "calendar" in found && found.path===ref?.path }
   const marks = (d: WorldDate) => {
     if (!calendar) return []
     const day = dayNumber(calendar, d)
@@ -200,9 +202,10 @@ export function WikiCalendar({ path }: { path?: string }) {
 
   return (
     <div className="page wiki-calendar">
+      {!players && !readOnly && <AbbrMigration root={wiki!.root} />}
       <div className="page-head">
         <div>
-          <span className="eyebrow">{calendar.name}</span>
+          <span className="eyebrow">{calendar.name} · sigla {calendar.abbr}</span>
           <h1 className="page-title">
             {calendar.months[view.month - 1]?.name} de {formatYear(calendar, view.year)}
           </h1>
@@ -319,9 +322,39 @@ function CalendarHelp({ compact }: { compact?: boolean }) {
         <code>equivalentes</code> (outra contagem de anos), <code>correspondencias</code> (o mesmo dia em outro calendário) e <code>hoje</code>.
       </p>
       <p className="small muted">
-        Nos artigos: <code>calendario: "[[Nome do calendário]]"</code> e datas em propriedades que terminam em <code>_mundo</code> (<code>nascimento_mundo: "3999-02-12"</code>, <code>data_mundo</code>,{" "}
-        <code>morte_mundo</code>…). A ficha calcula idade, dia da semana, lua, estação, era e "há quanto tempo".
+        Dê ao calendário uma <code>sigla</code> (ex.: <code>sigla: OC</code>). Nos artigos, as datas ficam em propriedades que terminam em <code>_mundo</code>, no formato <code>ANO-MM-DD SIGLA</code>:{" "}
+        <code>nascimento_mundo: "3999-02-12 OC"</code>, <code>data_mundo</code>, <code>morte_mundo</code>… É a sigla que escolhe o calendário. A ficha calcula idade, dia da semana, lua, estação, era e "há quanto tempo".
       </p>
     </details>
+  )
+}
+
+/** Datas antigas, sem sigla: regrava cada uma como "ANO-MM-DD SIGLA", com o calendário que já valia para ela. */
+function AbbrMigration({ root }: { root: string }) {
+  const vault = useVault()
+  const toast = useToast()
+  const index = vault.index!
+  const [busy, setBusy] = useState(false)
+  const pending = useMemo(() => index.notesIn(root).flatMap((note) => { const dates = datesMissingAbbr(index, note.path); return dates.length ? [{ path: note.path, dates }] : [] }), [index, root, vault.version])
+  if (!pending.length) return null
+  const run = async () => {
+    setBusy(true)
+    try {
+      await flushOpenNotes()
+      for (const note of pending) for (const d of note.dates) await vault.setProperty(note.path, d.key, d.text)
+      toast(`Sigla acrescentada às datas de ${pending.length} ${pending.length === 1 ? "nota" : "notas"}.`)
+    } catch (error) {
+      toast(error instanceof Error ? error.message : String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="card row-wrap" style={{ marginBottom: 12 }} role="status">
+      <span className="small" style={{ flex: "1 1 260px" }}>
+        {pending.length} {pending.length === 1 ? "nota tem" : "notas têm"} datas sem a sigla do calendário (ex.: <code>{pending[0]!.dates[0]!.text}</code>). As datas agora levam a sigla, que escolhe o calendário.
+      </span>
+      <button className="btn sm primary" disabled={busy} onClick={() => void run()}>Acrescentar a sigla</button>
+    </div>
   )
 }

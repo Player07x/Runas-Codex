@@ -1,7 +1,6 @@
 ---
 tipo: personagem
-calendario: "[[Calendário de Ordem x Caos]]"
-nascimento_mundo: "3999-02-12"
+nascimento_mundo: "3999-02-12 OC"
 residencia: "[[Valdris]]"
 ---
 # Aldren

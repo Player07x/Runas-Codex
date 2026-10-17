@@ -1,4 +1,4 @@
-import { addDays, addMonths, CalendarError, convert, dateProblem, dayNumber, equivalentYears, eraOf, formatDate, fromDayNumber, holidaysOn, isLeapYear, moons, parseCalendar, parseWorldDate, relative, season, weekday, weekdayIndex, worldDateText, yearsBetween, type Calendar, type WorldDate } from "./calendar"
+import { defaultAbbr, noteDateText, sameAbbr, addDays, addMonths, CalendarError, convert, dateProblem, dayNumber, equivalentYears, eraOf, formatDate, fromDayNumber, holidaysOn, isLeapYear, moons, parseCalendar, parseWorldDate, relative, season, weekday, weekdayIndex, worldDateText, yearsBetween, type Calendar, type WorldDate } from "./calendar"
 
 const GREGORIANO = `
 nome: Gregoriano
@@ -171,5 +171,19 @@ describe("datas em texto", () => {
     expect(parseWorldDate("-120-03-01")).toEqual({ year: -120, month: 3, day: 1 } satisfies WorldDate)
     expect(worldDateText({ year: -120, month: 3, day: 1 })).toBe("-0120-03-01")
     expect(parseWorldDate("15 de março")).toBeNull()
+  })
+})
+
+describe("data com a sigla do calendário", () => {
+  it("lê e escreve ANO-MM-DD SIGLA, e a sigla padrão vem das iniciais do nome", () => {
+    expect(parseWorldDate("3999-02-12 OC")).toEqual({ year: 3999, month: 2, day: 12, calendar: "OC" })
+    expect(parseWorldDate(" -120-03-01  E.C. ")).toEqual({ year: -120, month: 3, day: 1, calendar: "E.C." })
+    expect(parseWorldDate("3999-02-12")).toEqual({ year: 3999, month: 2, day: 12 })
+    expect(noteDateText({ year: 12, month: 3, day: 4 }, { abbr: "OC" })).toBe("0012-03-04 OC")
+    expect(sameAbbr("o.c.", "OC")).toBe(true)
+    expect(defaultAbbr("Calendário de Ordem x Caos")).toBe("OC")
+    expect(defaultAbbr("calendário")).toBe("CAL")
+    expect(parseCalendar("nome: Reckoning\nsigla: DR\nmeses: [{ nome: A, dias: 30 }]").abbr).toBe("DR")
+    expect(parseCalendar("nome: Calendário de Tharn\nmeses: [{ nome: A, dias: 30 }]").abbr).toBe("T")
   })
 })

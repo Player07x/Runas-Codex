@@ -1,4 +1,4 @@
-import { CALENDAR_EXAMPLE, articleImage, articleKind, ARTICLE_KINDS, calendarFor, diplomacy, familyTree, listCalendars, listWikis, newArticleNote, newCalendarNote, noteDates, orgChart, parseMap, pinsToYaml, relationsOf, timelineEvents, type CalendarRef } from "./wiki"
+import { CALENDAR_EXAMPLE, datesMissingAbbr, articleImage, articleKind, ARTICLE_KINDS, calendarFor, diplomacy, familyTree, listCalendars, listWikis, newArticleNote, newCalendarNote, noteDates, orgChart, parseMap, pinsToYaml, relationsOf, timelineEvents, type CalendarRef } from "./wiki"
 import { parseCalendar } from "./calendar"
 import { VaultIndex } from "./vault-index"
 import { parseFrontmatter } from "./parse"
@@ -39,9 +39,10 @@ describe("wiki", () => {
     expect(ARTICLE_KINDS.length).toBeGreaterThanOrEqual(20)
     expect(articleKind("Acontecimento")?.id).toBe("evento")
     expect(articleKind("País")?.id).toBe("pais")
-    const text = newArticleNote(articleKind("personagem")!, "Ilsa", "Calendário do Mundo")
+    const text = newArticleNote(articleKind("personagem")!, "Ilsa")
     const data = parseFrontmatter(text)!.data!
-    expect(data).toMatchObject({ tipo: "personagem", calendario: "[[Calendário do Mundo]]", afiliacao: [] })
+    expect(data).toMatchObject({ tipo: "personagem", afiliacao: [] })
+    expect("calendario" in data).toBe(false)
     expect("nascimento_mundo" in data).toBe(true)
     expect(text).toContain("# Ilsa")
     expect(text).toContain("%% O que essa pessoa quer mais do que tudo? %%")
@@ -134,5 +135,31 @@ describe("arte do artigo", () => {
   it("funciona sem tipo e com tipos desconhecidos", () => {
     expect(articleImage(note('# Sem tipo\n![[imagem.png|300]]'))).toBe("imagem.png")
     expect(articleImage(note('---\ntipo: inventado\n---\n![[arquivo.pdf]]'))).toBeNull()
+  })
+
+  it("a sigla depois da data escolhe o calendário: artigo, linha do tempo e datas antigas", () => {
+    const cal = (name: string, sigla: string) => "```runas-calendario\n" + CALENDAR_EXAMPLE.replace("nome: Calendário", `nome: ${name}`).replace("sigla: CAL", `sigla: ${sigla}`) + "\n```\n"
+    const two: Record<string, string> = {
+      "Wikis/M/Calendários/Comum.md": cal("Calendário Comum", "CC"),
+      "Wikis/M/Calendários/Élfico.md": cal("Calendário Élfico", "EL"),
+      "Wikis/M/Ilsa.md": "---\ntipo: personagem\nnascimento_mundo: \"1000-02-12 el\"\n---",
+      "Wikis/M/Torvak.md": "---\ntipo: personagem\nnascimento_mundo: \"1001-03-01 CC\"\nmorte_mundo: \"1040-01-01 EL\"\n---",
+      "Wikis/M/Antiga.md": "---\ntipo: evento\ncalendario: \"[[Comum]]\"\ndata_mundo: \"1005-01-01\"\n---",
+      "Wikis/M/Errada.md": "---\ntipo: evento\ndata_mundo: \"1005-01-01 XX\"\n---",
+    }
+    const idx = new VaultIndex(Object.keys(two).map((path) => ({ path, size: 1, mtime: 1 })), two)
+    const comum = calendarFor(idx, "Wikis/M/Calendários/Comum.md") as CalendarRef
+    const elfico = calendarFor(idx, "Wikis/M/Calendários/Élfico.md") as CalendarRef
+    expect((calendarFor(idx, "Wikis/M/Ilsa.md") as CalendarRef).path).toBe(elfico.path)
+    expect((calendarFor(idx, "Wikis/M/Torvak.md", noteDates(idx.note("Wikis/M/Torvak.md")!.meta.frontmatter!.data).find((d) => d.key === "morte_mundo")!.date) as CalendarRef).path).toBe(elfico.path)
+    expect((calendarFor(idx, "Wikis/M/Antiga.md") as CalendarRef).path).toBe(comum.path)
+    expect(calendarFor(idx, "Wikis/M/Errada.md")).toEqual({ error: "Nenhum calendário tem a sigla “XX” (ponha sigla: XX no bloco runas-calendario)." })
+    // Cada data vai para a linha do tempo do seu calendário.
+    expect(timelineEvents(idx, "Wikis/M/", comum, { people: true }).map((e) => e.title)).toEqual(["Nasce Torvak", "Antiga"])
+    expect(timelineEvents(idx, "Wikis/M/", elfico, { people: true }).map((e) => e.title)).toEqual(["Nasce Ilsa", "Morre Torvak"])
+    // Datas antigas, sem sigla, ganham a do calendário que valia para elas.
+    expect(datesMissingAbbr(idx, "Wikis/M/Antiga.md")).toEqual([{ key: "data_mundo", text: "1005-01-01 CC" }])
+    expect(datesMissingAbbr(idx, "Wikis/M/Ilsa.md")).toEqual([])
+    expect(newCalendarNote("Calendário de Ordem x Caos")).toContain("sigla: OC")
   })
 })

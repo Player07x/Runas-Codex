@@ -123,14 +123,13 @@ Um único cofre Obsidian com um espaço por domínio:
   por hash, com gravação adiada de 1–2 s. Mapas e áudios pesados ficam em `.runas/` para não poluir o Obsidian nem a
   sincronização.
 - **Calendário fictício** = uma nota na wiki com um bloco ` ```runas-calendario ` (YAML com meses, semanas, luas,
-  eras…). O C.E./Logi do `chronology.ts` vira o primeiro exemplo. Notas escolhem o calendário pelo frontmatter e usam
-  **chaves próprias, entre aspas**, para datas fictícias (o `types.json` do Obsidian é global e `1492-03-15` sem
-  aspas vira data real):
+  eras…) e uma `sigla`. O C.E./Logi do `chronology.ts` vira o primeiro exemplo. Notas usam **chaves próprias, entre
+  aspas**, para datas fictícias (o `types.json` do Obsidian é global e `1492-03-15` sem aspas vira data real), no
+  formato **`ANO-MM-DD SIGLA`**: a sigla escolhe o calendário de cada data (ADR 0010, beta.9):
 
   ```yaml
-  calendario: "[[Calendário de Ordem x Caos]]"
-  data_mundo: "4031-03-15"
-  nascimento_mundo: "3999-07-02"
+  data_mundo: "4031-03-15 OC"
+  nascimento_mundo: "3999-07-02 OC"
   ```
 
   O app mostra sozinho: dia da semana, fase das luas, estação, era, idade e "há X anos" em relação à data atual da

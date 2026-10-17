@@ -436,3 +436,12 @@ aparelho físico acima continua necessária.
 - [ ] No quadro (Canvas e Campanhas › Quadro), com mouse: dois cliques num cartão de texto abrem a edição dele, sem
   criar outro; dois cliques num cartão de nota abrem a nota; dois cliques no vazio criam um cartão de texto.
 - [ ] O mesmo no celular/tablet com toque (dois toques).
+
+## Beta.9 — datas com a sigla do calendário
+
+- [ ] Ficha de um personagem (Editar): a data de nascimento tem a lista de calendários; trocar o calendário regrava
+  `nascimento_mundo: "ANO-MM-DD SIGLA"`. Idade, dia da semana e era conferem com o calendário escolhido.
+- [ ] Wiki com dois calendários: nascimento num e morte no outro; cada um aparece na linha do tempo do seu calendário.
+- [ ] Cofre com datas antigas (sem sigla): Wiki › Calendário mostra o aviso; "Acrescentar a sigla" regrava as datas e
+  o aviso some. No Obsidian, as datas aparecem como texto com a sigla.
+- [ ] Nova sessão de campanha: a data do mundo vem com a sigla.

@@ -182,7 +182,7 @@ const IMAGE = /\.(png|jpe?g|webp|gif|avif|svg)$/i
 /** Novo artigo: tipo (com modelo e perguntas-guia), nome e pasta. Calendário e mapa têm o bloco pronto. */
 export function NewArticleDialog({ onClose, initialName = "", initialKind, initialFolder }: { onClose(): void; initialName?: string; initialKind?: string; initialFolder?: string }) {
   const vault = useVault()
-  const { wiki, calendar } = useWiki()
+  const { wiki } = useWiki()
   const index = vault.index!
   const [kind, setKind] = useState<ArticleKind>(() => articleKind(initialKind) ?? ARTICLE_KINDS[0]!)
   const [name, setName] = useState(initialName)
@@ -203,7 +203,7 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
       const text =
         kind.id === "calendario" ? newCalendarNote(title)
         : kind.id === "mapa" ? newMapNote(title, index.linkTarget(image, `${root}/${folder}/${title}.md`))
-        : newArticleNote(kind, title, calendar ? noteName(calendar.path) : undefined)
+        : newArticleNote(kind, title)
       const created = await vault.createNote(folder.trim() ? `${root}/${folder.trim()}` : root, title, text)
       onClose()
       navigate(kind.id === "mapa" ? `/wiki/mapa/${encodeURIComponent(created)}` : articleRoute(created))

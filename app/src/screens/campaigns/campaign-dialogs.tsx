@@ -6,7 +6,7 @@ import {
   type CampaignInfo, type QuestStatus,
 } from "../../core/campaigns"
 import { emptyCanvasText } from "../../core/canvas"
-import { worldDateText } from "../../core/calendar"
+import { noteDateText, parseWorldDate } from "../../core/calendar"
 import { dirname, noteName } from "../../core/text"
 import { listWikis } from "../../core/wiki"
 import { useVault } from "../../platform/VaultProvider"
@@ -115,7 +115,7 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
   const [date, setDate] = useState(iso(suggested))
   const [start, setStart] = useState(last?.time ?? "19:30")
   const [end, setEnd] = useState(last?.endTime ?? "23:00")
-  const [world, setWorld] = useState(data.calendar?.today ? worldDateText(data.calendar.today) : "")
+  const [world, setWorld] = useState(data.calendar?.today ? noteDateText(data.calendar.today, data.calendar) : "")
   const [withEvent, setWithEvent] = useState(true)
   const n = Number(number)
   return (
@@ -125,6 +125,9 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
       disabled={!Number.isInteger(n) || n < 1 || !date}
       onClose={onClose}
       onConfirm={async () => {
+        // A data do mundo vai com a sigla do calendário ("4031-07-16 OC").
+        const typed = parseWorldDate(world.trim())
+        const worldText = typed && !typed.calendar && data.calendar ? noteDateText(typed, data.calendar) : world.trim()
         const folder = `${data.campaign.root}Sessões`
         const name = uniqueNoteName(index, folder, sessionFileName(n))
         const sessionPath = `${folder}/${name}`
@@ -146,10 +149,10 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
           }
           const eventName = uniqueNoteName(index, "Agenda", eventFileName(input))
           eventPath = `Agenda/${eventName}`
-          await vault.createNote(folder, name, newSessionNote({ number: n, ...(title.trim() ? { title: title.trim() } : {}), date, time: start, ...(end ? { endTime: end } : {}), event: eventPath, ...(world ? { worldDate: world } : {}) }))
+          await vault.createNote(folder, name, newSessionNote({ number: n, ...(title.trim() ? { title: title.trim() } : {}), date, time: start, ...(end ? { endTime: end } : {}), event: eventPath, ...(worldText ? { worldDate: worldText } : {}) }))
           await vault.createNote("Agenda", eventName, eventNote(input))
         } else {
-          await vault.createNote(folder, name, newSessionNote({ number: n, ...(title.trim() ? { title: title.trim() } : {}), date, time: start, ...(end ? { endTime: end } : {}), ...(world ? { worldDate: world } : {}) }))
+          await vault.createNote(folder, name, newSessionNote({ number: n, ...(title.trim() ? { title: title.trim() } : {}), date, time: start, ...(end ? { endTime: end } : {}), ...(worldText ? { worldDate: worldText } : {}) }))
         }
         onCreated(`${sessionPath}.md`)
       }}
@@ -180,7 +183,7 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
       </div>
       <label className="field">
         <span>Data no mundo {data.calendar ? `(${data.calendar.name})` : ""}</span>
-        <input className="input mono" value={world} onChange={(e) => setWorld(e.target.value)} placeholder="4031-07-16" aria-label="Data no mundo" />
+        <input className="input mono" value={world} onChange={(e) => setWorld(e.target.value)} placeholder={`4031-07-16 ${data.calendar?.abbr ?? "SIGLA"}`} aria-label="Data no mundo" />
       </label>
       <label className="check">
         <input type="checkbox" checked={withEvent} onChange={(e) => setWithEvent(e.target.checked)} /> Criar o evento na Agenda (lembrete 1 dia antes e contagem regressiva na tela inicial)

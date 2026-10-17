@@ -46,7 +46,7 @@ status: ${status}
 data: "${date}"
 hora: "19:30"
 hora_fim: "23:00"
-data_mundo: "${world}"
+data_mundo: "${world} OC"
 presentes: ${present}${status === "realizada" ? `\navaliacao: ${n === 10 ? 8 : 9}` : ""}
 ---
 # Sessão ${n} — ${title}
@@ -83,7 +83,7 @@ tipo: sessao
 numero: 12
 status: planejada
 data: "2026-10-17"
-data_mundo: "4031-07-16"
+data_mundo: "4031-07-16 OC"
 presentes: ${pcs("Ilsa Brasa", "Torvak", "Mirela")}
 ---
 # Sessão 12 — O selo na carta

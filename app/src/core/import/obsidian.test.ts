@@ -82,10 +82,10 @@ describe("migração do Obsidian (cofre de exemplo com os plugins)", () => {
       expect(e.after.slice(after.end)).toBe(e.before.slice(before.end))
       for (const [key, value] of Object.entries(before.data!)) expect(after.data![key]).toEqual(value)
     }
-    expect(parseFrontmatter(edit("Crônicas/A Coroação.md")!.after)!.data).toMatchObject({ calendario: "[[Calendário de Tharn]]", data_mundo: "4031-03-12" })
-    expect(parseFrontmatter(edit("Crônicas/O Cerco.md")!.after)!.data).toMatchObject({ calendario: "[[Calendário de Tharn]]", data_mundo: "4012-05-01", data_fim_mundo: "4012-05-03" })
+    expect(parseFrontmatter(edit("Crônicas/A Coroação.md")!.after)!.data).toMatchObject({ data_mundo: "4031-03-12 T" })
+    expect(parseFrontmatter(edit("Crônicas/O Cerco.md")!.after)!.data).toMatchObject({ data_mundo: "4012-05-01 T", data_fim_mundo: "4012-05-03 T" })
     // Datas entre aspas no arquivo (o Obsidian não as trata como datas reais).
-    expect(edit("Crônicas/O Cerco.md")!.after).toContain('data_mundo: "4012-05-01"')
+    expect(edit("Crônicas/O Cerco.md")!.after).toContain('data_mundo: "4012-05-01 T"')
   })
 
   it("mantém o CRLF de quem usa CRLF", () => {

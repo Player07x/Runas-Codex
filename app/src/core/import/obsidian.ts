@@ -8,7 +8,7 @@ import { calendariumData, convertCalendar, parseNoteDate, type CmCalendar } from
 import { convertEncounter } from "./encounter"
 import { convertLeaflet, leafletSavedMaps, linkTarget, readLeafletBlock, type LocatedNote } from "./leaflet"
 import { convertStatblock, statblockBestiary } from "./statblock"
-import { worldDateText } from "../calendar"
+import { defaultAbbr, noteDateText } from "../calendar"
 import { listCalendars, listWikis, wikiRootOf } from "../wiki"
 
 /**
@@ -272,11 +272,12 @@ export function planObsidianMigration(input: MigrationInput): MigrationPlan {
         continue
       }
       const end = data["fc-end"] !== undefined ? parseNoteDate(data["fc-end"], found.cal) : null
+      // A sigla do calendário convertido vai em cada data ("4031-07-15 OC") e escolhe o calendário.
+      const abbr = { abbr: defaultAbbr(found.cal.name) }
       const keys: [string, string][] = []
-      if (data.calendario === undefined) keys.push(["calendario", `[[${found.note}]]`])
-      if (data.data_mundo === undefined) keys.push(["data_mundo", worldDateText(date)])
-      if (end && data.data_fim_mundo === undefined) keys.push(["data_fim_mundo", worldDateText(end)])
-      if (!keys.some(([k]) => k !== "calendario")) continue
+      if (data.data_mundo === undefined) keys.push(["data_mundo", noteDateText(date, abbr)])
+      if (end && data.data_fim_mundo === undefined) keys.push(["data_fim_mundo", noteDateText(end, abbr)])
+      if (!keys.length) continue
       const edit = editOf(note.path)
       try {
         let after = edit.after
