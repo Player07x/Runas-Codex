@@ -89,12 +89,22 @@ export function App() {
   return (
     <VaultProvider>
       <ToastProvider>
+        <AppearanceRuntime />
+        <OnboardingRuntime />
         <ReminderSync />
         <Shell route={route} theme={theme} onToggleTheme={toggleTheme} fill={isFill(route)}>
           {screen}
         </Shell>
         <CustomizationRuntime />
+        <ActiveRoom />
+        <DesktopTrayRuntime />
       </ToastProvider>
     </VaultProvider>
   )
 }
+
+import { ActiveRoom } from "./vtt/ActiveRoom"
+import { DesktopTrayRuntime } from "./platform/DesktopTray"
+
+import { AppearanceRuntime } from "./components/Appearance"
+import { OnboardingRuntime } from "./components/Onboarding"

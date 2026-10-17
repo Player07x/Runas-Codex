@@ -151,7 +151,7 @@ sistemas, assistente de IA (precisa de internet; IA local fica para o futuro), c
 - [x] **Tabelas aleatórias roláveis** — dentro da nota, encadeáveis (uma tabela chama outra). _(WA, FVTT, OBS+ Dice Roller)_
 - [x] **Geradores offline** — nomes (inclusive brasileiros e lusófonos), NPCs, tavernas, tesouro, clima, ganchos. _(RN, NK, KK)_
 - [x] **Idiomas fictícios** — dicionário com tradução, pronúncia e regras. _(CF, WA)_
-- [x] **Metas de palavras e progresso** da wiki. _(WA)_
+- [-] ~~**Metas de palavras e progresso** da wiki~~ — retirado na beta.7 (não ajudava a escrever). _(WA)_
 
 ### B.6 Compartilhar com os jogadores
 
@@ -326,7 +326,7 @@ A sintaxe exata dos itens estendidos é decidida na etapa 0 (proposta no [plano]
 - [x] **Fontes embutidas offline** — biblioteca de fontes livres para títulos e corpo. _(HB)_
 - [x] **Perfis de impressão** — A4, Carta, A5, 6×9; margens, sangria e marcas de corte. _(HB)_
 - [x] **Cortiça** — cartões de capítulo para reorganizar arrastando. _(SCR, CF)_
-- [x] **Metas de palavras e estatísticas de escrita**. _(CF, WA, SCR)_
+- [x] **Estatísticas de escrita** (contagem de palavras). As metas de palavras foram retiradas na beta.7. _(CF, WA, SCR)_
 - [x] **Modo foco / máquina de escrever**. _(SCR)_
 - [x] **Comentários de revisão** no texto. _(CF, SCR)_
 - [x] **Snapshots de capítulo** com comparação. _(SCR)_

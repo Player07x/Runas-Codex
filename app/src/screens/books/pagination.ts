@@ -1,14 +1,15 @@
+import type { PrintOptions } from "../../core/books-finish"
 import { Previewer } from "./vendor/paged-0.4.3.js"
 import { pageRules, type BookSize } from "../../core/books-preview"
 
 export interface Pagination { total: number; milliseconds: number; dispose(): void }
 /** A fonte já foi desenhada pelo Markdown compartilhado e sanitizada por ele. */
-export async function paginate(source: HTMLElement, target: HTMLElement, size: BookSize): Promise<Pagination> {
+export async function paginate(source: HTMLElement, target: HTMLElement, size: BookSize, options?: PrintOptions): Promise<Pagination> {
   const previewer = new Previewer()
   const started = performance.now()
   // Passar uma lista explícita impede o Paged.js de retirar folhas de estilo da aplicação.
   try {
-    const flow = await previewer.preview(source.innerHTML, [{ [location.href]: pageRules(size) }], target)
+    const flow = await previewer.preview(source.innerHTML, [{ [location.href]: pageRules(size, options) }], target)
     return { total: flow.total, milliseconds: performance.now() - started, dispose() {
       previewer.chunker.stop()
       previewer.chunker.destroy()

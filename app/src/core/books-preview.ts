@@ -1,3 +1,4 @@
+import { bookAppendices, type PrintOptions } from "./books-finish"
 import { bookProperties, readBook } from "./books"
 import { noteBody } from "./sections"
 import type { IndexedNote, VaultIndex } from "./vault-index"
@@ -19,14 +20,14 @@ export function previewSettings(book: IndexedNote) {
 }
 export interface PreviewChapter { path: string; title: string; kind: string; body: string }
 export function previewChapters(index: VaultIndex, book: IndexedNote, draft?: { path: string; text: string }): PreviewChapter[] {
-  return readBook(index, book).items.map((item) => item.note
+  return [...readBook(index, book).items.map((item) => item.note
     ? { path: item.note.path, title: item.note.name, kind: item.kind, body: noteBody(draft?.path === item.note.path ? draft.text : item.note.text) }
-    : { path: item.link, title: "Link quebrado", kind: "secao", body: `Nota não encontrada: ${item.link}` })
+    : { path: item.link, title: "Link quebrado", kind: "secao", body: `Nota não encontrada: ${item.link}` }), ...bookAppendices(index, book, draft)]
 }
 /** Só valores enumerados e dimensões conhecidas entram no CSS; metadados não viram regras. */
-export function pageRules(size: BookSize): string {
+export function pageRules(size: BookSize, options?: PrintOptions): string {
   const page = BOOK_SIZES[size]
-  return `@page { size: ${page.width}mm ${page.height}mm; margin: ${page.margin}mm;
+  return `@page { size: ${page.width}mm ${page.height}mm; margin: ${options?.margin ?? page.margin}mm; bleed: ${options?.bleed ?? 0}mm; marks: ${options?.crop ? "crop" : "none"};
     @top-left { content: string(book-title); font-size: 8pt; }
     @top-right { content: string(chapter-title); font-size: 8pt; }
     @bottom-center { content: counter(page); font-size: 9pt; }

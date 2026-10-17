@@ -157,6 +157,9 @@ const bridge: RunasCodexBridge = {
     }
   },
   openWindow: (route) => invoke(IPC.openWindow, route),
+  setTrayEnabled: enabled=>invoke(IPC.trayEnabled,enabled),
 }
+
+bridge.vtt.collaboration = {state:()=>invoke(VTT.collaborationState),command:command=>invoke(VTT.collaborationCommand,command)}
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

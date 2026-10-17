@@ -56,7 +56,6 @@ subtitulo: "Guia do condado"
 autor: "João Antonio"
 tema: manual          # manual | pergaminho | moderno | minimalista   (8b)
 pagina: A4            # A4 | Carta | A5 | 6x9                         (8b)
-meta_palavras: 40000
 capa: "[[Anexos/capa.png]]"   # (8b, opcional)
 contracapa: "Texto da contracapa"   # (8b, opcional)
 creditos: "Texto: João Antonio. Mapas: …"   # (8b, opcional)
@@ -89,7 +88,7 @@ Escreva o ADR [`docs/adr/0009-livros.md`](../adr/) no fim da 8a registrando este
      criar capítulo, parte ou seção (entra na `estrutura` logo depois do selecionado);
    - **capítulo no centro** com o `NoteView` (três modos) e uma **barra de formatadores** (`formatters.ts`) que insere
      a sintaxe do dialeto no cursor — tudo da seção E.1 da checklist;
-   - **meta de palavras** do livro (progresso) e contagem do capítulo.
+   - contagem de palavras do livro e do capítulo (a meta de palavras foi retirada na beta.7).
 4. **Cortiça:** cartões dos capítulos (título, resumo, status, palavras) para reordenar **arrastando** (mouse e
    toque) e também pelo teclado (botões subir/descer, para acessibilidade). Reordenar grava só a `estrutura` da nota
    do livro (`setProperty`).

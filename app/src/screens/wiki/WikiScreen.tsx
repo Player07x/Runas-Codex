@@ -1,3 +1,4 @@
+import { WikiCategory } from "./WikiCategory"
 import { useState } from "react"
 import { CalendarDays, ChevronDown, Eye, EyeOff, GitFork, History, Library, Map, Network, Plus } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
@@ -11,6 +12,7 @@ import { WikiGraph } from "./WikiGraph"
 import { WikiHome } from "./WikiHome"
 import { WikiMap } from "./WikiMap"
 import { WikiRelations } from "./WikiRelations"
+import { WikiTools } from "./WikiTools"
 import { WikiTimeline } from "./WikiTimeline"
 import { WikiProvider, useWiki } from "./wiki-state"
 import "./register"
@@ -22,6 +24,7 @@ const TABS = [
   { id: "linha-do-tempo", label: "Linha do tempo", icon: <History size={15} /> },
   { id: "mapa", label: "Mapas", icon: <Map size={15} /> },
   { id: "relacoes", label: "Relações", icon: <GitFork size={15} /> },
+  { id: "ferramentas", label: "Ferramentas", icon: <Plus size={15} /> },
   { id: "grafico", label: "Gráfico", icon: <Network size={15} /> },
 ]
 
@@ -29,7 +32,7 @@ const TABS = [
 export function WikiScreen({ route }: { route: string[] }) {
   const vault = useVault()
   const [section = "", rawId] = route
-  const id = rawId ? decodeURIComponent(rawId) : undefined
+  const id = rawId // O roteador já decodifica cada segmento uma vez.
   if (vault.loading && !vault.index) return <div className="page"><p className="muted">Abrindo o cofre…</p></div>
   if (!vault.index) {
     return (
@@ -39,7 +42,7 @@ export function WikiScreen({ route }: { route: string[] }) {
     )
   }
   return (
-    <WikiProvider articlePath={section === "artigo" || section === "mapa" || section === "calendario" ? id : undefined}>
+    <WikiProvider articlePath={section === "artigo" || section === "mapa" || section === "calendario" || section === "categoria" ? id : undefined}>
       <WikiBody section={section} id={id} />
     </WikiProvider>
   )
@@ -51,13 +54,15 @@ function WikiBody({ section, id }: { section: string; id?: string }) {
   if (!wiki) return <NoWiki />
   return (
     <div className={fill ? "wiki-fill" : ""}>
-      <WikiHeader current={section === "artigo" ? "" : section} />
+      <WikiHeader current={section === "artigo" || section === "categoria" ? "" : section} />
       {section === "" && <WikiHome />}
+      {section === "categoria" && id && <WikiCategory key={`${wiki.root}:${id}`} path={id}/>}
       {section === "artigo" && id && <WikiArticleView key={id} path={id} />}
       {section === "calendario" && <WikiCalendar path={id} />}
       {section === "linha-do-tempo" && <WikiTimeline />}
       {section === "mapa" && <WikiMap path={id} />}
       {section === "relacoes" && <WikiRelations path={id} />}
+      {section === "ferramentas" && <WikiTools />}
       {section === "grafico" && <WikiGraph />}
     </div>
   )
@@ -144,6 +149,7 @@ function WikiHeader({ current }: { current: string }) {
           </div>
         )}
       </div>
+      <select className="select mobile-space-nav" aria-label="Tela da Wiki" value={current} onChange={event => navigate(`/wiki${event.target.value ? "/" + event.target.value : ""}`)}>{TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select>
       <nav className="tabs wiki-tabs">
         {TABS.map((tab) => (
           <a key={tab.id} href={href(`/wiki${tab.id ? `/${tab.id}` : ""}`)} className={current === tab.id ? "active" : ""}>

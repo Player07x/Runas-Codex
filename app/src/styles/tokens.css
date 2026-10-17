@@ -55,17 +55,39 @@
   --panel-hover: #dce2f3;
   --text: #222a42;
   --muted: #53617c;
-  --faint: #63708a;
+  --faint: #57657f;
   --line: #cbd3e6;
-  --line-strong: #8393b6;
+  --line-strong: #68799a;
   --cyan: #454e9c;
   --cyan-dim: #6974b4;
   --green: #396549;
   --red: #a54433;
-  --gold: #806021;
-  --violet: #745b8e;
+  --gold: #795b1f;
+  --violet: #6e5588;
   --on-accent: #fff;
   --shadow: 0 24px 70px rgb(34 42 66 / 15%);
   --shadow-sm: 0 8px 24px rgb(34 42 66 / 10%);
   color-scheme: light;
+}
+
+/* Paletas temáticas preservam o papel semântico das variáveis do Órbita. */
+:root[data-palette="floresta"] {
+ --bg:#111916;--bg-deep:#0b120f;--panel:#19251f;--panel-2:#24362c;--panel-hover:#304438;
+ --text:#eff8ed;--muted:#b9cdbb;--faint:#a6bea9;--line:#354d3c;--line-strong:#7c9e84;
+ --cyan:#b0ddb6;--cyan-dim:#92b99a;--on-accent:#152d1d;
+}
+:root[data-palette="floresta"][data-theme="light"] {
+ --bg:#eff4eb;--bg-deep:#e3ebdd;--panel:#fff;--panel-2:#e7efdf;--panel-hover:#dbe7d3;
+ --text:#243525;--muted:#4f654e;--faint:#566a51;--line:#c5d2bc;--line-strong:#6b8063;
+ --cyan:#365e3d;--cyan-dim:#537658;--on-accent:#fff;
+}
+:root[data-palette="brasa"] {
+ --bg:#1b1514;--bg-deep:#130e0d;--panel:#29201e;--panel-2:#382c28;--panel-hover:#49372f;
+ --text:#fff1e7;--muted:#d3bfb0;--faint:#c2ab9b;--line:#513d32;--line-strong:#a68a76;
+ --cyan:#f4bf94;--cyan-dim:#d6a682;--on-accent:#382218;
+}
+:root[data-palette="brasa"][data-theme="light"] {
+ --bg:#faf0e7;--bg-deep:#f0e4d8;--panel:#fff;--panel-2:#f4e8db;--panel-hover:#ecdccb;
+ --text:#432d23;--muted:#765343;--faint:#7d5945;--line:#ddc7b3;--line-strong:#97765e;
+ --cyan:#8d4828;--cyan-dim:#9d5735;--on-accent:#fff;
 }

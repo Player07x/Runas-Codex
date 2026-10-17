@@ -80,3 +80,13 @@ autorizou mexer na gravação segura (`desktop/src/main/vault.ts`) para isso.
   confere as recusas e mostra a imagem por `vault-file://`; o `--smoke` só de leitura confere a recusa.
 - Anexos continuam fora dos backups (só texto, ADR 0005).
 - No Android, os binários chegam com o cofre real (etapa A).
+
+## Pasta comum e renomeação de imagens — pedido do dono em 17/10/2026
+
+Imagens novas de todos os espaços ficam em `Anexos/Imagens`, inclusive importações de livros e recortes de quadro.
+O importador usa o caminho devolvido por `addAttachment`, preservando seus links. Áudio, vídeo e PDF continuam
+seguindo `.obsidian/app.json`. Não reescrevemos a configuração do Obsidian para impor essa preferência ao outro app.
+
+A renomeação pode partir dos links da nota, do menu no Código ou da própria imagem, e usa o planejador existente
+com todas as gravações pelo cofre. O campo `runas_original` do Canvas também acompanha a mudança. A reunião de
+imagens existentes mostra previamente os destinos e resolve nomes repetidos sem substituir arquivos.

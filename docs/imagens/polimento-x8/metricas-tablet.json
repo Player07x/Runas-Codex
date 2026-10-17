@@ -1,0 +1,128 @@
+[
+  {
+    "route": "/",
+    "theme": "dark",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/notas",
+    "theme": "dark",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/agenda",
+    "theme": "dark",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/wiki",
+    "theme": "dark",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/campanhas",
+    "theme": "dark",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/livros",
+    "theme": "dark",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/vtt",
+    "theme": "dark",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/transferir",
+    "theme": "dark",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/config",
+    "theme": "dark",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/",
+    "theme": "light",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/notas",
+    "theme": "light",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/agenda",
+    "theme": "light",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/wiki",
+    "theme": "light",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/campanhas",
+    "theme": "light",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/livros",
+    "theme": "light",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/vtt",
+    "theme": "light",
+    "available": 952,
+    "main": 952,
+    "width": 1024
+  },
+  {
+    "route": "/transferir",
+    "theme": "light",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  },
+  {
+    "route": "/config",
+    "theme": "light",
+    "available": 942,
+    "main": 942,
+    "width": 1024
+  }
+]

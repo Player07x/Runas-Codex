@@ -54,5 +54,6 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     openWindow: (route) => bridge.openWindow(route),
     listTrash: () => vault.listTrash(),
     restoreTrash: (path, target) => vault.restoreTrash(path, target),
+    setTrayEnabled: enabled=>bridge.setTrayEnabled?bridge.setTrayEnabled(enabled):Promise.resolve(false),
   }
 }

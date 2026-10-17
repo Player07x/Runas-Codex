@@ -5,5 +5,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     environment: "node",
     globals: true,
+    // Evita dezenas de parsers e importadores concorrendo por CPU nos checkouts e no CI.
+    maxWorkers: 2,
   },
 })

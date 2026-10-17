@@ -19,6 +19,24 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  targets:
+    # Escopo da versão no próprio commit; reativar Android após a revisão complementar.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      android: ${{ steps.targets.outputs.android }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: targets
+        run: |
+          node --input-type=module <<'JS' >> "$GITHUB_OUTPUT"
+          import {readFileSync} from 'node:fs'
+          const config=JSON.parse(readFileSync('.github/release-targets.json','utf8'))
+          if(typeof config.android !== 'boolean') throw new Error('Defina android como booleano em release-targets.json')
+          console.log('android='+config.android)
+          JS
+
   linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -97,6 +115,8 @@ jobs:
           retention-days: 14
 
   android:
+    needs: targets
+    if: needs.targets.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -134,9 +154,9 @@ jobs:
           retention-days: 14
 
   publish:
-    # Uma Release só, com todos os instaladores, e só se os três builds passaram.
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [linux, windows, android]
+    # Publica só depois de todos os builds habilitados nesta versão passarem.
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') && needs.linux.result == 'success' && needs.windows.result == 'success' && (needs.android.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android.result == 'skipped')) }}
+    needs: [targets, linux, windows, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -163,7 +183,8 @@ jobs:
 
   android-touch:
     # APK de teste em emulador: a cópia com depuração do WebView nunca é publicada como instalador.
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: targets
+    if: needs.targets.outputs.android == 'true' && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -243,3 +264,5 @@ jobs:
           path: /tmp/runas-touch-webview
           if-no-files-found: warn
           retention-days: 14
+
+# beta.5: somente desktop, conforme .github/release-targets.json e pedido do dono.

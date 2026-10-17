@@ -1,3 +1,4 @@
+import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload } from "lucide-react"
 import { AGENDA_ROOT, checklist, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, toggleTask, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
@@ -6,7 +7,7 @@ import type { VaultIndex } from "../../core/vault-index"
 import { agendaEvents, vaultDueTasks } from "../../lib/agenda-data"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
-import { Empty, Segmented, useToast } from "../../components/ui"
+import { Empty, Modal, Segmented, useToast } from "../../components/ui"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { useVault } from "../../platform/VaultProvider"
 import { exactAlarmsAllowed, isAndroidApp, openExactAlarmSettings } from "../../platform/reminders"
@@ -57,6 +58,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const vault = useVault()
   const toast = useToast()
   const readOnly = vault.info?.readOnly ?? true
+  const [poll,setPoll]=useState(false)
   const [view, setViewState] = useState<View>(savedView)
   const today = useMemo(() => startOfDay(new Date()), [])
   const [cursor, setCursor] = useState(today)
@@ -213,12 +215,14 @@ function AgendaView({ index }: { index: VaultIndex }) {
 
   return (
     <div className="page agenda">
+      {poll&&<Modal title="Enquete de data pela sala" onClose={()=>setPoll(false)} wide><CampaignRoomTools campaign="Agenda" root="Agenda/" readOnly={readOnly} onlyPoll/></Modal>}
       <div className="page-head">
         <div>
           <span className="eyebrow">Agenda · {events.length} evento(s) em Agenda/</span>
           <h1 className="page-title agenda-title">{title}</h1>
         </div>
         <div className="row-wrap">
+          <button className="btn" onClick={()=>setPoll(true)}>Enquete de data</button>
           <div className="row" style={{ gap: 2 }}>
             <button className="icon-btn" aria-label="Anterior" onClick={() => move(-1)}>
               <ChevronLeft size={18} />

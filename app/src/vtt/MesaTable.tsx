@@ -86,19 +86,20 @@ function useMasterAudio(): AudioState {
   return state
 }
 
-/** Abre a mesa pelo id (rota `/vtt/mesa/<id>`) e fecha ao sair da tela. */
+/** Abre a mesa pelo id (rota `/vtt/mesa/<id>`) mantém a sala ao consultar outros espaços. */
 export function MesaTable({ id }: { id: string }) {
   const [world, setWorld] = useState<WorldSummary | null>(null)
   const [error, setError] = useState<string>()
   useEffect(() => {
     let active = true
+    try{sessionStorage.setItem("runas-codex:mesa-aberta",id)}catch{}
     vtt.openWorld(id).then(
       (opened) => active && setWorld(opened),
       (reason: unknown) => active && setError(reason instanceof Error ? reason.message : String(reason)),
     )
     return () => {
       active = false
-      void vtt.closeWorld()
+      // A sala permanece no processo principal; trocar cofre/mesa ou encerrar explicitamente a fecha.
     }
   }, [id])
   if (error) {

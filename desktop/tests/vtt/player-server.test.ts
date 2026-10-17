@@ -1,3 +1,4 @@
+import { CollaborationRoom } from "../../../app/src/vtt/shared/collaboration"
 import { mkdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -194,4 +195,38 @@ describe("limite de tentativas de entrada", () => {
     expect(clientAddress(request("::ffff:127.0.0.1"))).toBe("1.2.3.4")
     expect(clientAddress(request("192.168.0.5"))).toBe("192.168.0.5")
   })
+})
+
+
+describe("privacidade das atividades na conexão real",()=>{
+ it("filtra destinatários na conexão inicial e nas atualizações, sem transmitir avaliações",async()=>{
+  const room=new CollaborationRoom(),ana={slotId:"a",label:"Ana"},bia={slotId:"b",label:"Bia"}
+  room.command({type:"prompt",prompt:{id:"p",kind:"avaliacao",title:"Sessão",options:[]}})
+  room.reply({type:"reply",promptId:"p",score:8,text:"avaliacao-privada"},ana,"r")
+  room.command({type:"handout",handout:{title:"Reservado",text:"privado-apenas-ana",recipients:["a"]}})
+  const server=newServer({snapshot:seat=>({...emptySnapshot,collaboration:room.publicSnapshot(seat?.slotId)}),authenticateSeat:token=>token==="a"?ana:token==="b"?bia:null})
+  await server.start(0,"chave")
+  const sockets:Socket[]=[]
+  async function client(token?:string){
+   const socket=connect(server.addressPort,"127.0.0.1");sockets.push(socket);let output=""
+   socket.on("data",bytes=>{output+=bytes.toString("utf8")})
+   socket.write(`GET /socket?k=chave HTTP/1.1\r\nHost: 127.0.0.1:${server.addressPort}\r\nOrigin: http://127.0.0.1:${server.addressPort}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n${token?`Cookie: runas_seat=${token}\r\n`:""}\r\n`)
+   for(let i=0;i<100&&!output.includes('"snapshot"');i++)await wait(10)
+   expect(output).toContain("101 Switching Protocols")
+   return ()=>output
+  }
+  try{
+   const first=await client("a"),second=await client("b"),guest=await client()
+   expect(first()).toContain("privado-apenas-ana")
+   expect(second()).not.toContain("privado-apenas-ana")
+   expect(guest()).not.toContain("privado-apenas-ana")
+   for(const output of [first(),second(),guest()]){expect(output).not.toContain("avaliacao-privada");expect(output).not.toContain("recipients")}
+   room.command({type:"handout",handout:{title:"Reservado",text:"segunda-apresentacao",recipients:["b"]}})
+   server.publishTo(seat=>({type:"collaboration",collaboration:room.publicSnapshot(seat?.slotId)}))
+   for(let i=0;i<100&&!second().includes("segunda-apresentacao");i++)await wait(10)
+   expect(second()).toContain("segunda-apresentacao")
+   expect(first()).not.toContain("segunda-apresentacao")
+   expect(guest()).not.toContain("segunda-apresentacao")
+  }finally{for(const socket of sockets)socket.destroy()}
+ })
 })

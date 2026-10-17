@@ -115,6 +115,7 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
         lostListeners.delete(listener)
       }
     },
+    collaboration: {state:()=>invoke(IPC.collaborationState),command:command=>invoke(IPC.collaborationCommand,command)},
     listWorlds: async () => (world ? [world] : [await api.connect()]),
     createWorld: refuse,
     openWorld: async (id) => {

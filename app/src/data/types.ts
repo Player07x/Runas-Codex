@@ -120,7 +120,6 @@ export interface Book {
   subtitle: string
   theme: string
   page: "A4" | "Carta" | "A5"
-  goal: number
   chapters: BookChapter[]
 }
 

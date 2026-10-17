@@ -81,11 +81,11 @@ for (const book of BOOKS) {
     links.push(`[[${folder}/${title}]]`)
     DEMO_TEXT_FILES[`${folder}/${title}.md`] = `---\n${stringify({ tipo: "capitulo", status: chapter.status === "revisão" ? "revisao" : chapter.status, resumo: chapter.part })}---\n${chapter.markdown}\n`
   }
-  DEMO_TEXT_FILES[`${folder}/${book.title}.md`] = newBookText(book.title, links, book.subtitle, book.goal)
+  DEMO_TEXT_FILES[`${folder}/${book.title}.md`] = newBookText(book.title, links, book.subtitle)
 }
 
 // Corpus visual da fase 8b, usando exatamente o leitor e o dialeto das Notas.
-DEMO_TEXT_FILES["Livros/Caderno de formatadores/Caderno de formatadores.md"] = newBookText("Caderno de formatadores", ["[[Livros/Caderno de formatadores/Formatadores]]"], "O dialeto completo em páginas", 5000)
+DEMO_TEXT_FILES["Livros/Caderno de formatadores/Caderno de formatadores.md"] = newBookText("Caderno de formatadores", ["[[Livros/Caderno de formatadores/Formatadores]]"], "O dialeto completo em páginas")
 DEMO_TEXT_FILES["Livros/Caderno de formatadores/Formatadores.md"] = formatadores
 
 // Campanhas de exemplo (etapa 7): sessões, missões, personagens e um quadro .canvas.
@@ -95,3 +95,17 @@ Object.assign(DEMO_TEXT_FILES, campaignDemoFiles())
 // Dados de plugins de RPG do Obsidian para a migração (etapa 10).
 import { OBSIDIAN_PLUGIN_DEMO } from "./obsidian-plugins-demo"
 Object.assign(DEMO_TEXT_FILES, OBSIDIAN_PLUGIN_DEMO)
+
+// C6: ferramentas do mundo, idioma, recorrência e crônicas.
+import { WIKI_FINISH_DEMO } from "./wiki-finish-demo"
+Object.assign(DEMO_TEXT_FILES, WIKI_FINISH_DEMO)
+
+// C6b: tesouro e iniciativa genéricos, em notas comuns.
+import { CAMPAIGN_TOOLS_DEMO } from "./campaign-tools-demo"
+Object.assign(DEMO_TEXT_FILES,CAMPAIGN_TOOLS_DEMO)
+
+import { WIKI_CATEGORY_DEMO } from "./wiki-category-demo"
+Object.assign(DEMO_TEXT_FILES, WIKI_CATEGORY_DEMO)
+
+// A grade da Wiki usa iniciais no navegador; o anexo continua resolvido no índice.
+Object.assign(DEMO_ASSETS, { "Anexos/Imagens/exemplo-retrato.png": runa })

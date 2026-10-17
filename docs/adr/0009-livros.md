@@ -17,7 +17,8 @@ A ordem é linear: `tipo: parte | capitulo | secao` identifica cada item, sem ac
 com a lista decidida. Sem `tipo`, o item é capítulo. `status` e `resumo` alimentam o binder e os cartões; podem ser
 editados nas propriedades em Notas ou no código da nota. Notas da pasta ausentes da lista aparecem em “Fora do livro”.
 
-`subtitulo`, `autor` e `meta_palavras` pertencem à nota do livro. `tema`, `pagina`, `capa`, `contracapa` e `creditos`
+`subtitulo` e `autor` pertencem à nota do livro. (A meta de palavras foi retirada na beta.7: não ajudava a
+escrever; um `meta_palavras` antigo fica como propriedade comum.) `tema`, `pagina`, `capa`, `contracapa` e `creditos`
 ficam reservados para a 8b. O corpo da nota do livro guarda anotações e não entra na contagem dos capítulos.
 
 O núcleo `core/books.ts` descobre livros, resolve a estrutura, conta palavras e move itens sem depender de React.
@@ -147,3 +148,31 @@ Validação: exemplos Markdown e DOCX pequenos no repositório, testes dos conve
 renderização dos callouts após a quebra de coluna. O smoke gravável importa o exemplo pela tela e confere capítulos
 na ordem. Capturas em `docs/imagens/livros-8d/`; temas escuro/claro, 320 px e prévia com tabela/imagem no Electron.
 A comparação com documentos reais e a compatibilidade visual no Obsidian, Windows e Android continuam manuais.
+
+## X5 — fechamento dos Livros (17/10/2026)
+
+O acabamento fica no frontmatter da nota do livro: `indice_remissivo`, `indice_termos` (lista), `glossario`,
+`margem_mm`, `sangria_mm`, `marcas_corte`, `fundo_pagina` (#RRGGBB), `textura` (papel/linho/nenhuma),
+`marca_agua` e `css_livro`. Valores físicos são limitados antes de gerar as regras do Paged.js. O padrão de margem
+continua sendo o do perfil escolhido. Texturas são procedurais, sem recursos externos.
+
+Índice e glossário entram na mesma fonte da prévia e das exportações. O índice usa artigos da Wiki citados e termos
+selecionados pelo autor; aponta ao capítulo e à página inicial dele no impresso. O glossário lê `resumo` dos artigos
+citados, sem copiar os artigos inteiros. Os links do índice do EPUB apontam para o arquivo XHTML do capítulo.
+
+CSS próprio aceita regras simples confinadas ao conteúdo do papel. Recusa @-rules, URLs, escapes, regras aninhadas
+e propriedades de posicionamento/conteúdo; falhas são mostradas sem aplicar a regra. Nenhuma alteração no dialeto.
+
+HTML é um único arquivo autônomo com fontes e imagens em data URIs e CSP sem rede. RTF mantém texto Unicode,
+formatação básica e imagens PNG/JPEG; tabelas viram linhas separadas por tabulação e diagramas recebem aviso.
+Markdown único mantém a ordem e explicita os caminhos do cofre; o ZIP conserva a árvore original e inclui notas
+e anexos referenciados, com o rascunho atual no lugar do capítulo. Não reimporta livros do Runas Book (ADR 0004).
+
+O painel da Wiki permite consultar, ligar personagens/locais/artigos e transcluir no cursor. Comentários usam
+`%% revisão: … %%`, editáveis e removíveis no modo Código. Snapshots usam o histórico local já existente (C5c), com
+comparação e restauração pelo mesmo fluxo seguro. Modo foco recolhe a estrutura; máquina de escrever centraliza o
+cursor com uma opção do editor, sem alterar o documento nem o autosave.
+
+Android não foi validado nesta rodada, por orientação do dono. Impressora física, Word e leitores de EPUB ficam
+no roteiro manual. Os testes automatizados cobrem referências com rascunho, isolamento do CSS, perfis de impressão,
+HTML autônomo, Unicode/imagens no RTF e ZIP Markdown com anexos.

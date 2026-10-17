@@ -1,3 +1,4 @@
+import { CollaborationRoom } from "./shared/collaboration"
 import { assetUrl, type DocumentChange, type PlayerDisplay, type PlayerState, type VttApi } from "./shared/ipc"
 import { normalizeDocumentData, type AssetPath } from "./shared/scene"
 import { createWorldManifest, type WorldDocument, type WorldSummary } from "./shared/world"
@@ -17,6 +18,7 @@ export function configurePlayerAssets(base: string, key: string): void {
  * para experimentar: nada é gravado, e a transmissão para os jogadores só é simulada.
  */
 function createBrowserPreviewApi(): VttApi {
+  const collaboration=new CollaborationRoom()
   const worlds: WorldSummary[] = []
   const documents = new Map<string, WorldDocument>()
   const documentListeners = new Set<(change: DocumentChange) => void>()
@@ -24,6 +26,7 @@ function createBrowserPreviewApi(): VttApi {
   const player: PlayerState = { enabled: false, port: 30000, key: null, localUrl: null, publicUrl: null, tunnel: null, tunnelLost: false, sceneId: null, audio: true, moves: true, bars: "friendly", spectators: 0, players: 0, sessionId: null, seats: [] }
   const emitPlayer = () => playerListeners.forEach((listener) => listener({ ...player }))
   return {
+    collaboration: {state:async()=>collaboration.snapshot(),command:async command=>collaboration.command(command)},
     listWorlds: async () => [...worlds].sort((a, b) => b.updatedAt - a.updatedAt),
     createWorld: async (input) => {
       const manifest = createWorldManifest(input, crypto.randomUUID(), Date.now())
@@ -37,7 +40,7 @@ function createBrowserPreviewApi(): VttApi {
       world.updatedAt = Date.now()
       return world
     },
-    closeWorld: async () => undefined,
+    closeWorld: async () => collaboration.reset(),
     documents: {
       list: async (type, parentId) => [...documents.values()].filter((document) => document.type === type && (parentId === undefined || document.parentId === parentId)),
       put: async (input) => {

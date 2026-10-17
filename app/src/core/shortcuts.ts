@@ -10,3 +10,8 @@ export function shortcutAction(event: Parameters<typeof eventShortcut>[0], overr
   const pressed = eventShortcut(event)
   return (Object.keys(SHORTCUTS) as ShortcutAction[]).find(action => (overrides[action] ?? SHORTCUTS[action].key) === pressed)
 }
+
+/** A ajuda usa a mesma combinação efetiva que o comando. */
+export function shortcutLabel(action: ShortcutAction, overrides: Partial<Record<ShortcutAction, string>>): string {
+  return overrides[action] ?? SHORTCUTS[action].key
+}

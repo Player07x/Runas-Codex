@@ -348,3 +348,85 @@ aparelho físico acima continua necessária.
 - [ ] Cancelar a autorização: o app mostra o cancelamento e permanece aberto, sem anunciar sucesso.
 - [ ] Com outro gerenciador de pacotes aberto, conferir espera/erro legível sem fechar o app. Se houver conflito ao
   salvar uma nota, o app permanece aberto para resolver antes de reiniciar.
+
+## C6a — fechamento da Wiki
+
+- [ ] Geradores: criar resultado, editar e guardar como nota; conferir sem rede e no Obsidian.
+- [ ] Tabelas: pesos, encadeamento de outra nota, erro de ciclo e destino inexistente; leitura e live preview.
+- [ ] Idioma: traduções, pronúncia, regras e filtro nos dois sentidos; novo artigo traz exemplo editável.
+- [ ] Galeria e áudio com anexos reais; spoiler abre por clique/teclado também no Obsidian.
+- [ ] Repetições de eventos por dias/meses/anos no calendário fictício, com data final e dias inexistentes. Na visão
+  dos jogadores, eventos secretos não aparecem.
+- [ ] Crônicas: trocar era na linha do tempo e abrir o mapa; conferir imagens, zonas, rotas, rótulos e camadas
+  secretas. Criar/remover desenhos por pontos e camadas de imagem, inclusive depois de fechar e abrir o cofre.
+- [ ] Windows, Obsidian e áudio real ficam na conferência manual; Android ficou para a tarefa complementar.
+
+## C6 — Wiki, Campanhas e Agenda (Codex, 17/10/2026)
+
+- Em Linux e Windows, ligar a bandeja, fechar a janela, reabrir pelo ícone e sair pelo menu; conferir lembrete
+  agendado com a janela escondida. Autorun permanece C9.
+- Com dois jogadores reais e um espectador, apresentar artigo público e privado, enviar diário, avaliar uma sessão,
+  responder enquete de data e sinalizar Carta X. Só o mestre deve ver resultados privados; só o destinatário deve
+  ver o artigo privado. Gravar diários/resultados antes de abrir outra atividade ou fechar o mundo.
+- Navegar Wiki → Campanhas → Mesa mantendo sala; encerrar no banner e trocar de cofre. Conferir importação de
+  encontros para iniciativa presencial, tesouro e gerador de aventuras.
+- Conferir camadas/eras do mapa, recorrência fictícia, dicionários e tabelas encadeadas com um cofre real.
+- Em tela touch física, testar pinça, seleção de cartões, arrasto conjunto e recorte/restauração. Capturas e testes
+  automatizados não substituem multitouch físico nem revisão por leitor de tela. Android vai para a tarefa posterior.
+
+## X5 — fechamento dos Livros
+
+- [ ] Em um livro real: citar personagens/locais pelo painel da Wiki, transcluir um artigo e conferir no Obsidian.
+- [ ] Ligar índice/glossário no acabamento, preencher termos e os resumos dos artigos. Conferir ordem e referências
+  de capítulo/página na prévia/PDF e os links do EPUB em um leitor.
+- [ ] A4/Carta/A5/6x9: margens, sangria e marcas de corte em impressora física; fundos, texturas e marca d’água.
+- [ ] CSS de tipografia/cores modifica só o papel. CSS inválido mostra o erro e não é aplicado.
+- [ ] Exportar HTML e abri-lo sem internet; abrir RTF no Word/LibreOffice. Conferir acentos e imagens. RTF usa
+  tabulações para tabelas e avisos para diagramas; para fidelidade de página, usar PDF.
+- [ ] Markdown único mantém a ordem e caminhos do cofre. Extrair o ZIP e abrir como cofre no Obsidian, incluindo
+  transclusões e anexos.
+- [ ] Modo foco, máquina de escrever, comentários no cursor e histórico de versões do capítulo: guardar, comparar e
+  restaurar, inclusive com alterações externas para conferir a recusa de conflito.
+- [ ] Android: conferir na tarefa complementar da revisão completa, após C8/X7 (fora desta rodada).
+
+## X8 e pedido adicional de imagens/contadores
+
+- Conferir preferências 85–140%, três paletas, claro/escuro, modo tablet e movimento reduzido em Linux/Windows e com
+  Orca/NVDA. Testar Tab/Escape/retorno de foco nos diálogos e na paleta, inclusive diálogos sobrepostos.
+- Criar cofre vazio: tour, oito exemplos, pasta `Anexos/Imagens`; remover exemplos para `.trash`, preservar notas sem
+  marca e recuperar pela lixeira. Conferir zero artigos sem página escrita e zero mesas sem manifesto.
+- Colar/arrastar/importar imagens em vários espaços, renomear pelo link, pelo botão da nota e pelo botão direito;
+  repetir o mesmo arquivo em duas notas e num quadro/mapa. Reunir arquivos com nomes iguais e conferir no Obsidian.
+- Conferir fonte/zoom e menus no teclado virtual e multitouch físicos. Android não foi implementado/testado nesta
+  rodada. O roteiro completo está em `docs/tarefas/revisao-completa-complementar.md`.
+
+
+## W1 — categorias da Wiki
+
+- [ ] Categoria real com 100+ artigos: início limita cinco recentes, abrir categoria mostra 24, “Mostrar mais” amplia
+  por 24; rolar com retratos pesados e conferir carregamento lazy, busca por apelidos/campos, ordem e persistência da lista.
+- [ ] Retrato em propriedade e primeira imagem no corpo, sem tipo e sem imagem: conferir no Windows/Linux e no
+  Obsidian, inclusive imagens em `Anexos/Imagens`, nomes duplicados e caminhos com acento/porcentagem.
+- [ ] Alternar visão dos jogadores: notas secretas não entram na contagem, busca, filtros ou cards; artigo recém
+  alterado fora do app deve atualizar os resultados após releitura.
+- [ ] Criar a partir de subcategoria e conferir tipo/pasta sugeridos; tema claro/escuro, 320 px e fontes ampliadas.
+- [ ] Personalizar Nova nota e conferir ajuda de Configurações, dica do botão e paleta com a combinação efetiva.
+
+
+## Atualizador Ubuntu — beta.6
+
+- [ ] Instalar manualmente a beta.6 sobre beta.4/5 (elas ainda executam o comando APT antigo).
+- [ ] Da beta.6 para uma versão posterior, testar o botão Baixar e instalar, autorização gráfica, senha cancelada,
+  bloqueio do APT, dependência ausente e reabertura. Os testes não instalam pacotes no sistema do desenvolvedor.
+- [ ] Conferir que o perfil de fontes é removido após sucesso/falha e que não houve download de dependências.
+
+## Beta.7 — sem metas de palavras e Configurações compactas
+
+- [ ] Livros: estante e editor mostram só palavras e capítulos; criar livro novo não grava `meta_palavras`. Um livro
+  antigo com `meta_palavras` abre normalmente.
+- [ ] Wiki: a página inicial não mostra mais o cartão de progresso/meta.
+- [ ] Configurações no desktop (janela larga e estreita) e no celular: duas colunas sem buracos; tudo cabe a partir de
+  320 px. Conferir Aparência (tema, paleta, tamanho, animações, tablet, restaurar), Primeiros passos (tour, adicionar
+  e remover exemplos), Imagens (criar pasta, reunir), bandeja do desktop dentro de Agenda e lembretes, atalhos
+  editáveis e restaurar, trechos CSS (adicionar, importar, cancelar, ligar/desligar, remover).
+- [ ] A aparência da sala do VTT (botão de paleta na mesa) continua abrindo e mudando tema e tamanho.

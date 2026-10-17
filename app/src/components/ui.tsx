@@ -1,18 +1,17 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
+import { useDialogFocus } from "./useDialogFocus"
+import { createContext, useCallback, useContext, useId, useRef, useState, type ReactNode } from "react"
 import { CheckCircle2, X } from "lucide-react"
 import runa from "../assets/runa.png"
 
 export function Modal({ title, onClose, children, footer, wide }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose()
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [onClose])
+  const ref = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  useDialogFocus(ref, onClose)
   return (
     <div className="backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-modal="true">
+      <div className={`modal ${wide ? "wide" : ""}`} ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="modal-head">
-          <strong>{title}</strong>
+          <strong id={titleId}>{title}</strong>
           <button className="icon-btn sm" onClick={onClose} aria-label="Fechar">
             <X size={16} />
           </button>
@@ -28,7 +27,12 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
   return (
     <div className="segmented" role="tablist" aria-label={label}>
       {options.map((option) => (
-        <button key={option.value} role="tab" aria-selected={value === option.value} className={value === option.value ? "active" : ""} onClick={() => onChange(option.value)}>
+        <button key={option.value} role="tab" tabIndex={value === option.value ? 0 : -1} aria-selected={value === option.value} onKeyDown={event => {
+          const at = options.findIndex(item => item.value === value)
+          const next = event.key === "ArrowRight" ? (at + 1) % options.length : event.key === "ArrowLeft" ? (at + options.length - 1) % options.length : event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : -1
+          if (next < 0) return
+          event.preventDefault(); onChange(options[next]!.value); (event.currentTarget.parentElement?.children[next] as HTMLElement | undefined)?.focus()
+        }} className={value === option.value ? "active" : ""} onClick={() => onChange(option.value)}>
           {option.icon}
           {option.label}
         </button>
@@ -49,7 +53,7 @@ export function Empty({ title, children, action }: { title: string; children?: R
 }
 
 export function Switch({ on, onChange, label }: { on: boolean; onChange?: (value: boolean) => void; label: string }) {
-  return <button className={`switch ${on ? "on" : ""}`} role="switch" aria-checked={on} aria-label={label} onClick={() => onChange?.(!on)} />
+  return <button className={`switch ${on ? "on" : ""}`} disabled={!onChange} role="switch" aria-checked={on} aria-label={label} onClick={() => onChange?.(!on)} />
 }
 
 export function Progress({ value, max, color = "var(--cyan)" }: { value: number; max: number; color?: string }) {

@@ -8,11 +8,11 @@ import { isAndroidApp, onAndroidReminderOpen, scheduleInBrowser, scheduleOnAndro
  * recarregar a página volta ao exemplo. Segue as mesmas regras da plataforma real (versão esperada, lixeira…).
  */
 export function createMemoryPlatform(onNotify?: (title: string, body: string) => void): Platform {
-  const files = new Map<string, { content: string; mtime: number; bytes?: Uint8Array }>([
+  const files = new Map<string, { content: string; mtime: number; bytes?: Uint8Array; assetUrl?: string }>([
     ...ALL_NOTES.map((n) => [n.path, { content: n.markdown, mtime: Date.parse(n.updated) }] as const),
     ...Object.entries(DEMO_TEXT_FILES).map(([path, content]) => [path, { content, mtime: Date.parse("2026-10-14T09:00:00") }] as const),
     // Anexos: só o nome entra no cofre; a imagem vem empacotada com o app (`fileUrl`).
-    ...Object.keys(DEMO_ASSETS).map((path) => [path, { content: "", mtime: Date.parse("2026-10-14T09:00:00") }] as const),
+    ...Object.keys(DEMO_ASSETS).map((path) => [path, { content: "", mtime: Date.parse("2026-10-14T09:00:00"), assetUrl: DEMO_ASSETS[path] }] as const),
   ])
   const listeners = new Set<(changes: VaultChange[]) => void>()
   // Endereços `blob:` dos anexos gravados nesta aba (a imagem colada aparece na nota sem ir para o disco).
@@ -110,7 +110,7 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     },
     fileUrl(path) {
       const bytes = files.get(path)?.bytes
-      if (!bytes) return DEMO_ASSETS[path] ?? null
+      if (!bytes) return files.get(path)?.assetUrl ?? DEMO_ASSETS[path] ?? null
       let url = blobUrls.get(bytes)
       if (!url) blobUrls.set(bytes, (url = URL.createObjectURL(new Blob([bytes as BlobPart]))))
       return url
@@ -148,7 +148,7 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
       const file = files.get(path)
       if (!file) throw new Error(`Arquivo não encontrado no cofre: ${path}`)
       if (file.bytes) return file.bytes.slice()
-      const asset = DEMO_ASSETS[path]
+      const asset = file.assetUrl ?? DEMO_ASSETS[path]
       if (asset) return new Uint8Array(await (await fetch(asset)).arrayBuffer())
       return new TextEncoder().encode(file.content)
     },

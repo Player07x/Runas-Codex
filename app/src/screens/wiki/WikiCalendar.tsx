@@ -1,9 +1,10 @@
+import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { addDays, addMonths, CalendarError, convert, dateProblem, dayNumber, equivalentYears, eraOf, formatDate, formatYear, holidaysOn, monthLength, moons, parseCalendar, relative, season, weekday, weekdayIndex, worldDateText, type Calendar, type MoonState, type WorldDate } from "../../core/calendar"
 import { findCodeBlocks, replaceCodeBlock, setBlockLine } from "../../core/codeblocks"
 import { noteName } from "../../core/text"
-import { calendarInNote, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
+import { calendarFor, calendarInNote, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
 import { useNoteSet } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
@@ -121,7 +122,7 @@ export function CalendarBlock({ code }: { code: string }) {
 export function WikiCalendar({ path }: { path?: string }) {
   const vault = useVault()
   const toast = useToast()
-  const { wiki, calendar: main } = useWiki()
+  const { wiki, calendar: main, players } = useWiki()
   const index = vault.index!
   const all = useMemo(() => listCalendars(index, wiki!.root), [index, wiki, vault.version])
   const chosenNote = path ? index.note(path) : undefined
@@ -145,11 +146,13 @@ export function WikiCalendar({ path }: { path?: string }) {
       return born ? [{ path: note.path, born }] : []
     })
   }, [index, wiki, ref, vault.version])
+  const calendarForForRecurrence = (path:string) => { const found=calendarFor(index,path); return found && "calendar" in found && found.path===ref?.path }
   const marks = (d: WorldDate) => {
     if (!calendar) return []
     const day = dayNumber(calendar, d)
     return [
-      ...events.filter((e) => e.startDay <= day && e.endDay >= day).map((e) => ({ label: e.title, color: "var(--violet)", to: e.path })),
+      ...events.filter((e) => e.startDay <= day && e.endDay >= day && !(players && index.note(e.path)?.meta.frontmatter?.data?.segredo === true) && !index.note(e.path)?.meta.frontmatter?.data?.recorrencia_mundo).map((e) => ({ label: e.title, color: "var(--violet)", to: e.path })),
+      ...index.notesIn(wiki!.root).filter(n=>{const data=n.meta.frontmatter?.data;return data?.recorrencia_mundo && !(players && data.segredo===true) && calendarForForRecurrence(n.path) && worldEventOn(data,calendar,d)}).map(n=>({label:n.name,color:"var(--violet)",to:n.path})),
       ...births.filter((b) => b.born.month === d.month && b.born.day === d.day && b.born.year <= d.year).map((b) => ({ label: `${noteName(b.path)} (${d.year - b.born.year})`, color: "var(--gold)", to: b.path })),
     ]
   }
