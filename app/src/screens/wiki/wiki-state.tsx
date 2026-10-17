@@ -5,7 +5,7 @@ import {
   Activity, BookOpen, CalendarDays, Castle, Cog, FileText, Flag, Flame, Gem, Hourglass, Landmark, Languages, Layers, Map, MapPin, PawPrint, ScrollText, Shield, Ship, Sparkles, Sun, Swords, User, Users,
   type LucideIcon,
 } from "lucide-react"
-import { articleKind, calendarFor, listCalendars, listWikis, type CalendarRef, type WikiInfo } from "../../core/wiki"
+import { articleKind, listCalendars, listWikis, mainCalendar, type CalendarRef, type WikiInfo } from "../../core/wiki"
 import { publicWikiIndex } from "../../core/wiki-public"
 import { VaultView, useVault } from "../../platform/VaultProvider"
 
@@ -87,8 +87,8 @@ export function WikiProvider({ children, articlePath }: { children: ReactNode; a
   const calendars = useMemo(() => (index && wiki ? listCalendars(index, wiki.root).filter((c): c is CalendarRef => "calendar" in c && (!players || index.note(c.path)?.meta.frontmatter?.data?.segredo !== true)) : []), [index, wiki, players, vault.version])
   const calendar = useMemo(() => {
     if (!index || !wiki) return null
-    const fromHome = wiki.home ? calendarFor(index, wiki.home) : null
-    return fromHome && "calendar" in fromHome && (!players || index.note(fromHome.path)?.meta.frontmatter?.data?.segredo !== true) ? fromHome : (calendars[0] ?? null)
+    const found = mainCalendar(index, wiki.root, wiki.home)
+    return found && calendars.some((c) => c.path === found.path) ? found : (calendars[0] ?? null)
   }, [index, wiki, calendars, players])
   const publicIndex=useMemo(()=>players&&index?publicWikiIndex(index):null,[players,index,vault.version])
   const deny=()=>Promise.reject(new Error("Mude para a visão do mestre para editar o cofre."))

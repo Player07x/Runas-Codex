@@ -4,7 +4,7 @@ import {
   campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks, upcomingSession,
   type CampaignInfo, type CampaignStats, type Clock, type PlayerCharacter, type QuestInfo, type SecretItem, type SessionInfo, type TrackedLink,
 } from "../../core/campaigns"
-import { listCalendars } from "../../core/wiki"
+import { listWikis, mainCalendar } from "../../core/wiki"
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
 
@@ -48,8 +48,9 @@ export function useCampaignData(name: string): CampaignData {
     const home = campaign.home ? index.note(campaign.home) : undefined
     const sessions = listSessions(index, campaign, today)
     const players = listPlayers(index, campaign)
-    const calendars = listCalendars(index, campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/")
-    const calendar = calendars.find((c): c is Extract<typeof c, { calendar: Calendar }> => "calendar" in c)?.calendar ?? null
+    // O calendário principal da wiki da campanha (o da nota inicial ou o que as datas mais usam).
+    const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
+    const calendar = mainCalendar(index, root, listWikis(index).find((w) => w.root === root)?.home)?.calendar ?? null
     return {
       campaign,
       ...(home ? { home } : {}),

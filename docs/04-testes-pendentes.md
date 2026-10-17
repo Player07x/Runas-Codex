@@ -445,3 +445,11 @@ aparelho físico acima continua necessária.
 - [ ] Cofre com datas antigas (sem sigla): Wiki › Calendário mostra o aviso; "Acrescentar a sigla" regrava as datas e
   o aviso some. No Obsidian, as datas aparecem como texto com a sigla.
 - [ ] Nova sessão de campanha: a data do mundo vem com a sigla.
+
+## Beta.11 — linha do tempo com vários calendários e sincronização
+
+- [ ] Wiki com dois calendários (ex.: Valknut, Rúnico e Arthuriano): a linha do tempo abre com o que tem
+  acontecimentos; marcar os dois mostra gráficos separados até sincronizar, e no mesmo eixo depois.
+- [ ] Calendário › Sincronizar: gravar "este dia = aquele dia"; o bloco ganha `correspondencias`; o Dia escolhido
+  mostra a data no outro calendário; "Alinhar o hoje" e "Definir hoje" (digitado) atualizam os dois.
+- [ ] Digitar uma data inexistente em "Definir hoje" mostra o erro e não grava.
