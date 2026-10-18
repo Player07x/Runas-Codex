@@ -484,3 +484,12 @@ No celular (Android 11 ou mais novo, de preferência um aparelho médio), com o 
 - [ ] Lembrete de um evento do cofre real dispara com o app fechado.
 - [ ] Configurações › Criar cofre numa pasta vazia: nasce com as pastas dos espaços e `.obsidian`, já gravável.
 - [ ] Depois de cadastrar os segredos da chave (ADR 0015, seção 6): a Release traz o APK assinado.
+
+### Fechamento do CI da C8 — 18/10/2026
+
+O emulador Android 35 aprovou os 22 checks do smoke e o spike de 5 mil notas: `indexMs: 8677`, `heapMb: 20`,
+`keyboardMs: 5564` (execução `39168629768`, ADR 0015, seção 5). Continuam pendentes os testes físicos acima.
+
+- [ ] No Windows, editar a mesma nota em duas janelas, inclusive com o antivírus ativo: uma gravação deve vencer e a
+  outra deve avisar o conflito. O runner apresentou `EPERM` transitório na troca do temporário em algumas execuções;
+  as regras da gravação segura permaneceram intactas.

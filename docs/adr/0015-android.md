@@ -81,8 +81,16 @@ Job `android-vault` do `release.yml`. Roda nos PRs de branches `android/*` (ou c
   o Gboard (sugestões, acentos por composição). Isso fica para o teste em celular físico (docs/04).
 - **5 mil notas:** o job gera um cofre de 5 mil notas (links, etiquetas e uma tarefa em cada) e mede do `am start` até
   as Configurações mostrarem "5000 notas Markdown no índice" (`vault-index.json` no artefato
-  `Runas-Codex-android-cofre`). **Resultado no emulador do CI: ver o PR da C8.** O emulador x86_64 com aceleração
+  `Runas-Codex-android-cofre`). **Resultado no emulador do CI:** `indexMs: 8677`, `heapMb: 20`,
+  `keyboardMs: 5564`, com os 22 checks do smoke aprovados. Medição de 18/10/2026 no Android 35 x86_64,
+  [execução 39168629768](https://github.com/Player07x/Runas-Codex/actions/runs/39168629768), commit `38446b8`.
+  O emulador x86_64 com aceleração
   não é um "celular médio": o número serve de referência, e a medida num aparelho físico fica em docs/04.
+
+O fechamento do CI também corrigiu a espera pela montagem e escrita do armazenamento FUSE, a serialização de
+condições do CDP e o spike do teclado: ele usa uma nota nova recebida pelo observador, com a versão atual no índice.
+Restaurar uma nota diretamente pelo plugin e depois editá-la com a versão antiga da interface deve continuar sendo
+recusado. As garantias do `VaultStore` não foram alteradas para esses ajustes.
 
 ### 6. APK de release assinado
 
