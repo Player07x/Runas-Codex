@@ -171,3 +171,9 @@ Por pedido posterior do dono, a entrega é reunida num PR integrado e numa nova 
 As branches de fase e os commits continuam preservados para revisão. A mesclagem na main continua a cargo do dono.
 A revisão complementar foi criada em chat próprio e concluiu a auditoria do snapshot d6ea6bd; seus três achados de
 interface/confiabilidade dos testes foram tratados na beta.5. Validação física e C8/X7 continuam pendentes.
+
+## Pedido futuro — Tasks e tempo livre (18/10/2026)
+
+| Tarefa | Pedido | Situação |
+|---|---|---|
+| Compatibilidade completa com Tasks nas notas e no checklist de preparação; cálculo de tempo livre diário na Agenda | [tasks-tempo-livre.md](tasks-tempo-livre.md) | autorizada em 18/10/2026; Claude Code, `agenda/tasks-tempo-livre` |
