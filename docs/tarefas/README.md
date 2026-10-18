@@ -176,4 +176,4 @@ interface/confiabilidade dos testes foram tratados na beta.5. Validação físic
 
 | Fase | Responsável | Branch | Situação |
 |---|---|---|---|
-| **C8** A1: cofre real, spikes, emulador no CI, APK assinado | Claude Code | `android/a1-cofre` | em revisão ([ADR 0015](../adr/0015-android.md)) |
+| **C8** A1: cofre real, spikes, emulador no CI, APK assinado | Claude Code; CI com o Codex ([c8-ci-android.md](c8-ci-android.md)) | `android/a1-cofre` | em revisão ([ADR 0015](../adr/0015-android.md)) |
