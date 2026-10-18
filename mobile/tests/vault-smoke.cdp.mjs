@@ -162,9 +162,22 @@ try {
   await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
   await until(`document.querySelector('.cm-content')`, 150)
   await run(`(()=>{const c=document.querySelector('.cm-content'); c.focus(); const r=document.createRange(); r.selectNodeContents(c); r.collapse(false); const s=getSelection(); s.removeAllRanges(); s.addRange(r); return true})()`)
+  await until(`document.activeElement === document.querySelector('.cm-content')`)
+  // Dá ao Android tempo para ligar a conexão do teclado antes da primeira tecla.
+  await sleep(1000)
   const typedAt = Date.now()
-  adb('shell', 'input', 'text', 'teclado%sAndroid')
-  const typed = await until(`document.querySelector('.cm-content').innerText.includes('teclado Android')`, 100).catch(() => false)
+  let prefix = ''
+  let typed = true
+  // `input text` manda uma rajada de key events sem esperar o WebView. Cada tecla continua vindo do Android,
+  // mas só envia a seguinte quando o CodeMirror processou a anterior (a métrica inclui essa cadência).
+  for (const key of 'teclado Android') {
+    adb('shell', 'input', 'text', key === ' ' ? '%s' : key)
+    prefix += key
+    if (!await until(`document.querySelector('.cm-content').innerText.includes(${JSON.stringify(prefix)})`, 100).catch(() => false)) {
+      typed = false
+      break
+    }
+  }
   result.metrics.keyboardMs = Date.now() - typedAt
   check('CodeMirror recebe o teclado do Android', Boolean(typed))
   // Espera a gravação real depois da pausa na digitação, inclusive num emulador mais lento.
