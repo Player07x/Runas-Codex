@@ -1,5 +1,7 @@
 package dev.runas.codex.vault;
 
+import android.annotation.SuppressLint;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,7 +35,7 @@ import java.util.zip.ZipOutputStream;
  * - grava num temporário e troca de uma vez (sem arquivo pela metade);
  * - "apagar" manda para a lixeira do cofre (.trash, a mesma do Obsidian).
  *
- * Java puro (sem Android), para os testes de unidade rodarem na JVM.
+ * Java puro (só uma anotação do Android), para os testes de unidade rodarem na JVM.
  */
 public final class VaultStore {
 
@@ -137,6 +139,7 @@ public final class VaultStore {
     private static boolean nioAvailable = true;
 
     /** Link simbólico? (`lstat` pelo java.nio, do Android 8 em diante; antes, comparando o caminho canônico). */
+    @SuppressLint("NewApi") // No Android 7, a chamada falha (NoClassDefFoundError) e o caminho canônico assume.
     private static boolean isSymlink(File file) {
         if (nioAvailable) {
             try {
