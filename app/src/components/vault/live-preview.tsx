@@ -218,6 +218,9 @@ class CheckboxWidget extends WidgetType {
       const insert = toggledTaskLines(line.text).join(view.state.lineBreak)
       if (insert !== line.text) view.dispatch({ changes: { from: line.from, to: line.to, insert } })
     })
+    // O estado desenhado vem só do texto: sem isto, o clique marca a caixa nativa, e o widget reaproveitado (a próxima
+    // ocorrência de uma recorrência fica no mesmo lugar, ainda `[ ]`) apareceria marcado.
+    box.addEventListener("click", (event) => event.preventDefault())
     return box
   }
 
