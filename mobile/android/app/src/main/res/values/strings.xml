@@ -4,4 +4,7 @@
     <string name="title_activity_main">Runas-Codex</string>
     <string name="package_name">dev.runas.codex</string>
     <string name="custom_url_scheme">dev.runas.codex</string>
+    <string name="agenda_widget_title">Agenda · Runas-Codex</string>
+    <string name="agenda_widget_empty">Nada marcado nos próximos dias.</string>
+    <string name="agenda_widget_description">Os próximos eventos da Agenda do cofre.</string>
 </resources>

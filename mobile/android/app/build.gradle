@@ -20,10 +20,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // APK de release assinado (ADR 0015): a chave é do dono e fica nos segredos do repositório; o workflow a passa
+    // por variáveis de ambiente. Sem elas, só o APK de depuração é gerado.
+    def keystoreFile = System.getenv("RUNAS_KEYSTORE_FILE")
+    signingConfigs {
+        release {
+            if (keystoreFile) {
+                storeFile file(keystoreFile)
+                storePassword System.getenv("RUNAS_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("RUNAS_KEY_ALIAS")
+                keyPassword System.getenv("RUNAS_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystoreFile) signingConfig signingConfigs.release
         }
     }
 }
