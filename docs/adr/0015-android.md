@@ -77,13 +77,13 @@ Job `android-vault` do `release.yml`. Roda nos PRs de branches `android/*` (ou c
 ### 5. Spikes da etapa 2
 
 - **Teclado do Android no CodeMirror:** o smoke foca o editor, digita pelo teclado do sistema (`adb shell input text`)
-  e confere que o texto entra e é gravado no arquivo. O `input text` manda teclas, não a composição de um teclado como
+  e confere que o texto entra e é gravado no arquivo. As teclas são enviadas uma a uma, aguardando o CodeMirror processar cada uma; `keyboardMs` inclui essa cadência e o custo do `adb`. O `input text` manda teclas, não a composição de um teclado como
   o Gboard (sugestões, acentos por composição). Isso fica para o teste em celular físico (docs/04).
 - **5 mil notas:** o job gera um cofre de 5 mil notas (links, etiquetas e uma tarefa em cada) e mede do `am start` até
   as Configurações mostrarem "5000 notas Markdown no índice" (`vault-index.json` no artefato
-  `Runas-Codex-android-cofre`). **Resultado no emulador do CI:** `indexMs: 8677`, `heapMb: 20`,
-  `keyboardMs: 5564`, com os 22 checks do smoke aprovados. Medição de 18/10/2026 no Android 35 x86_64,
-  [execução 39168629768](https://github.com/Player07x/Runas-Codex/actions/runs/39168629768), commit `38446b8`.
+  `Runas-Codex-android-cofre`). **Resultado no emulador do CI:** `indexMs: 8415`, `heapMb: 18`,
+  `keyboardMs: 6509`, com os 22 checks do smoke aprovados. Medição de 18/10/2026 no Android 35 x86_64,
+  [execução 39170127880](https://github.com/Player07x/Runas-Codex/actions/runs/39170127880), commit `861e251`.
   O emulador x86_64 com aceleração
   não é um "celular médio": o número serve de referência, e a medida num aparelho físico fica em docs/04.
 

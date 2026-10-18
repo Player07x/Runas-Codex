@@ -487,8 +487,8 @@ No celular (Android 11 ou mais novo, de preferência um aparelho médio), com o 
 
 ### Fechamento do CI da C8 — 18/10/2026
 
-O emulador Android 35 aprovou os 22 checks do smoke e o spike de 5 mil notas: `indexMs: 8677`, `heapMb: 20`,
-`keyboardMs: 5564` (execução `39168629768`, ADR 0015, seção 5). Continuam pendentes os testes físicos acima.
+O emulador Android 35 aprovou os 22 checks do smoke e o spike de 5 mil notas: `indexMs: 8415`, `heapMb: 18`,
+`keyboardMs: 6509` (execução `39170127880`, ADR 0015, seção 5). Continuam pendentes os testes físicos acima.
 
 - [ ] No Windows, editar a mesma nota em duas janelas, inclusive com o antivírus ativo: uma gravação deve vencer e a
   outra deve avisar o conflito. O runner apresentou `EPERM` transitório na troca do temporário em algumas execuções;
