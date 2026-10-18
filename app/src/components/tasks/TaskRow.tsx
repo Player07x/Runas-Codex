@@ -142,6 +142,7 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
           canPostpone={canPostpone}
           onStatus={(s) => (setMenu(false), void actions.setStatus(task, s))}
           onPostpone={(days) => (setMenu(false), void actions.postpone(task, days))}
+          onFixed={(days) => (setMenu(false), void actions.setPostponeDate(task, days))}
           onClose={() => setMenu(false)}
         />
       )}
@@ -150,7 +151,7 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
   )
 }
 
-function TaskMenu({ task, statuses, canPostpone, onStatus, onPostpone, onClose }: { task: Task; statuses: Status[]; canPostpone: boolean; onStatus(s: Status): void; onPostpone(days: number): void; onClose(): void }) {
+function TaskMenu({ task, statuses, canPostpone, onStatus, onPostpone, onFixed, onClose }: { task: Task; statuses: Status[]; canPostpone: boolean; onStatus(s: Status): void; onPostpone(days: number): void; onFixed(days: number | null): void; onClose(): void }) {
   return (
     <div className="task-menu card" role="menu" aria-label="Ações da tarefa" onKeyDown={(e) => e.key === "Escape" && onClose()}>
       <span className="eyebrow">Estado</span>
@@ -174,6 +175,16 @@ function TaskMenu({ task, statuses, canPostpone, onStatus, onPostpone, onClose }
               {label}
             </button>
           ))}
+          <span className="eyebrow">Mudar para</span>
+          <button role="menuitem" className="menu-item" onClick={() => onFixed(0)}>
+            Hoje
+          </button>
+          <button role="menuitem" className="menu-item" onClick={() => onFixed(1)}>
+            Amanhã
+          </button>
+          <button role="menuitem" className="menu-item" onClick={() => onFixed(null)}>
+            Tirar a data
+          </button>
         </>
       )}
       <button className="btn sm ghost" onClick={onClose}>

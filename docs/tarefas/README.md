@@ -176,4 +176,4 @@ interface/confiabilidade dos testes foram tratados na beta.5. Validação físic
 
 | Tarefa | Pedido | Situação |
 |---|---|---|
-| Compatibilidade completa com Tasks nas notas e no checklist de preparação; cálculo de tempo livre diário na Agenda | [tasks-tempo-livre.md](tasks-tempo-livre.md) | autorizada em 18/10/2026; Claude Code, `agenda/tasks-tempo-livre` |
+| Compatibilidade completa com Tasks nas notas e no checklist de preparação; cálculo de tempo livre diário na Agenda | [tasks-tempo-livre.md](tasks-tempo-livre.md) | em revisão; Claude Code, `agenda/tasks-tempo-livre` ([matriz](tasks-matriz.md), [ADR 0020](../adr/0020-tasks-e-tempo-livre.md)) |

@@ -55,6 +55,12 @@ export function useTaskActions() {
         return update(task, { [field]: postponedDate(task[field], today, days) })
       },
       setDate: (task: Task, field: DateField, value: string | null) => update(task, { [field]: value }),
+      /** Data fixa no campo do adiar: hoje + `days` dias, ou `null` para tirar a data. */
+      setPostponeDate(task: Task, days: number | null) {
+        const field = postponeField(task, settings.postponeDateField)
+        if (!field) return Promise.resolve()
+        return update(task, { [field]: days === null ? null : postponedDate(null, parseContext(settings).today, days) })
+      },
     }
   }, [readOnly, run, settings])
 }
