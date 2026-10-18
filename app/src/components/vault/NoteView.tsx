@@ -17,6 +17,8 @@ import { hasBookmark } from "../../core/bookmarks"
 import { toggleFavorite, useFavorites } from "../../lib/bookmarks"
 import { useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
+import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
+import { checkboxLines } from "../../markdown/task-checkboxes"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
@@ -321,6 +323,27 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   }
 
   const { body } = splitFrontmatter(draft)
+  // Modo leitura: a caixa clicada é achada pela ordem (a n-ésima caixa do texto); se a contagem não bate, não arrisca.
+  const taskBoxes = useMemo<TaskCheckboxHandler | null>(
+    () =>
+      readOnly
+        ? null
+        : {
+            source: body,
+            onToggle(index, total) {
+              const lines = checkboxLines(draft)
+              const line = lines[index]
+              if (lines.length !== total || line === undefined) {
+                toast("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
+                return
+              }
+              const all = draft.split("\n")
+              all.splice(line, 1, ...toggledTaskLines(all[line]!))
+              setDraft(all.join("\n"))
+            },
+          },
+    [body, draft, readOnly, toast],
+  )
   const status: Record<SaveState, string> = { salvo: "Salvo", pendente: "Editando…", salvando: "Salvando…", conflito: "Conflito", erro: "Erro ao salvar" }
 
   return (
@@ -531,7 +554,9 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
       <div className="editor-body" ref={reader}>
         {mode === "leitura" ? (
           <NoteSetContext.Provider value={noteSet}>
-            {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} showSecrets={showSecrets} /> : <p className="muted">Nota vazia.</p>}
+            <TaskCheckboxContext.Provider value={taskBoxes}>
+              {body.trim() ? <Markdown source={body} space={scopeOf(path).space ?? undefined} showSecrets={showSecrets} /> : <p className="muted">Nota vazia.</p>}
+            </TaskCheckboxContext.Provider>
           </NoteSetContext.Provider>
         ) : (
           <SourceEditor onImageLinkContext={at => { const image = imageLinkAt(index,path,draft,at); if (!image) return false; renameImage(image); return true }} typewriter={typewriter} ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
