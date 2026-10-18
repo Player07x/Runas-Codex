@@ -371,11 +371,16 @@ jobs:
           }
           # O armazenamento compartilhado monta um pouco depois do boot.
           for i in $(seq 1 60); do
-            if adb shell 'mkdir -p /sdcard/Documents && test -d /sdcard/Documents'; then break; fi
+            if adb shell 'mkdir -p /sdcard/Documents/cofre-smoke && echo pronto > /sdcard/Documents/cofre-smoke/.runas-mount-probe && rm /sdcard/Documents/cofre-smoke/.runas-mount-probe'; then break; fi
             sleep 2
           done
-          adb shell test -d /sdcard/Documents
-          adb push desktop/tests/cofre-exemplo /sdcard/Documents/cofre-smoke
+          # O FUSE pode recusar uma cópia enquanto termina de montar; repete sobre a mesma pasta, sem aninhá-la.
+          copied=false
+          for i in $(seq 1 10); do
+            if adb push desktop/tests/cofre-exemplo/. /sdcard/Documents/cofre-smoke/; then copied=true; break; fi
+            sleep 2
+          done
+          test "$copied" = true
           adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
           adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
           adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
