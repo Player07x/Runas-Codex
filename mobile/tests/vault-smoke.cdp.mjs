@@ -33,14 +33,15 @@ async function connect() {
     if (!message.id) return
     const action = pending.get(message.id)
     pending.delete(message.id)
+    clearTimeout(action?.timer)
     if (message.error) action?.reject(new Error(message.error.message))
     else action?.resolve(message.result)
   }
   const send = (method, params = {}) => new Promise((resolve, reject) => {
     const id = ++sequence
-    pending.set(id, { resolve, reject })
+    const timer = setTimeout(() => { if (pending.delete(id)) reject(new Error('Tempo excedido: ' + method)) }, 60000)
+    pending.set(id, { resolve, reject, timer })
     socket.send(JSON.stringify({ id, method, params }))
-    setTimeout(() => { if (pending.delete(id)) reject(new Error('Tempo excedido: ' + method)) }, 60000)
   })
   await send('Runtime.enable')
   const run = async expression => {
@@ -143,7 +144,12 @@ try {
   check('anexo carrega na interface', typeof image === 'string' && image.startsWith('image/'), image)
 
   // ---------- Spike: teclado do Android no CodeMirror ----------
-  await run(`location.hash = '#/notas/' + encodeURIComponent('Notas/Smoke.md'); true`)
+  // As chamadas diretas acima não passam pelo VaultProvider. Uma nota nova de fora chega ao índice com a versão
+  // atual; reutilizar Smoke.md depois de restaurá-la testava uma versão antiga, que o plugin deve mesmo recusar.
+  adb('shell', `echo '# Teclado' > ${deviceVault}/Notas/Teclado.md`)
+  await until(`window.__runasChanges.some(c => c.type === 'changed' && c.entry.path === 'Notas/Teclado.md')`, 150)
+  await run(`location.hash = '#/notas/' + encodeURIComponent('Notas/Teclado.md'); true`)
+  await until(`document.querySelector('.editor-status')?.getAttribute('title') === 'Notas/Teclado.md'`, 150)
   await until(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent))`, 150)
   await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
   await until(`document.querySelector('.cm-content')`, 150)
@@ -153,9 +159,14 @@ try {
   const typed = await until(`document.querySelector('.cm-content').innerText.includes('teclado Android')`, 100).catch(() => false)
   result.metrics.keyboardMs = Date.now() - typedAt
   check('CodeMirror recebe o teclado do Android', Boolean(typed))
-  // Grava depois da pausa na digitação.
-  await sleep(2500)
-  check('o texto digitado é gravado', adb('shell', 'cat', `${deviceVault}/Notas/Smoke.md`).includes('teclado Android'))
+  // Espera a gravação real depois da pausa na digitação, inclusive num emulador mais lento.
+  let saved = ''
+  for (let n = 0; n < 150; n++) {
+    saved = adb('shell', 'cat', `${deviceVault}/Notas/Teclado.md`)
+    if (saved.includes('teclado Android')) break
+    await sleep(100)
+  }
+  check('o texto digitado é gravado', saved.includes('teclado Android'), { disk: saved, status: await run(`document.querySelector('.editor-status')?.textContent`) })
 } catch (error) {
   result.errors.push(String(error && error.stack || error))
 } finally {
