@@ -50,7 +50,8 @@ async function connect() {
   }
   const until = async (expression, tries = 300) => {
     for (let n = 0; n < tries; n++) {
-      const value = await run(`(()=>{try{return (${expression})}catch{return false}})()`)
+      // A espera só precisa da condição: serializar um nó DOM pelo CDP percorre referências do React.
+      const value = await run(`(()=>{try{return Boolean(${expression})}catch{return false}})()`)
       if (value) return value
       await sleep(100)
     }
