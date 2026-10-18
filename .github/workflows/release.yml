@@ -369,7 +369,12 @@ jobs:
             done
             return 1
           }
-          adb shell mkdir -p /sdcard/Documents
+          # O armazenamento compartilhado monta um pouco depois do boot.
+          for i in $(seq 1 60); do
+            if adb shell 'mkdir -p /sdcard/Documents && test -d /sdcard/Documents'; then break; fi
+            sleep 2
+          done
+          adb shell test -d /sdcard/Documents
           adb push desktop/tests/cofre-exemplo /sdcard/Documents/cofre-smoke
           adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
           adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
