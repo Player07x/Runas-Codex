@@ -10,6 +10,8 @@ import { useTaskActions, type TaskActions } from "../../components/tasks/useTask
 import { vaultTasks } from "../../lib/tasks"
 import { useNotesLock } from "../../lib/notes-lock"
 import "../../components/tasks/tasks.css"
+import { useFreeTimePrefs } from "../../lib/free-time"
+import { FreeTimeDialog, FreeTimePanel, shortMinutes, useFreeTime, useNow } from "./FreeTime"
 import { dirname, joinPath, noteName } from "../../core/text"
 import type { VaultIndex } from "../../core/vault-index"
 import { agendaEvents } from "../../lib/agenda-data"
@@ -68,7 +70,10 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const readOnly = vault.info?.readOnly ?? true
   const [poll,setPoll]=useState(false)
   const [view, setViewState] = useState<View>(savedView)
-  const today = useMemo(() => startOfDay(new Date()), [])
+  // Anda de minuto em minuto: o "livre restante" e a virada do dia (hoje muda à meia-noite).
+  const now = useNow()
+  const todayKey = isoDate(new Date(now))
+  const today = useMemo(() => startOfDay(new Date(`${todayKey}T00:00`)), [todayKey])
   const [cursor, setCursor] = useState(today)
   const [selectedDay, setSelectedDay] = useState(today)
   const [selectedKey, setSelectedKey] = useState<string>()
@@ -98,6 +103,14 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const allTasks = useMemo(() => vaultTasks(index, actions.settings, { notesLocked: locked }), [index, vault.version, actions.settings, locked])
   const tasks = useMemo(() => allTasks.filter((t) => !isDone(t) && t.dueDate).sort((a, b) => a.dueDate!.localeCompare(b.dueDate!) || a.description.localeCompare(b.description, "pt-BR")), [allTasks])
   const todayIso = isoDate(today)
+  const freePrefs = useFreeTimePrefs(vault.info?.path)
+  const [freeDialog, setFreeDialog] = useState(false)
+  const freeOf = useFreeTime(freePrefs, events, allTasks, now)
+  const freeLabel = (day: Date) => {
+    const f = freeOf(isoDate(day))
+    return f && !f.unavailable ? shortMinutes(f.freeMinutes) : null
+  }
+  const calendars = useMemo(() => [...new Set(events.map((e) => dirname(e.path)))].sort((a, b) => a.localeCompare(b, "pt-BR")), [events])
 
   // Intervalo visível de cada visão.
   const range = useMemo(() => {
@@ -266,7 +279,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onPick={pick} onCreate={create} />}
+          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
           {(view === "semana" || view === "dia") && (
             <TimeGrid
               days={view === "dia" ? [cursor] : Array.from({ length: 7 }, (_, i) => addDays(range.start, i))}
@@ -277,6 +290,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
               onPickDay={(day) => (setCursor(day), setView("dia"), pickDay(day))}
               onPick={pick}
               onCreate={create}
+              freeLabel={freeLabel}
             />
           )}
           {view === "lista" && <ListView from={cursor} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} />}
@@ -313,6 +327,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
                   <Plus size={14} /> Evento neste dia
                 </button>
               )}
+              <FreeTimePanel day={freeOf(isoDate(selectedDay))} timeZone={freePrefs.timeZone} onConfigure={() => setFreeDialog(true)} />
               <DayTasks tasks={allTasks} day={isoDate(selectedDay)} actions={actions} today={todayIso} />
             </section>
           )}
@@ -374,6 +389,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
         </aside>
       </div>
 
+      {freeDialog && <FreeTimeDialog vault={vault.info?.path} prefs={freePrefs} calendars={calendars} onClose={() => setFreeDialog(false)} />}
       {dialog?.kind === "new" && (
         <EventDialog
           initial={{ date: isoDate(dialog.day), ...(dialog.time ? { startTime: dialog.time } : {}) }}

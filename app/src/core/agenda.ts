@@ -9,7 +9,8 @@ import { noteName } from "./text"
  * `title`, `allDay`, `startTime`/`endTime`, `type` (`single`, `recurring` com `daysOfWeek`, `rrule` com `startDate`
  * e `skipDates`) —, então o Obsidian mostra os mesmos eventos se o plugin estiver ligado. O que o Full Calendar não tem
  * vai em chaves próprias que ele ignora: `local`, `categoria`, `cor`, `lembrete` (minutos antes), `sessao` (link para a
- * nota da sessão) e `contagem` (contagem regressiva na tela inicial). O texto da nota é o lugar das anotações e da
+ * nota da sessão), `contagem` (contagem regressiva na tela inicial) e `ocupado: false` (o evento não tira tempo livre,
+ * como o TRANSP:TRANSPARENT do iCalendar). O texto da nota é o lugar das anotações e da
  * checklist de preparação.
  */
 
@@ -48,6 +49,8 @@ export interface AgendaEvent {
   /** Alvo do link da nota da sessão (`[[alvo]]`). */
   session?: string
   countdown: boolean
+  /** `false`: o evento não ocupa o tempo (livre/ocupado). */
+  busy?: boolean
 }
 
 /** O que a tela de evento edita (e o que um `.ics` importado vira). */
@@ -156,6 +159,7 @@ export function parseEvent(path: string, text: string): AgendaEvent | null {
     reminders: [...new Set(reminders)].sort((a, b) => a - b),
     ...(linkTarget(data.sessao) ? { session: linkTarget(data.sessao) } : {}),
     countdown: data.contagem === true,
+    ...(data.ocupado === false ? { busy: false } : {}),
   }
 }
 
@@ -263,7 +267,7 @@ export function upcomingReminders(events: AgendaEvent[], now: Date, horizonDays 
 // ---------- Evento → nota ----------
 
 /** Chaves que a agenda grava (as demais da nota ficam como estão). */
-const MANAGED = ["title", "allDay", "startTime", "endTime", "type", "date", "endDate", "daysOfWeek", "startRecur", "endRecur", "startDate", "rrule", "skipDates", "completed", "local", "categoria", "cor", "lembrete", "sessao", "contagem"]
+const MANAGED = ["title", "allDay", "startTime", "endTime", "type", "date", "endDate", "daysOfWeek", "startRecur", "endRecur", "startDate", "rrule", "skipDates", "completed", "local", "categoria", "cor", "lembrete", "sessao", "contagem", "ocupado"]
 
 function eventProperties(input: EventInput): Record<string, PropertyValue> {
   const props: Record<string, PropertyValue> = { title: input.title, allDay: input.allDay }
@@ -294,6 +298,7 @@ function eventProperties(input: EventInput): Record<string, PropertyValue> {
   else if (input.reminders.length > 1) props.lembrete = input.reminders.map(String)
   if (input.session) props.sessao = `[[${input.session}]]`
   if (input.countdown) props.contagem = true
+  if (input.busy === false) props.ocupado = false
   return props
 }
 
@@ -362,6 +367,7 @@ export function exportIcs(events: { event: AgendaEvent; notes: string }[], now =
     for (const skip of event.skipDates) vevent.addPropertyWithValue("exdate", icalTime(skip, event.startTime, event.allDay))
     if (event.location) vevent.updatePropertyWithValue("location", event.location)
     if (event.category) vevent.updatePropertyWithValue("categories", event.category)
+    if (event.busy === false) vevent.updatePropertyWithValue("transp", "TRANSPARENT")
     if (notes.trim()) vevent.updatePropertyWithValue("description", notes.trim())
     for (const minutes of event.reminders) {
       const alarm = new ICAL.Component("valarm")
@@ -375,51 +381,87 @@ export function exportIcs(events: { event: AgendaEvent; notes: string }[], now =
   return calendar.toString().replace(/\r?\n/g, "\r\n") + "\r\n"
 }
 
-/** Lê um `.ics`: cada VEVENT vira um evento (sem caminho ainda). Fusos horários do arquivo são respeitados. */
+/**
+ * Lê um `.ics`: cada VEVENT vira um evento (sem caminho ainda). Fusos horários do arquivo são respeitados. Uma ocorrência
+ * alterada (RECURRENCE-ID) vira um evento próprio e a data dela é pulada na série; ocorrências e eventos cancelados
+ * (STATUS:CANCELLED) não entram; TRANSP:TRANSPARENT vira `ocupado: false` (não tira tempo livre).
+ */
 export function importIcs(text: string): EventInput[] {
   const root = new ICAL.Component(ICAL.parse(text))
   for (const zone of root.getAllSubcomponents("vtimezone")) ICAL.TimezoneService.register(zone)
+  const dayOf = (t: ICAL.Time) => (t.isDate ? `${t.year}-${pad(t.month)}-${pad(t.day)}` : isoDate(t.toJSDate()))
+  const cancelled = (vevent: ICAL.Component) => String(vevent.getFirstPropertyValue("status") ?? "").toUpperCase() === "CANCELLED"
   const events: EventInput[] = []
+  const series = new Map<string, EventInput>()
+  const overrides: ICAL.Component[] = []
   for (const vevent of root.getAllSubcomponents("vevent")) {
-    // Exceções de uma recorrência (RECURRENCE-ID) ficam de fora: o evento principal já cobre a série.
-    if (vevent.hasProperty("recurrence-id")) continue
-    const startValue = vevent.getFirstPropertyValue("dtstart") as ICAL.Time | null
-    if (!startValue) continue
-    const allDay = startValue.isDate
-    const start = allDay ? parseDate(`${startValue.year}-${pad(startValue.month)}-${pad(startValue.day)}`) : startValue.toJSDate()
-    const endValue = vevent.getFirstPropertyValue("dtend") as ICAL.Time | null
-    const durationValue = vevent.getFirstPropertyValue("duration") as ICAL.Duration | null
-    let end = endValue ? (endValue.isDate ? parseDate(`${endValue.year}-${pad(endValue.month)}-${pad(endValue.day)}`) : endValue.toJSDate()) : durationValue ? new Date(start.getTime() + durationValue.toSeconds() * 1000) : null
-    if (allDay && end) end = addDays(end, -1) // DTEND de dia inteiro é exclusivo
-    const rrule = vevent.getFirstPropertyValue("rrule") as ICAL.Recur | null
-    let repeat: Repeat = { kind: "none" }
-    if (rrule) {
-      const rule = rrule.toString()
-      const weekly = /^FREQ=WEEKLY;BYDAY=([A-Z,]+)$/.exec(rule)
-      repeat = weekly ? { kind: "weekly", days: weekly[1]!.split(",").map((d) => ICAL_DAYS.indexOf(d)).filter((d) => d >= 0) } : { kind: "rrule", rule }
+    if (vevent.hasProperty("recurrence-id")) {
+      overrides.push(vevent)
+      continue
     }
-    const skipDates = vevent.getAllProperties("exdate").flatMap((p) => p.getValues() as ICAL.Time[]).map((t) => `${t.year}-${pad(t.month)}-${pad(t.day)}`)
-    const reminders = vevent
-      .getAllSubcomponents("valarm")
-      .map((alarm) => alarm.getFirstPropertyValue("trigger"))
-      .filter((t): t is ICAL.Duration => t instanceof ICAL.Duration)
-      .map((t) => Math.max(0, Math.round(-t.toSeconds() / 60)))
-    const categories = vevent.getFirstPropertyValue("categories")
-    const date = isoDate(start)
-    events.push({
-      title: String(vevent.getFirstPropertyValue("summary") ?? "").trim() || "Evento",
-      allDay,
-      date,
-      ...(end && isoDate(end) > date ? { endDate: isoDate(end) } : {}),
-      ...(allDay ? {} : { startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`, ...(end ? { endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}` } : {}) }),
-      repeat: repeat.kind === "weekly" && !repeat.days.length ? { kind: "none" } : repeat,
-      skipDates,
-      ...(vevent.getFirstPropertyValue("location") ? { location: String(vevent.getFirstPropertyValue("location")) } : {}),
-      ...(categories ? { category: String(categories) } : {}),
-      reminders: [...new Set(reminders)].sort((a, b) => a - b),
-      countdown: false,
-      notes: String(vevent.getFirstPropertyValue("description") ?? ""),
-    })
+    if (cancelled(vevent)) continue
+    const input = readIcsEvent(vevent, dayOf)
+    if (!input) continue
+    events.push(input)
+    const uid = vevent.getFirstPropertyValue("uid")
+    if (uid) series.set(String(uid), input)
+  }
+  for (const vevent of overrides) {
+    const id = vevent.getFirstPropertyValue("recurrence-id") as ICAL.Time | null
+    const master = series.get(String(vevent.getFirstPropertyValue("uid") ?? ""))
+    if (id && master && master.repeat.kind !== "none") master.skipDates = [...new Set([...master.skipDates, dayOf(id)])].sort()
+    if (cancelled(vevent)) continue
+    const moved = readIcsEvent(vevent, dayOf)
+    if (moved) events.push({ ...moved, repeat: { kind: "none" }, skipDates: [] })
+  }
+  // O Full Calendar só pula datas em regras RRULE: a semanal com datas puladas vira a regra equivalente.
+  for (const input of events) {
+    if (input.repeat.kind === "weekly" && input.skipDates.length) {
+      const until = input.until ? `;UNTIL=${input.until.replace(/-/g, "")}` : ""
+      input.repeat = { kind: "rrule", rule: `FREQ=WEEKLY;BYDAY=${input.repeat.days.map((d) => ICAL_DAYS[d]).join(",")}${until}` }
+      delete input.until
+    }
   }
   return events
+}
+
+function readIcsEvent(vevent: ICAL.Component, dayOf: (t: ICAL.Time) => string): EventInput | null {
+  const startValue = vevent.getFirstPropertyValue("dtstart") as ICAL.Time | null
+  if (!startValue) return null
+  const allDay = startValue.isDate
+  const start = allDay ? parseDate(`${startValue.year}-${pad(startValue.month)}-${pad(startValue.day)}`) : startValue.toJSDate()
+  const endValue = vevent.getFirstPropertyValue("dtend") as ICAL.Time | null
+  const durationValue = vevent.getFirstPropertyValue("duration") as ICAL.Duration | null
+  let end = endValue ? (endValue.isDate ? parseDate(`${endValue.year}-${pad(endValue.month)}-${pad(endValue.day)}`) : endValue.toJSDate()) : durationValue ? new Date(start.getTime() + durationValue.toSeconds() * 1000) : null
+  if (allDay && end) end = addDays(end, -1) // DTEND de dia inteiro é exclusivo
+  const rrule = vevent.getFirstPropertyValue("rrule") as ICAL.Recur | null
+  let repeat: Repeat = { kind: "none" }
+  if (rrule) {
+    const rule = rrule.toString()
+    const weekly = /^FREQ=WEEKLY;BYDAY=([A-Z,]+)$/.exec(rule)
+    repeat = weekly ? { kind: "weekly", days: weekly[1]!.split(",").map((d) => ICAL_DAYS.indexOf(d)).filter((d) => d >= 0) } : { kind: "rrule", rule }
+  }
+  const skipDates = vevent.getAllProperties("exdate").flatMap((p) => p.getValues() as ICAL.Time[]).map(dayOf)
+  const reminders = vevent
+    .getAllSubcomponents("valarm")
+    .map((alarm) => alarm.getFirstPropertyValue("trigger"))
+    .filter((t): t is ICAL.Duration => t instanceof ICAL.Duration)
+    .map((t) => Math.max(0, Math.round(-t.toSeconds() / 60)))
+  const categories = vevent.getFirstPropertyValue("categories")
+  const date = isoDate(start)
+  return {
+    title: String(vevent.getFirstPropertyValue("summary") ?? "").trim() || "Evento",
+    allDay,
+    date,
+    ...(end && isoDate(end) > date ? { endDate: isoDate(end) } : {}),
+    ...(allDay ? {} : { startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`, ...(end ? { endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}` } : {}) }),
+    repeat: repeat.kind === "weekly" && !repeat.days.length ? { kind: "none" } : repeat,
+    skipDates: [...new Set(skipDates)].sort(),
+    ...(vevent.getFirstPropertyValue("location") ? { location: String(vevent.getFirstPropertyValue("location")) } : {}),
+    ...(categories ? { category: String(categories) } : {}),
+    reminders: [...new Set(reminders)].sort((a, b) => a - b),
+    countdown: false,
+    ...(String(vevent.getFirstPropertyValue("transp") ?? "").toUpperCase() === "TRANSPARENT" ? { busy: false } : {}),
+    notes: String(vevent.getFirstPropertyValue("description") ?? ""),
+  }
 }

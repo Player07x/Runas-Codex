@@ -68,6 +68,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
   const [session, setSession] = useState(initial.session ?? "")
   const [createSession, setCreateSession] = useState("")
   const [countdown, setCountdown] = useState(initial.countdown ?? false)
+  const [occupies, setOccupies] = useState(initial.busy !== false)
   const [notes, setNotes] = useState(initial.notes ?? "")
   const [addingTask, setAddingTask] = useState(false)
   const tasksSettings = useTasksSettings(useTasksVault().vault?.info?.path)
@@ -111,6 +112,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
       reminders: [...new Set(reminders)].sort((a, b) => a - b),
       ...(session.trim() ? { session: session.trim().replace(/\.md$/i, "") } : {}),
       countdown,
+      ...(occupies ? {} : { busy: false }),
       notes,
     }
     try {
@@ -307,6 +309,10 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
         <div className="row between">
           <span className="small">Contagem regressiva na tela inicial</span>
           <Switch on={countdown} onChange={setCountdown} label="Contagem regressiva" />
+        </div>
+        <div className="row between">
+          <span className="small">Ocupa o tempo (conta no tempo livre)</span>
+          <Switch on={occupies} onChange={setOccupies} label="Ocupa o tempo" />
         </div>
         {!editing && (
           <label className="field">
