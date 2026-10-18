@@ -194,7 +194,13 @@ try {
   // Espera a gravação real depois da pausa na digitação, inclusive num emulador mais lento.
   let saved = ''
   for (let n = 0; n < 150; n++) {
-    saved = adb('shell', 'cat', `${deviceVault}/Notas/Teclado.md`)
+    try { saved = adb('shell', 'cat', `${deviceVault}/Notas/Teclado.md`) }
+    catch (error) {
+      // O SAF publica por duas renomeações: uma leitura externa pode cair no intervalo entre elas.
+      // Só repete esse caso; a frase completa ainda precisa aparecer no arquivo dentro do prazo.
+      if (!saf || !String(error.stderr ?? '').includes('No such file or directory')) throw error
+      saved = ''
+    }
     if (saved.includes('teclado Android')) break
     await sleep(100)
   }
