@@ -463,3 +463,24 @@ aparelho físico acima continua necessária.
 - Em campanha antiga, adicionar um artigo e desvincular perfis antigos até esvaziar o elenco; reabrir a campanha e
   conferir os vínculos e as presenças históricas. Não há migração automática de arquivos antigos.
 - Conferir o formulário e os botões em 320 px, tablet e desktop, nos temas claro/escuro e em dispositivos físicos.
+
+## C8 — Android com o cofre real (ADR 0015)
+
+No celular (Android 11 ou mais novo, de preferência um aparelho médio), com o APK do PR da C8:
+
+- [ ] Configurações › Cofre › Abrir pasta: o Android pede "acesso a todos os arquivos"; depois, escolher a pasta do
+  cofre do Obsidian (ex.: `Documents/Obsidian/…`). As notas aparecem; o cofre abre em somente leitura.
+- [ ] Liberar a gravação, editar uma nota e abrir no Obsidian do celular: o texto é o mesmo; nada mais mudou no cofre
+  (conferir com o Syncthing/Git, se usar).
+- [ ] Com o Obsidian do celular, mudar uma nota aberta no Runas-Codex: a nota recarrega (ou avisa o conflito, se havia
+  edição pendente).
+- [ ] Digitar com o Gboard no editor (acentos, sugestões, apagar palavras inteiras): o texto sai certo.
+- [ ] Tempo para abrir um cofre grande (anotar quantas notas e quantos segundos).
+- [ ] Imagens das notas aparecem; tocar num PDF ou áudio abre no app do Android.
+- [ ] Exportar o .ics da Agenda: o Android pergunta onde salvar.
+- [ ] Compartilhar um link do navegador e uma foto da galeria com o Runas-Codex: vira nota em
+  `Notas/Caixa de entrada/`, com a imagem embutida.
+- [ ] Widget da Agenda na tela inicial: mostra os próximos eventos; tocar abre a Agenda.
+- [ ] Lembrete de um evento do cofre real dispara com o app fechado.
+- [ ] Configurações › Criar cofre numa pasta vazia: nasce com as pastas dos espaços e `.obsidian`, já gravável.
+- [ ] Depois de cadastrar os segredos da chave (ADR 0015, seção 6): a Release traz o APK assinado.

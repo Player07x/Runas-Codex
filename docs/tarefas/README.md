@@ -171,3 +171,9 @@ Por pedido posterior do dono, a entrega é reunida num PR integrado e numa nova 
 As branches de fase e os commits continuam preservados para revisão. A mesclagem na main continua a cargo do dono.
 A revisão complementar foi criada em chat próprio e concluiu a auditoria do snapshot d6ea6bd; seus três achados de
 interface/confiabilidade dos testes foram tratados na beta.5. Validação física e C8/X7 continuam pendentes.
+
+## C8 — Android completo (18/10/2026)
+
+| Fase | Responsável | Branch | Situação |
+|---|---|---|---|
+| **C8** A1: cofre real, spikes, emulador no CI, APK assinado | Claude Code | `android/a1-cofre` | em revisão ([ADR 0015](../adr/0015-android.md)) |

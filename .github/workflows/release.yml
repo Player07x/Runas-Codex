@@ -153,6 +153,36 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # APK de release assinado com a chave do dono (segredos ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+      # ANDROID_KEY_ALIAS e ANDROID_KEY_PASSWORD; passo a passo em docs/adr/0015-android.md). Sem eles, fica só o de
+      # depuração, como antes.
+      - name: APK de release assinado
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          RUNAS_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RUNAS_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RUNAS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::notice::Sem a chave de assinatura nos segredos do repositório: só o APK de depuração."
+            exit 0
+          fi
+          export RUNAS_KEYSTORE_FILE="$RUNNER_TEMP/runas-release.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNAS_KEYSTORE_FILE"
+          (cd mobile/android && ./gradlew assembleRelease --no-daemon)
+          rm -f "$RUNAS_KEYSTORE_FILE"
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$apksigner" verify --print-certs mobile/android/app/build/outputs/apk/release/app-release.apk
+          version="$(node -p "require('./package.json').version")"
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk "Runas-Codex-$version-android.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-android-assinado
+          path: Runas-Codex-*-android.apk
+          if-no-files-found: ignore
+          retention-days: 14
+
   publish:
     # Publica só depois de todos os builds habilitados nesta versão passarem.
     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') && needs.linux.result == 'success' && needs.windows.result == 'success' && (needs.android.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android.result == 'skipped')) }}
@@ -262,6 +292,117 @@ jobs:
         with:
           name: Runas-Codex-android-toque
           path: /tmp/runas-touch-webview
+          if-no-files-found: warn
+          retention-days: 14
+
+  android-vault:
+    # C8 (docs/adr/0015-android.md): testes de unidade do plugin do cofre e, no emulador, o cofre real aberto e editado
+    # pelo app (o equivalente Android do `--smoke --write`), mais os spikes de teclado e de 5 mil notas. Roda nos PRs de
+    # branches `android/*` (ou com o Android ligado em release-targets.json) e na execução manual.
+    needs: targets
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (needs.targets.outputs.android == 'true' || startsWith(github.head_ref, 'android/')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run sync -w @runas-codex/mobile
+      - name: Habilitar depuração só no APK desta verificação
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs'
+          const path='mobile/android/app/src/main/assets/capacitor.config.json'
+          const config=JSON.parse(readFileSync(path,'utf8'))
+          config.android={...config.android,webContentsDebuggingEnabled:true}
+          writeFileSync(path,JSON.stringify(config))
+          JS
+      - name: Testes de unidade do cofre e APK de teste
+        working-directory: mobile/android
+        run: ./gradlew testDebugUnitTest assembleDebug --no-daemon
+      - name: Preparar emulador Android 35
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/runas-avd"
+          mkdir -p "$ANDROID_AVD_HOME" /tmp/runas-android-vault
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          sudo chmod 666 /dev/kvm
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-cofre -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --path "$ANDROID_AVD_HOME/runas-cofre.avd"
+          test -f "$ANDROID_AVD_HOME/runas-cofre.avd/config.ini"
+          cat > "$ANDROID_AVD_HOME/runas-cofre.ini" <<EOF
+          avd.ini.encoding=UTF-8
+          path=$ANDROID_AVD_HOME/runas-cofre.avd
+          target=android-35
+          EOF
+          "$ANDROID_HOME/emulator/emulator" -avd runas-cofre -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-vault/emulator.log 2>&1 &
+          timeout 120 adb wait-for-device
+          for i in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          adb shell input keyevent 82
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+      - name: Smoke do cofre real
+        run: |
+          devtools() {
+            for i in $(seq 1 90); do
+              pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r')
+              if [ -n "$pid" ]; then
+                adb forward tcp:9224 "localabstract:webview_devtools_remote_$pid"
+                if curl --silent --fail http://127.0.0.1:9224/json > /dev/null; then return 0; fi
+              fi
+              sleep 1
+            done
+            return 1
+          }
+          adb shell mkdir -p /sdcard/Documents
+          adb push desktop/tests/cofre-exemplo /sdcard/Documents/cofre-smoke
+          adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
+          adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-smoke --ez runasWritable true
+          devtools
+          node mobile/tests/vault-smoke.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault /sdcard/Documents/cofre-smoke desktop/tests/cofre-exemplo
+      - name: Spike — cofre de 5 mil notas
+        run: |
+          adb shell am force-stop dev.runas.codex
+          adb shell 'mkdir -p /sdcard/Documents/cofre-5000/Notas && cd /sdcard/Documents/cofre-5000/Notas && for i in $(seq 1 5000); do printf "# Nota %s\n\nLigada a [[Nota %s]] e #tag%s.\n\n- [ ] tarefa %s\n" $i $((i+1)) $((i%50)) $i > "Nota $i.md"; done'
+          start=$(date +%s%3N)
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-5000
+          for i in $(seq 1 90); do
+            pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r')
+            if [ -n "$pid" ]; then
+              adb forward tcp:9224 "localabstract:webview_devtools_remote_$pid"
+              if curl --silent --fail http://127.0.0.1:9224/json > /dev/null; then break; fi
+            fi
+            sleep 0.5
+          done
+          node mobile/tests/vault-index.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault 5000 "$start"
+      - name: Registro do Android
+        if: always()
+        run: adb logcat -d > /tmp/runas-android-vault/logcat.txt 2>&1 || true
+      - name: Guardar o resultado do cofre no Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-android-cofre
+          path: |
+            /tmp/runas-android-vault
+            mobile/android/app/build/reports/tests
           if-no-files-found: warn
           retention-days: 14
 
