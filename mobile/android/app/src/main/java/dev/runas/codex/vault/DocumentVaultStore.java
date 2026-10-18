@@ -57,7 +57,12 @@ final class DocumentVaultStore implements VaultFs {
     private static String path(String value, boolean writing) throws VaultError {
         List<String> parts = VaultStore.split(value);
         if (writing) for (String part : parts) if (part.startsWith(".")) throw new VaultError("O app não grava em pastas ou arquivos ocultos: " + value);
-        return String.join("/", parts);
+        StringBuilder normalized = new StringBuilder();
+        for (String part : parts) {
+            if (normalized.length() > 0) normalized.append('/');
+            normalized.append(part);
+        }
+        return normalized.toString();
     }
 
     private static String parent(String path) { int slash = path.lastIndexOf('/'); return slash < 0 ? "" : path.substring(0, slash); }

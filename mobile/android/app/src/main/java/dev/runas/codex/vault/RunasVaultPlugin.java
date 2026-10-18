@@ -66,6 +66,7 @@ public class RunasVaultPlugin extends Plugin {
     private static final long MAX_SHARED_BYTES = 20L * 1024 * 1024;
 
     private VaultFs store;
+    private String openError;
     private boolean pickSaf;
     private VaultWatcher watcher;
     private boolean testVault;
@@ -92,6 +93,7 @@ public class RunasVaultPlugin extends Plugin {
                 } catch (IOException | SecurityException e) {
                     // Permissão revogada ou pasta removida: a interface oferece escolher novamente.
                     store = null;
+                    openError = e.getMessage();
                 }
             }
         }
@@ -111,6 +113,7 @@ public class RunasVaultPlugin extends Plugin {
     private void open(VaultFs next) {
         if (watcher != null) watcher.stop();
         store = next;
+        openError = null;
         watcher = new VaultWatcher(next, (changed, deleted) -> {
             if (store != next) return;
             JSArray list = new JSArray();
@@ -182,6 +185,10 @@ public class RunasVaultPlugin extends Plugin {
 
     @PluginMethod
     public void current(PluginCall call) {
+        if (openError != null) {
+            call.reject(openError + " Escolha novamente a pasta em Configurações.");
+            return;
+        }
         call.resolve(info());
     }
 
