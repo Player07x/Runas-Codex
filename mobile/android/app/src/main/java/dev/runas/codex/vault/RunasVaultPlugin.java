@@ -20,6 +20,7 @@ import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
 import androidx.activity.result.ActivityResult;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 
 import com.getcapacitor.JSArray;
@@ -64,7 +65,8 @@ public class RunasVaultPlugin extends Plugin {
     private static final long DAY_MS = 24L * 60 * 60 * 1000;
     private static final long MAX_SHARED_BYTES = 20L * 1024 * 1024;
 
-    private VaultStore store;
+    private VaultFs store;
+    private boolean pickSaf;
     private VaultWatcher watcher;
     private boolean testVault;
     private boolean testWritable;
@@ -79,12 +81,25 @@ public class RunasVaultPlugin extends Plugin {
         if (debuggable && intent != null && intent.getStringExtra("runasVault") != null) {
             testVault = true;
             testWritable = intent.getBooleanExtra("runasWritable", false);
-            open(new File(intent.getStringExtra("runasVault")));
+            open(new VaultStore(new File(intent.getStringExtra("runasVault"))));
         } else {
             String saved = prefs().getString("path", null);
-            if (saved != null && new File(saved).isDirectory() && hasAccess()) open(new File(saved));
+            if (saved != null) {
+                try {
+                    if ("saf".equals(prefs().getString("mode", "direct"))) {
+                        open(openSaf(Uri.parse(saved)));
+                    } else if (new File(saved).isDirectory() && hasAccess()) open(new VaultStore(new File(saved)));
+                } catch (IOException | SecurityException e) {
+                    // Permissão revogada ou pasta removida: a interface oferece escolher novamente.
+                    store = null;
+                }
+            }
         }
         handleShare(intent);
+    }
+
+    private DocumentVaultStore openSaf(Uri tree) throws IOException {
+        return new DocumentVaultStore(new SafDocuments(getContext().getContentResolver(), tree), new File(getContext().getFilesDir(), "vault-transactions"));
     }
 
     private SharedPreferences prefs() {
@@ -93,10 +108,11 @@ public class RunasVaultPlugin extends Plugin {
 
     // ---------- Cofre aberto ----------
 
-    private void open(File root) {
+    private void open(VaultFs next) {
         if (watcher != null) watcher.stop();
-        store = new VaultStore(root);
-        watcher = new VaultWatcher(store, (changed, deleted) -> {
+        store = next;
+        watcher = new VaultWatcher(next, (changed, deleted) -> {
+            if (store != next) return;
             JSArray list = new JSArray();
             for (VaultStore.Entry e : changed) {
                 JSObject change = new JSObject();
@@ -121,7 +137,7 @@ public class RunasVaultPlugin extends Plugin {
         if (store == null) return false;
         if (testVault) return testWritable;
         Set<String> list = prefs().getStringSet("writable", new HashSet<>());
-        return list.contains(store.root().getAbsolutePath());
+        return list.contains(store.identity());
     }
 
     private JSObject info() {
@@ -131,20 +147,21 @@ public class RunasVaultPlugin extends Plugin {
             return out;
         }
         JSObject vault = new JSObject();
-        vault.put("name", store.root().getName());
-        vault.put("path", store.root().getAbsolutePath());
+        vault.put("name", store.name());
+        vault.put("path", store.identity());
         vault.put("readOnly", !writable());
+        vault.put("mode", store.mode());
         out.put("vault", vault);
         return out;
     }
 
-    private VaultStore requireStore() throws VaultStore.VaultError {
+    private VaultFs requireStore() throws VaultStore.VaultError {
         if (store == null) throw new VaultStore.VaultError("Nenhum cofre aberto. Escolha a pasta em Configurações.");
         return store;
     }
 
-    private VaultStore writableStore() throws IOException {
-        VaultStore s = requireStore();
+    private VaultFs writableStore() throws IOException {
+        VaultFs s = requireStore();
         if (!writable()) throw new VaultStore.VaultError("Cofre em somente leitura. Libere a gravação em Configurações › Cofre.");
         dailyBackup(s);
         return s;
@@ -155,6 +172,7 @@ public class RunasVaultPlugin extends Plugin {
         o.put("path", e.path);
         o.put("size", e.size);
         o.put("mtime", e.mtime);
+        if (e.uri != null) o.put("uri", e.uri);
         return o;
     }
 
@@ -184,7 +202,12 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void choose(PluginCall call) {
         pickMode = "choose";
-        withAccess(call);
+        // O CI usa o seletor real e a permissão persistente. Os parâmetros de teste só valem no APK depurável.
+        boolean debug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (debug && Boolean.TRUE.equals(call.getBoolean("saf", false))) {
+            pickSaf = true;
+            pickFolder(call);
+        } else withAccess(call);
     }
 
     @PluginMethod
@@ -194,7 +217,8 @@ public class RunasVaultPlugin extends Plugin {
     }
 
     private void withAccess(PluginCall call) {
-        if (hasAccess()) {
+        pickSaf = !hasAccess() && prefs().getBoolean("preferSaf", false);
+        if (pickSaf || hasAccess()) {
             pickFolder(call);
             return;
         }
@@ -222,11 +246,26 @@ public class RunasVaultPlugin extends Plugin {
 
     private void afterAccess(PluginCall call) {
         if (hasAccess()) pickFolder(call);
-        else call.reject("Sem acesso aos arquivos: o app precisa de “acesso a todos os arquivos” para abrir o cofre direto na pasta (como o Obsidian).");
+        else getActivity().runOnUiThread(() -> new AlertDialog.Builder(getActivity())
+            .setTitle("Abrir pelo seletor de pastas")
+            .setMessage("Você pode abrir uma pasta local sem liberar o acesso a todos os arquivos. O app usará apenas a pasta escolhida; a leitura de cofres grandes pode levar mais tempo.")
+            .setPositiveButton("Escolher pasta", (dialog, which) -> {
+                prefs().edit().putBoolean("preferSaf", true).apply();
+                pickSaf = true;
+                pickFolder(call);
+            })
+            .setNegativeButton("Cancelar", (dialog, which) -> call.resolve(info()))
+            .setOnCancelListener(dialog -> call.resolve(info()))
+            .show());
     }
 
     private void pickFolder(PluginCall call) {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+            .putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        boolean debug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        String initial = debug ? call.getString("initialUri", null) : null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && initial != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(initial));
         startActivityForResult(call, intent, "folderResult");
     }
 
@@ -236,27 +275,41 @@ public class RunasVaultPlugin extends Plugin {
             call.resolve(info());
             return;
         }
-        String path = treeToPath(result.getData().getData());
-        if (path == null) {
-            call.reject("Escolha uma pasta da memória interna ou do cartão (não um atalho como Downloads ou Drive).");
-            return;
-        }
-        File root = new File(path);
+        Uri uri = result.getData().getData();
+        String mode = pickSaf ? "saf" : prefs().getString("mode:" + uri, "direct");
         try {
-            if (!root.isDirectory()) throw new VaultStore.VaultError("A pasta escolhida não está acessível: " + path);
+            VaultFs selected;
+            if ("saf".equals(mode)) {
+                int flags = result.getData().getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                if ((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0 || (flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == 0) {
+                    throw new VaultStore.VaultError("Escolha uma pasta local com permissão de leitura e gravação.");
+                }
+                getContext().getContentResolver().takePersistableUriPermission(uri, flags);
+                DocumentVaultStore documents = openSaf(uri);
+                if (pickMode.equals("create")) documents.initialize();
+                selected = documents;
+            } else {
+                String path = treeToPath(uri);
+                if (path == null) throw new VaultStore.VaultError("Escolha uma pasta da memória interna ou do cartão.");
+                File root = new File(path);
+                if (!root.isDirectory()) throw new VaultStore.VaultError("A pasta escolhida não está acessível: " + path);
+                if (pickMode.equals("create")) {
+                    String[] names = root.list();
+                    if (names != null) for (String name : names) if (!name.startsWith(".")) throw new VaultStore.VaultError("Escolha uma pasta vazia para o cofre novo.");
+                    VaultStore.createVault(root);
+                }
+                selected = new VaultStore(root);
+            }
             if (pickMode.equals("create")) {
-                String[] names = root.list();
-                if (names != null) for (String name : names) if (!name.startsWith(".")) throw new VaultStore.VaultError("Escolha uma pasta vazia para o cofre novo (para abrir um cofre que já existe, use “Abrir pasta”).");
-                VaultStore.createVault(root);
                 Set<String> list = new HashSet<>(prefs().getStringSet("writable", new HashSet<>()));
-                list.add(root.getAbsolutePath());
+                list.add(selected.identity());
                 prefs().edit().putStringSet("writable", list).apply();
             }
             testVault = false;
-            prefs().edit().putString("path", root.getAbsolutePath()).apply();
-            open(root);
+            prefs().edit().putString("path", selected.identity()).putString("mode", selected.mode()).putString("mode:" + uri, selected.mode()).apply();
+            open(selected);
             call.resolve(info());
-        } catch (IOException e) {
+        } catch (IOException | SecurityException e) {
             fail(call, e);
         }
     }
@@ -275,7 +328,7 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void setWritable(PluginCall call) {
         try {
-            VaultStore s = requireStore();
+            VaultFs s = requireStore();
             boolean on = Boolean.TRUE.equals(call.getBoolean("writable", false));
             if (testVault) {
                 testWritable = on;
@@ -283,8 +336,8 @@ public class RunasVaultPlugin extends Plugin {
                 // Liberar a gravação faz um backup antes, para poder voltar atrás.
                 if (on) s.backup(backupFolder(s), 15);
                 Set<String> list = new HashSet<>(prefs().getStringSet("writable", new HashSet<>()));
-                if (on) list.add(s.root().getAbsolutePath());
-                else list.remove(s.root().getAbsolutePath());
+                if (on) list.add(s.identity());
+                else list.remove(s.identity());
                 prefs().edit().putStringSet("writable", list).apply();
             }
             call.resolve(info());
@@ -342,7 +395,7 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void write(PluginCall call) {
         try {
-            VaultStore s = writableStore();
+            VaultFs s = writableStore();
             String path = call.getString("path");
             VaultStore.Entry entry = s.writeText(path, call.getString("content", ""), expectedOf(call), createOnly(call));
             if (watcher != null) watcher.remember(entry);
@@ -367,7 +420,7 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void writeBinary(PluginCall call) {
         try {
-            VaultStore s = writableStore();
+            VaultFs s = writableStore();
             byte[] bytes = Base64.decode(call.getString("base64", ""), Base64.DEFAULT);
             VaultStore.Entry entry = s.writeBinary(call.getString("path"), bytes, expectedOf(call), createOnly(call));
             if (watcher != null) watcher.remember(entry);
@@ -390,7 +443,7 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void rename(PluginCall call) {
         try {
-            VaultStore s = writableStore();
+            VaultFs s = writableStore();
             String from = call.getString("from");
             String to = call.getString("to");
             if (watcher != null) watcher.forget(from);
@@ -409,7 +462,7 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void trash(PluginCall call) {
         try {
-            VaultStore s = writableStore();
+            VaultFs s = writableStore();
             String path = call.getString("path");
             if (watcher != null) watcher.forget(path);
             s.trash(path);
@@ -457,14 +510,14 @@ public class RunasVaultPlugin extends Plugin {
 
     // ---------- Backups ----------
 
-    private File backupFolder(VaultStore s) throws IOException {
+    private File backupFolder(VaultFs s) throws IOException {
         File base = getContext().getExternalFilesDir("backups");
         if (base == null) base = new File(getContext().getFilesDir(), "backups");
-        return VaultStore.backupFolder(base, s.root());
+        return s instanceof VaultStore ? VaultStore.backupFolder(base, ((VaultStore) s).root()) : VaultStore.backupFolder(base, s.identity());
     }
 
     /** Backup automático antes da primeira gravação de cada dia. */
-    private void dailyBackup(VaultStore s) throws IOException {
+    private void dailyBackup(VaultFs s) throws IOException {
         if (testVault) return;
         File folder = backupFolder(s);
         List<VaultStore.Backup> all = VaultStore.listBackups(folder);
@@ -483,7 +536,7 @@ public class RunasVaultPlugin extends Plugin {
     @PluginMethod
     public void backup(PluginCall call) {
         try {
-            VaultStore s = requireStore();
+            VaultFs s = requireStore();
             call.resolve(backupJson(s.backup(backupFolder(s), 15)));
         } catch (IOException e) {
             fail(call, e);
@@ -529,8 +582,8 @@ public class RunasVaultPlugin extends Plugin {
             String ext = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1).toLowerCase(java.util.Locale.ROOT) : "";
             for (String part : path.split("/")) if (part.startsWith(".")) throw new VaultStore.VaultError("“" + path + "” não é um anexo que o app abre.");
             if (!OPENABLE.contains(ext)) throw new VaultStore.VaultError("“" + path + "” não é um anexo que o app abre.");
-            File file = requireStore().resolveInside(path);
-            Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", file);
+            String source = requireStore().source(path);
+            Uri uri = source.startsWith("content://") ? Uri.parse(source) : FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", new File(source));
             String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
             Intent intent = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime != null ? mime : "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             getActivity().startActivity(Intent.createChooser(intent, "Abrir com"));

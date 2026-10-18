@@ -402,6 +402,31 @@ jobs:
             sleep 0.5
           done
           node mobile/tests/vault-index.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault 5000 "$start"
+      - name: Escolher o cofre pelo SAF sem acesso a todos os arquivos
+        run: |
+          adb shell am force-stop dev.runas.codex
+          adb shell mkdir -p /sdcard/Documents/cofre-smoke-saf
+          adb push desktop/tests/cofre-exemplo/. /sdcard/Documents/cofre-smoke-saf/
+          adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE deny
+          adb shell am start -n dev.runas.codex/.MainActivity
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/vault-saf.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/saf /sdcard/Documents/cofre-smoke-saf true
+      - name: Smoke do cofre pelo SAF com a permissão persistente
+        run: |
+          adb shell am force-stop dev.runas.codex
+          adb shell am start -n dev.runas.codex/.MainActivity
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/vault-smoke.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/saf /sdcard/Documents/cofre-smoke-saf desktop/tests/cofre-exemplo saf
+      - name: Escolher as 5 mil notas pelo SAF
+        run: |
+          node mobile/tests/vault-saf.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/saf/index-picker /sdcard/Documents/cofre-5000 false
+      - name: Spike — reabrir as 5 mil notas pelo SAF
+        run: |
+          adb shell am force-stop dev.runas.codex
+          start=$(date +%s%3N)
+          adb shell am start -n dev.runas.codex/.MainActivity
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/vault-index.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/saf 5000 "$start"
       - name: Registro do Android
         if: always()
         run: adb logcat -d > /tmp/runas-android-vault/logcat.txt 2>&1 || true

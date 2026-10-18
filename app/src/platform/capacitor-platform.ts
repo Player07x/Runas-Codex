@@ -1,5 +1,5 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core"
-import type { BackupInfo, Platform, RoomHostInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
+import type { BackupInfo, Platform, RoomHostInfo, VaultEntry, VaultInfo } from "./platform"
 import { onAndroidReminderOpen, scheduleOnAndroid } from "./reminders"
 
 /**
@@ -9,6 +9,9 @@ import { onAndroidReminderOpen, scheduleOnAndroid } from "./reminders"
  */
 
 type Expected = { mtime: number; size: number } | null | undefined
+type NativeEntry = VaultEntry & { uri?: string }
+type NativeInfo = VaultInfo & { mode?: "direct" | "saf" }
+type NativeChange = { type: "changed"; entry: NativeEntry } | { type: "deleted"; path: string }
 
 export interface SharedItem {
   text?: string
@@ -17,21 +20,21 @@ export interface SharedItem {
 }
 
 interface RunasVaultPlugin {
-  current(): Promise<{ vault: VaultInfo | null }>
-  choose(): Promise<{ vault: VaultInfo | null }>
-  create(): Promise<{ vault: VaultInfo | null }>
+  current(): Promise<{ vault: NativeInfo | null }>
+  choose(): Promise<{ vault: NativeInfo | null }>
+  create(): Promise<{ vault: NativeInfo | null }>
   access(): Promise<{ granted: boolean }>
-  setWritable(options: { writable: boolean }): Promise<{ vault: VaultInfo | null }>
-  list(options: { prefix?: string }): Promise<{ entries: VaultEntry[] }>
+  setWritable(options: { writable: boolean }): Promise<{ vault: NativeInfo | null }>
+  list(options: { prefix?: string }): Promise<{ entries: NativeEntry[] }>
   read(options: { paths: string[] }): Promise<{ texts: Record<string, string> }>
-  write(options: { path: string; content: string; expected?: { mtime: number; size: number } | null }): Promise<VaultEntry>
+  write(options: { path: string; content: string; expected?: { mtime: number; size: number } | null }): Promise<NativeEntry>
   readBinary(options: { path: string }): Promise<{ base64: string }>
-  writeBinary(options: { path: string; base64: string; expected?: { mtime: number; size: number } | null }): Promise<VaultEntry>
+  writeBinary(options: { path: string; base64: string; expected?: { mtime: number; size: number } | null }): Promise<NativeEntry>
   createFolder(options: { path: string }): Promise<void>
   rename(options: { from: string; to: string }): Promise<void>
   trash(options: { path: string }): Promise<void>
   listTrash(): Promise<{ entries: VaultEntry[] }>
-  restoreTrash(options: { path: string; target: string }): Promise<VaultEntry>
+  restoreTrash(options: { path: string; target: string }): Promise<NativeEntry>
   installSnippet(options: { css: string }): Promise<{ path: string }>
   backup(): Promise<BackupInfo>
   listBackups(): Promise<{ backups: BackupInfo[] }>
@@ -40,7 +43,7 @@ interface RunasVaultPlugin {
   saveAs(options: { name: string; mime: string; base64: string }): Promise<{ name: string | null }>
   appVersion(): Promise<{ version: string }>
   setAgendaWidget(options: { items: { when: string; title: string }[] }): Promise<void>
-  addListener(event: "change", listener: (data: { changes: VaultChange[] }) => void): Promise<PluginListenerHandle>
+  addListener(event: "change", listener: (data: { changes: NativeChange[] }) => void): Promise<PluginListenerHandle>
   addListener(event: "share", listener: (data: SharedItem) => void): Promise<PluginListenerHandle>
   addListener(event: "open", listener: (data: { route: string }) => void): Promise<PluginListenerHandle>
 }
@@ -71,25 +74,49 @@ const READ_BATCH = 400
 
 export function createCapacitorPlatform(): Platform {
   let root: string | null = null
-  const remember = (info: VaultInfo | null) => ((root = info?.path ?? null), info)
+  let saf = false
+  const sources = new Map<string, string>()
+  const remember = (info: NativeInfo | null) => {
+    if (root !== (info?.path ?? null)) sources.clear()
+    root = info?.path ?? null
+    saf = info?.mode === "saf"
+    return info
+  }
+  const rememberEntry = (entry: NativeEntry) => {
+    if (entry.uri) sources.set(entry.path, entry.uri)
+    return entry
+  }
+  const forget = (path: string) => {
+    for (const key of sources.keys()) if (key === path || key.startsWith(path + "/")) sources.delete(key)
+  }
   return {
     kind: "capacitor",
     vault: async () => remember((await RunasVault.current()).vault),
     chooseVault: async () => remember((await RunasVault.choose()).vault),
     createVault: async () => remember((await RunasVault.create()).vault),
     setWritable: async (writable) => remember((await RunasVault.setWritable({ writable })).vault),
-    listVault: async (prefix) => (await RunasVault.list({ prefix: prefix ?? "" })).entries,
+    async listVault(prefix) {
+      const { entries } = await RunasVault.list({ prefix: prefix ?? "" })
+      for (const path of sources.keys()) if (!prefix || path.startsWith(prefix)) sources.delete(path)
+      return entries.map(rememberEntry)
+    },
     async readTexts(paths) {
       const out: Record<string, string> = {}
       for (let i = 0; i < paths.length; i += READ_BATCH) Object.assign(out, (await RunasVault.read({ paths: paths.slice(i, i + READ_BATCH) })).texts)
       return out
     },
-    writeText: (path, content, expected) => RunasVault.write(withExpected({ path, content }, expected)),
+    writeText: async (path, content, expected) => rememberEntry(await RunasVault.write(withExpected({ path, content }, expected))),
     createFolder: (path) => RunasVault.createFolder({ path }),
-    rename: (from, to) => RunasVault.rename({ from, to }),
-    trash: (path) => RunasVault.trash({ path }),
+    rename: async (from, to) => { await RunasVault.rename({ from, to }); forget(from) },
+    trash: async (path) => { await RunasVault.trash({ path }); forget(path) },
     watch(listener) {
-      const handle = RunasVault.addListener("change", (data) => listener(data.changes))
+      const handle = RunasVault.addListener("change", (data) => {
+        for (const change of data.changes) {
+          if (change.type === "changed") rememberEntry(change.entry)
+          else forget(change.path)
+        }
+        listener(data.changes)
+      })
       return () => void handle.then((h) => h.remove())
     },
     backup: () => RunasVault.backup(),
@@ -99,7 +126,10 @@ export function createCapacitorPlatform(): Platform {
       const { path } = await RunasVault.backupsPath()
       window.dispatchEvent(new CustomEvent("runas-codex:aviso", { detail: { title: "Backups", body: `Ficam em ${path} (zip com as notas).` } }))
     },
-    fileUrl: (path) => (root ? Capacitor.convertFileSrc(`${root}/${path}`) : null),
+    fileUrl: (path) => {
+      const source = saf ? sources.get(path) : root ? `${root}/${path}` : null
+      return source ? Capacitor.convertFileSrc(source) : null
+    },
     openFile: (path) => RunasVault.openFile({ path }),
     installSnippet: async (css) => (await RunasVault.installSnippet({ css })).path,
     async notify(title, body) {
@@ -113,10 +143,10 @@ export function createCapacitorPlatform(): Platform {
     },
     async stopRoom() {},
     readBinary: async (path) => fromBase64((await RunasVault.readBinary({ path })).base64),
-    writeBinary: (path, bytes, expected) => RunasVault.writeBinary(withExpected({ path, base64: toBase64(bytes) }, expected)),
+    writeBinary: async (path, bytes, expected) => rememberEntry(await RunasVault.writeBinary(withExpected({ path, base64: toBase64(bytes) }, expected))),
     saveBytes: async (name, bytes, mime) => (await RunasVault.saveAs({ name, mime, base64: toBase64(bytes) })).name,
     appVersion: async () => (await RunasVault.appVersion()).version,
     listTrash: async () => (await RunasVault.listTrash()).entries,
-    restoreTrash: (path, target) => RunasVault.restoreTrash({ path, target }),
+    restoreTrash: async (path, target) => rememberEntry(await RunasVault.restoreTrash({ path, target })),
   }
 }

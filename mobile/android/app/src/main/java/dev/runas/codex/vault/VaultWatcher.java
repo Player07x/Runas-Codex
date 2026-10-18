@@ -28,7 +28,7 @@ public final class VaultWatcher {
     private static final long DELAY_MS = 400;
     private static final long OWN_WRITE_MS = 5000;
 
-    private final VaultStore store;
+    private final VaultFs store;
     private final Listener listener;
     private final HandlerThread thread = new HandlerThread("RunasVaultWatcher");
     private final Handler handler;
@@ -37,9 +37,9 @@ public final class VaultWatcher {
     /** Gravações do próprio app: caminho → {tamanho, data, quando}; data -1 = o app removeu ou moveu. */
     private final Map<String, long[]> own = new HashMap<>();
     private final Runnable rescan = this::rescan;
-    private boolean stopped;
+    private volatile boolean stopped;
 
-    public VaultWatcher(VaultStore store, Listener listener) {
+    public VaultWatcher(VaultFs store, Listener listener) {
         this.store = store;
         this.listener = listener;
         thread.start();
@@ -62,8 +62,10 @@ public final class VaultWatcher {
         for (FileObserver o : observers) o.stopWatching();
         observers.clear();
         if (stopped) return;
+        // O SAF só relê ao voltar para o app; os documentos não são caminhos para FileObserver.
+        if (!(store instanceof VaultStore)) return;
         try {
-            for (File folder : store.folders()) {
+            for (File folder : ((VaultStore) store).folders()) {
                 FileObserver observer = new FileObserver(folder.getAbsolutePath(), MASK) {
                     @Override
                     public void onEvent(int event, String path) {
