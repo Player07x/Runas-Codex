@@ -3,7 +3,8 @@
 set -euo pipefail
 port="${1:-9224}"
 for i in $(seq 1 90); do
-  runas_pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r')
+  # pidof retorna 1 enquanto o processo ainda não nasceu; isso faz parte da espera, não é falha do teste.
+  runas_pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r') || runas_pid=''
   if [ -n "$runas_pid" ]; then
     adb forward "tcp:$port" "localabstract:webview_devtools_remote_$runas_pid"
     if curl --silent --fail "http://127.0.0.1:$port/json" > /dev/null; then exit 0; fi
