@@ -126,6 +126,24 @@ describe("marcar tarefas", () => {
     expect(toggle("- [>] a 🔁 every day 📅 2026-10-18", 0, c)).toBe("- [ ] a 🔁 every day 📅 2026-10-19\n- [x] a 🔁 every day 📅 2026-10-18 ✅ 2026-10-18")
   })
 
+  // Casos de tests/Commands/ToggleDone.test.ts do Tasks 8.6.0.
+  it("casos do próprio Tasks: a recorrência anda pelos estados até um TODO, sem laço infinito", () => {
+    const d = new Date(2022, 8, 4, 10)
+    const custom = (core: object[]) => ctx(importTasksPluginData(JSON.stringify({ statusSettings: { coreStatuses: core, customStatuses: [] } })).settings, d)
+    const c1 = custom([{ symbol: "x", name: "Done", nextStatusSymbol: "-", type: "DONE" }, { symbol: " ", name: "Todo", nextStatusSymbol: "x", type: "TODO" }, { symbol: "-", name: "Cancelled", nextStatusSymbol: " ", type: "CANCELLED" }])
+    expect(toggle("- [ ] Recurring task should start with TODO 🔁 every day 📅 2022-09-04 ", 0, c1)).toBe("- [ ] Recurring task should start with TODO 🔁 every day 📅 2022-09-05\n- [x] Recurring task should start with TODO 🔁 every day 📅 2022-09-04 ✅ 2022-09-04")
+    const c2 = custom([{ symbol: "1", name: "1", nextStatusSymbol: "2", type: "IN_PROGRESS" }, { symbol: "2", name: "2", nextStatusSymbol: "1", type: "DONE" }])
+    expect(toggle("- [1] Recurring task should start with TODO 🔁 every day 📅 2022-09-04 ", 0, c2)).toBe("- [1] Recurring task should start with TODO 🔁 every day 📅 2022-09-05\n- [2] Recurring task should start with TODO 🔁 every day 📅 2022-09-04 ✅ 2022-09-04")
+  })
+
+  it("casos do próprio Tasks: espaço único no fim some; quebra de linha de 2 ou 3 espaços fica", () => {
+    const d = ctx({}, new Date(2022, 8, 4, 10))
+    expect(toggle("- [ ] foo ", 0, d)).toBe("- [x] foo ✅ 2022-09-04")
+    expect(toggle("- [x] foo ✅ 2022-09-04 ", 0, d)).toBe("- [ ] foo")
+    expect(toggle("- [ ] foo  ", 0, d)).toBe("- [x] foo ✅ 2022-09-04  ")
+    expect(toggle("- [x] foo ✅ 2022-09-04   ", 0, d)).toBe("- [ ] foo   ")
+  })
+
   it("fora do filtro global, a caixa só alterna, sem datas", () => {
     expect(toggle("- [ ] sem filtro 📅 2026-10-18", 0, ctx({ globalFilter: "#t" }))).toBe("- [x] sem filtro 📅 2026-10-18")
   })
@@ -189,6 +207,26 @@ describe("recorrência", () => {
   it("atravessa a troca do horário de verão sem pular dias", () => {
     expect(next("every day", { dueDate: "2026-11-01" })?.dueDate).toBe("2026-11-02")
     expect(next("every day", { dueDate: "2026-03-08" })?.dueDate).toBe("2026-03-09")
+  })
+
+  // Casos de tests/Task/Recurrence.test.ts do Tasks 8.6.0.
+  it("casos do próprio Tasks: meses no fim do mês, anos bissextos e datas inválidas", () => {
+    expect(next("every 3 months", { dueDate: "2022-01-31" })?.dueDate).toBe("2022-04-30")
+    expect(next("every 2 months", { dueDate: "2023-12-31" })?.dueDate).toBe("2024-02-29")
+    expect(next("every 2 years", { dueDate: "2024-02-29" })?.dueDate).toBe("2026-02-28")
+    expect(next("every 11 months", { dueDate: "2020-03-31" })?.dueDate).toBe("2021-02-28")
+    expect(next("every 13 months", { dueDate: "2020-01-31" })?.dueDate).toBe("2021-02-28")
+    expect(parseRecurrence("every day", { dueDate: "2022-02-30", scheduledDate: null, startDate: null }, "2022-01-10")).toBeNull()
+    expect(next("every day", { scheduledDate: "2022-02-30", dueDate: "2022-02-27" })).toEqual({ startDate: null, scheduledDate: "2022-02-28", dueDate: "2022-02-28" })
+    expect(next("every week", {})).toEqual({ startDate: null, scheduledDate: null, dueDate: null })
+  })
+
+  it("casos do próprio Tasks: tirar a agendada na recorrência, inclusive com when done", () => {
+    const d = (x: { startDate?: string; scheduledDate?: string; dueDate?: string }) => ({ startDate: x.startDate ?? null, scheduledDate: x.scheduledDate ?? null, dueDate: x.dueDate ?? null })
+    const run = (rule: string, dates: ReturnType<typeof d>, today: string) => nextOccurrence(parseRecurrence(rule, dates, today, true)!, dates, today, true)
+    expect(run("every month", d({ startDate: "2022-01-01", scheduledDate: "2022-01-04", dueDate: "2022-01-10" }), "2022-01-10")).toEqual({ startDate: "2022-02-01", scheduledDate: null, dueDate: "2022-02-10" })
+    expect(run("every month", d({ scheduledDate: "2022-01-04" }), "2022-01-10")?.scheduledDate).toBe("2022-02-04")
+    expect(run("every 3 days when done", d({ startDate: "2022-01-01", scheduledDate: "2022-01-04" }), "2022-01-10")).toEqual({ startDate: "2022-01-13", scheduledDate: null, dueDate: null })
   })
 
   it("regra que terminou não cria ocorrência", () => {

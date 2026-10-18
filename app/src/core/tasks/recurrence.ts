@@ -25,9 +25,10 @@ export interface Recurrence {
   rule: RRule
 }
 
+/** A primeira data presente na ordem do Tasks (pode ser inválida, como `2026-02-30`: aí não há recorrência). */
 function referenceDate(dates: OccurrenceDates, removeScheduledDateOnRecurrence: boolean): string | null {
   const order = removeScheduledDateOnRecurrence ? [dates.dueDate, dates.startDate, dates.scheduledDate] : [dates.dueDate, dates.scheduledDate, dates.startDate]
-  return order.find((d): d is string => d !== null && isValidDate(d)) ?? null
+  return order.find((d): d is string => d !== null) ?? null
 }
 
 /** Lê o texto depois de 🔁; `null` se o rrule não entende. `today` é a data local de hoje (`AAAA-MM-DD`). */
@@ -39,6 +40,8 @@ export function parseRecurrence(text: string, dates: OccurrenceDates, today: str
     const options = RRule.parseText(match[1]!.trim())
     if (!options) return null
     const reference = referenceDate(dates, removeScheduledDateOnRecurrence)
+    // Data de referência inválida: o Tasks não calcula a próxima (a regra fica sem efeito).
+    if (!baseOnToday && reference && !isValidDate(reference)) return null
     options.dtstart = utcDate(!baseOnToday && reference ? reference : today)
     const rule = new RRule(options)
     return { text: rule.toText() + (baseOnToday ? " when done" : ""), baseOnToday, rule }
@@ -88,7 +91,8 @@ export function nextOccurrence(recurrence: Recurrence, dates: OccurrenceDates, t
   }
   if (next === null) return null
   if (reference === null) return { startDate: null, scheduledDate: null, dueDate: null }
-  const shift = (date: string | null) => (date === null || !isValidDate(date) ? date : addDays(next!, daysBetween(reference, date)))
+  // Uma data secundária inválida recebe a próxima data de referência (a diferença não se calcula; é o que o Tasks faz).
+  const shift = (date: string | null) => (date === null ? null : !isValidDate(date) || !isValidDate(reference) ? next! : addDays(next!, daysBetween(reference, date)))
   const removeScheduled = removeScheduledDateOnRecurrence && (dates.startDate !== null || dates.dueDate !== null)
   return { startDate: shift(dates.startDate), scheduledDate: removeScheduled ? null : shift(dates.scheduledDate), dueDate: shift(dates.dueDate) }
 }
