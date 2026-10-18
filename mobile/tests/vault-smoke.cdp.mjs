@@ -86,6 +86,9 @@ try {
   const current = await run(call('current'))
   check('cofre aberto e gravável', current.ok?.vault?.path === deviceVault && current.ok.vault.readOnly === false, current)
   const expected = await localFiles(localVault)
+  // O plugin fica disponível antes de o VaultProvider terminar a leitura e ligar sua observação.
+  await run(`location.hash = '#/config'; true`)
+  await until(`document.body.innerText.includes(${JSON.stringify(`${expected.filter(p => p.endsWith('.md')).length} notas Markdown no índice`)})`)
   const listed = await run(call('list', { prefix: '' }))
   const paths = (listed.ok?.entries ?? []).map(e => e.path).sort()
   check('lista igual à do disco', JSON.stringify(paths) === JSON.stringify(expected), { device: paths.length, local: expected.length, missing: expected.filter(p => !paths.includes(p)).slice(0, 5) })
@@ -137,9 +140,13 @@ try {
   check('observa mudanças de fora', Boolean(seen), await run('window.__runasChanges'))
 
   // ---------- A interface com o cofre real ----------
-  await run(`location.hash = '#/notas/' + encodeURIComponent('Notas/Externa.md'); true`)
+  // O aviso nativo chega antes de a leitura assíncrona atualizar o índice. Abre pela lista depois que ele aparecer,
+  // como um toque do usuário, em vez de navegar para uma nota que a interface ainda está recebendo.
+  await run(`location.hash = '#/notas'; true`)
+  await until(`document.querySelector('[data-note-path="Notas/Externa.md"]')`, 150)
+  await run(`document.querySelector('[data-note-path="Notas/Externa.md"]').click(); true`)
   const shown = await until(`document.body.innerText.includes('nova do Obsidian')`, 150).catch(() => false)
-  check('a nota de fora aparece no app', Boolean(shown))
+  check('a nota de fora aparece no app', Boolean(shown), await run(`({ hash: location.hash, status: document.querySelector('.editor-status')?.textContent, body: document.body.innerText.slice(-5000) })`))
   const image = await run(`(()=>{const u=window.Capacitor.convertFileSrc(${JSON.stringify(deviceVault + '/Notas/Anexos/smoke.png')}); return fetch(u).then(r=>r.ok && r.headers.get('content-type')).catch(e=>String(e))})()`)
   check('anexo carrega na interface', typeof image === 'string' && image.startsWith('image/'), image)
 
@@ -148,7 +155,8 @@ try {
   // atual; reutilizar Smoke.md depois de restaurá-la testava uma versão antiga, que o plugin deve mesmo recusar.
   adb('shell', `echo '# Teclado' > ${deviceVault}/Notas/Teclado.md`)
   await until(`window.__runasChanges.some(c => c.type === 'changed' && c.entry.path === 'Notas/Teclado.md')`, 150)
-  await run(`location.hash = '#/notas/' + encodeURIComponent('Notas/Teclado.md'); true`)
+  await until(`document.querySelector('[data-note-path="Notas/Teclado.md"]')`, 150)
+  await run(`document.querySelector('[data-note-path="Notas/Teclado.md"]').click(); true`)
   await until(`document.querySelector('.editor-status')?.getAttribute('title') === 'Notas/Teclado.md'`, 150)
   await until(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent))`, 150)
   await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
