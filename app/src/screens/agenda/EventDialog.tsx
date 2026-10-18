@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { EVENT_COLORS, type AgendaEvent, type EventInput, type Repeat } from "../../core/agenda"
 import { Modal, Switch } from "../../components/ui"
+import { TaskEditDialog } from "../../components/tasks/TaskEditDialog"
+import { useTasksSettings, useTasksVault } from "../../lib/tasks"
 import { WEEKDAYS } from "./views"
 
 type RepeatChoice = "none" | "weekly" | "biweekly" | "monthly" | "yearly" | "custom"
@@ -67,6 +69,8 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
   const [createSession, setCreateSession] = useState("")
   const [countdown, setCountdown] = useState(initial.countdown ?? false)
   const [notes, setNotes] = useState(initial.notes ?? "")
+  const [addingTask, setAddingTask] = useState(false)
+  const tasksSettings = useTasksSettings(useTasksVault().vault?.info?.path)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
 
@@ -307,12 +311,19 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
         {!editing && (
           <label className="field">
             <span>Anotações e checklist de preparação</span>
-            <textarea className="input" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={"- [ ] Imprimir mapas\n- [ ] Separar miniaturas"} aria-label="Anotações do evento" />
+            <textarea className="input" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={"- [ ] Imprimir mapas\n- [ ] Separar miniaturas 📅 2026-10-20"} aria-label="Anotações do evento" />
+            <span className="row between">
+              <span className="tiny faint">Aceita a sintaxe do plugin Tasks (datas, prioridade, 🔁 recorrência).</span>
+              <button type="button" className="btn sm ghost" onClick={() => setAddingTask(true)}>
+                Inserir tarefa
+              </button>
+            </span>
           </label>
         )}
         {error && <p className="small" style={{ color: "var(--red)" }}>{error}</p>}
         <span className="tiny faint">O evento é uma nota em Agenda/ no formato do plugin Full Calendar (o Obsidian mostra igual).</span>
       </form>
+      {addingTask && <TaskEditDialog settings={tasksSettings} onLines={(lines) => setNotes((n) => `${n.replace(/\s*$/, "")}${n.trim() ? "\n" : ""}${lines.join("\n")}\n`)} onClose={() => setAddingTask(false)} />}
     </Modal>
   )
 }

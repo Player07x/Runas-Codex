@@ -10,6 +10,8 @@ import { EditorView, keymap, placeholder } from "@codemirror/view"
 import { tags } from "@lezer/highlight"
 import { parseFrontmatter } from "../../core/parse"
 import { SLASH_COMMANDS } from "../../core/note-tools"
+import { suggestForTaskLine } from "../../core/tasks/suggest"
+import { currentParseContext, vaultTaskIds } from "../../lib/tasks"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import { livePreview as livePreviewExtension, livePreviewHost, type LivePreviewHost } from "./live-preview"
 
@@ -140,6 +142,17 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
       for (let n: typeof node | null = node; n; n = n.parent) if (/Code|Comment/.test(n.name)) return null
       return { from: match.from, options: SLASH_COMMANDS.map(command => ({ label: `/${command.label}`, detail: command.detail, apply: command.label === "data" ? new Date().toLocaleDateString("sv-SE") : command.insert })) }
     }
+    // Autocompletar do Tasks numa linha de tarefa: campos, datas, regras de repetição e ids.
+    const taskSource = (context: CompletionContext): CompletionResult | null => {
+      const line = context.state.doc.lineAt(context.pos)
+      if (!/^[\s>]*(?:[-*+]|\d+[.)]) +\[.\]/.test(line.text)) return null
+      const node = syntaxTree(context.state).resolveInner(context.pos, -1)
+      for (let n: typeof node | null = node; n; n = n.parent) if (/Code|Comment/.test(n.name)) return null
+      const ctx = currentParseContext()
+      const found = suggestForTaskLine(line.text, context.pos - line.from, ctx.settings, new Date(), line.text.includes("⛔") || line.text.includes("dependsOn::") ? vaultTaskIds() : [])
+      if (!found) return null
+      return { from: line.from + found.from, filter: false, options: found.options.map((o) => ({ label: o.label, detail: o.detail, apply: o.apply })) }
+    }
     const state = EditorState.create({
       doc: value,
       // O cursor começa depois do frontmatter (no live preview, as propriedades aparecem desenhadas).
@@ -149,7 +162,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         markdown({ extensions: [GFM, obsidianSyntax] }),
         syntaxHighlighting(highlight),
         highlightSelectionMatches(),
-        autocompletion({ override: [linkSource, mentionSource, slashSource], icons: false }),
+        autocompletion({ override: [linkSource, mentionSource, slashSource, taskSource], icons: false }),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ spellcheck: "true", lang: "pt-BR", "aria-label": "Código-fonte Markdown" }),
         placeholder("Comece a escrever. Use [[ ou @ para ligar a outra nota."),

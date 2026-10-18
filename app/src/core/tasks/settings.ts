@@ -25,6 +25,10 @@ export interface TasksSettings {
   recurrenceOnNextLine: boolean
   removeScheduledDateOnRecurrence: boolean
   taskCountLocation: "top" | "bottom"
+  /** Sugestões ao digitar numa tarefa (autoSuggestInEditor), com o mínimo de letras e o máximo de itens. */
+  autoSuggestInEditor: boolean
+  autoSuggestMinMatch: number
+  autoSuggestMaxItems: number
   coreStatuses: Status[]
   customStatuses: Status[]
 }
@@ -56,6 +60,9 @@ export const DEFAULT_TASKS_SETTINGS: TasksSettings = {
   recurrenceOnNextLine: false,
   removeScheduledDateOnRecurrence: false,
   taskCountLocation: "bottom",
+  autoSuggestInEditor: true,
+  autoSuggestMinMatch: 0,
+  autoSuggestMaxItems: 20,
   coreStatuses: DEFAULT_CORE_STATUSES,
   customStatuses: DEFAULT_CUSTOM_STATUSES,
 }
@@ -98,7 +105,8 @@ export function importTasksPluginData(json: string): ImportedTasksSettings {
   str("globalFilter")
   str("globalQuery")
   str("filenameAsScheduledDateFormat")
-  for (const key of ["removeGlobalFilter", "setCreatedDate", "setDoneDate", "setCancelledDate", "useFilenameAsScheduledDate", "recurrenceOnNextLine", "removeScheduledDateOnRecurrence"]) bool(key)
+  for (const key of ["autoSuggestMinMatch", "autoSuggestMaxItems"]) if (typeof data[key] === "number" && Number.isFinite(data[key])) (used.add(key), ((out as unknown as Record<string, unknown>)[key] = Math.max(0, Math.round(data[key] as number))))
+  for (const key of ["autoSuggestInEditor", "removeGlobalFilter", "setCreatedDate", "setDoneDate", "setCancelledDate", "useFilenameAsScheduledDate", "recurrenceOnNextLine", "removeScheduledDateOnRecurrence"]) bool(key)
   if (data.taskFormat === "dataview" || data.taskFormat === "tasksPluginEmoji") (used.add("taskFormat"), (out.taskFormat = data.taskFormat))
   if (data.presets && typeof data.presets === "object" && !Array.isArray(data.presets)) {
     used.add("presets")

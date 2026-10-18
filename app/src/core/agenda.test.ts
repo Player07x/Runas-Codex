@@ -1,4 +1,4 @@
-import { checklist, dueTasks, eventFileName, eventNote, expandEvents, exportIcs, importIcs, isoDate, nextSession, normalizeTime, occurrences, parseEvent, parseReminder, toggleTask, updateEventNote, upcomingReminders, type AgendaEvent, type EventInput } from "./agenda"
+import { eventFileName, eventNote, expandEvents, exportIcs, importIcs, isoDate, nextSession, normalizeTime, occurrences, parseEvent, parseReminder, updateEventNote, upcomingReminders, type AgendaEvent, type EventInput } from "./agenda"
 import { parseFrontmatter } from "./parse"
 
 const event = (path: string, yaml: string, body = "") => parseEvent(path, `---\n${yaml}\n---\n${body}`)!
@@ -99,30 +99,6 @@ describe("evento → nota", () => {
   it("nome do arquivo como o Full Calendar, sem caracteres proibidos", () => {
     expect(eventFileName(input)).toBe("2026-10-24 Sessão 13")
     expect(eventFileName({ title: "Mesa: semanal?", date: "2026-10-03", repeat: { kind: "weekly", days: [6] } })).toBe("Mesa- semanal-")
-  })
-})
-
-describe("checklist e tarefas com prazo", () => {
-  const text = "---\ntitle: x\n---\n- [ ] Imprimir\n- [x] Pilhas 📅 2026-10-16\n```\n- [ ] dentro de código\n```\n  * [ ] Sub 📅 2026-10-15 ⏫\n"
-
-  it("acha as tarefas fora de código, com a linha", () => {
-    expect(checklist(text).map((i) => [i.line, i.done, i.text])).toEqual([
-      [3, false, "Imprimir"],
-      [4, true, "Pilhas 📅 2026-10-16"],
-      [8, false, "Sub 📅 2026-10-15 ⏫"],
-    ])
-  })
-
-  it("marca só a linha pedida", () => {
-    expect(toggleTask(text, 3, true).split("\n")[3]).toBe("- [x] Imprimir")
-    expect(() => toggleTask(text, 0, true)).toThrow()
-  })
-
-  it("tarefas com 📅 de todas as notas, em ordem de prazo", () => {
-    expect(dueTasks([{ path: "Notas/a.md", text }]).map((t) => [t.due, t.text, t.done])).toEqual([
-      ["2026-10-15", "Sub", false],
-      ["2026-10-16", "Pilhas", true],
-    ])
   })
 })
 

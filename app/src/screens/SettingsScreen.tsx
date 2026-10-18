@@ -12,6 +12,7 @@ import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
+import { TasksSettingsCard } from "../components/tasks/TasksSettings"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -156,6 +157,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
             </Row>
             <DesktopTraySettings />
           </SettingsCard>
+          <TasksSettingsCard />
           <OnboardingSettings />
           <SettingsCard icon={<Dices size={16} />} title="Sala do VTT">
             <Row title="Conexão dos jogadores" hint="Abra uma mesa e configure o acesso no painel Sala. O endereço e o código só existem com a sala aberta.">

@@ -64,3 +64,38 @@ export function parseDateRangeText(input: string, now: Date, forwardDate = false
   const second = results[1]?.start ? isoDate(results[1].start.date()) : first
   return isValidDate(first) && isValidDate(second) ? range(first, second) : null
 }
+
+const PT_WEEKDAYS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"]
+
+/**
+ * Data digitada na janela de tarefa: `AAAA-MM-DD`, português comum ("amanhã", "sexta", "próxima segunda",
+ * "daqui a 3 dias", "em 2 semanas") ou o inglês do Tasks ("tomorrow", "next friday"). `forwardOnly` escolhe a próxima
+ * data quando o texto é ambíguo (como a opção "só datas futuras" do Tasks).
+ */
+export function parseTypedDate(input: string, now: Date, forwardOnly = true): string | null {
+  const text = input.trim().toLowerCase().normalize("NFC")
+  if (!text) return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return isValidDate(text) ? text : null
+  const today = isoDate(now)
+  const simple: Record<string, number> = { hoje: 0, amanhã: 1, amanha: 1, "depois de amanhã": 2, "depois de amanha": 2, ontem: -1, anteontem: -2 }
+  if (text in simple) return addDays(today, simple[text]!)
+  const span = /^(?:daqui a|em|dentro de) (\d+) (dias?|semanas?|m[eê]s|meses|anos?)$/.exec(text)
+  if (span) {
+    const n = Number(span[1])
+    const unit = span[2]!
+    return unit.startsWith("dia") ? addDays(today, n) : unit.startsWith("semana") ? addDays(today, 7 * n) : unit.startsWith("ano") ? addMonths(today, 12 * n) : addMonths(today, n)
+  }
+  const weekday = /^(?:(?:na |no )?pr[oó]xim[ao] |(?:na |no ))?(domingo|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado)(?:-feira)?(?: que vem)?$/.exec(text)
+  if (weekday) {
+    const name = weekday[1]!.replace("terca", "terça").replace("sabado", "sábado")
+    const target = PT_WEEKDAYS.indexOf(name)
+    const current = now.getDay()
+    let diff = (target - current + 7) % 7
+    if (diff === 0 || /pr[oó]xim|que vem/.test(text)) diff = diff === 0 ? 7 : diff
+    return addDays(today, diff)
+  }
+  const en = chrono.parseDate(input, now, { forwardDate: forwardOnly })
+  if (en) return isoDate(en)
+  const pt = chrono.pt.parseDate(input, now, { forwardDate: forwardOnly })
+  return pt ? isoDate(pt) : null
+}

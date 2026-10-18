@@ -218,6 +218,6 @@ describe("configurações do Tasks", () => {
   it("importa o data.json e lista o que não muda o comportamento", () => {
     const { settings, ignored } = importTasksPluginData(JSON.stringify({ globalFilter: "#t", taskFormat: "dataview", setDoneDate: false, recurrenceOnNextLine: true, postpone: { dateField: "scheduled" }, presets: { meu: "not done" }, autoSuggestInEditor: true, loggingOptions: {} }))
     expect(settings).toMatchObject({ globalFilter: "#t", taskFormat: "dataview", setDoneDate: false, recurrenceOnNextLine: true, postponeDateField: "scheduled", presets: { meu: "not done" } })
-    expect(ignored).toEqual(["autoSuggestInEditor", "loggingOptions"])
+    expect(ignored).toEqual(["loggingOptions"])
   })
 })

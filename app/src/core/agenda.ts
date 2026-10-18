@@ -1,5 +1,5 @@
 import ICAL from "ical.js"
-import { maskNonContent, parseFrontmatter } from "./parse"
+import { parseFrontmatter } from "./parse"
 import { setProperty, type PropertyValue } from "./properties"
 import { noteBody } from "./sections"
 import { noteName } from "./text"
@@ -323,56 +323,9 @@ export function eventFileName(input: Pick<EventInput, "title" | "date" | "repeat
   return input.repeat.kind === "none" ? `${input.date} ${title}` : title
 }
 
-// ---------- Checklist e tarefas com prazo ----------
+// ---------- Anotações ----------
 
-export interface ChecklistItem {
-  /** Linha no arquivo (0 = primeira). */
-  line: number
-  text: string
-  done: boolean
-}
-
-const TASK = /^(\s*(?:[-*+]|\d+[.)])\s+\[)([ xX])(\]\s+)(.*)$/
-
-/** As tarefas `- [ ]` de uma nota (fora de código), com a linha de cada uma. */
-export function checklist(text: string): ChecklistItem[] {
-  const masked = maskNonContent(text).split("\n")
-  const lines = text.split("\n")
-  const start = parseFrontmatter(text) ? text.slice(0, parseFrontmatter(text)!.end).split("\n").length - 1 : 0
-  const items: ChecklistItem[] = []
-  for (let i = start; i < lines.length; i++) {
-    const m = TASK.exec(masked[i]!.replace(/\r$/, ""))
-    if (m) items.push({ line: i, text: lines[i]!.replace(/\r$/, "").replace(TASK, "$4"), done: m[2] !== " " })
-  }
-  return items
-}
-
-/** Marca ou desmarca a tarefa da linha `line`, sem mexer no resto do arquivo. */
-export function toggleTask(text: string, line: number, done: boolean): string {
-  const lines = text.split("\n")
-  const current = lines[line]
-  if (current === undefined || !TASK.test(current.replace(/\r$/, ""))) throw new Error("A tarefa mudou de lugar; recarregue a nota.")
-  lines[line] = current.replace(TASK, (_m, a: string, _b: string, c: string, rest: string) => `${a}${done ? "x" : " "}${c}${rest}`)
-  return lines.join("\n")
-}
-
-export interface DueTask extends ChecklistItem {
-  path: string
-  due: string
-}
-
-/** Tarefas com prazo no formato do plugin Tasks (`- [ ] texto 📅 2026-10-17`), em todas as notas. */
-export function dueTasks(notes: { path: string; text: string }[]): DueTask[] {
-  const out: DueTask[] = []
-  for (const note of notes) {
-    if (!note.text.includes("📅")) continue
-    for (const item of checklist(note.text)) {
-      const due = /📅\s*(\d{4}-\d{2}-\d{2})/u.exec(item.text)?.[1]
-      if (due) out.push({ ...item, path: note.path, due, text: item.text.replace(/\s*(?:📅|⏳|🛫|✅|➕|🔁|⏫|🔼|🔽)\s*[^📅⏳🛫✅➕🔁⏫🔼🔽]*/gu, "").trim() })
-    }
-  }
-  return out.sort((a, b) => a.due.localeCompare(b.due) || a.text.localeCompare(b.text, "pt-BR"))
-}
+// A checklist de preparação é lida e marcada pelo motor do plugin Tasks (core/tasks/), o mesmo das notas.
 
 /** O texto da nota sem o frontmatter (anotações do evento). */
 export function eventNotes(text: string): string {

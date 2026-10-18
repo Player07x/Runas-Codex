@@ -98,6 +98,7 @@ export function App() {
         <CustomizationRuntime />
         <ActiveRoom />
         <DesktopTrayRuntime />
+        <TasksRuntime />
       </ToastProvider>
     </VaultProvider>
   )
@@ -108,3 +109,4 @@ import { DesktopTrayRuntime } from "./platform/DesktopTray"
 
 import { AppearanceRuntime } from "./components/Appearance"
 import { OnboardingRuntime } from "./components/Onboarding"
+import { TasksRuntime } from "./components/tasks/TasksRuntime"

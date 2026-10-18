@@ -126,3 +126,43 @@ export function postponedDate(current: string | null, today: string, amount: num
   const base = current && isValidDate(current) && current >= today ? current : today
   return addDays(base, amount)
 }
+
+/**
+ * Comando "alternar tarefa" no editor (toggleLine do Tasks): tarefa → próximo estado; caixa fora do filtro global →
+ * alterna ` `/`x`; item de lista → ganha a caixa; linha comum → vira `- [ ] `. `cursorAtEnd` diz se o cursor vai para o
+ * fim da linha (quando a linha ganhou a caixa).
+ */
+export function toggleLineCommand(line: string, ctx: ParseContext, today = ctx.today): { lines: string[]; cursorAtEnd: boolean } {
+  const edit = editForLine(line, 0, ctx, { today })
+  if (edit) return { lines: edit.lines, cursorAtEnd: false }
+  const item = /^([\s\t>]*)([-*+]|[0-9]+[.)])/.exec(line)
+  if (item) return { lines: [line.replace(/^([\s\t>]*)([-*+]|[0-9]+[.)])/, "$1$2 [ ]")], cursorAtEnd: true }
+  return { lines: [line.replace(/^([\s\t>]*)/, "$1- [ ] ")], cursorAtEnd: true }
+}
+
+/**
+ * Aplica a edição da janela "criar ou editar tarefa": campos trocados e, se o estado mudou, a mesma transição do clique
+ * (datas de conclusão/cancelamento e recorrência). Devolve as linhas, na ordem do arquivo.
+ */
+export function applyTaskEdit(task: Task, patch: Partial<Task>, newStatus: Status | null, ctx: ParseContext, today = ctx.today): string[] {
+  const edited: Task = { ...task, ...patch }
+  if (patch.recurrenceText !== undefined || patch.dueDate !== undefined || patch.scheduledDate !== undefined || patch.startDate !== undefined) edited.recurrence = edited.recurrenceText ? parseRecurrence(edited.recurrenceText, edited, today, ctx.settings.removeScheduledDateOnRecurrence) : null
+  if (patch.scheduledDate !== undefined) edited.scheduledDateIsInferred = false
+  const tasks = newStatus && !sameStatus(newStatus, task.status) ? withNewStatus(edited, newStatus, ctx, today) : [edited]
+  return tasks.map((t) => taskToLine(t, ctx.settings))
+}
+
+/** Uma tarefa nova a partir de uma linha (ou `- [ ] ` vazia), para a janela de edição. */
+export function blankTask(line: string, ctx: ParseContext): Task {
+  return parseTaskLine(line, "", 0, { ...ctx, settings: { ...ctx.settings, globalFilter: "" } }) ?? parseTaskLine("- [ ] ", "", 0, { ...ctx, settings: { ...ctx.settings, globalFilter: "" } })!
+}
+
+/** Troca a linha da tarefa pelas linhas editadas (recusa se a linha mudou desde a leitura). */
+export function replaceTaskLine(text: string, line: number, lines: string[], expected: string): string {
+  const all = text.split("\n")
+  const current = all[line]
+  if (current === undefined || current.replace(/\r$/, "") !== expected.replace(/\r$/, "")) throw new Error("A tarefa mudou de lugar; recarregue a nota.")
+  const cr = current.endsWith("\r") ? "\r" : ""
+  all.splice(line, 1, ...lines.map((l) => l + cr))
+  return all.join("\n")
+}

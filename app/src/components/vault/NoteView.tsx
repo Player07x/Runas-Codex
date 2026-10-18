@@ -19,6 +19,9 @@ import { useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
 import { checkboxLines } from "../../markdown/task-checkboxes"
+import { toggleLineCommand } from "../../core/tasks/edit"
+import { currentParseContext, tasksSettingsOf } from "../../lib/tasks"
+import { TaskEditDialog } from "../tasks/TaskEditDialog"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
@@ -107,6 +110,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
   const [expandedTools, setExpandedTools] = useState(false)
   const [imageRename, setImageRename] = useState<string | null>(null)
+  // "Criar ou editar tarefa" (Tasks) na linha do cursor.
+  const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
   const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
   const [copyMenu, setCopyMenu] = useState(false)
   const [organizeMenu, setOrganizeMenu] = useState(false)
@@ -321,6 +326,36 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
     event.stopPropagation()
     openNote(target.path, "aba")
   }
+
+  // Comandos do Tasks no editor: alternar a tarefa da linha do cursor e abrir a janela de edição.
+  useEffect(() => {
+    const run = (kind: string) => {
+      if (!focused || readOnly || mode === "leitura" || !editor.current) return
+      if (kind === "toggleTask" || kind === "toggle-task") {
+        editor.current.transform((doc, cursor) => {
+          const start = doc.lastIndexOf("\n", cursor - 1) + 1
+          const end = doc.indexOf("\n", cursor) < 0 ? doc.length : doc.indexOf("\n", cursor)
+          const result = toggleLineCommand(doc.slice(start, end), currentParseContext())
+          const before = result.lines.slice(0, -1).join("\n")
+          const lastStart = start + before.length + (result.lines.length > 1 ? 1 : 0)
+          const last = result.lines.at(-1) ?? ""
+          return { text: doc.slice(0, start) + result.lines.join("\n") + doc.slice(end), cursor: result.cursorAtEnd ? lastStart + last.length : Math.min(lastStart + (cursor - start), lastStart + last.length) }
+        })
+      }
+      if (kind === "editTask" || kind === "edit-task") {
+        const cursor = editor.current.cursor() ?? 0
+        const line = draft.slice(0, cursor).split("\n").length - 1
+        setTaskEdit({ line, text: draft.split("\n")[line] ?? "" })
+      }
+    }
+    const fromShortcut = (event: Event) => run((event as CustomEvent<string>).detail)
+    window.addEventListener("runas-codex:comando", fromShortcut)
+    window.addEventListener("runas-codex:nota-acao", fromShortcut)
+    return () => {
+      window.removeEventListener("runas-codex:comando", fromShortcut)
+      window.removeEventListener("runas-codex:nota-acao", fromShortcut)
+    }
+  }, [focused, readOnly, mode, draft])
 
   const { body } = splitFrontmatter(draft)
   // Modo leitura: a caixa clicada é achada pela ordem (a n-ésima caixa do texto); se a contagem não bate, não arrisca.
@@ -568,6 +603,23 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
 
       {linkPreview}
       {imageRename && <ImageRenameDialog path={imageRename} onClose={() => setImageRename(null)} />}
+      {taskEdit && (
+        <TaskEditDialog
+          initialLine={/^[\s>]*(?:[-*+]|\d+[.)])[ \t]+\[.\]/.test(taskEdit.text) ? taskEdit.text : `- [ ] ${taskEdit.text.replace(/^[\s>]*(?:[-*+]|\d+[.)])?[ \t]*/, "")}`}
+          settings={tasksSettingsOf(vault.info?.path)}
+          onLines={(lines) =>
+            editor.current?.transform((doc) => {
+              const all = doc.split("\n")
+              if ((all[taskEdit.line] ?? "") !== taskEdit.text) throw new Error("A linha mudou; abra a janela de novo.")
+              const indent = /^[\s>]*/.exec(taskEdit.text)?.[0] ?? ""
+              all.splice(taskEdit.line, 1, ...lines.map((l) => (/^[\s>]/.test(l) ? l : indent + l)))
+              const cursor = all.slice(0, taskEdit.line + lines.length).join("\n").length
+              return { text: all.join("\n"), cursor }
+            })
+          }
+          onClose={() => setTaskEdit(null)}
+        />
+      )}
 
       {dialog === "template" && (
         <TemplatePicker
