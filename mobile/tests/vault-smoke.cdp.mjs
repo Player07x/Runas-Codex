@@ -251,10 +251,9 @@ try {
     if(!pickerReady) await sleep(150)
   }
   if(!pickerReady) throw new Error('O seletor de destino não chegou ao primeiro plano.')
-  // Aguarda a árvore nativa pronta, incluindo a ligação do botão Voltar. O primeiro Voltar pode só ocultar o IME.
-  adb('shell','uiautomator','dump','/sdcard/runas-save-picker.xml')
-  await writeFile(join(output,'save-picker.xml'),adb('shell','cat','/sdcard/runas-save-picker.xml'))
-  for(let i=0;i<3 && !(await run('window.__saveCancelled'));i++) {
+  // O primeiro Voltar pode só ocultar o IME; só repete enquanto o seletor continua em primeiro plano.
+  await writeFile(join(output,'save-picker-window.txt'),adb('shell','dumpsys','window','windows'))
+  for(let i=0;i<10 && !(await run('window.__saveCancelled'));i++) {
     const resumed = adb('shell','dumpsys','activity','activities').split('\n').filter(line=>/mResumedActivity|topResumedActivity/.test(line)).join('\n')
     if(resumed.includes('com.android.documentsui')) adb('shell','input','keyevent','KEYCODE_BACK')
     await sleep(500)
