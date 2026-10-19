@@ -83,6 +83,12 @@ const call = (method, args = {}) => `window.Capacitor.Plugins.RunasVault.${metho
 const page = await connect()
 const { run, until, send } = page
 try {
+  // O launcher do emulador pode travar durante o primeiro boot. Seu diálogo bloqueia entrada mesmo com o WebView
+  // respondendo ao CDP. Remove somente esse processo do sistema de teste; ANR do Runas nunca é ocultado.
+  const windows = adb('shell','dumpsys','window','windows')
+  if(windows.includes('Application Not Responding: com.google.android.apps.nexuslauncher')) adb('shell','am','force-stop','com.google.android.apps.nexuslauncher')
+  adb('shell','am','start','-n','dev.runas.codex/.MainActivity')
+  await until('document.hasFocus()',150)
   // ---------- O cofre abre e a interface lê ----------
   await until(`window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.RunasVault`)
   const current = await run(call('current'))
