@@ -1,3 +1,4 @@
+import { strFromU8, unzipSync } from "fflate"
 import type { BrowserWindow } from "electron"
 import { readFile } from "node:fs/promises"
 import { readTransferArchive } from "../../../app/src/core/transfer/archive"
@@ -10,7 +11,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     const until = async test => { for (let i=0;i<200;i++) { const value=test(); if(value)return value; await wait(100) } throw Error("A tela de transferência não respondeu: " + test) }
     const button = text => [...document.querySelectorAll("button")].find(el => el.textContent.trim() === text)
     const select = (label, value) => { const el=document.querySelector('[aria-label="'+label+'"]'); el.value=value; el.dispatchEvent(new Event("change",{bubbles:true})) }
-    const upload = () => { const input=document.querySelector('[aria-label="Arquivo para importar"]'), data=new DataTransfer(); data.items.add(new File(["\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n"],"Transfer-smoke.md")); data.items.add(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg=="),char=>char.charCodeAt(0))],"Anexos-transfer-smoke.png")); input.files=data.files; input.dispatchEvent(new Event("change",{bubbles:true})) }
+    const upload = () => { const input=document.querySelector('[aria-label="Arquivo para importar"]'), data=new DataTransfer(); data.items.add(new File(["\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n\r\n> [!segredo]\r\n> X4_SEGREDO_NAO_EXPORTAR\r\n"],"Transfer-smoke.md")); data.items.add(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg=="),char=>char.charCodeAt(0))],"Anexos-transfer-smoke.png")); input.files=data.files; input.dispatchEvent(new Event("change",{bubbles:true})) }
     const api=window.runasCodex, checks={}
     location.hash="/transferir"
     await until(()=>document.querySelector("[data-transfer-workspace]"))
@@ -22,7 +23,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     button("Importar 2 arquivo(s)").click()
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes("2 arquivo(s) importados"))
     const path="Notas/Importados/Transfer-smoke.md", asset="Notas/Importados/Anexos-transfer-smoke.png"
-    checks.imported=(await api.vault.read([path]))[path] === "\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n" && (await api.vault.readBinary(asset)).length===70
+    checks.imported=(await api.vault.read([path]))[path] === "\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n\r\n> [!segredo]\r\n> X4_SEGREDO_NAO_EXPORTAR\r\n" && (await api.vault.readBinary(asset)).length===70
     upload()
     await until(()=>document.querySelector('[data-transfer-preview]')?.textContent.includes("2 conflito(s)"))
     checks.merge=button("Importar 0 arquivo(s)")?.disabled===true
@@ -47,6 +48,10 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes("arquivo(s) exportados:"))
     const exported=document.querySelector(".transfer-status").textContent.split("exportados: ")[1]
     checks.dependencies=document.querySelector(".transfer-status").textContent.startsWith("2 arquivo(s)")
+    const players=[...document.querySelectorAll("label")].find(el=>el.textContent.includes("Versão dos jogadores, sem artigos"))?.querySelector("input")
+    if(!players)throw Error("Opção dos jogadores ausente.")
+    if(!players.checked)players.click()
+    await wait(100)
     button("Preparar documento").click()
     await until(()=>document.querySelector(".book-preview-output")?.dataset.pages || document.querySelector(".book-pages-output")?.dataset.pages || (document.querySelector("[data-book-pagination-status]")?.textContent.includes("páginas")))
     select("Formato de exportação","html")
@@ -57,6 +62,11 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     button("Exportar arquivo").click()
     await until(()=>document.querySelector("[data-book-export-status]")?.textContent.startsWith("PDF salvo:"))
     const pdf=document.querySelector("[data-book-export-status]").textContent.slice("PDF salvo: ".length)
+    checks.publicPreview=!document.querySelector(".book-preview-source")?.textContent.includes("X4_SEGREDO_NAO_EXPORTAR")
+    select("Formato de exportação","site")
+    button("Exportar arquivo").click()
+    await until(()=>document.querySelector("[data-book-export-status]")?.textContent.includes("site.zip"))
+    const site=document.querySelector("[data-book-export-status]").textContent.slice("Arquivo salvo: ".length).split(". ")[0]
     button("Fechar prévia").click()
     select("Formato do pacote","markdown")
     button("Escolher onde salvar").click()
@@ -66,14 +76,17 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await api.vault.writeManagedTransfer(managed,manifest,null)
     checks.world=(await api.vault.listTransferFiles(true)).some(entry=>entry.path===managed) && !(await api.vault.listTransferFiles(false)).some(entry=>entry.path===managed)
     checks.hidden=await api.vault.writeManagedTransfer(".obsidian/teste.json",manifest,null).then(()=>false,()=>true)
-    return {checks,exported,zip,html,pdf}
-  })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string }
+    return {checks,exported,zip,html,pdf,site}
+  })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string; site: string }
   const native = await readTransferArchive(new Uint8Array(await readFile(result.exported)))
   const markdown = await readTransferArchive(new Uint8Array(await readFile(result.zip)))
   const html = await readFile(result.html, "utf8")
   result.checks.nativeArchive = native.kind === "runas" && native.files.length === 2 && native.files.find(file => file.path.endsWith(".png"))?.bytes.length === 70
   result.checks.markdownArchive = markdown.kind === "markdown" && markdown.files.length === 2
-  result.checks.html = html.includes("Transferência") && html.includes('aria-label="Sumário"')
+  result.checks.html = html.includes("Transferência") && html.includes('aria-label="Sumário"') && !html.includes("X4_SEGREDO_NAO_EXPORTAR")
+  const site = unzipSync(new Uint8Array(await readFile(result.site)))
+  const first = strFromU8(site["notas/nota-1.html"] ?? new Uint8Array())
+  result.checks.site = Boolean(site["index.html"] && site["book.css"]) && first.includes("Transferência") && first.includes('src="../assets/') && !first.includes("X4_SEGREDO_NAO_EXPORTAR") && !first.includes("<script")
   const pdf = await checkPdf(result.pdf)
   result.checks.pdf = Boolean(pdf && typeof pdf === "object" && "pages" in pdf && Number(pdf.pages) > 0)
   return { ...result, nativePaths: native.files.map(file=>file.path), markdownPaths: markdown.files.map(file=>file.path), pdfCheck: pdf, ok: Object.values(result.checks).every(Boolean) }

@@ -1,3 +1,4 @@
+import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
@@ -329,7 +330,7 @@ function PropertiesPanel({ document, scene, store, put, onRemove, onClose }: { d
   const update = (patch: Record<string, unknown>) => put({ id: document.id, type: document.type, parentId: document.parentId, data: { ...(document.data as object), ...patch } })
   const data = document.data as { hidden?: boolean; locked?: boolean }
   const title = { token: "Token", tile: "Imagem", drawing: "Desenho", note: "Nota", wall: "Parede", light: "Luz", sound: "Som", region: "Região" }[document.type as "token"] ?? "Objeto"
-  return <aside className="properties" aria-label={`Propriedades: ${title}`}>
+  return <ResizablePanel id="vtt-properties" label={`Propriedades: ${title}`} width={290} className="properties">
     <header>
       <strong>{title}</strong>
       <div className="row-actions">
@@ -347,7 +348,7 @@ function PropertiesPanel({ document, scene, store, put, onRemove, onClose }: { d
     {document.type === "light" && <LightFields data={document.data as LightData} update={update} />}
     {document.type === "sound" && <SoundFields data={document.data as SoundData} update={update} />}
     {document.type === "region" && <RegionFields id={document.id} data={document.data as RegionData} store={store} update={update} />}
-  </aside>
+  </ResizablePanel>
 }
 
 function ImagePicker({ kind, path, onChange }: { kind: AssetKind; path: string | null; onChange: (path: string | null, size?: { width: number; height: number }) => void }) {

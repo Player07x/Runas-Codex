@@ -555,3 +555,27 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - APK debug antigo (até beta.13) tem outra assinatura. A nova beta não consegue substituí-lo automaticamente;
   planejar a migração manual preservando o cofre e exportando backups antes de remover uma instalação antiga.
   A implementação não desinstala nem apaga a versão antiga.
+
+## X4 e interface de escrita — conferência antes do merge (19/10/2026)
+
+- [ ] No navegador, conferir os seis controles de Livros, galeria por categoria e Modo foco; sair pelo botão e Escape.
+- [ ] Arrastar as bordas da navegação, lista/detalhes de Notas, referência/prévia de Livros, Wiki, Agenda, sessões,
+      gráfico e propriedades da mesa; recolher e reabrir também no celular; conferir a persistência ao reabrir.
+- [ ] Verificar nomes horizontais no seletor de Wiki e datas em uma linha em Agenda › Tarefas com prazo.
+- [ ] Inserir `::: runas-colunas-1` até `::: runas-colunas-4`; conferir o fluxo na prévia e no PDF, sem retirar as
+      quebras de colunas manuais. Abrir o DOCX/RTF no Word e no LibreOffice para conferir suas seções contínuas.
+- [ ] Abrir Exportar… na nota, pasta, artigo, categoria e Wiki, e Exportar diário… nas sessões da campanha.
+- [ ] Gerar versão dos jogadores; verificar PDF, DOCX e HTML sem o segredo e sem artigos secretos.
+- [ ] Extrair o ZIP do Site offline e abrir index.html sem internet no computador e no celular; conferir links,
+      imagens e fontes. Mapas são imagem e lista; controles interativos não acompanham o arquivo.
+- [ ] Autorizar explicitamente o merge e uma eventual release depois da conferência do navegador, como solicitado.
+
+### Conferência adicional de Livros — layout de escrita e celular (19/10/2026)
+
+- Conferir a folha central e a faixa visual de formatação; selecionar uma palavra e aplicar Negrito/Itálico.
+- No celular, conferir os ícones, dicas, abertura/recolhimento de Capítulos e Referências e os modos da nota.
+- No foco, conferir a barra única (Voltar, Ações, Leitura/Editar/Código e Sair do Foco), a faixa fixa e o aproveitamento da altura.
+- Conferir a precisão de cliques em notas longas, títulos e linhas quebradas após mudar fonte/tamanho e largura.
+- Mandar capítulo/seção/parte para a lixeira e conferir a propriedade `estrutura` dos livros que o referenciam.
+- Abrir o site extraído por `index.html` fora do navegador integrado, que bloqueia `file://`; testar os links offline.
+- Validação local: 515 testes app + 178 desktop; typecheck, builds e smokes Electron de leitura/gravação passaram.

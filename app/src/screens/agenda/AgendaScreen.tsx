@@ -1,3 +1,4 @@
+import { ResizablePanel } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload } from "lucide-react"
@@ -269,7 +270,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
           {view === "lista" && <ListView from={cursor} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} />}
         </div>
 
-        <aside className="stack-lg agenda-side">
+        <ResizablePanel id="agenda" label="Detalhes da agenda" side="right" width={320} className="stack-lg agenda-side">
           {selected ? (
             <EventDetail
               occurrence={selected}
@@ -325,7 +326,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
                       {noteName(t.path)}
                     </a>
                   </span>
-                  <span className={`meta tiny ${t.due < isoDate(today) ? "late" : "faint"}`}>{new Date(`${t.due}T12:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                  <span className={`task-due-date meta tiny ${t.due < isoDate(today) ? "late" : "faint"}`}>{new Date(`${t.due}T12:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
                 </label>
               ))}
             </div>
@@ -374,7 +375,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
               }}
             />
           </div>
-        </aside>
+        </ResizablePanel>
       </div>
 
       {dialog?.kind === "new" && (

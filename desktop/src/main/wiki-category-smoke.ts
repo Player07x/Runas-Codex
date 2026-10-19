@@ -29,7 +29,7 @@ export const WIKI_CATEGORY_SMOKE = `
   document.querySelector(".wiki-players")?.click()
   await until(() => document.querySelector(".wiki-players[aria-pressed=true]"))
   await until(() => !cards().some(el => el.textContent.includes("Visitante Oculto")))
-  result.wikiCategory.public = cards().length === allCount - 1 && !document.querySelector(".wiki-category-page .page-head button") && !document.querySelector(".wiki-category-page").textContent.includes("Incógnito")
+  result.wikiCategory.public = cards().length === allCount - 1 && !document.querySelector(".wiki-category-page .page-head button.primary") && [...document.querySelectorAll(".wiki-category-page .page-head button")].some(button => button.textContent.includes("Exportar categoria")) && !document.querySelector(".wiki-category-page").textContent.includes("Incógnito")
   document.querySelector(".wiki-players")?.click()
   await until(() => document.querySelector(".wiki-players[aria-pressed=false]"))
   await until(() => cards().length === allCount)

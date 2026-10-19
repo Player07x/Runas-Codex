@@ -1,3 +1,4 @@
+import { exportHeadingId } from "../../core/export/documents"
 import { bookDecorationCss } from "../../core/books-finish"
 import type { ExportAsset, ExportBook, ExportNode } from "../../core/export/book"
 import { bookExportPlan } from "../../core/export/book"
@@ -62,6 +63,7 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
       const computed = getComputedStyle(node)
       attrs.style = styles.map((key) => `${key}:${computed.getPropertyValue(key)}`).join(";")
     }
+    if (/^H[1-6]$/.test(node.tagName) && node.closest(".md") && !attrs.id) attrs.id = exportHeadingId(node.textContent ?? "")
     if (node instanceof HTMLImageElement) {
       if (!node.complete || !node.naturalWidth) throw new Error(`Imagem não carregada: ${node.alt}`)
       attrs.src = await imageAsset(node)
@@ -71,7 +73,17 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
       const href = node.getAttribute("href") ?? ""
       if (/^(https?:|mailto:|#)/.test(href)) attrs.href = href
       // Links que saem do documento conservam o rótulo. Nunca empacotamos caminhos do computador.
-      if (node.classList.contains("wikilink")) delete attrs.href
+      if (node.classList.contains("wikilink")) {
+        delete attrs.href
+        const path = (node.getAttribute("title") ?? "").replace(/^Em outro espaço: /, "")
+        if (index.note(path)) attrs["data-note-path"] = path
+        const raw = node.getAttribute("data-href") ?? ""
+        const anchor = raw.includes("#") ? raw.slice(raw.indexOf("#") + 1) : ""
+        if (anchor && !anchor.startsWith("^")) {
+          attrs["data-note-anchor"] = "#" + encodeURIComponent(exportHeadingId(anchor))
+          if (raw.startsWith("#")) attrs.href = attrs["data-note-anchor"]
+        }
+      }
     }
     const tag = node.tagName.toLowerCase()
     return [{ tag: tag === "input" ? "span" : tag, attrs: tag === "input" ? {} : attrs, children: tag === "input" ? [node.hasAttribute("checked") ? "☑" : "☐"] : (await Promise.all([...node.childNodes].map(capture))).flat() }]
