@@ -10,7 +10,8 @@ const endpoint = process.argv[2] ?? 'http://127.0.0.1:9224'
 const output = process.argv[3] ?? '/tmp/runas-android-vault'
 const deviceVault = process.argv[4] ?? '/sdcard/Documents/cofre-smoke'
 const localVault = process.argv[5] ?? 'desktop/tests/cofre-exemplo'
-const saf = process.argv[6] === 'saf'
+const external = process.argv[6] === 'external'
+const saf = process.argv[6] === 'saf' || external
 await mkdir(output, { recursive: true })
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const adb = (...args) => execFileSync('adb', args, { timeout: 60000, maxBuffer: 64 * 1024 * 1024 }).toString()
@@ -87,7 +88,7 @@ try {
   const current = await run(call('current'))
   const correctVault = saf ? current.ok?.vault?.mode === 'saf' && current.ok.vault.name === deviceVault.split('/').at(-1) : current.ok?.vault?.path === deviceVault
   check('cofre aberto e gravável', correctVault && current.ok.vault.readOnly === false, current)
-  if (saf) check('SAF sem acesso a todos os arquivos', (await run(call('access'))).ok?.granted === false)
+  if (saf) check(external ? 'SAF de outro aplicativo com acesso amplo já liberado' : 'SAF sem acesso a todos os arquivos', (await run(call('access'))).ok?.granted === external)
   const expected = await localFiles(localVault)
   // O plugin fica disponível antes de o VaultProvider terminar a leitura e ligar sua observação.
   await run(`location.hash = '#/config'; true`)

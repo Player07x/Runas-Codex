@@ -507,3 +507,21 @@ O emulador Android 35 aprovou os 22 checks do smoke e o spike de 5 mil notas: `i
 - [ ] Interromper uma gravação ou movimento SAF encerrando o processo: ao reabrir, o original volta ou fica preservado
   na `.trash` se o destino já estiver ocupado. Os testes JVM cobrem as etapas da recuperação; falta celular físico.
 - [ ] Digitação rápida e composição com Gboard no cofre SAF; o teste do emulador envia teclas com cadência definida.
+
+## Beta.13 — retorno da conferência manual pelo dono
+
+O dono informou que concluiu os testes manuais desta rodada e que tudo está funcionando. A limitação relatada
+após essa validação é selecionar como cofre uma pasta do notebook acessada por SMB em outro aplicativo de arquivos
+no Android. A beta.13 restringe o seletor e o backend SAF à memória interna e ao cartão; falta verificar se o
+aplicativo escolhido disponibiliza a pasta pelo SAF e se o uso pretendido é acesso remoto ou uma cópia local
+sincronizada. A assinatura do APK continua dependendo da configuração da chave descrita na ADR 0015.
+
+### Pastas de outros aplicativos — nova conferência após a beta.13
+
+- [ ] Com acesso a todos os arquivos já liberado, usar Abrir pasta e selecionar a pasta disponibilizada pelo outro
+  gerenciador. Conferir leitura, backup ao liberar gravação, alteração no arquivo sincronizado e persistência após
+  reiniciar o Runas. Repetir Criar cofre em uma pasta vazia desse gerenciador.
+- [ ] Cancelar o seletor mantém o cofre anterior. Revogar a permissão ou deixar o provedor indisponível deve mostrar
+  o erro sem alterar arquivos; voltar ao app relê as mudanças recebidas do notebook pelo gerenciador.
+- [ ] Conferir anexos por URI do outro aplicativo e a recusa de escrita quando ele não fornece as operações ou os
+  metadados necessários. O CI usa outro aplicativo de teste; sincronização real continua sendo conferência física.

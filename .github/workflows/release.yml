@@ -427,6 +427,26 @@ jobs:
           adb shell am start -n dev.runas.codex/.MainActivity
           bash mobile/tests/android-devtools.sh
           node mobile/tests/vault-index.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/saf 5000 "$start"
+      - name: Gerar o provedor de pastas de outro aplicativo para o teste
+        working-directory: mobile/android
+        run: ./gradlew :test-documents-provider:assembleDebug -PrunasTestProvider --no-daemon
+      - name: Escolher pasta de outro aplicativo com acesso amplo já liberado
+        run: |
+          adb shell am force-stop dev.runas.codex
+          adb shell mkdir -p /sdcard/Documents/cofre-smoke-provider
+          adb push desktop/tests/cofre-exemplo/. /sdcard/Documents/cofre-smoke-provider/
+          adb install -r mobile/android/test-documents-provider/build/outputs/apk/debug/test-documents-provider-debug.apk
+          adb shell appops set --uid dev.runas.codex.testdocuments MANAGE_EXTERNAL_STORAGE allow
+          adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
+          adb shell am start -n dev.runas.codex/.MainActivity
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/vault-saf.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/external /sdcard/Documents/cofre-smoke-provider true external
+      - name: Smoke da pasta de outro aplicativo após reiniciar o processo
+        run: |
+          adb shell am force-stop dev.runas.codex
+          adb shell am start -n dev.runas.codex/.MainActivity
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/vault-smoke.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/external /sdcard/Documents/cofre-smoke-provider desktop/tests/cofre-exemplo external
       - name: Registro do Android
         if: always()
         run: adb logcat -d > /tmp/runas-android-vault/logcat.txt 2>&1 || true

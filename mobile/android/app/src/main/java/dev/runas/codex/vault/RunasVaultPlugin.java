@@ -255,7 +255,7 @@ public class RunasVaultPlugin extends Plugin {
         if (hasAccess()) pickFolder(call);
         else getActivity().runOnUiThread(() -> new AlertDialog.Builder(getActivity())
             .setTitle("Abrir pelo seletor de pastas")
-            .setMessage("Você pode abrir uma pasta local sem liberar o acesso a todos os arquivos. O app usará apenas a pasta escolhida; a leitura de cofres grandes pode levar mais tempo.")
+            .setMessage("Você pode escolher uma pasta sem liberar o acesso a todos os arquivos, inclusive uma pasta disponibilizada por outro aplicativo. O app usará apenas a pasta escolhida; a leitura de cofres grandes pode levar mais tempo.")
             .setPositiveButton("Escolher pasta", (dialog, which) -> {
                 prefs().edit().putBoolean("preferSaf", true).apply();
                 pickSaf = true;
@@ -268,8 +268,7 @@ public class RunasVaultPlugin extends Plugin {
 
     private void pickFolder(PluginCall call) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-            .putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
         boolean debug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         String initial = debug ? call.getString("initialUri", null) : null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && initial != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(initial));
@@ -283,21 +282,22 @@ public class RunasVaultPlugin extends Plugin {
             return;
         }
         Uri uri = result.getData().getData();
-        String mode = pickSaf ? "saf" : prefs().getString("mode:" + uri, "direct");
         try {
+            // Ter acesso ao disco não transforma a árvore de outro aplicativo num caminho local.
+            // O seletor pode devolver qualquer DocumentsProvider; nesse caso, mantém a URI e usa o SAF.
+            boolean useSaf = pickSaf || !hasAccess() || "saf".equals(prefs().getString("mode:" + uri, "direct"));
+            String path = useSaf ? null : treeToPath(uri);
             VaultFs selected;
-            if ("saf".equals(mode)) {
+            if (path == null) {
                 int flags = result.getData().getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 if ((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0 || (flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == 0) {
-                    throw new VaultStore.VaultError("Escolha uma pasta local com permissão de leitura e gravação.");
+                    throw new VaultStore.VaultError("Escolha uma pasta com permissão de leitura e gravação no aplicativo de arquivos.");
                 }
                 getContext().getContentResolver().takePersistableUriPermission(uri, flags);
                 DocumentVaultStore documents = openSaf(uri);
                 if (pickMode.equals("create")) documents.initialize();
                 selected = documents;
             } else {
-                String path = treeToPath(uri);
-                if (path == null) throw new VaultStore.VaultError("Escolha uma pasta da memória interna ou do cartão.");
                 File root = new File(path);
                 if (!root.isDirectory()) throw new VaultStore.VaultError("A pasta escolhida não está acessível: " + path);
                 if (pickMode.equals("create")) {
@@ -316,7 +316,7 @@ public class RunasVaultPlugin extends Plugin {
             prefs().edit().putString("path", selected.identity()).putString("mode", selected.mode()).putString("mode:" + uri, selected.mode()).apply();
             open(selected);
             call.resolve(info());
-        } catch (IOException | SecurityException e) {
+        } catch (IOException | SecurityException | IllegalArgumentException e) {
             fail(call, e);
         }
     }
