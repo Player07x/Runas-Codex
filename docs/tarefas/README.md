@@ -192,7 +192,7 @@ com Android, Windows e Linux, conforme confirmação na conversa.
 | Entrega | Situação |
 |---|---|
 | Pastas fornecidas por outros aplicativos no Android | PR #45 mesclado; acesso amplo + provedor de outro UID e persistência após reiniciar conferidos no CI |
-| Transferências centrais, pacotes de cofre/espaços e documentos de seleção no desktop e mobile | PR #46 em validação final; ADR 0020 |
+| Transferências centrais, pacotes de cofre/espaços e documentos de seleção no desktop e mobile | PR #46 mesclado; CI e smokes Windows/Linux/Android aprovados (Release 39251916487); ADR 0020 |
 | Atualizador do APK e interface Android sem indicações de teclado | PR #47 em validação final; ADR 0021 |
 | Próxima beta Android, Windows e Linux | beta.14 preparada; publicação após os checks e a mesclagem |
 

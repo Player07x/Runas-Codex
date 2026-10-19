@@ -30,14 +30,14 @@ desktop, atualizar esta lista, mesclar por PR e publicar a próxima beta. Não u
 ## Fechamento
 
 - [ ] Typecheck, testes, build web e desktop; compilação e testes Android no GitHub Actions (ADR 0003).
-- [ ] Atualizar ADRs, lista de tarefas e conferências manuais específicas das mudanças.
+- [x] Atualizar ADRs, lista de tarefas e conferências manuais específicas das mudanças.
 - [ ] PRs em português, mesclagem após checks aprovados e próxima beta para Android, Windows e Linux.
 
 Importações de produtos antigos da Runas Suite continuam fora do plano conforme ADR 0004; migrações adicionais de
 outros serviços seguem o escopo de pós-1.0 já registrado. Sincronização SMB permanece responsabilidade do gerenciador
 escolhido pelo usuário.
 
-Fase 2: implementação e testes automatizados na ADR 0020. Checks nativos do PR ainda precisam ser confirmados antes da mesclagem.
+Fase 2: PR #46 mesclado em 19/10/2026. CI 39251916379 e Release 39251916487 aprovados: Windows, Linux, APK, toque, cofre direto, SAF local e provedor de outro aplicativo, incluindo persistência e 5 mil notas. Formato e limites na ADR 0020.
 
 Pedido adicional do dono: ocultar indicações e configurações de atalhos de teclado no Android, mantendo as ações por toque.
 
