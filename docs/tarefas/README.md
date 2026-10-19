@@ -176,8 +176,8 @@ interface/confiabilidade dos testes foram tratados na beta.5. Validação físic
 
 | Fase | Responsável | Branch | Situação |
 |---|---|---|---|
-| **C8** A1: cofre real, spikes, emulador no CI, APK assinado | Claude Code; CI com o Codex ([c8-ci-android.md](c8-ci-android.md)) | `android/a1-cofre` | em revisão ([ADR 0015](../adr/0015-android.md)) |
-| SAF como reserva do cofre (depois do CI da C8) | Codex ([android-saf.md](android-saf.md)) | `android/a2-saf` | a fazer |
+| **C8** A1: cofre real, spikes, emulador no CI, APK assinado | Claude Code; CI com o Codex ([c8-ci-android.md](c8-ci-android.md)) | `android/a1-cofre` | mesclada (PR #41); CI fechado pelo Codex ([ADR 0015](../adr/0015-android.md)) |
+| SAF como reserva do cofre (depois do CI da C8) | Codex ([android-saf.md](android-saf.md)) | `android/a2-saf` | mesclada (PR #42, integrada pelo #43); publicada na beta.13 |
 
 ## Pedido posterior à beta.13 — pastas, transferências e APK
 
@@ -185,3 +185,18 @@ O dono aprovou a conferência manual da beta.13 e pediu a seleção de pastas di
 importação/exportação para mobile e desktop e atualização do APK pelo app. O andamento e o fechamento estão em
 [pastas-transferencias-atualizacao.md](pastas-transferencias-atualizacao.md). Ao concluir, publicar a próxima beta
 com Android, Windows e Linux, conforme confirmação na conversa.
+
+
+## Fechamento posterior à beta.13 (19/10/2026)
+
+| Entrega | Situação |
+|---|---|
+| Pastas fornecidas por outros aplicativos no Android | PR #45 mesclado; acesso amplo + provedor de outro UID e persistência após reiniciar conferidos no CI |
+| Transferências centrais, pacotes de cofre/espaços e documentos de seleção no desktop e mobile | PR #46 em validação final; ADR 0020 |
+| Atualizador do APK e interface Android sem indicações de teclado | PR #47 em validação final; ADR 0021 |
+| Próxima beta Android, Windows e Linux | beta.14 preparada; publicação após os checks e a mesclagem |
+
+Este pedido entrega o transporte de dados da C7 e a exportação central de notas/coleções da X4. Backups agendados,
+tratamento dedicado dos conflitos de sincronizadores, entradas de exportação em cada módulo e o site ZIP de uma
+página por nota continuam nas tarefas correspondentes; o HTML central desta entrega é um documento offline único.
+A tarefa X7 de hospedar a sala pelo celular permanece independente.
