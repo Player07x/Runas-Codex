@@ -53,7 +53,10 @@ export function selectTransferPaths(index: VaultIndex, entries: TransferEntry[],
       if (dest && (linkedNotes || !index.note(dest))) include(dest)
     }
     // Caminhos de imagens em propriedades e blocos desenhados também precisam viajar com a nota.
-    for (const entry of attachments) if (note.text.includes(entry.path) || note.text.includes(basename(entry.path))) include(entry.path)
+    for (const entry of attachments) {
+      const name = basename(entry.path)
+      if (note.text.includes(entry.path) || note.text.includes(name) && index.resolve({ kind: "wiki", embed: true, target: name, raw: "", start: 0, end: 0, inFrontmatter: false }, path).dest === entry.path) include(entry.path)
+    }
   }
   return [...wanted].sort((a, b) => a.localeCompare(b, "pt-BR"))
 }

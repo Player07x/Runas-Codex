@@ -66,6 +66,11 @@ describe("planejamento das transferências", () => {
     expect(selectTransferPaths(index, entries, ["Notas/a.md"], false, false)).toEqual(["Anexos/mapa.png", "Notas/a.md"])
     expect(selectTransferPaths(index, entries, ["Notas/a.md"], true, false)).toHaveLength(3)
   })
+  it("não inclui uma cópia distante do anexo quando há dois arquivos com o mesmo nome", () => {
+    const texts = { "Notas/Importados/a.md": "![[mapa.png]]" }
+    const entries = [entry("Notas/Importados/a.md"), entry("Notas/Importados/mapa.png"), entry("Notas/Cópia/mapa.png")]
+    expect(selectTransferPaths(new VaultIndex(entries, texts), entries, ["Notas/Importados/a.md"], false, false)).toEqual(["Notas/Importados/a.md", "Notas/Importados/mapa.png"])
+  })
   it("leva os eventos que apontam à sessão e os dados da mesa ligada à campanha", () => {
     const texts = { "Campanhas/Porto/Porto.md": "---\nmesa: abcdefgh-1234\n---\n", "Campanhas/Porto/Sessão.md": "# Sessão", "Agenda/Sábado.md": '---\nsessao: "[[Campanhas/Porto/Sessão]]"\n---\n' }
     const entries = [...Object.keys(texts).map(path => entry(path)), entry(".runas/mesas/porto-abcdefgh/mesa.json"), entry(".runas/mesas/outra/mesa.json")]
