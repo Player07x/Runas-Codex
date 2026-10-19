@@ -37,8 +37,10 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await wait(150)
     document.querySelector("summary").click()
     button("Limpar seleção").click()
+    await until(()=>document.querySelector("summary")?.textContent.includes("(0)") && ![...document.querySelectorAll(".transfer-files input")].some(input=>input.checked))
     const choice=await until(()=>[...document.querySelectorAll(".transfer-files label")].find(el=>el.textContent.startsWith(path)))
     choice.querySelector("input").click()
+    await until(()=>document.querySelector("summary")?.textContent.includes("(1)") && !button("Escolher onde salvar")?.disabled)
     const linked=[...document.querySelectorAll("label")].find(el=>el.textContent.includes("Incluir notas ligadas")).querySelector("input")
     if(linked.checked)linked.click()
     button("Escolher onde salvar").click()
@@ -74,5 +76,5 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
   result.checks.html = html.includes("Transferência") && html.includes('aria-label="Sumário"')
   const pdf = await checkPdf(result.pdf)
   result.checks.pdf = Boolean(pdf && typeof pdf === "object" && "pages" in pdf && Number(pdf.pages) > 0)
-  return { ...result, pdfCheck: pdf, ok: Object.values(result.checks).every(Boolean) }
+  return { ...result, nativePaths: native.files.map(file=>file.path), markdownPaths: markdown.files.map(file=>file.path), pdfCheck: pdf, ok: Object.values(result.checks).every(Boolean) }
 }
