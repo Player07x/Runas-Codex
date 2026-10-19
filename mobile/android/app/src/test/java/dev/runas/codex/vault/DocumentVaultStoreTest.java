@@ -39,6 +39,17 @@ public class DocumentVaultStoreTest {
     }
     private String text(String path) throws IOException { return store.readTexts(Arrays.asList(path)).get(path); }
 
+    @Test public void pacotesUsamSubarvoreInternaSemLiberarOutrosOcultos() throws Exception {
+        assertNull(VaultTransfer.worlds(store, temp.newFolder(), false));
+        VaultFs worlds = VaultTransfer.worlds(store, temp.newFolder(), true);
+        VaultStore.Entry entry = worlds.writeBinary("porto/mesa.json", "{}".getBytes(StandardCharsets.UTF_8), null, true);
+        assertTrue(entry.uri.startsWith("content://local/document/"));
+        assertEquals(entry.uri, store.source(".runas/mesas/porto/mesa.json"));
+        assertEquals("{}", store.readTexts(Arrays.asList(".runas/mesas/porto/mesa.json")).get(".runas/mesas/porto/mesa.json"));
+        refuses("ocultos", () -> store.writeText(".runas/mesas/porto/mesa.json", "fora do contrato", null, false));
+        assertEquals(0, store.list("", false).size());
+    }
+
     @Test public void listaCincoMilNotasComUmaConsultaPorPasta() throws IOException {
         for (int i = 0; i < 5000; i++) documents.file("Notas/Nota " + i + ".md", "# " + i);
         documents.file(".obsidian/app.json", "{}");

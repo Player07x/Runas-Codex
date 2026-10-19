@@ -100,6 +100,14 @@ function registerIpc(): void {
   handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
   handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
+  handle(IPC.vaultTransferList, (_event, includeWorlds) => { if (includeWorlds !== false) vtt.flushWorld(); return vault.listTransferFiles(includeWorlds !== false) })
+  handle(IPC.vaultTransferWrite, async (_event, path, bytes, expected) => {
+    if (!(bytes instanceof Uint8Array)) throw new Error("Conteúdo inválido para importar a mesa.")
+    const version = versionOf(expected)
+    if (version === undefined) throw new Error("A versão lida é obrigatória para importar a mesa.")
+    vtt.closeWorld()
+    return vault.writeManagedTransfer(text(path, "caminho"), bytes, version)
+  })
   handle(IPC.vaultWriteBinary, (_event, path, content, expected) => {
     if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
     return vault.writeBinary(text(path, "caminho"), content, versionOf(expected))

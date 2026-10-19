@@ -8,6 +8,7 @@ import { installSnippet, mediaFile } from "./vault-files"
 import { VaultWatcher } from "./watcher"
 import { listTrash, restoreTrash } from "./trash"
 import { WriteQueue } from "./write-queue"
+import { listTransferFiles, writeManagedTransfer } from "./vault-transfer"
 
 interface Config {
   vaultPath?: string
@@ -278,5 +279,13 @@ export class VaultService {
     const entry = await restoreTrash(root, path, target)
     this.watcher?.remember(entry); this.send([{ type: "changed", entry }])
     return entry
+  }
+  listTransferFiles(includeWorlds = true): Promise<VaultEntry[]> { return listTransferFiles(this.root(), includeWorlds) }
+  async writeManagedTransfer(path: string, bytes: Uint8Array, expected: { size: number; mtime: number } | null): Promise<VaultEntry> {
+    const root = this.writableRoot()
+    return this.writes.run(root + "\0" + path, async () => {
+      await this.dailyBackup()
+      return writeManagedTransfer(root, path, bytes, expected)
+    })
   }
 }

@@ -388,6 +388,37 @@ public class RunasVaultPlugin extends Plugin {
         }
     }
 
+    @PluginMethod
+    public void listTransferFiles(PluginCall call) {
+        try {
+            VaultFs source = requireStore();
+            JSArray entries = new JSArray();
+            for (VaultStore.Entry entry : source.list("", false)) entries.put(entryJson(entry));
+            if (!Boolean.FALSE.equals(call.getBoolean("includeWorlds", true))) {
+                VaultFs worlds = VaultTransfer.worlds(source, new File(getContext().getFilesDir(), "vault-transactions"), false);
+                if (worlds != null) for (VaultStore.Entry entry : worlds.list("", false)) {
+                    String path = VaultTransfer.PREFIX + entry.path;
+                    if (VaultTransfer.accepts(path)) entries.put(entryJson(new VaultStore.Entry(path, entry.size, entry.mtime, entry.uri)));
+                }
+            }
+            JSObject result = new JSObject(); result.put("entries", entries); call.resolve(result);
+        } catch (IOException e) { fail(call, e); }
+    }
+
+    @PluginMethod
+    public void writeManagedTransfer(PluginCall call) {
+        try {
+            String path = call.getString("path"), relative = VaultTransfer.relative(path);
+            VaultStore.Version expected = expectedOf(call);
+            boolean creating = createOnly(call);
+            if (!creating && (expected == null || expected.size < 0 || !Double.isFinite(expected.mtime) || expected.mtime <= 0)) throw new VaultStore.VaultError("A versão lida é obrigatória para importar os dados da mesa.");
+            byte[] bytes = Base64.decode(call.getString("base64", ""), Base64.DEFAULT);
+            VaultFs worlds = VaultTransfer.worlds(writableStore(), new File(getContext().getFilesDir(), "vault-transactions"), true);
+            VaultStore.Entry entry = worlds.writeBinary(relative, bytes, expected, creating);
+            call.resolve(entryJson(new VaultStore.Entry(path, entry.size, entry.mtime, entry.uri)));
+        } catch (IOException | IllegalArgumentException e) { fail(call, e); }
+    }
+
     /** `expected`: ausente = grava por cima; `null` = só cria; `{mtime,size}` = só se for a versão lida. */
     private static VaultStore.Version expectedOf(PluginCall call) {
         JSObject expected = call.getObject("expected", null);

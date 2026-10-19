@@ -35,6 +35,8 @@ interface RunasVaultPlugin {
   trash(options: { path: string }): Promise<void>
   listTrash(): Promise<{ entries: VaultEntry[] }>
   restoreTrash(options: { path: string; target: string }): Promise<NativeEntry>
+  listTransferFiles(options: { includeWorlds: boolean }): Promise<{ entries: NativeEntry[] }>
+  writeManagedTransfer(options: { path: string; base64: string; expected: { size: number; mtime: number } | null }): Promise<NativeEntry>
   installSnippet(options: { css: string }): Promise<{ path: string }>
   backup(): Promise<BackupInfo>
   listBackups(): Promise<{ backups: BackupInfo[] }>
@@ -148,5 +150,7 @@ export function createCapacitorPlatform(): Platform {
     appVersion: async () => (await RunasVault.appVersion()).version,
     listTrash: async () => (await RunasVault.listTrash()).entries,
     restoreTrash: async (path, target) => rememberEntry(await RunasVault.restoreTrash({ path, target })),
+    listTransferFiles: async (includeWorlds = true) => (await RunasVault.listTransferFiles({ includeWorlds })).entries.map(rememberEntry),
+    writeManagedTransfer: async (path, bytes, expected) => rememberEntry(await RunasVault.writeManagedTransfer({ path, base64: toBase64(bytes), expected })),
   }
 }

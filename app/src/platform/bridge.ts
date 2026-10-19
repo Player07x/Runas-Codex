@@ -35,6 +35,8 @@ export interface RunasCodexBridge {
     writeBinary(path: string, bytes: Uint8Array, expected?: { mtime: number; size: number } | null): Promise<VaultEntry>
     listTrash(): Promise<VaultEntry[]>
     restoreTrash(path: string, target: string): Promise<VaultEntry>
+    listTransferFiles?(includeWorlds?: boolean): Promise<VaultEntry[]>
+    writeManagedTransfer?(path: string, bytes: Uint8Array, expected: { size: number; mtime: number } | null): Promise<VaultEntry>
   }
   /** Lembretes da Agenda (notificações do sistema, agendadas no processo principal). */
   readonly agenda: {

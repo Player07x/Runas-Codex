@@ -127,6 +127,8 @@ export class VttHost {
     void this.closeServices()
     this.store.close()
   }
+  /** Exportar o cofre inclui as alterações da mesa sem encerrar a sala em andamento. */
+  flushWorld(): void { this.store.openWorld?.database.flush() }
 
   /**
    * Janela de jogador: a sala desta máquina (tela para a TV) ou a de outra pessoa (Entrar Sala). Sem preload e sem

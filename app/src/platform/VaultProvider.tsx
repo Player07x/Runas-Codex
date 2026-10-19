@@ -10,10 +10,12 @@ import { renameTabs } from "../lib/tabs"
 import { recordVersion, renameVersions } from "../lib/note-history"
 import { renameDecorations } from "../lib/customization"
 import { flushOpenNotes } from "../lib/vault-notes"
-import { extname, joinPath } from "../core/text"
+import { extname, foldName, joinPath } from "../core/text"
 import { VaultIndex, type IndexedNote } from "../core/vault-index"
 import { platform } from "./index"
 import type { Platform, VaultChange, VaultEntry, VaultInfo } from "./platform"
+import { decodeTransferText, sameTransferVersion, type TransferWrite } from "../core/transfer/plan"
+import { managedWorldPath, transferPath } from "../core/transfer/archive"
 
 const BATCH = 200
 
@@ -55,6 +57,8 @@ export interface VaultState {
    * Importadores podem informar uma pasta de destino explícita; o padrão continua sendo o do Obsidian.
    */
   addAttachment(fileName: string, bytes: Uint8Array, nearNote?: string, folder?: string): Promise<string>
+  /** Executa a prévia confirmada, sempre com a versão capturada nela; todas as gravações ficam no useVault. */
+  importTransfer(writes: TransferWrite[]): Promise<number>
 }
 
 const VaultContext = createContext<VaultState | null>(null)
@@ -81,6 +85,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
   const indexRef = useRef<VaultIndex | null>(null)
+  const importing = useRef<Promise<number> | null>(null)
   const bump = useCallback(() => setVersion((v) => v + 1), [])
 
   const open = useCallback(async (next: VaultInfo | null) => {
@@ -284,13 +289,55 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     current.set(entry, text); bump()
   }, [requireIndex, bump])
 
-  const choose = useCallback(async () => { await flushOpenNotes(); await open(await platform.chooseVault()) }, [open])
-  const create = useCallback(async () => { await flushOpenNotes(); const next = await platform.createVault(); if (next && !next.readOnly) await platform.createFolder(DEFAULT_IMAGE_FOLDER); await open(next) }, [open])
-  const setWritable = useCallback(async (writable: boolean) => setInfo(await platform.setWritable(writable)), [])
-  const reload = useCallback(async () => open(await platform.vault()), [open])
+  const choose = useCallback(async () => { await importing.current; await flushOpenNotes(); await open(await platform.chooseVault()) }, [open])
+  const create = useCallback(async () => { await importing.current; await flushOpenNotes(); const next = await platform.createVault(); if (next && !next.readOnly) await platform.createFolder(DEFAULT_IMAGE_FOLDER); await open(next) }, [open])
+  const setWritable = useCallback(async (writable: boolean) => { await importing.current; setInfo(await platform.setWritable(writable)) }, [])
+  const reload = useCallback(async () => { await importing.current; await open(await platform.vault()) }, [open])
+  const importTransfer = useCallback((writes: TransferWrite[]): Promise<number> => {
+    if (importing.current) return Promise.reject(new Error("Já há uma importação em andamento."))
+    const task = (async () => {
+      requireIndex()
+      await flushOpenNotes()
+      const identity = info!.path
+      const entries = await (platform.listTransferFiles?.() ?? platform.listVault())
+      for (const write of writes) {
+        transferPath(write.path)
+        if (!sameTransferVersion(entries.find(entry => foldName(entry.path) === foldName(write.path)), write.expected)) throw new Error(`“${write.path}” mudou desde a prévia. Prepare a importação novamente.`)
+      }
+      await platform.backup()
+      let completed = 0
+      try {
+        for (const write of writes) {
+          if ((await platform.vault())?.path !== identity) throw new Error("O cofre mudou durante a importação.")
+          if (managedWorldPath(write.path)) {
+            if (!platform.writeManagedTransfer) throw new Error("Esta versão do app não oferece importação dos dados internos das mesas.")
+            await platform.writeManagedTransfer(write.path, write.bytes, write.expected)
+          } else if (/\.(md|canvas|base)$/i.test(write.path)) {
+            const before = indexRef.current?.note(write.path)?.text, text = decodeTransferText(write.bytes)
+            if (before !== undefined && before !== text) await recordVersion(identity, write.path, before)
+            await platform.writeText(write.path, text, write.expected)
+          } else await platform.writeBinary(write.path, write.bytes, write.expected)
+          completed++
+        }
+        return completed
+      } catch (error) {
+        throw new Error(`${error instanceof Error ? error.message : String(error)} ${completed} arquivo(s) foram gravados antes da interrupção; os demais não foram importados. Confira o pacote de segurança antes de repetir.`)
+      } finally {
+        try {
+          const actual = await platform.vault()
+          if (actual?.path === identity) {
+            const loaded = await loadIndex()
+            indexRef.current = loaded; setIndex(loaded); bump()
+          } else await open(actual)
+        } catch (error) { setError(`Não deu para reler o cofre após a importação: ${error instanceof Error ? error.message : String(error)}`) }
+      }
+    })()
+    importing.current = task
+    return task.finally(() => { if (importing.current === task) importing.current = null })
+  }, [info, open, requireIndex, bump])
 
   return (
-    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile, addAttachment, restoreTrash }}>
+    <VaultContext.Provider value={{ platform, info, index, version, config, templates, loading, error, choose, create, setWritable, reload, save, createNote, createFolder, rename, trash, setProperty, createFile, addAttachment, restoreTrash, importTransfer }}>
       {children}
     </VaultContext.Provider>
   )

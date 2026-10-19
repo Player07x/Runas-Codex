@@ -400,4 +400,10 @@ final class DocumentVaultStore implements VaultFs {
         for (int i = keep; i < backups.size(); i++) new File(folder, backups.get(i).id + ".zip").delete();
         return new VaultStore.Backup(id, createdAt, files, zip.length());
     }
+    synchronized VaultFs worlds(File journalBase, boolean create) throws IOException {
+        Node documents = create ? folder(".runas/mesas") : optional(".runas/mesas", true);
+        if (documents == null) return null;
+        if (!documents.folder) throw new VaultError("A pasta interna das mesas não é uma pasta.");
+        return new DocumentVaultStore(new DocumentSubtree(tree, documents), journalBase);
+    }
 }

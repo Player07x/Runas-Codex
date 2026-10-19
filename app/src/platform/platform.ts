@@ -111,4 +111,8 @@ export interface Platform {
   listTrash?(): Promise<VaultEntry[]>
   restoreTrash?(path: string, target: string): Promise<VaultEntry>
   setTrayEnabled?(enabled:boolean):Promise<boolean>
+  /** Arquivos transportáveis: notas/anexos e, opcionalmente, dados internos das mesas. Não inclui preferências. */
+  listTransferFiles?(includeWorlds?: boolean): Promise<VaultEntry[]>
+  /** Importa somente a área interna autorizada das mesas, com versão obrigatória; usada pelo VaultProvider. */
+  writeManagedTransfer?(path: string, bytes: Uint8Array, expected: VaultEntry | null): Promise<VaultEntry>
 }
