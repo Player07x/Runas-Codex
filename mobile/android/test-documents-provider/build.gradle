@@ -1,0 +1,14 @@
+apply plugin: 'com.android.application'
+
+// Aplicativo separado, instalado apenas no emulador. Não entra no APK nem nos artefatos publicados.
+android {
+    namespace = 'dev.runas.codex.testdocuments'
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId 'dev.runas.codex.testdocuments'
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName '1.0'
+    }
+}

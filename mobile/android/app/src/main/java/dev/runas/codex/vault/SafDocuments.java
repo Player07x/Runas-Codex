@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-/** DocumentsContract em lote; o provedor local aplica a permissão à árvore inteira, inclusive após renomear. */
+/** DocumentsContract em lote; a permissão se limita à árvore escolhida, inclusive em outros aplicativos. */
 final class SafDocuments implements DocumentTree {
     private static final String[] COLUMNS = { Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME,
         Document.COLUMN_MIME_TYPE, Document.COLUMN_SIZE, Document.COLUMN_LAST_MODIFIED, Document.COLUMN_FLAGS };
@@ -20,9 +20,9 @@ final class SafDocuments implements DocumentTree {
     private final Uri tree;
 
     SafDocuments(ContentResolver resolver, Uri tree) throws IOException {
-        // O app é offline. Provedores remotos podem fazer rede ao abrir um arquivo, mesmo sem rede na interface.
-        if (!"content".equals(tree.getScheme()) || !"com.android.externalstorage.documents".equals(tree.getAuthority()) || !DocumentsContract.isTreeUri(tree)) {
-            throw new VaultStore.VaultError("Escolha uma pasta local da memória interna ou do cartão para abrir pelo seletor.");
+        // A pasta é concedida pelo seletor; IDs e acesso continuam sob o controle do DocumentsProvider escolhido.
+        if (!"content".equals(tree.getScheme()) || tree.getAuthority() == null || tree.getAuthority().isEmpty() || !DocumentsContract.isTreeUri(tree)) {
+            throw new VaultStore.VaultError("Escolha uma pasta disponibilizada pelo aplicativo de arquivos no seletor do Android.");
         }
         this.resolver = resolver;
         this.tree = tree;

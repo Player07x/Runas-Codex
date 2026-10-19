@@ -3,3 +3,7 @@ include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 
 apply from: 'capacitor.settings.gradle'
+// Provedor em outro aplicativo, apenas quando o CI pede explicitamente; nunca faz parte do APK publicado.
+if (providers.gradleProperty('runasTestProvider').isPresent()) {
+    include ':test-documents-provider'
+}

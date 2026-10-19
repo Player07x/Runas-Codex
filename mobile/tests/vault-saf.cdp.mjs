@@ -4,7 +4,8 @@ import { execFileSync } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 
-const [endpoint = 'http://127.0.0.1:9224', output = '/tmp/runas-android-vault/saf', path = '/sdcard/Documents/cofre-smoke-saf', writable = 'true'] = process.argv.slice(2)
+const [endpoint = 'http://127.0.0.1:9224', output = '/tmp/runas-android-vault/saf', path = '/sdcard/Documents/cofre-smoke-saf', writable = 'true', provider = 'local'] = process.argv.slice(2)
+const external = provider === 'external'
 await mkdir(output, { recursive: true })
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const adb = (...args) => execFileSync('adb', args, { timeout: 30000, maxBuffer: 4 * 1024 * 1024 }).toString()
@@ -40,9 +41,10 @@ try {
     await sleep(200)
   }
   const access = await run('window.Capacitor.Plugins.RunasVault.access()')
-  if (access.granted) throw new Error('O teste SAF exige que o acesso a todos os arquivos esteja recusado.')
-  const initialUri = 'content://com.android.externalstorage.documents/document/' + encodeURIComponent('primary:' + path.replace(/^\/sdcard\//, ''))
-  await run(`window.__runasSafResult=null; window.Capacitor.Plugins.RunasVault.choose(${JSON.stringify({ saf: true, initialUri })}).then(value=>window.__runasSafResult={value},error=>window.__runasSafResult={error:String(error.message||error)}); true`)
+  if (access.granted !== external) throw new Error(external ? 'O teste do outro aplicativo exige acesso amplo já liberado para verificar a escolha automática do SAF.' : 'O teste SAF exige que o acesso a todos os arquivos esteja recusado.')
+  const initialUri = external ? 'content://dev.runas.codex.testdocuments/document/vault' : 'content://com.android.externalstorage.documents/document/' + encodeURIComponent('primary:' + path.replace(/^\/sdcard\//, ''))
+  // Sem forçar SAF no outro aplicativo: exercita a decisão de produção com o acesso amplo já liberado.
+  await run(`window.__runasSafResult=null; window.Capacitor.Plugins.RunasVault.choose(${JSON.stringify({ saf: !external, initialUri })}).then(value=>window.__runasSafResult={value},error=>window.__runasSafResult={error:String(error.message||error)}); true`)
   let selected = false
   for (let n = 0; n < 30 && !selected; n++) {
     let xml = ''
@@ -87,6 +89,7 @@ try {
   if (picked?.error) throw new Error(picked.error)
   const vault = picked?.value?.vault
   if (vault?.mode !== 'saf' || vault.name !== basename(path) || !vault.path.startsWith('content://')) throw new Error('O seletor abriu outro cofre: ' + JSON.stringify(picked))
+  if (external && !vault.path.startsWith('content://dev.runas.codex.testdocuments/tree/')) throw new Error('O seletor não usou a árvore do outro aplicativo.')
   result.readOnlyOnOpen = vault.readOnly
   if (!vault.readOnly) throw new Error('Um cofre existente deve abrir em somente leitura.')
   const changed = await run(`window.Capacitor.Plugins.RunasVault.setWritable({writable:${writable === 'true'}})`)

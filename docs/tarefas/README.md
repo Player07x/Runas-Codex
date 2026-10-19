@@ -178,3 +178,10 @@ interface/confiabilidade dos testes foram tratados na beta.5. Validação físic
 |---|---|---|---|
 | **C8** A1: cofre real, spikes, emulador no CI, APK assinado | Claude Code; CI com o Codex ([c8-ci-android.md](c8-ci-android.md)) | `android/a1-cofre` | em revisão ([ADR 0015](../adr/0015-android.md)) |
 | SAF como reserva do cofre (depois do CI da C8) | Codex ([android-saf.md](android-saf.md)) | `android/a2-saf` | a fazer |
+
+## Pedido posterior à beta.13 — pastas, transferências e APK
+
+O dono aprovou a conferência manual da beta.13 e pediu a seleção de pastas disponibilizadas por outros aplicativos,
+importação/exportação para mobile e desktop e atualização do APK pelo app. O andamento e o fechamento estão em
+[pastas-transferencias-atualizacao.md](pastas-transferencias-atualizacao.md). Ao concluir, publicar a próxima beta
+com Android, Windows e Linux, conforme confirmação na conversa.

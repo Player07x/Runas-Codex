@@ -24,8 +24,8 @@ notas num celular médio.
   acesso a arquivos, o plugin lê em lote, como o desktop.
 - **Reserva pelo SAF:** implementada no branch dependente `android/a2-saf`. Ao recusar o acesso a todos os arquivos,
   o app oferece escolher uma pasta pelo seletor, com `takePersistableUriPermission`. Lembra o modo de cada pasta e
-  reabre a árvore após encerrar o processo. A reserva aceita o provedor **local** da memória interna e do cartão;
-  provedores de nuvem são recusados para preservar o funcionamento offline.
+  reabre a árvore após encerrar o processo. Na beta.13 a reserva aceitava apenas o provedor local da memória interna
+  e do cartão. O pedido posterior do dono amplia a escolha para pastas disponibilizadas por outros gerenciadores.
 - **Mudanças de fora** (Obsidian, Syncthing): um `FileObserver` por pasta dispara uma releitura (com pausa de 400 ms), e
   a releitura compara com a última fotografia (tamanho e data). Ao voltar para o app, ele também relê, porque o Android
   pode pausar os avisos. O que o próprio app gravou não volta como mudança.
@@ -156,3 +156,24 @@ O APK assinado instala por cima de outro APK assinado com a mesma chave. Ele **n
 - A partir da beta.13, `release-targets.json` tem `"android": true`, conforme o pedido posterior do dono para
   publicar Android, Windows e Linux. Os jobs do APK e dos emuladores foram aprovados no PR #43.
 - Pendente: teclado real (Gboard) e um aparelho físico; a sala hospedada pelo celular (A2).
+
+## Pastas disponibilizadas por outros aplicativos
+
+Após aprovar os testes da beta.13, o dono pediu que “Abrir pasta” pudesse usar outros gerenciadores de arquivos,
+inclusive para pastas sincronizadas com o notebook. O nome do gerenciador não faz parte do contrato: qualquer
+`DocumentsProvider` que disponibilize uma árvore pelo seletor do Android pode ser escolhido.
+
+- O seletor deixa de pedir `EXTRA_LOCAL_ONLY`. A árvore de outro provedor segue pelo SAF, mesmo com “acesso a todos
+  os arquivos” já liberado; essa permissão não transforma URIs de outros aplicativos em caminhos do disco.
+- A permissão persistente, o modo de cada cofre e a recuperação das transações continuam iguais. Provedores sem
+  metadados confiáveis ou sem as operações necessárias recusam a escrita antes de substituir o original.
+- A sincronização e eventual acesso de rede são feitos pelo gerenciador escolhido explicitamente pelo usuário.
+  Essa é a exceção pedida pelo dono à restrição inicial de provedores locais; o Runas não implementa um cliente SMB,
+  não guarda suas credenciais e não adiciona domínios à CSP. Disponibilidade offline depende da cópia mantida pelo
+  gerenciador. O app não agenda consultas de rede ou sincronização por conta própria.
+- O CI instala um segundo aplicativo, com outro UID e outra autoridade, cuja raiz não tem `FLAG_LOCAL_ONLY`.
+  O teste usa o seletor real, sem forçar o modo SAF e com acesso amplo já liberado, reinicia o Runas e executa o mesmo
+  smoke. O módulo `test-documents-provider` só é incluído com `-PrunasTestProvider` e não entra no APK publicado.
+- Aplicativos que apenas importam arquivos individuais precisam também oferecer uma árvore de documentos para uso
+  como cofre; o Android concede acesso persistente à pasta por esse contrato. Referência:
+  [Storage Access Framework](https://developer.android.com/guide/topics/providers/document-provider).
