@@ -273,6 +273,8 @@ jobs:
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
+      - name: Remover aviso de travamento do launcher do emulador
+        run: adb shell am force-stop com.google.android.apps.nexuslauncher
       - name: Operar a mesa por toque e medir o WebView
         run: |
           adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
@@ -357,6 +359,8 @@ jobs:
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
+      - name: Remover aviso de travamento do launcher do emulador
+        run: adb shell am force-stop com.google.android.apps.nexuslauncher
       - name: Smoke do cofre real
         run: |
           devtools() {
