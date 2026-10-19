@@ -37,6 +37,8 @@ export const IPC = {
   vaultListTrash: "vault:list-trash",
   vaultRestoreTrash: "vault:restore-trash",
   trayEnabled: "desktop:tray-enabled",
+  vaultTransferList: "vault:transfer-list",
+  vaultTransferWrite: "vault:transfer-write",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

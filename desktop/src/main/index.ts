@@ -1,3 +1,4 @@
+import { checkTransfers } from "./transfer-smoke"
 import { DesktopTray } from "./tray"
 import { exportBookPdf } from "./books-pdf"
 import { mkdtemp, writeFile } from "node:fs/promises"
@@ -100,6 +101,14 @@ function registerIpc(): void {
   handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
   handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
+  handle(IPC.vaultTransferList, (_event, includeWorlds) => { if (includeWorlds !== false) vtt.flushWorld(); return vault.listTransferFiles(includeWorlds !== false) })
+  handle(IPC.vaultTransferWrite, async (_event, path, bytes, expected) => {
+    if (!(bytes instanceof Uint8Array)) throw new Error("Conteúdo inválido para importar a mesa.")
+    const version = versionOf(expected)
+    if (version === undefined) throw new Error("A versão lida é obrigatória para importar a mesa.")
+    vtt.closeWorld()
+    return vault.writeManagedTransfer(text(path, "caminho"), bytes, version)
+  })
   handle(IPC.vaultWriteBinary, (_event, path, content, expected) => {
     if (!(content instanceof Uint8Array)) throw new Error("Parâmetro inválido: conteúdo.")
     return vault.writeBinary(text(path, "caminho"), content, versionOf(expected))
@@ -213,11 +222,12 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (bookFiles?.epub && bookFiles.docx) result.bookFilesCheck = await checkBookFiles(bookFiles.epub, bookFiles.docx)
     const master = result.master as { key?: string | null } | undefined
     if (result.room && master?.key) result.masterCheck = await checkMaster(window, (result.room as { port: number }).port, master.key, String(result.masterScene ?? ""), () => vtt.master.rotate(), argValue("shot-master"))
+    if (result.vault && !(result.vault as { readOnly: boolean }).readOnly) result.transfers = await checkTransfers(window)
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     result.spellcheck = spellcheckReport()
     console.log(JSON.stringify(result, null, 2))
-    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport())
+    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true)
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
     const hold = Number(argValue("hold") ?? 0)
     if (hold > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(hold, 600) * 1000))

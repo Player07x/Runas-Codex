@@ -41,6 +41,8 @@ const bridge: RunasCodexBridge = {
     writeBinary: (path, bytes, expected) => invoke(IPC.vaultWriteBinary, path, bytes, expected === undefined ? undefined : expected && { mtime: expected.mtime, size: expected.size }),
     listTrash: () => invoke(IPC.vaultListTrash),
     restoreTrash: (path, target) => invoke(IPC.vaultRestoreTrash, path, target),
+    listTransferFiles: includeWorlds => invoke(IPC.vaultTransferList, includeWorlds),
+    writeManagedTransfer: (path, bytes, expected) => invoke(IPC.vaultTransferWrite, path, bytes, expected && { mtime: expected.mtime, size: expected.size }),
   },
   agenda: {
     schedule: (reminders) => invoke(IPC.agendaSchedule, reminders),

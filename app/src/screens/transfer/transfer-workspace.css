@@ -1,0 +1,15 @@
+.transfer-workspace { max-width: 1240px; }
+.transfer-workspace > .card { margin-bottom: var(--space-column); }
+.transfer-workspace .section-title { display: flex; align-items: center; gap: 8px; }
+.transfer-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; }
+.transfer-files { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.transfer-files .check { display: flex; gap: 8px; min-height: 44px; padding: 8px; border-bottom: 1px solid var(--line); }
+.transfer-files .check:last-child { border-bottom: 0; }
+.transfer-files .check > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.transfer-files small { flex-shrink: 0; color: var(--muted); }
+.transfer-workspace input[type=file] { width: 100%; max-width: 100%; min-height: 44px; }
+.transfer-workspace details > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.transfer-workspace .field, .transfer-workspace .select, .transfer-workspace .input { min-width: 0; max-width: 100%; }
+.transfer-workspace .check { min-height: 44px; }
+.transfer-status, .transfer-error { overflow-wrap: anywhere; }
+.transfer-error { color: var(--red); }

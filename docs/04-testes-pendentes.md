@@ -525,3 +525,19 @@ sincronizada. A assinatura do APK continua dependendo da configuração da chave
   o erro sem alterar arquivos; voltar ao app relê as mudanças recebidas do notebook pelo gerenciador.
 - [ ] Conferir anexos por URI do outro aplicativo e a recusa de escrita quando ele não fornece as operações ou os
   metadados necessários. O CI usa outro aplicativo de teste; sincronização real continua sendo conferência física.
+
+### Transferências e documentos — pedido após a beta.13 (2026-10-18)
+
+Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir somente os fluxos novos:
+
+- Android e desktop: exportar `.runas` e ZIP de um espaço e do cofre inteiro, incluindo imagens e mesas. Levar
+  ao outro aparelho, conferir a prévia e importar; abrir o ZIP no Obsidian. Notas e anexos devem permanecer iguais.
+- Escolher notas específicas, com/sem notas ligadas; anexos devem acompanhar. Mesclar mantém conflitos; duplicar
+  cria caminhos novos; substituir pede salvar o pacote de segurança. Cancelar esse destino não deve substituir nada.
+- Alterar um arquivo no outro editor depois da prévia e confirmar: deve recusar a versão antiga. Em falha parcial
+  de um provedor, conferir a quantidade informada e os arquivos presentes, sem perda da cópia de segurança.
+- Android: cancelar os seletores de entrada/saída e escolher um destino oferecido por outro aplicativo. Testar
+  documentos grandes dentro dos limites exibidos e a recusa acima deles, inclusive no aparelho com pouca memória.
+- PDF/HTML/DOCX: selecionar notas de Wiki e Notas com tabelas, imagens, fórmulas e transclusões. Conferir a prévia,
+  o sumário HTML offline e a versão dos jogadores sem segredos. No Android, salvar PDF pelo diálogo de impressão;
+  cancelar a impressão deve manter o app utilizável. Conferir o DOCX no editor que será utilizado.

@@ -89,7 +89,7 @@ export interface Platform {
   hostRoom(mesaId: string): Promise<RoomHostInfo>
   stopRoom(): Promise<void>
   /** Abre o diálogo de impressão do documento atual. */
-  printDocument?(): void
+  printDocument?(name?: string): void | Promise<void>
   /** Lê um arquivo do cofre como bytes (imagem, PDF…). */
   readBinary(path: string): Promise<Uint8Array>
   /** Grava bytes no cofre com as mesmas regras do `writeText` (versão esperada, `null` só cria, nada oculto). */
@@ -111,4 +111,8 @@ export interface Platform {
   listTrash?(): Promise<VaultEntry[]>
   restoreTrash?(path: string, target: string): Promise<VaultEntry>
   setTrayEnabled?(enabled:boolean):Promise<boolean>
+  /** Arquivos transportáveis: notas/anexos e, opcionalmente, dados internos das mesas. Não inclui preferências. */
+  listTransferFiles?(includeWorlds?: boolean): Promise<VaultEntry[]>
+  /** Importa somente a área interna autorizada das mesas, com versão obrigatória; usada pelo VaultProvider. */
+  writeManagedTransfer?(path: string, bytes: Uint8Array, expected: VaultEntry | null): Promise<VaultEntry>
 }

@@ -60,7 +60,7 @@ async function connect() {
     }
     throw new Error('Não aconteceu: ' + expression)
   }
-  return { run, until, close: () => socket.close() }
+  return { run, until, send, close: () => socket.close() }
 }
 
 async function localFiles(dir) {
@@ -81,8 +81,14 @@ async function localFiles(dir) {
 const call = (method, args = {}) => `window.Capacitor.Plugins.RunasVault.${method}(${JSON.stringify(args)}).then(v => ({ ok: v ?? null }), e => ({ error: String(e && e.message || e) }))`
 
 const page = await connect()
-const { run, until } = page
+const { run, until, send } = page
 try {
+  // O launcher do emulador pode travar durante o primeiro boot. Seu diálogo bloqueia entrada mesmo com o WebView
+  // respondendo ao CDP. Remove somente esse processo do sistema de teste; ANR do Runas nunca é ocultado.
+  const windows = adb('shell','dumpsys','window','windows')
+  if(windows.includes('Application Not Responding: com.google.android.apps.nexuslauncher')) adb('shell','am','force-stop','com.google.android.apps.nexuslauncher')
+  adb('shell','am','start','-n','dev.runas.codex/.MainActivity')
+  await until('document.hasFocus()',150)
   // ---------- O cofre abre e a interface lê ----------
   await until(`window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.RunasVault`)
   const current = await run(call('current'))
@@ -173,6 +179,17 @@ try {
   await until(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent))`, 150)
   await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
   await until(`document.querySelector('.cm-content')`, 150)
+  // Um toque confiável liga também a InputConnection nativa do WebView; foco DOM sozinho não garante isso.
+  const editorPoint = await run(`(()=>{const r=document.querySelector('.cm-content').getBoundingClientRect();return {x:r.x+Math.min(40,r.width/2),y:r.y+Math.min(15,r.height/2)}})()`)
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [editorPoint] })
+  await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  let inputMethod = ''
+  for(let i=0;i<100;i++) {
+    inputMethod = adb('shell','dumpsys','input_method')
+    if(inputMethod.includes('packageName=dev.runas.codex')) break
+    await sleep(200)
+  }
+  await writeFile(join(output,'keyboard-input-method.txt'),inputMethod)
   await run(`(()=>{const c=document.querySelector('.cm-content'); c.focus(); const r=document.createRange(); r.selectNodeContents(c); r.collapse(false); const s=getSelection(); s.removeAllRanges(); s.addRange(r); return true})()`)
   await until(`document.activeElement === document.querySelector('.cm-content')`)
   // Dá ao Android tempo para ligar a conexão do teclado antes da primeira tecla.
@@ -206,6 +223,51 @@ try {
     await sleep(100)
   }
   check('o texto digitado é gravado', saved.includes('teclado Android'), { disk: saved, status: await run(`document.querySelector('.editor-status')?.textContent`) })
+  // ---------- Transferências na interface, e área interna de mesas pela ponte nativa ----------
+  await run(`location.hash = '#/transferir'; true`)
+  await until(`document.querySelector('[data-transfer-workspace]')`)
+  await run(`[...document.querySelectorAll('[role=tab]')].find(t=>t.textContent.includes('Importar')).click(); true`)
+  await until(`document.querySelector('[aria-label="Arquivo para importar"]')`)
+  await run(`(()=>{const input=document.querySelector('[aria-label="Arquivo para importar"]'), files=new DataTransfer(); files.items.add(new File(['# Transferência Android\\n'], 'Transferencia-Android.md')); input.files=files.files; input.dispatchEvent(new Event('change',{bubbles:true})); return true})()`)
+  await until(`document.querySelector('[data-transfer-preview]')?.textContent.includes('1 arquivo(s)')`)
+  check('prévia de importação sem gravar', !adb('shell', 'ls', deviceVault + '/Notas').includes('Transferencia-Android.md'))
+  await run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Importar 1 arquivo(s)').click(); true`)
+  await until(`document.querySelector('.transfer-status')?.textContent.includes('1 arquivo(s) importados')`)
+  check('interface importa através do cofre real', adb('shell', 'cat', deviceVault + '/Notas/Importados/Transferencia-Android.md').includes('Transferência Android'))
+  const worldPath = '.runas/mesas/transfer-smoke/mesa.json'
+  const worldBytes = Buffer.from(JSON.stringify({formatVersion:1,id:'transfer-smoke',title:'Transferência',createdAt:1,updatedAt:1})).toString('base64')
+  const createdWorld = await run(call('writeManagedTransfer', {path:worldPath,base64:worldBytes,expected:null}))
+  check('importa dados internos da mesa', createdWorld.ok?.path === worldPath, createdWorld)
+  const transferList = await run(call('listTransferFiles', {includeWorlds:true}))
+  check('lista mesas sem preferências do aparelho', transferList.ok?.entries?.some(e=>e.path===worldPath) && !transferList.ok?.entries?.some(e=>e.path.startsWith('.obsidian/')), transferList.error)
+  const withoutWorlds = await run(call('listTransferFiles', {includeWorlds:false}))
+  check('pode exportar sem os dados da mesa', !withoutWorlds.ok?.entries?.some(e=>e.path===worldPath))
+  const occupiedWorld = await run(call('writeManagedTransfer', {path:worldPath,base64:worldBytes,expected:null}))
+  check('mesa existente exige versão da prévia', Boolean(occupiedWorld.error), occupiedWorld)
+  const invalidWorld = await run(call('writeManagedTransfer', {path:'.obsidian/teste.json',base64:worldBytes,expected:null}))
+  check('transferência não libera escrita em outros arquivos ocultos', Boolean(invalidWorld.error), invalidWorld)
+  const readWorld = await run(call('readBinary', {path:worldPath}))
+  check('bytes internos viajam sem alteração', readWorld.ok?.base64 === worldBytes, readWorld.error)
+  // O botão de exportar abre o seletor do sistema; voltar deve resolver como cancelado e manter o cofre aberto.
+  await run(`window.__saveCancelled=null; window.Capacitor.Plugins.RunasVault.saveAs({name:'Cancelamento.runas',mime:'application/octet-stream',base64:'YQ=='}).then(value=>window.__saveCancelled=value); true`)
+  let pickerReady = false
+  for(let i=0;i<60&&!pickerReady;i++) {
+    const resumed = adb('shell','dumpsys','activity','activities').split('\n').filter(line=>/mResumedActivity|topResumedActivity/.test(line)).join('\n')
+    pickerReady = resumed.includes('com.android.documentsui')
+    if(!pickerReady) await sleep(150)
+  }
+  if(!pickerReady) throw new Error('O seletor de destino não chegou ao primeiro plano.')
+  // O primeiro Voltar pode só ocultar o IME; só repete enquanto o seletor continua em primeiro plano.
+  await writeFile(join(output,'save-picker-window.txt'),adb('shell','dumpsys','window','windows'))
+  for(let i=0;i<10 && !(await run('window.__saveCancelled'));i++) {
+    const resumed = adb('shell','dumpsys','activity','activities').split('\n').filter(line=>/mResumedActivity|topResumedActivity/.test(line)).join('\n')
+    if(resumed.includes('com.android.documentsui')) adb('shell','input','keyevent','KEYCODE_BACK')
+    await sleep(500)
+  }
+  await until(`window.__saveCancelled !== null`)
+  check('cancelar destino não anuncia arquivo salvo', (await run('window.__saveCancelled')).name === null)
+  const afterCancel = await run(call('current'))
+  check('cofre permanece utilizável após cancelar', afterCancel.ok?.vault?.path === current.ok.vault.path)
 } catch (error) {
   result.errors.push(String(error && error.stack || error))
 } finally {

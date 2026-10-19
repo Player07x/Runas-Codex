@@ -6,7 +6,17 @@ import type { IndexedNote, VaultIndex } from "../vault-index"
 
 const base64 = (bytes: Uint8Array) => { let text = ""; for (let i=0;i<bytes.length;i+=8192) text += String.fromCharCode(...bytes.subarray(i,i+8192)); return btoa(text) }
 export function generateHtml(book: ExportBook): Uint8Array {
-  let body = book.sections.map(s => s.nodes.map(nodeXml).join("")).join("\n"), css = book.css
+  const links = new Map(book.sections.map((section, index) => [section.path, `#documento-${index}`]))
+  const navigationNode = (node: ExportNode): ExportNode => {
+    if (typeof node === "string") return node
+    const target = node.tag === "a" && node.attrs.class?.split(" ").includes("wikilink") ? links.get((node.attrs.title ?? "").replace(/^Em outro espaço: /, "")) : undefined
+    return { ...node, attrs: target ? { ...node.attrs, href: target } : node.attrs, children: node.children.map(navigationNode) }
+  }
+  let body = book.sections.map((s, i) => {
+    const content = s.nodes.map(node => nodeXml(book.navigation ? navigationNode(node) : node)).join("")
+    return book.navigation ? `<article id="documento-${i}">${content}</article>` : content
+  }).join("\n"), css = book.css
+  if (book.navigation) body = `<nav aria-label="Sumário"><h1>${xml(book.title)}</h1><ul>${book.sections.map((section, i) => `<li><a href="#documento-${i}">${xml(section.title)}</a></li>`).join("")}</ul></nav>\n` + body
   for (const asset of book.assets) {
     if (asset.docxOnly) continue
     const data = `data:${asset.mime};base64,${base64(asset.bytes)}`
