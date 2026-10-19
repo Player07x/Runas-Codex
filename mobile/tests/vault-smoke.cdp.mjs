@@ -60,7 +60,7 @@ async function connect() {
     }
     throw new Error('Não aconteceu: ' + expression)
   }
-  return { run, until, close: () => socket.close() }
+  return { run, until, send, close: () => socket.close() }
 }
 
 async function localFiles(dir) {
@@ -81,7 +81,7 @@ async function localFiles(dir) {
 const call = (method, args = {}) => `window.Capacitor.Plugins.RunasVault.${method}(${JSON.stringify(args)}).then(v => ({ ok: v ?? null }), e => ({ error: String(e && e.message || e) }))`
 
 const page = await connect()
-const { run, until } = page
+const { run, until, send } = page
 try {
   // ---------- O cofre abre e a interface lê ----------
   await until(`window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.RunasVault`)
@@ -173,6 +173,17 @@ try {
   await until(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent))`, 150)
   await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
   await until(`document.querySelector('.cm-content')`, 150)
+  // Um toque confiável liga também a InputConnection nativa do WebView; foco DOM sozinho não garante isso.
+  const editorPoint = await run(`(()=>{const r=document.querySelector('.cm-content').getBoundingClientRect();return {x:r.x+Math.min(40,r.width/2),y:r.y+Math.min(15,r.height/2)}})()`)
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [editorPoint] })
+  await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  let inputMethod = ''
+  for(let i=0;i<100;i++) {
+    inputMethod = adb('shell','dumpsys','input_method')
+    if(inputMethod.includes('packageName=dev.runas.codex')) break
+    await sleep(200)
+  }
+  await writeFile(join(output,'keyboard-input-method.txt'),inputMethod)
   await run(`(()=>{const c=document.querySelector('.cm-content'); c.focus(); const r=document.createRange(); r.selectNodeContents(c); r.collapse(false); const s=getSelection(); s.removeAllRanges(); s.addRange(r); return true})()`)
   await until(`document.activeElement === document.querySelector('.cm-content')`)
   // Dá ao Android tempo para ligar a conexão do teclado antes da primeira tecla.
@@ -233,11 +244,21 @@ try {
   check('bytes internos viajam sem alteração', readWorld.ok?.base64 === worldBytes, readWorld.error)
   // O botão de exportar abre o seletor do sistema; voltar deve resolver como cancelado e manter o cofre aberto.
   await run(`window.__saveCancelled=null; window.Capacitor.Plugins.RunasVault.saveAs({name:'Cancelamento.runas',mime:'application/octet-stream',base64:'YQ=='}).then(value=>window.__saveCancelled=value); true`)
-  for(let i=0;i<30;i++) {
-    if(adb('shell','dumpsys','activity','activities').includes('com.android.documentsui')) break
-    await sleep(100)
+  let pickerReady = false
+  for(let i=0;i<60&&!pickerReady;i++) {
+    const resumed = adb('shell','dumpsys','activity','activities').split('\n').filter(line=>/mResumedActivity|topResumedActivity/.test(line)).join('\n')
+    pickerReady = resumed.includes('com.android.documentsui')
+    if(!pickerReady) await sleep(150)
   }
-  adb('shell','input','keyevent','KEYCODE_BACK')
+  if(!pickerReady) throw new Error('O seletor de destino não chegou ao primeiro plano.')
+  // Aguarda a árvore nativa pronta, incluindo a ligação do botão Voltar. O primeiro Voltar pode só ocultar o IME.
+  adb('shell','uiautomator','dump','/sdcard/runas-save-picker.xml')
+  await writeFile(join(output,'save-picker.xml'),adb('shell','cat','/sdcard/runas-save-picker.xml'))
+  for(let i=0;i<3 && !(await run('window.__saveCancelled'));i++) {
+    const resumed = adb('shell','dumpsys','activity','activities').split('\n').filter(line=>/mResumedActivity|topResumedActivity/.test(line)).join('\n')
+    if(resumed.includes('com.android.documentsui')) adb('shell','input','keyevent','KEYCODE_BACK')
+    await sleep(500)
+  }
   await until(`window.__saveCancelled !== null`)
   check('cancelar destino não anuncia arquivo salvo', (await run('window.__saveCancelled')).name === null)
   const afterCancel = await run(call('current'))
