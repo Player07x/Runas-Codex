@@ -10,7 +10,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     const until = async test => { for (let i=0;i<200;i++) { const value=test(); if(value)return value; await wait(100) } throw Error("A tela de transferência não respondeu: " + test) }
     const button = text => [...document.querySelectorAll("button")].find(el => el.textContent.trim() === text)
     const select = (label, value) => { const el=document.querySelector('[aria-label="'+label+'"]'); el.value=value; el.dispatchEvent(new Event("change",{bubbles:true})) }
-    const upload = () => { const input=document.querySelector('[aria-label="Arquivo para importar"]'), data=new DataTransfer(); data.items.add(new File(["\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n"],"Transfer-smoke.md")); data.items.add(new File([new Uint8Array([137,80,78,71])],"Anexos-transfer-smoke.png")); input.files=data.files; input.dispatchEvent(new Event("change",{bubbles:true})) }
+    const upload = () => { const input=document.querySelector('[aria-label="Arquivo para importar"]'), data=new DataTransfer(); data.items.add(new File(["\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n"],"Transfer-smoke.md")); data.items.add(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg=="),char=>char.charCodeAt(0))],"Anexos-transfer-smoke.png")); input.files=data.files; input.dispatchEvent(new Event("change",{bubbles:true})) }
     const api=window.runasCodex, checks={}
     location.hash="/transferir"
     await until(()=>document.querySelector("[data-transfer-workspace]"))
@@ -22,7 +22,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     button("Importar 2 arquivo(s)").click()
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes("2 arquivo(s) importados"))
     const path="Notas/Importados/Transfer-smoke.md", asset="Notas/Importados/Anexos-transfer-smoke.png"
-    checks.imported=(await api.vault.read([path]))[path] === "\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n" && (await api.vault.readBinary(asset)).length===4
+    checks.imported=(await api.vault.read([path]))[path] === "\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n" && (await api.vault.readBinary(asset)).length===70
     upload()
     await until(()=>document.querySelector('[data-transfer-preview]')?.textContent.includes("2 conflito(s)"))
     checks.merge=button("Importar 0 arquivo(s)")?.disabled===true
@@ -69,7 +69,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
   const native = await readTransferArchive(new Uint8Array(await readFile(result.exported)))
   const markdown = await readTransferArchive(new Uint8Array(await readFile(result.zip)))
   const html = await readFile(result.html, "utf8")
-  result.checks.nativeArchive = native.kind === "runas" && native.files.length === 2 && native.files.find(file => file.path.endsWith(".png"))?.bytes.length === 4
+  result.checks.nativeArchive = native.kind === "runas" && native.files.length === 2 && native.files.find(file => file.path.endsWith(".png"))?.bytes.length === 70
   result.checks.markdownArchive = markdown.kind === "markdown" && markdown.files.length === 2
   result.checks.html = html.includes("Transferência") && html.includes('aria-label="Sumário"')
   const pdf = await checkPdf(result.pdf)
