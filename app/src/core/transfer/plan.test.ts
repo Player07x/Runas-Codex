@@ -7,6 +7,10 @@ const file = (path: string, body = "# Nota\n") => ({ path, bytes: strToU8(body) 
 const archive = (...files: TransferFile[]): TransferArchive => ({ title: "Meu cofre", kind: "runas", files, ignored: [] })
 const entry = (path: string, mtime = 10, size = 7) => ({ path, size, mtime })
 describe("planejamento das transferências", () => {
+  it("recusa arquivos avulsos com o mesmo nome ou com caminhos incompatíveis", () => {
+    expect(() => buildImportPlan(archive(file("Notas/a.md"), file("Notas/A.md")), [], "merge")).toThrow("repete")
+    expect(() => buildImportPlan(archive(file("Notas/a.md"), file("Notas/a.md/b.md")), [], "merge")).toThrow("ocupa")
+  })
   it("mescla criando somente arquivos novos e informa os conflitos", () => {
     const plan = buildImportPlan(archive(file("Notas/a.md"), file("Notas/b.md")), [entry("Notas/a.md")], "merge")
     expect(plan.skipped).toEqual(["Notas/a.md"])
@@ -61,6 +65,14 @@ describe("planejamento das transferências", () => {
     const index = new VaultIndex(entries, texts)
     expect(selectTransferPaths(index, entries, ["Notas/a.md"], false, false)).toEqual(["Anexos/mapa.png", "Notas/a.md"])
     expect(selectTransferPaths(index, entries, ["Notas/a.md"], true, false)).toHaveLength(3)
+  })
+  it("leva os eventos que apontam à sessão e os dados da mesa ligada à campanha", () => {
+    const texts = { "Campanhas/Porto/Porto.md": "---\nmesa: abcdefgh-1234\n---\n", "Campanhas/Porto/Sessão.md": "# Sessão", "Agenda/Sábado.md": '---\nsessao: "[[Campanhas/Porto/Sessão]]"\n---\n' }
+    const entries = [...Object.keys(texts).map(path => entry(path)), entry(".runas/mesas/porto-abcdefgh/mesa.json"), entry(".runas/mesas/outra/mesa.json")]
+    const paths = selectTransferPaths(new VaultIndex(entries, texts), entries, ["Campanhas/Porto"], true, false, new Map([["abcdefgh-1234", ".runas/mesas/porto-abcdefgh"]]))
+    expect(paths).toHaveLength(4)
+    expect(paths).toContain("Agenda/Sábado.md")
+    expect(paths).not.toContain(".runas/mesas/outra/mesa.json")
   })
   it("não substitui texto inválido nem aceita criação sobre um arquivo que apareceu depois", () => {
     expect(() => buildImportPlan(archive({ path: "Notas/a.md", bytes: new Uint8Array([255]) }), [], "merge")).toThrow("UTF-8")

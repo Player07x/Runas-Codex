@@ -206,6 +206,42 @@ try {
     await sleep(100)
   }
   check('o texto digitado é gravado', saved.includes('teclado Android'), { disk: saved, status: await run(`document.querySelector('.editor-status')?.textContent`) })
+  // ---------- Transferências na interface, e área interna de mesas pela ponte nativa ----------
+  await run(`location.hash = '#/transferir'; true`)
+  await until(`document.querySelector('[data-transfer-workspace]')`)
+  await run(`[...document.querySelectorAll('[role=tab]')].find(t=>t.textContent.includes('Importar')).click(); true`)
+  await until(`document.querySelector('[aria-label="Arquivo para importar"]')`)
+  await run(`(()=>{const input=document.querySelector('[aria-label="Arquivo para importar"]'), files=new DataTransfer(); files.items.add(new File(['# Transferência Android\\n'], 'Transferencia-Android.md')); input.files=files.files; input.dispatchEvent(new Event('change',{bubbles:true})); return true})()`)
+  await until(`document.querySelector('[data-transfer-preview]')?.textContent.includes('1 arquivo(s)')`)
+  check('prévia de importação sem gravar', !adb('shell', 'ls', deviceVault + '/Notas').includes('Transferencia-Android.md'))
+  await run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Importar 1 arquivo(s)').click(); true`)
+  await until(`document.querySelector('.transfer-status')?.textContent.includes('1 arquivo(s) importados')`)
+  check('interface importa através do cofre real', adb('shell', 'cat', deviceVault + '/Notas/Importados/Transferencia-Android.md').includes('Transferência Android'))
+  const worldPath = '.runas/mesas/transfer-smoke/mesa.json'
+  const worldBytes = Buffer.from(JSON.stringify({formatVersion:1,id:'transfer-smoke',title:'Transferência',createdAt:1,updatedAt:1})).toString('base64')
+  const createdWorld = await run(call('writeManagedTransfer', {path:worldPath,base64:worldBytes,expected:null}))
+  check('importa dados internos da mesa', createdWorld.ok?.path === worldPath, createdWorld)
+  const transferList = await run(call('listTransferFiles', {includeWorlds:true}))
+  check('lista mesas sem preferências do aparelho', transferList.ok?.entries?.some(e=>e.path===worldPath) && !transferList.ok?.entries?.some(e=>e.path.startsWith('.obsidian/')), transferList.error)
+  const withoutWorlds = await run(call('listTransferFiles', {includeWorlds:false}))
+  check('pode exportar sem os dados da mesa', !withoutWorlds.ok?.entries?.some(e=>e.path===worldPath))
+  const occupiedWorld = await run(call('writeManagedTransfer', {path:worldPath,base64:worldBytes,expected:null}))
+  check('mesa existente exige versão da prévia', Boolean(occupiedWorld.error), occupiedWorld)
+  const invalidWorld = await run(call('writeManagedTransfer', {path:'.obsidian/teste.json',base64:worldBytes,expected:null}))
+  check('transferência não libera escrita em outros arquivos ocultos', Boolean(invalidWorld.error), invalidWorld)
+  const readWorld = await run(call('readBinary', {path:worldPath}))
+  check('bytes internos viajam sem alteração', readWorld.ok?.base64 === worldBytes, readWorld.error)
+  // O botão de exportar abre o seletor do sistema; voltar deve resolver como cancelado e manter o cofre aberto.
+  await run(`window.__saveCancelled=null; window.Capacitor.Plugins.RunasVault.saveAs({name:'Cancelamento.runas',mime:'application/octet-stream',base64:'YQ=='}).then(value=>window.__saveCancelled=value); true`)
+  for(let i=0;i<30;i++) {
+    if(adb('shell','dumpsys','activity','activities').includes('com.android.documentsui')) break
+    await sleep(100)
+  }
+  adb('shell','input','keyevent','KEYCODE_BACK')
+  await until(`window.__saveCancelled !== null`)
+  check('cancelar destino não anuncia arquivo salvo', (await run('window.__saveCancelled')).name === null)
+  const afterCancel = await run(call('current'))
+  check('cofre permanece utilizável após cancelar', afterCancel.ok?.vault?.path === current.ok.vault.path)
 } catch (error) {
   result.errors.push(String(error && error.stack || error))
 } finally {

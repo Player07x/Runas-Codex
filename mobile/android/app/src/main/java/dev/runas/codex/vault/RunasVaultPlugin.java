@@ -406,6 +406,22 @@ public class RunasVaultPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void printDocument(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                android.print.PrintManager manager = (android.print.PrintManager) getContext().getSystemService(Context.PRINT_SERVICE);
+                if (manager == null) { call.reject("A impressão não está disponível neste aparelho."); return; }
+                String name = call.getString("name", "Runas-Codex");
+                android.print.PrintJob job = manager.print(name, getBridge().getWebView().createPrintDocumentAdapter(name),
+                    new android.print.PrintAttributes.Builder().setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4)
+                        .setMinMargins(android.print.PrintAttributes.Margins.NO_MARGINS).build());
+                if (job == null) { call.reject("O Android não abriu o diálogo de impressão."); return; }
+                call.resolve();
+            } catch (IllegalStateException | IllegalArgumentException e) { fail(call, e); }
+        });
+    }
+
+    @PluginMethod
     public void writeManagedTransfer(PluginCall call) {
         try {
             String path = call.getString("path"), relative = VaultTransfer.relative(path);

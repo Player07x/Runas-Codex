@@ -32,7 +32,7 @@ export function transferPath(raw: string): string {
   return path
 }
 
-function validatePaths(files: TransferFile[]): void {
+export function validateTransferPaths(files: TransferFile[]): void {
   const names = new Set<string>(), folders = new Map<string, string>()
   for (const file of files) {
     const path = transferPath(file.path), key = foldName(path)
@@ -159,13 +159,13 @@ export async function readTransferArchive(bytes: Uint8Array, title = "Cofre impo
   }
   if (!files.length) throw new Error("O arquivo não contém notas ou anexos importáveis.")
   if (files.length > limits.files) throw new Error("O pacote excede a quantidade permitida de arquivos.")
-  validatePaths(files)
+  validateTransferPaths(files)
   return { title, kind: manifestBytes ? "runas" : "markdown", files, ignored }
 }
 
 export async function createTransferArchive(title: string, files: TransferFile[], kind: "runas" | "markdown" = "runas", limits: TransferLimits = TRANSFER_LIMITS): Promise<Uint8Array> {
   if (!files.length || files.length > limits.files) throw new Error("Selecione arquivos para exportar, dentro do limite de quantidade.")
-  validatePaths(files)
+  validateTransferPaths(files)
   let total = 0
   const zip: Zippable = Object.create(null) as Zippable
   const entries: { path: string; size: number; sha256: string }[] = []

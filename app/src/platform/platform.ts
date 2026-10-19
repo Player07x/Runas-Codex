@@ -89,7 +89,7 @@ export interface Platform {
   hostRoom(mesaId: string): Promise<RoomHostInfo>
   stopRoom(): Promise<void>
   /** Abre o diálogo de impressão do documento atual. */
-  printDocument?(): void
+  printDocument?(name?: string): void | Promise<void>
   /** Lê um arquivo do cofre como bytes (imagem, PDF…). */
   readBinary(path: string): Promise<Uint8Array>
   /** Grava bytes no cofre com as mesmas regras do `writeText` (versão esperada, `null` só cria, nada oculto). */

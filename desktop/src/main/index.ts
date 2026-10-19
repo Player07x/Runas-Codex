@@ -1,3 +1,4 @@
+import { checkTransfers } from "./transfer-smoke"
 import { DesktopTray } from "./tray"
 import { exportBookPdf } from "./books-pdf"
 import { mkdtemp, writeFile } from "node:fs/promises"
@@ -221,11 +222,12 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (bookFiles?.epub && bookFiles.docx) result.bookFilesCheck = await checkBookFiles(bookFiles.epub, bookFiles.docx)
     const master = result.master as { key?: string | null } | undefined
     if (result.room && master?.key) result.masterCheck = await checkMaster(window, (result.room as { port: number }).port, master.key, String(result.masterScene ?? ""), () => vtt.master.rotate(), argValue("shot-master"))
+    if (result.vault && !(result.vault as { readOnly: boolean }).readOnly) result.transfers = await checkTransfers(window)
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     result.spellcheck = spellcheckReport()
     console.log(JSON.stringify(result, null, 2))
-    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport())
+    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true)
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
     const hold = Number(argValue("hold") ?? 0)
     if (hold > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(hold, 600) * 1000))

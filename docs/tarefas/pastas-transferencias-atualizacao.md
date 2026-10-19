@@ -9,16 +9,16 @@ desktop, atualizar esta lista, mesclar por PR e publicar a próxima beta. Não u
 - [x] Usar a árvore pelo SAF quando a URI não pertence ao armazenamento direto, inclusive com acesso amplo liberado.
 - [x] Manter permissões persistentes, versão esperada, temporário sincronizado e recuperação sem substituir conflitos.
 - [x] Acrescentar um segundo aplicativo de teste, instalado apenas no CI, para cobrir outra autoridade e outro UID.
-- [ ] Confirmar os três smokes no emulador e os checks de Windows/Linux.
+- [x] Confirmar os três smokes no emulador e os checks de Windows/Linux (PR #45; Release 39189445030).
 
 ## 2. Importação e exportação no mobile e desktop
 
-- [ ] Tornar a tela central de transferências funcional, com os fluxos já existentes acessíveis.
-- [ ] Pacotes do Runas com manifesto e versão; prévia, seleção e conflitos antes de importar.
-- [ ] Importar/exportar notas e anexos em ZIP Markdown compatível com o Obsidian.
-- [ ] Conectar os fluxos de Livros, Agenda, Wiki/Campanhas e Mesa disponíveis no programa.
-- [ ] Usar os seletores e destinos de arquivos do sistema em ambos os ambientes; cancelamento não anuncia sucesso.
-- [ ] Validar leitura, escrita com versão esperada, conflitos, limites e integridade dos pacotes.
+- [x] Tornar a tela central de transferências funcional, com os fluxos já existentes acessíveis.
+- [x] Pacotes do Runas com manifesto e versão; prévia, seleção e conflitos antes de importar.
+- [x] Importar/exportar notas e anexos em ZIP Markdown compatível com o Obsidian.
+- [x] Conectar os fluxos de Livros, Agenda, Wiki/Campanhas e Mesa disponíveis no programa.
+- [x] Usar os seletores e destinos de arquivos do sistema em ambos os ambientes; cancelamento não anuncia sucesso.
+- [x] Validar leitura, escrita com versão esperada, conflitos, limites e integridade dos pacotes.
 
 ## 3. Atualização do APK no aplicativo
 
@@ -36,3 +36,7 @@ desktop, atualizar esta lista, mesclar por PR e publicar a próxima beta. Não u
 Importações de produtos antigos da Runas Suite continuam fora do plano conforme ADR 0004; migrações adicionais de
 outros serviços seguem o escopo de pós-1.0 já registrado. Sincronização SMB permanece responsabilidade do gerenciador
 escolhido pelo usuário.
+
+Fase 2: implementação e testes automatizados na ADR 0020. Checks nativos do PR ainda precisam ser confirmados antes da mesclagem.
+
+Pedido adicional do dono: ocultar indicações e configurações de atalhos de teclado no Android, mantendo as ações por toque.

@@ -3,7 +3,7 @@ import { parseNote } from "../parse"
 import { basename, extname, foldName } from "../text"
 import { VaultIndex } from "../vault-index"
 import { parseWorldManifest, worldFolderName } from "../../vtt/shared/world"
-import { managedWorldPath, transferPath, type TransferArchive, type TransferFile } from "./archive"
+import { managedWorldPath, transferPath, validateTransferPaths, type TransferArchive, type TransferFile } from "./archive"
 
 export interface TransferEntry { path: string; size: number; mtime: number }
 export type ImportStrategy = "merge" | "replace" | "duplicate"
@@ -28,7 +28,7 @@ function freeFolder(base: string, existing: Iterable<string>): string {
 }
 
 /** Notas ligadas são opcionais; anexos de links resolvidos sempre acompanham a seleção. */
-export function selectTransferPaths(index: VaultIndex, entries: TransferEntry[], selected: string[], linkedNotes: boolean, includeWorlds: boolean): string[] {
+export function selectTransferPaths(index: VaultIndex, entries: TransferEntry[], selected: string[], linkedNotes: boolean, includeWorlds: boolean, worldRoots: ReadonlyMap<string, string> = new Map()): string[] {
   const wanted = new Set<string>()
   const pending: string[] = []
   const attachments = entries.filter(entry => !/\.md$/i.test(entry.path) && !managedWorldPath(entry.path))
@@ -41,6 +41,13 @@ export function selectTransferPaths(index: VaultIndex, entries: TransferEntry[],
     wanted.add(path)
     const note = index.note(path)
     if (!note) continue
+    if (linkedNotes && path.startsWith("Campanhas/")) {
+      // Eventos podem apontar à sessão sem a sessão ter ainda um link de volta.
+      for (const backlink of index.backlinks(path)) if (backlink.from.startsWith("Agenda/")) include(backlink.from)
+      const id = note.meta.frontmatter?.data?.mesa
+      const root = typeof id === "string" ? worldRoots.get(id) : null
+      if (root) for (const entry of entries) if (entry.path.startsWith(root + "/")) include(entry.path)
+    }
     for (const link of note.meta.links) {
       const dest = index.resolve(link, path).dest
       if (dest && (linkedNotes || !index.note(dest))) include(dest)
@@ -137,6 +144,7 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
 
 /** A prévia fixa a versão dos arquivos existentes. O executor precisa usar exatamente essa versão para gravar. */
 export function buildImportPlan(archive: TransferArchive, existing: TransferEntry[], strategy: ImportStrategy, newId: () => string = () => crypto.randomUUID()): ImportPlan {
+  validateTransferPaths(archive.files)
   validateWorlds(archive.files)
   const files = strategy === "duplicate" ? duplicateFiles(archive, existing, newId) : archive.files
   const byName = new Map(existing.map(entry => [foldName(entry.path), entry]))

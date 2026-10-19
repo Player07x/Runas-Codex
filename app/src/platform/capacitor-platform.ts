@@ -44,6 +44,7 @@ interface RunasVaultPlugin {
   openFile(options: { path: string }): Promise<void>
   saveAs(options: { name: string; mime: string; base64: string }): Promise<{ name: string | null }>
   appVersion(): Promise<{ version: string }>
+  printDocument(options: { name: string }): Promise<void>
   setAgendaWidget(options: { items: { when: string; title: string }[] }): Promise<void>
   addListener(event: "change", listener: (data: { changes: NativeChange[] }) => void): Promise<PluginListenerHandle>
   addListener(event: "share", listener: (data: SharedItem) => void): Promise<PluginListenerHandle>
@@ -152,5 +153,6 @@ export function createCapacitorPlatform(): Platform {
     restoreTrash: async (path, target) => rememberEntry(await RunasVault.restoreTrash({ path, target })),
     listTransferFiles: async (includeWorlds = true) => (await RunasVault.listTransferFiles({ includeWorlds })).entries.map(rememberEntry),
     writeManagedTransfer: async (path, bytes, expected) => rememberEntry(await RunasVault.writeManagedTransfer({ path, base64: toBase64(bytes), expected })),
+    printDocument: (name = "Runas-Codex") => RunasVault.printDocument({ name }),
   }
 }

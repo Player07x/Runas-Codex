@@ -14,6 +14,7 @@ export interface ExportBook {
   title: string; author: string; language: string; identifier: string
   theme: ReturnType<typeof previewSettings>["theme"]; size: ReturnType<typeof previewSettings>["size"]
   sections: ExportSection[]; assets: ExportAsset[]; css: string; warnings: string[]
+  navigation?: boolean
 }
 export function bookExportPlan(index: VaultIndex, book: IndexedNote, draft?: { path: string; text: string }) {
   const structure = readBook(index, book)
@@ -25,7 +26,7 @@ export function bookExportPlan(index: VaultIndex, book: IndexedNote, draft?: { p
     title: book.name, author: typeof data.autor === "string" ? data.autor : "", language: "pt-BR",
     identifier: `urn:runas:${encodeURIComponent(book.path)}`, ...previewSettings(book),
     sections: [
-      { path: book.path, title: book.name, kind: "capa", body: "" },
+      ...(data.exportar_capa === false ? [] : [{ path: book.path, title: book.name, kind: "capa", body: "" }]),
       ...(typeof data.creditos === "string" && data.creditos.trim() ? [{ path: book.path, title: "Créditos", kind: "creditos", body: data.creditos }] : []),
       ...previewChapters(index, book, draft),
       ...(typeof data.contracapa === "string" && data.contracapa.trim() ? [{ path: book.path, title: "Contracapa", kind: "contracapa", body: data.contracapa }] : []),
