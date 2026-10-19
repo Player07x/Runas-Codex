@@ -193,8 +193,8 @@ com Android, Windows e Linux, conforme confirmação na conversa.
 |---|---|
 | Pastas fornecidas por outros aplicativos no Android | PR #45 mesclado; acesso amplo + provedor de outro UID e persistência após reiniciar conferidos no CI |
 | Transferências centrais, pacotes de cofre/espaços e documentos de seleção no desktop e mobile | PR #46 mesclado; CI e smokes Windows/Linux/Android aprovados (Release 39251916487); ADR 0020 |
-| Atualizador do APK e interface Android sem indicações de teclado | PR #47 em validação final; ADR 0021 |
-| Próxima beta Android, Windows e Linux | beta.14 preparada; publicação após os checks e a mesclagem |
+| Atualizador do APK e interface Android sem indicações de teclado | PR #47 mesclado; atualização real e preservação do SAF conferidas no emulador; ADR 0021 |
+| Próxima beta Android, Windows e Linux | [beta.14 publicada](https://github.com/Player07x/Runas-Codex/releases/tag/v0.1.0-beta.14); APK assinado, .exe, .deb e AppImage conferidos; PR #48 mesclado |
 
 Este pedido entrega o transporte de dados da C7 e a exportação central de notas/coleções da X4. Backups agendados,
 tratamento dedicado dos conflitos de sincronizadores, entradas de exportação em cada módulo e o site ZIP de uma
