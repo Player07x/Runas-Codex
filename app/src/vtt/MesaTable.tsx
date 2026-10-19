@@ -1,3 +1,4 @@
+import { useVault } from "../platform/VaultProvider"
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { ArrowLeft, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, ScrollText, Settings } from "lucide-react"
 import { href, navigate } from "../lib/router"
@@ -88,6 +89,7 @@ function useMasterAudio(): AudioState {
 
 /** Abre a mesa pelo id (rota `/vtt/mesa/<id>`) mantém a sala ao consultar outros espaços. */
 export function MesaTable({ id }: { id: string }) {
+  const keyboardHints = useVault().platform.kind !== "capacitor"
   const [world, setWorld] = useState<WorldSummary | null>(null)
   const [error, setError] = useState<string>()
   useEffect(() => {
@@ -119,15 +121,16 @@ export function MesaTable({ id }: { id: string }) {
       </div>
     )
   }
-  return <TableShell key={world.id} world={world} />
+  return <TableShell key={world.id} world={world} keyboardHints={keyboardHints} />
 }
 
 /** Mesa já aberta no computador da sala, controlada pelo celular do mestre (página `/master`, ADR 0016). */
 export function RemoteMesa({ world }: { world: WorldSummary }) {
-  return <TableShell key={world.id} world={world} remote />
+  return <TableShell key={world.id} world={world} keyboardHints remote />
 }
 
-function TableShell({ world, remote = false }: { world: WorldSummary; remote?: boolean }) {
+// A mesa remota não tem VaultProvider; a plataforma do app informa apenas as dicas de teclado.
+function TableShell({ world, keyboardHints, remote = false }: { world: WorldSummary; keyboardHints: boolean; remote?: boolean }) {
   const [store] = useState(() => new DocumentStore())
   const [loaded, setLoaded] = useState(false)
   const [sceneId, setSceneId] = useState<string | null>(null)
@@ -211,15 +214,15 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
             <button className="ghost" onClick={() => { setTab("players"); setPanelOpen(true) }} title="Sala dos jogadores">
               <MonitorPlay size={16} /> Sala
             </button>
-            <button className="icon" onClick={() => setSettingsOpen(true)} title="Configurações da mesa" aria-label="Configurações da mesa">
+            {keyboardHints && <button className="icon" onClick={() => setSettingsOpen(true)} title="Configurações da mesa" aria-label="Configurações da mesa">
               <Settings size={16} />
-            </button>
+            </button>}
           </div>
           <button className="mesa-panel-toggle ghost" aria-label="Abrir ou fechar painéis" aria-expanded={panelOpen} onClick={() => setPanelOpen(value => !value)}>Painéis</button>
         </header>
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         <section className="canvas-area" aria-label="Cena">
-          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} />}
+          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} />}
         </section>
         <aside className="side-panel" aria-label="Painel da mesa">
           <div className="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionar painel" onPointerDown={startResize} onPointerMove={resize} onPointerUp={endResize} onPointerCancel={endResize} />

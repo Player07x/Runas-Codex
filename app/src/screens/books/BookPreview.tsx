@@ -145,7 +145,7 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
       <label className="check"><input type="checkbox" checked={settings.newChapter} disabled={vault.info?.readOnly} onChange={(e) => void change("capitulos_nova_pagina", e.target.checked)} />Capítulos em página nova</label>
       <button className="btn" onClick={() => setMetadata(!metadata)} disabled={vault.info?.readOnly}>Editar capa e créditos</button>
       </>}
-      <button className="btn" disabled={!ready || !vault.platform.printDocument} onClick={() => requestPrint(book.name)}>Imprimir (Ctrl+P)</button>
+      <button className="btn" disabled={!ready || !vault.platform.printDocument} onClick={() => requestPrint(book.name)}>{vault.platform.kind === "capacitor" ? "Imprimir" : "Imprimir (Ctrl+P)"}</button>
       <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option><option value="html">HTML offline</option><option value="rtf">RTF</option>{!documentMode && <><option value="md">Markdown único</option><option value="zip">Pasta Markdown (ZIP)</option></>}</select></label>
       <button className="btn primary" disabled={!ready || exporting} onClick={() => void exportFile()}>{exporting ? "Exportando…" : "Exportar arquivo"}</button>
       {["epub","docx"].includes(format) && <p className="small">{format === "epub" ? "EPUB ajusta a paginação ao leitor; colunas viram texto corrido." : "DOCX é editável; a paginação e as fontes dependem do Word ou LibreOffice. Fórmulas ficam em LaTeX."}</p>}

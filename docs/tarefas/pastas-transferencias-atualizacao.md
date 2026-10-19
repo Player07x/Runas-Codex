@@ -22,10 +22,10 @@ desktop, atualizar esta lista, mesclar por PR e publicar a próxima beta. Não u
 
 ## 3. Atualização do APK no aplicativo
 
-- [ ] Verificar e implementar consulta manual à release, escolha do APK e conferência SHA-256.
-- [ ] Abrir o instalador do Android, com autorização e confirmação do usuário, sem abrir o site do GitHub.
-- [ ] Recusar arquivo incorreto, aplicação diferente, assinatura incompatível e instalação incompleta.
-- [ ] Manter o app utilizável em cancelamentos e salvar notas antes de iniciar a instalação.
+- [x] Verificar e implementar consulta manual à release, escolha do APK e conferência SHA-256.
+- [x] Abrir o instalador do Android, com autorização e confirmação do usuário, sem abrir o site do GitHub.
+- [x] Recusar arquivo incorreto, aplicação diferente, assinatura incompatível e instalação incompleta.
+- [x] Manter o app utilizável em cancelamentos e salvar notas antes de iniciar a instalação.
 
 ## Fechamento
 
@@ -40,3 +40,5 @@ escolhido pelo usuário.
 Fase 2: implementação e testes automatizados na ADR 0020. Checks nativos do PR ainda precisam ser confirmados antes da mesclagem.
 
 Pedido adicional do dono: ocultar indicações e configurações de atalhos de teclado no Android, mantendo as ações por toque.
+
+Fase 3: implementada na ADR 0021; o CI deve confirmar compilação, política e atualização real no emulador antes da mesclagem. Indicações de teclado ocultas no APK, com ações preservadas.

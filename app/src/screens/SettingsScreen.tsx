@@ -1,3 +1,4 @@
+import { flushOpenNotes } from "../lib/vault-notes"
 import { ImageFolderSettings } from "../components/vault/NoteImages"
 import { AppearanceSettings } from "../components/Appearance"
 import { OnboardingSettings } from "../components/Onboarding"
@@ -176,7 +177,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
             <UpdateRow />
             <PinRow />
           </SettingsCard>
-          <ShortcutSettings />
+          {vault.platform.kind !== "capacitor" && <ShortcutSettings />}
           <SnippetSettings />
         </div>
       </div>
@@ -242,7 +243,7 @@ function UpdateRow() {
 
   if (!platform.checkUpdate || !platform.installUpdate) {
     return (
-      <Row title="Atualizações" hint="No navegador o app já é a versão publicada. No Android, baixe o APK novo na página de versões: github.com/Player07x/Runas-Codex/releases">
+      <Row title="Atualizações" hint="No navegador o app já é a versão publicada.">
         <span className="small muted">—</span>
       </Row>
     )
@@ -256,11 +257,11 @@ function UpdateRow() {
     setState("baixando")
     setError("")
     setProgress(null)
-    platform.installUpdate!((received, total) => setProgress({ received, total })).then(
+    flushOpenNotes().then(() => platform.installUpdate!((received, total) => setProgress({ received, total }))).then(
       (result) => {
         if (result === "instalador-aberto") toast("O instalador abriu. O Runas-Codex vai fechar para ele trocar os arquivos.")
         else if (result === "reiniciar") toast("Atualizado. O Runas-Codex está reiniciando.")
-        else toast("O pacote abriu no instalador do sistema; conclua a instalação por lá e abra o app de novo.")
+        else toast("O instalador do sistema abriu. Confirme a atualização por lá; cancelar mantém o app atual.")
       },
       (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)),
     ).finally(() => setState("parado"))

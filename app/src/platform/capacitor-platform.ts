@@ -1,3 +1,4 @@
+import { createAndroidUpdates } from "./android-updates"
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core"
 import type { BackupInfo, Platform, RoomHostInfo, VaultEntry, VaultInfo } from "./platform"
 import { onAndroidReminderOpen, scheduleOnAndroid } from "./reminders"
@@ -94,6 +95,7 @@ export function createCapacitorPlatform(): Platform {
   }
   return {
     kind: "capacitor",
+    ...createAndroidUpdates(),
     vault: async () => remember((await RunasVault.current()).vault),
     chooseVault: async () => remember((await RunasVault.choose()).vault),
     createVault: async () => remember((await RunasVault.create()).vault),

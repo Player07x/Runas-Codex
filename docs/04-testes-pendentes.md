@@ -541,3 +541,17 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - PDF/HTML/DOCX: selecionar notas de Wiki e Notas com tabelas, imagens, fórmulas e transclusões. Conferir a prévia,
   o sumário HTML offline e a versão dos jogadores sem segredos. No Android, salvar PDF pelo diálogo de impressão;
   cancelar a impressão deve manter o app utilizável. Conferir o DOCX no editor que será utilizado.
+
+### Atualização do APK e indicações de teclado — próxima beta (2026-10-18)
+
+- No Android, conferir Configurações, busca/paleta, impressão e ferramentas da mesa: sem Mod/Ctrl/Alt na interface,
+  com as ações por toque presentes. Desktop deve continuar mostrando os atalhos. Notas com `<kbd>` conservam seu texto.
+- Na beta assinada com chave permanente, usar Verificar quando houver uma versão posterior com a mesma assinatura:
+  conferir versão e notas, baixar, negar e depois autorizar a instalação desta fonte. Cancelar o instalador deve
+  manter o app utilizável; confirmar a atualização deve preservar cofre, escrita liberada e permissão SAF.
+- Conferir rede indisponível e pouco espaço em cache: o erro deve ser explícito, sem marcar a versão como instalada.
+  Não existe atualização silenciosa. A troca real entre dois APKs é coberta no emulador; conferir o comportamento
+  do instalador e da autorização específica do aparelho do dono.
+- APK debug antigo (até beta.13) tem outra assinatura. A nova beta não consegue substituí-lo automaticamente;
+  planejar a migração manual preservando o cofre e exportando backups antes de remover uma instalação antiga.
+  A implementação não desinstala nem apaga a versão antiga.

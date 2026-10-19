@@ -1,8 +1,11 @@
 apply plugin: 'com.android.application'
 
-// A versão vem do package.json da raiz (a mesma do desktop): 1.2.3 vira versionCode 10203.
+apply from: 'version-code.gradle'
+
+// A versão vem do package.json da raiz; version-code.gradle também ordena as pré-releases.
 def rootVersion = new groovy.json.JsonSlurper().parse(file('../../../package.json')).version
-def versionParts = rootVersion.tokenize('-')[0].tokenize('.').collect { it as int }
+def updateTest = project.hasProperty('runasUpdateTest')
+if (updateTest && project.hasProperty('runasTestVersion')) rootVersion = project.property('runasTestVersion')
 
 android {
     namespace = "dev.runas.codex"
@@ -11,8 +14,9 @@ android {
         applicationId "dev.runas.codex"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]
+        versionCode runasVersionCode(rootVersion)
         versionName rootVersion
+        buildConfigField "boolean", "RUNAS_UPDATE_TEST", updateTest ? "true" : "false"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -33,6 +37,8 @@ android {
             }
         }
     }
+    buildFeatures { buildConfig true }
+    sourceSets { debug { if (updateTest) manifest.srcFile 'src/updateTest/AndroidManifest.xml' } }
     buildTypes {
         release {
             minifyEnabled false
@@ -69,4 +75,9 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// O APK com origem fictícia e HTTP local nunca pode virar um artefato de release.
+gradle.taskGraph.whenReady { graph ->
+    if (updateTest && graph.allTasks.any { it.name.toLowerCase().contains('release') }) throw new GradleException('Não gere release com o modo de teste do atualizador.')
 }

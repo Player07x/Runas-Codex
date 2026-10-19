@@ -1,0 +1,2 @@
+<!-- Apenas o APK do CI acessa o servidor HTTP local que oferece as releases fictícias. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:usesCleartextTraffic="true" /></manifest>
