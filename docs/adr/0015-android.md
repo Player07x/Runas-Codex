@@ -153,6 +153,6 @@ O APK assinado instala por cima de outro APK assinado com a mesma chave. Ele **n
 ## Consequências
 
 - O Android passa a abrir o cofre do Obsidian sem cópia e sem mudar nada que o app não grave.
-- `release-targets.json` continua com `"android": false` (decisão do dono, até a revisão complementar). O job do
-  emulador roda mesmo assim nos branches `android/*`.
+- A partir da beta.13, `release-targets.json` tem `"android": true`, conforme o pedido posterior do dono para
+  publicar Android, Windows e Linux. Os jobs do APK e dos emuladores foram aprovados no PR #43.
 - Pendente: teclado real (Gboard) e um aparelho físico; a sala hospedada pelo celular (A2).
