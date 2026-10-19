@@ -66,6 +66,17 @@ describe("planejamento das transferências", () => {
     expect(selectTransferPaths(index, entries, ["Notas/a.md"], false, false)).toEqual(["Anexos/mapa.png", "Notas/a.md"])
     expect(selectTransferPaths(index, entries, ["Notas/a.md"], true, false)).toHaveLength(3)
   })
+  it.each(["Anexos-", "Meu "])("não confunde o sufixo de um anexo com outro nome de arquivo (%s)", prefix => {
+    const name = prefix + "mapa.png"
+    const texts = { "Notas/a.md": `![[${name}]]` }
+    const entries = [entry("Notas/a.md"), entry("Notas/" + name), entry("Notas/mapa.png")]
+    expect(selectTransferPaths(new VaultIndex(entries, texts), entries, ["Notas/a.md"], false, false)).toEqual(["Notas/a.md", "Notas/" + name])
+  })
+  it("inclui o nome completo de uma imagem em uma propriedade sem levar o sufixo de outra", () => {
+    const texts = { "Notas/a.md": '---\nmapa: "Minha imagem.png"\n---\n' }
+    const entries = [entry("Notas/a.md"), entry("Notas/Minha imagem.png"), entry("Notas/imagem.png")]
+    expect(selectTransferPaths(new VaultIndex(entries, texts), entries, ["Notas/a.md"], false, false)).toEqual(["Notas/a.md", "Notas/Minha imagem.png"])
+  })
   it("não inclui uma cópia distante do anexo quando há dois arquivos com o mesmo nome", () => {
     const texts = { "Notas/Importados/a.md": "![[mapa.png]]" }
     const entries = [entry("Notas/Importados/a.md"), entry("Notas/Importados/mapa.png"), entry("Notas/Cópia/mapa.png")]
