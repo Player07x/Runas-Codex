@@ -51,7 +51,18 @@ caminho de arquivo a partir deles. Anexos usam `convertFileSrc(contentUri)` e `_
 
 O CI usa o seletor real com acesso a todos os arquivos negado, reinicia o processo e executa o mesmo smoke em ambos
 os modos. Os relatórios SAF ficam em `saf/` no artefato `Runas-Codex-android-cofre`, incluindo a medição das 5 mil
-notas. **Comparação medida: pendente da primeira execução deste branch; será registrada antes da conclusão.**
+notas.
+
+**Comparação medida** (Android 35 x86_64 no CI, 18/10/2026,
+[execução 39173777825](https://github.com/Player07x/Runas-Codex/actions/runs/39173777825), commit `dfb1ff1`):
+
+| Modo | Abrir e indexar 5 mil notas | Memória JS | Checks do smoke |
+|---|---|---|---|
+| Acesso direto | 8,6 s (`indexMs: 8593`) | 20 MB | 23 aprovados |
+| SAF (reserva) | 42,7 s (`indexMs: 42738`) | 21 MB | 25 aprovados |
+
+O SAF fica cerca de **5 vezes mais lento** para abrir um cofre grande (uma consulta ao provedor por pasta e a leitura
+de cada documento pelo `ContentResolver`). Por isso ele continua sendo a reserva, não o caminho principal.
 
 ### 2. Plugin nativo do cofre, com a gravação segura do desktop
 
@@ -144,4 +155,4 @@ O APK assinado instala por cima de outro APK assinado com a mesma chave. Ele **n
 - O Android passa a abrir o cofre do Obsidian sem cópia e sem mudar nada que o app não grave.
 - `release-targets.json` continua com `"android": false` (decisão do dono, até a revisão complementar). O job do
   emulador roda mesmo assim nos branches `android/*`.
-- Pendente: medir a reserva SAF no CI; teclado real (Gboard) e um aparelho físico; a sala hospedada pelo celular (A2).
+- Pendente: teclado real (Gboard) e um aparelho físico; a sala hospedada pelo celular (A2).
