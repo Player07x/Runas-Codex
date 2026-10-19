@@ -46,8 +46,16 @@ let webViewBounds
 const adb = (...args) => execFileSync('adb', args, { timeout: 20000, maxBuffer: 16 * 1024 * 1024 })
 const devicePoint = async point => {
   if (!webViewBounds) {
-    adb('shell', 'uiautomator', 'dump', '/sdcard/runas-toque.xml')
-    const xml = adb('exec-out', 'cat', '/sdcard/runas-toque.xml').toString()
+    let xml = '', lastError
+    for(let attempt=0;attempt<3;attempt++) {
+      try {
+        adb('shell', 'uiautomator', 'dump', '/sdcard/runas-toque.xml')
+        xml = adb('exec-out', 'cat', '/sdcard/runas-toque.xml').toString()
+        break
+      } catch(error) { lastError=error; await sleep(500) }
+    }
+    if(!xml) throw lastError
+
     await writeFile(output + '/android-hierarquia.xml', xml)
     const view = xml.match(/<node[^>]*class="(?:android\.webkit\.WebView|com\.getcapacitor\.BridgeWebView)"[^>]*>/)?.[0]
     const bounds = view?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/)
@@ -101,6 +109,10 @@ const results = {}
 try {
   await send('Runtime.enable'); await send('Log.enable')
   android = await run(`navigator.userAgent.includes('Android')`)
+  if(android) {
+    results.updateTestDisabled = await run(`window.Capacitor.Plugins.RunasUpdates.testSource({port:12345}).then(()=>false,()=>true)`)
+    if(!results.updateTestDisabled) throw new Error('O APK distribuído não pode habilitar a origem de teste do atualizador.')
+  }
   if (!android) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   if (process.argv.includes('--mobile')) await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2.75, mobile: true })
   await run(`location.hash='/vtt/criar'`)
