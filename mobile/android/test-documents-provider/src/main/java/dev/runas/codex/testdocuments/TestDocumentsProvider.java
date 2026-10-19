@@ -101,9 +101,11 @@ public final class TestDocumentsProvider extends DocumentsProvider {
         return cursor;
     }
 
-    @Override public boolean isChildDocument(String parentId, String childId) throws FileNotFoundException {
-        File parent = file(parentId), child = file(childId);
-        return child.getPath().startsWith(parent.getPath() + File.separator);
+    @Override public boolean isChildDocument(String parentId, String childId) {
+        try {
+            File parent = file(parentId), child = file(childId);
+            return child.getPath().startsWith(parent.getPath() + File.separator);
+        } catch (FileNotFoundException e) { return false; }
     }
 
     @Override public DocumentsContract.Path findDocumentPath(String parentId, String childId) throws FileNotFoundException {
