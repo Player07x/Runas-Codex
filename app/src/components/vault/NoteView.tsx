@@ -352,10 +352,10 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
         </button>
         <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
         <span className="note-history">
-          <button className="icon-btn" title="Voltar (Alt ←)" aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
+          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
             <ArrowLeft size={17} />
           </button>
-          <button className="icon-btn" title="Avançar (Alt →)" aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
+          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
             <ArrowRight size={17} />
           </button>
         </span>
@@ -393,7 +393,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             </button>
             <button
               className="icon-btn"
-              title="Inserir imagem (também dá para colar com Ctrl+V ou arrastar para a nota)"
+              title={vault.platform.kind === "capacitor" ? "Inserir imagem" : "Inserir imagem (também dá para colar com Ctrl+V ou arrastar para a nota)"}
               aria-label="Inserir imagem"
               onClick={() => {
                 if (mode === "leitura") setMode("live")

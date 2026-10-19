@@ -1,0 +1,25 @@
+// Reserva espaço para cada beta, RC e estável; rejeita versões que não cabem na ordenação do Android.
+ext.runasVersionCode = { String version ->
+    def match = version =~ /^(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.(\d+))?$/
+    if (!match.matches()) throw new GradleException("Versão Android inválida: $version")
+    def major = match[0][1] as long, minor = match[0][2] as long, patch = match[0][3] as long
+    def stage = match[0][4], number = match[0][5] ? match[0][5] as int : 0
+    if (major > 20 || minor > 99 || patch > 99 || (stage && (number < 1 || number > 999))) throw new GradleException('A versão excede os limites do versionCode Android.')
+    long rank = stage == 'alpha' ? number : stage == 'beta' ? 1000 + number : stage == 'rc' ? 4000 + number : 9999
+    return (major * 100000000 + minor * 1000000 + patch * 10000 + rank) as int
+}
+tasks.register('checkRunasVersionCodes') {
+    doLast {
+        def ordered = ['0.1.0-alpha.1', '0.1.0-alpha.999', '0.1.0-beta.1', '0.1.0-beta.13', '0.1.0-beta.14', '0.1.0-rc.1', '0.1.0-rc.999', '0.1.0', '0.1.1-alpha.1', '0.2.0-beta.1', '1.0.0-beta.1', '20.99.99']
+        def codes = ordered.collect { runasVersionCode(it) }
+        assert codes[3] > 100 // As betas anteriores à correção usavam 100.
+        assert codes.every { it > 0 && it < 2100000000 }
+        assert codes == codes.sort(false) && codes.toSet().size() == codes.size()
+        ['0.1.0-beta.0', '0.1.0-beta.1000', '1.100.0', '21.0.0', 'inválida'].each { value ->
+            boolean rejected = false
+            try { runasVersionCode(value) } catch (GradleException expected) { rejected = true }
+            assert rejected
+        }
+    }
+}
+tasks.configureEach { task -> if (task.name == 'preBuild') task.dependsOn('checkRunasVersionCodes') }

@@ -160,10 +160,10 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
           <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Buscar e comandos">
             <Search size={16} />
             <span>Buscar notas e comandos…</span>
-            <kbd>Ctrl K</kbd>
+            {vault.platform.kind !== "capacitor" && <kbd>Ctrl K</kbd>}
           </button>
           <div className="top-actions">
-            <button className="icon-btn hide-mobile" onClick={() => navigate("/notas/nova")} title={`Nova nota (${shortcutLabel("newNote", prefs.shortcuts)})`}>
+            <button className="icon-btn hide-mobile" onClick={() => navigate("/notas/nova")} title={vault.platform.kind === "capacitor" ? "Nova nota" : `Nova nota (${shortcutLabel("newNote", prefs.shortcuts)})`}>
               <Plus size={18} />
             </button>
             <button className="icon-btn" onClick={onToggleTheme} title={theme === "dark" ? "Tema claro" : "Tema escuro"}>
@@ -218,7 +218,7 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
     () => [
-      { label: "Nova nota", icon: <Plus size={16} />, hint: shortcutLabel("newNote", prefs.shortcuts), run: () => navigate("/notas/nova") },
+      { label: "Nova nota", icon: <Plus size={16} />, hint: vault.platform.kind === "capacitor" ? "" : shortcutLabel("newNote", prefs.shortcuts), run: () => navigate("/notas/nova") },
       { label: "Nota do dia", icon: <CalendarDays size={16} />, hint: "Notas", run: () => navigate("/notas/hoje") },
       { label: "Criar Sala", icon: <DoorOpen size={16} />, hint: "VTT", run: () => navigate("/vtt/criar") },
       { label: "Entrar Sala", icon: <LogIn size={16} />, hint: "VTT", run: () => navigate("/vtt/entrar") },
@@ -227,12 +227,12 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Gráfico da wiki", icon: <Library size={16} />, hint: "Wiki", run: () => navigate("/wiki/grafico") },
       { label: "Importar / Exportar", icon: <ArrowDownUp size={16} />, hint: "", run: () => navigate("/transferir") },
       { label: "Alternar tema", icon: <Sun size={16} />, hint: "", run: onToggleTheme },
-      { label: "Voltar", icon: <ArrowLeft size={16} />, hint: "Alt ←", run: goBack },
-      { label: "Avançar", icon: <ArrowRight size={16} />, hint: "Alt →", run: goForward },
+      { label: "Voltar", icon: <ArrowLeft size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Alt ←", run: goBack },
+      { label: "Avançar", icon: <ArrowRight size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Alt →", run: goForward },
       { label: "Nota aleatória", icon: <Shuffle size={16} />, hint: "Notas", run: () => navigate("/notas/aleatoria") },
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
     ],
-    [onToggleTheme, prefs.shortcuts],
+    [onToggleTheme, prefs.shortcuts, vault.platform.kind],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
   // Notas do cofre (pelo índice); no exemplo do navegador, as que têm tela própria (wiki, campanhas) abrem nela.
@@ -253,7 +253,7 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
   }
   const items = [
     ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas" })),
-    ...(canCreate ? [{ key: "criar", label: `Criar nota “${query.trim()}”`, icon: <Plus size={16} />, hint: "Enter", run: createNote, section: "Notas" }] : []),
+    ...(canCreate ? [{ key: "criar", label: `Criar nota “${query.trim()}”`, icon: <Plus size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Enter", run: createNote, section: "Notas" }] : []),
     ...cmds.map((c) => ({ key: c.label, ...c, section: "Comandos" })),
   ]
 
@@ -297,11 +297,11 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
             </div>
           ))}
         </div>
-        <div className="palette-foot">
+        {vault.platform.kind !== "capacitor" && <div className="palette-foot">
           <span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span>
           <span><kbd>Enter</kbd> abrir</span>
           <span><kbd>Esc</kbd> fechar</span>
-        </div>
+        </div>}
       </div>
     </div>
   )

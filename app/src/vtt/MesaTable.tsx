@@ -1,3 +1,4 @@
+import { useVault } from "../platform/VaultProvider"
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { ArrowLeft, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, ScrollText, Settings } from "lucide-react"
 import { href, navigate } from "../lib/router"
@@ -132,6 +133,7 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
   const [loaded, setLoaded] = useState(false)
   const [sceneId, setSceneId] = useState<string | null>(null)
   const [tab, setTab] = useState<SideTab>("scenes")
+  const keyboardHints = useVault().platform.kind !== "capacitor"
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const audio = useMasterAudio()
@@ -211,9 +213,9 @@ function TableShell({ world, remote = false }: { world: WorldSummary; remote?: b
             <button className="ghost" onClick={() => { setTab("players"); setPanelOpen(true) }} title="Sala dos jogadores">
               <MonitorPlay size={16} /> Sala
             </button>
-            <button className="icon" onClick={() => setSettingsOpen(true)} title="Configurações da mesa" aria-label="Configurações da mesa">
+            {keyboardHints && <button className="icon" onClick={() => setSettingsOpen(true)} title="Configurações da mesa" aria-label="Configurações da mesa">
               <Settings size={16} />
-            </button>
+            </button>}
           </div>
           <button className="mesa-panel-toggle ghost" aria-label="Abrir ou fechar painéis" aria-expanded={panelOpen} onClick={() => setPanelOpen(value => !value)}>Painéis</button>
         </header>

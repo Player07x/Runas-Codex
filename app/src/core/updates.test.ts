@@ -55,3 +55,17 @@ describe("checksumFor", () => {
     expect(checksumFor(sums, "outro.exe")).toBeNull()
   })
 })
+
+
+describe("APK Android", () => {
+  it("prefere o APK assinado e mantém o debug como compatibilidade de releases antigas", () => {
+    const item = release("v0.1.0-beta.14", true)
+    item.assets.push(asset("Runas-Codex-0.1.0-beta.14-android-debug.apk"))
+    expect(pickUpdate("0.1.0-beta.13", parseReleases([item]), "android").asset?.name).toContain("android-debug.apk")
+    item.assets.push(asset("Runas-Codex-0.1.0-beta.14-android.apk"))
+    const update = pickUpdate("0.1.0-beta.13", parseReleases([item]), "android")
+    expect(update.asset?.name).toBe("Runas-Codex-0.1.0-beta.14-android.apk")
+    expect(update.newer).toBe(true)
+    expect(update.checksums?.name).toBe("SHA256SUMS.txt")
+  })
+})

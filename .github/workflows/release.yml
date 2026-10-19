@@ -157,6 +157,7 @@ jobs:
       # ANDROID_KEY_ALIAS e ANDROID_KEY_PASSWORD; passo a passo em docs/adr/0015-android.md). Sem eles, fica só o de
       # depuração, como antes.
       - name: APK de release assinado
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           RUNAS_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -329,7 +330,7 @@ jobs:
           JS
       - name: Testes de unidade do cofre e APK de teste
         working-directory: mobile/android
-        run: ./gradlew testDebugUnitTest assembleDebug --no-daemon
+        run: ./gradlew testDebugUnitTest assembleDebug -PrunasUpdateTest -PrunasTestVersion=0.1.0-beta.13 --no-daemon
       - name: Preparar emulador Android 35
         run: |
           export PATH="$ANDROID_HOME/platform-tools:$PATH"
@@ -447,6 +448,19 @@ jobs:
           adb shell am start -n dev.runas.codex/.MainActivity
           bash mobile/tests/android-devtools.sh
           node mobile/tests/vault-smoke.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/external /sdcard/Documents/cofre-smoke-provider desktop/tests/cofre-exemplo external
+      - name: Gerar APKs somente para verificar a atualização
+        working-directory: mobile/android
+        run: |
+          ./gradlew assembleDebug -PrunasUpdateTest -PrunasTestVersion=0.1.0-beta.14 --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk /tmp/runas-android-vault/update-candidate.apk
+          keytool -genkeypair -keystore "$RUNNER_TEMP/update-other.jks" -storepass teste-1234 -keypass teste-1234 -alias teste -keyalg RSA -validity 2 -dname 'CN=Teste isolado do CI' -noprompt
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$apksigner" sign --ks "$RUNNER_TEMP/update-other.jks" --ks-pass pass:teste-1234 --key-pass pass:teste-1234 --out /tmp/runas-android-vault/update-other.apk /tmp/runas-android-vault/update-candidate.apk
+      - name: Atualizar o APK pelo instalador e preservar o cofre
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          adb forward tcp:9224 localabstract:webview_devtools_remote_$(adb shell pidof dev.runas.codex | tr -d '\r')
+          node mobile/tests/updates.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-vault/updates /tmp/runas-android-vault/update-candidate.apk /tmp/runas-android-vault/update-other.apk mobile/android/test-documents-provider/build/outputs/apk/debug/test-documents-provider-debug.apk
       - name: Registro do Android
         if: always()
         run: adb logcat -d > /tmp/runas-android-vault/logcat.txt 2>&1 || true

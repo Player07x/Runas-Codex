@@ -1,3 +1,4 @@
+import { useVault } from "../../platform/VaultProvider"
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
@@ -210,6 +211,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
       if (next) setTool(next.id)
     }
   }, true)
+  const keyboardHints = useVault().platform.kind !== "capacitor"
   const shortcutOf = (action: KeyAction) => settings.keyBindings[action].map(keyLabel).join(" / ")
 
   async function addTile(file: File, at?: { x: number; y: number }) {
@@ -250,7 +252,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
     {scene && <>
       <button className="scene-tools-toggle ghost" aria-label="Mostrar ferramentas" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}><Wrench size={18} /> Ferramentas</button>
       <nav className={`scene-tools ${toolsOpen ? "open" : ""}`} aria-label="Ferramentas">
-        {TOOLS.map(({ id, label, action, icon: Icon }) => <button key={id} className={tool === id ? "active" : ""} title={shortcutOf(action) ? `${label} (${shortcutOf(action)})` : label} aria-label={label} aria-pressed={tool === id} onClick={() => { setTool(id); setToolsOpen(false); setContext(null) }}><Icon size={17} /></button>)}
+        {TOOLS.map(({ id, label, action, icon: Icon }) => <button key={id} className={tool === id ? "active" : ""} title={keyboardHints && shortcutOf(action) ? `${label} (${shortcutOf(action)})` : label} aria-label={label} aria-pressed={tool === id} onClick={() => { setTool(id); setToolsOpen(false); setContext(null) }}><Icon size={17} /></button>)}
         <span className="divider" />
         <button className={preview ? "active" : ""} title={scene.data.vision.enabled ? "Ver como os jogadores (névoa e escuridão)" : "Ver a escuridão como os jogadores (a névoa está desligada nesta cena)"} aria-label="Ver como os jogadores" aria-pressed={preview} onClick={() => setPreview((value) => !value)}><ScanEye size={17} /></button>
         <button title="Adicionar imagem (tile)" aria-label="Adicionar imagem" onClick={() => tileInput.current?.click()}><ImagePlus size={17} /></button>
@@ -271,12 +273,12 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
         <span className="draw-options-label">{WALL_LABELS[wallKind]}</span>
       </div>}
       <nav className="scene-actions" aria-label="Comandos da cena">
-        <button aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!history.canUndo} onClick={() => void history.undo().catch(reportError)}><Undo2 size={18} /></button>
-        <button aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!history.canRedo} onClick={() => void history.redo().catch(reportError)}><Redo2 size={18} /></button>
+        <button aria-label="Desfazer" title={keyboardHints ? "Desfazer (Ctrl+Z)" : "Desfazer"} disabled={!history.canUndo} onClick={() => void history.undo().catch(reportError)}><Undo2 size={18} /></button>
+        <button aria-label="Refazer" title={keyboardHints ? "Refazer (Ctrl+Shift+Z)" : "Refazer"} disabled={!history.canRedo} onClick={() => void history.redo().catch(reportError)}><Redo2 size={18} /></button>
         <button aria-label="Afastar mapa" onClick={() => viewRef.current?.zoomBy(1 / 1.2)}><Minus size={18} /></button>
         <button aria-label="Aproximar mapa" onClick={() => viewRef.current?.zoomBy(1.2)}><Plus size={18} /></button>
         <button aria-label="Enquadrar cena" onClick={() => viewRef.current?.fitScene()}><Maximize2 size={18} /></button>
-        <button aria-label="Ignorar grade" title="Ignorar grade ao soltar (Alt)" aria-pressed={freePlacement} className={freePlacement ? "active" : ""} onClick={() => setFreePlacement(value => !value)}><Grid2X2 size={18} /></button>
+        <button aria-label="Ignorar grade" title={keyboardHints ? "Ignorar grade ao soltar (Alt)" : "Ignorar grade ao soltar"} aria-pressed={freePlacement} className={freePlacement ? "active" : ""} onClick={() => setFreePlacement(value => !value)}><Grid2X2 size={18} /></button>
       </nav>
       {selection.length > 0 && <div className="selection-actions" role="toolbar" aria-label="Comandos da seleção">
         <button aria-label="Propriedades do objeto" aria-expanded={propertiesOpen} onClick={() => setPropertiesOpen(value => !value)}><SlidersHorizontal size={18} /></button>
@@ -298,7 +300,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
       {selected && propertiesOpen && <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} onRemove={() => viewRef.current?.deleteSelection()} onClose={() => setPropertiesOpen(false)} />}
       {selection.length > 1 && propertiesOpen && <div className="properties multi"><strong>{selection.length} objetos selecionados</strong><div className="row-actions"><button className="ghost" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={14} /> Ocultar/mostrar</button><button className="ghost danger" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={14} /> Excluir</button></div></div>}
       <footer className="scene-status">
-        <span>{status || TOOL_HINTS[tool] || "Botão direito ou WASD/setas movem o mapa · roda do mouse aproxima · Shift + direção move a seleção · Alt ao soltar um token ignora a grade"}</span>
+        <span>{status || (!keyboardHints ? "Arraste para mover o mapa · use dois dedos para aproximar · escolha ferramentas e ações nos botões" : TOOL_HINTS[tool] || "Botão direito ou WASD/setas movem o mapa · roda do mouse aproxima · Shift + direção move a seleção · Alt ao soltar um token ignora a grade")}</span>
         <button className="link" onClick={() => viewRef.current?.fitScene()}>Enquadrar cena</button>
       </footer>
     </>}

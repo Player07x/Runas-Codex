@@ -23,7 +23,7 @@ export interface Release {
 }
 
 /** Qual instalador serve para este app: o `.exe` (NSIS), o AppImage (troca o próprio arquivo) ou o `.deb`. */
-export type UpdateTarget = "windows" | "appimage" | "deb"
+export type UpdateTarget = "windows" | "appimage" | "deb" | "android"
 
 /** Depois de baixar: o instalador do Windows abriu ou a instalação terminou e o aplicativo reinicia. `pacote-aberto` é mantido para pontes antigas. */
 export type UpdateInstallResult = "instalador-aberto" | "reiniciar" | "pacote-aberto"
@@ -100,6 +100,7 @@ export function parseReleases(json: unknown): Release[] {
 
 /** O instalador deste sistema numa release (pelos nomes que o workflow Release gera). */
 export function assetFor(release: Release, target: UpdateTarget): ReleaseAsset | null {
+  if (target === "android") return release.assets.find(asset => /^Runas-Codex-.+-android\.apk$/.test(asset.name)) ?? release.assets.find(asset => /^Runas-Codex-.+-android-debug\.apk$/.test(asset.name)) ?? null
   const pattern = target === "windows" ? /^Runas-Codex-Setup-.+\.exe$/ : target === "appimage" ? /^Runas-Codex-.+-linux-x86_64\.AppImage$/ : /^Runas-Codex-.+-linux-amd64\.deb$/
   return release.assets.find((asset) => pattern.test(asset.name)) ?? null
 }
