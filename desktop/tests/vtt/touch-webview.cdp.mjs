@@ -110,6 +110,7 @@ try {
   await send('Runtime.enable'); await send('Log.enable')
   android = await run(`navigator.userAgent.includes('Android')`)
   if(android) {
+    await until(`window.Capacitor?.Plugins?.RunasUpdates`)
     results.updateTestDisabled = await run(`window.Capacitor.Plugins.RunasUpdates.testSource({port:12345}).then(()=>false,()=>true)`)
     if(!results.updateTestDisabled) throw new Error('O APK distribuído não pode habilitar a origem de teste do atualizador.')
   }
