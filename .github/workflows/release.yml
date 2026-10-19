@@ -165,8 +165,8 @@ jobs:
           RUNAS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::notice::Sem a chave de assinatura nos segredos do repositório: só o APK de depuração."
-            exit 0
+            echo "::error::A release Android precisa da chave permanente de assinatura nos segredos do repositório."
+            exit 1
           fi
           export RUNAS_KEYSTORE_FILE="$RUNNER_TEMP/runas-release.jks"
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNAS_KEYSTORE_FILE"
@@ -194,6 +194,13 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: Conferir o APK assinado para publicação
+        if: needs.targets.outputs.android == 'true'
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          test -f "artifacts/Runas-Codex-$version-android.apk"
+          rm -f "artifacts/Runas-Codex-$version-android-debug.apk"
 
       - name: Somas SHA-256
         working-directory: artifacts

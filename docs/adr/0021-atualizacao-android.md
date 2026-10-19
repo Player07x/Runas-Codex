@@ -53,3 +53,9 @@ de teste, preservando a árvore SAF e suas notas. Essa fixture fixa versões de 
 Referências: [autorização para instalar](https://developer.android.com/reference/android/content/pm/PackageManager#canRequestPackageInstalls()),
 [certificados do APK](https://developer.android.com/reference/android/content/pm/SigningInfo) e
 [instalador por intenção](https://developer.android.com/reference/android/content/Intent#ACTION_INSTALL_PACKAGE).
+
+## Publicação da beta.14
+
+Tags com Android habilitado passam a exigir a chave permanente: falta de secrets de assinatura falha o job.
+A publicação confere a presença do APK assinado e retira o debug da lista de arquivos da release. O APK debug
+continua como artefato dos PRs, para testes, sem ser oferecido como atualização de produção.
