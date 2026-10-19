@@ -15,6 +15,12 @@ export function decodeTransferText(bytes: Uint8Array): string {
   catch { throw new Error("Há um arquivo de texto que não está em UTF-8. Converta-o antes de importar.") }
 }
 const isText = (path: string) => /\.(md|canvas|base|json|css|txt|ics|csv|html|rtf)$/i.test(path)
+function mentionsPath(text: string, path: string): boolean {
+  if (!text.includes(path)) return false
+  const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  // Valores completos em propriedades/JSON e destinos de links; um sufixo não é outro anexo.
+  return new RegExp(String.raw`(?:^|["'\[(:=]\s*)${escaped}(?=\s*(?:["'\])},|#\r\n]|$))`, "m").test(text)
+}
 const worldRoot = (path: string) => managedWorldPath(path) ? path.split("/").slice(0, 3).join("/") : null
 function cleanTitle(title: string): string {
   return title.replace(/[[\]#^|\\/:*?"<>\u0000-\u001f]/g, "-").replace(/^[.\s]+|[.\s]+$/g, "").slice(0, 60).replace(/[.\s]+$/, "") || "Cofre"
@@ -55,7 +61,7 @@ export function selectTransferPaths(index: VaultIndex, entries: TransferEntry[],
     // Caminhos de imagens em propriedades e blocos desenhados também precisam viajar com a nota.
     for (const entry of attachments) {
       const name = basename(entry.path)
-      if (note.text.includes(entry.path) || note.text.includes(name) && index.resolve({ kind: "wiki", embed: true, target: name, raw: "", start: 0, end: 0, inFrontmatter: false }, path).dest === entry.path) include(entry.path)
+      if (mentionsPath(note.text, entry.path) || mentionsPath(note.text, name) && index.resolve({ kind: "wiki", embed: true, target: name, raw: "", start: 0, end: 0, inFrontmatter: false }, path).dest === entry.path) include(entry.path)
     }
   }
   return [...wanted].sort((a, b) => a.localeCompare(b, "pt-BR"))

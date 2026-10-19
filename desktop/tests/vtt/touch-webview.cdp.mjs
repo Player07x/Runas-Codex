@@ -42,13 +42,16 @@ const until = async expression => {
   throw new Error('Não apareceu: ' + expression)
 }
 let android = false
-let webViewBounds
+let webViewBounds, webViewViewport
 const adb = (...args) => execFileSync('adb', args, { timeout: 20000, maxBuffer: 16 * 1024 * 1024 })
 const devicePoint = async point => {
-  if (!webViewBounds) {
+  const size = await run(`({width:innerWidth,height:innerHeight})`)
+  // O IME redimensiona o WebView nativo; não reutiliza os limites de antes do formulário da mesa.
+  if (!webViewBounds || webViewViewport?.width !== size.width || webViewViewport?.height !== size.height) {
     let xml = '', lastError
     for(let attempt=0;attempt<3;attempt++) {
       try {
+        adb('shell', 'rm', '-f', '/sdcard/runas-toque.xml')
         adb('shell', 'uiautomator', 'dump', '/sdcard/runas-toque.xml')
         xml = adb('exec-out', 'cat', '/sdcard/runas-toque.xml').toString()
         break
@@ -61,8 +64,8 @@ const devicePoint = async point => {
     const bounds = view?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/)
     if (!bounds) throw new Error('O Android não informou os limites do WebView.')
     webViewBounds = bounds.slice(1).map(Number)
+    webViewViewport = size
   }
-  const size = await run(`({width:innerWidth,height:innerHeight})`)
   const [left, top, right, bottom] = webViewBounds
   return [String(Math.round(left + point.x * (right - left) / size.width)), String(Math.round(top + point.y * (bottom - top) / size.height))]
 }
