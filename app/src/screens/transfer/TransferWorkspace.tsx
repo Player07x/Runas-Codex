@@ -140,7 +140,7 @@ export function TransferWorkspace() {
     setPreview(null); setEntries(await listFiles()); setStatus(`${count} arquivo(s) importados. ${plan.skipped.length} existente(s) preservados.`)
   }
   function toggle(set: Set<string>, path: string): Set<string> { const next = new Set(set); if (next.has(path)) next.delete(path); else next.add(path); return next }
-  const canImport = Boolean(vault.info && !vault.info.readOnly)
+  const canImport = Boolean(vault.info && !vault.info.readOnly && vault.index && !vault.loading)
 
   return <div className="page transfer-workspace">
     <div className="page-head"><div><span className="eyebrow">Leve seus dados entre aparelhos</span><h1 className="page-title">Importar / Exportar</h1></div>
@@ -163,7 +163,7 @@ export function TransferWorkspace() {
           {visible.length > shown && <button className="btn sm" onClick={() => setShown(shown + 100)}>Mostrar mais</button>}
         </div></details>
         <p className="tiny faint">Mantém as notas e anexos originais, inclusive os segredos do mestre. Preferências deste aparelho e configurações de plugins não entram no pacote.</p>
-        <button className="btn primary" disabled={busy || !scoped.length || selected?.size === 0} onClick={() => void act(exportFiles)}><ArrowUpFromLine size={16} /> {busy ? "Preparando…" : "Escolher onde salvar"}</button>
+        <button className="btn primary" disabled={busy || !vault.index || vault.loading || !scoped.length || selected?.size === 0} onClick={() => void act(exportFiles)}><ArrowUpFromLine size={16} /> {busy ? "Preparando…" : "Escolher onde salvar"}</button>
       </> : <>
         {vault.info.readOnly && <p role="status">O cofre está em somente leitura. Libere a gravação em Configurações para importar.</p>}
         <label className="field"><span>Pacote .runas, ZIP Markdown ou arquivos de notas e anexos</span><input type="file" aria-label="Arquivo para importar" multiple disabled={busy || !canImport} accept=".runas,.zip,.md,.canvas,.base,image/*,audio/*,video/*,.pdf" onChange={event => { const files = event.target.files; void prepareImport(files); event.target.value = "" }} /></label>

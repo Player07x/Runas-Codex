@@ -135,8 +135,8 @@ jobs:
       # Build do app web + cópia para o projeto Android (cap sync).
       - run: npm run sync -w @runas-codex/mobile
 
-      # APK de depuração: instala em qualquer Android 7+ (com "fontes desconhecidas"). O APK de release assinado
-      # depende de uma chave guardada nos segredos do repositório (próximo passo, ADR 0003).
+      # APK de depuração: instala em qualquer Android 7+ (com "fontes desconhecidas"), como artefato de teste.
+      # Tags publicam o APK de release e exigem a chave permanente (ADRs 0003 e 0021).
       - name: Gerar o APK
         working-directory: mobile/android
         run: ./gradlew assembleDebug --no-daemon
@@ -154,8 +154,8 @@ jobs:
           retention-days: 14
 
       # APK de release assinado com a chave do dono (segredos ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
-      # ANDROID_KEY_ALIAS e ANDROID_KEY_PASSWORD; passo a passo em docs/adr/0015-android.md). Sem eles, fica só o de
-      # depuração, como antes.
+      # ANDROID_KEY_ALIAS e ANDROID_KEY_PASSWORD; passo a passo em docs/adr/0015-android.md). A publicação de tags
+      # falha sem a chave permanente; não há substituição pelo APK de depuração.
       - name: APK de release assinado
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -165,8 +165,8 @@ jobs:
           RUNAS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::notice::Sem a chave de assinatura nos segredos do repositório: só o APK de depuração."
-            exit 0
+            echo "::error::A release Android precisa da chave permanente de assinatura nos segredos do repositório."
+            exit 1
           fi
           export RUNAS_KEYSTORE_FILE="$RUNNER_TEMP/runas-release.jks"
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNAS_KEYSTORE_FILE"
@@ -194,6 +194,13 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: Conferir o APK assinado para publicação
+        if: needs.targets.outputs.android == 'true'
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          test -f "artifacts/Runas-Codex-$version-android.apk"
+          rm -f "artifacts/Runas-Codex-$version-android-debug.apk"
 
       - name: Somas SHA-256
         working-directory: artifacts

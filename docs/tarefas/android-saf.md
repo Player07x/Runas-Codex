@@ -30,3 +30,11 @@ reserva pelo Storage Access Framework, para quando o usuário recusar esse acess
 - A ADR 0015 diz que a reserva existe e qual é o custo medido.
 - `npm run typecheck`, `npm test` e `npm run build` passam.
 - O PR está em português, com o que ficou sem verificar.
+
+
+## Conclusão
+
+Implementada em `android/a2-saf`, PR #42, integrada na main pelo PR #43 e publicada na beta.13, depois do CI da C8.
+O smoke e o spike das 5 mil notas passaram nos dois modos; permissões persistentes e reinício do processo foram
+conferidos no emulador. Custos e limites estão na ADR 0015. O PR #45 ampliou a escolha para provedores de outros
+aplicativos, inclusive com acesso amplo já liberado, preservando as garantias da escrita segura.

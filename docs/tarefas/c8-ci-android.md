@@ -41,3 +41,11 @@
 - Outra sessão (Claude Code) está fazendo a **reserva pelo SAF** num branch próprio, a partir deste. Mexa em `VaultStore` e `RunasVaultPlugin` só o necessário para o CI passar, para não gerar conflito.
 - No `release.yml` (arquivo compartilhado), mexa só no job `android-vault` e no passo do APK assinado do job `android`.
 - PR em português: o que mudou, como verificou e o que ficou sem verificar.
+
+
+## Conclusão
+
+CI fechado e PR #41 mesclado por autorização posterior do dono. Os resultados do teclado e das 5 mil notas
+(`indexMs: 8415`, `heapMb: 18`, `keyboardMs: 6509`) estão na ADR 0015 e no PR, com a execução 39170127880.
+A sequência SAF também foi concluída e entrou na beta.13. O dono informou a conferência manual anterior como
+aprovada; novas mudanças têm suas próprias conferências em docs/04.
