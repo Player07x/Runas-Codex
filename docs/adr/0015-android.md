@@ -22,12 +22,47 @@ notas num celular médio.
 - **Por que não o Storage Access Framework (SAF) como caminho principal:** cada arquivo é uma consulta ao provedor de
   documentos. Listar e ler 5 mil notas leva vários segundos a minutos, e renomear e mover pastas é limitado. Com o
   acesso a arquivos, o plugin lê em lote, como o desktop.
-- **Reserva:** o SAF continua sendo a saída se o Google Play recusar a permissão (o APK é distribuído pelo GitHub, fora
-  da loja). **Ainda não está implementado.** Fica para quando o app for para a loja, numa `VaultFs` com as mesmas
-  regras.
+- **Reserva pelo SAF:** implementada no branch dependente `android/a2-saf`. Ao recusar o acesso a todos os arquivos,
+  o app oferece escolher uma pasta pelo seletor, com `takePersistableUriPermission`. Lembra o modo de cada pasta e
+  reabre a árvore após encerrar o processo. A reserva aceita o provedor **local** da memória interna e do cartão;
+  provedores de nuvem são recusados para preservar o funcionamento offline.
 - **Mudanças de fora** (Obsidian, Syncthing): um `FileObserver` por pasta dispara uma releitura (com pausa de 400 ms), e
   a releitura compara com a última fotografia (tamanho e data). Ao voltar para o app, ele também relê, porque o Android
   pode pausar os avisos. O que o próprio app gravou não volta como mudança.
+  No SAF não há `FileObserver`: ao voltar para o app, a releitura em lote compara tamanho e data e atualiza o índice.
+
+#### Regras da reserva SAF
+
+`VaultFs` mantém a ponte independente do modo. `DocumentVaultStore` aplica as regras sobre `SafDocuments`
+(`DocumentsContract`/`ContentResolver`): uma consulta por pasta ao listar e o cache de IDs para ler os textos em lote,
+sem consultar os metadados de cada uma das 5 mil notas novamente. IDs e URIs vêm do provedor; nunca se monta um
+caminho de arquivo a partir deles. Anexos usam `convertFileSrc(contentUri)` e `_capacitor_content_`, na origem local.
+
+- Versão esperada por tamanho e data, `null` só cria, conteúdo igual não regrava, nada fora da árvore e nada gravado em
+  ocultos (salvo o snippet e as operações internas de inicialização/lixeira).
+- A escrita fecha e sincroniza o temporário, confere novamente a versão, guarda o original e publica o temporário
+  por renomeação. Falha na publicação restaura o original; nunca se abre o original com truncamento.
+- O SAF **não oferece uma transação de substituição atômica entre documentos**. Há um intervalo entre as duas
+  renomeações. `VaultJournal`, fora do cofre e sincronizado antes da troca, permite recuperar interrupções ao reabrir:
+  restaura o original quando o destino sumiu; se o destino já existe, preserva a versão anterior na `.trash`.
+  As garantias do acesso direto não foram alteradas. Provedor sem metadados ou operações necessárias recusa a escrita.
+- Lixeira `.trash` com nomes livres, restauração sem substituir e backup ZIP fora do cofre, antes de liberar a
+  gravação e no primeiro uso do dia. A permissão de árvore e as preferências não entram no cofre.
+
+O CI usa o seletor real com acesso a todos os arquivos negado, reinicia o processo e executa o mesmo smoke em ambos
+os modos. Os relatórios SAF ficam em `saf/` no artefato `Runas-Codex-android-cofre`, incluindo a medição das 5 mil
+notas.
+
+**Comparação medida** (Android 35 x86_64 no CI, 18/10/2026,
+[execução 39173777825](https://github.com/Player07x/Runas-Codex/actions/runs/39173777825), commit `dfb1ff1`):
+
+| Modo | Abrir e indexar 5 mil notas | Memória JS | Checks do smoke |
+|---|---|---|---|
+| Acesso direto | 8,6 s (`indexMs: 8593`) | 20 MB | 23 aprovados |
+| SAF (reserva) | 42,7 s (`indexMs: 42738`) | 21 MB | 25 aprovados |
+
+O SAF fica cerca de **5 vezes mais lento** para abrir um cofre grande (uma consulta ao provedor por pasta e a leitura
+de cada documento pelo `ContentResolver`). Por isso ele continua sendo a reserva, não o caminho principal.
 
 ### 2. Plugin nativo do cofre, com a gravação segura do desktop
 
@@ -120,4 +155,4 @@ O APK assinado instala por cima de outro APK assinado com a mesma chave. Ele **n
 - O Android passa a abrir o cofre do Obsidian sem cópia e sem mudar nada que o app não grave.
 - `release-targets.json` continua com `"android": false` (decisão do dono, até a revisão complementar). O job do
   emulador roda mesmo assim nos branches `android/*`.
-- Pendente: SAF como reserva; teclado real (Gboard) e um aparelho físico; a sala hospedada pelo celular (A2).
+- Pendente: teclado real (Gboard) e um aparelho físico; a sala hospedada pelo celular (A2).

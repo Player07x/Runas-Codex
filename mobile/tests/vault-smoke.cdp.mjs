@@ -10,6 +10,7 @@ const endpoint = process.argv[2] ?? 'http://127.0.0.1:9224'
 const output = process.argv[3] ?? '/tmp/runas-android-vault'
 const deviceVault = process.argv[4] ?? '/sdcard/Documents/cofre-smoke'
 const localVault = process.argv[5] ?? 'desktop/tests/cofre-exemplo'
+const saf = process.argv[6] === 'saf'
 await mkdir(output, { recursive: true })
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const adb = (...args) => execFileSync('adb', args, { timeout: 60000, maxBuffer: 64 * 1024 * 1024 }).toString()
@@ -84,7 +85,9 @@ try {
   // ---------- O cofre abre e a interface lê ----------
   await until(`window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.RunasVault`)
   const current = await run(call('current'))
-  check('cofre aberto e gravável', current.ok?.vault?.path === deviceVault && current.ok.vault.readOnly === false, current)
+  const correctVault = saf ? current.ok?.vault?.mode === 'saf' && current.ok.vault.name === deviceVault.split('/').at(-1) : current.ok?.vault?.path === deviceVault
+  check('cofre aberto e gravável', correctVault && current.ok.vault.readOnly === false, current)
+  if (saf) check('SAF sem acesso a todos os arquivos', (await run(call('access'))).ok?.granted === false)
   const expected = await localFiles(localVault)
   // O plugin fica disponível antes de o VaultProvider terminar a leitura e ligar sua observação.
   await run(`location.hash = '#/config'; true`)
@@ -103,6 +106,8 @@ try {
   check('criar recusa se existe', /Já existe/.test(again.error ?? ''), again)
   const updated = await run(call('write', { path: 'Notas/Smoke.md', content: '# Smoke\nlinha\n', expected: { mtime: created.ok.mtime, size: created.ok.size } }))
   check('grava com a versão lida', Boolean(updated.ok?.mtime), updated)
+  const unchanged = await run(call('write', { path: 'Notas/Smoke.md', content: '# Smoke\nlinha\n', expected: { mtime: updated.ok.mtime, size: updated.ok.size } }))
+  check('conteúdo igual não é regravado', unchanged.ok?.mtime === updated.ok.mtime && unchanged.ok?.size === updated.ok.size, unchanged)
   adb('shell', `echo "do Obsidian" > ${deviceVault}/Notas/Smoke.md`)
   await sleep(1200)
   const conflict = await run(call('write', { path: 'Notas/Smoke.md', content: 'minha', expected: { mtime: updated.ok.mtime, size: updated.ok.size } }))
@@ -113,7 +118,7 @@ try {
   const outside = await run(call('read', { paths: ['../fora.md'] }))
   check('não sai do cofre', /fora do cofre/.test(outside.error ?? ''), outside)
   const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg=='
-  await run(call('writeBinary', { path: 'Notas/Anexos/smoke.png', base64: png, expected: null }))
+  const binary = await run(call('writeBinary', { path: 'Notas/Anexos/smoke.png', base64: png, expected: null }))
   const back = await run(call('readBinary', { path: 'Notas/Anexos/smoke.png' }))
   check('anexo ida e volta', back.ok?.base64 === png, back)
   const tmp = adb('shell', 'ls', '-a', `${deviceVault}/Notas`)
@@ -135,7 +140,9 @@ try {
 
   // ---------- Mudança feita fora do app chega à interface ----------
   await run(`window.__runasChanges = []; window.Capacitor.Plugins.RunasVault.addListener('change', d => window.__runasChanges.push(...d.changes)); true`)
+  if (saf) adb('shell', 'input', 'keyevent', 'KEYCODE_HOME')
   adb('shell', `echo "nova do Obsidian" > ${deviceVault}/Notas/Externa.md`)
+  if (saf) adb('shell', 'am', 'start', '-n', 'dev.runas.codex/.MainActivity')
   const seen = await until(`window.__runasChanges.find(c => c.type === 'changed' && c.entry.path === 'Notas/Externa.md')`, 150).catch(() => null)
   check('observa mudanças de fora', Boolean(seen), await run('window.__runasChanges'))
 
@@ -147,13 +154,17 @@ try {
   await run(`document.querySelector('[data-note-path="Notas/Externa.md"]').click(); true`)
   const shown = await until(`document.body.innerText.includes('nova do Obsidian')`, 150).catch(() => false)
   check('a nota de fora aparece no app', Boolean(shown), await run(`({ hash: location.hash, status: document.querySelector('.editor-status')?.textContent, body: document.body.innerText.slice(-5000) })`))
-  const image = await run(`(()=>{const u=window.Capacitor.convertFileSrc(${JSON.stringify(deviceVault + '/Notas/Anexos/smoke.png')}); return fetch(u).then(r=>r.ok && r.headers.get('content-type')).catch(e=>String(e))})()`)
+  const source = saf ? binary.ok?.uri : deviceVault + '/Notas/Anexos/smoke.png'
+  if (saf) check('anexo usa _capacitor_content_', await run(`window.Capacitor.convertFileSrc(${JSON.stringify(source)}).includes('/_capacitor_content_/')`))
+  const image = await run(`(()=>{const u=window.Capacitor.convertFileSrc(${JSON.stringify(source)}); return fetch(u).then(r=>r.ok && r.headers.get('content-type')).catch(e=>String(e))})()`)
   check('anexo carrega na interface', typeof image === 'string' && image.startsWith('image/'), image)
 
   // ---------- Spike: teclado do Android no CodeMirror ----------
   // As chamadas diretas acima não passam pelo VaultProvider. Uma nota nova de fora chega ao índice com a versão
   // atual; reutilizar Smoke.md depois de restaurá-la testava uma versão antiga, que o plugin deve mesmo recusar.
+  if (saf) adb('shell', 'input', 'keyevent', 'KEYCODE_HOME')
   adb('shell', `echo '# Teclado' > ${deviceVault}/Notas/Teclado.md`)
+  if (saf) adb('shell', 'am', 'start', '-n', 'dev.runas.codex/.MainActivity')
   await until(`window.__runasChanges.some(c => c.type === 'changed' && c.entry.path === 'Notas/Teclado.md')`, 150)
   await until(`document.querySelector('[data-note-path="Notas/Teclado.md"]')`, 150)
   await run(`document.querySelector('[data-note-path="Notas/Teclado.md"]').click(); true`)
@@ -183,7 +194,13 @@ try {
   // Espera a gravação real depois da pausa na digitação, inclusive num emulador mais lento.
   let saved = ''
   for (let n = 0; n < 150; n++) {
-    saved = adb('shell', 'cat', `${deviceVault}/Notas/Teclado.md`)
+    try { saved = adb('shell', 'cat', `${deviceVault}/Notas/Teclado.md`) }
+    catch (error) {
+      // O SAF publica por duas renomeações: uma leitura externa pode cair no intervalo entre elas.
+      // Só repete esse caso; a frase completa ainda precisa aparecer no arquivo dentro do prazo.
+      if (!saf || !String(error.stderr ?? '').includes('No such file or directory')) throw error
+      saved = ''
+    }
     if (saved.includes('teclado Android')) break
     await sleep(100)
   }

@@ -116,6 +116,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   const latest = useRef({ path, base, draft, readOnly, save: vault.save, index })
   latest.current = { path, base, draft, readOnly, save: vault.save, index }
   const saving = useRef<Promise<void> | null>(null)
+  const ownSave = useRef<{ path: string; text: string } | null>(null)
   const saveError = useRef<string | null>(null)
 
   const flush = useCallback(async () => {
@@ -134,6 +135,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
       setState("conflito"); setError(saveError.current); return
     }
     saveError.current = null
+    ownSave.current = { path: target, text: next }
     setState("salvando")
     const run = save(target, next).then(
       () => {
@@ -144,6 +146,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
         }
       },
       (err: unknown) => {
+        if (ownSave.current?.path === target && ownSave.current.text === next) ownSave.current = null
         const message = err instanceof Error ? err.message : String(err)
         saveError.current = message
         setError(message)
@@ -172,6 +175,12 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
   useEffect(() => {
     if (note.text === base) return
     // A própria gravação do app (o índice muda antes de a promessa voltar).
+    // O usuário pode já ter continuado a digitar: o texto confirmado ainda é nosso, embora o rascunho seja maior.
+    if (ownSave.current?.path === path && ownSave.current.text === note.text) {
+      ownSave.current = null
+      setBase(note.text)
+      return
+    }
     if (toEditorText(note.text) === draft) {
       setBase(note.text)
       return

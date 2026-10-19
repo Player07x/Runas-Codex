@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -26,20 +25,18 @@ public final class VaultWatcher {
 
     private static final int MASK = FileObserver.CREATE | FileObserver.DELETE | FileObserver.MODIFY | FileObserver.MOVED_FROM | FileObserver.MOVED_TO | FileObserver.CLOSE_WRITE | FileObserver.DELETE_SELF;
     private static final long DELAY_MS = 400;
-    private static final long OWN_WRITE_MS = 5000;
 
-    private final VaultStore store;
+    private final VaultFs store;
     private final Listener listener;
     private final HandlerThread thread = new HandlerThread("RunasVaultWatcher");
     private final Handler handler;
     private final List<FileObserver> observers = new ArrayList<>();
     private final Map<String, long[]> snapshot = new HashMap<>();
-    /** Gravações do próprio app: caminho → {tamanho, data, quando}; data -1 = o app removeu ou moveu. */
-    private final Map<String, long[]> own = new HashMap<>();
+    private final VaultOwnWrites own = new VaultOwnWrites();
     private final Runnable rescan = this::rescan;
-    private boolean stopped;
+    private volatile boolean stopped;
 
-    public VaultWatcher(VaultStore store, Listener listener) {
+    public VaultWatcher(VaultFs store, Listener listener) {
         this.store = store;
         this.listener = listener;
         thread.start();
@@ -62,8 +59,10 @@ public final class VaultWatcher {
         for (FileObserver o : observers) o.stopWatching();
         observers.clear();
         if (stopped) return;
+        // O SAF só relê ao voltar para o app; os documentos não são caminhos para FileObserver.
+        if (!(store instanceof VaultStore)) return;
         try {
-            for (File folder : store.folders()) {
+            for (File folder : ((VaultStore) store).folders()) {
                 FileObserver observer = new FileObserver(folder.getAbsolutePath(), MASK) {
                     @Override
                     public void onEvent(int event, String path) {
@@ -86,19 +85,13 @@ public final class VaultWatcher {
     }
 
     /** Registra uma gravação do próprio app, para não avisá-la como mudança externa. */
-    public synchronized void remember(VaultStore.Entry entry) {
-        own.put(entry.path, new long[] { entry.size, entry.mtime, System.currentTimeMillis() });
+    public void remember(VaultStore.Entry entry) {
+        own.remember(entry);
     }
 
     /** Esquece um caminho que o app removeu ou moveu. */
-    public synchronized void forget(String path) {
-        own.put(path, new long[] { -1, -1, System.currentTimeMillis() });
-    }
-
-    private synchronized long[] ownWrite(String path) {
-        long now = System.currentTimeMillis();
-        for (Iterator<Map.Entry<String, long[]>> it = own.entrySet().iterator(); it.hasNext(); ) if (now - it.next().getValue()[2] > OWN_WRITE_MS) it.remove();
-        return own.get(path);
+    public void forget(String path) {
+        own.forget(path);
     }
 
     private void rescan() {
@@ -118,14 +111,12 @@ public final class VaultWatcher {
             long[] before = snapshot.get(e.path);
             if (before != null && before[0] == e.size && Math.abs(before[1] - e.mtime) < 2) continue;
             if (before == null && e.path.contains("/")) newFolders = true;
-            long[] mine = ownWrite(e.path);
-            if (mine != null && mine[0] == e.size && Math.abs(mine[1] - e.mtime) < 2) continue;
+            if (own.contains(e)) continue;
             changed.add(e);
         }
         for (String path : snapshot.keySet()) {
             if (next.containsKey(path)) continue;
-            long[] mine = ownWrite(path);
-            if (mine != null && mine[1] == -1) continue;
+            if (own.deleted(path)) continue;
             deleted.add(path);
         }
         snapshot.clear();

@@ -493,3 +493,17 @@ O emulador Android 35 aprovou os 22 checks do smoke e o spike de 5 mil notas: `i
 - [ ] No Windows, editar a mesma nota em duas janelas, inclusive com o antivírus ativo: uma gravação deve vencer e a
   outra deve avisar o conflito. O runner apresentou `EPERM` transitório na troca do temporário em algumas execuções;
   as regras da gravação segura permaneceram intactas.
+
+### Reserva SAF do cofre — Android A2
+
+- [ ] Recusar “acesso a todos os arquivos”, aceitar a reserva e escolher um cofre da memória interna ou do cartão:
+  abre em somente leitura. Liberar a gravação faz backup; editar e conferir no Obsidian.
+- [ ] Reiniciar o celular: a árvore e o modo de gravação continuam lembrados. Cancelar o seletor mantém o cofre atual.
+- [ ] Alterar uma nota pelo Obsidian enquanto o Runas-Codex está em segundo plano e voltar: relê a nota ou avisa o
+  conflito se havia edição pendente. No SAF a atualização acontece ao voltar para o app.
+- [ ] Imagens, áudio e PDF no SAF: aparecem na nota e abrem no aplicativo padrão; mover/renomear anexos mantém a
+  interface atualizada. Conferir os dois temas a partir de 320 px.
+- [ ] Revogar a permissão da árvore ou remover o cartão: o app oferece escolher novamente; nenhuma gravação parcial.
+- [ ] Interromper uma gravação ou movimento SAF encerrando o processo: ao reabrir, o original volta ou fica preservado
+  na `.trash` se o destino já estiver ocupado. Os testes JVM cobrem as etapas da recuperação; falta celular físico.
+- [ ] Digitação rápida e composição com Gboard no cofre SAF; o teste do emulador envia teclas com cadência definida.

@@ -37,7 +37,7 @@ import java.util.zip.ZipOutputStream;
  *
  * Java puro (só uma anotação do Android), para os testes de unidade rodarem na JVM.
  */
-public final class VaultStore {
+public final class VaultStore implements VaultFs {
 
     /** Erro com mensagem para o usuário (chega à interface como está). */
     public static final class VaultError extends IOException {
@@ -51,11 +51,17 @@ public final class VaultStore {
         public final String path;
         public final long size;
         public final long mtime;
+        public final String uri;
 
         public Entry(String path, long size, long mtime) {
+            this(path, size, mtime, null);
+        }
+
+        public Entry(String path, long size, long mtime, String uri) {
             this.path = path;
             this.size = size;
             this.mtime = mtime;
+            this.uri = uri;
         }
     }
 
@@ -86,9 +92,14 @@ public final class VaultStore {
         return root;
     }
 
+    public String identity() { return root.getAbsolutePath(); }
+    public String name() { return root.getName(); }
+    public String mode() { return "direct"; }
+    public String source(String path) throws IOException { return resolveInside(path).getAbsolutePath(); }
+
     // ---------- Caminhos ----------
 
-    private static List<String> split(String path) throws VaultError {
+    static List<String> split(String path) throws VaultError {
         if (path == null || path.isEmpty() || path.indexOf('\0') >= 0) throw new VaultError("Caminho inválido.");
         if (path.startsWith("/") || path.startsWith("\\") || path.matches("^[a-zA-Z]:.*")) throw new VaultError("Caminho fora do cofre: " + path);
         List<String> parts = new ArrayList<>();
@@ -401,9 +412,13 @@ public final class VaultStore {
 
     /** Pasta dos backups deste cofre (fora do cofre, para não ir para a sincronização). */
     public static File backupFolder(File backupsRoot, File vaultRoot) throws IOException {
+        return backupFolder(backupsRoot, vaultRoot.getCanonicalPath());
+    }
+
+    static File backupFolder(File backupsRoot, String identity) throws IOException {
         try {
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            byte[] hash = sha1.digest(vaultRoot.getCanonicalPath().getBytes(StandardCharsets.UTF_8));
+            byte[] hash = sha1.digest(identity.getBytes(StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder();
             for (byte b : hash) hex.append(String.format(Locale.ROOT, "%02x", b));
             return new File(backupsRoot, hex.substring(0, 12));

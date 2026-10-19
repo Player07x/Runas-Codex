@@ -52,7 +52,11 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   useEffect(() => {
     if (vault.info) vault.platform.listBackups().then(setBackups, () => setBackups([]))
   }, [vault.info, vault.platform])
-  const vaultHint = vault.info ? vault.info.path : "Nenhum cofre aberto"
+  const vaultHint = vault.info
+    ? vault.platform.kind === "capacitor" && vault.info.path.startsWith("content://")
+      ? "Pasta local escolhida pelo seletor do Android. Mudanças externas são relidas ao voltar para o app."
+      : vault.info.path
+    : "Nenhum cofre aberto"
   const notesHint = vault.loading ? "Lendo o cofre…" : vault.error ? `Erro: ${vault.error}` : vault.index ? `${vault.index.size} notas Markdown no índice` : "—"
   const lastBackup = backups[0]
   const [unused, setUnused] = useState<string[] | null>(null)
