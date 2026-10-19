@@ -61,8 +61,9 @@ do capítulo; conserva formatadores, ferramentas de edição e Sair do Foco (Esc
 
 A tela de escrita passa a ter uma folha central, faixa visual por categorias e comandos separados da escrita.
 Capítulos e referências começam recolhidos e seus controles permanecem acessíveis. A prévia ocupa a área de
-trabalho própria. No celular, ações comuns usam ícones com nomes acessíveis e dicas; os alvos têm pelo menos
-44 px. No foco, Voltar, Ações da nota e Leitura/Editar/Código ficam na mesma barra de Sair do Foco. A faixa de
+trabalho própria. No celular, ações comuns usam ícones com nomes acessíveis e dicas. Na revisão, o dono pediu controles
+mais compactos: os comandos ficam entre 28 e 32 px e os cartões de formatação em 40 px; as categorias conservam
+os 44 px anteriores no celular (34 px no desktop). No foco, Voltar, Ações da nota e Leitura/Editar/Código ficam na mesma barra de Sair do Foco. A faixa de
 formatadores permanece visível durante a rolagem do documento. O cabeçalho, a Cortiça, a biblioteca e a prévia
 foram conferidos em tema claro e escuro, com larguras de 320, 390 e 1280 px.
 
@@ -89,3 +90,12 @@ A conferência visual do Word/LibreOffice e de dispositivos físicos permanece m
 bloqueou a abertura direta do site por `file://`; a estrutura e os recursos do ZIP foram conferidos por testes,
 mas a abertura local direta precisa ser feita pelo dono. Capturas: [`docs/imagens/export-x4/`](../imagens/export-x4/).
 
+
+### Ajuste da conferência — barras compactas
+
+Fora do foco, a navegação do livro começa por Voltar → Capítulos → Escrever. Referências, Leitura, Editar,
+Código e Ações da nota ocupam uma faixa vertical à direita, nessa ordem, sem uma linha extra acima do texto.
+As ações abrem ao lado do texto. As categorias de formatação mantêm o tamanho anterior; os cartões internos
+ficam menores. A seta e o clique duplo na linha das categorias ocultam/mostram os cartões, e o estado fica
+nas preferências deste aparelho. A faixa continua fixa durante a rolagem. Conferidos 320 e 1280 px, foco,
+recolhimento persistido, ordem visual/DOM dos comandos e abertura dos painéis.

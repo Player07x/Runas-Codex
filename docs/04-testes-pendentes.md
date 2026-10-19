@@ -579,3 +579,10 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - Mandar capítulo/seção/parte para a lixeira e conferir a propriedade `estrutura` dos livros que o referenciam.
 - Abrir o site extraído por `index.html` fora do navegador integrado, que bloqueia `file://`; testar os links offline.
 - Validação local: 515 testes app + 178 desktop; typecheck, builds e smokes Electron de leitura/gravação passaram.
+
+### Revisão das barras de Livros — 19/10/2026
+
+- Conferir a ordem Voltar → Capítulos → Escrever no início da barra superior.
+- Na direita, conferir Referências → Leitura → Editar → Código → Ações da nota, com o menu de ações flutuante.
+- Conferir os cartões de 40 px e o tamanho anterior das categorias. A seta e dois cliques nas categorias recolhem/expandem os cartões; recarregar mantém a escolha.
+- Confirmar conforto dos comandos compactos no aparelho físico, conforme tamanho pedido na revisão.

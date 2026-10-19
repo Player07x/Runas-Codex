@@ -58,6 +58,7 @@ const isMedia = (name: string) => {
 interface Props {
   /** Controles de navegação ao lado de Sair do Foco no editor de Livros. */
   focusHeader?: HTMLElement | null
+  hideBackControl?: boolean
   formatSelection?: boolean
   typewriter?: boolean
   focused?: boolean
@@ -83,7 +84,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, formatSelection = false }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, formatSelection = false }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -355,8 +356,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     >
       <div className={`editor-bar ${expandedTools ? "tools-expanded" : ""}`}>
         {focusHeader ? createPortal(<>
-          <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>
-          <button className="btn focus-note-actions" aria-label={expandedTools ? "Recolher ações" : "Ações da nota"} title={expandedTools ? "Recolher ações" : "Ações da nota"} aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}><Ellipsis size={17}/><span>{expandedTools ? "Recolher ações" : "Ações da nota"}</span></button>
+          {!hideBackControl && <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>}
           <Segmented<ViewMode>
           label="Modo da nota"
           value={mode}
@@ -367,10 +367,11 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
             { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
           ]}
         />
+          <button className="btn focus-note-actions" aria-label={expandedTools ? "Recolher ações" : "Ações da nota"} title={expandedTools ? "Recolher ações" : "Ações da nota"} aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}><Ellipsis size={17}/><span>{expandedTools ? "Recolher ações" : "Ações da nota"}</span></button>
         </>, focusHeader) : <>
-        <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+        {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
           <ChevronLeft size={18} />
-        </button>
+        </button>}
         <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
         </>}
         <span className="note-history">
