@@ -1,4 +1,3 @@
-import { useVault } from "../../platform/VaultProvider"
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
@@ -62,7 +61,7 @@ export async function importImage(kind: AssetKind, file: File): Promise<{ path: 
   return { path, ...size }
 }
 
-export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void }) {
+export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean }) {
   const version = useDocumentsVersion(store)
   const settings = useSettings()
   const host = useRef<HTMLDivElement>(null)
@@ -211,7 +210,6 @@ export function SceneCanvas({ store, sceneId, onOpenUrl }: { store: DocumentStor
       if (next) setTool(next.id)
     }
   }, true)
-  const keyboardHints = useVault().platform.kind !== "capacitor"
   const shortcutOf = (action: KeyAction) => settings.keyBindings[action].map(keyLabel).join(" / ")
 
   async function addTile(file: File, at?: { x: number; y: number }) {

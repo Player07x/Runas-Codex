@@ -21,7 +21,17 @@ const check = (name, ok, detail) => { result.checks[name] = ok ? true : { ok: fa
 async function connect() {
   let page
   for (let n = 0; n < 150 && !page; n++) {
-    try { page = (await fetch(endpoint + '/json').then(r => r.json())).find(t => t.type === 'page' && t.webSocketDebuggerUrl) } catch { /* o WebView ainda está subindo */ }
+    try {
+      const targets = await fetch(endpoint + '/json').then(r => r.json())
+      // A recriação da Activity no primeiro boot deixa o alvo antigo no CDP, com a ponte nativa encerrada.
+      page = targets.find(t => {
+        if(t.type !== 'page' || !t.webSocketDebuggerUrl || !t.url?.startsWith('https://localhost')) return false
+        let view = {}
+        try { view = JSON.parse(t.description || '{}') } catch { /* versões sem descrição */ }
+        return view.attached !== false && view.visible !== false
+      })
+      result.metrics.webViewTargets = targets.map(({ id, url, description }) => ({ id, url, description }))
+    } catch { /* o WebView ainda está subindo */ }
     if (!page) await sleep(300)
   }
   if (!page) throw new Error('O WebView depurável não abriu.')
