@@ -1,4 +1,4 @@
-import type { ComponentType } from "react"
+import { createContext, type ComponentType } from "react"
 
 /**
  * Pontos de extensão do leitor de Markdown, para cada módulo (Wiki, Livros…) acrescentar o que precisa sem editar
@@ -57,3 +57,35 @@ export function registerFileEmbed(extensions: string[], component: ComponentType
 export function fileEmbedFor(ext: string): ComponentType<FileEmbedProps> | undefined {
   return fileEmbeds.get(ext.toLowerCase())
 }
+
+/**
+ * **Marcar tarefas:** um módulo (as Tarefas, com o comportamento do plugin Tasks) pode decidir o que entra no lugar da
+ * linha quando clicam na caixa — ex.: `- [x] … ✅ 2026-10-18` e a próxima ocorrência de uma tarefa recorrente. Sem
+ * nada registrado, o clique só alterna `[ ]` e `[x]`. Vale para o live preview e para o modo leitura.
+ */
+export type TaskToggle = (line: string) => string[] | null
+
+let taskToggle: TaskToggle | null = null
+
+export function registerTaskToggle(toggle: TaskToggle | null): void {
+  taskToggle = toggle
+}
+
+/** O que entra no lugar da linha de tarefa clicada (a linha sem o `\r`). */
+export function toggledTaskLines(line: string): string[] {
+  const custom = taskToggle?.(line)
+  if (custom) return custom
+  return [line.replace(/^([\s>]*(?:[-*+]|\d+[.)])[ \t]+\[)([^\]])\]/, (_m, before: string, mark: string) => `${before}${mark === " " ? "x" : " "}]`)]
+}
+
+/**
+ * Caixas clicáveis no modo leitura: a tela que mostra a nota diz qual texto o leitor recebeu (`source`) e o que fazer
+ * com o clique na caixa número `index` (na ordem do documento) de um total de `total`. Um leitor com outro texto (uma
+ * nota embutida, um trecho) ignora o contexto e deixa as caixas só para ver.
+ */
+export interface TaskCheckboxHandler {
+  source: string
+  onToggle(index: number, total: number): void
+}
+
+export const TaskCheckboxContext = createContext<TaskCheckboxHandler | null>(null)

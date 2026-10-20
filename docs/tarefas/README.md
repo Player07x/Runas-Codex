@@ -200,3 +200,9 @@ Este pedido entrega o transporte de dados da C7 e a exportação central de nota
 tratamento dedicado dos conflitos de sincronizadores, entradas de exportação em cada módulo e o site ZIP de uma
 página por nota continuam nas tarefas correspondentes; o HTML central desta entrega é um documento offline único.
 A tarefa X7 de hospedar a sala pelo celular permanece independente.
+
+## Pedido futuro — Tasks e tempo livre (18/10/2026)
+
+| Tarefa | Pedido | Situação |
+|---|---|---|
+| Compatibilidade completa com Tasks nas notas e no checklist de preparação; cálculo de tempo livre diário na Agenda | [tasks-tempo-livre.md](tasks-tempo-livre.md) | em revisão; Claude Code, `agenda/tasks-tempo-livre` ([matriz](tasks-matriz.md), [ADR 0020](../adr/0020-tasks-e-tempo-livre.md)) |

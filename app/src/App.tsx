@@ -99,6 +99,7 @@ export function App() {
         <ActiveRoom />
         <DesktopTrayRuntime />
         <AndroidRuntime />
+        <TasksRuntime />
       </ToastProvider>
     </VaultProvider>
   )
@@ -110,3 +111,4 @@ import { DesktopTrayRuntime } from "./platform/DesktopTray"
 import { AppearanceRuntime } from "./components/Appearance"
 import { OnboardingRuntime } from "./components/Onboarding"
 import { AndroidRuntime } from "./platform/AndroidRuntime"
+import { TasksRuntime } from "./components/tasks/TasksRuntime"

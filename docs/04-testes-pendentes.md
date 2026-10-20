@@ -555,3 +555,28 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - APK debug antigo (até beta.13) tem outra assinatura. A nova beta não consegue substituí-lo automaticamente;
   planejar a migração manual preservando o cofre e exportando backups antes de remover uma instalação antiga.
   A implementação não desinstala nem apaga a versão antiga.
+## Tarefas do plugin Tasks e tempo livre (ADR 0020)
+
+Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
+
+- [ ] Configurações › Tarefas › Importar: as opções do `data.json` do Tasks aparecem iguais (filtro global, formato,
+  estados personalizados, predefinições); o arquivo do Obsidian não muda.
+- [ ] Numa nota: `- [ ] Beber 2L de água 🔁 every day 📅 <hoje>`. Concluir no Runas-Codex (live preview, modo leitura,
+  numa consulta ```tasks, na Agenda) cria uma só ocorrência para amanhã, acima; abrir no Obsidian e conferir que a linha
+  é a mesma que o Tasks gravaria concluindo lá. Repetir concluindo no Obsidian e abrindo no Runas-Codex.
+- [ ] Mesma conferência com: formato Dataview, `🏁 delete`, `when done`, `every month` no dia 31, estados `[/]`, `[-]`
+  e um estado personalizado, tarefa com `🆔`/`⛔` (bloqueada some de `is not blocked`).
+- [ ] Blocos ```tasks copiados do Obsidian (filtros, `group by`, `sort by`, `limit`, `preset`, `view columns by
+  priority`) mostram as mesmas tarefas nos dois apps; arrastar entre colunas muda a prioridade/data na nota.
+- [ ] Editor: Ctrl+L alterna a tarefa da linha; Ctrl+Shift+T abre a janela "criar ou editar tarefa"; ao digitar
+  `📅 ama` numa tarefa aparece a data de amanhã.
+- [ ] Com o PIN do espaço Notas bloqueado, as tarefas de `Notas/` somem das consultas e da Agenda.
+- [ ] Agenda › Tempo livre › Definir horários (ex.: 08:00–12:00 e 14:00–18:00): o dia mostra o total e as faixas; hoje
+  mostra também o "livre daqui em diante"; o mês e a semana mostram o resumo em cada dia.
+- [ ] Caso de aceitação: disponível 08:00–18:00 e eventos 09–11, 10–12 e 15–16 → **6 h** em 08–09, 12–15 e 16–18; uma
+  tarefa com prazo nesse dia e um evento às 19h não mudam o total.
+- [ ] Evento marcado "não ocupa o tempo", evento de dia inteiro (as duas escolhas), evento que passa da meia-noite e
+  uma tarefa `- [ ] 09:00 - 10:30 …` com data agendada.
+- [ ] Importar um `.ics` do Google Agenda com uma ocorrência movida e outra cancelada: a movida aparece no novo horário
+  e a original some; a cancelada não aparece.
+- [ ] Celular (Android) e 320 px: caixas com 44 px de toque, janela de edição e de tempo livre sem rolagem lateral.

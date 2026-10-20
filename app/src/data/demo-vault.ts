@@ -109,3 +109,7 @@ Object.assign(DEMO_TEXT_FILES, WIKI_CATEGORY_DEMO)
 
 // A grade da Wiki usa iniciais no navegador; o anexo continua resolvido no índice.
 Object.assign(DEMO_ASSETS, { "Anexos/Imagens/exemplo-retrato.png": runa })
+
+// Tarefas no formato do plugin Tasks e consultas ```tasks.
+import { TASKS_DEMO } from "./tasks-demo"
+Object.assign(DEMO_TEXT_FILES, TASKS_DEMO)
