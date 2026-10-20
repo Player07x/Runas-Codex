@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
         // O cofre real (plugin próprio, fora do npm) precisa ser registrado antes de a ponte subir.
         registerPlugin(RunasVaultPlugin.class);
         registerPlugin(dev.runas.codex.updates.RunasUpdatesPlugin.class);
+        registerPlugin(dev.runas.codex.room.RunasRoomPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
