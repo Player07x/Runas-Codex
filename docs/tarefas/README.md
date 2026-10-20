@@ -208,7 +208,3 @@ Entradas de exportação por módulo, seleção de coleção e site offline ZIP 
 de Livros simplificados, galeria de formatadores, colunas automáticas 1–4, foco, painéis redimensionáveis e
 recolhíveis, correções do seletor de Wiki e das datas de tarefas. Conferência do dono no navegador pendente;
 **sem merge e sem release até o seu OK**. C7 (backups agendados/conflitos) e X7 continuam independentes.
-
-## X7 — sala Android e publicação autorizada (20/10/2026)
-
-O dono solicitou implementar a X7 e depois fazer merge e release, substituindo a espera de aprovação indicada na entrega local da X4. X4 e revisão de Livros seguem no PR #50; a X7 usa a mesma autoridade TS no desktop e no Android, com servidor LAN, serviço em primeiro plano, persistência versionada e teste de jogador no Chromium do CI. A validação física de Wi-Fi/hotspot e SAF permanece no checklist manual.
