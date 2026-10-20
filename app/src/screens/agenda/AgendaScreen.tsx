@@ -1,3 +1,4 @@
+import { ResizablePanel } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload } from "lucide-react"
@@ -296,7 +297,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
           {view === "lista" && <ListView from={cursor} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} />}
         </div>
 
-        <aside className="stack-lg agenda-side">
+        <ResizablePanel id="agenda" label="Detalhes da agenda" side="right" width={320} className="stack-lg agenda-side">
           {selected ? (
             <EventDetail
               occurrence={selected}
@@ -386,7 +387,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
               }}
             />
           </div>
-        </aside>
+        </ResizablePanel>
       </div>
 
       {freeDialog && <FreeTimeDialog vault={vault.info?.path} prefs={freePrefs} calendars={calendars} onClose={() => setFreeDialog(false)} />}

@@ -255,3 +255,12 @@
  .wiki-category-controls>[role=group] { width:100%; }
  .wiki-category-controls>[role=group] .btn { flex:1; }
 }
+
+.wiki-switcher .btn { min-width:0; max-width:100%; }
+.wiki-switcher .btn strong { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.wiki-switcher .menu { width:min(360px,calc(100vw - 32px)); }
+.wiki-switcher .menu .list-item { display:flex; align-items:center; gap:8px; width:100%; min-width:0; }
+.wiki-switcher .menu .list-item .grow { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
+.wiki-switcher .menu .list-item .meta { flex:0 0 auto; white-space:nowrap; }
+.wiki-switcher svg { flex:0 0 auto; }
+.wiki-switcher .menu { max-width:calc(100vw - 32px); }

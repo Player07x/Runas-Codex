@@ -1,3 +1,4 @@
+import { ResizablePanel } from "../../components/ResizablePanel"
 import { ShowArticle } from "./ShowArticle"
 import { useCallback, useMemo, useState } from "react"
 import { GitFork, Link2, Network, Plus } from "lucide-react"
@@ -46,7 +47,7 @@ export function WikiArticleView({ path }: { path: string }) {
       <section className="wiki-article-main">
         <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} toolbar={insert=><label className="wiki-resource-insert">Inserir recurso da Wiki<select className="input" value="" onChange={e=>{if(e.target.value)insert(e.target.value)}}><option value="">Escolha um recurso…</option>{WIKI_INSERTS.map(([label,syntax])=><option key={label} value={syntax}>{label}</option>)}</select></label>} />
       </section>
-      <aside className="wiki-article-side">
+      <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side">
         <NoteSetContext.Provider value={noteSet}>
           <Infobox
             note={note}
@@ -61,7 +62,7 @@ export function WikiArticleView({ path }: { path: string }) {
           <Relations path={path} root={wiki?.root ?? ""} readOnly={readOnly} />
           <Mentions path={path} />
         </NoteSetContext.Provider>
-      </aside>
+      </ResizablePanel>
       {create !== null && <NewArticleDialog initialName={create} onClose={() => setCreate(null)} />}
     </div>
   )

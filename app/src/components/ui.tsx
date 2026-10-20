@@ -27,7 +27,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
   return (
     <div className="segmented" role="tablist" aria-label={label}>
       {options.map((option) => (
-        <button key={option.value} role="tab" tabIndex={value === option.value ? 0 : -1} aria-selected={value === option.value} onKeyDown={event => {
+        <button key={option.value} title={typeof option.label === "string" ? option.label : undefined} role="tab" tabIndex={value === option.value ? 0 : -1} aria-selected={value === option.value} onKeyDown={event => {
           const at = options.findIndex(item => item.value === value)
           const next = event.key === "ArrowRight" ? (at + 1) % options.length : event.key === "ArrowLeft" ? (at + options.length - 1) % options.length : event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : -1
           if (next < 0) return

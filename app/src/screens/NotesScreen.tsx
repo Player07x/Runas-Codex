@@ -1,3 +1,5 @@
+import { openDocumentExport } from "../components/export/ExportDialog"
+import { ResizablePanel } from "../components/ResizablePanel"
 import { useCallback, useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react"
 import { Archive, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
@@ -401,6 +403,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={13} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />} <span className="grow truncate">{sub.name}</span>
               <span className="folder-actions">
+                <button type="button" className="icon-btn sm" aria-label={`Exportar pasta ${sub.name}`} title="Exportar pasta…" onClick={e => { e.preventDefault(); e.stopPropagation(); openDocumentExport({ paths: index.notesIn(sub.path + "/").map(note => note.path), title: sub.name }) }}>↗</button>
                 <FolderAppearance path={sub.path} />
                 {starButton({ type: "folder", path: sub.path }, `a pasta ${sub.name}`)}
                 {!readOnly && (
@@ -426,10 +429,10 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
 
   return (
     <div className={`workspace ${path || graph ? "" : "show-left"} ${showRight ? "show-right" : ""} ${graph ? "no-right" : ""}`}>
-      <aside className="pane-left">
+      <ResizablePanel id="notes-left" label="Lista de notas" side="left" width={280} className="pane-left">
         <div className="pane-head">
           <div className="row between">
-            <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong>
+            <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong><button className="btn sm" onClick={() => openDocumentExport({ paths: index.notesIn(currentFolder ? currentFolder + "/" : root).map(note => note.path), title: currentFolder || root || vault.info?.name || "Notas" })}>Exportar…</button>
             <div className="row" style={{ gap: 2 }}>
               <button className="icon-btn sm" title="Lixeira" aria-label="Abrir lixeira" onClick={() => setTrashOpen(true)}><Archive size={16} /></button>
               <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
@@ -572,7 +575,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
             </details>
           )}
         </div>
-      </aside>
+      </ResizablePanel>
 
       <section className={`pane-center ${graph ? "graph" : "tabs-host"}`}>
         {graph ? (
@@ -619,9 +622,9 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         )}
       </section>
 
-      <aside className="pane-right" hidden={graph}>
+      <ResizablePanel id="notes-right" label="Detalhes da nota" side="right" width={300} className="pane-right" hidden={graph}>
         {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} onSaveNote={vault.save} />}
-      </aside>
+      </ResizablePanel>
 
       {!readOnly && (
         <button className="fab" onClick={() => setDialog({ kind: "note", folder: currentFolder })} aria-label="Nova nota (atalho)">

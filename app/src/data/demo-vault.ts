@@ -113,3 +113,37 @@ Object.assign(DEMO_ASSETS, { "Anexos/Imagens/exemplo-retrato.png": runa })
 // Tarefas no formato do plugin Tasks e consultas ```tasks.
 import { TASKS_DEMO } from "./tasks-demo"
 Object.assign(DEMO_TEXT_FILES, TASKS_DEMO)
+
+DEMO_TEXT_FILES["Livros/Caderno de formatadores/Colunas automáticas.md"] = `---
+tipo: capitulo
+status: revisao
+---
+# Colunas automáticas
+
+Escreva entre as marcações; a prévia, o PDF e o Word distribuem o conteúdo sem quebras manuais.
+
+::: runas-colunas-2
+
+## A estrada de Valdris
+
+O sol nasce sobre o condado e encontra uma estrada cheia de viajantes. Mercadores, estudiosos e aventureiros passam pela mesma ponte. Cada um carrega uma história, mas todos procuram o calor de uma fogueira quando chega a noite.
+
+Na taverna, os mapas ocupam uma mesa inteira. O mestre descreve as montanhas ao norte enquanto os jogadores decidem qual caminho seguir. O texto continua pela segunda coluna automaticamente: o autor pode escrever na ordem natural, sem escolher onde cada parágrafo ficará.
+
+Uma carta selada anuncia que a ponte foi fechada. Na manhã seguinte, o grupo parte em busca de outra passagem pelo rio. As escolhas ficam registradas no diário e se transformam nos próximos capítulos.
+
+:::
+
+Este parágrafo volta a ocupar a largura inteira.
+
+::: runas-colunas-3
+
+**Explorar** — Procure pistas no mundo e registre o que os personagens descobriram.
+
+**Criar** — Conecte as ideias, dê nomes aos lugares e prepare o próximo encontro.
+
+**Jogar** — Reúna o grupo e deixe que as escolhas mudem a história.
+
+:::
+`
+DEMO_TEXT_FILES["Livros/Caderno de formatadores/Caderno de formatadores.md"] = newBookText("Caderno de formatadores", ["[[Livros/Caderno de formatadores/Colunas automáticas]]", "[[Livros/Caderno de formatadores/Formatadores]]"], "O dialeto completo em páginas")

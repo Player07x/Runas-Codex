@@ -1,3 +1,4 @@
+import { ResizablePanel } from "../../components/ResizablePanel"
 import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
@@ -256,7 +257,7 @@ export function WikiCalendar({ path }: { path?: string }) {
         <div className="card flat agenda-main">
           <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />
         </div>
-        <aside className="stack-lg agenda-side">
+        <ResizablePanel id="agenda" label="Detalhes do calendário" side="right" width={320} className="stack-lg agenda-side">
           <section className="card stack">
             <span className="eyebrow">Dia escolhido</span>
             {pickProblem ? (
@@ -322,7 +323,7 @@ export function WikiCalendar({ path }: { path?: string }) {
           </section>
           {refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
           <CalendarHelp compact />
-        </aside>
+        </ResizablePanel>
       </div>
     </div>
   )

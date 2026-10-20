@@ -14,7 +14,7 @@ import { paginate, readyForPagination, type Pagination } from "./pagination"
 import "./book-pages.css"
 import "./book-preview.css"
 
-export default function BookPreview({ book, draft, onClose, documentMode = false, showSecrets = true }: { book: IndexedNote; draft?: { path: string; text: string }; onClose(): void; documentMode?: boolean; showSecrets?: boolean }) {
+export default function BookPreview({ book, draft, onClose, documentMode = false, showSecrets = true, siteEnabled = false }: { book: IndexedNote; draft?: { path: string; text: string }; onClose(): void; documentMode?: boolean; showSecrets?: boolean; siteEnabled?: boolean }) {
   const vault = useVault(), index = vault.index!
   const settings = previewSettings(book)
   let decoration = "", cssError = ""
@@ -125,8 +125,8 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
         const { captureBook } = await import("./export-snapshot")
         const snapshot = await captureBook(source.current, index, book, vault.platform, draft)
         if (documentMode && format === "html") snapshot.navigation = true
-        const bytes = format === "html" ? (await import("../../core/export/book-extra")).generateHtml(snapshot) : format === "rtf" ? (await import("../../core/export/book-extra")).generateRtf(snapshot) : format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
-        const path = await vault.platform.saveBytes(`${book.name}.${format}`, bytes, format === "html" ? "text/html" : format === "rtf" ? "application/rtf" : format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        const bytes = format === "site" ? (await import("../../core/export/documents")).generateStaticSite(snapshot) : format === "html" ? (await import("../../core/export/book-extra")).generateHtml(snapshot) : format === "rtf" ? (await import("../../core/export/book-extra")).generateRtf(snapshot) : format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
+        const path = await vault.platform.saveBytes(`${book.name}.${format === "site" ? "site.zip" : format}`, bytes, format === "site" ? "application/zip" : format === "html" ? "text/html" : format === "rtf" ? "application/rtf" : format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         setExportStatus(path ? `Arquivo salvo: ${path}. ${snapshot.warnings.join(" ")}` : "Exportação cancelada.")
       }
     } catch (err) { setExportStatus(`Não foi possível exportar: ${err instanceof Error ? err.message : String(err)}`) }
@@ -146,7 +146,7 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
       <button className="btn" onClick={() => setMetadata(!metadata)} disabled={vault.info?.readOnly}>Editar capa e créditos</button>
       </>}
       <button className="btn" disabled={!ready || !vault.platform.printDocument} onClick={() => requestPrint(book.name)}>{vault.platform.kind === "capacitor" ? "Imprimir" : "Imprimir (Ctrl+P)"}</button>
-      <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option><option value="html">HTML offline</option><option value="rtf">RTF</option>{!documentMode && <><option value="md">Markdown único</option><option value="zip">Pasta Markdown (ZIP)</option></>}</select></label>
+      <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option><option value="html">HTML offline</option><option value="rtf">RTF</option>{siteEnabled && <option value="site">Site offline (ZIP, uma página por nota)</option>}{!documentMode && <><option value="md">Markdown único</option><option value="zip">Pasta Markdown (ZIP)</option></>}</select></label>
       <button className="btn primary" disabled={!ready || exporting} onClick={() => void exportFile()}>{exporting ? "Exportando…" : "Exportar arquivo"}</button>
       {["epub","docx"].includes(format) && <p className="small">{format === "epub" ? "EPUB ajusta a paginação ao leitor; colunas viram texto corrido." : "DOCX é editável; a paginação e as fontes dependem do Word ou LibreOffice. Fórmulas ficam em LaTeX."}</p>}
       {exportStatus && <p role="status" data-book-export-status>{exportStatus}</p>}

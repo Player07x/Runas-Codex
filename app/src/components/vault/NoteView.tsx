@@ -1,8 +1,11 @@
+import { formatterInsertion } from "../../core/formatter-insertion"
+import { createPortal } from "react-dom"
+import { openDocumentExport } from "../export/ExportDialog"
 import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImages } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, Ellipsis, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -58,12 +61,17 @@ const isMedia = (name: string) => {
 }
 
 interface Props {
+  /** Controles de navegação ao lado de Sair do Foco no editor de Livros. */
+  focusHeader?: HTMLElement | null
+  hideBackControl?: boolean
+  formatSelection?: boolean
   typewriter?: boolean
   focused?: boolean
   path: string
   folders: string[]
   onShowPanel(): void
   onBack(): void
+  onTrashed?(): void
   onCreate(target: string): void
   onTag(tag: string): void
   /** Observação do rascunho para prévias; não grava nem substitui o autosave. */
@@ -81,7 +89,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, formatSelection = false }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -405,20 +413,9 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
       onAuxClick={(event) => event.button === 1 && openLinkInTab(event)}
     >
       <div className={`editor-bar ${expandedTools ? "tools-expanded" : ""}`}>
-        <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
-          <ChevronLeft size={18} />
-        </button>
-        <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
-        <span className="note-history">
-          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
-            <ArrowLeft size={17} />
-          </button>
-          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
-            <ArrowRight size={17} />
-          </button>
-        </span>
-        <NoteImages path={path} text={draft} onRename={renameImage} />
-        <Segmented<ViewMode>
+        {focusHeader ? createPortal(<>
+          {!hideBackControl && <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>}
+          <Segmented<ViewMode>
           label="Modo da nota"
           value={mode}
           onChange={setMode}
@@ -428,6 +425,33 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
             { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
           ]}
         />
+          <button className="btn focus-note-actions" aria-label={expandedTools ? "Recolher ações" : "Ações da nota"} title={expandedTools ? "Recolher ações" : "Ações da nota"} aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}><Ellipsis size={17}/><span>{expandedTools ? "Recolher ações" : "Ações da nota"}</span></button>
+        </>, focusHeader) : <>
+        {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+          <ChevronLeft size={18} />
+        </button>}
+        <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
+        </>}
+        <span className="note-history">
+          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
+            <ArrowLeft size={17} />
+          </button>
+          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
+            <ArrowRight size={17} />
+          </button>
+        </span>
+        <button className="btn note-export-action" onClick={() => openDocumentExport({ paths: [path], title: note.name, players: !showSecrets })}>Exportar…</button>
+        <NoteImages path={path} text={draft} onRename={renameImage} />
+        {!focusHeader && <Segmented<ViewMode>
+          label="Modo da nota"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
+            ...(readOnly ? [] : [{ value: "live" as const, label: "Editar", icon: <Type size={14} /> }]),
+            { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
+          ]}
+        />}
         {readOnly && (
           <span className="chip gold" title="Libere a gravação em Configurações › Cofre">
             <Lock size={13} /> Somente leitura
@@ -592,7 +616,11 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
         </div>
       )}
 
-      {!readOnly && mode !== "leitura" && toolbar?.((text) => editor.current?.insert(text))}
+      {!readOnly && mode !== "leitura" && toolbar?.((text) => {
+        const range = editor.current?.selection()
+        const selectedText = range ? draft.slice(range.from, range.to) : ""
+        editor.current?.insert(formatSelection ? formatterInsertion(text, selectedText) : text)
+      })}
 
       <div className={sidebar ? "books-writing-area" : undefined} style={sidebar ? undefined : { display: "contents" }}>
       <div className="editor-body" ref={reader}>
@@ -663,11 +691,12 @@ export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, 
           onClose={() => setDialog(null)}
           onConfirm={async () => {
             await vault.trash(path)
-            navigate("/notas")
+            if (onTrashed) onTrashed()
+            else navigate("/notas")
           }}
         >
           “{noteName(path)}” vai para a lixeira do cofre (<code>.trash</code>), a mesma do Obsidian. Dá para recuperar de lá.
-          {index.backlinks(path).length > 0 && <p style={{ marginTop: 8 }}>{index.backlinks(path).length} notas apontam para ela; os links vão ficar quebrados.</p>}
+          {index.backlinks(path).length > 0 && <p style={{ marginTop: 8 }}>As referências na estrutura dos livros serão removidas automaticamente. Outros links para esta nota podem ficar quebrados.</p>}
         </ConfirmDialog>
       )}
     </article>
