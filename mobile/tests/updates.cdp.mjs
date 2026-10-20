@@ -25,7 +25,10 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r))
 const port=server.address().port; origin='http://127.0.0.1:'+port
 adb('reverse','tcp:'+port,'tcp:'+port)
 async function connect() {
-  for(let i=0;i<100;i++) {
+  // A instalação de APK pode reiniciar o WebView depois que o processo já
+  // voltou ao foreground. Dê tempo suficiente para o socket de depuração
+  // reaparecer em emuladores mais lentos.
+  for(let i=0;i<300;i++) {
     try {
       const target=(await fetch(endpoint+'/json').then(r=>r.json())).find(t=>t.type==='page'&&t.webSocketDebuggerUrl)
       if(target) {
@@ -103,9 +106,11 @@ try {
   let installed=false
   for(let i=0;i<150;i++){if(adb('shell','dumpsys','package','dev.runas.codex').includes('versionName=0.1.0-beta.14')){installed=true;break}await sleep(200)}
   check('o Android instala após confirmação explícita',installed)
-  socket.close();adb('shell','am','start','-n','dev.runas.codex/.MainActivity');
+  socket.close();
+  adb('shell','am','force-stop','dev.runas.codex');
+  adb('shell','am','start','-n','dev.runas.codex/.MainActivity');
   let nextPid=''
-  for(let i=0;i<100&&!nextPid;i++){try{nextPid=adb('shell','pidof','dev.runas.codex').trim()}catch{}if(!nextPid)await sleep(100)}
+  for(let i=0;i<300&&!nextPid;i++){try{nextPid=adb('shell','pidof','dev.runas.codex').trim()}catch{}if(!nextPid)await sleep(200)}
   if(!nextPid)throw Error('O app atualizado não iniciou.')
   adb('forward','tcp:'+new URL(endpoint).port,'localabstract:webview_devtools_remote_'+nextPid)
   await connect();await until('window.Capacitor?.Plugins?.RunasVault')

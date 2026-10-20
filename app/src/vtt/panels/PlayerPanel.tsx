@@ -5,7 +5,7 @@ import type { LinkTestResult, PlayerState } from "../shared/ipc"
 import { masterLink, type MasterState } from "../shared/master"
 import type { DocumentStore } from "../document-store"
 import { useDocumentsVersion } from "../document-store"
-import { remoteMaster, vtt } from "../api"
+import { isAndroidRoom, remoteMaster, vtt } from "../api"
 
 /** O Electron embrulha o erro do processo principal ("Error invoking remote method 'x': Error: …"); o mestre só precisa do motivo. */
 export function errorMessage(reason: unknown): string {
@@ -58,7 +58,9 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
   const scenes = store.scenes()
   const link = state?.publicUrl ?? state?.localUrl ?? ""
   const listenPort = state?.port ?? 30000
-  const lanHint = platform === "linux"
+  const lanHint = isAndroidRoom
+    ? "Todos devem estar na mesma rede Wi-Fi ou no ponto de acesso do celular. A notificação mantém a sala aberta e permite encerrá-la. Ao trocar de rede, desligue e ligue a transmissão para gerar o link atualizado."
+    : platform === "linux"
     ? `Se outro aparelho da rede não abrir o link, o firewall pode estar barrando a porta: sudo ufw allow ${listenPort}/tcp. Wi-Fis com "isolamento de clientes" também impedem aparelho de falar com aparelho.`
     : platform === "darwin"
       ? "O macOS pode pedir permissão para aceitar conexões de entrada na primeira vez. Todos na mesma rede abrem este link."
@@ -95,10 +97,10 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
         <div className="table-scroll"><table><thead><tr><th>Assento</th><th>Código</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{state.seats.map((seat) => <tr key={seat.slotId}><td>{seat.label}</td><td><code>{seat.code ?? "••••••••"}</code>{seat.code && <button className="ghost small" aria-label={`Copiar código de ${seat.label}`} onClick={() => { void navigator.clipboard?.writeText(seat.code ?? "") }}>Copiar</button>}</td><td>{seat.status === "attached" ? "Ficha anexada" : seat.status === "connected" ? "Conectado" : "Disponível"}</td><td><button className="ghost small" disabled={busy} onClick={() => void run(async () => { const next = await vtt.player.rotateSeatCode(seat.slotId); setState(next) })}><RotateCw size={13} /> Regenerar</button><button className="ghost small danger" disabled={busy || (!seat.tokenId && seat.status === "available")} onClick={() => { if (window.confirm(`Limpar a ficha de ${seat.label}?`)) void run(async () => { const next = await vtt.player.clearSeat(seat.slotId); setState(next) }) }}><Trash2 size={13} /> Limpar</button></td></tr>)}</tbody></table></div>
       </div>
       {!remoteMaster && vtt.master && <MasterRemotePanel roomUrl={state.publicUrl ?? state.localUrl} />}
-      {!remoteMaster && <div className="player-actions"><button className="ghost" onClick={() => void run(() => vtt.player.openWindow())}><MonitorPlay size={15} /> Abrir janela local</button><button className="ghost" disabled={busy} onClick={() => { if (window.confirm("Baixar o cloudflared do release oficial da Cloudflare, verificar o SHA-256 e abrir um túnel público?")) void run(async () => { setTunneling(true); try { await vtt.player.publicLink() } finally { setTunneling(false) } }) }}><ExternalLink size={15} /> {tunneling ? "Conectando à Cloudflare…" : state.publicUrl ? "Gerar novo link público" : "Gerar link público"}</button>{state.publicUrl && <button className="ghost" disabled={busy || testing} onClick={() => { setTesting(true); setLinkTest(null); void vtt.player.testPublicLink().then(setLinkTest).catch((reason) => setLinkTest({ ok: false, ms: 0, error: reason instanceof Error ? reason.message : String(reason) })).finally(() => setTesting(false)) }}><Activity size={15} /> {testing ? "Testando…" : "Testar link"}</button>}</div>}
+      {!remoteMaster && !isAndroidRoom && <div className="player-actions"><button className="ghost" onClick={() => void run(() => vtt.player.openWindow())}><MonitorPlay size={15} /> Abrir janela local</button><button className="ghost" disabled={busy} onClick={() => { if (window.confirm("Baixar o cloudflared do release oficial da Cloudflare, verificar o SHA-256 e abrir um túnel público?")) void run(async () => { setTunneling(true); try { await vtt.player.publicLink() } finally { setTunneling(false) } }) }}><ExternalLink size={15} /> {tunneling ? "Conectando à Cloudflare…" : state.publicUrl ? "Gerar novo link público" : "Gerar link público"}</button>{state.publicUrl && <button className="ghost" disabled={busy || testing} onClick={() => { setTesting(true); setLinkTest(null); void vtt.player.testPublicLink().then(setLinkTest).catch((reason) => setLinkTest({ ok: false, ms: 0, error: reason instanceof Error ? reason.message : String(reason) })).finally(() => setTesting(false)) }}><Activity size={15} /> {testing ? "Testando…" : "Testar link"}</button>}</div>}
       {linkTest && <p className={linkTest.ok ? "hint" : "error"} role="status">{linkTest.ok ? `O link responde: ${linkTest.ms} ms do seu computador até a mesa, passando pela Cloudflare. Se um jogador ainda não abrir, o bloqueio está na rede dele: alguns provedores, DNS de filtro e antivírus barram trycloudflare.com. Peça para testar em dados móveis ou com o DNS 1.1.1.1.` : `O link não respondeu: ${linkTest.error ?? "erro desconhecido"}.`}</p>}
       {tunneling && <p className="hint" role="status">Conectando à Cloudflare. Leva alguns segundos e, se a rede bloquear a porta 7844, o app desiste em até 60 s e explica o motivo.</p>}
-      <p className="hint">O link público usa um túnel Cloudflare Quick Tunnel opcional e só é iniciado após sua confirmação.</p>
+      {isAndroidRoom ? <p className="hint">A sala do celular funciona na rede local. Encerrar o aplicativo também encerra a sala.</p> : <p className="hint">O link público usa um túnel Cloudflare Quick Tunnel opcional e só é iniciado após sua confirmação.</p>}
       <div className="player-config">
         <label className="field"><span>Cena transmitida</span><select value={state.sceneId ?? ""} onChange={(event) => void run(() => vtt.player.setScene(event.target.value || null))}><option value="">Cena aberta pelo mestre</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>{scene.data.name}</option>)}</select></label>
         <button className="ghost" onClick={() => void run(() => vtt.player.pullCamera())}><Target size={15} /> Puxar a câmera para o ponto do mestre</button>

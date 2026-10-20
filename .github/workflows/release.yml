@@ -186,8 +186,8 @@ jobs:
 
   publish:
     # Publica só depois de todos os builds habilitados nesta versão passarem.
-    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') && needs.linux.result == 'success' && needs.windows.result == 'success' && (needs.android.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android.result == 'skipped')) }}
-    needs: [targets, linux, windows, android]
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') && needs.linux.result == 'success' && needs.windows.result == 'success' && (needs.android-room.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android-room.result == 'skipped')) && (needs.android.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android.result == 'skipped')) }}
+    needs: [targets, linux, windows, android, android-room]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -259,7 +259,14 @@ jobs:
           mkdir -p "$ANDROID_AVD_HOME"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           sudo chmod 666 /dev/kvm
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
+          for attempt in 1 2 3; do
+            if "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'; then
+              break
+            fi
+            rm -rf "$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
+            sleep 5
+          done
+          test -d "$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-toque -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --path "$ANDROID_AVD_HOME/runas-toque.avd"
           # Ferramentas de versões diferentes podem escrever o índice do AVD em pastas distintas.
           test -f "$ANDROID_AVD_HOME/runas-toque.avd/config.ini"
@@ -286,7 +293,9 @@ jobs:
         run: |
           adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
           adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
-          adb shell am start -n dev.runas.codex/.MainActivity
+          adb shell mkdir -p /sdcard/Documents/cofre-toque
+          adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-toque --ez runasWritable true
           for i in $(seq 1 60); do
             runas_pid=$(adb shell pidof -s dev.runas.codex | tr -d '\r')
             if [ -n "$runas_pid" ]; then
@@ -487,3 +496,105 @@ jobs:
           retention-days: 14
 
 # beta.5: somente desktop, conforme .github/release-targets.json e pedido do dono.
+
+  android-room:
+    # APK de teste em emulador: a cópia com depuração do WebView nunca é publicada como instalador.
+    needs: targets
+    if: needs.targets.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run sync -w @runas-codex/mobile
+      - name: Habilitar depuração só no APK desta verificação
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs'
+          const path='mobile/android/app/src/main/assets/capacitor.config.json'
+          const config=JSON.parse(readFileSync(path,'utf8'))
+          config.android={...config.android,webContentsDebuggingEnabled:true}
+          writeFileSync(path,JSON.stringify(config))
+          JS
+      - name: Testes do servidor e APK de teste
+        working-directory: mobile/android
+        run: ./gradlew testDebugUnitTest assembleDebug --no-daemon
+      - name: Preparar emulador Android 35
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/runas-avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          sudo chmod 666 /dev/kvm
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-sala -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --path "$ANDROID_AVD_HOME/runas-sala.avd"
+          # Ferramentas de versões diferentes podem escrever o índice do AVD em pastas distintas.
+          test -f "$ANDROID_AVD_HOME/runas-sala.avd/config.ini"
+          cat > "$ANDROID_AVD_HOME/runas-sala.ini" <<EOF
+          avd.ini.encoding=UTF-8
+          path=$ANDROID_AVD_HOME/runas-sala.avd
+          target=android-35
+          EOF
+          mkdir -p /tmp/runas-android-room
+          "$ANDROID_HOME/emulator/emulator" -avd runas-sala -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-room/emulator.log 2>&1 &
+          timeout 120 adb wait-for-device
+          for i in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          adb shell input keyevent 82
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+      - name: Sala Android e jogador no navegador do job
+        run: |
+          adb shell am force-stop com.google.android.apps.nexuslauncher
+          node mobile/tests/room-fixture.mjs /tmp/runas-android-room
+          for i in $(seq 1 60); do
+            if adb shell 'mkdir -p /sdcard/Documents/cofre-room/Notas && echo pronto > /sdcard/Documents/cofre-room/.runas-mount-probe && rm /sdcard/Documents/cofre-room/.runas-mount-probe'; then break; fi
+            sleep 2
+          done
+          copied=false
+          for i in $(seq 1 10); do
+            if adb push /tmp/runas-android-room/fixture/Notas/. /sdcard/Documents/cofre-room/Notas/; then copied=true; break; fi
+            sleep 2
+          done
+          test "$copied" = true
+          adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
+          adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-room --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
+          adb forward tcp:30000 tcp:30000
+          # Somente no emulador: evitar a apresentação inicial do Chrome e inspecionar o jogador Android.
+          adb shell am set-debug-app --persistent com.android.chrome
+          adb shell 'echo "_ --disable-fre --no-first-run --no-default-browser-check" > /data/local/tmp/chrome-command-line'
+          adb shell am force-stop com.android.chrome
+          adb forward tcp:9226 localabstract:chrome_devtools_remote
+          google-chrome --headless --no-sandbox --disable-dev-shm-usage --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --remote-debugging-port=9225 --user-data-dir=/tmp/runas-room-chrome about:blank > /tmp/runas-android-room/chrome.log 2>&1 &
+          node mobile/tests/room-smoke.cdp.mjs /tmp/runas-android-room
+      - name: Registro da sala no Android
+        if: always()
+        run: adb logcat -d > /tmp/runas-android-room/logcat.txt 2>&1 || true
+      - name: Guardar resultado da sala Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-android-sala
+          path: |
+            /tmp/runas-android-room
+            mobile/android/app/build/reports/tests
+          if-no-files-found: warn
+          retention-days: 14
