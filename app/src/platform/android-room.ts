@@ -98,7 +98,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
   const api:VttApi={
     collaboration:{state:async()=>authority.collaboration.snapshot(),command:async command=>authority.collaborationCommand(command)},
     listWorlds:()=>store.list(), createWorld:input=>store.create(input),
-    openWorld:async id=>{if(store.openWorld?.summary.id!==id)await close();const summary=await store.open(id);sessionStorage.setItem("runas-codex:mesa-pasta",summary.path);return summary},closeWorld:close,
+    openWorld:async id=>{if(store.openWorld?.summary.id!==id)await close();return store.open(id)},closeWorld:close,
     documents:{
       list:async(type,parentId)=>store.database().list(type,parentId),
       put:async input=>{const {document,change}=putDocument(store.database(),input);publish(change);await save();return document},
@@ -119,7 +119,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     },
     audio:{state:async()=>audio.get(),onState:listener=>{audioListeners.add(listener);return()=>audioListeners.delete(listener)},playPlaylist:async id=>audio.playPlaylist(id),stopPlaylist:async id=>audio.stopPlaylist(id),playTrack:async id=>audio.playTrack(id),stopTrack:async id=>audio.stopTrack(id),stopAll:async()=>audio.stopAll(),ended:async key=>audio.ended(key)},
     vision:{resetExploration:async id=>{vision.resetExploration(id);authority.refresh();await save()}},
-    assets:{import:async(kind,name,bytes)=>{
+    assets:{url:path=>store.openWorld && isAssetPath(path)?platform.fileUrl(`${store.openWorld.summary.path}/assets/${path}`):null,import:async(kind,name,bytes)=>{
       const extension=name.split(".").pop()?.toLowerCase() ?? ""
       const allowed=kind==="audio"?["mp3","ogg","wav","m4a","flac","webm","opus"]:["png","jpg","jpeg","webp","gif","avif"]
       if(!allowed.includes(extension))throw new Error("Formato de arquivo não suportado.")

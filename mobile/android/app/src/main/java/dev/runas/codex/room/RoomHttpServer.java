@@ -59,7 +59,7 @@ public final class RoomHttpServer implements AutoCloseable {
   private final ServerSocket listener;
   private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
   private final Set<Client> clients = ConcurrentHashMap.newKeySet();
-  private final Set<String> assets = ConcurrentHashMap.newKeySet();
+  private volatile Set<String> assets = Collections.emptySet();
   private final Map<String, List<Long>> failures = new HashMap<>();
   private final ThreadPoolExecutor workers =
       new ThreadPoolExecutor(
@@ -120,8 +120,9 @@ public final class RoomHttpServer implements AutoCloseable {
   }
 
   public void allowedAssets(Collection<String> paths) {
-    assets.clear();
-    for (String path : paths) if (validAsset(path)) assets.add(path);
+    Set<String> next = new HashSet<>();
+    for (String path : paths) if (validAsset(path)) next.add(path);
+    assets = Collections.unmodifiableSet(next);
   }
 
   public static boolean validAsset(String path) {
@@ -433,9 +434,9 @@ public final class RoomHttpServer implements AutoCloseable {
                         .getBytes(StandardCharsets.US_ASCII)));
     out.write(
         ("HTTP/1.1 101 Switching Protocols\r\n"
-             + "Upgrade: websocket\r\n"
-             + "Connection: Upgrade\r\n"
-             + "Sec-WebSocket-Accept: "
+                + "Upgrade: websocket\r\n"
+                + "Connection: Upgrade\r\n"
+                + "Sec-WebSocket-Accept: "
                 + accept
                 + "\r\n\r\n")
             .getBytes(StandardCharsets.US_ASCII));
@@ -559,7 +560,7 @@ public final class RoomHttpServer implements AutoCloseable {
     sockets.clear();
     workers.shutdownNow();
     clock.shutdownNow();
-    assets.clear();
+    assets = Collections.emptySet();
     counts();
   }
 

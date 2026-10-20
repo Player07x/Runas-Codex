@@ -13,13 +13,19 @@ import dev.runas.codex.R;
 public class RoomService extends Service {
   private static final String CHANNEL = "runas-room", STOP = "dev.runas.codex.room.STOP";
   private static volatile Runnable onStop;
+  private static volatile String activeId;
+  private String sessionId;
   private PowerManager.WakeLock cpu;
   private WifiManager.WifiLock wifi;
 
   public static void start(Context context, String link, String code, Runnable stop) {
+    activeId = java.util.UUID.randomUUID().toString();
     onStop = stop;
     Intent intent =
-        new Intent(context, RoomService.class).putExtra("link", link).putExtra("code", code);
+        new Intent(context, RoomService.class)
+            .putExtra("link", link)
+            .putExtra("code", code)
+            .putExtra("sessionId", activeId);
     androidx.core.content.ContextCompat.startForegroundService(context, intent);
   }
 
@@ -37,6 +43,7 @@ public class RoomService extends Service {
       stopSelf();
       return START_NOT_STICKY;
     }
+    sessionId = intent.getStringExtra("sessionId");
     if (Build.VERSION.SDK_INT >= 26) {
       NotificationChannel channel =
           new NotificationChannel(CHANNEL, "Sala do VTT", NotificationManager.IMPORTANCE_LOW);
@@ -95,9 +102,12 @@ public class RoomService extends Service {
 
   @Override
   public void onDestroy() {
-    Runnable callback = onStop;
-    onStop = null;
-    if (callback != null) callback.run();
+    // Uma instância antiga não pode encerrar a sala que acabou de ser religada.
+    if (sessionId != null && sessionId.equals(activeId)) {
+      Runnable callback = onStop;
+      onStop = null;
+      if (callback != null) callback.run();
+    }
     if (cpu != null && cpu.isHeld()) cpu.release();
     if (wifi != null && wifi.isHeld()) wifi.release();
     stopForeground(true);

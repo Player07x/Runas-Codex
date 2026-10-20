@@ -3,7 +3,7 @@ export const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 export async function connectDevtools(endpoint,match=()=>true) {
   let target
   for(let n=0;n<180 && !target;n++) {
-    try {target=(await fetch(endpoint+'/json').then(r=>r.json())).find(t=>t.type==='page' && t.webSocketDebuggerUrl && match(t))}catch{}
+    try {target=(await fetch(endpoint+'/json').then(r=>r.json())).find(t=>{let view={};try{view=JSON.parse(t.description||'{}')}catch{}return t.type==='page' && t.webSocketDebuggerUrl && view.attached!==false && view.visible!==false && match(t)})}catch{}
     if(!target)await sleep(250)
   }
   if(!target)throw new Error('Página de teste não abriu: '+endpoint)

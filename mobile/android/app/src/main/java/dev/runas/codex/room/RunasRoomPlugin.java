@@ -87,7 +87,7 @@ public class RunasRoomPlugin extends Plugin {
             String folder = path.substring(".runas/mesas/".length());
             VaultFs worlds = vault().roomWorlds();
             worlds.entry(folder + "/mesa.json");
-            vaultIdentity = worlds.identity();
+            vaultIdentity = vault().roomIdentity();
             address = lanAddress();
             if (address == null)
               throw new IOException(
@@ -167,11 +167,22 @@ public class RunasRoomPlugin extends Plugin {
 
                       public RoomHttpServer.Resource asset(String name) throws IOException {
                         if (!RoomHttpServer.validAsset(name)
-                            || !worlds.identity().equals(vaultIdentity))
+                            || !vault().roomIdentity().equals(vaultIdentity))
                           throw new IOException("Asset inválido.");
                         String relative = folder + "/assets/" + name;
                         VaultStore.Entry entry = worlds.entry(relative);
                         String source = worlds.source(relative);
+                        if (!source.startsWith("content:")) {
+                          File root =
+                              new File(worlds.source(folder + "/mesa.json"))
+                                  .getParentFile()
+                                  .getCanonicalFile();
+                          if (!new File(source)
+                              .getCanonicalPath()
+                              .startsWith(
+                                  root.getPath() + File.separator + "assets" + File.separator))
+                            throw new IOException("Asset fora da mesa aberta.");
+                        }
                         InputStream stream =
                             source.startsWith("content:")
                                 ? getContext()

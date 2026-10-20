@@ -137,9 +137,6 @@ export const isBrowserPreview = !window.runasCodex?.vtt && !remoteMaster && !pla
 export function resolveAssetUrl(path: AssetPath): string {
   if (playerAssetEndpoint) return `${playerAssetEndpoint.base}${path}?k=${encodeURIComponent(playerAssetEndpoint.key)}`
   if (remote) return remoteAssetUrl(remote, path)
-  if(platform.kind === "capacitor") {
-    const id=sessionStorage.getItem("runas-codex:mesa-pasta")
-    if(id)return platform.fileUrl(`${id}/assets/${path}`) ?? ""
-  }
+  if(platform.vtt)return platform.vtt.assets.url?.(path) ?? ""
   return previewAssets.get(path) ?? assetUrl(path)
 }

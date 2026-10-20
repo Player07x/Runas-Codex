@@ -555,8 +555,16 @@ jobs:
         run: |
           adb shell am force-stop com.google.android.apps.nexuslauncher
           node mobile/tests/room-fixture.mjs /tmp/runas-android-room
-          adb shell mkdir -p /sdcard/Documents/cofre-room
-          adb push /tmp/runas-android-room/fixture/. /sdcard/Documents/cofre-room/
+          for i in $(seq 1 60); do
+            if adb shell 'mkdir -p /sdcard/Documents/cofre-room/Notas && echo pronto > /sdcard/Documents/cofre-room/.runas-mount-probe && rm /sdcard/Documents/cofre-room/.runas-mount-probe'; then break; fi
+            sleep 2
+          done
+          copied=false
+          for i in $(seq 1 10); do
+            if adb push /tmp/runas-android-room/fixture/Notas/. /sdcard/Documents/cofre-room/Notas/; then copied=true; break; fi
+            sleep 2
+          done
+          test "$copied" = true
           adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
           adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
           adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS

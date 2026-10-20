@@ -1,5 +1,5 @@
 // X7: servidor no Android, jogador no Chromium do job, rede local e Activity em segundo plano.
-import {mkdir,readFile,writeFile} from 'node:fs/promises'
+import {mkdir,readFile,readdir,writeFile} from 'node:fs/promises'
 import {execFileSync} from 'node:child_process'
 import {connectDevtools,sleep} from './devtools-client.mjs'
 const output=process.argv[2] ?? '/tmp/runas-android-room'
@@ -16,6 +16,18 @@ async function appButton(text){await app.until(`[...document.querySelectorAll('b
 async function waitMessage(socket,predicate){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{socket.removeEventListener('message',on);reject(new Error('Mensagem não chegou'))},12000);function on(event){const value=JSON.parse(event.data);if(predicate(value)){clearTimeout(timer);socket.removeEventListener('message',on);resolve(value)}}socket.addEventListener('message',on)})}
 try {
   await app.until('window.Capacitor?.Plugins?.RunasVault')
+  // A própria ponte cria a área oculta: o shell do emulador não tem as permissões do aplicativo.
+  const seed=async(folder,prefix='')=>{
+    for(const entry of await readdir(folder,{withFileTypes:true})) {
+      const relative=prefix+entry.name,full=folder+'/'+entry.name
+      if(entry.isDirectory())await seed(full,relative+'/')
+      else if(relative.startsWith('.runas/mesas/')) {
+        const base64=(await readFile(full)).toString('base64')
+        await app.run(`window.Capacitor.Plugins.RunasVault.writeManagedTransfer(${JSON.stringify({path:relative,base64,expected:null})})`)
+      }
+    }
+  }
+  await seed(output+'/fixture')
   await app.run(`location.hash='#/vtt/mesa/x7-ci';true`)
   await app.until(`document.querySelector('.table-title')?.textContent.includes('Sala Android X7')`)
   await click(app,'[title="Sala dos jogadores"]')
