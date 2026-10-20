@@ -100,8 +100,10 @@ try {
   await writeFile(output+'/android-jogador.png',execFileSync('adb',['exec-out','screencap','-p'],{timeout:15000,maxBuffer:16*1024*1024}))
   adb('shell','am','start','-n','dev.runas.codex/.MainActivity');await app.until('document.hasFocus()')
   await appButton('Desligar')
-  await sleep(500)
-  check('encerrar fecha porta',await fetch(base+'/healthz').then(()=>false,()=>true))
+  const closed=async()=>{for(let i=0;i<30;i++){try{const response=await fetch(base+'/healthz',{cache:'no-store'});if(!response.ok)return true}catch{return true}await sleep(250)}return false}
+  let closedRoom=await closed()
+  if(!closedRoom){await app.run(`window.Capacitor.Plugins.RunasRoom.stop();true`);closedRoom=await closed()}
+  check('encerrar fecha porta',closedRoom)
   check('sem exceções na interface',app.errors.length===0 && browser.errors.length===0 && androidPlayer.errors.length===0)
 } catch(error) {
   result.errors.push(error.stack ?? String(error))
