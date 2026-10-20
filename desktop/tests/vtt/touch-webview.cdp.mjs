@@ -133,8 +133,11 @@ try {
   console.log('Mesa criada; movendo token por toque nativo.')
   if (process.argv.includes('--slow')) await run(`new Promise(resolve=>{const interval=setInterval(()=>{const end=performance.now()+90;while(performance.now()<end){}},120);setTimeout(()=>{clearInterval(interval);resolve(true)},4000)})`)
   await label('Enquadrar cena')
-  await tool('Novo token'); await tapPoint(await at(1250, 950))
-  if (!await run(`!!document.querySelector('.properties')`)) await label('Propriedades do objeto')
+  await tool('Novo token')
+  for (const [dx, dy] of [[0, 0], [32, 0], [-32, 0], [0, 32], [0, -32]]) {
+    await tapPoint(await at(1250 + dx, 950 + dy))
+    if (await run(`!!document.querySelector('.properties')`)) break
+  }
   await until(`document.querySelector('.properties')`)
   results.initialToken = { x: Number(await field('Posição X')), y: Number(await field('Posição Y')) }
   if (results.initialToken.x !== 1250 || results.initialToken.y !== 950) throw new Error('O enquadramento não corresponde ao tamanho CSS do canvas: '+JSON.stringify(results.initialToken))
