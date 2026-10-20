@@ -134,6 +134,7 @@ try {
   if (process.argv.includes('--slow')) await run(`new Promise(resolve=>{const interval=setInterval(()=>{const end=performance.now()+90;while(performance.now()<end){}},120);setTimeout(()=>{clearInterval(interval);resolve(true)},4000)})`)
   await label('Enquadrar cena')
   await tool('Novo token'); await tapPoint(await at(1250, 950))
+  if (!await run(`!!document.querySelector('.properties')`)) await label('Propriedades do objeto')
   await until(`document.querySelector('.properties')`)
   results.initialToken = { x: Number(await field('Posição X')), y: Number(await field('Posição Y')) }
   if (results.initialToken.x !== 1250 || results.initialToken.y !== 950) throw new Error('O enquadramento não corresponde ao tamanho CSS do canvas: '+JSON.stringify(results.initialToken))
