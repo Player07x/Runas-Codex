@@ -61,7 +61,8 @@ function pastedFiles(data: DataTransfer | null): File[] {
 /** Cores pelas variáveis do tema: o editor acompanha o claro/escuro do Órbita. */
 const theme = EditorView.theme({
   "&": { color: "var(--text)", backgroundColor: "transparent", fontSize: "calc(14px * var(--font-scale, 1))", height: "100%" },
-  ".cm-content": { fontFamily: "var(--font-mono)", lineHeight: "1.7", caretColor: "var(--cyan)", padding: "0 0 40vh" },
+  ".cm-scroller": { fontFamily: "var(--font-mono)", lineHeight: "1.7" },
+  ".cm-content": { caretColor: "var(--cyan)", padding: "0 0 40vh" },
   ".cm-cursor": { borderLeftColor: "var(--cyan)" },
   "&.cm-focused": { outline: "none" },
   ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": { backgroundColor: "color-mix(in srgb, var(--cyan) 28%, transparent) !important" },
@@ -195,7 +196,15 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
       ],
     })
     view.current = new EditorView({ state, parent: host.current! })
+    const editorView = view.current
+    const measure = () => { if (view.current === editorView) editorView.requestMeasure() }
+    const geometry = new ResizeObserver(measure)
+    geometry.observe(host.current!)
+    void document.fonts.ready.then(measure)
+    document.fonts.addEventListener("loadingdone", measure)
     return () => {
+      geometry.disconnect()
+      document.fonts.removeEventListener("loadingdone", measure)
       view.current?.destroy()
       view.current = null
     }

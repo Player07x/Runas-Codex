@@ -66,3 +66,17 @@
  .books-layout:not(.has-preview) .books-writing-area { display:grid;grid-template-columns:minmax(0,1fr) 300px;flex:1; }
  .books-layout:not(.has-preview) .books-writing-area > .book-writing-tools { border-left:1px solid var(--line);border-top:0;overflow:auto; }
 }
+
+/* O foco libera toda a janela para a escrita. */
+body.book-focus-active .shell { grid-template-columns:minmax(0,1fr)!important; }
+body.book-focus-active .shell>.sidebar,body.book-focus-active .topbar,body.book-focus-active .bottom-nav { display:none!important; }
+body.book-focus-active .content { padding:0; }
+body.book-focus-active .main { padding-bottom:env(safe-area-inset-bottom); }
+body.book-focus-active .editor-bar :is(.editor-status,.note-history,.note-word-count,.note-export-action) { display:none!important; }
+body .books-focus .books-header>:not(.book-focus-toggle):not(.book-focus-navigation) { display:none; }
+body .books-focus .books-header>.book-focus-navigation { display:flex; align-items:center; margin-right:auto; min-width:0; }
+.book-focus-navigation .btn,.book-focus-navigation .icon-btn { min-height:44px; }
+.book-tools-panel { padding:12px; overflow:auto; border-left:1px solid var(--line); }
+.formatter-card { display:flex; flex-direction:column; align-items:center; background:var(--panel); border:1px solid var(--line); color:var(--text); font:inherit; cursor:pointer; }
+.formatter-sample { display:grid; place-items:center; font-family:Georgia,serif; }
+.column-sample { display:grid; gap:5px; font:8px/1.2 monospace; }

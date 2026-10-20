@@ -1,3 +1,4 @@
+import { bookEditsBeforeTrash } from "../core/book-removal"
 import { DEFAULT_IMAGE_FOLDER, folderForAttachment } from "../core/images"
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { attachmentPath } from "../core/attachments"
@@ -223,13 +224,35 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   const trash = useCallback(
     async (path: string) => {
+      await flushOpenNotes()
       const current = requireIndex()
-      for (const note of current.allNotes()) if (note.path === path || note.path.startsWith(path + "/")) await recordVersion(info!.path, note.path, note.text, true)
-      await platform.trash(path)
+      const edits = bookEditsBeforeTrash(current, path)
+      const applied: typeof edits = []
+      try {
+        // Resolve os vínculos enquanto os destinos existem e grava com a versão esperada.
+        for (const edit of edits) {
+          if (current.note(edit.path)?.text !== edit.before) throw new Error(`“${edit.path}” mudou durante a remoção. Confira o livro e tente novamente.`)
+          await save(edit.path, edit.after)
+          applied.push(edit)
+        }
+        for (const note of current.allNotes()) if (note.path === path || note.path.startsWith(path + "/")) await recordVersion(info!.path, note.path, note.text, true)
+        await platform.trash(path)
+      } catch (error) {
+        // Falha ao mover para a lixeira não deve deixar os livros sem seus vínculos.
+        const failed: string[] = []
+        for (const edit of applied.reverse()) {
+          try {
+            if (current.note(edit.path)?.text !== edit.after) throw new Error("Livro alterado durante a remoção")
+            await save(edit.path, edit.before)
+          } catch { failed.push(edit.path) }
+        }
+        if (failed.length) throw new Error(`${String(error)} Não foi possível restaurar a estrutura de: ${failed.join(", ")}. Confira esses livros.`)
+        throw error
+      }
       for (const file of current.allFiles()) if (file.path === path || file.path.startsWith(path + "/")) current.remove(file.path)
       bump()
     },
-    [requireIndex, bump, info],
+    [requireIndex, bump, info, save],
   )
 
   const setProperty = useCallback(

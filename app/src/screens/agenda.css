@@ -64,3 +64,5 @@ button.event-pill { display: block; width: 100%; border-top: 0; border-right: 0;
   .timegrid-head, .timegrid-body { grid-template-columns: 34px repeat(var(--days), minmax(0, 1fr)); }
   .timegrid .week-event { font-size: calc(10px * var(--font-scale, 1)); padding: 2px 3px; }
 }
+
+.task-due-date { flex:0 0 auto; min-width:5ch; white-space:nowrap; font-variant-numeric:tabular-nums; text-align:right; }
