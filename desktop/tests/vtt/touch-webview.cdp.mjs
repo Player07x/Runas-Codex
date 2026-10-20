@@ -62,8 +62,11 @@ const devicePoint = async point => {
     await writeFile(output + '/android-hierarquia.xml', xml)
     const view = xml.match(/<node[^>]*class="(?:android\.webkit\.WebView|com\.getcapacitor\.BridgeWebView)"[^>]*>/)?.[0]
     const bounds = view?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/)
-    if (!bounds) throw new Error('O Android não informou os limites do WebView.')
-    webViewBounds = bounds.slice(1).map(Number)
+    if (!bounds) {
+      const physical = adb('shell', 'wm', 'size').toString().match(/(\d+)x(\d+)/)
+      if (!physical) throw new Error('O Android não informou os limites do WebView.')
+      webViewBounds = [0, 0, Number(physical[1]), Number(physical[2])]
+    } else webViewBounds = bounds.slice(1).map(Number)
     webViewViewport = size
   }
   const [left, top, right, bottom] = webViewBounds
