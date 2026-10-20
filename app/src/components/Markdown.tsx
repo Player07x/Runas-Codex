@@ -18,10 +18,11 @@ import { prepareSource, remarkBlocks } from "../markdown/blocks"
 import { Callout, LayoutCallout, LAYOUT_CALLOUTS } from "../markdown/Callout"
 import { Embed, IMAGE_EXT } from "../markdown/Embed"
 import { EmbedImage } from "../markdown/EmbedImage"
-import { codeBlockFor, registerCodeBlock, type CodeBlockProps } from "../markdown/extensions"
+import { codeBlockFor, registerCodeBlock, TaskCheckboxContext, type CodeBlockProps } from "../markdown/extensions"
 import { MathTex } from "../markdown/MathTex"
 import { MermaidDiagram } from "../markdown/Mermaid"
 import { remarkObsidian } from "../markdown/remark-obsidian"
+import { rehypeTaskIndex, remarkTaskStatus } from "../markdown/task-checkboxes"
 
 /**
  * Leitor de Markdown do Runas-Codex: remark (CommonMark + GFM + matemática) com o plugin do dialeto
@@ -45,8 +46,9 @@ const schema = {
   },
 }
 
-const remarkPlugins = [remarkGfm, remarkMath, remarkBlocks, remarkObsidian]
-const rehypePlugins = [rehypeRaw, [rehypeSanitize, schema], [rehypeHighlight, { detect: false }]] as never
+const remarkPlugins = [remarkGfm, remarkTaskStatus, remarkMath, remarkBlocks, remarkObsidian]
+/** O último numera as caixas de tarefa (para o clique no modo leitura achar a linha); recebe o contador de cada leitor. */
+const rehypePluginsWith = (counter: { total: number }) => [rehypeRaw, [rehypeSanitize, schema], [rehypeHighlight, { detect: false }], rehypeTaskIndex(counter)] as never
 
 /** Títulos da nota (para o sumário ```table-of-contents```) e se os segredos do mestre aparecem. */
 const MarkdownContext = createContext<{ headings: { level: number; text: string }[]; showSecrets: boolean }>({ headings: [], showSecrets: true })
@@ -83,7 +85,7 @@ export function Markdown({ source, space, showSecrets = true, className, context
   return (
     <MarkdownContext.Provider value={context}>
       <div className={`md ${className ?? ""}`}>
-        <MarkdownBody text={prepared} space={space} />
+        <MarkdownBody text={prepared} source={source} space={space} />
       </div>
     </MarkdownContext.Provider>
   )
@@ -129,9 +131,14 @@ function TableOfContents() {
 registerCodeBlock(["mermaid"], ({ code }: CodeBlockProps) => <MermaidDiagram code={code} />)
 registerCodeBlock(["table-of-contents", "toc"], () => <TableOfContents />)
 
-function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
+function MarkdownBody({ text, source, space }: { text: string; source: string; space?: SpaceId }) {
   const set = useNoteSet()
   const { showSecrets } = useContext(MarkdownContext)
+  // Caixas de tarefa clicáveis só quando a tela diz que este é o texto dela (não numa nota embutida).
+  const taskHandler = useContext(TaskCheckboxContext)
+  const tasks = taskHandler?.source === source ? taskHandler : null
+  const counter = useMemo(() => ({ total: 0 }), [])
+  const rehypePlugins = useMemo(() => rehypePluginsWith(counter), [counter])
   // Os dois últimos componentes desenham as tags próprias do `remarkBlocks` (callouts).
   const components = useMemo(() => {
     const find = (target: string, kind: "wiki" | "markdown") => {
@@ -304,6 +311,18 @@ function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
       "runas-callout-title"({ children }: { children?: ReactNode }) {
         return <>{children}</>
       },
+      input({ node, ...props }) {
+        const index = node?.properties?.dataTaskIndex
+        if (props.type !== "checkbox" || typeof index !== "number" || !tasks) return <input {...props} />
+        return (
+          <input
+            type="checkbox"
+            checked={Boolean(props.checked)}
+            aria-label={props.checked ? "Desmarcar tarefa" : "Marcar tarefa"}
+            onChange={() => tasks.onToggle(index, counter.total)}
+          />
+        )
+      },
       table({ children, className }) {
         return (
           <div className="table-wrap">
@@ -312,7 +331,7 @@ function MarkdownBody({ text, space }: { text: string; space?: SpaceId }) {
         )
       },
     }
-  }, [set, space, showSecrets]) as Components
+  }, [set, space, showSecrets, tasks, counter]) as Components
   return (
     <ReactMarkdown
       remarkPlugins={remarkPlugins}

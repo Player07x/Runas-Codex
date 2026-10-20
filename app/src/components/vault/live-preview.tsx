@@ -10,7 +10,7 @@ import { Markdown } from "../Markdown"
 import { NoteSetContext } from "../../lib/note-set"
 import { Embed } from "../../markdown/Embed"
 import { ImageEditContext, type ImageEditApi } from "../../markdown/EmbedImage"
-import { isRenderedCodeBlock } from "../../markdown/extensions"
+import { isRenderedCodeBlock, toggledTaskLines } from "../../markdown/extensions"
 
 /**
  * Live preview do editor, como no Obsidian: fora da linha (ou do trecho) do cursor, a marcação some e o texto aparece
@@ -213,8 +213,14 @@ class CheckboxWidget extends WidgetType {
     box.addEventListener("mousedown", (event) => {
       event.preventDefault()
       if (view.state.readOnly) return
-      view.dispatch({ changes: { from: this.from, to: this.from + 3, insert: this.checked ? "[ ]" : "[x]" } })
+      // A linha inteira passa pelo módulo de tarefas (o Tasks põe a data de conclusão e cria a próxima recorrência).
+      const line = view.state.doc.lineAt(this.from)
+      const insert = toggledTaskLines(line.text).join(view.state.lineBreak)
+      if (insert !== line.text) view.dispatch({ changes: { from: line.from, to: line.to, insert } })
     })
+    // O estado desenhado vem só do texto: sem isto, o clique marca a caixa nativa, e o widget reaproveitado (a próxima
+    // ocorrência de uma recorrência fica no mesmo lugar, ainda `[ ]`) apareceria marcado.
+    box.addEventListener("click", (event) => event.preventDefault())
     return box
   }
 
@@ -422,10 +428,13 @@ function buildInline(view: EditorView): DecorationSet {
           if (mark?.name === "ListMark") {
             const bullet = /^[-*+]$/.test(state.sliceDoc(mark.from, mark.to))
             const space = state.sliceDoc(mark.to, mark.to + 1) === " " ? mark.to + 1 : mark.to
-            if (task && !near(mark.from, task.to)) {
+            // Estados do Tasks com outro caractere (`[/]`, `[-]`…): também são caixa, marcada, como no Obsidian.
+            const custom = task ? null : /^\[([^\]\s])\][ \t]/.exec(state.sliceDoc(space, space + 4))
+            const box = task ? { from: task.from, to: task.to } : custom ? { from: space, to: space + 3 } : null
+            if (box && !near(mark.from, box.to)) {
               ranges.push(hide.range(mark.from, space))
-              const checked = /x/i.test(state.sliceDoc(task.from, task.to))
-              ranges.push(Decoration.replace({ widget: new CheckboxWidget(checked, task.from) }).range(task.from, task.to))
+              const checked = task ? /x/i.test(state.sliceDoc(task.from, task.to)) : true
+              ranges.push(Decoration.replace({ widget: new CheckboxWidget(checked, box.from) }).range(box.from, box.to))
               if (checked) ranges.push(Decoration.line({ class: "cm-lp-task-done" }).range(state.doc.lineAt(node.from).from))
             } else if (bullet && !near(mark.from, mark.to)) {
               ranges.push(Decoration.replace({ widget: new BulletWidget() }).range(mark.from, mark.to))
