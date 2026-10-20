@@ -13,6 +13,7 @@ let browser,guest,androidPlayer
 async function screenshot(client,name){const shot=await client.send('Page.captureScreenshot',{format:'png'});await writeFile(`${output}/${name}.png`,Buffer.from(shot.data,'base64'))}
 async function click(client,selector){await client.until(`document.querySelector(${JSON.stringify(selector)})`);await client.run(`document.querySelector(${JSON.stringify(selector)}).click();true`)}
 async function appButton(text){await app.until(`[...document.querySelectorAll('button')].some(b=>b.textContent.trim()===${JSON.stringify(text)})`);await app.run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(text)}).click();true`)}
+async function waitFrames(client,predicate){for(let n=0;n<100;n++){const message=client.frames.find(predicate);if(message)return message;await sleep(150)}throw new Error('Resposta não chegou pelo WebSocket do navegador')}
 async function waitMessage(socket,predicate){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{socket.removeEventListener('message',on);reject(new Error('Mensagem não chegou'))},12000);function on(event){const value=JSON.parse(event.data);if(predicate(value)){clearTimeout(timer);socket.removeEventListener('message',on);resolve(value)}}socket.addEventListener('message',on)})}
 try {
   await app.until('window.Capacitor?.Plugins?.RunasVault')
@@ -47,20 +48,22 @@ try {
   check('Range retorna somente o trecho',range.status===206 && (await range.arrayBuffer()).byteLength===4 && range.headers.get('content-range')===`bytes 2-5/${fixture.imageBytes}`)
   check('origem externa é recusada',(await fetch(`${base}/seat/join?k=${key}`,{method:'POST',headers:{Origin:'https://externo.invalid','Content-Type':'application/json'},body:JSON.stringify({code})})).status===403)
   browser=await connectDevtools(chromeEndpoint)
-  await browser.send('Page.addScriptToEvaluateOnNewDocument',{source:`window.__roomMessages=[];window.__NativeWebSocket=WebSocket;window.WebSocket=class extends window.__NativeWebSocket{constructor(...args){super(...args);window.__roomSocket=this;this.addEventListener('message',event=>window.__roomMessages.push(JSON.parse(event.data)))}}`})
   await browser.send('Page.navigate',{url:playerUrl})
   await browser.until(`document.querySelector('.player-lobby input')`)
   await browser.run(`(()=>{const input=document.querySelector('.player-lobby input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(code)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));return true})()`)
   await click(browser,'.player-lobby button[type="submit"]')
-  await browser.until(`window.__roomMessages?.some(m=>m.type==='seat-status' && m.seat.slotId==='player-1')`)
+  await browser.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`)
+  await browser.run(`window.__testWire=new WebSocket('ws://127.0.0.1:30000/socket?k=${key}');true`)
+  await browser.until(`window.__testWire?.readyState===WebSocket.OPEN`)
   await browser.until(`document.querySelector('canvas')`)
   check('jogador do navegador autenticado',true)
-  check('projeção não revela token nem parede privados',!await browser.run(`JSON.stringify(window.__roomMessages).includes('SEGREDO-X7') || JSON.stringify(window.__roomMessages).includes('"wall"')`))
-  await browser.run(`window.__roomSocket.send(JSON.stringify({type:'move',tokenId:'hero',x:250,y:250}));true`)
-  await browser.until(`window.__roomMessages.some(m=>m.type==='move-result' && m.ok)`)
+  check('projeção não revela token nem parede privados',!JSON.stringify(browser.frames).includes('SEGREDO-X7') && !JSON.stringify(browser.frames).includes('"wall"'))
+  browser.frames.length=0
+  await browser.run(`window.__testWire.send(JSON.stringify({type:'move',tokenId:'hero',x:250,y:250}));true`)
+  await waitFrames(browser,m=>m.type==='move-result' && m.ok)
   check('movimento autorizado confirmado',true)
-  await browser.run(`window.__roomSocket.send(JSON.stringify({type:'move',tokenId:'hero',x:750,y:250}));true`)
-  await browser.until(`window.__roomMessages.some(m=>m.type==='move-result' && !m.ok && /parede/.test(m.reason))`)
+  await browser.run(`window.__testWire.send(JSON.stringify({type:'move',tokenId:'hero',x:750,y:250}));true`)
+  await waitFrames(browser,m=>m.type==='move-result' && !m.ok && /parede/.test(m.reason))
   check('parede bloqueia movimento',true)
   await screenshot(browser,'jogador-no-navegador')
   guest=new WebSocket(`ws://127.0.0.1:30000/socket?k=${key}`)
@@ -69,8 +72,9 @@ try {
   // A autoridade continua respondendo sem a Activity visível e com a tela apagada.
   adb('shell','input','keyevent','3');adb('shell','input','keyevent','223');await sleep(3000)
   const pong=waitMessage(guest,m=>m.type==='pong');guest.send('{"type":"ping"}');await pong
-  await browser.run(`window.__roomMessages.length=0;window.__roomSocket.send(JSON.stringify({type:'move',tokenId:'hero',x:350,y:350}));true`)
-  await browser.until(`window.__roomMessages.some(m=>m.type==='move-result' && m.ok)`)
+  browser.frames.length=0
+  await browser.run(`window.__testWire.send(JSON.stringify({type:'move',tokenId:'hero',x:350,y:350}));true`)
+  await waitFrames(browser,m=>m.type==='move-result' && m.ok)
   check('autoridade ativa em segundo plano e com tela apagada',true)
   const services=adb('shell','dumpsys','activity','services','dev.runas.codex')
   check('serviço em primeiro plano ativo',services.includes('RoomService') && /isForeground=true/.test(services))
@@ -81,7 +85,7 @@ try {
   adb('shell','input','keyevent','224');adb('shell','input','keyevent','82');adb('shell','am','start','-n','dev.runas.codex/.MainActivity')
   await app.until('document.hasFocus()')
   await app.run(`[...document.querySelectorAll('.player-seats button')].find(b=>b.textContent.includes('Regenerar')).click();true`)
-  await browser.until(`window.__roomSocket.readyState===WebSocket.CLOSED`)
+  await browser.until(`window.__testWire.readyState===WebSocket.CLOSED`)
   check('regenerar revoga conexão anterior',true)
   guest.close();guest=null
   // Entrar Sala abre o jogador no navegador do próprio aparelho, com a autoridade em segundo plano.
@@ -102,8 +106,8 @@ try {
 } catch(error) {
   result.errors.push(error.stack ?? String(error))
   if(browser)try{
-    result.browser=await browser.run(`({url:location.href,ready:document.readyState,body:document.body?.innerText,messages:window.__roomMessages,socket:window.__roomSocket?.readyState})`)
-    result.browserErrors=browser.errors;result.network=browser.network
+    result.browser=await browser.run(`({url:location.href,ready:document.readyState,body:document.body?.innerText,socket:window.__testWire?.readyState})`)
+    result.browserErrors=browser.errors;result.network=browser.network;result.frames=browser.frames
     result.cookies=(await browser.send('Network.getCookies')).cookies.map(({name,domain,path,sameSite,secure})=>({name,domain,path,sameSite,secure}))
     await screenshot(browser,'falha-jogador')
   }catch{}

@@ -7,7 +7,9 @@ import { normalizeRuler, projectScene, type PlayerProjection, type PlayerRuler }
 import type { PlayerTransport, PlayerTransportOptions, JoinedPlayerSeat, PlayerSeatConnection } from "./transport"
 import type { PlayerWireMessage } from "./player"
 import type { DocumentDatabase } from "./database"
-export interface RoomStore { openWorld: { summary: { path: string }; database: DocumentDatabase } | null }
+export interface RoomStore {
+  openWorld: { summary: { path: string }; database: DocumentDatabase } | null
+}
 import type { VisionService } from "./vision-service"
 import type { AudioState } from "./audio"
 import type { DocumentChange as Change } from "./ipc"
@@ -16,7 +18,6 @@ import { normalizeMoveRequest, validatePlayerMove } from "./player-moves"
 import { PlayerSession, normalizeSeatCount, randomSecret } from "./player-session"
 
 const DEFAULT_PORT = 30000
-
 
 function validPort(value: number): number {
   if (!Number.isInteger(value) || value < 1 || value > 65535) throw new Error("A porta precisa estar entre 1 e 65535.")
@@ -53,15 +54,26 @@ export class RoomAuthority {
   private lastProjection: PlayerProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
   private onStateChange: (state: PlayerState) => void
 
-  constructor(private readonly store: RoomStore, makeTransport: (options: PlayerTransportOptions) => PlayerTransport, onStateChange: (state: PlayerState) => void, private readonly vision: VisionService | null = null, private readonly localAddress: () => string = () => "127.0.0.1") {
+  constructor(
+    private readonly store: RoomStore,
+    makeTransport: (options: PlayerTransportOptions) => PlayerTransport,
+    onStateChange: (state: PlayerState) => void,
+    private readonly vision: VisionService | null = null,
+    private readonly localAddress: () => string = () => "127.0.0.1",
+  ) {
     this.onStateChange = onStateChange
     this.server = makeTransport({
       worldPath: () => this.store.openWorld?.summary.path ?? null,
       projection: () => this.lastProjection,
       allowedAssets: () => [...this.lastProjection.assets, ...(this.audioEnabled ? this.audio.sounds.map((sound) => sound.audio) : [])],
-      snapshot: seat => this.snapshotMessage(seat),
-      onSpectators: (spectators) => { this.emit(spectators) },
-      onPlayers: (players) => { this.playerCount = players; this.emit() },
+      snapshot: (seat) => this.snapshotMessage(seat),
+      onSpectators: (spectators) => {
+        this.emit(spectators)
+      },
+      onPlayers: (players) => {
+        this.playerCount = players
+        this.emit()
+      },
       joinSeat: (code) => this.joinSeat(code),
       authenticateSeat: (token) => this.authenticateSeat(token),
       onClientMessage: (message, seat) => this.handleClientMessage(message, seat),
@@ -70,7 +82,23 @@ export class RoomAuthority {
 
   state(): PlayerState {
     const localUrl = this.enabled && this.key ? `http://${this.localAddress()}:${this.port}/?k=${this.key}` : null
-    return { enabled: this.enabled, port: this.port, key: this.key, localUrl, publicUrl: this.publicUrl, tunnel: this.tunnel, tunnelLost: this.tunnelLost, sceneId: this.sceneId, audio: this.audioEnabled, moves: this.movesEnabled, bars: this.bars, spectators: this.server.spectatorCount, players: this.playerCount, sessionId: this.session?.id ?? null, seats: this.seatStates() }
+    return {
+      enabled: this.enabled,
+      port: this.port,
+      key: this.key,
+      localUrl,
+      publicUrl: this.publicUrl,
+      tunnel: this.tunnel,
+      tunnelLost: this.tunnelLost,
+      sceneId: this.sceneId,
+      audio: this.audioEnabled,
+      moves: this.movesEnabled,
+      bars: this.bars,
+      spectators: this.server.spectatorCount,
+      players: this.playerCount,
+      sessionId: this.session?.id ?? null,
+      seats: this.seatStates(),
+    }
   }
 
   /** URL usada pela BrowserWindow local; a página é a mesma dos espectadores. */
@@ -100,9 +128,9 @@ export class RoomAuthority {
   }
 
   async stop(): Promise<void> {
-    this.collaboration.command({type:"prompt",prompt:null})
-    this.collaboration.command({type:"handout",handout:null})
-    this.collaboration.command({type:"ack-safety"})
+    this.collaboration.command({ type: "prompt", prompt: null })
+    this.collaboration.command({ type: "handout", handout: null })
+    this.collaboration.command({ type: "ack-safety" })
     await this.server.stop()
     this.enabled = false
     this.key = null
@@ -188,11 +216,19 @@ export class RoomAuthority {
     this.emit()
   }
 
-  get currentPublicUrl(): string | null { return this.publicUrl }
+  get currentPublicUrl(): string | null {
+    return this.publicUrl
+  }
 
-  get currentPort(): number { return this.port }
-  get currentKey(): string | null { return this.key }
-  get isEnabled(): boolean { return this.enabled }
+  get currentPort(): number {
+    return this.port
+  }
+  get currentKey(): string | null {
+    return this.key
+  }
+  get isEnabled(): boolean {
+    return this.enabled
+  }
 
   setScene(sceneId: string | null): void {
     this.sceneId = typeof sceneId === "string" && sceneId ? sceneId : null
@@ -243,7 +279,10 @@ export class RoomAuthority {
     if (!this.enabled) return
     // Rebuild from the database instead of forwarding `change`: projection is
     // the security boundary, including for bridge writes and deletes.
-    if (change.kind === "put" && change.document.type === "log-entry") { this.publishFloat(change.document.data as LogData); return }
+    if (change.kind === "put" && change.document.type === "log-entry") {
+      this.publishFloat(change.document.data as LogData)
+      return
+    }
     // Token atribuído, reatribuído ou apagado: os assentos acompanham.
     if ((change.kind === "put" && change.document.type === "token") || change.kind === "delete") {
       this.attachAssignedTokens()
@@ -261,10 +300,16 @@ export class RoomAuthority {
 
   private refreshProjection(): void {
     const database = this.store.openWorld?.database
-    if (!database) { this.lastProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }; return }
+    if (!database) {
+      this.lastProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
+      return
+    }
     const targetId = this.sceneId ?? this.table.sceneId
     const scene = targetId ? database.get(targetId) : null
-    if (!scene || scene.type !== "scene") { this.lastProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }; return }
+    if (!scene || scene.type !== "scene") {
+      this.lastProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
+      return
+    }
     const sceneData = scene.data as SceneData
     this.lastProjection = projectScene({
       scene: scene as WorldDocument<SceneData>,
@@ -285,7 +330,9 @@ export class RoomAuthority {
   }
 
   /** Cena cujos sons do mapa são ouvidos: a fixada na transmissão ou a aberta pelo mestre. */
-  get audibleSceneId(): string | null { return this.sceneId ?? this.table.sceneId }
+  get audibleSceneId(): string | null {
+    return this.sceneId ?? this.table.sceneId
+  }
 
   setAudio(state: AudioState): void {
     this.audio = state
@@ -304,10 +351,16 @@ export class RoomAuthority {
 
   /** Único pedido que um espectador pode fazer: mover um token "Jogador". */
   handleClientMessage(value: unknown, seat?: PlayerSeatConnection | null): PlayerWireMessage | null {
-    if(value && typeof value === "object" && ["reply","safety"].includes(String((value as {type?:unknown}).type))) {
-      const requestType=(value as {type:string}).type === "safety"?"safety" as const:"reply" as const
-      try { if(!this.enabled)throw new Error("Sala encerrada.");this.collaboration.reply(value,seat??null,randomSecret(12));this.server.publishTo(client=>({type:"collaboration",collaboration:this.collaboration.publicSnapshot(client?.slotId)}));return {type:"collaboration-result",requestType,ok:true} }
-      catch(e){return {type:"collaboration-result",requestType,ok:false,reason:e instanceof Error?e.message:String(e)}}
+    if (value && typeof value === "object" && ["reply", "safety"].includes(String((value as { type?: unknown }).type))) {
+      const requestType = (value as { type: string }).type === "safety" ? ("safety" as const) : ("reply" as const)
+      try {
+        if (!this.enabled) throw new Error("Sala encerrada.")
+        this.collaboration.reply(value, seat ?? null, randomSecret(12))
+        this.server.publishTo((client) => ({ type: "collaboration", collaboration: this.collaboration.publicSnapshot(client?.slotId) }))
+        return { type: "collaboration-result", requestType, ok: true }
+      } catch (e) {
+        return { type: "collaboration-result", requestType, ok: false, reason: e instanceof Error ? e.message : String(e) }
+      }
     }
     const request = normalizeMoveRequest(value)
     if (!request) return null
@@ -321,8 +374,11 @@ export class RoomAuthority {
     // optional parameter keeps the pure unit-test entry point useful; the
     // PlayerServer always supplies null for spectators and an identity for
     // authenticated players.
-    if (seat !== undefined && (!seat || result.token.data.playerSlotId !== seat.slotId)) return reject("Esse token pertence a outro jogador.")
-    this.commit(putDocument(database, { id: result.token.id, type: "token", parentId: result.token.parentId, data: result.token.data }).change)
+    if (seat !== undefined && (!seat || result.token.data.playerSlotId !== seat.slotId))
+      return reject("Esse token pertence a outro jogador.")
+    this.commit(
+      putDocument(database, { id: result.token.id, type: "token", parentId: result.token.parentId, data: result.token.data }).change,
+    )
     return { type: "move-result", tokenId: request.tokenId, ok: true }
   }
 
@@ -340,17 +396,25 @@ export class RoomAuthority {
   private publishSnapshot(): void {
     this.refreshProjection()
     if (this.ruler && this.ruler.sceneId !== this.lastProjection.scene?.id) this.ruler = null
-    this.server.publishTo(seat=>this.snapshotMessage(seat))
+    this.server.publishTo((seat) => this.snapshotMessage(seat))
   }
 
-  private snapshotMessage(seat?:PlayerSeatConnection|null): PlayerWireMessage {
-    return { type: "snapshot", collaboration:this.collaboration.publicSnapshot(seat?.slotId), projection: this.lastProjection, ruler: this.ruler, audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null, moves: this.movesEnabled }
+  private snapshotMessage(seat?: PlayerSeatConnection | null): PlayerWireMessage {
+    return {
+      type: "snapshot",
+      collaboration: this.collaboration.publicSnapshot(seat?.slotId),
+      projection: this.lastProjection,
+      ruler: this.ruler,
+      audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null,
+      moves: this.movesEnabled,
+    }
   }
 
-  collaborationCommand(value:unknown) {
-    if(!this.enabled && !(value && typeof value === "object" && (value as {type?:unknown}).type === "consume-diary"))throw new Error("Abra uma sala do VTT para iniciar esta atividade.")
-    const result=this.collaboration.command(value)
-    this.server.publishTo(seat=>({type:"collaboration",collaboration:this.collaboration.publicSnapshot(seat?.slotId)}))
+  collaborationCommand(value: unknown) {
+    if (!this.enabled && !(value && typeof value === "object" && (value as { type?: unknown }).type === "consume-diary"))
+      throw new Error("Abra uma sala do VTT para iniciar esta atividade.")
+    const result = this.collaboration.command(value)
+    this.server.publishTo((seat) => ({ type: "collaboration", collaboration: this.collaboration.publicSnapshot(seat?.slotId) }))
     return result
   }
 

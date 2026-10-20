@@ -1,8 +1,14 @@
 import type { AssetPath } from "./scene"
 import type { PlayerProjection, PlayerWireMessage } from "./player"
 
-export interface PlayerSeatConnection { slotId: string; label: string }
-export interface JoinedPlayerSeat { seat: PlayerSeatConnection; token: string }
+export interface PlayerSeatConnection {
+  slotId: string
+  label: string
+}
+export interface JoinedPlayerSeat {
+  seat: PlayerSeatConnection
+  token: string
+}
 export interface PlayerTransportOptions {
   worldPath(): string | null
   projection(): PlayerProjection
