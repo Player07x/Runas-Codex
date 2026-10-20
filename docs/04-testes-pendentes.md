@@ -586,3 +586,11 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - Na direita, conferir Referências → Leitura → Editar → Código → Ações da nota, com o menu de ações flutuante.
 - Conferir os cartões de 40 px e o tamanho anterior das categorias. A seta e dois cliques nas categorias recolhem/expandem os cartões; recarregar mantém a escolha.
 - Confirmar conforto dos comandos compactos no aparelho físico, conforme tamanho pedido na revisão.
+
+## X7 — sala hospedada no Android (2026-10-20)
+
+- Conferir em aparelho físico uma sessão na mesma rede Wi-Fi e no hotspot: abrir mesa, ligar transmissão, entregar um código por jogador e conectar um computador e outro celular.
+- Mover tokens atribuídos, testar paredes, névoa, áudio e atividades; minimizar o app e apagar a tela durante a sessão. A notificação deve mostrar o link/código da sala e permitir encerrá-la.
+- Regenerar/limpar assento deve desconectar a sessão anterior; trocar de cofre/mesa e remover o app dos recentes deve encerrar a sala. Depois de trocar de rede, religar a transmissão atualiza o link.
+- Conferir a sala num cofre escolhido pelo SAF, incluindo mapa e áudio com avanço na faixa. A importação de assets no celular respeita o limite de 50 MB da ponte existente.
+- Automação: `android-room` exige ingresso pelo Chromium do job, movimentos autorizados e recusados, Range, proteção de dados privados, persistência, segundo plano/tela apagada, revogação e encerramento antes de publicar APK.

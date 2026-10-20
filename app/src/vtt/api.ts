@@ -1,3 +1,4 @@
+import { platform } from "../platform"
 import { CollaborationRoom } from "./shared/collaboration"
 import { assetUrl, type DocumentChange, type PlayerDisplay, type PlayerState, type VttApi } from "./shared/ipc"
 import { normalizeDocumentData, type AssetPath } from "./shared/scene"
@@ -128,12 +129,17 @@ const remote = window.runasCodex?.vtt ? null : masterConnection()
 export const remoteMaster: RemoteVttApi | null = remote ? createRemoteVttApi(remote) : null
 
 /** No desktop, a ponte do preload; na mesa do mestre remoto, o computador da sala; no navegador, a prévia em memória. */
-export const vtt: VttApi = window.runasCodex?.vtt ?? remoteMaster ?? createBrowserPreviewApi()
-export const isBrowserPreview = !window.runasCodex?.vtt && !remoteMaster
+export const vtt: VttApi = window.runasCodex?.vtt ?? remoteMaster ?? platform.vtt ?? createBrowserPreviewApi()
+export const isAndroidRoom = platform.kind === "capacitor" && !remoteMaster
+export const isBrowserPreview = !window.runasCodex?.vtt && !remoteMaster && !platform.vtt
 
 /** URL de um asset da mesa para `<img>` e texturas. */
 export function resolveAssetUrl(path: AssetPath): string {
   if (playerAssetEndpoint) return `${playerAssetEndpoint.base}${path}?k=${encodeURIComponent(playerAssetEndpoint.key)}`
   if (remote) return remoteAssetUrl(remote, path)
+  if(platform.kind === "capacitor") {
+    const id=sessionStorage.getItem("runas-codex:mesa-pasta")
+    if(id)return platform.fileUrl(`${id}/assets/${path}`) ?? ""
+  }
   return previewAssets.get(path) ?? assetUrl(path)
 }

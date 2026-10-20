@@ -170,6 +170,11 @@ public class RunasVaultPlugin extends Plugin {
         return s;
     }
 
+    /** A sala recebe somente a área confinada das mesas, com a mesma permissão de gravação. */
+    public VaultFs roomWorlds() throws IOException {
+        return VaultTransfer.worlds(writableStore(), new File(getContext().getFilesDir(), "vault-transactions"), true);
+    }
+
     private static JSObject entryJson(VaultStore.Entry e) {
         JSObject o = new JSObject();
         o.put("path", e.path);
