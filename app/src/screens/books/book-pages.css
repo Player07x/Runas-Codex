@@ -54,11 +54,3 @@
 .book-print .embed-note { padding: 2mm; border-radius: 0; }
 .book-paper.tema-minimalista .callout { box-shadow: none; border-width: 0 0 0 2px; background: transparent; }
 .book-paper.tema-moderno .callout { border-left: 3px solid var(--accent); }
-
-:is(.book-print,.books-editor) .runas-colunas-1 { column-count:1; }
-:is(.book-print,.books-editor) .runas-colunas-2 { column-count:2; }
-:is(.book-print,.books-editor) .runas-colunas-3 { column-count:3; }
-:is(.book-print,.books-editor) .runas-colunas-4 { column-count:4; }
-:is(.book-print,.books-editor) :is(.runas-colunas-1,.runas-colunas-2,.runas-colunas-3,.runas-colunas-4) { column-gap:6mm; column-fill:balance; widows:2; orphans:2; }
-:is(.book-print,.books-editor) :is(.runas-colunas-1,.runas-colunas-2,.runas-colunas-3,.runas-colunas-4)>:is(h1,h2,h3,h4) { break-after:avoid; }
-@media(max-width:600px) { .books-editor .note-editor .md :is(.runas-colunas-2,.runas-colunas-3,.runas-colunas-4) { column-count:1; } }

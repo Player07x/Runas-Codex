@@ -1,4 +1,3 @@
-import { openDocumentExport } from "../../components/export/ExportDialog"
 import { useMemo, useState } from "react"
 import { ArrowLeft, Folder, Grid2X2, List, Plus, Search } from "lucide-react"
 import { articleCardFields, categoryFacets, categoryKind, categoryNotes, categorySubfolders, filterCategory } from "../../core/wiki-category"
@@ -28,7 +27,6 @@ export function WikiCategory({ path }: { path: string }) {
   return <div className="page wiki-category-page">
     <a className="wiki-category-back" href={href("/wiki")}><ArrowLeft size={16}/> Voltar para a Wiki</a>
     <header className="page-head"><div><span className="eyebrow">{wiki!.name} · Categoria{players ? " · Visão dos jogadores" : ""}</span><h1 className="page-title row">{kind ? <Icon size={25}/> : <Folder size={25}/>} {name}</h1><p className="small muted">{notes.length} {notes.length === 1 ? "artigo" : "artigos"}</p></div>
-      <button className="btn" onClick={() => openDocumentExport({ paths: notes.map(note => note.path), title: name, players })}>Exportar categoria…</button>
       {!players && <button className="btn primary" disabled={vault.info?.readOnly} onClick={() => setCreating(true)}><Plus size={16}/> Novo {kind?.label.toLocaleLowerCase("pt-BR") ?? "artigo"}</button>}
     </header>
     <section className="wiki-category-controls" aria-label="Busca e organização da categoria">

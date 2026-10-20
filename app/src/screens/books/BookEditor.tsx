@@ -1,14 +1,12 @@
-import { ChevronLeft, Eye, FileDown, LayoutDashboard, Maximize2, Minimize2, PenLine, SlidersHorizontal } from "lucide-react"
-import { lazy, Suspense, useEffect, useCallback, useRef, useState } from "react"
+import { lazy, Suspense, useCallback, useRef, useState } from "react"
 import { countWords, moveBookItem, readBook } from "../../core/books"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteView } from "../../components/vault/NoteView"
-import { navigate } from "../../lib/router"
+import { href, navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
-import { BookFormatters } from "./BookFormatters"
-import { ResizablePanel } from "../../components/ResizablePanel"
+import { FORMATTER_GROUPS } from "./formatters"
 
 import { BookWritingTools } from "./BookWritingTools"
 
@@ -20,17 +18,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const [selected, setSelected] = useState<string | undefined>(() => structure.items.find((i) => i.note)?.note?.path)
   const [view, setView] = useState("escrever")
   const [focus,setFocus] = useState(false)
-  const [chapterHeader, setChapterHeader] = useState<HTMLDivElement | null>(null)
-  const [referenceHeader, setReferenceHeader] = useState<HTMLDivElement | null>(null)
-  const [commandHeader, setCommandHeader] = useState<HTMLDivElement | null>(null)
-  const [focusHeader, setFocusHeader] = useState<HTMLDivElement | null>(null)
-  useEffect(() => {
-    if (!focus) return
-    document.body.classList.add("book-focus-active")
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setFocus(false) }
-    window.addEventListener("keydown", escape)
-    return () => { document.body.classList.remove("book-focus-active"); window.removeEventListener("keydown", escape) }
-  }, [focus])
+  const [typewriter,setTypewriter] = useState(false)
   const [preview, setPreview] = useState(false)
   const [draft, setDraft] = useState<{ path: string; text: string }>()
   const onDraftChange = useCallback((text: string) => { if (selected) setDraft({ path: selected, text }) }, [selected])
@@ -65,20 +53,24 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const open = (path: string) => { setSelected(path); setView("escrever") }
   return <div className={`books-editor books-view-${view} ${focus ? "books-focus" : ""}`}>
     <header className="books-header">
-      {focus && <div className="book-focus-navigation" ref={setFocusHeader} />}
-      <nav className="row-wrap book-view-tabs" aria-label="Visão do livro"><button className="btn book-back" aria-label="Voltar" title="Voltar aos livros" onClick={() => navigate("/livros")}><ChevronLeft size={15}/></button><div className="book-chapter-control" ref={setChapterHeader} />{[["escrever", "Escrever", PenLine], ["cortica", "Cortiça", LayoutDashboard], ["previa", "Prévia", Eye]].map(([value, label, Icon]) => {
-        const ViewIcon = Icon as typeof PenLine
-        return <button key={String(value)} className="btn" aria-label={String(label)} title={String(label)} aria-pressed={view === value} onClick={() => { setView(String(value)); setPreview(value === "previa") }}><ViewIcon size={15}/><span>{String(label)}</span></button>
-      })}</nav>
-      <button className="btn primary book-focus-toggle" aria-label={focus ? "Sair do Foco" : "Modo foco"} title={focus ? "Sair do Foco" : "Modo foco"} aria-pressed={focus} onClick={() => { setFocus(!focus); setView("escrever"); setPreview(false) }}>{focus ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}<span>{focus ? "Sair do Foco" : "Modo foco"}</span></button>
-      <button className="btn book-metadata-button" aria-label="Metadados" title="Metadados" onClick={() => navigate(vaultRoute(book.path))}><SlidersHorizontal size={17}/><span>Metadados</span></button>
-      <button className="btn book-export-button" aria-label="Exportar" title="Exportar" onClick={() => { setPreview(true); setView("previa") }}><FileDown size={17}/><span>Exportar</span></button>
+      <a className="btn" href={href("/livros")}>Livros</a>
+      <strong>{book.name}</strong>
+      <span>{structure.words.toLocaleString("pt-BR")} palavras</span><select className="select mobile-space-nav" aria-label="Visão do livro" value={view} onChange={event => { setView(event.target.value); if (event.target.value === "previa") setPreview(true) }}>{[["estrutura","Estrutura"],["escrever","Escrever"],["cortica","Cortiça"],["previa","Prévia"]].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><nav className="row-wrap book-view-tabs" aria-label="Visão do livro">{[["estrutura", "Estrutura"], ["escrever", "Escrever"], ["cortica", "Cortiça"], ["previa", "Prévia"]].map(([value, label]) => <button key={value} className="btn" aria-pressed={view === value} onClick={() => { setView(value!); if (value === "previa") setPreview(true) }}>{label}</button>)}</nav>
+      <button className="btn book-writing-option book-focus-toggle" aria-pressed={focus} onClick={()=>setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
+      <button className="btn book-writing-option" aria-pressed={typewriter} onClick={()=>setTypewriter(!typewriter)}>Máquina de escrever</button>
+      <button className="btn book-writing-option" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+      <details className="book-mobile-controls"><summary>Opções de escrita</summary><div className="row-wrap">
+        <button className="btn" aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? "Sair do foco" : "Modo foco"}</button>
+        <button className="btn" aria-pressed={typewriter} onClick={() => setTypewriter(!typewriter)}>Máquina de escrever</button>
+        <button className="btn" onClick={() => navigate(vaultRoute(book.path))}>Metadados do livro</button>
+      </div></details>
+      <button className="btn" onClick={() => { setPreview(true); setView("previa") }}>Exportar…</button>
     </header>
     {vault.info?.readOnly && <p className="proto-note">Somente leitura. Libere a gravação em Configurações › Cofre.</p>}
     {(error || structure.error) && <p role="alert">{error || structure.error}</p>}
     <span className="books-announcement" role="status">{announcement}</span>
     <div className={`books-layout ${preview ? "has-preview" : ""}`}>
-      <ResizablePanel id="book-binder" label="Capítulos" side="left" width={250} controlsTarget={chapterHeader} defaultCollapsed reveal={creating} className="books-binder">
+      <aside className="books-binder" aria-label="Estrutura do livro">
         <h2>Estrutura</h2>
         <button className="btn primary" aria-label="Criar capítulo" disabled={locked} onClick={() => setCreating(!creating)}>Criar capítulo, parte ou seção</button>
         {creating && <form className="stack" onSubmit={(e) => {
@@ -108,7 +100,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
           <button className="books-item" onClick={() => open(n.path)}>{n.name}</button>
           <button className="btn" disabled={locked} onClick={() => void run(() => insertNote(n.path))} aria-label={`Incluir ${n.name}`}>Incluir</button>
         </div>)}
-      </ResizablePanel>
+      </aside>
       <main className="books-main">
         {view === "cortica" ? <div className="books-cork" aria-label="Cortiça">{structure.items.map((item, i) => <article className="books-cork-card" data-book-position={i} key={`${item.link}:${structure.items.slice(0, i).filter((other) => other.link === item.link).length}`}>
           <button className="btn books-drag" disabled={locked} aria-label={`Arrastar ${item.note?.name ?? item.link}`} onPointerDown={(e) => { drag.current = i; e.currentTarget.setPointerCapture(e.pointerId) }} onPointerCancel={() => { drag.current = null }} onPointerUp={(e) => {
@@ -131,13 +123,14 @@ export function BookEditor({ book }: { book: IndexedNote }) {
             <span>{countWords(current.text)} palavras</span>
             <button className="btn" onClick={() => navigate(vaultRoute(current.path))}>Propriedades e resumo</button>
           </div>
-          <NoteView hideBackControl={!focus} onTrashed={() => setSelected(structure.items.find(item => item.note && item.note.path !== current.path)?.note?.path)} focusHeader={focus ? focusHeader : commandHeader} formatSelection sidebar={focus ? undefined : insert => <ResizablePanel id="book-tools" label="Referências" width={280} controlsTarget={referenceHeader} defaultCollapsed className="book-tools-panel"><BookWritingTools book={book} draft={draft} insert={insert} /></ResizablePanel>} onDraftChange={onDraftChange} key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => { if (focus) setFocus(false); else navigate("/livros") }} onCreate={(target) => { setName(target); setCreating(true); setView("escrever") }} onTag={() => navigate("/notas")} toolbar={(insert) => <BookFormatters insert={insert} />} />
+          <NoteView sidebar={insert => <BookWritingTools book={book} draft={draft} insert={insert} />} typewriter={typewriter} onDraftChange={onDraftChange} key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => setView("estrutura")} onCreate={(target) => { setName(target); setCreating(true); setView("estrutura") }} onTag={() => navigate("/notas")} toolbar={(insert) => <div className="books-formatters">
+            <label>Inserir formatador<select className="input" aria-label="Inserir formatador" value="" onChange={(e) => { if (e.target.value) insert(e.target.value) }}>
+              <option value="">Escolha uma formatação…</option>{FORMATTER_GROUPS.map((group) => <optgroup key={group.title} label={group.title}>{group.items.map((f) => <option key={f.label} value={f.syntax}>{f.label}</option>)}</optgroup>)}</select>
+            </label>
+          </div>} />
         </> : <p className="page">Selecione uma nota na estrutura. Links quebrados podem ser corrigidos nos metadados do livro.</p>}
       </main>
       {preview && <Suspense fallback={<p>Carregando prévia…</p>}><BookPreview book={book} draft={draft} onClose={() => { setPreview(false); setView("escrever") }} /></Suspense>}
-      <div className="book-commandbar" ref={setCommandHeader} role="toolbar" aria-label="Ações e modos da nota" aria-orientation="vertical"><div className="book-reference-control" ref={setReferenceHeader} /></div>
     </div>
   </div>
 }
-
-import "./book-pages.css"

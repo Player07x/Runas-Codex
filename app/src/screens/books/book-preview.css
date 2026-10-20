@@ -49,7 +49,3 @@
   body.book-preview-open .content.fill { display: block !important; position: static; height: auto !important; overflow: visible !important; padding: 0; margin: 0; }
   body.book-preview-open .shell > nav, body.book-preview-open .main > header { display: none !important; }
 }
-@media print {
- body.book-preview-open .book-preview-panel { display:block!important; position:static!important; overflow:visible!important; height:auto!important; }
- body.book-preview-open .panel-controls,body.book-preview-open .panel-edge { display:none!important; }
-}

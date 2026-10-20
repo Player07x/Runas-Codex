@@ -29,9 +29,11 @@ interface ViewProps {
   onPickDay(day: Date): void
   onPick(occurrence: Occurrence): void
   onCreate(day: Date, time?: string): void
+  /** Resumo do tempo livre do dia (ex.: "6 h livres"), quando configurado. */
+  freeLabel?(day: Date): string | null
 }
 
-export function MonthView({ month, occurrences, today, selectedDay, selectedKey, onPickDay, onPick, onCreate }: ViewProps & { month: Date }) {
+export function MonthView({ month, occurrences, today, selectedDay, selectedKey, onPickDay, onPick, onCreate, freeLabel }: ViewProps & { month: Date }) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1)
   const start = addDays(first, -first.getDay())
   const days = Array.from({ length: 42 }, (_, i) => addDays(start, i))
@@ -56,6 +58,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
             data-day={isoDate(day)}
           >
             <span className="day-number">{day.getDate()}</span>
+            {freeLabel?.(day) && <span className="cell-free tiny" title="Tempo livre no dia">{freeLabel(day)}</span>}
             <span className="cell-events">
               {items.slice(0, 3).map((o) => (
                 <button
@@ -120,7 +123,7 @@ function layoutDay(list: Occurrence[], day: Date): { occurrence: Occurrence; top
 }
 
 /** Semana ou dia: grade de horas, com os eventos de dia inteiro em cima. */
-export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCreate, onPickDay }: ViewProps & { days: Date[] }) {
+export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCreate, onPickDay, freeLabel }: ViewProps & { days: Date[] }) {
   const scroller = useRef<HTMLDivElement>(null)
   useEffect(() => {
     // Começa às 7h (ou na hora atual, se for depois).
@@ -138,6 +141,7 @@ export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCrea
               <button className="ghost-link" onClick={() => onPickDay(day)}>
                 {WEEKDAYS[day.getDay()]} <strong>{day.getDate()}</strong>
               </button>
+              {freeLabel?.(day) && <span className="cell-free tiny" title="Tempo livre no dia">{freeLabel(day)}</span>}
               {allDay.map((o) => (
                 <button key={o.key} className={`event-pill ${o.key === selectedKey ? "active" : ""}`} style={{ ["--ev" as string]: eventColor(o.event) }} onClick={() => onPick(o)}>
                   {o.event.title}

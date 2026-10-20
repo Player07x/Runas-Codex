@@ -1,4 +1,3 @@
-import { createAndroidVttApi } from "./android-room"
 import { createAndroidUpdates } from "./android-updates"
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core"
 import type { BackupInfo, Platform, RoomHostInfo, VaultEntry, VaultInfo } from "./platform"
@@ -94,13 +93,13 @@ export function createCapacitorPlatform(): Platform {
   const forget = (path: string) => {
     for (const key of sources.keys()) if (key === path || key.startsWith(path + "/")) sources.delete(key)
   }
-  const result: Platform = {
+  return {
     kind: "capacitor",
     ...createAndroidUpdates(),
     vault: async () => remember((await RunasVault.current()).vault),
-    chooseVault: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.choose()).vault) },
-    createVault: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.create()).vault) },
-    setWritable: async (writable) => { if(!writable)await result.vtt?.closeWorld(); return remember((await RunasVault.setWritable({ writable })).vault) },
+    chooseVault: async () => remember((await RunasVault.choose()).vault),
+    createVault: async () => remember((await RunasVault.create()).vault),
+    setWritable: async (writable) => remember((await RunasVault.setWritable({ writable })).vault),
     async listVault(prefix) {
       const { entries } = await RunasVault.list({ prefix: prefix ?? "" })
       for (const path of sources.keys()) if (!prefix || path.startsWith(prefix)) sources.delete(path)
@@ -144,12 +143,10 @@ export function createCapacitorPlatform(): Platform {
     scheduleReminders: (reminders) => scheduleOnAndroid(reminders),
     onReminderOpen: onAndroidReminderOpen,
     saveFile: async (name, content, mime) => (await RunasVault.saveAs({ name, mime, base64: toBase64(new TextEncoder().encode(content)) })).name,
-    async hostRoom(id): Promise<RoomHostInfo> {
-      await result.vtt!.openWorld(id)
-      const state=await result.vtt!.player.start()
-      return {lanUrl:state.localUrl!,code:state.key!}
+    async hostRoom(): Promise<RoomHostInfo> {
+      throw new Error("Hospedar a sala pelo celular chega na etapa A2.")
     },
-    async stopRoom() { await result.vtt!.player.stop() },
+    async stopRoom() {},
     readBinary: async (path) => fromBase64((await RunasVault.readBinary({ path })).base64),
     writeBinary: async (path, bytes, expected) => rememberEntry(await RunasVault.writeBinary(withExpected({ path, base64: toBase64(bytes) }, expected))),
     saveBytes: async (name, bytes, mime) => (await RunasVault.saveAs({ name, mime, base64: toBase64(bytes) })).name,
@@ -160,6 +157,4 @@ export function createCapacitorPlatform(): Platform {
     writeManagedTransfer: async (path, bytes, expected) => rememberEntry(await RunasVault.writeManagedTransfer({ path, base64: toBase64(bytes), expected })),
     printDocument: (name = "Runas-Codex") => RunasVault.printDocument({ name }),
   }
-  result.vtt = createAndroidVttApi(result)
-  return result
 }

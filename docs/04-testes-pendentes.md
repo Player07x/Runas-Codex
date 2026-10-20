@@ -555,34 +555,28 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - APK debug antigo (até beta.13) tem outra assinatura. A nova beta não consegue substituí-lo automaticamente;
   planejar a migração manual preservando o cofre e exportando backups antes de remover uma instalação antiga.
   A implementação não desinstala nem apaga a versão antiga.
+## Tarefas do plugin Tasks e tempo livre (ADR 0020)
 
-## X4 e interface de escrita — conferência antes do merge (19/10/2026)
+Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
 
-- [ ] No navegador, conferir os seis controles de Livros, galeria por categoria e Modo foco; sair pelo botão e Escape.
-- [ ] Arrastar as bordas da navegação, lista/detalhes de Notas, referência/prévia de Livros, Wiki, Agenda, sessões,
-      gráfico e propriedades da mesa; recolher e reabrir também no celular; conferir a persistência ao reabrir.
-- [ ] Verificar nomes horizontais no seletor de Wiki e datas em uma linha em Agenda › Tarefas com prazo.
-- [ ] Inserir `::: runas-colunas-1` até `::: runas-colunas-4`; conferir o fluxo na prévia e no PDF, sem retirar as
-      quebras de colunas manuais. Abrir o DOCX/RTF no Word e no LibreOffice para conferir suas seções contínuas.
-- [ ] Abrir Exportar… na nota, pasta, artigo, categoria e Wiki, e Exportar diário… nas sessões da campanha.
-- [ ] Gerar versão dos jogadores; verificar PDF, DOCX e HTML sem o segredo e sem artigos secretos.
-- [ ] Extrair o ZIP do Site offline e abrir index.html sem internet no computador e no celular; conferir links,
-      imagens e fontes. Mapas são imagem e lista; controles interativos não acompanham o arquivo.
-- [ ] Autorizar explicitamente o merge e uma eventual release depois da conferência do navegador, como solicitado.
-
-### Conferência adicional de Livros — layout de escrita e celular (19/10/2026)
-
-- Conferir a folha central e a faixa visual de formatação; selecionar uma palavra e aplicar Negrito/Itálico.
-- No celular, conferir os ícones, dicas, abertura/recolhimento de Capítulos e Referências e os modos da nota.
-- No foco, conferir a barra única (Voltar, Ações, Leitura/Editar/Código e Sair do Foco), a faixa fixa e o aproveitamento da altura.
-- Conferir a precisão de cliques em notas longas, títulos e linhas quebradas após mudar fonte/tamanho e largura.
-- Mandar capítulo/seção/parte para a lixeira e conferir a propriedade `estrutura` dos livros que o referenciam.
-- Abrir o site extraído por `index.html` fora do navegador integrado, que bloqueia `file://`; testar os links offline.
-- Validação local: 515 testes app + 178 desktop; typecheck, builds e smokes Electron de leitura/gravação passaram.
-
-### Revisão das barras de Livros — 19/10/2026
-
-- Conferir a ordem Voltar → Capítulos → Escrever no início da barra superior.
-- Na direita, conferir Referências → Leitura → Editar → Código → Ações da nota, com o menu de ações flutuante.
-- Conferir os cartões de 40 px e o tamanho anterior das categorias. A seta e dois cliques nas categorias recolhem/expandem os cartões; recarregar mantém a escolha.
-- Confirmar conforto dos comandos compactos no aparelho físico, conforme tamanho pedido na revisão.
+- [ ] Configurações › Tarefas › Importar: as opções do `data.json` do Tasks aparecem iguais (filtro global, formato,
+  estados personalizados, predefinições); o arquivo do Obsidian não muda.
+- [ ] Numa nota: `- [ ] Beber 2L de água 🔁 every day 📅 <hoje>`. Concluir no Runas-Codex (live preview, modo leitura,
+  numa consulta ```tasks, na Agenda) cria uma só ocorrência para amanhã, acima; abrir no Obsidian e conferir que a linha
+  é a mesma que o Tasks gravaria concluindo lá. Repetir concluindo no Obsidian e abrindo no Runas-Codex.
+- [ ] Mesma conferência com: formato Dataview, `🏁 delete`, `when done`, `every month` no dia 31, estados `[/]`, `[-]`
+  e um estado personalizado, tarefa com `🆔`/`⛔` (bloqueada some de `is not blocked`).
+- [ ] Blocos ```tasks copiados do Obsidian (filtros, `group by`, `sort by`, `limit`, `preset`, `view columns by
+  priority`) mostram as mesmas tarefas nos dois apps; arrastar entre colunas muda a prioridade/data na nota.
+- [ ] Editor: Ctrl+L alterna a tarefa da linha; Ctrl+Shift+T abre a janela "criar ou editar tarefa"; ao digitar
+  `📅 ama` numa tarefa aparece a data de amanhã.
+- [ ] Com o PIN do espaço Notas bloqueado, as tarefas de `Notas/` somem das consultas e da Agenda.
+- [ ] Agenda › Tempo livre › Definir horários (ex.: 08:00–12:00 e 14:00–18:00): o dia mostra o total e as faixas; hoje
+  mostra também o "livre daqui em diante"; o mês e a semana mostram o resumo em cada dia.
+- [ ] Caso de aceitação: disponível 08:00–18:00 e eventos 09–11, 10–12 e 15–16 → **6 h** em 08–09, 12–15 e 16–18; uma
+  tarefa com prazo nesse dia e um evento às 19h não mudam o total.
+- [ ] Evento marcado "não ocupa o tempo", evento de dia inteiro (as duas escolhas), evento que passa da meia-noite e
+  uma tarefa `- [ ] 09:00 - 10:30 …` com data agendada.
+- [ ] Importar um `.ics` do Google Agenda com uma ocorrência movida e outra cancelada: a movida aparece no novo horário
+  e a original some; a cancelada não aparece.
+- [ ] Celular (Android) e 320 px: caixas com 44 px de toque, janela de edição e de tempo livre sem rolagem lateral.

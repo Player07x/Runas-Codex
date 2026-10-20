@@ -196,7 +196,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
 
   return (
     <main ref={root} className="vtt-root">
-      <div className={`table ${panelOpen ? "panel-open" : ""}`} style={{ gridTemplateColumns: `minmax(${CANVAS_MIN}px, 1fr) ${panelOpen ? width : 48}px` }}>
+      <div className={`table ${panelOpen ? "panel-open" : ""}`} style={{ gridTemplateColumns: `minmax(${CANVAS_MIN}px, 1fr) ${width}px` }}>
         <header className="table-bar">
           {remote ? (
             <span className="chip" title="As mudanças são gravadas no computador da sala">

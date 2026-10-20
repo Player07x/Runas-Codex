@@ -27,7 +27,7 @@
 .source-editor { min-height: 60vh; }
 .source-editor .cm-editor { min-height: 60vh; }
 /* Live preview: o texto com a letra do modo leitura (o código-fonte continua em fonte mono). */
-.source-editor.live .cm-editor .cm-scroller { font-family: var(--font-sans); font-size: calc(15px * var(--font-scale, 1)); line-height: 1.7; }
+.source-editor.live .cm-editor .cm-content { font-family: var(--font-sans); font-size: calc(15px * var(--font-scale, 1)); line-height: 1.7; }
 .source-editor.live .cm-editor .cm-lp-codeblock { font-family: var(--font-mono); }
 .editor-bar .segmented { flex-shrink: 0; overflow: visible; }
 .editor-bar .editor-status { flex: 1 1 auto; min-width: 0; text-align: right; }

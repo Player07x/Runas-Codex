@@ -1,4 +1,3 @@
-import { ResizablePanel } from "../ResizablePanel"
 import { useEffect, useMemo, useState } from "react"
 import { ChevronLeft, Crosshair, Play, Plus, Search, SlidersHorizontal, Square, X } from "lucide-react"
 import { buildGraph, type GraphGroup, type GraphNode } from "../../core/graph-data"
@@ -111,7 +110,7 @@ export function GraphPage({ index, root, version, onBroken }: { index: VaultInde
         </button>
       </div>
       {panel && (
-        <ResizablePanel id="graph" label="Filtros do gráfico" width={300} className="graph-panel card">
+        <aside className="graph-panel card">
           <span className="eyebrow">Filtros</span>
           <label className="search">
             <Search size={14} />
@@ -168,7 +167,7 @@ export function GraphPage({ index, root, version, onBroken }: { index: VaultInde
             Restaurar padrões
           </button>
           <span className="tiny faint">Losango = nota de outro espaço (portal). Círculo vazado = nota que ainda não existe.</span>
-        </ResizablePanel>
+        </aside>
       )}
     </div>
   )

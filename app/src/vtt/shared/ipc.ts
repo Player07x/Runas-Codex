@@ -200,8 +200,6 @@ export interface VttApi {
     resetExploration(sceneId: string): Promise<void>
   }
   assets: {
-    /** Endereço local de um asset; o adaptador Android resolve disco e SAF. */
-    url?(path: AssetPath): string | null
     /** Copia um arquivo para a mesa aberta e devolve o caminho do asset. */
     import(kind: AssetKind, fileName: string, bytes: Uint8Array): Promise<AssetPath>
   }

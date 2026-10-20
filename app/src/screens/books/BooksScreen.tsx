@@ -5,9 +5,7 @@ import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
 import { BookEditor } from "./BookEditor"
 import { BookImport } from "./BookImport"
-import "../notes.css"
 import "./books.css"
-import "./book-workspace.css"
 
 export function BooksScreen({ bookId }: { bookId?: string }) {
   const vault = useVault()
@@ -52,7 +50,7 @@ function BookList() {
   return <div className="page books-list">
     <div className="page-head">
       <div>
-        <span className="eyebrow">Sua biblioteca</span>
+        <span className="eyebrow">Cada capítulo é uma nota .md</span>
         <h1 className="page-title">Livros</h1>
       </div>
       <div className="row-wrap">

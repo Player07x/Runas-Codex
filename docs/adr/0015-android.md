@@ -177,7 +177,3 @@ inclusive para pastas sincronizadas com o notebook. O nome do gerenciador não f
 - Aplicativos que apenas importam arquivos individuais precisam também oferecer uma árvore de documentos para uso
   como cofre; o Android concede acesso persistente à pasta por esse contrato. Referência:
   [Storage Access Framework](https://developer.android.com/guide/topics/providers/document-provider).
-
-## X7 — sala hospedada pelo celular (20/10/2026)
-
-A autoridade é compartilhada com o desktop e o transporte HTTP/WebSocket vive num serviço Android em primeiro plano. Decisões, limites e testes estão na [ADR 0024](0024-sala-android.md). A sala funciona na rede local, inclusive ao minimizar o app; encerramento e revogação são explícitos. O job `android-room` valida um jogador no navegador do CI e passa a ser requisito da publicação Android.

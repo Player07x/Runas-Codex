@@ -201,10 +201,8 @@ tratamento dedicado dos conflitos de sincronizadores, entradas de exportação e
 página por nota continuam nas tarefas correspondentes; o HTML central desta entrega é um documento offline único.
 A tarefa X7 de hospedar a sala pelo celular permanece independente.
 
-## X4 e interface de Livros — 19/10/2026
+## Pedido futuro — Tasks e tempo livre (18/10/2026)
 
-Implementação na branch `export/x4-interface-livros`, baseada na main após beta.14 (#49), em cópia isolada.
-Entradas de exportação por módulo, seleção de coleção e site offline ZIP entregues; ADR 0013. Inclui controles
-de Livros simplificados, galeria de formatadores, colunas automáticas 1–4, foco, painéis redimensionáveis e
-recolhíveis, correções do seletor de Wiki e das datas de tarefas. Conferência do dono no navegador pendente;
-**sem merge e sem release até o seu OK**. C7 (backups agendados/conflitos) e X7 continuam independentes.
+| Tarefa | Pedido | Situação |
+|---|---|---|
+| Compatibilidade completa com Tasks nas notas e no checklist de preparação; cálculo de tempo livre diário na Agenda | [tasks-tempo-livre.md](tasks-tempo-livre.md) | em revisão; Claude Code, `agenda/tasks-tempo-livre` ([matriz](tasks-matriz.md), [ADR 0020](../adr/0020-tasks-e-tempo-livre.md)) |

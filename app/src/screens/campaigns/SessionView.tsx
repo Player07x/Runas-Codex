@@ -1,5 +1,3 @@
-import { openDocumentExport } from "../../components/export/ExportDialog"
-import { ResizablePanel } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, Download, Globe, PanelRight, Plus, Users } from "lucide-react"
 import { campaignJournal, previousSession, SESSION_STATUS, setPrepDetail, setSectionText, setTaskLine, SUMMARY_HEADING, type SessionInfo, type SessionStatus } from "../../core/campaigns"
@@ -40,9 +38,8 @@ function SessionList({ data }: { data: CampaignData }) {
         </div>
         <div className="row-wrap">
           <button className="btn" onClick={() => void exportJournal()} title="As sessões realizadas com o que aconteceu em cada uma, num arquivo Markdown">
-            <Download size={16} /> Diário Markdown
+            <Download size={16} /> Exportar diário
           </button>
-          <button className="btn" onClick={() => openDocumentExport({ paths: data.sessions.filter(session => session.status === "realizada").map(session => session.path), title: `Diário — ${data.campaign.name}`, journal: data.campaign.name })}>Exportar diário…</button>
           <button className="btn primary" onClick={() => (data.readOnly ? toast("Libere a gravação em Configurações para criar sessões.") : setCreating(true))}>
             <Plus size={16} /> Nova sessão
           </button>
@@ -105,14 +102,14 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
           onTag={(tag) => toast(`Tag #${tag}`)}
         />
       </section>
-      <ResizablePanel id="campaign-session" label="Detalhes da sessão" side="right" width={360} className="campaign-session-side" aria-label="Sessão">
+      <aside className="campaign-session-side" aria-label="Sessão">
         <button className="btn ghost sm campaign-panel-close" onClick={() => setPanel(false)}>
           <ChevronLeft size={14} /> Voltar à nota
         </button>
         <SessionDetails data={data} session={session} />
         <PrepCard data={data} session={session} />
         <SummaryCard data={data} session={session} />
-      </ResizablePanel>
+      </aside>
       <button className="icon-btn campaign-panel-toggle" onClick={() => setPanel(!panel)} aria-label="Painel da sessão">
         <PanelRight size={18} />
       </button>

@@ -30,8 +30,6 @@ export function generateRtf(book: ExportBook): Uint8Array {
   function node(n: ExportNode): string {
     if (typeof n === "string") return rtfText(n)
     const inner = n.children.map(node).join("")
-    const columns = /runas-colunas-([1-4])/.exec(n.attrs.class ?? "")?.[1]
-    if (columns) return `\\sect\\sectd\\sbknone\\cols${columns}\\colsx340 ${inner}\\sect\\sectd\\sbknone\\cols1 `
     if (n.tag === "img") {
       const asset = book.assets.find(a => a.name === n.attrs.src)
       if (!asset || !["image/png","image/jpeg"].includes(asset.mime)) return rtfText(`[Imagem: ${n.attrs.alt ?? ""}]`)

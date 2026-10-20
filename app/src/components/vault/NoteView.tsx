@@ -1,11 +1,8 @@
-import { formatterInsertion } from "../../core/formatter-insertion"
-import { createPortal } from "react-dom"
-import { openDocumentExport } from "../export/ExportDialog"
 import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImages } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, Ellipsis, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -22,6 +19,9 @@ import { useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
 import { checkboxLines } from "../../markdown/task-checkboxes"
+import { toggleLineCommand } from "../../core/tasks/edit"
+import { currentParseContext, tasksSettingsOf } from "../../lib/tasks"
+import { TaskEditDialog } from "../tasks/TaskEditDialog"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
@@ -58,17 +58,12 @@ const isMedia = (name: string) => {
 }
 
 interface Props {
-  /** Controles de navegação ao lado de Sair do Foco no editor de Livros. */
-  focusHeader?: HTMLElement | null
-  hideBackControl?: boolean
-  formatSelection?: boolean
   typewriter?: boolean
   focused?: boolean
   path: string
   folders: string[]
   onShowPanel(): void
   onBack(): void
-  onTrashed?(): void
   onCreate(target: string): void
   onTag(tag: string): void
   /** Observação do rascunho para prévias; não grava nem substitui o autosave. */
@@ -86,7 +81,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, formatSelection = false }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -115,6 +110,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
   const [expandedTools, setExpandedTools] = useState(false)
   const [imageRename, setImageRename] = useState<string | null>(null)
+  // "Criar ou editar tarefa" (Tasks) na linha do cursor.
+  const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
   const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
   const [copyMenu, setCopyMenu] = useState(false)
   const [organizeMenu, setOrganizeMenu] = useState(false)
@@ -339,6 +336,36 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     openNote(target.path, "aba")
   }
 
+  // Comandos do Tasks no editor: alternar a tarefa da linha do cursor e abrir a janela de edição.
+  useEffect(() => {
+    const run = (kind: string) => {
+      if (!focused || readOnly || mode === "leitura" || !editor.current) return
+      if (kind === "toggleTask" || kind === "toggle-task") {
+        editor.current.transform((doc, cursor) => {
+          const start = doc.lastIndexOf("\n", cursor - 1) + 1
+          const end = doc.indexOf("\n", cursor) < 0 ? doc.length : doc.indexOf("\n", cursor)
+          const result = toggleLineCommand(doc.slice(start, end), currentParseContext())
+          const before = result.lines.slice(0, -1).join("\n")
+          const lastStart = start + before.length + (result.lines.length > 1 ? 1 : 0)
+          const last = result.lines.at(-1) ?? ""
+          return { text: doc.slice(0, start) + result.lines.join("\n") + doc.slice(end), cursor: result.cursorAtEnd ? lastStart + last.length : Math.min(lastStart + (cursor - start), lastStart + last.length) }
+        })
+      }
+      if (kind === "editTask" || kind === "edit-task") {
+        const cursor = editor.current.cursor() ?? 0
+        const line = draft.slice(0, cursor).split("\n").length - 1
+        setTaskEdit({ line, text: draft.split("\n")[line] ?? "" })
+      }
+    }
+    const fromShortcut = (event: Event) => run((event as CustomEvent<string>).detail)
+    window.addEventListener("runas-codex:comando", fromShortcut)
+    window.addEventListener("runas-codex:nota-acao", fromShortcut)
+    return () => {
+      window.removeEventListener("runas-codex:comando", fromShortcut)
+      window.removeEventListener("runas-codex:nota-acao", fromShortcut)
+    }
+  }, [focused, readOnly, mode, draft])
+
   const { body } = splitFrontmatter(draft)
   // Modo leitura: a caixa clicada é achada pela ordem (a n-ésima caixa do texto); se a contagem não bate, não arrisca.
   const taskBoxes = useMemo<TaskCheckboxHandler | null>(
@@ -378,9 +405,20 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
       onAuxClick={(event) => event.button === 1 && openLinkInTab(event)}
     >
       <div className={`editor-bar ${expandedTools ? "tools-expanded" : ""}`}>
-        {focusHeader ? createPortal(<>
-          {!hideBackControl && <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>}
-          <Segmented<ViewMode>
+        <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+          <ChevronLeft size={18} />
+        </button>
+        <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
+        <span className="note-history">
+          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
+            <ArrowLeft size={17} />
+          </button>
+          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
+            <ArrowRight size={17} />
+          </button>
+        </span>
+        <NoteImages path={path} text={draft} onRename={renameImage} />
+        <Segmented<ViewMode>
           label="Modo da nota"
           value={mode}
           onChange={setMode}
@@ -390,33 +428,6 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
             { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
           ]}
         />
-          <button className="btn focus-note-actions" aria-label={expandedTools ? "Recolher ações" : "Ações da nota"} title={expandedTools ? "Recolher ações" : "Ações da nota"} aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}><Ellipsis size={17}/><span>{expandedTools ? "Recolher ações" : "Ações da nota"}</span></button>
-        </>, focusHeader) : <>
-        {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
-          <ChevronLeft size={18} />
-        </button>}
-        <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
-        </>}
-        <span className="note-history">
-          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
-            <ArrowLeft size={17} />
-          </button>
-          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
-            <ArrowRight size={17} />
-          </button>
-        </span>
-        <button className="btn note-export-action" onClick={() => openDocumentExport({ paths: [path], title: note.name, players: !showSecrets })}>Exportar…</button>
-        <NoteImages path={path} text={draft} onRename={renameImage} />
-        {!focusHeader && <Segmented<ViewMode>
-          label="Modo da nota"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
-            ...(readOnly ? [] : [{ value: "live" as const, label: "Editar", icon: <Type size={14} /> }]),
-            { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
-          ]}
-        />}
         {readOnly && (
           <span className="chip gold" title="Libere a gravação em Configurações › Cofre">
             <Lock size={13} /> Somente leitura
@@ -581,11 +592,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
         </div>
       )}
 
-      {!readOnly && mode !== "leitura" && toolbar?.((text) => {
-        const range = editor.current?.selection()
-        const selectedText = range ? draft.slice(range.from, range.to) : ""
-        editor.current?.insert(formatSelection ? formatterInsertion(text, selectedText) : text)
-      })}
+      {!readOnly && mode !== "leitura" && toolbar?.((text) => editor.current?.insert(text))}
 
       <div className={sidebar ? "books-writing-area" : undefined} style={sidebar ? undefined : { display: "contents" }}>
       <div className="editor-body" ref={reader}>
@@ -605,6 +612,23 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
 
       {linkPreview}
       {imageRename && <ImageRenameDialog path={imageRename} onClose={() => setImageRename(null)} />}
+      {taskEdit && (
+        <TaskEditDialog
+          initialLine={/^[\s>]*(?:[-*+]|\d+[.)])[ \t]+\[.\]/.test(taskEdit.text) ? taskEdit.text : `- [ ] ${taskEdit.text.replace(/^[\s>]*(?:[-*+]|\d+[.)])?[ \t]*/, "")}`}
+          settings={tasksSettingsOf(vault.info?.path)}
+          onLines={(lines) =>
+            editor.current?.transform((doc) => {
+              const all = doc.split("\n")
+              if ((all[taskEdit.line] ?? "") !== taskEdit.text) throw new Error("A linha mudou; abra a janela de novo.")
+              const indent = /^[\s>]*/.exec(taskEdit.text)?.[0] ?? ""
+              all.splice(taskEdit.line, 1, ...lines.map((l) => (/^[\s>]/.test(l) ? l : indent + l)))
+              const cursor = all.slice(0, taskEdit.line + lines.length).join("\n").length
+              return { text: all.join("\n"), cursor }
+            })
+          }
+          onClose={() => setTaskEdit(null)}
+        />
+      )}
 
       {dialog === "template" && (
         <TemplatePicker
@@ -639,12 +663,11 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
           onClose={() => setDialog(null)}
           onConfirm={async () => {
             await vault.trash(path)
-            if (onTrashed) onTrashed()
-            else navigate("/notas")
+            navigate("/notas")
           }}
         >
           “{noteName(path)}” vai para a lixeira do cofre (<code>.trash</code>), a mesma do Obsidian. Dá para recuperar de lá.
-          {index.backlinks(path).length > 0 && <p style={{ marginTop: 8 }}>As referências na estrutura dos livros serão removidas automaticamente. Outros links para esta nota podem ficar quebrados.</p>}
+          {index.backlinks(path).length > 0 && <p style={{ marginTop: 8 }}>{index.backlinks(path).length} notas apontam para ela; os links vão ficar quebrados.</p>}
         </ConfirmDialog>
       )}
     </article>

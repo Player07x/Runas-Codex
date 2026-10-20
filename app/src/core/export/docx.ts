@@ -18,7 +18,6 @@ const color = (value?: string) => {
 export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
   const page = BOOK_SIZES[book.size]
   const width = (page.width - 2 * page.margin) * 96 / 25.4
-  let contentWidth = width
   const theme = { manual: "7B251C", pergaminho: "694421", moderno: "215A79", minimalista: "222222" }[book.theme]
   const assets = new Map(book.assets.map((a) => [a.name, a]))
   function inline(nodes: ExportNode[], style: IRunOptions = {}): ParagraphChild[] {
@@ -29,14 +28,14 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
       if (node.tag === "svg") {
         const fallback = assets.get(node.attrs["data-fallback"] ?? "")
         if (!fallback) return [new TextRun({ text: "[Diagrama: veja a versão em PDF ou EPUB]", italics: true })]
-        const w = Math.min(contentWidth, fallback.width || contentWidth)
+        const w = Math.min(width, fallback.width || width)
         const h = w * ((fallback.height || 1) / (fallback.width || 1))
         return [new ImageRun({ data: fallback.bytes, type: "png", transformation: { width: w, height: h }, altText: { title: "Diagrama", description: "Diagrama", name: "Diagrama" } })]
       }
       if (node.tag === "img") {
         const asset = assets.get(node.attrs.src)
         if (!asset || !["image/png", "image/jpeg", "image/gif", "image/bmp"].includes(asset.mime)) return [new TextRun(node.attrs.alt || "[Imagem]")]
-        const w = Math.min(contentWidth, Number(node.attrs.width) || asset.width || contentWidth)
+        const w = Math.min(width, Number(node.attrs.width) || asset.width || width)
         const h = w * ((asset.height || 1) / (asset.width || 1))
         return [new ImageRun({ data: asset.bytes, type: asset.mime === "image/jpeg" ? "jpg" : asset.mime.split("/")[1] as "png" | "gif" | "bmp", transformation: { width: w, height: h }, altText: { title: node.attrs.alt ?? "Imagem", description: node.attrs.alt ?? "Imagem", name: "Imagem" } })]
       }
@@ -123,13 +122,10 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
   function flush(columns = 1) { if (pending.length) { sections.push({ properties: properties(columns), children: pending }); pending = [] } }
   function flow(nodes: ExportNode[]) {
     for (const node of nodes) {
-      if (typeof node !== "string" && (classes(node).includes("md-colunas") || classes(node).some(c => /^runas-colunas-[1-4]$/.test(c)))) {
+      if (typeof node !== "string" && classes(node).includes("md-colunas")) {
         flush()
-        const columns = Number(/runas-colunas-([1-4])/.exec(node.attrs.class ?? "")?.[1]) || Number(/column-count:\s*(\d)/.exec(node.attrs.style ?? "")?.[1]) || 2
-        contentWidth = (width - (columns - 1) * 340 / 15) / columns
         pending = blocks(node.children)
-        flush(columns)
-        contentWidth = width
+        flush(Number(/column-count:\s*(\d)/.exec(node.attrs.style ?? "")?.[1]) || 2)
       } else if (typeof node !== "string" && ["section", "main", "div"].includes(node.tag) && !classes(node).some((c) => ["callout", "quebra-pagina", "quebra-coluna", "katex", "mermaid"].includes(c))) flow(node.children)
       else pending.push(...blocks([node]))
     }

@@ -62,11 +62,8 @@ const devicePoint = async point => {
     await writeFile(output + '/android-hierarquia.xml', xml)
     const view = xml.match(/<node[^>]*class="(?:android\.webkit\.WebView|com\.getcapacitor\.BridgeWebView)"[^>]*>/)?.[0]
     const bounds = view?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/)
-    if (!bounds) {
-      const physical = adb('shell', 'wm', 'size').toString().match(/(\d+)x(\d+)/)
-      if (!physical) throw new Error('O Android não informou os limites do WebView.')
-      webViewBounds = [0, 0, Number(physical[1]), Number(physical[2])]
-    } else webViewBounds = bounds.slice(1).map(Number)
+    if (!bounds) throw new Error('O Android não informou os limites do WebView.')
+    webViewBounds = bounds.slice(1).map(Number)
     webViewViewport = size
   }
   const [left, top, right, bottom] = webViewBounds
@@ -136,11 +133,7 @@ try {
   console.log('Mesa criada; movendo token por toque nativo.')
   if (process.argv.includes('--slow')) await run(`new Promise(resolve=>{const interval=setInterval(()=>{const end=performance.now()+90;while(performance.now()<end){}},120);setTimeout(()=>{clearInterval(interval);resolve(true)},4000)})`)
   await label('Enquadrar cena')
-  await tool('Novo token')
-  for (const [dx, dy] of [[0, 0], [32, 0], [-32, 0], [0, 32], [0, -32]]) {
-    await tapPoint(await at(1250 + dx, 950 + dy))
-    if (await run(`!!document.querySelector('.properties')`)) break
-  }
+  await tool('Novo token'); await tapPoint(await at(1250, 950))
   await until(`document.querySelector('.properties')`)
   results.initialToken = { x: Number(await field('Posição X')), y: Number(await field('Posição Y')) }
   if (results.initialToken.x !== 1250 || results.initialToken.y !== 950) throw new Error('O enquadramento não corresponde ao tamanho CSS do canvas: '+JSON.stringify(results.initialToken))
@@ -162,12 +155,9 @@ try {
   await label('Desfazer'); await until(`!document.querySelector('[aria-label="Refazer"]').disabled`)
   results.redoEnabled = await run(`!document.querySelector('[aria-label="Refazer"]').disabled`)
   await label('Refazer'); await tool('Selecionar e mover')
-  // Refazer pode reabrir as propriedades; o gesto seguinte precisa alcançar o canvas.
-  if (await run(`!!document.querySelector('[aria-label="Fechar propriedades"]')`)) await label('Fechar propriedades')
   const held = await at(1450, 1050)
   await hold(held)
-  await until(`document.querySelector('[role="menu"][aria-label="Ações do objeto"]')`)
-  results.menu = true
+  results.menu = await run(`!!document.querySelector('[role="menu"][aria-label="Ações do objeto"]')`)
   results.textSelection = await run(`window.getSelection()?.toString() ?? ''`)
   if (results.textSelection) throw new Error('O toque longo selecionou texto da interface: ' + results.textSelection)
   await button('Fechar menu')
@@ -196,16 +186,7 @@ try {
   console.log(JSON.stringify(results, null, 2))
   if (!results.undoEnabled || !results.redoEnabled || !results.menu || results.device.scrollWidth > results.device.width) throw new Error('A verificação do toque falhou.')
 } catch (error) {
-  const text = String(error)
-  // Alguns WebViews de emulador não expõem o painel lateral após o toque, embora a cena e o gesto já estejam funcionais.
-  // O smoke salva a evidência e deixa essa limitação explícita; a sala Android tem seu job próprio obrigatório.
-  if (text.includes("document.querySelector('.properties')")) {
-    results.skipped = 'O WebView não expôs o painel de propriedades após o toque.'
-    await writeFile(output + '/skipped.txt', results.skipped)
-    console.warn(results.skipped)
-  } else {
-    await shot('erro').catch(() => {})
-    await writeFile(output + '/error.txt', text)
-    throw error
-  }
+  await shot('erro').catch(() => {})
+  await writeFile(output + '/error.txt', String(error))
+  throw error
 } finally { await writeFile(output + '/browser-errors.json', JSON.stringify(browserErrors, null, 2)); socket.close() }

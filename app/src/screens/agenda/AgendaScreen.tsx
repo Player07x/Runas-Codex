@@ -1,11 +1,20 @@
-import { ResizablePanel } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload } from "lucide-react"
-import { AGENDA_ROOT, checklist, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, toggleTask, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
+import { AGENDA_ROOT, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
+import { isDone, parseContext, parseTaskLine, type Task } from "../../core/tasks/task"
+import { checkboxLines } from "../../markdown/task-checkboxes"
+import { TaskRow } from "../../components/tasks/TaskRow"
+import { TaskEditDialog } from "../../components/tasks/TaskEditDialog"
+import { useTaskActions, type TaskActions } from "../../components/tasks/useTaskActions"
+import { vaultTasks } from "../../lib/tasks"
+import { useNotesLock } from "../../lib/notes-lock"
+import "../../components/tasks/tasks.css"
+import { useFreeTimePrefs } from "../../lib/free-time"
+import { FreeTimeDialog, FreeTimePanel, shortMinutes, useFreeTime, useNow } from "./FreeTime"
 import { dirname, joinPath, noteName } from "../../core/text"
 import type { VaultIndex } from "../../core/vault-index"
-import { agendaEvents, vaultDueTasks } from "../../lib/agenda-data"
+import { agendaEvents } from "../../lib/agenda-data"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { Empty, Modal, Segmented, useToast } from "../../components/ui"
@@ -61,7 +70,10 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const readOnly = vault.info?.readOnly ?? true
   const [poll,setPoll]=useState(false)
   const [view, setViewState] = useState<View>(savedView)
-  const today = useMemo(() => startOfDay(new Date()), [])
+  // Anda de minuto em minuto: o "livre restante" e a virada do dia (hoje muda à meia-noite).
+  const now = useNow()
+  const todayKey = isoDate(new Date(now))
+  const today = useMemo(() => startOfDay(new Date(`${todayKey}T00:00`)), [todayKey])
   const [cursor, setCursor] = useState(today)
   const [selectedDay, setSelectedDay] = useState(today)
   const [selectedKey, setSelectedKey] = useState<string>()
@@ -85,7 +97,20 @@ function AgendaView({ index }: { index: VaultIndex }) {
   }, [])
 
   const events = useMemo(() => agendaEvents(index), [index, vault.version])
-  const tasks = useMemo(() => vaultDueTasks(index).filter((t) => !t.done), [index, vault.version])
+  // Tarefas do plugin Tasks (com o filtro global e as opções do cofre); as do espaço Notas somem com o PIN bloqueado.
+  const actions = useTaskActions()
+  const { locked } = useNotesLock()
+  const allTasks = useMemo(() => vaultTasks(index, actions.settings, { notesLocked: locked }), [index, vault.version, actions.settings, locked])
+  const tasks = useMemo(() => allTasks.filter((t) => !isDone(t) && t.dueDate).sort((a, b) => a.dueDate!.localeCompare(b.dueDate!) || a.description.localeCompare(b.description, "pt-BR")), [allTasks])
+  const todayIso = isoDate(today)
+  const freePrefs = useFreeTimePrefs(vault.info?.path)
+  const [freeDialog, setFreeDialog] = useState(false)
+  const freeOf = useFreeTime(freePrefs, events, allTasks, now)
+  const freeLabel = (day: Date) => {
+    const f = freeOf(isoDate(day))
+    return f && !f.unavailable ? shortMinutes(f.freeMinutes) : null
+  }
+  const calendars = useMemo(() => [...new Set(events.map((e) => dirname(e.path)))].sort((a, b) => a.localeCompare(b, "pt-BR")), [events])
 
   // Intervalo visível de cada visão.
   const range = useMemo(() => {
@@ -254,7 +279,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onPick={pick} onCreate={create} />}
+          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
           {(view === "semana" || view === "dia") && (
             <TimeGrid
               days={view === "dia" ? [cursor] : Array.from({ length: 7 }, (_, i) => addDays(range.start, i))}
@@ -265,12 +290,13 @@ function AgendaView({ index }: { index: VaultIndex }) {
               onPickDay={(day) => (setCursor(day), setView("dia"), pickDay(day))}
               onPick={pick}
               onCreate={create}
+              freeLabel={freeLabel}
             />
           )}
           {view === "lista" && <ListView from={cursor} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} />}
         </div>
 
-        <ResizablePanel id="agenda" label="Detalhes da agenda" side="right" width={320} className="stack-lg agenda-side">
+        <aside className="stack-lg agenda-side">
           {selected ? (
             <EventDetail
               occurrence={selected}
@@ -279,10 +305,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
               onEdit={() => setDialog({ kind: "edit", event: selected.event })}
               onDelete={() => setDialog({ kind: "delete", event: selected.event })}
               onSkip={() => void skipDate(selected).catch(fail)}
-              onToggle={(line, done) => {
-                const note = index.note(selected.event.path)
-                if (note) void vault.save(note.path, toggleTask(note.text, line, done)).catch(fail)
-              }}
+              actions={actions}
+              today={todayIso}
               onClose={() => setSelectedKey(undefined)}
             />
           ) : (
@@ -303,34 +327,21 @@ function AgendaView({ index }: { index: VaultIndex }) {
                   <Plus size={14} /> Evento neste dia
                 </button>
               )}
+              <FreeTimePanel day={freeOf(isoDate(selectedDay))} timeZone={freePrefs.timeZone} onConfigure={() => setFreeDialog(true)} />
+              <DayTasks tasks={allTasks} day={isoDate(selectedDay)} actions={actions} today={todayIso} />
             </section>
           )}
 
           <section className="card">
             <span className="section-title">Tarefas com prazo</span>
-            <div className="list" style={{ marginTop: 8 }}>
-              {tasks.length === 0 && <span className="muted small">Nenhuma tarefa com 📅 nas notas.</span>}
+            <ul className="task-list" style={{ marginTop: 8 }}>
+              {tasks.length === 0 && <li className="muted small">Nenhuma tarefa por fazer com 📅 nas notas.</li>}
               {tasks.slice(0, 12).map((t) => (
-                <label key={`${t.path}:${t.line}`} className="check">
-                  <input
-                    type="checkbox"
-                    disabled={readOnly}
-                    onChange={(e) => {
-                      const note = index.note(t.path)
-                      if (note) void vault.save(note.path, toggleTask(note.text, t.line, e.target.checked)).catch(fail)
-                    }}
-                  />
-                  <span className="grow small">
-                    {t.text}{" "}
-                    <a href="#" className="tiny faint" onClick={(e) => (e.preventDefault(), navigate(vaultRoute(t.path)))}>
-                      {noteName(t.path)}
-                    </a>
-                  </span>
-                  <span className={`task-due-date meta tiny ${t.due < isoDate(today) ? "late" : "faint"}`}>{new Date(`${t.due}T12:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
-                </label>
+                <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today: todayIso, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />
               ))}
-            </div>
-            <span className="tiny faint">Tarefas das notas no formato do plugin Tasks: “- [ ] texto 📅 2026-10-17”.</span>
+            </ul>
+            {tasks.length > 12 && <span className="tiny faint">E mais {tasks.length - 12}. Use um bloco ```tasks numa nota para ver todas.</span>}
+            <span className="tiny faint">Tarefas das notas no formato do plugin Tasks: “- [ ] texto 📅 2026-10-17”. O clique segue o Tasks (data de conclusão, recorrência).</span>
           </section>
 
           <section className="card stack">
@@ -375,9 +386,10 @@ function AgendaView({ index }: { index: VaultIndex }) {
               }}
             />
           </div>
-        </ResizablePanel>
+        </aside>
       </div>
 
+      {freeDialog && <FreeTimeDialog vault={vault.info?.path} prefs={freePrefs} calendars={calendars} onClose={() => setFreeDialog(false)} />}
       {dialog?.kind === "new" && (
         <EventDialog
           initial={{ date: isoDate(dialog.day), ...(dialog.time ? { startTime: dialog.time } : {}) }}
@@ -428,10 +440,20 @@ function AgendaView({ index }: { index: VaultIndex }) {
   )
 }
 
-function EventDetail({ occurrence, index, readOnly, onEdit, onDelete, onSkip, onToggle, onClose }: { occurrence: Occurrence; index: VaultIndex; readOnly: boolean; onEdit(): void; onDelete(): void; onSkip(): void; onToggle(line: number, done: boolean): void; onClose(): void }) {
+/** As caixas da nota do evento (todas, como antes, mesmo fora do filtro global), lidas pelo motor do Tasks. */
+function eventChecklist(path: string, text: string, actions: TaskActions): Task[] {
+  const ctx = parseContext({ ...actions.settings, globalFilter: "" })
+  const lines = text.split("\n")
+  return checkboxLines(text).flatMap((line) => parseTaskLine(lines[line]!, path, line, ctx) ?? [])
+}
+
+function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDelete, onSkip, onClose }: { occurrence: Occurrence; index: VaultIndex; readOnly: boolean; actions: TaskActions; today: string; onEdit(): void; onDelete(): void; onSkip(): void; onClose(): void }) {
   const { event } = occurrence
+  const vault = useVault()
+  const toast = useToast()
+  const [adding, setAdding] = useState(false)
   const text = index.note(event.path)?.text ?? ""
-  const items = checklist(text)
+  const items = useMemo(() => eventChecklist(event.path, text, actions), [event.path, text, actions])
   const repeat = describeRepeat(event)
   const sessionPath = event.session ? index.resolve({ kind: "wiki", embed: false, target: event.session, start: 0, end: 0, raw: "", inFrontmatter: true }, event.path).dest : null
   return (
@@ -464,15 +486,32 @@ function EventDetail({ occurrence, index, readOnly, onEdit, onDelete, onSkip, on
           <Bell size={15} /> Lembrete: {event.reminders.length ? event.reminders.map(reminderText).join(" e ") : "nenhum"}
         </span>
       </div>
-      {items.length > 0 && (
+      {(items.length > 0 || !readOnly) && (
         <div className="stack" style={{ gap: 4 }}>
           <span className="eyebrow">Preparação</span>
-          {items.map((item) => (
-            <label key={item.line} className="check small">
-              <input type="checkbox" checked={item.done} disabled={readOnly} onChange={(e) => onToggle(item.line, e.target.checked)} /> <span className={item.done ? "faint" : ""}>{item.text}</span>
-            </label>
-          ))}
+          <ul className="task-list">
+            {items.map((item) => (
+              <TaskRow key={item.line} task={item} actions={actions} options={{ today, hidden: new Set(["backlink", "urgency"]) }} />
+            ))}
+          </ul>
+          {!readOnly && (
+            <button className="btn sm ghost" onClick={() => setAdding(true)}>
+              <Plus size={14} /> Tarefa de preparação
+            </button>
+          )}
         </div>
+      )}
+      {adding && (
+        <TaskEditDialog
+          settings={actions.settings}
+          onLines={(lines) => {
+            const note = index.note(event.path)
+            if (!note) return
+            const body = note.text.replace(/\s*$/, "")
+            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+          }}
+          onClose={() => setAdding(false)}
+        />
       )}
       <div className="row-wrap">
         {event.session && (
@@ -501,5 +540,21 @@ function EventDetail({ occurrence, index, readOnly, onEdit, onDelete, onSkip, on
       </div>
       <span className="tiny faint mono truncate">{event.path}</span>
     </section>
+  )
+}
+
+/** Tarefas do dia escolhido: prazo, agendada ou início nesse dia. */
+function DayTasks({ tasks, day, actions, today }: { tasks: Task[]; day: string; actions: TaskActions; today: string }) {
+  const list = tasks.filter((t) => t.dueDate === day || t.scheduledDate === day || t.startDate === day)
+  if (!list.length) return null
+  return (
+    <div className="stack" style={{ gap: 4, marginTop: 10 }}>
+      <span className="eyebrow">Tarefas do dia</span>
+      <ul className="task-list">
+        {list.slice(0, 20).map((t) => (
+          <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />
+        ))}
+      </ul>
+    </div>
   )
 }
