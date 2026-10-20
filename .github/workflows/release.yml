@@ -259,7 +259,14 @@ jobs:
           mkdir -p "$ANDROID_AVD_HOME"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           sudo chmod 666 /dev/kvm
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
+          for attempt in 1 2 3; do
+            if "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'; then
+              break
+            fi
+            rm -rf "$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
+            sleep 5
+          done
+          test -d "$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-toque -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --path "$ANDROID_AVD_HOME/runas-toque.avd"
           # Ferramentas de versões diferentes podem escrever o índice do AVD em pastas distintas.
           test -f "$ANDROID_AVD_HOME/runas-toque.avd/config.ini"
