@@ -8,10 +8,11 @@ export async function connectDevtools(endpoint,match=()=>true) {
   }
   if(!target)throw new Error('Página de teste não abriu: '+endpoint)
   const socket=new WebSocket(target.webSocketDebuggerUrl),pending=new Map();let sequence=0
-  const errors=[]
+  const errors=[],network=[]
   await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject})
   socket.onmessage=event=>{
     const message=JSON.parse(event.data)
+    if(message.method==='Network.loadingFailed' || message.method==='Network.responseReceived'){network.push({method:message.method,params:message.params});if(network.length>100)network.shift()}
     if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.exception?.description ?? 'exceção no navegador')
     if(!message.id)return
     const action=pending.get(message.id);if(!action)return;pending.delete(message.id);clearTimeout(action.timer)
@@ -26,8 +27,8 @@ export async function connectDevtools(endpoint,match=()=>true) {
     if(reply.exceptionDetails)throw new Error(reply.exceptionDetails.exception?.description ?? JSON.stringify(reply.exceptionDetails))
     return reply.result?.value
   }
-  await send('Runtime.enable')
-  return {send,run,errors,close:()=>socket.close(),until:async(expression,tries=200)=>{
+  await send('Runtime.enable');await send('Network.enable')
+  return {send,run,errors,network,close:()=>socket.close(),until:async(expression,tries=200)=>{
     for(let n=0;n<tries;n++){if(await run(`(()=>{try{return Boolean(${expression})}catch{return false}})()`))return;await sleep(150)}
     throw new Error('Não aconteceu: '+expression)
   }}

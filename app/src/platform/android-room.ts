@@ -95,10 +95,17 @@ export function createAndroidVttApi(platform: Platform): VttApi {
   async function stop(){if(stopping)return;stopping=true;try{await authority.stop();await flush()}finally{stopping=false}}
   async function close(){await stop();audio.closeWorld();vision.clear();regions.clear();await authority.closeWorld();await store.close()}
   const unsupported=async():Promise<never>=>{throw new Error("No Android, compartilhe a sala pela rede local.")}
+  // O React pode abrir a mesma mesa duas vezes na montagem; mudanças de sala são sequenciais.
+  let lifecycle: Promise<unknown> = Promise.resolve()
+  function ordered<T>(action:()=>Promise<T>):Promise<T> {
+    const next=lifecycle.then(action,action)
+    lifecycle=next.catch(()=>undefined)
+    return next
+  }
   const api:VttApi={
     collaboration:{state:async()=>authority.collaboration.snapshot(),command:async command=>authority.collaborationCommand(command)},
     listWorlds:()=>store.list(), createWorld:input=>store.create(input),
-    openWorld:async id=>{if(store.openWorld?.summary.id!==id)await close();return store.open(id)},closeWorld:close,
+    openWorld:id=>ordered(async()=>{if(store.openWorld?.summary.id!==id)await close();return store.open(id)}),closeWorld:()=>ordered(close),
     documents:{
       list:async(type,parentId)=>store.database().list(type,parentId),
       put:async input=>{const {document,change}=putDocument(store.database(),input);publish(change);await save();return document},
@@ -109,7 +116,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     table:{report:async report=>{authority.setMasterView(report);audio.sceneChanged();await save()}},
     player:{
       state:async()=>authority.state(),onState:listener=>{playerListeners.add(listener);return()=>playerListeners.delete(listener)},displays:async()=>[],
-      start:async(port,seats)=>{try{const state=await authority.start(port,seats);transport!.rememberSeats(state);authority.refresh();await save();return state}catch(error){await stop();throw error}},stop,
+      start:(port,seats)=>ordered(async()=>{try{const state=await authority.start(port,seats);transport!.rememberSeats(state);authority.refresh();await save();return state}catch(error){await stop();throw error}}),stop:()=>ordered(stop),
       rotateSeatCode:async id=>{const state=authority.rotateSeatCode(id);authority.refresh();return state},clearSeat:async id=>{const state=authority.clearSeat(id);authority.refresh();return state},
       openWindow:async()=>{const url=authority.localWindowUrl();if(url)await native.openUrl({url})},
       join:async url=>{const parsed=new URL(url);if(!["http:","https:"].includes(parsed.protocol) || parsed.username || parsed.password)throw new Error("Link da sala inválido.");await native.openUrl({url:parsed.href})},

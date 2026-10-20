@@ -571,6 +571,11 @@ jobs:
           adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-room --ez runasWritable true
           bash mobile/tests/android-devtools.sh
           adb forward tcp:30000 tcp:30000
+          # Somente no emulador: evitar a apresentação inicial do Chrome e inspecionar o jogador Android.
+          adb shell am set-debug-app --persistent com.android.chrome
+          adb shell 'echo "_ --disable-fre --no-first-run --no-default-browser-check" > /data/local/tmp/chrome-command-line'
+          adb shell am force-stop com.android.chrome
+          adb forward tcp:9226 localabstract:chrome_devtools_remote
           google-chrome --headless --no-sandbox --disable-dev-shm-usage --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --remote-debugging-port=9225 --user-data-dir=/tmp/runas-room-chrome about:blank > /tmp/runas-android-room/chrome.log 2>&1 &
           node mobile/tests/room-smoke.cdp.mjs /tmp/runas-android-room
       - name: Registro da sala no Android
