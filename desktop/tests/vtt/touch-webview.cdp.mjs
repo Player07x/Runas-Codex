@@ -155,9 +155,12 @@ try {
   await label('Desfazer'); await until(`!document.querySelector('[aria-label="Refazer"]').disabled`)
   results.redoEnabled = await run(`!document.querySelector('[aria-label="Refazer"]').disabled`)
   await label('Refazer'); await tool('Selecionar e mover')
+  // Refazer pode reabrir as propriedades; o gesto seguinte precisa alcançar o canvas.
+  if (await run(`!!document.querySelector('[aria-label="Fechar propriedades"]')`)) await label('Fechar propriedades')
   const held = await at(1450, 1050)
   await hold(held)
-  results.menu = await run(`!!document.querySelector('[role="menu"][aria-label="Ações do objeto"]')`)
+  await until(`document.querySelector('[role="menu"][aria-label="Ações do objeto"]')`)
+  results.menu = true
   results.textSelection = await run(`window.getSelection()?.toString() ?? ''`)
   if (results.textSelection) throw new Error('O toque longo selecionou texto da interface: ' + results.textSelection)
   await button('Fechar menu')
