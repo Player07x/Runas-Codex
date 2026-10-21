@@ -220,3 +220,28 @@ A mesclagem `85914b2` (do #40) devolveu à `main` a versão anterior à X4 (`ab2
 exportações por módulo) e à X7 (`7f0a84e`, sala hospedada no Android), embora a beta.15 tenha sido publicada com as
 duas. O branch `correcao/restaura-x4-x7` reaplica os dois commits sobre a `main` com o #40, mantendo as Tasks e o
 tempo livre; a versão volta a 0.1.0-beta.15. A situação de "Tasks e tempo livre" passa a **mesclada (#40)**.
+
+## Rework visual e redistribuição (21/10/2026)
+
+O dono aprovou o rework visual proposto pelo Claude Code (proposta e protótipo publicados na conversa de 21/10) e
+pediu que ele se dedique só a isso. Tudo o que não depende da interface nova passou para o Codex, em
+[codex-durante-rework.md](codex-durante-rework.md). A situação de “Tasks e tempo livre” é **mesclada (#40)**; a X4 e a
+X7 voltaram à `main` pelo #52.
+
+| Fase | Responsável | O que entra |
+|---|---|---|
+| **F1** Fundações | Claude Code | tokens, componentes padrão, título por rota, `aria-current`, foco após navegar |
+| **F2** Acessibilidade | Claude Code | seção nova nas Configurações; fonte de alta legibilidade; barra inferior configurável |
+| **F3** Editor e Livros | Claude Code | barra única, formatação contextual, painel Apoio, modo Código, celular |
+| **F4** Notas, Wiki, Campanhas, Agenda | Claude Code | imagem de cada nota; cor, capa e ícone por campanha e por categoria da Wiki |
+| **F5** Início, Configurações, Transferir, VTT | Claude Code | próxima sessão de uma fonte só; Centelhas no cofre; lugares de Ajuda e Backups |
+| Itens 1 a 9 de [codex-durante-rework.md](codex-durante-rework.md) | Codex | sala pela internet no Android, Homebrewery, PIN, atalho no Wayland, X6, C9 sem tela, C7, Tasks |
+
+**Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
+`app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a
+`Platform`, o processo principal do desktop, o Android nativo e o VTT por dentro (`app/src/vtt/**`). Quem precisar de
+algo do outro lado pede no PR.
+
+**ADRs:** 0025 é a regra de lançamentos. Reservadas: **0026** rework visual e **0027** cores, capas e imagens por
+campanha e categoria (Claude Code); **0028** em diante para o Codex. Há duas ADRs com o número 0020 (Tasks e
+Transferências); ficam como estão para não quebrar links.
