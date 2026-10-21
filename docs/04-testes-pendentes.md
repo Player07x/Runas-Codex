@@ -611,3 +611,10 @@ Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
 - Na direita, conferir Referências → Leitura → Editar → Código → Ações da nota, com o menu de ações flutuante.
 - Conferir os cartões de 40 px e o tamanho anterior das categorias. A seta e dois cliques nas categorias recolhem/expandem os cartões; recarregar mantém a escolha.
 - Confirmar conforto dos comandos compactos no aparelho físico, conforme tamanho pedido na revisão.
+
+## Restauração da X4 e da X7 na main (21/10/2026)
+
+- [ ] Livros: a faixa de formatadores, o Modo foco e os painéis redimensionáveis voltaram, iguais aos da beta.15.
+- [ ] Exportar… aparece de novo na nota, na pasta, no artigo, na categoria, na Wiki e no diário das sessões.
+- [ ] Agenda › Tarefas com prazo continua com as linhas do Tasks (#40), sem voltar à lista antiga.
+- [ ] Android: hospedar a sala pelo celular (X7) funciona como na beta.15; o CI roda o `room-smoke`.

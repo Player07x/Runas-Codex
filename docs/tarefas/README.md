@@ -213,3 +213,10 @@ Entradas de exportação por módulo, seleção de coleção e site offline ZIP 
 de Livros simplificados, galeria de formatadores, colunas automáticas 1–4, foco, painéis redimensionáveis e
 recolhíveis, correções do seletor de Wiki e das datas de tarefas. Conferência do dono no navegador pendente;
 **sem merge e sem release até o seu OK**. C7 (backups agendados/conflitos) e X7 continuam independentes.
+
+## Restauração da X4 e da X7 (21/10/2026)
+
+A mesclagem `85914b2` (do #40) devolveu à `main` a versão anterior à X4 (`ab2ab90`, interface de Livros e
+exportações por módulo) e à X7 (`7f0a84e`, sala hospedada no Android), embora a beta.15 tenha sido publicada com as
+duas. O branch `correcao/restaura-x4-x7` reaplica os dois commits sobre a `main` com o #40, mantendo as Tasks e o
+tempo livre; a versão volta a 0.1.0-beta.15. A situação de "Tasks e tempo livre" passa a **mesclada (#40)**.
