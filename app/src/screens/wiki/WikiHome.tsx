@@ -15,6 +15,7 @@ import { Markdown } from "../../components/Markdown"
 import { Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, iconByName, KindIcon, takeWikiSearch, useWiki } from "./wiki-state"
+import { useCreateRequest } from "../../lib/create-request"
 
 interface FolderNode {
   name: string
@@ -66,6 +67,7 @@ export function WikiHome() {
   const home = wiki!.home ? index.note(wiki!.home) : undefined
   const noteSet = useMemo(() => vaultNoteSet(index, home?.path ?? root, {}, vault.platform), [index, home, root, vault.platform, vault.version])
   const readOnly = vault.info?.readOnly ?? true
+  useCreateRequest("artigo", () => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true)))
 
   return (
     <div className="page wiki-home">

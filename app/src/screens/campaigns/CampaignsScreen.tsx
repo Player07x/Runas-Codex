@@ -15,6 +15,7 @@ import { BoardsView } from "./CampaignCanvas"
 import { StorytellerScreen } from "./StorytellerScreen"
 import "./campaigns.css"
 import "./register"
+import { useCreateRequest } from "../../lib/create-request"
 
 const TABS = [
   { id: "", label: "Painel", icon: <LayoutDashboard size={15} /> },
@@ -125,6 +126,7 @@ function CampaignList() {
     })
   }, [index, vault.version])
   const create = () => (readOnly ? toast("Libere a gravação em Configurações para criar uma campanha.") : setCreating(true))
+  useCreateRequest("campanha", create)
   return (
     <div className="page">
       <div className="page-head">

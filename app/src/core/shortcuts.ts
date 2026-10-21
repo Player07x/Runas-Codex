@@ -15,3 +15,8 @@ export function shortcutAction(event: Parameters<typeof eventShortcut>[0], overr
 export function shortcutLabel(action: ShortcutAction, overrides: Partial<Record<ShortcutAction, string>>): string {
   return overrides[action] ?? SHORTCUTS[action].key
 }
+
+/** Atalho como a pessoa lê no teclado: “Mod” vira Ctrl (⌘ no Mac). */
+export function shortcutText(key: string, mac = false): string {
+  return key.split("+").map((part) => (part === "Mod" ? (mac ? "⌘" : "Ctrl") : part)).join("+")
+}

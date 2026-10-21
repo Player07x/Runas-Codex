@@ -67,13 +67,14 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
 }
 
 /* Escala de leitura por aparelho, com escopo fora das páginas de impressão. */
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md,.canvas-md { font-size:calc(15px * var(--font-scale,1)); }
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h1 { font-size:calc(28px * var(--font-scale,1)); }
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h2 { font-size:calc(21px * var(--font-scale,1)); }
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h3 { font-size:calc(17px * var(--font-scale,1)); }
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h4 { font-size:calc(15px * var(--font-scale,1)); }
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h5 { font-size:calc(14px * var(--font-scale,1)); }
-:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h6 { font-size:calc(13px * var(--font-scale,1)); }
+/* Texto de leitura a 16 px (rework F1), proporções dos títulos mantidas; a impressão de Livros não é afetada. */
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md,.canvas-md { font-size:calc(16px * var(--font-scale,1)); }
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h1 { font-size:calc(29px * var(--font-scale,1)); }
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h2 { font-size:calc(22px * var(--font-scale,1)); }
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h3 { font-size:calc(18px * var(--font-scale,1)); }
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h4 { font-size:calc(16px * var(--font-scale,1)); }
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h5 { font-size:calc(15px * var(--font-scale,1)); }
+:is(.note-editor,.article,.book-wiki-reference,.link-preview) .md h6 { font-size:calc(14px * var(--font-scale,1)); }
 
 .mobile-space-nav { display:none; }
 .room-appearance { position:fixed;z-index:50;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:44px;height:44px;padding:0;box-shadow:var(--shadow-sm); }

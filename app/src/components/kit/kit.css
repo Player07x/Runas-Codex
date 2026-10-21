@@ -1,0 +1,72 @@
+/* Componentes padrão do rework (ADR 0026): mesmas medidas e estados em todas as telas, só com tokens do Órbita. */
+
+/* ---------- Menu ⋯ ---------- */
+.kit-menu-wrap { position: relative; display: inline-flex; }
+.kit-menu { position: absolute; z-index: 70; top: calc(100% + 6px); min-width: 240px; max-width: min(340px, calc(100vw - 24px)); display: grid; gap: 1px; padding: 5px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-sm); }
+.kit-menu.end { right: 0; }
+.kit-menu.start { left: 0; }
+.kit-menu-heading { padding: 6px 10px 4px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.kit-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: left; font-size: calc(14px * var(--font-scale, 1)); }
+.kit-menu-item svg { color: var(--muted); flex: 0 0 auto; }
+.kit-menu-item:hover, .kit-menu-item:focus-visible { background: var(--panel-2); outline-offset: -2px; }
+.kit-menu-item.danger, .kit-menu-item.danger svg { color: var(--red); }
+.kit-menu-item kbd { margin-left: auto; }
+.kit-menu-sep { height: 1px; margin: 4px 6px; background: var(--line); }
+
+/* ---------- Abas do painel ---------- */
+.kit-tabs { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.kit-tab { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: calc(13.5px * var(--font-scale, 1)); font-weight: 600; white-space: nowrap; }
+.kit-tab:hover { color: var(--text); }
+.kit-tab[aria-selected="true"] { border-bottom-color: var(--cyan); color: var(--text); }
+.kit-tab-count { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-variant-numeric: tabular-nums; }
+.kit-tabpanel { display: grid; gap: var(--space-section); padding: 12px; align-content: start; }
+.kit-tabpanel:focus-visible { outline-offset: -3px; }
+
+/* ---------- Cabeçalho de página ---------- */
+.kit-page-head { align-items: center; }
+.kit-page-head .page-title:focus { outline: none; }
+.kit-page-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; color: var(--muted); }
+.kit-actions { display: flex; align-items: center; gap: var(--space-field); margin-left: auto; }
+
+/* ---------- Barra do documento ---------- */
+.kit-docbar { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px; border-bottom: 1px solid var(--line); background: var(--bg); min-width: 0; }
+.kit-back { padding-left: 8px; }
+.kit-doc-title { display: grid; min-width: 0; line-height: 1.25; }
+.kit-doc-title small { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
+.kit-doc-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kit-doc-center { margin-inline: auto; }
+.kit-doc-end { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.kit-doc-center + .kit-doc-end { margin-left: 0; }
+.kit-save { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); white-space: nowrap; }
+.kit-save::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.kit-save.salvando::before { background: var(--gold); }
+.kit-save.erro { color: var(--red); }
+.kit-save.erro::before { background: var(--red); }
+.kit-save.somente-leitura::before { background: var(--muted); }
+
+/* ---------- Aviso ---------- */
+.kit-notice { --tone: var(--cyan); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--tone) 8%, var(--panel)); }
+.kit-notice.warn { --tone: var(--gold); }
+.kit-notice.danger { --tone: var(--red); }
+.kit-notice.ok { --tone: var(--green); }
+.kit-notice > svg { color: var(--tone); flex: 0 0 auto; }
+.kit-notice-text { display: grid; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.kit-notice-text span { color: var(--muted); }
+.kit-notice-actions { display: flex; flex-wrap: wrap; gap: var(--space-field); }
+
+/* ---------- Linha de lista ---------- */
+.kit-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 6px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text); text-align: left; text-decoration: none; }
+.kit-row:is(a, button):hover { background: var(--panel-2); }
+.kit-row[aria-current] { background: color-mix(in srgb, var(--cyan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cyan); }
+.kit-row-media { display: grid; place-items: center; width: 40px; height: 40px; overflow: hidden; border-radius: 10px; background: var(--panel-2); color: var(--muted); }
+.kit-row-media img { width: 100%; height: 100%; object-fit: cover; }
+.kit-row-text { display: grid; min-width: 0; }
+.kit-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kit-row-text small { overflow: hidden; color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.kit-row-end { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+
+@media (max-width: 860px), (pointer: coarse) {
+  .kit-menu-item, .kit-tab { min-height: 44px; }
+  .kit-docbar { gap: 6px; padding: 6px 10px; }
+  .kit-back span { display: none; }
+}

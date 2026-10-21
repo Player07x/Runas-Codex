@@ -1,14 +1,29 @@
 .resizable-panel { position:relative; min-width:0; }
 .panel-controls { position:sticky; top:0; z-index:4; display:flex; justify-content:flex-end; flex:0 0 auto; background:var(--panel); }
-.panel-collapse { min-height:44px; max-width:100%; gap:8px; }
+/* Barra do painel (ADR 0026): o nome do painel e um botão de recolher, igual em todas as telas. */
+.resizable-panel > .panel-controls { align-items:center; justify-content:space-between; gap:8px; min-height:40px; padding:2px 4px 2px 12px; border-bottom:1px solid var(--line); }
+.panel-title { overflow:hidden; color:var(--muted); font-size:calc(12px * var(--font-scale, 1)); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; text-overflow:ellipsis; white-space:nowrap; }
+.panel-collapse { max-width:100%; gap:8px; }
+.panel-controls .panel-collapse.btn { min-height:44px; }
 .panel-edge { position:absolute; top:0; bottom:0; width:8px; z-index:8; cursor:col-resize; touch-action:none; }
 .panel-edge:hover,.panel-edge:focus-visible { background:color-mix(in srgb,var(--cyan) 45%,transparent); }
 .panel-edge-left { right:0; } .panel-edge-right { left:0; }
-.resizable-panel[data-panel-collapsed=true] { padding:0!important; overflow:hidden; }
-.resizable-panel[data-panel-collapsed=true] > :not(.panel-controls):not(.panel-edge) { display:none!important; }
-.resizable-panel[data-panel-collapsed=true] .panel-collapse { padding:10px; }
+.resizable-panel[data-panel-collapsed=true]:not([data-panel-mode=rail]) { padding:0!important; overflow:hidden; }
+.resizable-panel[data-panel-collapsed=true]:not([data-panel-mode=rail]) > :not(.panel-controls):not(.panel-edge) { display:none!important; }
+.resizable-panel[data-panel-collapsed=true] > .panel-controls { justify-content:center; padding:4px 0; border-bottom:0; }
+.resizable-panel[data-panel-collapsed=true] > .panel-controls .panel-title { display:none; }
+
+/* Navegação principal: o botão fica ao lado da marca; recolhida, vira um trilho só com os ícones. */
+.sidebar.resizable-panel > .panel-controls { position:absolute; top:20px; right:8px; min-height:0; padding:0; border:0; background:transparent; }
+.sidebar.resizable-panel .brand { padding-right:44px; }
+.sidebar[data-panel-collapsed=true] { padding:12px 8px; overflow-x:hidden; }
+.sidebar[data-panel-collapsed=true] > .panel-controls { position:static; justify-content:center; margin-bottom:8px; }
+.sidebar[data-panel-collapsed=true] .brand { justify-content:center; padding:0 0 18px; }
+.sidebar[data-panel-collapsed=true] :is(.brand > div, .nav-link span, .nav-link .count, .nav-label, .offline-pill span) { display:none; }
+.sidebar[data-panel-collapsed=true] .nav-link { justify-content:center; padding:0; }
+.sidebar[data-panel-collapsed=true] .nav-group + .nav-label { display:block; height:1px; margin:14px 8px; padding:0; overflow:hidden; background:var(--line); font-size:0; }
+.sidebar[data-panel-collapsed=true] .offline-pill { justify-content:center; margin-inline:0; }
 @media(min-width:861px) {
- .resizable-panel[data-panel-collapsed=true] .panel-collapse span { display:none; }
  body .shell:has(>.resizable-panel) { grid-template-columns:var(--panel-navigation,240px) minmax(0,1fr); }
  body .workspace { grid-template-columns:var(--panel-notes-left,280px) minmax(0,1fr) var(--panel-notes-right,300px); }
  body .workspace.no-right { grid-template-columns:var(--panel-notes-left,280px) minmax(0,1fr); }
@@ -26,7 +41,9 @@
 @media(max-width:860px) {
  .panel-edge { display:none; }
  .resizable-panel[data-panel-collapsed=true] { min-height:44px; height:auto; }
- .resizable-panel[data-panel-collapsed=true] .panel-collapse { width:100%; justify-content:flex-start; }
+ .resizable-panel[data-panel-collapsed=true] > .panel-controls { justify-content:space-between; padding:2px 4px 2px 12px; }
+ .resizable-panel[data-panel-collapsed=true] > .panel-controls .panel-title { display:inline; }
+ .panel-controls .panel-collapse.icon-btn.sm { width:44px; height:44px; }
  body .workspace.show-left:has(>.pane-left[data-panel-collapsed=true])>section { display:block; }
  body .books-layout:has(>.books-binder[data-panel-collapsed=true]) .books-main { display:flex; }
 }

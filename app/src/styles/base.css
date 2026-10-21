@@ -7,7 +7,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: calc(14px * var(--font-scale, 1));
+  font-size: calc(15px * var(--font-scale, 1));
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -20,19 +20,21 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 p { margin: 0; }
 ul, ol { margin: 0; }
 img { max-width: 100%; }
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+/* Texto só para leitores de tela (avisos de troca de tela, rótulos de ícones). */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 ::selection { background: color-mix(in srgb, var(--cyan) 35%, transparent); }
 
 /* Barras de rolagem discretas (desktop). */
 * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 
 /* ---------- Tipografia ---------- */
-.eyebrow { color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.eyebrow { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .display { font-family: var(--font-display); letter-spacing: 0.02em; }
 .muted { color: var(--muted); }
 .faint { color: var(--faint); }
-.small { font-size: calc(12px * var(--font-scale, 1)); }
-.tiny { font-size: calc(11px * var(--font-scale, 1)); }
+.small { font-size: calc(13px * var(--font-scale, 1)); }
+.tiny { font-size: calc(12px * var(--font-scale, 1)); }
 .mono { font-family: var(--font-mono); }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .page-title { font-family: var(--font-display); font-size: calc(26px * var(--font-scale, 1)); font-weight: 600; }
@@ -72,7 +74,7 @@ img { max-width: 100%; }
   min-height: 36px; padding: 0 14px;
   border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--panel-2); color: var(--text);
-  font-size: calc(13px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; text-decoration: none;
+  font-size: calc(14px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; text-decoration: none;
 }
 .btn:hover { background: var(--panel-hover); border-color: var(--line-strong); }
 .btn.primary { border-color: transparent; background: var(--cyan); color: var(--on-accent); }
@@ -80,7 +82,7 @@ img { max-width: 100%; }
 .btn.danger { border-color: color-mix(in srgb, var(--red) 45%, var(--line)); color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--panel)); }
 .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 .btn.ghost:hover { background: var(--panel-2); color: var(--text); }
-.btn.sm { min-height: 30px; padding: 0 10px; font-size: calc(12px * var(--font-scale, 1)); border-radius: 8px; }
+.btn.sm { min-height: 30px; padding: 0 10px; font-size: calc(13px * var(--font-scale, 1)); border-radius: 8px; }
 .btn.lg { min-height: 48px; padding: 0 20px; font-size: calc(15px * var(--font-scale, 1)); }
 .btn.block { width: 100%; }
 .icon-btn {
@@ -93,15 +95,16 @@ img { max-width: 100%; }
 
 /* ---------- Segmentado / abas ---------- */
 .segmented { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); max-width: 100%; overflow-x: auto; }
-.segmented button { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; white-space: nowrap; }
+.segmented button { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; white-space: nowrap; }
 .segmented button:hover { color: var(--text); }
-.segmented button.active { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+/* O item escolhido se distingue pela borda forte (3:1), não só pelo fundo. */
+.segmented button.active { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); }
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-.tabs button, .tabs a { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: calc(13px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; text-decoration: none; }
+.tabs button, .tabs a { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: calc(14px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; text-decoration: none; }
 .tabs button.active, .tabs a.active { border-bottom-color: var(--cyan); color: var(--text); }
 
 /* ---------- Chips, selos ---------- */
-.chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: calc(11.5px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; }
 .chip.cyan { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 40%, var(--line)); background: color-mix(in srgb, var(--cyan) 10%, var(--panel)); }
 .chip.red { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, var(--line)); background: color-mix(in srgb, var(--red) 10%, var(--panel)); }
 .chip.gold { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, var(--line)); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); }
@@ -109,11 +112,11 @@ img { max-width: 100%; }
 .chip.green { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, var(--line)); background: color-mix(in srgb, var(--green) 10%, var(--panel)); }
 button.chip:hover { color: var(--text); }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--muted); }
-kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--panel-2); color: var(--muted); font-family: var(--font-mono); font-size: calc(11px * var(--font-scale, 1)); text-align: center; }
+kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--panel-2); color: var(--muted); font-family: var(--font-mono); font-size: calc(12px * var(--font-scale, 1)); text-align: center; }
 
 /* ---------- Campos ---------- */
 .field { display: grid; gap: var(--space-label); min-width: 0; }
-.field > span { color: var(--muted); font-size: calc(11.5px * var(--font-scale, 1)); font-weight: 650; }
+.field > span { color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); font-weight: 650; }
 .input, .select, .textarea {
   width: 100%; min-height: 38px; padding: 0 11px;
   border: 1px solid var(--line); border-radius: var(--radius);
@@ -124,9 +127,9 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
 .search { position: relative; display: flex; align-items: center; }
 .search svg { position: absolute; left: 10px; color: var(--muted); pointer-events: none; }
 .search .input { padding-left: 34px; }
-.check { display: flex; align-items: center; gap: 8px; min-height: 30px; font-size: calc(13px * var(--font-scale, 1)); }
+.check { display: flex; align-items: center; gap: 8px; min-height: 30px; font-size: calc(14px * var(--font-scale, 1)); }
 .check input { accent-color: var(--cyan); width: 16px; height: 16px; }
-.switch { position: relative; width: 38px; height: 22px; flex: 0 0 auto; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); }
+.switch { position: relative; width: 38px; height: 22px; flex: 0 0 auto; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--panel-2); }
 .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform 120ms; }
 .switch.on { background: color-mix(in srgb, var(--cyan) 35%, var(--panel-2)); border-color: var(--cyan-dim); }
 .switch.on::after { transform: translateX(16px); background: var(--cyan); }
@@ -140,7 +143,7 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
 .list-item:hover { background: var(--panel-2); }
 .list-item.active { background: var(--panel-2); border-color: var(--line); }
 .list-item > svg { color: var(--muted); }
-.list-item .meta { margin-left: auto; color: var(--faint); font-size: calc(11px * var(--font-scale, 1)); white-space: nowrap; }
+.list-item .meta { margin-left: auto; color: var(--faint); font-size: calc(12px * var(--font-scale, 1)); white-space: nowrap; }
 
 /* ---------- Diálogos ---------- */
 .backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 55%); backdrop-filter: blur(3px); }
@@ -159,7 +162,7 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
 .empty .rune-mark { width: 64px; height: 64px; opacity: 0.85; }
 
 /* ---------- Faixa de protótipo ---------- */
-.proto-note { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px dashed color-mix(in srgb, var(--gold) 50%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--gold) 7%, transparent); color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); }
+.proto-note { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px dashed color-mix(in srgb, var(--gold) 50%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--gold) 7%, transparent); color: var(--gold); font-size: calc(13px * var(--font-scale, 1)); }
 
 /* ---------- Alvos de toque no celular ---------- */
 @media (max-width: 860px) {

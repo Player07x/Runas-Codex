@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { eventShortcut, shortcutAction, shortcutLabel } from "./shortcuts"
+import { eventShortcut, shortcutAction, shortcutLabel, shortcutText } from "./shortcuts"
 const event = { key: "p", ctrlKey: true, metaKey: false, altKey: false, shiftKey: false }
 it("os atalhos respeitam modificadores e a configuração substitui o padrão", () => {
   expect(shortcutAction(event, {})).toBe("palette")
@@ -15,4 +15,12 @@ it("uma letra simples ou só um modificador não vira atalho", () => {
 it("a ajuda acompanha a combinação personalizada", () => {
   expect(shortcutLabel("newNote", {})).toBe("Mod+N")
   expect(shortcutLabel("newNote", { newNote: "Mod+Alt+N" })).toBe("Mod+Alt+N")
+})
+
+describe("atalho escrito para a pessoa", () => {
+  it("mostra Ctrl no lugar de Mod, e ⌘ no Mac", () => {
+    expect(shortcutText("Mod+Shift+H")).toBe("Ctrl+Shift+H")
+    expect(shortcutText("Mod+N", true)).toBe("⌘+N")
+    expect(shortcutText("Alt+F4")).toBe("Alt+F4")
+  })
 })

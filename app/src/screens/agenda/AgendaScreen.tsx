@@ -25,6 +25,7 @@ import { exactAlarmsAllowed, isAndroidApp, openExactAlarmSettings } from "../../
 import { EventDialog } from "./EventDialog"
 import { addDays, eventColor, hhmm, ListView, MonthView, onDay, sameDay, startOfDay, TimeGrid } from "./views"
 import "../agenda.css"
+import { useCreateRequest } from "../../lib/create-request"
 
 type View = "mes" | "semana" | "dia" | "lista"
 const VIEW_KEY = "runas-codex:agenda-visao"
@@ -240,6 +241,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
 
   const dayList = onDay(occurrences.length ? expandEvents(events, startOfDay(selectedDay), addDays(selectedDay, 1)) : [], selectedDay)
 
+  // “+ Novo › Evento na Agenda”: o mesmo diálogo do botão Evento, no dia escolhido.
+  useCreateRequest("evento", () => { if (!readOnly) create(selectedDay) })
   return (
     <div className="page agenda">
       {poll&&<Modal title="Enquete de data pela sala" onClose={()=>setPoll(false)} wide><CampaignRoomTools campaign="Agenda" root="Agenda/" readOnly={readOnly} onlyPoll/></Modal>}

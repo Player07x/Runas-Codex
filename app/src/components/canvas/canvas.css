@@ -3,7 +3,8 @@
 .canvas-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 88%, transparent); }
 .canvas-sep { width: 1px; height: 22px; background: var(--line); }
 .canvas-colors { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; color: var(--muted); }
-.canvas-swatch { width: 18px; height: 18px; padding: 0; border: 2px solid var(--panel); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); }
+/* 24 px no mouse (WCAG 2.5.8); o toque já sobe para 44 px nas regras do celular. */
+.canvas-swatch { width: 24px; height: 24px; padding: 0; border: 2px solid var(--panel); border-radius: 50%; box-shadow: 0 0 0 1px var(--line-strong); }
 .canvas-swatch:disabled { opacity: 0.35; }
 .canvas-zoom { min-width: 40px; text-align: center; }
 .canvas-inspector { position: absolute; z-index: 4; top: 56px; right: 12px; width: 240px; padding: 10px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-sm); }
