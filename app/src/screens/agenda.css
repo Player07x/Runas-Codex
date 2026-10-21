@@ -78,3 +78,4 @@ button.event-pill { display: block; width: 100%; border-top: 0; border-right: 0;
 @media (max-width: 700px) {
   .cell-free { display: block; margin: 0; padding: 0 3px; font-size: 10px; }
 }
+.task-due-date { flex:0 0 auto; min-width:5ch; white-space:nowrap; font-variant-numeric:tabular-nums; text-align:right; }

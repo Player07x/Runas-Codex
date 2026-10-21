@@ -412,3 +412,8 @@
   .vtt-root .table-title { display: none; }
   .vtt-root .table-bar > .ghost:first-child { padding-inline: 8px; }
 }
+
+@media(min-width:861px) {
+ .table:not(.panel-open)>.side-panel>:not(.side-tabs) { display:none; }
+ .scene-canvas>.resizable-panel.properties { width:var(--panel-vtt-properties,290px); }
+}

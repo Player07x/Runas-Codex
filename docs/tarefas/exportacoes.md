@@ -46,3 +46,10 @@ notas sai em PDF, DOCX ou HTML**, com o mesmo leitor do app.
 - Acrescente em `docs/04-testes-pendentes.md` o que o dono precisa conferir à mão (abrir no Word e no LibreOffice,
   site no celular).
 - Atualize a tabela de situação do [`README.md`](README.md).
+
+## Implementação para conferência — 19/10/2026
+
+O complemento da X4 está em `export/x4-interface-livros`; ver ADR 0013. Reaproveita os exportadores publicados
+na beta.14 e acrescenta as entradas por módulo, seleção de notas/links e o site ZIP com uma página por nota.
+O teste de transferências do Electron agora exporta a versão dos jogadores em PDF, HTML e site ZIP e verifica
+que a sentinela secreta não aparece na captura, no HTML nem no site. A publicação aguarda a conferência do dono.

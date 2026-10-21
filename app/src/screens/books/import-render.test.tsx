@@ -11,3 +11,13 @@ it("desenha os callouts após a quebra de coluna, sem mostrar marcações como t
   expect(html).not.toContain("[!statblock]")
   expect(html).toContain("<table>")
 })
+
+
+it.each([1,2,3,4])("desenha a marcação automática de %i colunas sem exigir separação manual", count => {
+  const html = renderToStaticMarkup(<Markdown source={`Antes.\n\n::: runas-colunas-${count}\n\nPrimeiro parágrafo.\n\nSegundo parágrafo.\n\n:::\n\nDepois.`} space="livros" />)
+  expect(html).toContain(`class="md-container runas-colunas-${count}"`)
+  expect(html).toContain("Primeiro parágrafo.")
+  expect(html).not.toContain("::: runas")
+  expect(html).not.toContain("quebra-coluna")
+  expect(html).toMatch(/<\/div>\s*<p>Depois\./)
+})

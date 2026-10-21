@@ -1,3 +1,4 @@
+import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
 import { Camera, Clock, DoorOpen, Dices, Link2, LogIn, Map, Plus, WifiOff, Wifi, Hash } from "lucide-react"
 import { href, navigate } from "../../lib/router"
@@ -239,7 +240,7 @@ function JoinRoom() {
             <Camera size={14} /> No celular, ler o QR com a câmera abre a sala no navegador.
           </span>
         </section>
-        <aside className="stack-lg">
+        <ResizablePanel id="vtt-join" label="Detalhes da sala" width={320} className="stack-lg">
           <section className="card stack">
             <span className="section-title">Salas recentes</span>
             {recent.length === 0 && <span className="muted small">As salas em que você entrar aparecem aqui.</span>}
@@ -262,7 +263,7 @@ function JoinRoom() {
               <Link2 size={15} /> Fora de casa: o mestre liga o link público e manda um endereço https.
             </span>
           </section>
-        </aside>
+        </ResizablePanel>
       </div>
     </div>
   )

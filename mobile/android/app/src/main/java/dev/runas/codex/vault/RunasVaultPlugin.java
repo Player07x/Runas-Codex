@@ -65,7 +65,7 @@ public class RunasVaultPlugin extends Plugin {
     private static final long DAY_MS = 24L * 60 * 60 * 1000;
     private static final long MAX_SHARED_BYTES = 20L * 1024 * 1024;
 
-    private VaultFs store;
+    private volatile VaultFs store;
     private String openError;
     private boolean pickSaf;
     private VaultWatcher watcher;
@@ -168,6 +168,13 @@ public class RunasVaultPlugin extends Plugin {
         if (!writable()) throw new VaultStore.VaultError("Cofre em somente leitura. Libere a gravação em Configurações › Cofre.");
         dailyBackup(s);
         return s;
+    }
+
+    /** A sala recebe somente a área confinada das mesas, com a mesma permissão de gravação. */
+    public String roomIdentity() throws IOException { return requireStore().identity(); }
+
+    public VaultFs roomWorlds() throws IOException {
+        return VaultTransfer.worlds(writableStore(), new File(getContext().getFilesDir(), "vault-transactions"), true);
     }
 
     private static JSObject entryJson(VaultStore.Entry e) {

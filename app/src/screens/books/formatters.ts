@@ -104,7 +104,8 @@ export const FORMATTER_GROUPS: { title: string; items: Formatter[] }[] = [
   {
     title: "Livro",
     items: [
-      { label: "Duas colunas", syntax: "> [!colunas]\n> Primeira coluna.\n> <div class=\"quebra-coluna\"></div>\n> Segunda coluna." },
+      ...([1, 2, 3, 4] as const).map(count => ({ label: `Colunas automáticas: ${count}`, syntax: `\n::: runas-colunas-${count}\n\nEscreva aqui. O conteúdo flui automaticamente pelas colunas.\n\n:::\n` })),
+      { label: "Duas colunas manuais", syntax: "> [!colunas]\n> Primeira coluna.\n> <div class=\"quebra-coluna\"></div>\n> Segunda coluna." },
       { label: "Quebra de coluna", syntax: '<div class="quebra-coluna"></div>' },
       { label: "Quebra de página", syntax: '<div class="quebra-pagina"></div>' },
       { label: "Bloco largo", syntax: "> [!largo]" },

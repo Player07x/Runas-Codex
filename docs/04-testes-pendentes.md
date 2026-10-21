@@ -580,3 +580,41 @@ Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
 - [ ] Importar um `.ics` do Google Agenda com uma ocorrência movida e outra cancelada: a movida aparece no novo horário
   e a original some; a cancelada não aparece.
 - [ ] Celular (Android) e 320 px: caixas com 44 px de toque, janela de edição e de tempo livre sem rolagem lateral.
+
+## X4 e interface de escrita — conferência antes do merge (19/10/2026)
+
+- [ ] No navegador, conferir os seis controles de Livros, galeria por categoria e Modo foco; sair pelo botão e Escape.
+- [ ] Arrastar as bordas da navegação, lista/detalhes de Notas, referência/prévia de Livros, Wiki, Agenda, sessões,
+      gráfico e propriedades da mesa; recolher e reabrir também no celular; conferir a persistência ao reabrir.
+- [ ] Verificar nomes horizontais no seletor de Wiki e datas em uma linha em Agenda › Tarefas com prazo.
+- [ ] Inserir `::: runas-colunas-1` até `::: runas-colunas-4`; conferir o fluxo na prévia e no PDF, sem retirar as
+      quebras de colunas manuais. Abrir o DOCX/RTF no Word e no LibreOffice para conferir suas seções contínuas.
+- [ ] Abrir Exportar… na nota, pasta, artigo, categoria e Wiki, e Exportar diário… nas sessões da campanha.
+- [ ] Gerar versão dos jogadores; verificar PDF, DOCX e HTML sem o segredo e sem artigos secretos.
+- [ ] Extrair o ZIP do Site offline e abrir index.html sem internet no computador e no celular; conferir links,
+      imagens e fontes. Mapas são imagem e lista; controles interativos não acompanham o arquivo.
+- [ ] Autorizar explicitamente o merge e uma eventual release depois da conferência do navegador, como solicitado.
+
+### Conferência adicional de Livros — layout de escrita e celular (19/10/2026)
+
+- Conferir a folha central e a faixa visual de formatação; selecionar uma palavra e aplicar Negrito/Itálico.
+- No celular, conferir os ícones, dicas, abertura/recolhimento de Capítulos e Referências e os modos da nota.
+- No foco, conferir a barra única (Voltar, Ações, Leitura/Editar/Código e Sair do Foco), a faixa fixa e o aproveitamento da altura.
+- Conferir a precisão de cliques em notas longas, títulos e linhas quebradas após mudar fonte/tamanho e largura.
+- Mandar capítulo/seção/parte para a lixeira e conferir a propriedade `estrutura` dos livros que o referenciam.
+- Abrir o site extraído por `index.html` fora do navegador integrado, que bloqueia `file://`; testar os links offline.
+- Validação local: 515 testes app + 178 desktop; typecheck, builds e smokes Electron de leitura/gravação passaram.
+
+### Revisão das barras de Livros — 19/10/2026
+
+- Conferir a ordem Voltar → Capítulos → Escrever no início da barra superior.
+- Na direita, conferir Referências → Leitura → Editar → Código → Ações da nota, com o menu de ações flutuante.
+- Conferir os cartões de 40 px e o tamanho anterior das categorias. A seta e dois cliques nas categorias recolhem/expandem os cartões; recarregar mantém a escolha.
+- Confirmar conforto dos comandos compactos no aparelho físico, conforme tamanho pedido na revisão.
+
+## Restauração da X4 e da X7 na main (21/10/2026)
+
+- [ ] Livros: a faixa de formatadores, o Modo foco e os painéis redimensionáveis voltaram, iguais aos da beta.15.
+- [ ] Exportar… aparece de novo na nota, na pasta, no artigo, na categoria, na Wiki e no diário das sessões.
+- [ ] Agenda › Tarefas com prazo continua com as linhas do Tasks (#40), sem voltar à lista antiga.
+- [ ] Android: hospedar a sala pelo celular (X7) funciona como na beta.15; o CI roda o `room-smoke`.

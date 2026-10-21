@@ -1,3 +1,4 @@
+import type { VttApi } from "../vtt/shared/ipc"
 import type { Reminder } from "../core/agenda"
 import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 
@@ -45,6 +46,9 @@ export interface RoomHostInfo {
 }
 
 export interface Platform {
+  /** Autoridade nativa da sala no Android (X7). */
+  vtt?: VttApi
+
   readonly kind: "electron" | "capacitor" | "memory"
   /** Cofre aberto agora, ou `null` se nenhum foi escolhido. */
   vault(): Promise<VaultInfo | null>

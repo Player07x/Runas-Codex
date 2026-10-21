@@ -206,3 +206,17 @@ A tarefa X7 de hospedar a sala pelo celular permanece independente.
 | Tarefa | Pedido | Situação |
 |---|---|---|
 | Compatibilidade completa com Tasks nas notas e no checklist de preparação; cálculo de tempo livre diário na Agenda | [tasks-tempo-livre.md](tasks-tempo-livre.md) | em revisão; Claude Code, `agenda/tasks-tempo-livre` ([matriz](tasks-matriz.md), [ADR 0020](../adr/0020-tasks-e-tempo-livre.md)) |
+## X4 e interface de Livros — 19/10/2026
+
+Implementação na branch `export/x4-interface-livros`, baseada na main após beta.14 (#49), em cópia isolada.
+Entradas de exportação por módulo, seleção de coleção e site offline ZIP entregues; ADR 0013. Inclui controles
+de Livros simplificados, galeria de formatadores, colunas automáticas 1–4, foco, painéis redimensionáveis e
+recolhíveis, correções do seletor de Wiki e das datas de tarefas. Conferência do dono no navegador pendente;
+**sem merge e sem release até o seu OK**. C7 (backups agendados/conflitos) e X7 continuam independentes.
+
+## Restauração da X4 e da X7 (21/10/2026)
+
+A mesclagem `85914b2` (do #40) devolveu à `main` a versão anterior à X4 (`ab2ab90`, interface de Livros e
+exportações por módulo) e à X7 (`7f0a84e`, sala hospedada no Android), embora a beta.15 tenha sido publicada com as
+duas. O branch `correcao/restaura-x4-x7` reaplica os dois commits sobre a `main` com o #40, mantendo as Tasks e o
+tempo livre; a versão volta a 0.1.0-beta.15. A situação de "Tasks e tempo livre" passa a **mesclada (#40)**.

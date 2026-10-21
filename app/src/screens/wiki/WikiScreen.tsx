@@ -1,3 +1,4 @@
+import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useState } from "react"
 import { CalendarDays, ChevronDown, Eye, EyeOff, GitFork, History, Library, Map, Network, Plus } from "lucide-react"
@@ -149,6 +150,7 @@ function WikiHeader({ current }: { current: string }) {
           </div>
         )}
       </div>
+      <button className="btn" onClick={() => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players })}>Exportar wiki…</button>
       <select className="select mobile-space-nav" aria-label="Tela da Wiki" value={current} onChange={event => navigate(`/wiki${event.target.value ? "/" + event.target.value : ""}`)}>{TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select>
       <nav className="tabs wiki-tabs">
         {TABS.map((tab) => (

@@ -1,7 +1,9 @@
+import { ExportDialog } from "./export/ExportDialog"
+import { ResizablePanel } from "./ResizablePanel"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
-  PanelLeftClose, PanelLeftOpen, Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
+  Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
   ArrowLeft, ArrowRight, Shuffle,
 } from "lucide-react"
 import runa from "../assets/runa.png"
@@ -73,7 +75,6 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
 
 export function Shell({ route, theme, onToggleTheme, fill, children }: { route: string[]; theme: string; onToggleTheme: () => void; fill?: boolean; children: ReactNode }) {
   const vault = useVault()
-  const [collapsed, setCollapsed] = useState(false)
   const [palette, setPalette] = useState(false)
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
@@ -108,8 +109,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   useEffect(() => vault.platform.onQuickCapture?.(() => navigate("/notas/nova")), [vault.platform])
 
   return (
-    <div className={`shell ${collapsed ? "collapsed" : ""}`}>
-      <nav className="sidebar" aria-label="Espaços">
+    <div className="shell">
+      <ResizablePanel id="navigation" label="Navegação" side="left" width={240} as="nav" className="sidebar" aria-label="Espaços">
         <a className="brand" href={href("/")}>
           <img src={runa} alt="" />
           <div>
@@ -140,12 +141,9 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <WifiOff size={15} />
             <span>Offline · cofre local</span>
           </div>
-          <button className="nav-link" style={{ border: 0, background: "transparent" }} onClick={() => setCollapsed(!collapsed)} title="Recolher barra">
-            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            <span>Recolher</span>
-          </button>
+
         </div>
-      </nav>
+      </ResizablePanel>
 
       <div className="main">
         <header className="topbar">
@@ -203,6 +201,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
           </div>
         </Modal>
       )}
+      <ExportDialog />
       {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} />}
     </div>
   )
@@ -231,8 +230,8 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Avançar", icon: <ArrowRight size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Alt →", run: goForward },
       { label: "Nota aleatória", icon: <Shuffle size={16} />, hint: "Notas", run: () => navigate("/notas/aleatoria") },
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
-      { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: shortcutLabel("toggleTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
-      { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: shortcutLabel("editTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
+      { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutLabel("toggleTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
+      { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutLabel("editTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
     ],
     [onToggleTheme, prefs.shortcuts, vault.platform.kind],
   )
