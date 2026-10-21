@@ -618,3 +618,23 @@ Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
 - [ ] Exportar… aparece de novo na nota, na pasta, no artigo, na categoria, na Wiki e no diário das sessões.
 - [ ] Agenda › Tarefas com prazo continua com as linhas do Tasks (#40), sem voltar à lista antiga.
 - [ ] Android: hospedar a sala pelo celular (X7) funciona como na beta.15; o CI roda o `room-smoke`.
+
+## Situação das conferências (21/10/2026)
+
+As caixas acima nunca foram marcadas, mas a maior parte já foi conferida pelo dono. Este resumo diz o que vale; as
+seções antigas ficam como histórico (o arquivo só recebe acréscimos).
+
+**Aprovado pelo dono**
+- Da etapa 1 até a beta.13: aprovado na conferência registrada em “Beta.13 — retorno da conferência manual pelo dono”.
+- Android depois da beta.13 (pastas de outros aplicativos, transferências, atualização do APK, C8): o dono usa o app
+  no celular todo dia e informou em 21/10 que está funcionando muito bem.
+
+**Ainda falta conferir**
+- **Tarefas do plugin Tasks e tempo livre (#40):** ainda não saíram em nenhuma versão; entram na próxima (beta.16).
+  Inclui a conferência com o plugin aberto no Obsidian.
+- **X4, só o que não muda no rework:** colunas automáticas (`::: runas-colunas-1` a `4`) na prévia, no PDF e no DOCX/RTF
+  aberto no Word e no LibreOffice; “Exportar…” em cada módulo; versão dos jogadores sem segredos; site offline em ZIP
+  aberto sem internet. A parte visual da escrita de Livros será refeita pelo rework e conferida de novo.
+- **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
+  existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
+- **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.

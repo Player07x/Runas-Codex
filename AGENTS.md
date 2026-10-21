@@ -96,3 +96,11 @@ blocos), sem reescrever nem reordenar o que existe: `package.json`, `package-loc
   que explicam o porquê).
 - TypeScript estrito; sem `any`; nomes de componentes em inglês ou português como no arquivo vizinho.
 - Testes descrevem o comportamento em português (`it("grava a ordem dos capítulos no livro", …)`).
+
+## Lançamento de versões
+
+O dono pede versões antes de as fases terminarem, para testar o que já existe. Isso é normal: publique a próxima
+pré-release quando ele pedir, seguindo a [ADR 0025](docs/adr/0025-lancamentos.md). Em resumo: tag só na `main`, número
+sempre maior que o anterior, nenhum arquivo da versão anterior some sem explicação no PR de versão, nada incompleto
+quebra o que já funciona, notas em “Pronto para testar”, “Em construção” e “Problemas conhecidos”, e o que conferir
+acrescentado no fim de `docs/04-testes-pendentes.md`.
