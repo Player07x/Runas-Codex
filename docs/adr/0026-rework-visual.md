@@ -128,3 +128,26 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
 - **Relações (WIK-4):** a teia diplomática enquadra ao abrir e ganha a tabela “quem · relação · com quem”, com a cor num
   ponto ao lado do nome (as cores fixas da teia não passariam de contraste como texto).
 - **Ferramentas (WIK-5):** geradores numa lista à esquerda e o resultado à direita, do tamanho dele.
+
+## F4c — Campanhas (decisões)
+- **Barra da campanha (CAM-2):** a mesma da Wiki — troca de campanha por menu (com “Todas as campanhas”), as telas que
+  não cabem vão para “Mais”, `aria-current` na tela aberta e “Tela do Mestre” no fim.
+- **Sessões e próxima sessão (CAM-3):** planejada em dourado, jogada em verde, cancelada apagada, igual no painel, na
+  lista e na linha do tempo. Na lista de sessões, “+ Nova sessão” é a ação principal e as exportações do diário vão
+  para o ⋯.
+- **Missões (CAM-4):** colunas com largura mínima; quando não cabem, a barra de rolagem fica à vista e uma sombra marca
+  o lado que continua. No celular, uma coluna por vez, escolhida num seletor com a contagem de cada uma.
+- **Elenco (CAM-5):** cada NPC e facção tem um ⋯ (Abrir na Wiki, Tirar da campanha) no lugar da lixeira solta. Os
+  cartões dos personagens dos jogadores ficam como estavam.
+- **Ferramentas (CAM-6):** lista à esquerda e só a ferramenta escolhida à direita; a última fica lembrada no aparelho.
+- **Quadro (CAM-7), em todos os `.canvas`:** o cartão guarda o tamanho do arquivo (como no Obsidian) e não cresce
+  sozinho ao abrir, para não cobrir os vizinhos nem gravar sem pedido. Quando o texto não cabe aparece “continua…”;
+  depois de escrever num cartão ele cresce até 520 px para o texto caber, e “Ajustar altura” mostra tudo do cartão
+  escolhido. Os cartões entram no Tab, as setas movem os selecionados (Shift: 50 px), Enter edita ou abre a nota e o
+  foco traz para a vista o cartão que estava fora dela. As amostras de cor já tinham 24 px (X8).
+- **Tela do Mestre (CAM-8):** deixa de ser janela sobre a página e ocupa a tela inteira, em três colunas com rolagem
+  própria: Agora (próxima sessão, pistas guardadas, iniciativa presencial, relógios e dados), Elenco (personagens,
+  NPCs e facções) e Notas fixadas, uma por aba e inteira. No celular, uma coluna por vez, nas abas de cima. Esc fecha.
+- **Painel no celular (CAM-9):** próxima sessão, relógios, missões ativas, segredos e pistas, elenco, limites e linha do
+  tempo; as estatísticas vão para o fim, recolhidas. A ordem muda no HTML (não só no CSS), para o leitor de tela e o
+  Tab seguirem o que se vê.

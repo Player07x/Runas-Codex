@@ -729,3 +729,18 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
   trilha e fim); rótulos perto da borda direita aparecem do lado esquerdo do ponto.
 - [ ] Relações: a teia enquadra ao abrir; tabela “quem · relação · com quem” com links.
 - [ ] Ferramentas: escolher um gerador na lista gera na hora; “Gerar de novo”; guardar como nota.
+
+## Rework visual — F4c Campanhas (22/10/2026)
+
+- [ ] Barra da campanha: trocar de campanha pelo menu; estreitar a janela e conferir “Mais”; Tela do Mestre no fim.
+- [ ] Cores das sessões: planejada dourada, jogada verde, cancelada apagada no painel, na lista e na linha do tempo.
+- [ ] Sessões: “+ Nova sessão” e o ⋯ com as duas exportações do diário (Markdown e PDF/HTML).
+- [ ] Missões no computador: com a janela estreita, a quinta coluna fica cortada com sombra e barra de rolagem à vista;
+  arrastar entre colunas grava o status. No celular: seletor de coluna com as contagens e uma coluna por vez.
+- [ ] Elenco: o ⋯ de cada NPC e facção abre na Wiki e tira da campanha.
+- [ ] Ferramentas: escolher na lista; a escolhida volta ao reabrir.
+- [ ] Quadro (campanha e Notas): “continua…” nos cartões cortados; Ajustar altura; escrever num cartão pequeno faz ele
+  crescer; Tab passa pelos cartões, setas movem, Shift+setas move mais, Enter edita; o arquivo abre igual no Obsidian.
+- [ ] Tela do Mestre: tela inteira com Agora, Elenco e Notas fixadas; iniciativa funciona dali; fixar e desafixar nota;
+  Esc fecha e o foco volta. No celular: abas Agora, Elenco e Notas fixadas.
+- [ ] Painel no celular: próxima sessão primeiro, estatísticas no fim e recolhidas.

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
-import { Minus, Plus, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
+import { BookOpen, Minus, Plus, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { ATTITUDES, withCampaignPlayer, type PlayerCharacter, npcSightings, reputationOf, withoutPosition, withTrackedLink, type TrackedLink } from "../../core/campaigns"
 import { noteName } from "../../core/text"
-import { href } from "../../lib/router"
+import { href, navigate } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { EditPlayerDialog, NewPlayerDialog, WikiNotePicker } from "./campaign-dialogs"
@@ -118,11 +119,10 @@ function TrackedSection({ data, kind }: { data: CampaignData; kind: "npcs" | "fa
                 </button>
               </span>
             )}
-            {!data.readOnly && (
-              <button className="icon-btn sm" onClick={() => setHome(kind, withoutPosition(data.data[kind], item.position))} aria-label={`Tirar ${noteName(item.target)} da campanha`}>
-                <Trash size={13} />
-              </button>
-            )}
+            <OverflowMenu label={`Ações de ${noteName(item.target)}`} items={[
+              ...(item.dest ? [{ label: "Abrir na Wiki", icon: <BookOpen size={15} />, onSelect: () => navigate(noteRoute(item.dest!)) }] : []),
+              { label: "Tirar da campanha", icon: <Trash size={15} />, danger: true, disabled: data.readOnly, onSelect: () => setHome(kind, withoutPosition(data.data[kind], item.position)) },
+            ]} />
           </div>
         )
       })}

@@ -26,9 +26,9 @@ export function NextSessionCard({ data, session, onNew, onScreen }: { data: Camp
   return (
     <section className="card campaign-next">
       <div className="row between">
-        <span className="eyebrow" style={{ color: "var(--red)" }}>Próxima sessão</span>
+        <span className="eyebrow" style={{ color: "var(--gold)" }}>Próxima sessão</span>
         {when && (
-          <span className="chip red">
+          <span className="chip gold">
             <ClockIcon size={13} /> {when}
           </span>
         )}

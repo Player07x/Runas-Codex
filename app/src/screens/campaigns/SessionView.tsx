@@ -1,7 +1,8 @@
 import { openDocumentExport } from "../../components/export/ExportDialog"
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
-import { CalendarDays, ChevronLeft, Download, Globe, PanelRight, Plus, Users } from "lucide-react"
+import { CalendarDays, ChevronLeft, Download, FileDown, Globe, PanelRight, Plus, Users } from "lucide-react"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { campaignJournal, previousSession, SESSION_STATUS, setPrepDetail, setSectionText, setTaskLine, SUMMARY_HEADING, type SessionInfo, type SessionStatus } from "../../core/campaigns"
 import { dirname, noteName } from "../../core/text"
 import { href, navigate } from "../../lib/router"
@@ -38,14 +39,14 @@ function SessionList({ data }: { data: CampaignData }) {
           <span className="eyebrow">{data.campaign.root}Sessões/</span>
           <h1 className="page-title">Sessões</h1>
         </div>
-        <div className="row-wrap">
-          <button className="btn" onClick={() => void exportJournal()} title="As sessões realizadas com o que aconteceu em cada uma, num arquivo Markdown">
-            <Download size={16} /> Diário Markdown
-          </button>
-          <button className="btn" onClick={() => openDocumentExport({ paths: data.sessions.filter(session => session.status === "realizada").map(session => session.path), title: `Diário — ${data.campaign.name}`, journal: data.campaign.name })}>Exportar diário…</button>
+        <div className="kit-actions">
           <button className="btn primary" onClick={() => (data.readOnly ? toast("Libere a gravação em Configurações para criar sessões.") : setCreating(true))}>
             <Plus size={16} /> Nova sessão
           </button>
+          <OverflowMenu label="Ações das sessões" items={[
+            { label: "Exportar diário (Markdown)", icon: <Download size={15} />, onSelect: () => void exportJournal() },
+            { label: "Exportar diário (PDF, HTML…)…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: data.sessions.filter(session => session.status === "realizada").map(session => session.path), title: `Diário — ${data.campaign.name}`, journal: data.campaign.name }) },
+          ]} />
         </div>
       </div>
       {sessions.length === 0 && (

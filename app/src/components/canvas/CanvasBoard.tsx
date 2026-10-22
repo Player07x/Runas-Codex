@@ -1,7 +1,7 @@
 import { pinchCanvas, selectCanvasBox, type CanvasPoint } from "../../core/canvas-tools"
 import { CanvasImageCrop, CanvasImagePicker } from "./CanvasImageTools"
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
-import { Cable, FileText, Group, Link2, Maximize, Minus, Palette, Plus, StickyNote, Trash, Type } from "lucide-react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
+import { Cable, FileText, FoldVertical, Group, Link2, Maximize, Minus, Palette, Plus, StickyNote, Trash, Type } from "lucide-react"
 import {
   addEdge, addNode, anchorPoint, canvasBounds, canvasToSave, colorCss, CANVAS_COLORS, moveNodes, nodesInside, parseCanvas, removeEdge, removeNodes, updateEdge, updateNode,
   type CanvasDoc, type CanvasNode, type CanvasSide, type NodeInput,
@@ -30,6 +30,8 @@ type Drag =
   | { kind: "resize"; id: string; startX: number; startY: number; width: number; height: number }
 
 const SAVE_DELAY = 600
+/** Até onde um cartão cresce sozinho depois de editado (rework F4c, CAM-7); “Ajustar altura” mostra o texto todo. */
+const GROW_LIMIT = 520
 const IMAGE = /\.(png|jpe?g|gif|webp|svg|avif)$/i
 
 export function CanvasBoard({ path }: { path: string }) {
@@ -63,6 +65,10 @@ export function CanvasBoard({ path }: { path: string }) {
   const timer = useRef<number | undefined>(undefined)
   const lastSeen = useRef<string>("")
   const [reload, setReload] = useState(0)
+  // Cartões cujo texto não cabe: id → altura que mostraria tudo. O tamanho gravado só muda por ação de quem edita.
+  const [overflowing, setOverflowing] = useState<Record<string, number>>({})
+  const autoFit = useRef<string | null>(null)
+  const hintId = useId()
 
   // Lê o arquivo (e relê quando ele muda fora do app, se não houver edição esperando para gravar).
   const stamp = entry ? `${entry.mtime}:${entry.size}` : ""
@@ -290,6 +296,51 @@ export function CanvasBoard({ path }: { path: string }) {
     }
   }, [doc, readOnly, selected, selectedIds, selectedEdge, change])
 
+  // Depois de escrever num cartão, ele cresce até GROW_LIMIT para o texto caber (é uma edição, então grava).
+  const changeRef = useRef(change)
+  changeRef.current = change
+  const onMeasure = useCallback((id: string, need: number | null) => {
+    setOverflowing((prev) => {
+      if ((prev[id] ?? null) === need) return prev
+      const next = { ...prev }
+      if (need === null) delete next[id]
+      else next[id] = need
+      return next
+    })
+    if (autoFit.current !== id) return
+    autoFit.current = null
+    const latest = currentDoc.current, node = latest?.nodes.find((n) => n.id === id)
+    if (latest && node && need && need > node.height && node.height < GROW_LIMIT) changeRef.current(updateNode(latest, id, { height: Math.min(need, GROW_LIMIT) }))
+  }, [])
+
+  // Teclado (UI-011): Tab passa pelos cartões, as setas movem os selecionados (Shift: mais longe), Enter edita ou abre.
+  const onCardKey = (event: ReactKeyboardEvent, node: CanvasNode) => {
+    if (editing === node.id || event.target !== event.currentTarget) return
+    const step = event.shiftKey ? 50 : 10
+    const delta = ({ ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] } as Record<string, [number, number]>)[event.key]
+    if (delta) {
+      event.preventDefault()
+      if (readOnly || !doc) return
+      const ids = selectedIds.includes(node.id) ? selectedIds : [node.id]
+      if (!selectedIds.includes(node.id)) { setSelectedIds(ids); setSelected(node.id) }
+      change(moveNodes(doc, ids, delta[0], delta[1]))
+    } else if (event.key === "Enter") {
+      event.preventDefault()
+      editNode(node)
+    }
+  }
+  // Foco pelo teclado seleciona o cartão e traz para a vista o que estiver fora do quadro visível.
+  const onCardFocus = (element: HTMLElement, node: CanvasNode) => {
+    if (!element.matches(":focus-visible")) return
+    if (!selectedIds.includes(node.id)) { setSelectedIds([node.id]); setSelected(node.id); setSelectedEdge(null) }
+    const board = boardRef.current
+    if (!board) return
+    const left = view.x + node.x * view.zoom, top = view.y + node.y * view.zoom
+    const right = left + node.width * view.zoom, bottom = top + node.height * view.zoom
+    if (left < 0 || top < 0 || right > board.clientWidth || bottom > board.clientHeight)
+      setView((v) => ({ ...v, x: board.clientWidth / 2 - (node.x + node.width / 2) * v.zoom, y: board.clientHeight / 2 - (node.y + node.height / 2) * v.zoom }))
+  }
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const typing = (event.target as HTMLElement | null)?.closest("input, textarea, [contenteditable]")
@@ -362,6 +413,9 @@ export function CanvasBoard({ path }: { path: string }) {
               />
             ))}
           </div>
+          <button className="btn sm" disabled={readOnly || !current || !overflowing[current.id]} onClick={() => current && overflowing[current.id] && change(updateNode(doc, current.id, { height: overflowing[current.id] }))} title="Aumenta o cartão escolhido até o texto caber inteiro">
+            <FoldVertical size={14} /> Ajustar altura
+          </button>
           <button className="icon-btn sm" disabled={readOnly || (!selected && !selectedEdge)} onClick={removeSelected} title="Apagar (Delete)" aria-label="Apagar selecionado">
             <Trash size={15} />
           </button>
@@ -408,6 +462,7 @@ export function CanvasBoard({ path }: { path: string }) {
           onDoubleClick={onDoubleClick}
           aria-label={`Quadro ${noteName(path)}`}
         >
+          <p id={hintId} className="sr-only">Setas movem o cartão (com Shift, mais longe). Enter edita o texto ou abre a nota. Delete apaga.</p>
           <div className="canvas-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
             <svg className="canvas-edges" aria-hidden="true">
               <defs>
@@ -449,8 +504,12 @@ export function CanvasBoard({ path }: { path: string }) {
                 onDown={(e) => onNodeDown(e, node)}
                 onResize={(e) => onResizeDown(e, node)}
                 onEdit={() => editNode(node)}
-                onText={(text) => change(updateNode(doc, node.id, { text }))}
+                onText={(text) => { if (text !== (node.text ?? "")) autoFit.current = node.id; change(updateNode(doc, node.id, { text })) }}
                 onDone={() => setEditing(null)}
+                onMeasure={onMeasure}
+                onKey={(e) => onCardKey(e, node)}
+                onFocus={(element) => onCardFocus(element, node)}
+                hintId={hintId}
               />
             ))}
           </div>
@@ -535,10 +594,45 @@ interface CardProps {
   onEdit(): void
   onText(text: string): void
   onDone(): void
+  onMeasure(id: string, need: number | null): void
+  onKey(event: ReactKeyboardEvent): void
+  onFocus(element: HTMLElement): void
+  hintId: string
 }
 
-function CanvasCard({ node, selected, editing, readOnly, onDown, onResize, onEdit, onText, onDone }: CardProps) {
+/** Nome do cartão para leitores de tela: a primeira linha do texto, a nota, o link ou o grupo. */
+function cardLabel(node: CanvasNode): string {
+  if (node.type === "group") return `Grupo ${node.label || ""}`.trim()
+  if (node.type === "file") return extname(node.file ?? "") === ".md" ? `Nota ${noteName(node.file ?? "")}` : `Arquivo ${(node.file ?? "").split("/").pop()}`
+  if (node.type === "link") return `Link ${node.url ?? ""}`
+  const first = (node.text ?? "").split("\n").map((line) => line.replace(/^[#>*\-\s]+/, "").replace(/[*_`~]|==|\[\[|\]\]/g, "").trim()).find(Boolean)
+  return first ? `Cartão ${first.slice(0, 60)}` : "Cartão vazio"
+}
+
+function CanvasCard({ node, selected, editing, readOnly, onDown, onResize, onEdit, onText, onDone, onMeasure, onKey, onFocus, hintId }: CardProps) {
   const vault = useVault()
+  const body = useRef<HTMLDivElement>(null)
+  const [cut, setCut] = useState(false)
+  const file = node.type === "file" ? node.file ?? "" : ""
+  const noteText = file ? vault.index?.note(file)?.text : undefined
+  const measured = node.type === "text" || (node.type === "file" && !IMAGE.test(file))
+  // Mede se o texto passou da altura do cartão (CAM-7): mostra “continua” e informa o quadro, para Ajustar altura.
+  useLayoutEffect(() => {
+    const element = body.current
+    if (!element || !measured || editing) return
+    const measure = () => {
+      const extra = element.scrollHeight - element.clientHeight
+      setCut(extra > 2)
+      onMeasure(node.id, extra > 2 ? Math.ceil(node.height + extra + 4) : null)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    if (element.firstElementChild) observer.observe(element.firstElementChild)
+    return () => observer.disconnect()
+  }, [measured, editing, node.id, node.text, node.width, node.height, noteText, onMeasure])
+  const focusable = { tabIndex: 0, role: "group", "aria-roledescription": "cartão", "aria-label": cardLabel(node), "aria-describedby": hintId,
+    onKeyDown: onKey, onFocus: (event: React.FocusEvent<HTMLDivElement>) => onFocus(event.currentTarget) }
   const color = colorCss(node.color)
   const style = { left: node.x, top: node.y, width: node.width, height: node.height, ...(color ? { ["--card" as string]: color } : {}) }
   const className = `canvas-card type-${node.type} ${selected ? "selected" : ""} ${color ? "colored" : ""}`
@@ -546,27 +640,26 @@ function CanvasCard({ node, selected, editing, readOnly, onDown, onResize, onEdi
 
   if (node.type === "group") {
     return (
-      <div className={className} style={style} onPointerDown={onDown} data-node-id={node.id}>
+      <div className={className} style={style} onPointerDown={onDown} data-node-id={node.id} {...focusable}>
         <span className="canvas-group-label">{node.label || "Grupo"}</span>
         {resize}
       </div>
     )
   }
 
-  let body
+  let content
   if (node.type === "text") {
-    body = editing ? (
-      <textarea className="canvas-textarea" autoFocus defaultValue={node.text ?? ""} onBlur={(e) => { onText(e.target.value); onDone() }} onPointerDown={(e) => e.stopPropagation()} aria-label="Texto do cartão" />
+    content = editing ? (
+      <textarea className="canvas-textarea" autoFocus defaultValue={node.text ?? ""} onFocus={(e) => { const end = e.currentTarget.value.length; e.currentTarget.setSelectionRange(end, end) }} onBlur={(e) => { onText(e.target.value); onDone() }} onPointerDown={(e) => e.stopPropagation()} aria-label="Texto do cartão" />
     ) : node.text?.trim() ? (
       <Markdown source={node.text} className="canvas-md" />
     ) : (
       <span className="faint small">{readOnly ? "Cartão vazio" : "Dois cliques para escrever"}</span>
     )
   } else if (node.type === "file") {
-    const file = node.file ?? ""
     const note = vault.index?.note(file)
     const url = IMAGE.test(file) ? vault.platform.fileUrl(file) : null
-    body = (
+    content = (
       <>
         <a
           className="canvas-file-title"
@@ -591,18 +684,19 @@ function CanvasCard({ node, selected, editing, readOnly, onDown, onResize, onEdi
       </>
     )
   } else if (node.type === "link") {
-    body = (
+    content = (
       <a className="canvas-file-title" href={node.url} target="_blank" rel="noreferrer" onPointerDown={(e) => e.stopPropagation()}>
         <Link2 size={13} /> {node.url}
       </a>
     )
   } else {
-    body = <span className="faint small">Tipo de cartão desconhecido ({node.type}); fica como está no arquivo.</span>
+    content = <span className="faint small">Tipo de cartão desconhecido ({node.type}); fica como está no arquivo.</span>
   }
 
   return (
-    <div className={className} style={style} onPointerDown={onDown} onDoubleClick={(e) => { e.stopPropagation(); onEdit() }} data-node-id={node.id}>
-      <div className="canvas-card-body">{body}</div>
+    <div className={className} style={style} onPointerDown={onDown} onDoubleClick={(e) => { e.stopPropagation(); onEdit() }} data-node-id={node.id} {...focusable}>
+      <div className="canvas-card-body" ref={body}>{measured && !editing ? <div className="canvas-card-content">{content}</div> : content}</div>
+      {cut && <span className="canvas-more" aria-hidden="true">continua…</span>}
       {resize}
     </div>
   )
