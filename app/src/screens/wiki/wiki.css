@@ -264,3 +264,42 @@
 .wiki-switcher .menu .list-item .meta { flex:0 0 auto; white-space:nowrap; }
 .wiki-switcher svg { flex:0 0 auto; }
 .wiki-switcher .menu { max-width:calc(100vw - 32px); }
+
+/* Barra da Wiki (rework F4b, WIK-1): cinco telas à vista e “Mais”; sem rolagem lateral, que cortaria o menu. */
+.wiki-tabs { position: relative; flex: 1 1 0; min-width: 0; overflow: visible; }
+/* Cópia invisível da fileira inteira, só para medir quantas telas cabem. */
+.tabs-measure { position: absolute; visibility: hidden; pointer-events: none; display: flex; white-space: nowrap; height: 0; overflow: hidden; }
+.tabs-measure span { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: calc(14px * var(--font-scale, 1)); font-weight: 650; }
+.wiki-players { margin-left: 0; }
+.wiki-switch { min-width: 0; max-width: 100%; }
+.wiki-switch strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wiki-header > .kit-menu-wrap:last-of-type { flex: 0 0 auto; }
+@media (max-width: 860px) {
+  .wiki-header { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 8px; }
+  .wiki-header .mobile-space-nav { order: 10; flex: 1 1 100%; }
+  .wiki-players { margin: 0 0 0 auto; align-self: center; }
+}
+
+/* Ferramentas do mundo (rework F4b, WIK-5): geradores à esquerda, resultado à direita. */
+.wiki-tools-layout { display: grid; grid-template-columns: minmax(180px, 220px) minmax(0, 1fr); gap: var(--space-section); align-items: start; margin-block: var(--space-section); }
+.wiki-tools-list { display: grid; gap: 2px; }
+.wiki-tools-list .list-item.active { background: color-mix(in srgb, var(--cyan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cyan); }
+@media (max-width: 860px) { .wiki-tools-layout { grid-template-columns: minmax(0, 1fr); } .wiki-tools-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+
+/* Teia diplomática em tabela (rework F4b, WIK-4). */
+.relations-table { margin-top: var(--space-section); }
+.relation-kind { display: inline-flex; align-items: center; gap: 8px; }
+.relation-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* Linha do tempo (rework F4b, WIK-3): uma linha de controles com menus recolhidos e a vista em lista. */
+.timeline-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: var(--space-section); }
+.timeline-zoom { width: 160px; }
+.dropdown { position: relative; }
+.dropdown > summary { list-style: none; cursor: pointer; }
+.dropdown > summary::-webkit-details-marker { display: none; }
+.dropdown-panel { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; min-width: min(300px, calc(100vw - 32px)); margin: 0; box-shadow: var(--shadow-sm); }
+.timeline-chronicles summary { cursor: pointer; padding: 2px 0; }
+.timeline-chronicles[open] summary { margin-bottom: 10px; }
+.timeline-list { display: grid; gap: 8px; overflow-x: auto; }
+.tl-event.flip { flex-direction: row-reverse; }
+.tl-event.flip .tl-dot { transform: translateX(6px); }

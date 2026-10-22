@@ -717,3 +717,15 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Painel da nota: abas Links, Propriedades, Sumário e Gráfico pelo teclado (setas), com os contadores.
 - [ ] Gráfico: botão Lista mostra a tabela (nota, ligações, liga com); abrir pela tabela; a escolha fica lembrada. No
   gráfico local, as notas ligadas aparecem como botões embaixo do desenho.
+
+## Rework visual — F4b Wiki (22/10/2026)
+
+- [ ] Barra da Wiki: trocar de wiki pelo menu; estreitar a janela e conferir que as telas que não cabem vão para “Mais”
+  (sem cortar nem rolar); Exportar e Nova wiki no ⋯.
+- [ ] Artigo: abas Ficha, Relações, Citado em e Links, com contadores; Mostrar pela sala e mídia na Ficha.
+- [ ] Categoria: “Novo …” como ação principal e Exportar no ⋯.
+- [ ] Calendário: “+1 dia” ao lado de Hoje; abas Dia, Hoje no mundo, Sincronizar (com dois calendários) e Ajuda.
+- [ ] Linha do tempo: Calendários e Filtros abrem e fecham; zoom, Ajustar à tela e Lista (tabela com data, acontecimento,
+  trilha e fim); rótulos perto da borda direita aparecem do lado esquerdo do ponto.
+- [ ] Relações: a teia enquadra ao abrir; tabela “quem · relação · com quem” com links.
+- [ ] Ferramentas: escolher um gerador na lista gera na hora; “Gerar de novo”; guardar como nota.

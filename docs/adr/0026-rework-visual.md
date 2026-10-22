@@ -114,3 +114,17 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
   botões embaixo do desenho.
 - **Fileira de abas das notas** continua mesmo com uma nota só: ela guarda ações que não têm outro lugar (abrir em
   janela, fixar, dividir, workspaces). Some quando essas ações tiverem lugar fixo.
+
+## F4b — Wiki (decisões)
+- **Barra da Wiki (WIK-1):** a troca de wiki vira menu de verdade; as telas que não cabem vão para “Mais”, medido pelo
+  espaço (`kit/useFitCount`), em vez de serem cortadas; Exportar e Nova wiki no ⋯ da Wiki. As telas têm `aria-current`.
+- **Artigo (WIK-6):** o painel lateral vira abas — Ficha (com Mostrar pela sala e mídia), Relações, Citado em e Links —
+  com contadores. A ficha continua sendo a aba aberta por padrão.
+- **Categoria (WIK-7):** “Novo …” é a ação principal; Exportar categoria no ⋯.
+- **Calendário (WIK-2):** a coluna da direita vira abas (Dia, Hoje no mundo, Sincronizar, Ajuda); “+1 dia” fica no
+  cabeçalho, ao lado de Hoje.
+- **Linha do tempo (WIK-3):** uma linha de controles (Calendários e Filtros recolhidos, zoom, Ajustar à tela, Lista);
+  Crônicas recolhida; vista em tabela; rótulos perto da borda direita mudam de lado.
+- **Relações (WIK-4):** a teia diplomática enquadra ao abrir e ganha a tabela “quem · relação · com quem”, com a cor num
+  ponto ao lado do nome (as cores fixas da teia não passariam de contraste como texto).
+- **Ferramentas (WIK-5):** geradores numa lista à esquerda e o resultado à direita, do tamanho dele.
