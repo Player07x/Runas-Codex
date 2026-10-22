@@ -689,3 +689,21 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Celular/Android: ao tocar no texto, a barra sobre o teclado aparece no lugar da barra inferior; Aa abre a galeria,
   `/` abre o menu de blocos, B/I/link/tarefa funcionam; a barra fica colada no teclado.
 - [ ] Livros: o editor não mostra mais a faixa de formatadores; os modos e o menu ⋯ ficam no trilho (a F3b refaz a tela).
+
+## Rework visual — F3b Livros (22/10/2026)
+
+- [ ] Abrir um livro: a navegação do app recolhe para o trilho e volta ao sair. Barra: Livros, Sumário, título, Escrever ·
+  Organizar · Prévia, estado e ⋯ do capítulo, Foco, Apoio e ⋯ do livro. Conferir cada item do ⋯ do livro.
+- [ ] Sumário: pontos de status, palavras, capítulo atual marcado; “Novo capítulo” cria o capítulo no lugar certo da
+  estrutura; “Fora do livro” recolhido, com “Incluir”.
+- [ ] Linha do capítulo acima da página; clicar abre Apoio › Capítulo; mudar status e resumo e salvar atualiza o sumário
+  sem conflito com o texto em edição.
+- [ ] Selecionar um trecho: Comentar insere `%% revisão: … %%` depois dele; Apoio › Revisão lista, “Ir” seleciona e
+  “Remover” tira. Citar da Wiki abre as Referências com o trecho; Citar e Transcluir inserem o link.
+- [ ] Barra de status: palavras iguais às do sumário, “Modo: Visual/Código” troca o modo, máquina de escrever liga e
+  desliga e fica lembrada.
+- [ ] Organizar: cartões e lista; arrastar; menu de cada capítulo; Alt+↑/↓ com o capítulo focado (posição anunciada).
+- [ ] Prévia: pagina, exporta e imprime como antes; “Fechar prévia” volta a Escrever.
+- [ ] Foco: só a página e uma barra discreta; Esc sai.
+- [ ] Celular/Android: barra de uma linha; sumário e Apoio abrem por cima, um por vez; escolher capítulo fecha o
+  sumário; Organizar e Prévia no fim do sumário; barra de formatação sobre o teclado.

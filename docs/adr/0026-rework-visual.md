@@ -80,3 +80,24 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
   e sai do Código, Ctrl+/ abre a galeria. Os três entram na lista de atalhos editáveis.
 - Os smokes do desktop passam a renomear e abrir o histórico pelo menu ⋯; o caminho da nota continua no `title` do
   `.editor-status` (agora o título da barra) e a contagem em `.note-word-count` (agora na barra de status).
+
+## F3b — Livros (decisões)
+- **Três modos** no lugar dos sete botões: Escrever, Organizar (Estrutura e Cortiça numa visão só, em cartões ou lista) e
+  Prévia (onde mora Exportar). Foco é a única ação solta. Metadados, Exportar, Novo capítulo, máquina de escrever e
+  snapshots ficam no menu ⋯ do livro.
+- **Sumário recolhível** com status por ponto (pronto, revisão, rascunho; o nome vai junto para o leitor de tela),
+  palavras por capítulo, “Novo capítulo” no fim e “Fora do livro” recolhido com contador.
+- **Linha do capítulo** acima da página (tipo · status · palavras · resumo) no lugar do quadro de propriedades; clicar
+  abre a aba Capítulo do Apoio.
+- **Apoio** fechado por padrão, em três abas: Referências (busca na Wiki sem acento, mais citados primeiro, Citar e
+  Transcluir), Revisão (os `%% revisão %%` do capítulo, com Ir e Remover, e os snapshots) e Capítulo (tipo, status,
+  resumo; grava o texto em edição antes, para não virar conflito). A leitura e a remoção dos comentários estão em
+  `core/books-review.ts`, com testes.
+- Na barra da seleção, Livros acrescenta **Comentar** (o comentário entra depois do trecho) e **Citar da Wiki** (abre as
+  Referências com o trecho como busca). O capítulo usa a variante “livro” do `NoteView`: modo **Visual ⇄ Código** na
+  barra de status, estado e menu do capítulo na barra do livro, contagem de palavras igual à do sumário.
+- **Organizar:** arrastar pelo ⠿, menu de cada capítulo (Abrir, Subir, Descer) e Alt+↑/↓ no capítulo focado; a posição
+  nova é anunciada e o foco acompanha o capítulo.
+- Ao entrar num livro, a navegação do app recolhe para o trilho (e volta ao sair). No celular: barra de uma linha,
+  texto na largura toda, sumário e Apoio por cima da página (um por vez), Organizar e Prévia no fim do sumário.
+- `ResizablePanel` ganha `setPanelCollapsed`, que recolhe ou expande de vez (alternar duas vezes desfazia o pedido).

@@ -5,78 +5,15 @@
 .book-cover .display { font-size: calc(13px * var(--font-scale, 1)); line-height: 1.2; }
 .book-cover small { font-size: calc(9px * var(--font-scale, 1)); opacity: 0.8; }
 
-.books-editor { height: 100%; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.books-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 16px; border-bottom: 1px solid var(--line); }
-.books-header > strong { font-family: var(--font-cinzel); margin-right: auto; }
-.books-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); flex: 1; min-height: 0; }
-.books-binder { padding: 16px; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); }
-.books-binder h2, .books-binder h3 { margin: 12px 0; }
-.books-binder ol { list-style: none; padding: 0; }
-.books-item { width: 100%; text-align: left; display: grid; gap: 5px; padding: 12px; border: 1px solid transparent; background: transparent; color: var(--text); overflow-wrap: anywhere; border-radius: var(--radius); }
-.books-item[aria-current=true] { background: var(--panel-2); border-color: var(--cyan); }
-.books-item small { color: var(--muted); }
-.books-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
-.books-main .note-editor { flex: 1; min-height: 350px; }
-.books-chapter { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; }
-.books-formatters { padding: 8px 16px; border-bottom: 1px solid var(--line); }
-.books-formatters label { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.books-formatters select { max-width: 100%; width: 270px; }
-.books-cork { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 20px; padding: 20px; align-items: start; }
-.books-cork-card { display: grid; gap: 14px; padding: 16px; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--gold); border-radius: var(--radius); overflow-wrap: anywhere; }
-.books-drag { touch-action: none; cursor: grab; }
-.books-outside { display: flex; align-items: center; }
-.books-announcement:empty { display: none; }
-.books-editor .input { min-width: 0; max-width: 100%; }
 .book-import { margin-bottom: 24px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); min-width: 0; overflow-wrap: anywhere; }
 .book-import .field { flex: 1 1 220px; min-width: 0; }
 .book-import .input { width: 100%; min-width: 0; min-height: 44px; }
 .book-import .btn, .book-import summary { min-height: 44px; }
 .book-import h2 { margin-right: auto; }
 .book-import details > section { padding-block: 12px; border-bottom: 1px solid var(--line); }
-@media (max-width: 860px) {
-  .books-layout { grid-template-columns: minmax(0, 1fr); }
-  .books-binder { display: none; }
-  .books-view-estrutura .books-binder { display: block; }
-  .books-view-estrutura .books-main { display: none; }
-  .books-editor .btn, .books-editor .icon-btn, .books-editor [role=tab], .books-editor select, .books-editor input, .books-list .btn { min-height: 44px; }
-  .books-header { gap: 8px; padding: 12px; }
-  .books-header > strong { width: 100%; overflow-wrap: anywhere; }
-  .books-main .editor-bar { flex-wrap: wrap; }
-  .books-formatters { padding: 8px; }
-  .books-formatters label, .books-formatters select { width: 100%; }
-}
 
-.books-focus .books-binder { display:none; }
-.books-focus .books-layout { grid-template-columns:minmax(0,1fr); }
-.books-focus .books-header > :not(button) { display:none; }
-.book-writing-tools { padding-block:8px; max-width:100%; }
-.book-writing-tools .stack { padding-block:12px; }
 .book-wiki-reference { max-height:35vh; overflow:auto; padding:12px; border:1px solid var(--line); border-radius:var(--radius); }
 .book-finish-settings { border-bottom:1px solid var(--line); }
 .book-finish-settings summary { padding:12px; cursor:pointer; min-height:44px; }
 .book-finish-settings .book-metadata { max-height:45vh; }
 .book-print .book-section a[href^="#book-chapter-"]::after { content: " (p. " target-counter(attr(href),page) ")"; }
-.books-focus .books-layout.has-preview { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
-@media(max-width:860px) { .books-focus .books-layout.has-preview { grid-template-columns:minmax(0,1fr); } }
-
-.books-writing-area { min-height:0; min-width:0; }
-.books-writing-area > .book-writing-tools { padding:12px; border-top:1px solid var(--line); }
-.books-writing-area .book-writing-tools input,.books-writing-area .book-writing-tools select { width:100%; }
-@media(min-width:1200px) {
- .books-layout:not(.has-preview) .books-writing-area { display:grid;grid-template-columns:minmax(0,1fr) 300px;flex:1; }
- .books-layout:not(.has-preview) .books-writing-area > .book-writing-tools { border-left:1px solid var(--line);border-top:0;overflow:auto; }
-}
-
-/* O foco libera toda a janela para a escrita. */
-body.book-focus-active .shell { grid-template-columns:minmax(0,1fr)!important; }
-body.book-focus-active .shell>.sidebar,body.book-focus-active .topbar,body.book-focus-active .bottom-nav { display:none!important; }
-body.book-focus-active .content { padding:0; }
-body.book-focus-active .main { padding-bottom:env(safe-area-inset-bottom); }
-body.book-focus-active .editor-bar :is(.editor-status,.note-history,.note-word-count,.note-export-action) { display:none!important; }
-body .books-focus .books-header>:not(.book-focus-toggle):not(.book-focus-navigation) { display:none; }
-body .books-focus .books-header>.book-focus-navigation { display:flex; align-items:center; margin-right:auto; min-width:0; }
-.book-focus-navigation .btn,.book-focus-navigation .icon-btn { min-height:44px; }
-.book-tools-panel { padding:12px; overflow:auto; border-left:1px solid var(--line); }
-.formatter-card { display:flex; flex-direction:column; align-items:center; background:var(--panel); border:1px solid var(--line); color:var(--text); font:inherit; cursor:pointer; }
-.formatter-sample { display:grid; place-items:center; font-family:Georgia,serif; }
-.column-sample { display:grid; gap:5px; font:8px/1.2 monospace; }

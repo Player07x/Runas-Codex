@@ -286,7 +286,8 @@ export const SMOKE_SCRIPT = `(async () => {
   // Livros: a criação pela tela precisa persistir o capítulo e seu link na estrutura.
   const bookPath = "Livros/Guia de Valdris/Guia de Valdris.md"
   location.hash = "/livros/" + encodeURIComponent(bookPath)
-  ;(await until(() => document.querySelector("[aria-label='Criar capítulo']")))?.click()
+  // O sumário do livro (rework F3b) tem “Novo capítulo” no fim da lista.
+  ;(await until(() => [...document.querySelectorAll(".book-toc-new")].find((b) => b.textContent.trim() === "Novo capítulo")))?.click()
   const chapterTitle = await until(() => document.querySelector("[aria-label='Título do capítulo']"))
   if (chapterTitle) {
     setter.call(chapterTitle, "Capítulo do smoke")
