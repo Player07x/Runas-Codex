@@ -101,3 +101,5 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
 - Ao entrar num livro, a navegação do app recolhe para o trilho (e volta ao sair). No celular: barra de uma linha,
   texto na largura toda, sumário e Apoio por cima da página (um por vez), Organizar e Prévia no fim do sumário.
 - `ResizablePanel` ganha `setPanelCollapsed`, que recolhe ou expande de vez (alternar duas vezes desfazia o pedido).
+- **Excluir livro** (decisão do dono em 22/10): manda a nota do livro e os capítulos para a lixeira do cofre, com
+  confirmação. Ficam os capítulos de fora da pasta do livro e os que outro livro também usa.

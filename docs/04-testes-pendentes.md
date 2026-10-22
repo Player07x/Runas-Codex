@@ -705,5 +705,7 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Organizar: cartões e lista; arrastar; menu de cada capítulo; Alt+↑/↓ com o capítulo focado (posição anunciada).
 - [ ] Prévia: pagina, exporta e imprime como antes; “Fechar prévia” volta a Escrever.
 - [ ] Foco: só a página e uma barra discreta; Esc sai.
+- [ ] ⋯ do livro › Excluir livro: o diálogo diz quantos capítulos vão para a lixeira e quais ficam (fora da pasta ou usados
+  por outro livro); confirmar manda o livro e os capítulos para `.trash` e volta à estante; dá para recuperar pela lixeira.
 - [ ] Celular/Android: barra de uma linha; sumário e Apoio abrem por cima, um por vez; escolher capítulo fecha o
   sumário; Organizar e Prévia no fim do sumário; barra de formatação sobre o teclado.

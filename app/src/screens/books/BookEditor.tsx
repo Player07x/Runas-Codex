@@ -1,6 +1,6 @@
-import { ChevronLeft, Eye, FileDown, History, LayoutGrid, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, SlidersHorizontal, Type } from "lucide-react"
+import { ChevronLeft, Eye, FileDown, History, LayoutGrid, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, SlidersHorizontal, Trash2, Type } from "lucide-react"
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
-import { moveBookItem, readBook, type BookItem } from "../../core/books"
+import { findBooks, moveBookItem, readBook, type BookItem } from "../../core/books"
 import { reviewComment } from "../../core/books-review"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
@@ -12,7 +12,8 @@ import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { Notice } from "../../components/kit/Layout"
 import { Modal, Segmented } from "../../components/ui"
 import { navigate } from "../../lib/router"
-import { vaultRoute } from "../../lib/vault-notes"
+import { flushOpenNotes, vaultRoute } from "../../lib/vault-notes"
+import { ConfirmDialog } from "../../components/vault/dialogs"
 import { useVault } from "../../platform/VaultProvider"
 import { BookSupport, type SupportTab } from "./BookSupport"
 
@@ -60,6 +61,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [announcement, setAnnouncement] = useState("")
+  const [deleting, setDeleting] = useState(false)
   const narrow = useNarrow()
   const locked = Boolean(vault.info?.readOnly || busy || structure.error)
   const current = selected ? index.note(selected) : undefined
@@ -127,6 +129,14 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     { label: typewriter ? "Desligar a máquina de escrever" : "Ligar a máquina de escrever", icon: <Type size={16} />, onSelect: () => setTypewriter(!typewriter) },
     { label: "Snapshots do capítulo", icon: <History size={16} />, disabled: !current || view !== "escrever", onSelect: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "history" })) },
   ]
+  // Excluir o livro manda a nota dele e os capítulos para a lixeira do cofre. Ficam os capítulos de fora da pasta do
+  // livro e os que outro livro também usa, para não sumir texto de outro lugar.
+  const folder = dirname(book.path) + "/"
+  const otherBooks = new Set(findBooks(index).filter((other) => other.path !== book.path).flatMap((other) => readBook(index, other).items.flatMap((item) => (item.note ? [item.note.path] : []))))
+  const chapters = [...new Set(structure.items.flatMap((item) => (item.note ? [item.note.path] : [])))]
+  const toTrash = chapters.filter((path) => path.startsWith(folder) && !otherBooks.has(path))
+  const kept = chapters.filter((path) => !toTrash.includes(path))
+  bookMenu.push("separator", { label: "Excluir livro…", icon: <Trash2 size={16} />, danger: true, disabled: locked, onSelect: () => setDeleting(true) })
   const views = [{ value: "escrever" as const, label: "Escrever", icon: <PenLine size={14} /> }, { value: "organizar" as const, label: "Organizar", icon: <LayoutGrid size={14} /> }, { value: "previa" as const, label: "Prévia", icon: <Eye size={14} /> }]
 
   return <div className={`books-editor books-view-${view} ${focus ? "books-focus" : ""}`}>
@@ -234,6 +244,17 @@ export function BookEditor({ book }: { book: IndexedNote }) {
           </> : <div className="page"><p>Escolha um capítulo no sumário. Links quebrados podem ser corrigidos nos metadados do livro.</p></div>}
       </main>
     </div>
+    {deleting && <ConfirmDialog title="Excluir livro" confirmLabel="Mandar para a lixeira" danger onClose={() => setDeleting(false)} onConfirm={async () => {
+      await flushOpenNotes()
+      // Capítulos antes; a nota do livro por último (sem ela a tela do livro fecha).
+      for (const path of toTrash) await vault.trash(path)
+      await vault.trash(book.path)
+      navigate("/livros")
+    }}>
+      <p>“{book.name}” e {toTrash.length === 1 ? "1 capítulo vão" : `${toTrash.length} capítulos vão`} para a lixeira do cofre (<code>.trash</code>), a mesma do Obsidian. Dá para recuperar de lá.</p>
+      {kept.length > 0 && <p style={{ marginTop: 8 }}>Ficam no cofre, porque estão fora da pasta do livro ou também fazem parte de outro livro: {kept.map((path) => index.note(path)?.name ?? path).join(", ")}.</p>}
+      {structure.outside.length > 0 && <p style={{ marginTop: 8 }}>{structure.outside.length === 1 ? "A nota que está na pasta mas fora do livro também fica." : `As ${structure.outside.length} notas que estão na pasta mas fora do livro também ficam.`}</p>}
+    </ConfirmDialog>}
     {comment && <CommentDialog onClose={() => setComment(null)} onSave={(text) => {
       // Um espaço só quando o comentário cola em texto; no começo de uma linha ele entra sem espaço.
       const before = comment.editor.text[comment.at - 1]
