@@ -35,3 +35,26 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
 - O texto maior muda a densidade de telas que a F1 não refaz; as fases seguintes acertam cada uma.
 - Os painéis antigos mudam de cara sem mudar de comportamento: a preferência de largura e de recolhido continua no
   aparelho (`runas-codex:painel:<id>`).
+
+## F2 — acessibilidade (decisões)
+- **Seção própria** em Configurações › Acessibilidade (`/config/acessibilidade`, também pela paleta), separada de
+  Aparência. Grupos Leitura, Visão e Interação, prévia ao vivo e “Restaurar padrão”, que volta só o que é
+  acessibilidade (paleta, tema e barra inferior ficam). Tudo no aparelho (`runas-codex:aparencia`), validado em
+  `core/appearance.ts`: valor desconhecido volta ao padrão e nunca vira estilo.
+- **Cada opção só age quando ligada.** No padrão, nenhuma regra nova vale e o leitor desenha como antes (regra 7). O
+  “texto de leitura” é o mesmo escopo do tamanho do texto; as páginas impressas dos Livros ficam de fora.
+- **Espaçamento:** “Muito amplo” usa os valores da WCAG 1.4.12 (linha 2, letras 0,12em, palavras 0,16em,
+  parágrafos 2em).
+- **Fonte legível:** Atkinson Hyperlegible **Next** (`@fontsource-variable/atkinson-hyperlegible-next` 5.3.0, OFL), a
+  versão atual da fonte do Braille Institute, embutida no app. Ela vale para o **app inteiro**, porque quem precisa
+  dela precisa também dos menus; a Garamond fica só no texto das notas.
+- **Contraste alto:** texto, texto secundário e bordas neutros e mais fortes, iguais nas três paletas; fundo e cor de
+  destaque continuam os da paleta. Liga sozinho com `prefers-contrast: more`. O teste de tokens cobra 7:1 no texto e
+  4,5:1 nas bordas de controles.
+- **Rótulos junto aos ícones:** o nome mostrado é o mesmo `aria-label` do leitor de tela, então nunca diverge. No
+  celular, o nome vai embaixo do ícone e a barra do topo cresce.
+- **Controles maiores** é o antigo Modo tablet, com o mesmo comportamento.
+- **Barra inferior do celular (NAV-3):** quatro espaços escolhidos em Aparência; escolher um que já está na barra
+  troca os dois de lugar. O padrão continua Início, Notas, Agenda e VTT.
+- `ChoiceGroup` entra no kit: rádios de verdade com cara de seletor segmentado.
+- Uma seção pedida pela rota recebe o foco com `data-route-focus`, antes do título da tela.

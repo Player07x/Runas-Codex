@@ -65,8 +65,19 @@
 .kit-row-text small { overflow: hidden; color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
 .kit-row-end { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 
+/* ChoiceGroup: rádios com cara de seletor segmentado. O rádio cobre a opção inteira (clique e toque) e fica invisível;
+   o foco aparece na opção. */
+.kit-choice { display: inline-flex; flex-wrap: wrap; gap: 2px; max-width: 100%; padding: 3px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel-2); }
+.kit-choice-option { position: relative; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid transparent; border-radius: 7px; color: var(--muted); cursor: pointer; }
+.kit-choice-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.kit-choice-option:hover { color: var(--text); }
+.kit-choice-option.on { border-color: var(--line-strong); background: var(--panel); color: var(--text); font-weight: 600; }
+.kit-choice-option:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 1px; }
+:root[data-focus="strong"] .kit-choice-option:has(input:focus-visible) { outline: 4px solid var(--text); outline-offset: 2px; }
+
 @media (max-width: 860px), (pointer: coarse) {
   .kit-menu-item, .kit-tab { min-height: 44px; }
+  .kit-choice-option { min-height: 44px; }
   .kit-docbar { gap: 6px; padding: 6px 10px; }
   .kit-back span { display: none; }
 }

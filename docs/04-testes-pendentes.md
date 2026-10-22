@@ -653,3 +653,21 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
   controles com alvo de toque de 44 px e texto legível.
 - [ ] Em cofre somente leitura, conferir que `Novo` mantém as ações disponíveis e desabilita as que gravam; em cofre
   gravável, conferir que Evento, Artigo, Campanha e Livro abrem os mesmos diálogos dos botões de cada tela.
+
+## Rework visual — F2 acessibilidade (21/10/2026)
+
+- [ ] Configurações › Acessibilidade (ou `Ctrl+K` › “Acessibilidade”): a página rola até a seção e o foco vai para o
+  título dela. Mudar cada opção e conferir a prévia ao lado mudando na hora.
+- [ ] Espaçamento “Amplo” e “Muito amplo”, largura “Estreita” e “Larga” e fonte Garamond: abrir uma nota e um artigo da
+  Wiki (leitura e edição ao vivo). Abrir a prévia de um Livro e conferir que as páginas **não** mudam.
+- [ ] Fonte “Legível”: o app inteiro passa para a Atkinson Hyperlegible, inclusive sem internet; a prévia dos Livros
+  continua com as fontes do tema do livro.
+- [ ] Contraste alto nos temas claro e escuro e nas paletas Órbita, Floresta e Brasa. Com o contraste alto do sistema
+  ligado, conferir se o app acompanha com a opção desligada (só funciona onde o sistema informa
+  `prefers-contrast: more` ao app; no Linux isso não foi conferido).
+- [ ] Sublinhar links, Sem transparências e Foco reforçado (navegar com Tab); Mostrar rótulos junto aos ícones no
+  desktop e no celular (a barra do topo cresce e nada passa da tela em 320 px).
+- [ ] “Restaurar padrão” da Acessibilidade volta só as opções dela; paleta, tema e barra inferior ficam.
+- [ ] Android: Configurações › Aparência › Barra inferior do celular — trocar os atalhos e conferir a barra e o “Mais”.
+- [ ] Sala do VTT (jogador e mestre pelo celular): o botão Aparência da sala mostra Aparência e Acessibilidade, sem a
+  barra inferior.

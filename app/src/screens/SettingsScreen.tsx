@@ -1,6 +1,6 @@
 import { flushOpenNotes } from "../lib/vault-notes"
 import { ImageFolderSettings } from "../components/vault/NoteImages"
-import { AppearanceSettings } from "../components/Appearance"
+import { AccessibilitySettings, AppearanceSettings } from "../components/Appearance"
 import { OnboardingSettings } from "../components/Onboarding"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
@@ -14,6 +14,7 @@ import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import { TasksSettingsCard } from "../components/tasks/TasksSettings"
+import { useRoute } from "../lib/router"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -42,6 +43,8 @@ function SettingsCard({ icon, title, children }: { icon: ReactNode; title: strin
 export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
   const toast = useToast()
   const vault = useVault()
+  // /config/acessibilidade (Ctrl K › “Acessibilidade”) leva o foco direto à seção.
+  const section = useRoute()[1]
   const desktop = vault.platform.kind !== "memory"
   const [backups, setBackups] = useState<BackupInfo[]>([])
   const [busy, setBusy] = useState(false)
@@ -172,6 +175,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         </div>
         <div className="settings-column">
           <AppearanceSettings theme={theme} onTheme={onTheme} />
+          <AccessibilitySettings routeFocus={section === "acessibilidade"} />
           <SettingsCard icon={<ShieldCheck size={16} />} title="Privacidade e atualizações">
             <Row title="Telemetria" hint="Não existe. O app não chama a internet fora da sala.">
               <span className="chip green">desligada sempre</span>

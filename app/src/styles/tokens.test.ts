@@ -54,3 +54,19 @@ describe.each(themes)("contraste das cores no tema %s", (_name, t) => {
     expect(contrast(t["on-accent"]!, t.cyan!)).toBeGreaterThanOrEqual(4.5)
   })
 })
+
+const highDark = all.get(':root[data-contrast="high"]')!
+const highLight = { ...highDark, ...all.get(':root[data-contrast="high"][data-theme="light"]') }
+
+describe.each(themes)("contraste alto no tema %s", (name, t) => {
+  const high = { ...t, ...(name.endsWith("claro") ? highLight : highDark) }
+  it("texto e texto secundário passam de 7:1 em todas as superfícies", () => {
+    for (const fg of ["text", "muted", "faint"]) for (const bg of [...surfaces, "panel-hover"]) expect(contrast(high[fg]!, high[bg]!), `${fg} sobre ${bg}`).toBeGreaterThanOrEqual(7)
+  })
+  it("bordas de controles passam de 4,5:1 e linhas divisórias de 3:1", () => {
+    for (const bg of [...surfaces, "panel-hover"]) {
+      expect(contrast(high["line-strong"]!, high[bg]!), `line-strong sobre ${bg}`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(high.line!, high[bg]!), `line sobre ${bg}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+})
