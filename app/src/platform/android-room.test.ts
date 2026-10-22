@@ -94,5 +94,7 @@ describe("ponte da sala Android", () => {
     native.callbacks.get("stopped")!({ enabled: false })
     await vi.waitFor(async () => expect((await api.player.state()).enabled).toBe(false))
     await expect(api.player.publicLink()).rejects.toThrow("rede local")
+    await expect(api.player.testPublicLink()).rejects.toThrow("ainda não está disponível")
+    await expect(api.player.downloadCloudflared()).rejects.toThrow("ainda não está disponível")
   })
 })
