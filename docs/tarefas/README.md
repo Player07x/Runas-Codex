@@ -237,6 +237,9 @@ X7 voltaram à `main` pelo #52.
 | **F5** Início, Configurações, Transferir, VTT | Claude Code | próxima sessão de uma fonte só; Centelhas no cofre; lugares de Ajuda e Backups |
 | Itens 1 a 9 de [codex-durante-rework.md](codex-durante-rework.md) | Codex | sala pela internet no Android, Homebrewery, PIN, atalho no Wayland, X6, C9 sem tela, C7, Tasks |
 
+A **F1** está no branch `rework/f1-fundacoes` (começada pelo Claude Code, conferida pelo Codex); a conferência manual de
+rotas, foco, painéis, temas e criação pelo menu `Novo` está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
+
 **Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
 `app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a
 `Platform`, o processo principal do desktop, o Android nativo e o VTT por dentro (`app/src/vtt/**`). Quem precisar de

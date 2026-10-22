@@ -93,7 +93,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const newNoteHint = vault.platform.kind === "capacitor" ? undefined : shortcutText(shortcutLabel("newNote", prefs.shortcuts), mac)
   const create = [
     { label: "Nota", icon: <FilePlus size={16} />, hint: newNoteHint, onSelect: () => navigate("/notas/nova"), disabled: readOnly },
-    { label: "Nota do dia", icon: <CalendarDays size={16} />, onSelect: () => navigate("/notas/hoje") },
+    { label: "Nota do dia", icon: <CalendarDays size={16} />, onSelect: () => navigate("/notas/hoje"), disabled: readOnly },
     "separator" as const,
     { label: "Evento na Agenda", icon: <CalendarPlus size={16} />, onSelect: () => requestCreate("evento"), disabled: readOnly },
     { label: "Artigo da Wiki", icon: <Library size={16} />, onSelect: () => requestCreate("artigo"), disabled: readOnly },
@@ -148,13 +148,13 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               </span>
             ))}
           </nav>
-          <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Buscar e comandos">
+          <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Buscar notas e comandos">
             <Search size={16} />
             <span>Buscar notas e comandos…</span>
             {vault.platform.kind !== "capacitor" && <kbd>Ctrl K</kbd>}
           </button>
           <div className="top-actions">
-            <OverflowMenu label="Criar" heading="Criar" items={create} triggerClassName="btn new-trigger" trigger={<><Plus size={17} /><span>Novo</span></>} />
+            <OverflowMenu label="Novo" heading="Criar" items={create} triggerClassName="btn new-trigger" trigger={<><Plus size={17} /><span>Novo</span></>} />
             <button className="icon-btn" onClick={onToggleTheme} title={theme === "dark" ? "Tema claro" : "Tema escuro"} aria-label={theme === "dark" ? "Usar o tema claro" : "Usar o tema escuro"}>
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
@@ -221,13 +221,30 @@ function usePageChange(route: string[], crumbs: string[]): string {
       return
     }
     setAnnounce("")
+    const focusHeading = (heading: HTMLElement) => {
+      if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1")
+      heading.focus({ preventScroll: true })
+    }
     // Depois de os diálogos devolverem o foco (paleta, menus), para não perder a disputa.
+    let observer: MutationObserver | undefined
+    let timer = 0
     const frame = requestAnimationFrame(() => {
-      const heading = main?.querySelector<HTMLElement>("h1")
-      if (heading && !heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1")
-      ;(heading ?? main)?.focus({ preventScroll: true })
+      if (!main) return
+      const heading = main.querySelector<HTMLElement>("h1")
+      if (heading) return focusHeading(heading)
+      // Telas que desenham o título depois de ler os dados (a Agenda): o foco espera no conteúdo e passa ao título
+      // quando ele aparecer, se a pessoa ainda não tiver ido para outro lugar.
+      main.focus({ preventScroll: true })
+      observer = new MutationObserver(() => {
+        const late = main.querySelector<HTMLElement>("h1")
+        if (!late) return
+        observer?.disconnect()
+        if (document.activeElement === main) focusHeading(late)
+      })
+      observer.observe(main, { childList: true, subtree: true })
+      timer = window.setTimeout(() => observer?.disconnect(), 1500)
     })
-    return () => cancelAnimationFrame(frame)
+    return () => { cancelAnimationFrame(frame); observer?.disconnect(); clearTimeout(timer) }
     // A migalha muda junto com a rota; reagir à rota basta.
   }, [key])
   return announce

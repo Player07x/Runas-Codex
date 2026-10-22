@@ -638,3 +638,18 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
   existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
 - **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.
+
+## Rework visual — F1 fundações (21/10/2026)
+
+- [ ] Desktop: abrir Início, Notas, Agenda, Wiki, Campanhas, Livros, VTT, Importar e exportar e Configurações; conferir
+  que o título da aba acompanha a rota, a migalha usa nomes legíveis e o item atual tem `aria-current`.
+- [ ] Navegar apenas pelo teclado: abrir e fechar a paleta (`Ctrl+K`), o menu `Novo`, menus ⋯ e o seletor de abas; conferir
+  foco visível de 3 px, setas/Home/End, Escape e retorno do foco ao acionador.
+- [ ] Navegar entre duas rotas: conferir que o foco vai para o título da tela nova; ao trocar apenas o conteúdo no mesmo
+  espaço, conferir o anúncio da mudança sem retirar o foco do conteúdo.
+- [ ] Recolher e reabrir a navegação pelo botão e por `Ctrl+\`; conferir trilho de ícones, rótulos acessíveis e a
+  preferência preservada ao recarregar. Repetir nos painéis laterais com botão de recolhimento.
+- [ ] Repetir em tema escuro, claro, Floresta e Brasa, em 320 px, tablet e desktop; conferir sem rolagem horizontal,
+  controles com alvo de toque de 44 px e texto legível.
+- [ ] Em cofre somente leitura, conferir que `Novo` mantém as ações disponíveis e desabilita as que gravam; em cofre
+  gravável, conferir que Evento, Artigo, Campanha e Livro abrem os mesmos diálogos dos botões de cada tela.

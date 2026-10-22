@@ -63,7 +63,8 @@
   .search-trigger span, .search-trigger kbd { display: none; }
   .topbar .top-actions .hide-mobile { display: none; }
   .new-trigger { width: 44px; min-height: 44px; padding: 0; }
-  .new-trigger span { display: none; }
+  /* Some só da vista: o texto continua sendo o nome do botão para leitor de tela e comando de voz. */
+  .new-trigger span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .main { padding-bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); }
   .bottom-nav {
     position: fixed; z-index: 40; left: 0; right: 0; bottom: 0;
