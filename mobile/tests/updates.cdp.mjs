@@ -63,7 +63,7 @@ try {
   await run("location.hash='/config';true")
   await until('document.querySelector("[data-updates]")')
   check('Android não mostra a configuração de atalhos',await run('!document.querySelector("[aria-label^=\\"Atalho:\\"]") && !document.querySelector(".topbar kbd")'))
-  await run('document.querySelector("[aria-label=\\"Buscar e comandos\\"]").click();true')
+  await run('document.querySelector("[aria-label=\\"Buscar notas e comandos\\"]").click();true')
   await until('document.querySelector(".palette-list")')
   check('paleta Android não mostra combinações de teclado',await run('![...document.querySelectorAll(".palette-item small")].some(el=>/Mod\\+|Ctrl|Alt/.test(el.textContent)) && !document.querySelector(".palette-foot")'))
   await run('document.querySelector(".palette-backdrop")?.click();true')
