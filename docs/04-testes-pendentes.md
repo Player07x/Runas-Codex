@@ -709,3 +709,11 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
   por outro livro); confirmar manda o livro e os capítulos para `.trash` e volta à estante; dá para recuperar pela lixeira.
 - [ ] Celular/Android: barra de uma linha; sumário e Apoio abrem por cima, um por vez; escolher capítulo fecha o
   sumário; Organizar e Prévia no fim do sumário; barra de formatação sobre o teclado.
+
+## Rework visual — F4a Notas (22/10/2026)
+
+- [ ] Lista de Notas: “+ Nova nota” e o menu ⋯ (nova pasta, nota do dia, nota aleatória, gráfico, buscar e substituir,
+  exportar, lixeira, bloquear com PIN). A ordem fica ao lado da busca e diz a ordem atual.
+- [ ] Painel da nota: abas Links, Propriedades, Sumário e Gráfico pelo teclado (setas), com os contadores.
+- [ ] Gráfico: botão Lista mostra a tabela (nota, ligações, liga com); abrir pela tabela; a escolha fica lembrada. No
+  gráfico local, as notas ligadas aparecem como botões embaixo do desenho.

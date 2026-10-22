@@ -15,6 +15,8 @@ import { copyLinkTarget, copyText, headingLinkText, noteRoute, vaultRoute } from
 import { useVault } from "../../platform/VaultProvider"
 import { useToast } from "../ui"
 import { DEFAULT_FORCES, GraphView } from "./GraphView"
+import { PanelTabs, TabPanel } from "../kit/PanelTabs"
+import { GraphList } from "./GraphPage"
 
 type Tab = "links" | "props" | "outline" | "graph"
 
@@ -29,31 +31,27 @@ interface Props {
   onSaveNote?(path: string, text: string): Promise<void>
 }
 
-/** Painel da direita para notas do cofre: links, propriedades, sumário e gráfico local. */
+/** Painel da direita para notas do cofre: links, propriedades, sumário e gráfico local, em abas do kit (rework F4a). */
 export function VaultPanels(props: Props) {
   const [tab, setTab] = useState<Tab>("links")
+  const links = props.index.backlinks(props.path).length
+  const properties = Object.keys(props.index.note(props.path)?.meta.frontmatter?.data ?? {}).length
   return (
-    <div className="stack" style={{ gap: 0 }}>
-      <div className="tabs" style={{ padding: "0 8px" }}>
-        <button className={tab === "links" ? "active" : ""} onClick={() => setTab("links")} title="Backlinks e links de saída">
-          <Link2 size={15} /> Links
-        </button>
-        <button className={tab === "props" ? "active" : ""} onClick={() => setTab("props")} title="Propriedades">
-          <Tags size={15} /> Prop.
-        </button>
-        <button className={tab === "outline" ? "active" : ""} onClick={() => setTab("outline")} title="Sumário" aria-label="Sumário">
-          <ListTree size={15} />
-        </button>
-        <button className={tab === "graph" ? "active" : ""} onClick={() => setTab("graph")} title="Gráfico local" aria-label="Gráfico local">
-          <Network size={15} />
-        </button>
-      </div>
-      <div className="pane-body">
-        {tab === "links" && <LinksPanel {...props} />}
-        {tab === "props" && <PropertiesPanel {...props} />}
-        {tab === "outline" && <OutlinePanel {...props} />}
-        {tab === "graph" && <VaultGraph index={props.index} path={props.path} onCreate={props.onCreate} />}
-      </div>
+    <div className="vault-panels">
+      <PanelTabs<Tab> label="Detalhes da nota" idPrefix="nota-painel" value={tab} onChange={setTab} tabs={[
+        { value: "links", label: "Links", count: links, icon: <Link2 size={15} /> },
+        { value: "props", label: "Propriedades", count: properties, icon: <Tags size={15} /> },
+        { value: "outline", label: "Sumário", icon: <ListTree size={15} /> },
+        { value: "graph", label: "Gráfico", icon: <Network size={15} /> },
+      ]} />
+      <TabPanel idPrefix="nota-painel" value={tab}>
+        <div className="pane-body">
+          {tab === "links" && <LinksPanel {...props} />}
+          {tab === "props" && <PropertiesPanel {...props} />}
+          {tab === "outline" && <OutlinePanel {...props} />}
+          {tab === "graph" && <VaultGraph index={props.index} path={props.path} onCreate={props.onCreate} />}
+        </div>
+      </TabPanel>
     </div>
   )
 }
@@ -325,6 +323,8 @@ export function VaultGraph({ index, path, onCreate }: { index: VaultIndex; path:
         fitSignal={fit}
         onOpen={(node) => (node.kind === "missing" ? onCreate(node.path) : node.kind !== "attachment" && node.path !== path ? navigate(vaultRoute(node.path)) : undefined)}
       />
+      {/* Os mesmos nós como botões: o gráfico em WebGL não recebe foco do teclado (rework F4a, NOT-3). */}
+      <GraphList compact data={data} exclude={path} onOpen={(node) => (node.kind === "missing" ? onCreate(node.path) : node.kind !== "attachment" ? navigate(vaultRoute(node.path)) : undefined)} />
       <span className="tiny muted">
         {data.nodes.length - 1} {data.nodes.length === 2 ? "nota ligada" : "notas ligadas"} · losango = outro espaço (portal) ·{" "}
         <a href="#" onClick={(e) => (e.preventDefault(), navigate("/notas/grafico"))}>

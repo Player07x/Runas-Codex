@@ -247,6 +247,9 @@ A **F3** sai em duas partes empilhadas: **F3a** (`rework/f3-editor-livros`) é o
 formatação na seleção, menu `/`, galeria Formatar, Código mais legível e barra sobre o teclado; **F3b**
 (`rework/f3b-livros`) refaz Livros: Escrever, Organizar e Prévia, sumário, painel Apoio e celular.
 
+A **F4** sai por espaço, em partes empilhadas: **F4a** Notas (`rework/f4a-notas`), depois Wiki, Campanhas, Agenda e a
+personalização com cores, capas e imagens (ADR 0027).
+
 **Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
 `app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a
 `Platform`, o processo principal do desktop, o Android nativo e o VTT por dentro (`app/src/vtt/**`). Quem precisar de

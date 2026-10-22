@@ -103,3 +103,14 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
 - `ResizablePanel` ganha `setPanelCollapsed`, que recolhe ou expande de vez (alternar duas vezes desfazia o pedido).
 - **Excluir livro** (decisão do dono em 22/10): manda a nota do livro e os capítulos para a lixeira do cofre, com
   confirmação. Ficam os capítulos de fora da pasta do livro e os que outro livro também usa.
+
+## F4a — Notas (decisões)
+- **Cabeçalho da lista (NOT-1):** título, “+ Nova nota” e um menu ⋯ com nome em cada ação (nova pasta, nota do dia,
+  nota aleatória, gráfico, buscar e substituir, exportar, lixeira, bloquear). A ordem fica ao lado da busca, com o
+  nome da ordem atual no rótulo. No celular, o botão flutuante cria a nota.
+- **Painel da nota** com as abas do kit (Links, Propriedades, Sumário, Gráfico), com contador no nome acessível.
+- **Gráfico acessível (NOT-3):** a página do gráfico ganha “Lista”, uma tabela com cada nota, quantas ligações tem e com
+  quem, e um botão para abrir (as 500 mais ligadas; os filtros valem). O gráfico local mostra as notas ligadas como
+  botões embaixo do desenho.
+- **Fileira de abas das notas** continua mesmo com uma nota só: ela guarda ações que não têm outro lugar (abrir em
+  janela, fixar, dividir, workspaces). Some quando essas ações tiverem lugar fixo.
