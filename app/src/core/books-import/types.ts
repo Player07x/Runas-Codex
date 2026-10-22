@@ -17,7 +17,21 @@ export function protectCode(source: string) {
     saved.push(value)
     return `\uE000${saved.length - 1}\uE001`
   })
-  return { text, restore: (value: string) => value.replace(/\uE000(\d+)\uE001/g, (original, n: string) => saved[Number(n)] ?? original) }
+  const token = /\uE000(\d+)\uE001/g
+  return {
+    text,
+    restore: (value: string) => value.replace(token, (original, n: string) => saved[Number(n)] ?? original),
+    /**
+     * Prefixa as linhas internas de um bloco protegido sem o expor ao parser.
+     * Isso mantém um fenced block dentro de um blockquote/callout inteiro.
+     */
+    prefixLines: (value: string, prefix: string) => value.replace(token, (original, n: string) => {
+      const savedValue = saved[Number(n)]
+      if (savedValue === undefined) return original
+      saved.push(savedValue.replace(/\n/g, `\n${prefix}`))
+      return `\uE000${saved.length - 1}\uE001`
+    }),
+  }
 }
 
 export function splitChapters(source: string, options: ImportOptions): ImportedChapter[] {

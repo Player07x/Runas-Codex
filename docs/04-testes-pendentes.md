@@ -638,3 +638,42 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
   existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
 - **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.
+
+## Correções do Codex durante o rework (21/10/2026)
+
+- [ ] Android: abrir uma mesa hospedada no celular e conferir o aviso de que o link público pela internet ainda não está
+  disponível; na mesma rede Wi-Fi ou no ponto de acesso, o link local e o QR continuam funcionando. Hospedar no desktop
+  e conferir o link público pela Cloudflare.
+- [ ] Livros: importar um Homebrewery com bloco cercado de várias linhas dentro de `{{note …}}` e de
+  `<div class="note">`; conferir que todas as linhas, inclusive a cerca de fechamento, permanecem dentro da caixa.
+- [ ] PIN: executar o teste do app repetidamente; conferir que o hash é validado pelo formato e pelo PIN, sem depender
+  de uma sequência específica aparecer no hash aleatório.
+
+## Wayland e fechamento da mesa X6 (22/10/2026)
+
+- [ ] Linux Wayland: executar `runas-codex --captura` com o app fechado e aberto; conferir que a nota nova aparece. Em
+  GNOME, criar e remover o atalho do sistema em Configurações quando o botão do rework estiver disponível; no KDE,
+  conferir a ação “Captura rápida” do arquivo `.desktop`.
+- [ ] VTT: importar um `.uvtt`/`.dd2vtt` com mapa embutido e paredes, uma cena JSON do Foundry com porta, token e luz,
+  e uma lista de tokens em lote. Conferir que imagens externas geram aviso e não são baixadas.
+- [ ] VTT: criar um pino com caminho `Wikis/...md`, abrir pelo duplo clique e conferir que o caminho não aparece na
+  projeção dos jogadores. Com a sala aberta, mover um token e conferir que o mapa permanece e só o objeto alterado é
+  atualizado na Vista dos Jogadores.
+
+## C9 sem interface (22/10/2026)
+
+- [ ] Rodar os dois `--smoke` do Electron e conferir no JSON `network.violations: []`; simular uma URL externa fora da
+  sala/atualização e conferir que o smoke falha.
+- [ ] Conferir os artefatos do workflow Release: `.deb`, AppImage, NSIS e APK assinado; abrir, criar atalho e desinstalar
+  cada um conforme o sistema, preservando o perfil do app.
+- [ ] Repetir o benchmark de 10 mil notas no aparelho Android e registrar índice, busca, gráfico, heap e tempo de abertura.
+  A referência local do desktop está na [ADR 0030](adr/0030-c9-desempenho-rede-instaladores.md).
+
+## C7 — backups agendados e conflitos de sincronização (22/10/2026)
+
+- [ ] Em Configurações, definir um horário e retenção, fechar/reabrir o app e conferir que a agenda permanece; esperar o
+  disparo ou avançar o relógio do sistema e conferir um ZIP novo fora do cofre.
+- [ ] Criar uma cópia `Nota.sync-conflict-YYYYMMDD-HHMMSS-dispositivo.md` pelo Syncthing e uma `Nota (conflicted copy).md`
+  pelo Obsidian Sync; conferir o aviso, a indicação do original e que nenhuma versão é sobrescrita.
+- [ ] Arquivar uma cópia pelo aviso, conferir que ela foi para `.trash` e que o original continua abrindo; testar também
+  a restauração da lixeira. A implementação está descrita na [ADR 0031](adr/0031-c7-backups-conflitos-sync.md).

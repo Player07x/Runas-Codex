@@ -535,6 +535,8 @@ export async function checkMaster(main: BrowserWindow, port: number, key: string
 /** O resultado do roteiro passou? */
 export function smokePassed(result: Record<string, unknown>, hasVault: boolean): boolean {
   if (result.bridge !== true) return false
+  const network = result.network as { violations?: unknown[] } | undefined
+  if (!network || !Array.isArray(network.violations) || network.violations.length > 0) return false
   if (!hasVault) return true
   const listed = Array.isArray(result.listed) ? result.listed.length : -1
   const vault = result.vault as { readOnly?: boolean } | undefined

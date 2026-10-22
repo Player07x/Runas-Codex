@@ -19,6 +19,10 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     watch: (listener) => vault.onChange(listener),
     backup: () => vault.backup(),
     listBackups: () => vault.listBackups(),
+    backupSchedule: () => vault.backupSchedule(),
+    setBackupSchedule: (schedule) => vault.setBackupSchedule(schedule),
+    listSyncConflicts: () => vault.listSyncConflicts(),
+    archiveSyncConflict: (path) => vault.archiveSyncConflict(path),
     revealBackups: () => vault.revealBackups(),
     fileUrl: (path) => `${VAULT_FILE_SCHEME}://cofre/${path.split("/").map(encodeURIComponent).join("/")}`,
     openFile: (path) => vault.openFile(path),
@@ -55,6 +59,7 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     listTrash: () => vault.listTrash(),
     restoreTrash: (path, target) => vault.restoreTrash(path, target),
     setTrayEnabled: enabled=>bridge.setTrayEnabled?bridge.setTrayEnabled(enabled):Promise.resolve(false),
+    systemShortcut: bridge.systemShortcut,
     listTransferFiles: includeWorlds => vault.listTransferFiles ? vault.listTransferFiles(includeWorlds) : vault.list(),
     async writeManagedTransfer(path, bytes, expected) {
       if (!vault.writeManagedTransfer) throw new Error("Atualize o app para importar os dados internos da mesa.")

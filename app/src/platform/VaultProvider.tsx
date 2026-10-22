@@ -129,14 +129,14 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         const file = current.allFiles().find((f) => f.path === entry.path)
         return file !== undefined && file.mtime === entry.mtime && file.size === entry.size
       }
-      changes = changes.filter((c) => c.type === "deleted" || !known(c.entry))
+      changes = changes.filter((c) => c.type === "conflict" || c.type === "deleted" || !known(c.entry))
       if (!changes.length) return
       const changed = changes.filter((c): c is Extract<VaultChange, { type: "changed" }> => c.type === "changed")
       const texts = await platform.readTexts(changed.filter((c) => isText(c.entry.path) && extname(c.entry.path) === ".md").map((c) => c.entry.path))
       for (const change of changes) {
         if (change.type === "deleted") {
           for (const file of current.allFiles()) if (file.path === change.path || file.path.startsWith(change.path + "/")) current.remove(file.path)
-        } else current.set(change.entry, texts[change.entry.path])
+        } else if (change.type === "changed") current.set(change.entry, texts[change.entry.path])
       }
       bump()
     })

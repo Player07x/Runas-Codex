@@ -181,6 +181,8 @@ export interface NoteData {
   label: string
   /** Página aberta no navegador integrado ao ativar a nota (ex.: Wiki do Runas DM). */
   url: string
+  /** Caminho de uma nota do cofre, quando o pino aponta para conteúdo offline. */
+  notePath: string
   color: string
   hidden: boolean
 }
@@ -404,11 +406,13 @@ export function normalizeDrawing(value: unknown): DrawingData {
 export function normalizeNote(value: unknown): NoteData {
   const raw = record(value)
   const url = str(raw.url, "", 2000).trim()
+  const notePath = str(raw.notePath, "", 500).trim().replace(/\\/g, "/")
   return {
     x: num(raw.x, 0),
     y: num(raw.y, 0),
     label: str(raw.label, "Nota", 120),
     url: /^https?:\/\//i.test(url) ? url : "",
+    notePath: notePath && !notePath.includes("..") && !notePath.startsWith("/") ? notePath : "",
     color: color(raw.color, "#b99b65"),
     hidden: bool(raw.hidden, false),
   }

@@ -12,6 +12,7 @@ import type { SoundData } from "../shared/audio"
 import { REGION_SHAPES, REGION_TRIGGERS, type RegionData, type RegionShape, type RegionTrigger } from "../shared/region"
 import type { AssetKind, WorldDocument } from "../shared/world"
 import { resolveAssetUrl, vtt } from "../api"
+import { noteRoute } from "../../lib/vault-notes"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
 import { SceneHistory, type SceneEdit } from "./history"
@@ -139,7 +140,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints }: { stor
       onContextMenu: (id, point) => { setContext({ id, ...point }); setPropertiesOpen(false) },
       onPut: put,
       onRemove: (ids) => { for (const id of ids) edit({ id, value: null }) },
-      onOpenNote: (note) => { if (note.url) onOpenUrl(note.url) },
+      onOpenNote: (note) => { if (note.notePath) onOpenUrl(`#${noteRoute(note.notePath)}`); else if (note.url) onOpenUrl(note.url) },
       onStatus: setStatus,
       onRulerChange: sendRuler,
     }, { editable: true }).then((view) => {
@@ -542,6 +543,7 @@ function RegionFields({ id, data, store, update }: { id: string; data: RegionDat
 function NoteFields({ data, update }: { data: NoteData; update: (patch: Partial<NoteData>) => void }) {
   return <>
     <Field label="Rótulo"><TextInput value={data.label} onCommit={(label) => update({ label })} /></Field>
+    <Field label="Nota do cofre (opcional)"><TextInput value={data.notePath} placeholder="Wikis/Locais/Porto.md" onCommit={(notePath) => update({ notePath, url: notePath ? "" : data.url })} /></Field>
     <Field label="Página ligada (duplo clique abre no navegador)"><TextInput value={data.url} placeholder="https://runas-dm.pages.dev/wiki" onCommit={(url) => update({ url })} /></Field>
     <Field label="Cor"><input type="color" value={data.color} onChange={(event) => update({ color: event.target.value })} /></Field>
   </>

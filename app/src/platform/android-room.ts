@@ -180,7 +180,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     await store.close()
   }
   const unsupported = async (): Promise<never> => {
-    throw new Error("No Android, compartilhe a sala pela rede local.")
+    throw new Error("O link público pela internet ainda não está disponível no Android; compartilhe a sala pela rede local (Wi-Fi ou ponto de acesso).")
   }
   // O React pode abrir a mesma mesa duas vezes na montagem; mudanças de sala são sequenciais.
   let lifecycle: Promise<unknown> = Promise.resolve()
