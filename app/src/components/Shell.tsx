@@ -22,6 +22,8 @@ import { Modal, useToast } from "./ui"
 import { goBack, goForward } from "../lib/router"
 import { shortcutLabel, type ShortcutAction } from "../core/shortcuts"
 import { usePreferences } from "../lib/customization"
+import { useTasksSettings } from "../lib/tasks"
+import { TaskQuickSearch } from "./tasks/TaskQuickSearch"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -76,6 +78,7 @@ function crumbsFor(route: string[]): { label: string; to?: string }[] {
 export function Shell({ route, theme, onToggleTheme, fill, children }: { route: string[]; theme: string; onToggleTheme: () => void; fill?: boolean; children: ReactNode }) {
   const vault = useVault()
   const [palette, setPalette] = useState(false)
+  const [quickTaskSearch, setQuickTaskSearch] = useState(false)
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
   const crumbs = crumbsFor(route)
@@ -202,17 +205,19 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         </Modal>
       )}
       <ExportDialog />
-      {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} />}
+      {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} onOpenQuickSearch={() => setQuickTaskSearch(true)} />}
+      {quickTaskSearch && <TaskQuickSearch onClose={() => setQuickTaskSearch(false)} />}
     </div>
   )
 }
 
-function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
+function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose: () => void; onToggleTheme: () => void; onOpenQuickSearch: () => void }) {
   const prefs = usePreferences()
   const dialogRef = useRef<HTMLDivElement>(null)
   useDialogFocus(dialogRef, onClose)
   const vault = useVault()
   const toast = useToast()
+  const taskSettings = useTasksSettings(vault.info?.path)
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
@@ -232,8 +237,12 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
       { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutLabel("toggleTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
       { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutLabel("editTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
+      { label: "Busca rápida de tarefas (Tasks)", icon: <Search size={16} />, hint: "Tasks", run: onOpenQuickSearch },
+      ...[...taskSettings.coreStatuses, ...taskSettings.customStatuses]
+        .filter((status, index, statuses) => status.availableAsCommand && statuses.findIndex((other) => other.symbol === status.symbol) === index)
+        .map((status) => ({ label: `Definir tarefa: ${status.name}`, icon: <FileText size={16} />, hint: "Tasks", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: `set-task-status:${encodeURIComponent(status.symbol)}` })) })),
     ],
-    [onToggleTheme, prefs.shortcuts, vault.platform.kind],
+    [onOpenQuickSearch, onToggleTheme, prefs.shortcuts, taskSettings, vault.platform.kind],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
   // Notas do cofre (pelo índice); no exemplo do navegador, as que têm tela própria (wiki, campanhas) abrem nela.

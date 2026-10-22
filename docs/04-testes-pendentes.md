@@ -638,3 +638,17 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
   existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
 - **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.
+
+## Correção do túnel Android (22/10/2026)
+
+- [ ] Android: abrir uma mesa hospedada no celular e conferir o aviso de que o link público pela internet ainda não está
+  disponível; na mesma rede Wi-Fi ou no ponto de acesso, o link local e o QR continuam funcionando. Hospedar no desktop
+  e conferir o link público pela Cloudflare.
+
+## Tasks — pendências da matriz (22/10/2026)
+
+- [ ] Na paleta, usar cada comando “Definir tarefa: …” sobre uma linha com tarefa e conferir que o estado, as datas e a
+  recorrência seguem as regras do Tasks.
+- [ ] Em uma consulta, usar `path includes {{query.file.outlinks}}`, `{{query.file.outlinksInBody}}` e
+  `{{query.file.outlinksInProperties}}`; conferir os mesmos resultados no Obsidian com Tasks 8.6.0.
+- [ ] Abrir “Busca rápida de tarefas”, digitar parte da descrição e conferir que a nota de origem abre no ponto certo.

@@ -33,6 +33,8 @@ export interface SourceEditorHandle {
   /** Posição do cursor no documento (`null` sem editor). */
   cursor(): number | null
   selection(): { from: number; to: number } | null
+  /** Foca e rola até uma linha do arquivo. */
+  scrollToLine(line: number): void
 }
 
 interface Props {
@@ -278,6 +280,13 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     selection() {
       const selected = view.current?.state.selection.main
       return selected && !selected.empty ? { from: selected.from, to: selected.to } : null
+    },
+    scrollToLine(line: number) {
+      const v = view.current
+      if (!v) return
+      const target = v.state.doc.line(Math.max(1, Math.min(v.state.doc.lines, line + 1))).from
+      v.dispatch({ selection: { anchor: target }, effects: EditorView.scrollIntoView(target, { y: "center" }) })
+      v.focus()
     },
   }))
 

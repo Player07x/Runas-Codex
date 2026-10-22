@@ -245,3 +245,15 @@ algo do outro lado pede no PR.
 **ADRs:** 0025 é a regra de lançamentos. Reservadas: **0026** rework visual e **0027** cores, capas e imagens por
 campanha e categoria (Claude Code); **0028** em diante para o Codex. Há duas ADRs com o número 0020 (Tasks e
 Transferências); ficam como estão para não quebrar links.
+
+## Itens 1 e 8 do Codex durante o rework — situação (22/10/2026)
+
+O Android agora explica claramente que a sala hospedada pelo celular funciona na rede local e que o link público ainda
+não está disponível. A decisão técnica e os custos a medir antes de distribuir um túnel estão na [ADR 0032](../adr/0032-tunel-publico-android.md).
+O túnel em si continua reservado para uma etapa posterior, depois da medição no aparelho e da aprovação da política de
+distribuição do binário arm64.
+
+| Item | Situação |
+|---|---|
+| 1. Sala pela internet no Android | aviso claro e decisão técnica na ADR 0032; o túnel público continua reservado para depois da medição no aparelho |
+| 8. Pendências da matriz Tasks | implementados os comandos por estado, os marcadores de outlinks e a Busca rápida; falta apenas a conferência manual com o Tasks 8.6.0 no Obsidian |

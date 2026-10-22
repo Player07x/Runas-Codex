@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { continueLines, explainQuery, groupHeading, parseQuery, runQuery } from "./query"
+import { continueLines, explainQuery, expandPlaceholders, groupHeading, parseQuery, runQuery } from "./query"
 import { DEFAULT_TASKS_SETTINGS, type TasksSettings } from "./settings"
 import { parseContext, tasksInNote, type Task } from "./task"
 
@@ -34,8 +34,8 @@ function allTasks(s: TasksSettings = settings): Task[] {
   return Object.entries(NOTES).flatMap(([path, text]) => tasksInNote(path, text, ctx))
 }
 
-function run(source: string, s: TasksSettings = settings, file = "Consultas/Hoje.md", properties?: Record<string, unknown>) {
-  const q = parseQuery(source, { settings: s, now: NOW, file: { path: file, ...(properties ? { properties } : {}) } })
+function run(source: string, s: TasksSettings = settings, file = "Consultas/Hoje.md", properties?: Record<string, unknown>, outlinks: string[] = []) {
+  const q = parseQuery(source, { settings: s, now: NOW, file: { path: file, ...(properties ? { properties } : {}), outlinks } })
   const result = runQuery(q, allTasks(s), s, NOW)
   return { q, result, names: result.groups.flatMap((g) => g.tasks.map((t) => t.description)) }
 }
@@ -180,6 +180,15 @@ describe("consultas tasks: predefinições, marcadores e consulta global", () =>
 
   it("marcador de propriedade da nota", () => {
     expect(run("tag includes {{query.file.property('etiqueta')}}", settings, "x.md", { etiqueta: "#obra" }).names).toEqual(["Comprar tinta #obra"])
+  })
+
+  it("expande outlinks da nota em filtros de caminho", () => {
+    const file = { path: "Consultas/Hoje.md", outlinks: ["Casa/Tarefas.md", "Trabalho/Projeto.md"] }
+    expect(expandPlaceholders("path includes {{query.file.outlinks}}", file)).toBe("path includes Casa/Tarefas.md, Trabalho/Projeto.md")
+    expect(run("path includes {{query.file.outlinks}}", settings, file.path, undefined, file.outlinks).names.sort()).toEqual([
+      "Comprar cortina", "Comprar tinta #obra", "Ideia solta", "Lavar louça #casa", "Relatório", "Revisar relatório", "Tarefa no callout", "Trocar lâmpada", "Varrer #casa", "Varrer a varanda",
+    ])
+    expect(run("path does not include {{query.file.outlinks}}", settings, file.path, undefined, file.outlinks).names).toEqual(["Na raiz"])
   })
 
   it("predefinição inexistente lista as disponíveis", () => {
