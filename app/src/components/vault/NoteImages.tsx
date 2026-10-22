@@ -7,13 +7,14 @@ import { flushOpenNotes } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Modal, useToast } from "../ui"
 
-export function NoteImages({ path, text, onRename }: { path: string; text: string; onRename(path: string): void }) {
-  const vault = useVault(), [open, setOpen] = useState(false)
+/** Imagens ligadas pela nota, para renomear uma delas (aberto pelo menu ⋯ da nota). */
+export function NoteImagesDialog({ path, text, onRename, onClose }: { path: string; text: string; onRename(path: string): void; onClose(): void }) {
+  const vault = useVault()
   const images = useMemo(() => vault.index ? linkedImages(vault.index, path, text) : [], [vault.index, vault.version, path, text])
-  return <><button className="icon-btn" aria-label="Imagens vinculadas à nota" title="Renomear imagens pelos links desta nota" disabled={vault.info?.readOnly || !images.length} onClick={() => setOpen(true)}><ImageIcon size={17}/></button>
-    {open && <Modal title="Imagens vinculadas à nota" onClose={() => setOpen(false)}><p className="small muted">Escolha o link da imagem. Renomear atualiza todas as referências resolvidas no cofre, inclusive outras notas e cartões de quadro.</p>
-      {images.map(image => <button className="list-item" key={image} onClick={() => { setOpen(false); onRename(image) }}><ImageIcon size={16}/><span>{image}</span></button>)}
-    </Modal>}</>
+  return <Modal title="Imagens vinculadas à nota" onClose={onClose}><p className="small muted">Escolha o link da imagem. Renomear atualiza todas as referências resolvidas no cofre, inclusive outras notas e cartões de quadro.</p>
+    {images.map(image => <button className="list-item" key={image} onClick={() => { onClose(); onRename(image) }}><ImageIcon size={16}/><span>{image}</span></button>)}
+    {!images.length && <p className="muted">Esta nota não liga nenhuma imagem do cofre.</p>}
+  </Modal>
 }
 export function ImageRenameDialog({ path, onClose }: { path: string; onClose(): void }) {
   const vault = useVault(), index = vault.index!, toast = useToast()

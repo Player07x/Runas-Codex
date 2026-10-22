@@ -1,15 +1,16 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
-import { autocompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
+import { autocompletion, startCompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
 import { defaultKeymap, history, historyKeymap, indentWithTab, redo, undo } from "@codemirror/commands"
 import { markdown } from "@codemirror/lang-markdown"
 import { GFM } from "@lezer/markdown"
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from "@codemirror/language"
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
-import { Compartment, EditorState } from "@codemirror/state"
-import { EditorView, keymap, placeholder } from "@codemirror/view"
+import { Compartment, EditorSelection, EditorState, RangeSetBuilder } from "@codemirror/state"
+import { Decoration, EditorView, keymap, lineNumbers as lineNumberGutter, MatchDecorator, placeholder, ViewPlugin, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import { tags } from "@lezer/highlight"
 import { parseFrontmatter } from "../../core/parse"
 import { SLASH_COMMANDS } from "../../core/note-tools"
+import { FORMATTER_GROUPS, slashItems, type FormatterEntry, type SlashItem } from "../../core/formatters"
 import { suggestForTaskLine } from "../../core/tasks/suggest"
 import { currentParseContext, vaultTaskIds } from "../../lib/tasks"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
@@ -33,7 +34,14 @@ export interface SourceEditorHandle {
   /** Posição do cursor no documento (`null` sem editor). */
   cursor(): number | null
   selection(): { from: number; to: number } | null
+  /** Põe (ou tira, se já tem) a marca dos dois lados da seleção: `**`, `*`, `~~`, `==`. */
+  wrap(mark: string): void
+  /** Abre o menu `/` no cursor (botão “/” da barra sobre o teclado). */
+  openSlash(): void
 }
+
+/** Seleção com texto, em relação ao canto do editor: onde a barra de formatação aparece. */
+export interface EditorSelectionInfo { from: number; to: number; top: number; bottom: number; left: number; right: number; focused: boolean }
 
 interface Props {
   /** Texto inicial; para trocar o documento por fora (outra nota, recarregar), mude `docKey`. */
@@ -52,7 +60,66 @@ interface Props {
    * editor não aceita arquivos (o CodeMirror colaria o conteúdo como texto).
    */
   onFiles?(files: File[], at: number | null, how: "colar" | "soltar"): void
+  /** Seleção com texto (ou `null`), para a barra de formatação. */
+  onSelection?(selection: EditorSelectionInfo | null): void
+  /** Linha e coluna do cursor, para a barra de status. */
+  onCursor?(line: number, column: number): void
+  /** Itens do menu `/` que o editor não resolve sozinho (galeria, imagem, modelo, link). */
+  onSlashAction?(action: "format" | "image" | "template" | "link"): void
+  /** Números de linha no modo Código. */
+  lineNumbers?: boolean
+  /** Formatadores do espaço (a aba Wiki da galeria), que também entram no menu `/`. */
+  extraFormatters?: readonly FormatterEntry[]
 }
+
+/** Liga ou desliga a marca em volta de cada seleção (Ctrl+B, Ctrl+I e a barra da seleção). */
+function toggleWrap(view: EditorView, mark: string): boolean {
+  if (view.state.readOnly) return false
+  const doc = view.state
+  view.dispatch(doc.changeByRange((range) => {
+    const before = doc.sliceDoc(range.from - mark.length, range.from)
+    const after = doc.sliceDoc(range.to, range.to + mark.length)
+    // `*` colado em `**` é o negrito, não o itálico (a menos que seja `***`).
+    const boldAround = mark === "*" && doc.sliceDoc(range.from - 2, range.from) === "**" && doc.sliceDoc(range.from - 3, range.from) !== "***"
+    if (before === mark && after === mark && !boldAround) {
+      return { changes: [{ from: range.from - mark.length, to: range.from }, { from: range.to, to: range.to + mark.length }], range: EditorSelection.range(range.from - mark.length, range.to - mark.length) }
+    }
+    return { changes: [{ from: range.from, insert: mark }, { from: range.to, insert: mark }], range: EditorSelection.range(range.from + mark.length, range.to + mark.length) }
+  }))
+  view.focus()
+  return true
+}
+
+/** Código: o frontmatter numa faixa própria, para separar propriedades do texto. */
+const frontmatterBand = ViewPlugin.fromClass(class {
+  decorations: DecorationSet
+  constructor(view: EditorView) { this.decorations = this.build(view) }
+  update(update: ViewUpdate) { if (update.docChanged) this.decorations = this.build(update.view) }
+  build(view: EditorView): DecorationSet {
+    const builder = new RangeSetBuilder<Decoration>()
+    const end = parseFrontmatter(view.state.sliceDoc(0, Math.min(view.state.doc.length, 50_000)))?.end ?? 0
+    for (let pos = 0; pos < end && pos <= view.state.doc.length;) {
+      const line = view.state.doc.lineAt(pos)
+      builder.add(line.from, line.from, Decoration.line({ class: "cm-frontmatter" }))
+      pos = line.to + 1
+    }
+    return builder.finish()
+  }
+}, { decorations: (plugin) => plugin.decorations })
+
+/** Código: comentários de revisão (`%% revisão: … %%`) em dourado, para achar e apagar rápido. */
+const reviewMarks = new MatchDecorator({ regexp: /%%\s*revis[aã]o\b[^%]*%%/giu, decoration: Decoration.mark({ class: "cm-review" }) })
+const reviewComments = ViewPlugin.fromClass(class {
+  decorations: DecorationSet
+  constructor(view: EditorView) { this.decorations = reviewMarks.createDeco(view) }
+  update(update: ViewUpdate) { this.decorations = reviewMarks.updateDeco(update, this.decorations) }
+}, { decorations: (plugin) => plugin.decorations })
+
+const codeExtensions = (code: boolean, numbers: boolean) => (code ? [frontmatterBand, reviewComments, ...(numbers ? [lineNumberGutter()] : [])] : [])
+
+const FORMATTER_TITLES = FORMATTER_GROUPS.map((group) => group.title)
+/** Seção do item no menu `/`, na ordem: ações, comandos e os grupos da galeria. */
+const slashSection = (item: SlashItem, extra: readonly string[]) => item.kind === "action" ? { name: "Ações", rank: 0 } : extra.includes(item.detail) ? { name: item.detail, rank: 1 } : FORMATTER_TITLES.includes(item.detail) ? { name: item.detail, rank: 3 + FORMATTER_TITLES.indexOf(item.detail) } : { name: "Comandos", rank: 2 }
 
 /** Colar com texto junto (célula de planilha, trecho de documento) é colar texto; só a imagem sozinha vira arquivo. */
 function pastedFiles(data: DataTransfer | null): File[] {
@@ -92,14 +159,15 @@ const highlight = HighlightStyle.define([
   { tag: tags.list, color: "var(--violet)" },
 ])
 
-export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext }, ref) {
+export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext, onSelection, onCursor, onSlashAction, lineNumbers = false, extraFormatters }, ref) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const readOnlyConf = useRef(new Compartment())
   const previewConf = useRef(new Compartment())
+  const codeConf = useRef(new Compartment())
   // As funções mudam a cada render; o editor lê sempre a versão atual por estas referências.
-  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext })
-  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext }
+  const callbacks = useRef({ onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext, onSelection, onCursor, onSlashAction, extraFormatters })
+  callbacks.current = { onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext, onSelection, onCursor, onSlashAction, extraFormatters }
   // Anfitrião estável para o live preview (o editor não é recriado quando as funções mudam).
   const previewHost = useRef<LivePreviewHost>({
     noteSet: () => callbacks.current.livePreview!.noteSet(),
@@ -136,12 +204,34 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         options: callbacks.current.suggestLinks(match.text.slice(1)).map((s) => ({ label: s.label, detail: s.detail, apply: s.insert.includes("/") ? `[[${s.insert}|${s.label}]]` : `[[${s.insert}]]` })),
       }
     }
+    // Menu `/`: ações, comandos e o catálogo inteiro de formatadores (core/formatters.ts), filtrados sem acento.
+    const applySlash = (editorView: EditorView, item: SlashItem, from: number, to: number) => {
+      if (item.kind === "action") {
+        const date = item.action === "date" ? new Date().toLocaleDateString("sv-SE") : ""
+        editorView.dispatch({ changes: { from, to, insert: date }, selection: { anchor: from + date.length } })
+        if (item.action !== "date") callbacks.current.onSlashAction?.(item.action)
+        return
+      }
+      let insert = item.insert
+      if (item.block) {
+        const line = editorView.state.doc.lineAt(from)
+        if (editorView.state.sliceDoc(line.from, from).trim()) insert = "\n" + insert
+        if (editorView.state.sliceDoc(to, line.to).trim()) insert += "\n"
+      }
+      // O texto de exemplo (“texto”, “Título”) fica selecionado, para a pessoa digitar por cima.
+      const sample = /texto|Título|Nome|tarefa|item/.exec(insert)
+      editorView.dispatch({ changes: { from, to, insert }, selection: sample ? { anchor: from + sample.index, head: from + sample.index + sample[0].length } : { anchor: from + insert.length } })
+    }
     const slashSource = (context: CompletionContext): CompletionResult | null => {
-      const match = context.matchBefore(/(?:^|(?<=\s))\/[\p{L}-]*/u)
+      const match = context.matchBefore(/(?:^|(?<=\s))\/[\p{L}\d+ -]{0,30}/u)
       if (!match || (parseFrontmatter(context.state.doc.toString())?.end ?? 0) > match.from) return null
       const node = syntaxTree(context.state).resolveInner(match.from, 1)
       for (let n: typeof node | null = node; n; n = n.parent) if (/Code|Comment/.test(n.name)) return null
-      return { from: match.from, options: SLASH_COMMANDS.map(command => ({ label: `/${command.label}`, detail: command.detail, apply: command.label === "data" ? new Date().toLocaleDateString("sv-SE") : command.insert })) }
+      const extra = callbacks.current.extraFormatters ?? []
+      const items = slashItems(match.text.slice(1), SLASH_COMMANDS, extra)
+      if (!items.length) return null
+      const extraGroups = [...new Set(extra.map((f) => f.group))]
+      return { from: match.from, filter: false, options: items.map((item) => ({ label: item.label, detail: item.detail, section: slashSection(item, extraGroups), apply: (editorView: EditorView, _completion: unknown, from: number, to: number) => applySlash(editorView, item, from, to) })) }
     }
     // Autocompletar do Tasks numa linha de tarefa: campos, datas, regras de repetição e ids.
     const taskSource = (context: CompletionContext): CompletionResult | null => {
@@ -153,6 +243,21 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
       const found = suggestForTaskLine(line.text, context.pos - line.from, ctx.settings, new Date(), line.text.includes("⛔") || line.text.includes("dependsOn::") ? vaultTaskIds() : [])
       if (!found) return null
       return { from: line.from + found.from, filter: false, options: found.options.map((o) => ({ label: o.label, detail: o.detail, apply: o.apply })) }
+    }
+    // Cursor para a barra de status e seleção para a barra de formatação (medida depois do layout).
+    const report = (editorView: EditorView) => {
+      const main = editorView.state.selection.main
+      const line = editorView.state.doc.lineAt(main.head)
+      callbacks.current.onCursor?.(line.number, main.head - line.from + 1)
+      if (!callbacks.current.onSelection) return
+      if (main.empty) return callbacks.current.onSelection(null)
+      editorView.requestMeasure({
+        read: (v) => {
+          const start = v.coordsAtPos(main.from), end = v.coordsAtPos(main.to), box = host.current?.getBoundingClientRect()
+          return start && end && box ? { top: Math.min(start.top, end.top) - box.top, bottom: Math.max(start.bottom, end.bottom) - box.top, left: Math.min(start.left, end.left) - box.left, right: Math.max(start.right, end.right) - box.left, focused: v.hasFocus } : null
+        },
+        write: (at) => callbacks.current.onSelection?.(at ? { from: main.from, to: main.to, ...at } : null),
+      })
     }
     const state = EditorState.create({
       doc: value,
@@ -166,9 +271,11 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         autocompletion({ override: [linkSource, mentionSource, slashSource, taskSource], icons: false }),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ spellcheck: "true", lang: "pt-BR", "aria-label": "Código-fonte Markdown" }),
-        placeholder("Comece a escrever. Use [[ ou @ para ligar a outra nota."),
+        placeholder("Comece a escrever. Use [[ ou @ para ligar a outra nota e / para formatar."),
         keymap.of([
           { key: "Mod-s", run: () => (callbacks.current.onSave?.(), true) },
+          { key: "Mod-b", run: (editorView) => toggleWrap(editorView, "**") },
+          { key: "Mod-i", run: (editorView) => toggleWrap(editorView, "*") },
           ...defaultKeymap,
           ...historyKeymap,
           ...searchKeymap,
@@ -176,8 +283,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         ]),
         readOnlyConf.current.of([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]),
         previewConf.current.of(previewExtensions(Boolean(livePreview))),
+        codeConf.current.of(codeExtensions(!livePreview, lineNumbers)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) callbacks.current.onChange(update.state.doc.toString())
+          if (update.docChanged || update.selectionSet || update.focusChanged || update.geometryChanged) report(update.view)
           if ((update.docChanged || update.selectionSet) && callbacks.current.typewriter) {
             const pos = update.state.selection.main.head
             requestAnimationFrame(() => { if (view.current === update.view) update.view.dispatch({ effects: EditorView.scrollIntoView(Math.min(pos, update.view.state.doc.length), { y: "center" }) }) })
@@ -233,6 +342,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
   }, [Boolean(livePreview)])
 
   useEffect(() => {
+    view.current?.dispatch({ effects: codeConf.current.reconfigure(codeExtensions(!livePreview, lineNumbers)) })
+  }, [Boolean(livePreview), lineNumbers])
+
+  useEffect(() => {
     const command = (event: Event) => {
       if (!view.current || !host.current?.contains(document.activeElement)) return
       const action = (event as CustomEvent<string>).detail
@@ -278,6 +391,19 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     selection() {
       const selected = view.current?.state.selection.main
       return selected && !selected.empty ? { from: selected.from, to: selected.to } : null
+    },
+    wrap(mark: string) {
+      if (view.current) toggleWrap(view.current, mark)
+    },
+    openSlash() {
+      const v = view.current
+      if (!v || v.state.readOnly) return
+      const at = v.state.selection.main.head
+      const before = at > 0 ? v.state.sliceDoc(at - 1, at) : "\n"
+      const insert = /\s/.test(before) ? "/" : " /"
+      v.dispatch({ changes: { from: at, insert }, selection: { anchor: at + insert.length } })
+      v.focus()
+      startCompletion(v)
     },
   }))
 

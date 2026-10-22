@@ -14,6 +14,8 @@ export interface Appearance {
   /** "system" segue `prefers-contrast: more`; "high" liga sempre. */
   contrast: "system" | "high"; underlineLinks: boolean; solid: boolean; labels: boolean; strongFocus: boolean
   bottomNav: string[]
+  /** Números de linha no modo Código (Configurações › Editor e barra de status). */
+  codeLineNumbers: boolean
 }
 
 /** O que o "Restaurar padrão" da seção Acessibilidade volta (paleta, tema e barra inferior ficam). */
@@ -22,7 +24,7 @@ export const ACCESSIBILITY_DEFAULTS = {
   contrast: "system", underlineLinks: false, solid: false, labels: false, strongFocus: false,
 } satisfies Partial<Appearance>
 
-export const DEFAULT_APPEARANCE: Appearance = { ...ACCESSIBILITY_DEFAULTS, palette: "orbita", bottomNav: [...DEFAULT_BOTTOM_NAV] }
+export const DEFAULT_APPEARANCE: Appearance = { ...ACCESSIBILITY_DEFAULTS, palette: "orbita", bottomNav: [...DEFAULT_BOTTOM_NAV], codeLineNumbers: false }
 
 const oneOf = <T extends string>(list: readonly T[], value: unknown, fallback: T): T => (list.includes(value as T) ? value as T : fallback)
 
@@ -55,7 +57,7 @@ export function parseAppearance(raw: string | null): Appearance {
       motion: p.motion === "reduce" ? "reduce" : "system", tablet: p.tablet === true,
       spacing: oneOf(SPACINGS, p.spacing, "normal"), lineWidth: oneOf(LINE_WIDTHS, p.lineWidth, "media"), readingFont: oneOf(READING_FONTS, p.readingFont, "geist"),
       contrast: p.contrast === "high" ? "high" : "system", underlineLinks: p.underlineLinks === true, solid: p.solid === true, labels: p.labels === true, strongFocus: p.strongFocus === true,
-      bottomNav: parseBottomNav(p.bottomNav) }
+      bottomNav: parseBottomNav(p.bottomNav), codeLineNumbers: p.codeLineNumbers === true }
   } catch { return { ...DEFAULT_APPEARANCE, bottomNav: [...DEFAULT_BOTTOM_NAV] } }
 }
 /** Contraste sRGB, usado na conferência das variáveis de tema. */

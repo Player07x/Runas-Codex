@@ -86,10 +86,8 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
 
 .image-moves { max-height:200px;overflow:auto;padding-left:20px;font-size:calc(12px * var(--font-scale,1));overflow-wrap:anywhere; }
 
-.editor-tools-toggle,.book-mobile-controls { display:none; }
+.book-mobile-controls { display:none; }
 @media(max-width:860px) {
- .editor-tools-toggle { display:inline-flex;margin-left:auto; }
- .editor-bar:not(.tools-expanded) > :not(.segmented):not(.editor-tools-toggle):not(.mobile-switch) { display:none; }
  .editor-bar .segmented { flex:1 1 100%; }
  .books-header .book-view-tabs,.books-header>.book-writing-option { display:none; }
  .book-mobile-controls { display:block;flex:1 1 auto; }

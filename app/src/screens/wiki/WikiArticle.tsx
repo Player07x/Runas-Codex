@@ -12,6 +12,9 @@ import { NoteView } from "../../components/vault/NoteView"
 import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleExtras } from "./WikiArticleExtras"
 import { WIKI_INSERTS } from "./WikiTools"
+
+/** Recursos da Wiki: aba Wiki na galeria Formatar e seção no menu `/` (rework F3). */
+const WIKI_FORMATTERS = WIKI_INSERTS.map(([label, syntax]) => ({ label, syntax, group: "Wiki" }))
 import { Infobox } from "./Infobox"
 import { NewArticleDialog } from "./WikiHome"
 import { askWikiSearch, useWiki } from "./wiki-state"
@@ -45,7 +48,7 @@ export function WikiArticleView({ path }: { path: string }) {
   return (
     <div className={`wiki-article-layout ${panel ? "show-panel" : ""}`}>
       <section className="wiki-article-main">
-        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} toolbar={insert=><label className="wiki-resource-insert">Inserir recurso da Wiki<select className="input" value="" onChange={e=>{if(e.target.value)insert(e.target.value)}}><option value="">Escolha um recurso…</option>{WIKI_INSERTS.map(([label,syntax])=><option key={label} value={syntax}>{label}</option>)}</select></label>} />
+        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
       </section>
       <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side">
         <NoteSetContext.Provider value={noteSet}>

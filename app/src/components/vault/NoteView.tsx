@@ -2,17 +2,17 @@ import { formatterInsertion } from "../../core/formatter-insertion"
 import { createPortal } from "react-dom"
 import { openDocumentExport } from "../export/ExportDialog"
 import { imageLinkAt, linkedImages } from "../../core/images"
-import { ImageRenameDialog, NoteImages } from "./NoteImages"
+import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, Ellipsis, ImagePlus, LayoutTemplate, Link2, Lock, PanelRight, PenLine, Pin, PinOff, Star, Tag, Trash2, TriangleAlert, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Pin, PinOff, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
 import { archivePath, NOTE_COLORS, noteFlags, unarchivePath, type NoteColor } from "../../core/note-flags"
 import { scopeOf } from "../../core/spaces"
 import { fillTemplate, insertTemplate } from "../../core/templates"
-import { extname, foldName, noteName, textToSave, toEditorText } from "../../core/text"
+import { dirname, extname, foldName, noteName, textToSave, toEditorText } from "../../core/text"
 import { splitFrontmatter } from "../../lib/links"
 import { NoteSetContext } from "../../lib/note-set"
 import { goBack, goForward, navigate, useNavHistory } from "../../lib/router"
@@ -28,23 +28,36 @@ import { TaskEditDialog } from "../tasks/TaskEditDialog"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
-import { Segmented, useToast } from "../ui"
+import { Modal, Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
 import { LINK_SELECTOR, targetOf, useLinkPreview } from "./LinkPreview"
 import type { LivePreviewHost } from "./live-preview"
-import { SourceEditor, type SourceEditorHandle } from "./SourceEditor"
+import { SourceEditor, type EditorSelectionInfo, type SourceEditorHandle } from "./SourceEditor"
 import "./note-actions.css"
-import { NoteTools } from "./NoteTools"
+import { NoteTools, type NoteToolsHandle } from "./NoteTools"
+import { OverflowMenu, type MenuEntry } from "../kit/OverflowMenu"
+import { Notice, SaveStatus } from "../kit/Layout"
+import { FormatGallery } from "../editor/FormatGallery"
+import { SelectionBar, type SelectionAction } from "../editor/SelectionBar"
+import { KeyboardBar } from "../editor/KeyboardBar"
+import { useNarrow } from "../editor/use-narrow"
+import { isBlockSyntax, type FormatterEntry } from "../../core/formatters"
+import { textStats } from "../../core/note-tools"
+import { shortcutLabel, shortcutText, type ShortcutAction } from "../../core/shortcuts"
+import { usePreferences } from "../../lib/customization"
+import { updateAppearance, useAppearance } from "../../lib/appearance"
 import { ICON_LABELS, NOTE_ICONS } from "./Customization"
 
 /** Os três modos do Obsidian: leitura, live preview ("Editar") e código-fonte. */
 export type ViewMode = "leitura" | "live" | "fonte"
 
 const MODE_KEY = "runas-codex:modo-nota"
+/** O modo fica lembrado por espaço (quem consulta a Wiki costuma ficar em Leitura); o valor antigo, de todo o app, vale até a primeira troca. */
+const modeKey = (path: string) => `${MODE_KEY}:${scopeOf(path).space ?? "outros"}`
 
-function savedMode(): ViewMode {
+function savedMode(path: string): ViewMode {
   try {
-    const value = localStorage.getItem(MODE_KEY)
+    const value = localStorage.getItem(modeKey(path)) ?? localStorage.getItem(MODE_KEY)
     return value === "leitura" || value === "fonte" ? value : "live"
   } catch {
     return "live"
@@ -78,7 +91,10 @@ interface Props {
   onDraftChange?: (text: string) => void
   /** Barra opcional que insere no cursor do editor, sem outro fluxo de gravação. */
   sidebar?: (insert: (text: string) => void) => ReactNode
-  toolbar?: (insert: (text: string) => void) => ReactNode
+  /** Ações a mais na barra da seleção (Livros: Comentar, Citar da Wiki). */
+  selectionActions?: (selected: string) => SelectionAction[]
+  /** Formatadores do espaço: aba própria na galeria e seção no menu `/` (a Wiki põe os recursos dela). */
+  extraFormatters?: readonly FormatterEntry[]
   /** Pedido de rolar até um título (linha), vindo do sumário. */
   headingRequest?: { line: number; at: number }
   /** `false` esconde os segredos do mestre no modo leitura (versão dos jogadores). */
@@ -89,7 +105,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, toolbar, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, formatSelection = false }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -99,12 +115,15 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
   const index = vault.index!
   const note = index.note(path)!
   const readOnly = vault.info?.readOnly ?? true
-  const [mode, setModeState] = useState<ViewMode>(readOnly ? "leitura" : savedMode)
+  const [mode, setModeState] = useState<ViewMode>(() => (readOnly ? "leitura" : savedMode(path)))
+  // Ctrl+Shift+E sai do Código para o modo de antes.
+  const beforeCode = useRef<ViewMode>("live")
   const setMode = (next: ViewMode) => {
+    if (next === "fonte" && mode !== "fonte") beforeCode.current = mode
     setModeState(next)
     if (readOnly) return
     try {
-      localStorage.setItem(MODE_KEY, next)
+      localStorage.setItem(modeKey(path), next)
     } catch {
       /* só não é lembrado */
     }
@@ -115,15 +134,26 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
   const [docKey, setDocKey] = useState(0)
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()
-  const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | null>(null)
-  const [expandedTools, setExpandedTools] = useState(false)
+  const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | "decorate" | "images" | null>(null)
+  const [gallery, setGallery] = useState(false)
+  // Barra da seleção, posição do cursor (barra de status) e foco no editor (barra sobre o teclado, no celular).
+  const [selectionAt, setSelectionAt] = useState<EditorSelectionInfo | null>(null)
+  const [barFocused, setBarFocused] = useState(false)
+  const [cursorAt, setCursorAt] = useState({ line: 1, column: 1 })
+  const [editorFocused, setEditorFocused] = useState(false)
+  const [linkLabel, setLinkLabel] = useState("")
+  const narrow = useNarrow()
+  const appearance = useAppearance()
+  const shortcuts = usePreferences().shortcuts
+  const keyHint = (action: ShortcutAction) => (vault.platform.kind === "capacitor" ? undefined : shortcutText(shortcutLabel(action, shortcuts)))
   const [imageRename, setImageRename] = useState<string | null>(null)
   // "Criar ou editar tarefa" (Tasks) na linha do cursor.
   const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
   const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
-  const [copyMenu, setCopyMenu] = useState(false)
-  const [organizeMenu, setOrganizeMenu] = useState(false)
   const editor = useRef<SourceEditorHandle>(null)
+  const tools = useRef<NoteToolsHandle>(null)
+  const surface = useRef<HTMLDivElement>(null)
+  const selectionBar = useRef<HTMLDivElement>(null)
   const reader = useRef<HTMLDivElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -322,7 +352,6 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
   const toArchive = archivePath(path)
   const fromArchive = unarchivePath(path)
   const organize = (action: () => Promise<unknown>) => {
-    setOrganizeMenu(false)
     void flush()
       .then(action)
       .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
@@ -343,6 +372,19 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     event.stopPropagation()
     openNote(target.path, "aba")
   }
+
+  // Ctrl+E alterna Leitura e Editar, Ctrl+Shift+E entra e sai do Código, Ctrl+/ abre a galeria Formatar.
+  useEffect(() => {
+    const run = (event: Event) => {
+      if (!focused) return
+      const kind = (event as CustomEvent<string>).detail
+      if (kind === "readingMode") setMode(mode === "leitura" ? (readOnly ? "leitura" : "live") : "leitura")
+      if (kind === "codeMode") setMode(mode === "fonte" ? (readOnly ? "leitura" : beforeCode.current === "fonte" ? "live" : beforeCode.current) : "fonte")
+      if (kind === "format" && !readOnly) openGallery()
+    }
+    window.addEventListener("runas-codex:comando", run)
+    return () => window.removeEventListener("runas-codex:comando", run)
+  })
 
   // Comandos do Tasks no editor: alternar a tarefa da linha do cursor e abrir a janela de edição.
   useEffect(() => {
@@ -374,6 +416,45 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     }
   }, [focused, readOnly, mode, draft])
 
+  const stats = textStats(draft)
+  const openGallery = () => { if (mode === "leitura") setMode("live"); setGallery(true) }
+  // Formatador no cursor. Com seleção, ela entra no lugar do texto de exemplo; se o formatador não tem onde pôr a
+  // seleção (quebra de página, tabela…), ele entra depois dela, sem apagar o texto selecionado.
+  const insertFormatter = (syntax: string) => setTimeout(() => {
+    const handle = editor.current
+    if (!handle) return
+    const range = handle.selection()
+    const selected = range ? latest.current.draft.slice(range.from, range.to) : ""
+    const text = formatterInsertion(syntax, selected)
+    if (selected && text !== syntax) return handle.insert(text)
+    if (!isBlockSyntax(syntax)) return handle.insert(text, range?.to)
+    // Bloco com seleção vai para o fim da linha dela, para não partir o parágrafo no meio.
+    const lineEnd = range ? latest.current.draft.indexOf("\n", range.to) : -1
+    handle.insertBlock(text, range ? (lineEnd < 0 ? latest.current.draft.length : lineEnd) : undefined)
+  })
+  const openLinkDialog = () => {
+    const range = editor.current?.selection()
+    setLinkLabel(range ? draft.slice(range.from, range.to) : "")
+    if (mode === "leitura") setMode("live")
+    setDialog("link")
+  }
+  const pickImage = () => { if (mode === "leitura") setMode("live"); fileInput.current?.click() }
+  const pickTemplate = () => { if (mode === "leitura") setMode("live"); setDialog("template") }
+  const slashAction = (action: "format" | "image" | "template" | "link") => {
+    if (action === "format") setGallery(true)
+    else if (action === "image") fileInput.current?.click()
+    else if (action === "template") setDialog("template")
+    else openLinkDialog()
+  }
+  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && (selectionAt.focused || barFocused) && !gallery && !dialog
+  const showKeyboardBar = !readOnly && narrow && mode !== "leitura" && editorFocused && !gallery && !dialog
+  // No celular, a barra inferior do app dá lugar à barra de formatação enquanto se escreve.
+  useEffect(() => {
+    if (!showKeyboardBar) return
+    document.body.classList.add("editing-text")
+    return () => document.body.classList.remove("editing-text")
+  }, [showKeyboardBar])
+
   const { body } = splitFrontmatter(draft)
   // Modo leitura: a caixa clicada é achada pela ordem (a n-ésima caixa do texto); se a contagem não bate, não arrisca.
   const taskBoxes = useMemo<TaskCheckboxHandler | null>(
@@ -396,11 +477,57 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
           },
     [body, draft, readOnly, toast],
   )
-  const status: Record<SaveState, string> = { salvo: "Salvo", pendente: "Editando…", salvando: "Salvando…", conflito: "Conflito", erro: "Erro ao salvar" }
+  const sep = "separator" as const
+  const editing = !readOnly
+  // O menu ⋯ junta o que eram ícones soltos na barra (rework F3, EST-1); tudo tem nome e, quando há, o atalho.
+  const menu: MenuEntry[] = [
+    ...(editing ? [
+      { label: "Formatar…", icon: <Type size={16} />, hint: keyHint("format"), onSelect: openGallery },
+      { label: "Inserir link…", icon: <Link2 size={16} />, onSelect: openLinkDialog },
+      { label: "Inserir imagem…", icon: <ImagePlus size={16} />, onSelect: pickImage },
+      { label: "Inserir modelo…", icon: <LayoutTemplate size={16} />, onSelect: pickTemplate },
+      sep,
+      { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => void flush().then(() => setDialog("rename")) },
+    ] : []),
+    { label: favorite ? "Tirar dos favoritos" : "Favoritar", icon: <Star size={16} />, onSelect: () => toggleFavorite(vault.info?.path, { type: "file", path }) },
+    ...(editing ? [
+      { label: "Fixar, cor e ícone…", icon: <SwatchBook size={16} />, onSelect: () => setDialog("decorate") },
+      ...(toArchive ? [{ label: "Arquivar", icon: <Archive size={16} />, onSelect: () => move(toArchive) }] : []),
+      ...(fromArchive ? [{ label: "Desarquivar", icon: <ArchiveRestore size={16} />, onSelect: () => move(fromArchive) }] : []),
+    ] : []),
+    sep,
+    { label: "Copiar link da nota", icon: <Copy size={16} />, onSelect: copyNoteLink },
+    { label: "Copiar link do bloco no cursor", icon: <Copy size={16} />, disabled: readOnly || mode === "leitura", onSelect: copyBlockLink },
+    ...(vault.platform.kind === "electron" ? [{ label: "Copiar endereço runas://", icon: <Copy size={16} />, onSelect: () => copied(deepLinkFor(path)) }] : []),
+    sep,
+    { label: "Histórico de versões", icon: <History size={16} />, hint: keyHint("history"), onSelect: () => tools.current?.open("history") },
+    ...(editing ? [
+      { label: "Extrair seleção para nota…", icon: <Scissors size={16} />, onSelect: () => tools.current?.open("extract") },
+      { label: "Mesclar em outra nota…", icon: <Merge size={16} />, onSelect: () => tools.current?.open("merge") },
+      { label: "Renomear imagens da nota…", icon: <Images size={16} />, onSelect: () => setDialog("images") },
+    ] : []),
+    { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: [path], title: note.name, players: !showSecrets }) },
+    ...(editing ? [sep, { label: "Mandar para a lixeira", icon: <Trash2 size={16} />, danger: true, onSelect: () => setDialog("trash") }] : []),
+  ]
+  const modes = (
+    <Segmented<ViewMode>
+      label="Modo da nota"
+      value={mode}
+      onChange={setMode}
+      options={[
+        { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
+        ...(readOnly ? [] : [{ value: "live" as const, label: "Editar", icon: <Type size={14} /> }]),
+        { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
+      ]}
+    />
+  )
+  const actionsMenu = <OverflowMenu label="Ações da nota" items={menu} />
+  const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
+  const folder = dirname(path).split("/").pop() ?? ""
 
   return (
     <article
-      className="note-editor"
+      className={`note-editor mode-${mode}`}
       onContextMenuCapture={event => {
         if (readOnly || !(event.target instanceof HTMLImageElement)) return
         const src = event.target.src
@@ -412,215 +539,42 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
       onClickCapture={(event) => (event.ctrlKey || event.metaKey) && openLinkInTab(event)}
       onAuxClick={(event) => event.button === 1 && openLinkInTab(event)}
     >
-      <div className={`editor-bar ${expandedTools ? "tools-expanded" : ""}`}>
-        {focusHeader ? createPortal(<>
-          {!hideBackControl && <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>}
-          <Segmented<ViewMode>
-          label="Modo da nota"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
-            ...(readOnly ? [] : [{ value: "live" as const, label: "Editar", icon: <Type size={14} /> }]),
-            { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
-          ]}
-        />
-          <button className="btn focus-note-actions" aria-label={expandedTools ? "Recolher ações" : "Ações da nota"} title={expandedTools ? "Recolher ações" : "Ações da nota"} aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}><Ellipsis size={17}/><span>{expandedTools ? "Recolher ações" : "Ações da nota"}</span></button>
-        </>, focusHeader) : <>
-        {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
-          <ChevronLeft size={18} />
-        </button>}
-        <button className="btn editor-tools-toggle" aria-expanded={expandedTools} onClick={() => setExpandedTools(!expandedTools)}>{expandedTools ? "Recolher ações" : "Ações da nota"}</button>
-        </>}
-        <span className="note-history">
-          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
-            <ArrowLeft size={17} />
-          </button>
-          <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
-            <ArrowRight size={17} />
-          </button>
-        </span>
-        <button className="btn note-export-action" onClick={() => openDocumentExport({ paths: [path], title: note.name, players: !showSecrets })}>Exportar…</button>
-        <NoteImages path={path} text={draft} onRename={renameImage} />
-        {!focusHeader && <Segmented<ViewMode>
-          label="Modo da nota"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "leitura", label: "Leitura", icon: <BookOpenText size={14} /> },
-            ...(readOnly ? [] : [{ value: "live" as const, label: "Editar", icon: <Type size={14} /> }]),
-            { value: "fonte", label: "Código", icon: <Code2 size={14} /> },
-          ]}
-        />}
-        {readOnly && (
-          <span className="chip gold" title="Libere a gravação em Configurações › Cofre">
-            <Lock size={13} /> Somente leitura
+      {/* Livros põe voltar, modo e menu na própria barra; as outras telas usam a barra única do documento. */}
+      {focusHeader ? createPortal(<>
+        {!hideBackControl && <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>}
+        {modes}
+        {actionsMenu}
+      </>, focusHeader) : (
+        <div className="editor-bar doc-bar">
+          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+            <ChevronLeft size={18} />
+          </button>}
+          <span className="note-history">
+            <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Voltar" : "Voltar (Alt ←)"} aria-label="Voltar" disabled={!history.canBack} onClick={goBack}>
+              <ArrowLeft size={17} />
+            </button>
+            <button className="icon-btn" title={vault.platform.kind === "capacitor" ? "Avançar" : "Avançar (Alt →)"} aria-label="Avançar" disabled={!history.canForward} onClick={goForward}>
+              <ArrowRight size={17} />
+            </button>
           </span>
-        )}
-        <span className="tiny faint truncate editor-status" title={path}>
-          {readOnly ? path : `${status[state]} · ${path}`}
-        </span>
-        {!readOnly && (
-          <>
-            <button
-              className="icon-btn"
-              title="Inserir link (inclusive para outro espaço)"
-              aria-label="Inserir link"
-              onClick={() => {
-                if (mode === "leitura") setMode("live")
-                setDialog("link")
-              }}
-            >
-              <Link2 size={17} />
-            </button>
-            <button
-              className="icon-btn"
-              title={vault.platform.kind === "capacitor" ? "Inserir imagem" : "Inserir imagem (também dá para colar com Ctrl+V ou arrastar para a nota)"}
-              aria-label="Inserir imagem"
-              onClick={() => {
-                if (mode === "leitura") setMode("live")
-                fileInput.current?.click()
-              }}
-            >
-              <ImagePlus size={17} />
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              aria-label="Escolher imagens"
-              onChange={(event) => {
-                const files = [...(event.target.files ?? [])]
-                event.target.value = ""
-                void addFiles(files, null, false)
-              }}
-            />
-            <button
-              className="icon-btn"
-              title="Inserir modelo"
-              aria-label="Inserir modelo"
-              onClick={() => {
-                if (mode === "leitura") setMode("live")
-                setDialog("template")
-              }}
-            >
-              <LayoutTemplate size={17} />
-            </button>
-            <button className="icon-btn" title="Renomear ou mover" aria-label="Renomear nota" onClick={() => void flush().then(() => setDialog("rename"))}>
-              <PenLine size={17} />
-            </button>
-            <button className="icon-btn" title="Mandar para a lixeira" aria-label="Mandar para a lixeira" onClick={() => setDialog("trash")}>
-              <Trash2 size={17} />
-            </button>
-          </>
-        )}
-        {!readOnly && (
-          <div className="note-copy">
-            <button className="icon-btn" title="Fixar, colorir e arquivar" aria-label="Organizar a nota" aria-expanded={organizeMenu} onClick={() => setOrganizeMenu(!organizeMenu)}>
-              <Tag size={17} />
-            </button>
-            {organizeMenu && (
-              <div className="note-menu card" role="menu" onMouseLeave={() => setOrganizeMenu(false)}>
-                <button role="menuitem" className="list-item small" onClick={() => organize(() => vault.setProperty(path, "fixada", flags.pinned ? undefined : true))}>
-                  {flags.pinned ? <PinOff size={14} /> : <Pin size={14} />} {flags.pinned ? "Desafixar" : "Fixar no topo da lista"}
-                </button>
-                <div className="note-colors" role="group" aria-label="Cor da nota">
-                  {(Object.keys(NOTE_COLORS) as NoteColor[]).map((color) => (
-                    <button
-                      key={color}
-                      className={`note-swatch ${flags.color === color ? "active" : ""}`}
-                      style={{ ["--swatch" as string]: NOTE_COLORS[color] }}
-                      title={color}
-                      aria-label={`Cor ${color}`}
-                      aria-pressed={flags.color === color}
-                      onClick={() => setColor(flags.color === color ? undefined : color)}
-                    />
-                  ))}
-                  {flags.color && (
-                    <button className="btn sm ghost" onClick={() => setColor(undefined)}>
-                      Sem cor
-                    </button>
-                  )}
-                </div>
-                <label className="field"><span>Ícone da nota</span><select className="input" aria-label="Ícone da nota" value={String(note.meta.frontmatter?.data?.icone ?? "file")} onChange={event => organize(() => vault.setProperty(path, "icone", event.target.value))}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
-                {toArchive && (
-                  <button role="menuitem" className="list-item small" onClick={() => move(toArchive)}>
-                    <Archive size={14} /> Arquivar (vai para Notas/Arquivo)
-                  </button>
-                )}
-                {fromArchive && (
-                  <button role="menuitem" className="list-item small" onClick={() => move(fromArchive)}>
-                    <ArchiveRestore size={14} /> Desarquivar
-                  </button>
-                )}
-              </div>
-            )}
+          <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<strong>{note.name}</strong></div>
+          {modes}
+          <div className="doc-end">
+            <SaveStatus state={saveState} />
+            <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" title="Links, propriedades e gráfico local"><PanelRight size={17} /><span>Painel</span></button>
+            {actionsMenu}
           </div>
-        )}
-        <button className="icon-btn" title={favorite ? "Tirar dos favoritos" : "Favoritar a nota"} aria-label={favorite ? "Tirar dos favoritos" : "Favoritar a nota"} aria-pressed={favorite} onClick={() => toggleFavorite(vault.info?.path, { type: "file", path })}>
-          <Star size={17} fill={favorite ? "currentColor" : "none"} color={favorite ? "var(--gold)" : undefined} />
-        </button>
-        <div className="note-copy">
-          <button className="icon-btn" title="Copiar link" aria-label="Copiar link" aria-expanded={copyMenu} onClick={() => setCopyMenu(!copyMenu)}>
-            <Copy size={17} />
-          </button>
-          {copyMenu && (
-            <div className="note-menu card" role="menu" onMouseLeave={() => setCopyMenu(false)}>
-              <button role="menuitem" className="list-item small" onClick={() => (setCopyMenu(false), copyNoteLink())}>
-                Link da nota
-              </button>
-              <button
-                role="menuitem"
-                className="list-item small"
-                disabled={readOnly || mode === "leitura"}
-                title={readOnly ? "Libere a gravação para criar o ^id do bloco" : mode === "leitura" ? "No modo Editar ou Código, ponha o cursor no parágrafo" : undefined}
-                onClick={() => (setCopyMenu(false), copyBlockLink())}
-              >
-                Link do bloco no cursor
-              </button>
-              {vault.platform.kind === "electron" && (
-                <button
-                  role="menuitem"
-                  className="list-item small"
-                  title="Abre esta nota a partir de outro programa (um PDF, o calendário, um atalho)"
-                  onClick={() => (setCopyMenu(false), copied(deepLinkFor(path)))}
-                >
-                  Endereço runas://
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        <button className="icon-btn" onClick={onShowPanel} title="Links, propriedades e gráfico local" aria-label="Painel da nota">
-          <PanelRight size={18} />
-        </button>
-        <NoteTools active={focused} path={path} draft={draft} selection={() => editor.current?.selection() ?? null} replace={(text, cursor) => editor.current?.transform(() => ({ text, cursor }))} flush={flushChecked} />
-      </div>
-
-      {(state === "conflito" || state === "erro") && (
-        <div className="proto-note" style={{ margin: "10px 14px 0", color: "var(--red)", borderColor: "color-mix(in srgb, var(--red) 50%, var(--line))", background: "color-mix(in srgb, var(--red) 7%, transparent)" }}>
-          <TriangleAlert size={15} />
-          <span className="grow">{error}</span>
-          {state === "conflito" && (
-            <>
-              <button className="btn sm" onClick={reloadFromDisk}>
-                Usar a do disco
-              </button>
-              <button className="btn sm danger" onClick={keepMine}>
-                Manter a minha
-              </button>
-            </>
-          )}
         </div>
       )}
 
-      {!readOnly && mode !== "leitura" && toolbar?.((text) => {
-        const range = editor.current?.selection()
-        const selectedText = range ? draft.slice(range.from, range.to) : ""
-        editor.current?.insert(formatSelection ? formatterInsertion(text, selectedText) : text)
-      })}
+      {(state === "conflito" || state === "erro") && (
+        <div className="doc-notice">
+          <Notice tone="danger" title={state === "conflito" ? "Esta nota mudou fora do app" : "Não deu para salvar"} actions={state === "conflito" ? <>
+            <button className="btn sm" onClick={reloadFromDisk}>Usar a do disco</button>
+            <button className="btn sm danger" onClick={keepMine}>Manter a minha</button>
+          </> : undefined}>{error}</Notice>
+        </div>
+      )}
 
       <div className={sidebar ? "books-writing-area" : undefined} style={sidebar ? undefined : { display: "contents" }}>
       <div className="editor-body" ref={reader}>
@@ -631,12 +585,88 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
             </TaskCheckboxContext.Provider>
           </NoteSetContext.Provider>
         ) : (
-          <SourceEditor onImageLinkContext={at => { const image = imageLinkAt(index,path,draft,at); if (!image) return false; renameImage(image); return true }} typewriter={typewriter} ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")} />
+          <div
+            className="editor-surface"
+            ref={surface}
+            onFocus={() => setEditorFocused(true)}
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { setEditorFocused(false); setBarFocused(false) } }}
+            onKeyDown={(event) => {
+              // Alt+F10 leva o teclado até a barra da seleção (padrão dos editores com barra flutuante).
+              if (!(event.altKey && event.key === "F10") || !showSelectionBar) return
+              event.preventDefault()
+              setBarFocused(true)
+              requestAnimationFrame(() => selectionBar.current?.querySelector("button")?.focus())
+            }}
+          >
+            <SourceEditor onImageLinkContext={at => { const image = imageLinkAt(index,path,draft,at); if (!image) return false; renameImage(image); return true }} typewriter={typewriter} ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")}
+              onSelection={setSelectionAt} onCursor={mode === "fonte" ? (line, column) => setCursorAt({ line, column }) : undefined} onSlashAction={slashAction} lineNumbers={appearance.codeLineNumbers} extraFormatters={extraFormatters} />
+            {showSelectionBar && selectionAt && (
+              <SelectionBar
+                ref={selectionBar}
+                at={selectionAt}
+                width={surface.current?.clientWidth ?? 640}
+                onWrap={(mark) => { setBarFocused(false); editor.current?.wrap(mark) }}
+                onLink={() => { setBarFocused(false); openLinkDialog() }}
+                onMore={() => { setBarFocused(false); setGallery(true) }}
+                onLeave={() => { setBarFocused(false); editor.current?.focus() }}
+                extra={selectionActions?.(draft.slice(selectionAt.from, selectionAt.to))}
+              />
+            )}
+          </div>
         )}
       </div>
 
       {mode !== "leitura" && sidebar?.((text) => editor.current?.insert(text))}
       </div>
+
+      <div className="editor-statusbar">
+        {mode === "fonte" && <span className="statusbar-mode">MARKDOWN</span>}
+        {mode === "fonte" && <span>Linha {cursorAt.line}, coluna {cursorAt.column}</span>}
+        <span className="note-word-count">{stats.words} {stats.words === 1 ? "palavra" : "palavras"} · {stats.characters} {stats.characters === 1 ? "caractere" : "caracteres"}</span>
+        {mode === "fonte" && <button type="button" className="statusbar-toggle" aria-pressed={appearance.codeLineNumbers} onClick={() => updateAppearance({ codeLineNumbers: !appearance.codeLineNumbers })}>Números de linha: {appearance.codeLineNumbers ? "ligados" : "desligados"}</button>}
+      </div>
+
+      {!readOnly && (
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          aria-label="Escolher imagens"
+          onChange={(event) => {
+            const files = [...(event.target.files ?? [])]
+            event.target.value = ""
+            void addFiles(files, null, false)
+          }}
+        />
+      )}
+      <NoteTools ref={tools} active={focused} path={path} draft={draft} selection={() => editor.current?.selection() ?? null} replace={(text, cursor) => editor.current?.transform(() => ({ text, cursor }))} flush={flushChecked} />
+      {showKeyboardBar && <KeyboardBar onFormat={() => setGallery(true)} onSlash={() => editor.current?.openSlash()} onWrap={(mark) => editor.current?.wrap(mark)} onLink={openLinkDialog} onTask={() => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" }))} />}
+      {gallery && <FormatGallery code={mode === "fonte"} extra={extraFormatters} onClose={() => setGallery(false)} onInsert={insertFormatter} />}
+      {dialog === "images" && <NoteImagesDialog path={path} text={draft} onRename={renameImage} onClose={() => setDialog(null)} />}
+      {dialog === "decorate" && (
+        <Modal title="Fixar, cor e ícone" onClose={() => setDialog(null)} footer={<button className="btn" onClick={() => setDialog(null)}>Fechar</button>}>
+          <button className="btn" onClick={() => organize(() => vault.setProperty(path, "fixada", flags.pinned ? undefined : true))}>
+            {flags.pinned ? <PinOff size={15} /> : <Pin size={15} />} {flags.pinned ? "Desafixar" : "Fixar no topo da lista"}
+          </button>
+          <div className="note-colors" role="group" aria-label="Cor da nota">
+            {(Object.keys(NOTE_COLORS) as NoteColor[]).map((color) => (
+              <button
+                key={color}
+                className={`note-swatch ${flags.color === color ? "active" : ""}`}
+                style={{ ["--swatch" as string]: NOTE_COLORS[color] }}
+                title={color}
+                aria-label={`Cor ${color}`}
+                aria-pressed={flags.color === color}
+                onClick={() => setColor(flags.color === color ? undefined : color)}
+              />
+            ))}
+            {flags.color && <button className="btn sm ghost" onClick={() => setColor(undefined)}>Sem cor</button>}
+          </div>
+          <label className="field"><span>Ícone da nota</span><select className="input" aria-label="Ícone da nota" value={String(note.meta.frontmatter?.data?.icone ?? "file")} onChange={event => organize(() => vault.setProperty(path, "icone", event.target.value))}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
+        </Modal>
+      )}
 
       {linkPreview}
       {imageRename && <ImageRenameDialog path={imageRename} onClose={() => setImageRename(null)} />}
@@ -669,7 +699,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
           }}
         />
       )}
-      {dialog === "link" && <LinkPicker index={index} from={path} onPick={(link) => setTimeout(() => editor.current?.insert(link))} onClose={() => setDialog(null)} />}
+      {dialog === "link" && <LinkPicker index={index} from={path} onPick={(link) => setTimeout(() => editor.current?.insert(linkLabel && /^\[\[[^\]|]+\]\]$/.test(link) ? link.replace(/\]\]$/, `|${linkLabel}]]`) : link))} onClose={() => setDialog(null)} />}
       {dialog === "rename" && (
         <RenameDialog
           index={index}

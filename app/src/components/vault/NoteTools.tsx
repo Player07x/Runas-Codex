@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import { createPortal } from "react-dom"
-import { compareTexts, extractText, mergeCanvasLinks, mergeLinks, mergeText, textStats, type NoteSnapshot } from "../../core/note-tools"
+import { compareTexts, extractText, mergeCanvasLinks, mergeLinks, mergeText, type NoteSnapshot } from "../../core/note-tools"
 import { dirname, noteName, toEditorText } from "../../core/text"
 import { recordVersion, versions } from "../../lib/note-history"
 import { navigate } from "../../lib/router"
@@ -9,11 +9,12 @@ import { useVault } from "../../platform/VaultProvider"
 import { Modal, useToast } from "../ui"
 
 interface Props { active: boolean; path: string; draft: string; selection(): { from: number; to: number } | null; replace(text: string, cursor: number): void; flush(): Promise<void> }
-export function NoteTools({ active, path, draft, selection, replace, flush }: Props) {
+export type NoteToolKind = "history" | "extract" | "merge"
+export interface NoteToolsHandle { open(kind: NoteToolKind): void }
+/** Histórico de versões, extrair e mesclar: os diálogos. Quem abre é o menu ⋯ da nota, a paleta ou o atalho. */
+export const NoteTools = forwardRef<NoteToolsHandle, Props>(function NoteTools({ active, path, draft, selection, replace, flush }, ref) {
   const vault = useVault(), toast = useToast(), readOnly = vault.info?.readOnly
-  const host = useRef<HTMLDivElement>(null)
-  const [menu, setMenu] = useState(false), [dialog, setDialog] = useState<"history" | "extract" | "merge" | null>(null)
-  const [menuAt, setMenuAt] = useState({ x: 8, y: 8 })
+  const [dialog, setDialog] = useState<NoteToolKind | null>(null)
   const [history, setHistory] = useState<NoteSnapshot[]>([]), [picked, setPicked] = useState(0)
   const [name, setName] = useState(""), [target, setTarget] = useState(""), [targetText, setTargetText] = useState("")
   const [range, setRange] = useState<{ from: number; to: number } | null>(null), [original, setOriginal] = useState("")
@@ -24,19 +25,11 @@ export function NoteTools({ active, path, draft, selection, replace, flush }: Pr
     window.addEventListener("runas-codex:erro-historico", listener)
     return () => window.removeEventListener("runas-codex:erro-historico", listener)
   }, [toast])
-  useEffect(() => {
-    if (!menu) return
-    const close = () => setMenu(false)
-    const outside = (event: PointerEvent) => { if (event.target instanceof Element && !event.target.closest('.note-tools-menu') && !host.current?.contains(event.target)) close() }
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") close() }
-    window.addEventListener("pointerdown", outside); window.addEventListener("keydown", escape); window.addEventListener("resize", close)
-    return () => { window.removeEventListener("pointerdown", outside); window.removeEventListener("keydown", escape); window.removeEventListener("resize", close) }
-  }, [menu])
   const checkOriginal = () => {
     if (toEditorText(vault.index!.note(path)!.text) !== original) throw new Error("A nota mudou desde a prévia. Feche e abra a ferramenta novamente.")
   }
-  const begin = (kind: NonNullable<typeof dialog>) => {
-    setMenu(false); setDialog(kind); setError(""); setOriginal(draft); setRange(selection()); setName(""); setTarget("")
+  const begin = (kind: NoteToolKind) => {
+    setDialog(kind); setError(""); setOriginal(draft); setRange(selection()); setName(""); setTarget("")
     if (kind === "history") run(async () => { await flush(); setHistory(await versions(vault.info!.path, path)); setPicked(0) })
   }
   useEffect(() => {
@@ -93,16 +86,9 @@ export function NoteTools({ active, path, draft, selection, replace, flush }: Pr
     // O original permanece na lixeira; só sai depois de a gravação do destino ter concluído.
     await vault.trash(path); setDialog(null); navigate(vaultRoute(target)); toast("Notas mescladas. A origem pode ser recuperada da lixeira.")
   }
-  const stats = textStats(draft), selected = history[picked], diff = selected ? compareTexts(selected.text, draft) : null
+  useImperativeHandle(ref, () => ({ open: (kind) => { if (kind === "history" || !readOnly) begin(kind) } }))
+  const selected = history[picked], diff = selected ? compareTexts(selected.text, draft) : null
   return <>
-    <div className="note-copy" ref={host}>
-      <button className="btn sm ghost" aria-label="Ferramentas da nota" aria-expanded={menu} onClick={event => { const rect = event.currentTarget.getBoundingClientRect(); setMenuAt({ x: Math.max(8, Math.min(rect.left, window.innerWidth - 238)), y: Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 170)) }); setMenu(!menu) }}>Ferramentas</button>
-      {menu && createPortal(<div className="note-menu note-tools-menu card" role="menu" style={{ position: "fixed", left: menuAt.x, top: menuAt.y, right: "auto", zIndex: 85 }}>
-        <button role="menuitem" className="list-item small" onClick={() => begin("history")}>Histórico de versões</button>
-        {!readOnly && <><button role="menuitem" className="list-item small" onClick={() => begin("extract")}>Extrair seleção para nota</button><button role="menuitem" className="list-item small" onClick={() => begin("merge")}>Mesclar em outra nota</button></>}
-      </div>, document.body)}
-    </div>
-    <span className="tiny faint note-word-count" title={`${stats.characters} caracteres (sem o frontmatter)`}>{stats.words} palavras · {stats.characters} caracteres</span>
     {dialog && createPortal(<Modal title={dialog === "history" ? "Histórico de versões" : dialog === "extract" ? "Extrair seleção" : "Mesclar notas"} wide onClose={() => !busy && setDialog(null)} footer={<>
       <button className="btn" disabled={busy} onClick={() => setDialog(null)}>Fechar</button>
       {dialog === "history" && !readOnly && <><button className="btn" disabled={busy} onClick={() => run(async () => { await flush(); await recordVersion(vault.info!.path, path, vault.index!.note(path)!.text, true); setHistory(await versions(vault.info!.path, path)) })}>Guardar versão agora</button><button className="btn primary" disabled={busy || !selected} onClick={() => run(restore)}>Restaurar versão</button></>}
@@ -126,4 +112,4 @@ export function NoteTools({ active, path, draft, selection, replace, flush }: Pr
       </>}
     </Modal>, document.body)}
   </>
-}
+})

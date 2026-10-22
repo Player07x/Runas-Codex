@@ -58,3 +58,25 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
   troca os dois de lugar. O padrão continua Início, Notas, Agenda e VTT.
 - `ChoiceGroup` entra no kit: rádios de verdade com cara de seletor segmentado.
 - Uma seção pedida pela rota recebe o foco com `data-route-focus`, antes do título da tela.
+
+## F3a — editor compartilhado (decisões)
+- **Uma barra por documento** no `NoteView` (Notas, Wiki, Campanhas e Livros): voltar · voltar/avançar · pasta e
+  título · Leitura/Editar/Código · Salvo · Painel · ⋯. Os ícones soltos (link, imagem, modelo, renomear, lixeira,
+  organizar, favorito, copiar, imagens, ferramentas, exportar) vão para o menu ⋯, com nome e atalho. Fixar, cor e ícone
+  viram um diálogo. Conflito e erro de gravação usam o `Notice` do kit.
+- **Formatação onde se usa:** barra na seleção (negrito, itálico, tachado, destaque, link e “Mais”; Alt+F10 entra nela
+  pelo teclado), menu `/` com ações, comandos e o catálogo inteiro, e a galeria **Formatar** (Ctrl+/) com busca sem
+  acento e abas por grupo. No celular, uma barra sobre o teclado (Formatar, `/`, negrito, itálico, link, tarefa) toma o
+  lugar da barra inferior do app enquanto se escreve.
+- O catálogo de formatadores sai de `screens/books/` para `core/formatters.ts` (com testes), porque o editor inteiro usa.
+  A faixa fixa de Livros e o “Inserir recurso da Wiki” saem: os recursos da Wiki viram a aba Wiki da galeria e uma
+  seção do menu `/` (`extraFormatters`).
+- **Formatador com seleção:** a seleção entra no lugar do texto de exemplo; se o formatador não tem onde pô-la
+  (quebra de página, tabela), ele entra depois dela (blocos, no fim da linha) e nunca apaga o texto selecionado.
+- **Código:** Geist Mono no peso normal a 15 px, frontmatter numa faixa e no peso normal (o `---` que fecha o
+  frontmatter fazia o Markdown ler as propriedades como título), comentários `%% revisão %%` em dourado, números de linha
+  opcionais e barra de status com MARKDOWN, linha e coluna. O leitor compartilhado não muda (regra 7).
+- **Modo lembrado por espaço** (`runas-codex:modo-nota:<espaço>`); Ctrl+E alterna Leitura e Editar, Ctrl+Shift+E entra
+  e sai do Código, Ctrl+/ abre a galeria. Os três entram na lista de atalhos editáveis.
+- Os smokes do desktop passam a renomear e abrir o histórico pelo menu ⋯; o caminho da nota continua no `title` do
+  `.editor-status` (agora o título da barra) e a contagem em `.note-word-count` (agora na barra de status).

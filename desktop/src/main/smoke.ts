@@ -220,7 +220,10 @@ export const SMOKE_SCRIPT = `(async () => {
     location.hash = "/notas/" + encodeURIComponent(aldren.path)
     // Espera a nota trocar (o botão da nota anterior ainda pode estar na tela).
     await until(() => document.querySelector(".editor-status")?.getAttribute("title") === aldren.path)
-    const button = await until(() => document.querySelector("[aria-label='Renomear nota']"))
+    // Renomear fica no menu ⋯ da nota (rework F3).
+    const menu = await until(() => document.querySelector(".doc-bar [aria-label='Ações da nota']"))
+    menu.click()
+    const button = await until(() => [...document.querySelectorAll("[role=menuitem]")].find((item) => item.textContent.startsWith("Renomear ou mover")))
     button.click()
     const input = await until(() => document.querySelector("[aria-label='Novo nome']"))
     setter.call(input, "Aldren Vael")

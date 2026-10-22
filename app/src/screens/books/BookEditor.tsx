@@ -7,7 +7,6 @@ import { NoteView } from "../../components/vault/NoteView"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
-import { BookFormatters } from "./BookFormatters"
 import { ResizablePanel } from "../../components/ResizablePanel"
 
 import { BookWritingTools } from "./BookWritingTools"
@@ -131,7 +130,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
             <span>{countWords(current.text)} palavras</span>
             <button className="btn" onClick={() => navigate(vaultRoute(current.path))}>Propriedades e resumo</button>
           </div>
-          <NoteView hideBackControl={!focus} onTrashed={() => setSelected(structure.items.find(item => item.note && item.note.path !== current.path)?.note?.path)} focusHeader={focus ? focusHeader : commandHeader} formatSelection sidebar={focus ? undefined : insert => <ResizablePanel id="book-tools" label="Referências" width={280} controlsTarget={referenceHeader} defaultCollapsed className="book-tools-panel"><BookWritingTools book={book} draft={draft} insert={insert} /></ResizablePanel>} onDraftChange={onDraftChange} key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => { if (focus) setFocus(false); else navigate("/livros") }} onCreate={(target) => { setName(target); setCreating(true); setView("escrever") }} onTag={() => navigate("/notas")} toolbar={(insert) => <BookFormatters insert={insert} />} />
+          <NoteView hideBackControl={!focus} onTrashed={() => setSelected(structure.items.find(item => item.note && item.note.path !== current.path)?.note?.path)} focusHeader={focus ? focusHeader : commandHeader} sidebar={focus ? undefined : insert => <ResizablePanel id="book-tools" label="Referências" width={280} controlsTarget={referenceHeader} defaultCollapsed className="book-tools-panel"><BookWritingTools book={book} draft={draft} insert={insert} /></ResizablePanel>} onDraftChange={onDraftChange} key={current.path} path={current.path} folders={[...new Set(index.allNotes().map((n) => dirname(n.path)))]} onShowPanel={() => navigate(vaultRoute(current.path))} onBack={() => { if (focus) setFocus(false); else navigate("/livros") }} onCreate={(target) => { setName(target); setCreating(true); setView("escrever") }} onTag={() => navigate("/notas")} />
         </> : <p className="page">Selecione uma nota na estrutura. Links quebrados podem ser corrigidos nos metadados do livro.</p>}
       </main>
       {preview && <Suspense fallback={<p>Carregando prévia…</p>}><BookPreview book={book} draft={draft} onClose={() => { setPreview(false); setView("escrever") }} /></Suspense>}

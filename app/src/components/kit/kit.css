@@ -2,7 +2,7 @@
 
 /* ---------- Menu ⋯ ---------- */
 .kit-menu-wrap { position: relative; display: inline-flex; }
-.kit-menu { position: absolute; z-index: 70; top: calc(100% + 6px); min-width: 240px; max-width: min(340px, calc(100vw - 24px)); display: grid; gap: 1px; padding: 5px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-sm); }
+.kit-menu { position: absolute; z-index: 70; top: calc(100% + 6px); min-width: 240px; max-width: min(340px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 1px; padding: 5px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-sm); }
 .kit-menu.end { right: 0; }
 .kit-menu.start { left: 0; }
 .kit-menu-heading { padding: 6px 10px 4px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }

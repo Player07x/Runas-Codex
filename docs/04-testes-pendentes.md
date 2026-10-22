@@ -671,3 +671,21 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Android: Configurações › Aparência › Barra inferior do celular — trocar os atalhos e conferir a barra e o “Mais”.
 - [ ] Sala do VTT (jogador e mestre pelo celular): o botão Aparência da sala mostra Aparência e Acessibilidade, sem a
   barra inferior.
+
+## Rework visual — F3a editor compartilhado (22/10/2026)
+
+- [ ] Abrir uma nota, um artigo da Wiki e uma sessão de campanha: uma barra só (voltar, título, modo, Salvo, Painel, ⋯).
+  Conferir no menu ⋯ cada ação que antes era ícone: inserir link, imagem e modelo, renomear, favoritar, fixar/cor/ícone,
+  arquivar, copiar links, histórico, extrair, mesclar, renomear imagens, exportar e mandar para a lixeira.
+- [ ] Selecionar texto no Editar e no Código: a barra aparece sobre a seleção; Negrito, Itálico, Tachado, Destaque, Link e
+  Mais funcionam; Alt+F10 entra na barra, setas andam, Esc volta ao texto. Ctrl+B e Ctrl+I também.
+- [ ] Digitar `/` no começo de uma linha: o menu mostra Ações, Comandos e os grupos; digitar “tabe” filtra; Enter insere.
+  Na Wiki, aparece também a seção Wiki (segredo de jogador, spoiler, tabela rolável…).
+- [ ] Ctrl+/ abre a galeria Formatar com o foco na busca; “italico” acha Itálico; com uma palavra selecionada, Negrito a
+  envolve e Quebra de página entra depois da linha, **sem apagar a palavra**.
+- [ ] Código: frontmatter numa faixa e sem negrito, `%% revisão: … %%` em dourado, barra de status com linha e coluna;
+  “Números de linha” liga e desliga e fica lembrado.
+- [ ] Ctrl+E e Ctrl+Shift+E trocam o modo; o modo fica lembrado por espaço (Notas em Código, Wiki em Leitura…).
+- [ ] Celular/Android: ao tocar no texto, a barra sobre o teclado aparece no lugar da barra inferior; Aa abre a galeria,
+  `/` abre o menu de blocos, B/I/link/tarefa funcionam; a barra fica colada no teclado.
+- [ ] Livros: o editor não mostra mais a faixa de formatadores; os modos e o menu ⋯ ficam no trilho (a F3b refaz a tela).
