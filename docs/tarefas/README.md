@@ -257,3 +257,6 @@ distribuição do binário arm64.
 |---|---|
 | 1. Sala pela internet no Android | aviso claro e decisão técnica na ADR 0032; o túnel público continua reservado para depois da medição no aparelho |
 | 8. Pendências da matriz Tasks | implementados os comandos por estado, os marcadores de outlinks e a Busca rápida; falta apenas a conferência manual com o Tasks 8.6.0 no Obsidian |
+
+O inventário consolidado das frentes ainda abertas e de seus responsáveis está em
+[`abertas-e-responsaveis.md`](abertas-e-responsaveis.md).
