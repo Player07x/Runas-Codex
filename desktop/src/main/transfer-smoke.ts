@@ -48,6 +48,10 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes("arquivo(s) exportados:"))
     const exported=document.querySelector(".transfer-status").textContent.split("exportados: ")[1]
     checks.dependencies=document.querySelector(".transfer-status").textContent.startsWith("2 arquivo(s)")
+    // Rework F5 (TRF-1): o documento e o pacote ficam em cartões de escolha; a seleção de arquivos continua valendo.
+    const goal = text => [...document.querySelectorAll(".transfer-goal")].find(el=>el.textContent.includes(text)).querySelector("input").click()
+    goal("Gerar documento ou site")
+    await until(()=>button("Preparar documento"))
     const players=[...document.querySelectorAll("label")].find(el=>el.textContent.includes("Versão dos jogadores, sem artigos"))?.querySelector("input")
     if(!players)throw Error("Opção dos jogadores ausente.")
     if(!players.checked)players.click()
@@ -68,6 +72,8 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await until(()=>document.querySelector("[data-book-export-status]")?.textContent.includes("site.zip"))
     const site=document.querySelector("[data-book-export-status]").textContent.slice("Arquivo salvo: ".length).split(". ")[0]
     button("Fechar prévia").click()
+    goal("Levar para outro aparelho")
+    await until(()=>document.querySelector('[aria-label="Formato do pacote"]'))
     select("Formato do pacote","markdown")
     button("Escolher onde salvar").click()
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes(".zip"))

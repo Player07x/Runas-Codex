@@ -27,6 +27,7 @@ import { goBack, goForward } from "../lib/router"
 import { shortcutLabel, shortcutText, type ShortcutAction } from "../core/shortcuts"
 import { usePreferences } from "../lib/customization"
 import { useAppearance } from "../lib/appearance"
+import { requestAgendaAction } from "../lib/agenda-request"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -281,6 +282,13 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("toggleTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
       { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("editTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
       { label: "Acessibilidade", icon: <Accessibility size={16} />, hint: "Configurações", run: () => navigate("/config/acessibilidade") },
+      { label: "Enquete de data", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("enquete") },
+      { label: "Tempo livre", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("tempo-livre") },
+      { label: "Importar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("importar-ics") },
+      { label: "Exportar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("exportar-ics") },
+      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
+      { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
+      { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
     ],
     [onToggleTheme, prefs.shortcuts, vault.platform.kind],
   )

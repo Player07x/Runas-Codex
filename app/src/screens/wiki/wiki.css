@@ -303,3 +303,11 @@
 .timeline-list { display: grid; gap: 8px; overflow-x: auto; }
 .tl-event.flip { flex-direction: row-reverse; }
 .tl-event.flip .tl-dot { transform: translateX(6px); }
+
+/* Personalização das categorias (ADR 0027): capa, descrição, brasão sem imagem e a etiqueta da categoria no artigo. */
+.wiki-article-art.toned { color: var(--tone, var(--gold)); background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--tone, var(--cyan)) 28%, var(--panel)), var(--bg-deep)); }
+.wiki-art-emblem { width: 48%; height: 48%; max-width: 64px; max-height: 64px; }
+.wiki-category-cover { margin-bottom: var(--space-group); }
+.category-card-cover { margin: calc(-1 * var(--space-card, 16px)) calc(-1 * var(--space-card, 16px)) 10px; border-radius: var(--radius) var(--radius) 0 0; }
+.wiki-category-description { max-width: 70ch; margin: 4px 0 0; color: var(--muted); }
+.wiki-article-side .tone-chip { justify-self: start; text-decoration: none; }
