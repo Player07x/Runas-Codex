@@ -31,8 +31,8 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
  *,*::before,*::after { animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
 }
 @media(max-width:860px),(pointer:coarse) {
- button:not(.month-cell):not(.fcell):not(.week-event):not(.map-pin), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
- button:not(.month-cell):not(.fcell):not(.week-event):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
+ button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
+ button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
  .segmented { width:100%; }
  .segmented button { flex:1 1 auto; }
  .tabs { flex-wrap:wrap;overflow:visible; }
@@ -61,7 +61,7 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
  .agenda-main { padding:0;border:0; }
  .month { gap:0;grid-template-columns:repeat(7,minmax(44px,1fr)); }
  .month-cell { border-radius:4px;min-height:60px; }
- .month-head { font-size:calc(10px * var(--font-scale,1)); }
+ .month-head { font-size:calc(12px * var(--font-scale,1)); }
  .timegrid-head { overflow:auto; }
  .page-head > .row { flex-wrap:wrap; }
 }

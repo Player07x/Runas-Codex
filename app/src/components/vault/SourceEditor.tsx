@@ -38,6 +38,8 @@ export interface SourceEditorHandle {
   wrap(mark: string): void
   /** Abre o menu `/` no cursor (botão “/” da barra sobre o teclado). */
   openSlash(): void
+  /** Seleciona um trecho e rola até ele (o “Ir” dos comentários de revisão). */
+  select(from: number, to?: number): void
 }
 
 /** Seleção com texto, em relação ao canto do editor: onde a barra de formatação aparece. */
@@ -394,6 +396,13 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     },
     wrap(mark: string) {
       if (view.current) toggleWrap(view.current, mark)
+    },
+    select(from: number, to = from) {
+      const v = view.current
+      if (!v) return
+      const max = v.state.doc.length
+      v.dispatch({ selection: { anchor: Math.min(from, max), head: Math.min(to, max) }, scrollIntoView: true })
+      v.focus()
     },
     openSlash() {
       const v = view.current

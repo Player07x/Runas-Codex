@@ -40,7 +40,7 @@
 @media (max-width: 860px) {
   .editing-text .main { padding-bottom: calc(52px + env(safe-area-inset-bottom)); }
   /* O botão flutuante (+) de Notas fica no canto: a barra de status não passa por baixo dele. */
-  .editor-statusbar { padding-right: 84px; }
+  body:has(.fab) .editor-statusbar { padding-right: 84px; }
 }
 
 /* ---------- Barra de status ---------- */

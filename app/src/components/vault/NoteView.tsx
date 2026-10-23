@@ -43,6 +43,7 @@ import { KeyboardBar } from "../editor/KeyboardBar"
 import { useNarrow } from "../editor/use-narrow"
 import { isBlockSyntax, type FormatterEntry } from "../../core/formatters"
 import { textStats } from "../../core/note-tools"
+import { countWords } from "../../core/books"
 import { shortcutLabel, shortcutText, type ShortcutAction } from "../../core/shortcuts"
 import { usePreferences } from "../../lib/customization"
 import { updateAppearance, useAppearance } from "../../lib/appearance"
@@ -73,9 +74,26 @@ const isMedia = (name: string) => {
   return IMAGE_EXT.has(ext) || AUDIO_EXT.has(ext) || VIDEO_EXT.has(ext) || ext === ".pdf"
 }
 
+/** O que o painel Apoio e as ações da seleção de Livros podem fazer no editor da nota. */
+export interface NoteEditorApi {
+  /** Texto do editor agora (com o frontmatter). */
+  text: string
+  insert(text: string, at?: number): void
+  /** Troca o texto inteiro (um passo só no desfazer). */
+  replaceAll(change: (text: string) => string): void
+  selection(): { from: number; to: number } | null
+  /** Seleciona um trecho e rola até ele. */
+  select(from: number, to?: number): void
+  focus(): void
+}
+
 interface Props {
-  /** Controles de navegação ao lado de Sair do Foco no editor de Livros. */
+  /** Onde ficam os controles da nota quando ela não tem barra própria (Livros: estado e menu do capítulo). */
   focusHeader?: HTMLElement | null
+  /** Livros: o modo é Visual ⇄ Código, na barra de status; Leitura é a própria Prévia do livro. */
+  variant?: "livro"
+  /** Itens a mais na barra de status (Livros: palavras do livro, máquina de escrever). */
+  statusExtra?: ReactNode
   hideBackControl?: boolean
   formatSelection?: boolean
   typewriter?: boolean
@@ -89,10 +107,10 @@ interface Props {
   onTag(tag: string): void
   /** Observação do rascunho para prévias; não grava nem substitui o autosave. */
   onDraftChange?: (text: string) => void
-  /** Barra opcional que insere no cursor do editor, sem outro fluxo de gravação. */
-  sidebar?: (insert: (text: string) => void) => ReactNode
+  /** Painel ao lado do editor (Livros: Apoio); mexe no texto só pelo editor, sem outro fluxo de gravação. */
+  sidebar?: (editor: NoteEditorApi) => ReactNode
   /** Ações a mais na barra da seleção (Livros: Comentar, Citar da Wiki). */
-  selectionActions?: (selected: string) => SelectionAction[]
+  selectionActions?: (editor: NoteEditorApi) => SelectionAction[]
   /** Formatadores do espaço: aba própria na galeria e seção no menu `/` (a Wiki põe os recursos dela). */
   extraFormatters?: readonly FormatterEntry[]
   /** Pedido de rolar até um título (linha), vindo do sumário. */
@@ -105,7 +123,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -115,7 +133,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
   const index = vault.index!
   const note = index.note(path)!
   const readOnly = vault.info?.readOnly ?? true
-  const [mode, setModeState] = useState<ViewMode>(() => (readOnly ? "leitura" : savedMode(path)))
+  const book = variant === "livro"
+  const [mode, setModeState] = useState<ViewMode>(() => (readOnly ? "leitura" : book && savedMode(path) === "leitura" ? "live" : savedMode(path)))
   // Ctrl+Shift+E sai do Código para o modo de antes.
   const beforeCode = useRef<ViewMode>("live")
   const setMode = (next: ViewMode) => {
@@ -378,7 +397,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     const run = (event: Event) => {
       if (!focused) return
       const kind = (event as CustomEvent<string>).detail
-      if (kind === "readingMode") setMode(mode === "leitura" ? (readOnly ? "leitura" : "live") : "leitura")
+      if (kind === "readingMode" && !book) setMode(mode === "leitura" ? (readOnly ? "leitura" : "live") : "leitura")
       if (kind === "codeMode") setMode(mode === "fonte" ? (readOnly ? "leitura" : beforeCode.current === "fonte" ? "live" : beforeCode.current) : "fonte")
       if (kind === "format" && !readOnly) openGallery()
     }
@@ -416,7 +435,16 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     }
   }, [focused, readOnly, mode, draft])
 
-  const stats = textStats(draft)
+  // Em Livros, a contagem é a do sumário e da prévia (só o texto visível: sem tags, alvos de link nem comentários).
+  const stats = book ? { ...textStats(draft), words: countWords(draft) } : textStats(draft)
+  const api: NoteEditorApi = {
+    text: draft,
+    insert: (text, at) => editor.current?.insert(text, at),
+    replaceAll: (change) => editor.current?.transform((doc, cursor) => { const next = change(doc); return { text: next, cursor: Math.min(cursor, next.length) } }),
+    selection: () => editor.current?.selection() ?? null,
+    select: (from, to) => editor.current?.select(from, to),
+    focus: () => editor.current?.focus(),
+  }
   const openGallery = () => { if (mode === "leitura") setMode("live"); setGallery(true) }
   // Formatador no cursor. Com seleção, ela entra no lugar do texto de exemplo; se o formatador não tem onde pôr a
   // seleção (quebra de página, tabela…), ele entra depois dela, sem apagar o texto selecionado.
@@ -521,7 +549,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
       ]}
     />
   )
-  const actionsMenu = <OverflowMenu label="Ações da nota" items={menu} />
+  const actionsMenu = <OverflowMenu label={book ? "Ações do capítulo" : "Ações da nota"} items={menu} />
   const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
   const folder = dirname(path).split("/").pop() ?? ""
 
@@ -540,7 +568,10 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
       onAuxClick={(event) => event.button === 1 && openLinkInTab(event)}
     >
       {/* Livros põe voltar, modo e menu na própria barra; as outras telas usam a barra única do documento. */}
-      {focusHeader ? createPortal(<>
+      {focusHeader ? createPortal(book ? <>
+        <SaveStatus state={saveState} />
+        {actionsMenu}
+      </> : <>
         {!hideBackControl && <button className="icon-btn" onClick={onBack} aria-label="Voltar" title="Voltar"><ChevronLeft size={18} /></button>}
         {modes}
         {actionsMenu}
@@ -609,14 +640,14 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
                 onLink={() => { setBarFocused(false); openLinkDialog() }}
                 onMore={() => { setBarFocused(false); setGallery(true) }}
                 onLeave={() => { setBarFocused(false); editor.current?.focus() }}
-                extra={selectionActions?.(draft.slice(selectionAt.from, selectionAt.to))}
+                extra={selectionActions?.(api)}
               />
             )}
           </div>
         )}
       </div>
 
-      {mode !== "leitura" && sidebar?.((text) => editor.current?.insert(text))}
+      {mode !== "leitura" && sidebar?.(api)}
       </div>
 
       <div className="editor-statusbar">
@@ -624,6 +655,8 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
         {mode === "fonte" && <span>Linha {cursorAt.line}, coluna {cursorAt.column}</span>}
         <span className="note-word-count">{stats.words} {stats.words === 1 ? "palavra" : "palavras"} · {stats.characters} {stats.characters === 1 ? "caractere" : "caracteres"}</span>
         {mode === "fonte" && <button type="button" className="statusbar-toggle" aria-pressed={appearance.codeLineNumbers} onClick={() => updateAppearance({ codeLineNumbers: !appearance.codeLineNumbers })}>Números de linha: {appearance.codeLineNumbers ? "ligados" : "desligados"}</button>}
+        {book && !readOnly && <button type="button" className="statusbar-toggle" title={`Alternar Visual e Código${keyHint("codeMode") ? ` (${keyHint("codeMode")})` : ""}`} onClick={() => setMode(mode === "fonte" ? "live" : "fonte")}>Modo: {mode === "fonte" ? "Código" : "Visual"}</button>}
+        {statusExtra}
       </div>
 
       {!readOnly && (

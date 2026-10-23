@@ -70,3 +70,23 @@
 /* Ordem das notas: lista dentro do cabeçalho do painel (um menu flutuante seria cortado pela borda do painel) */
 .order-menu { display: grid; gap: 0; padding: 4px; }
 @media (max-width: 860px) { .order-menu .list-item { min-height: 44px; } }
+
+/* Cabeçalho da lista de Notas (rework F4a): título, “Nova nota” e ⋯; busca e ordem numa linha. */
+.notes-head { gap: 8px; }
+.notes-filter { align-items: center; gap: 4px; }
+.notes-filter .search { flex: 1 1 auto; min-width: 0; }
+/* No celular o botão flutuante (+) já cria a nota. */
+@media (max-width: 860px) { .notes-new { display: none; } }
+
+/* Gráfico como lista (rework F4a, NOT-3): a tabela ocupa o lugar do desenho, abaixo da barra do gráfico. */
+.graph-list { position: absolute; inset: 0; overflow: auto; padding: 64px 16px 16px; }
+.graph-page:has(.graph-panel:not([data-panel-collapsed=true])) .graph-list { padding-right: calc(var(--panel-graph, 300px) + 28px); }
+.graph-table { width: 100%; border-collapse: collapse; font-size: calc(14px * var(--font-scale, 1)); }
+.graph-table th, .graph-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.graph-table thead th { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.graph-table td:nth-child(2) { font-variant-numeric: tabular-nums; }
+.graph-open { padding: 0; border: 0; background: transparent; color: var(--cyan); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.graph-open:hover { text-decoration: underline; }
+.graph-open:disabled { color: var(--text); cursor: default; text-decoration: none; }
+.graph-node-list { display: grid; gap: 2px; max-height: 260px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+@media (max-width: 860px) { .graph-list { padding: 112px 12px 12px; } }

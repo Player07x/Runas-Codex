@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Crown } from "lucide-react"
 import type { GraphData } from "../../core/graph-data"
 import { noteName } from "../../core/text"
@@ -98,12 +98,27 @@ function Diplomacy({ root }: { root: string }) {
     }),
     [web],
   )
+  // Enquadra o gráfico logo depois de as forças assentarem (rework F4b, WIK-4).
+  const [fit, setFit] = useState(0)
+  useEffect(() => { const timer = setTimeout(() => setFit((n) => n + 1), 700); return () => clearTimeout(timer) }, [data])
   if (!web.edges.length) return <p className="muted">Nenhuma relação entre facções. Em organizações, países, culturas e religiões, use <code>aliados</code>, <code>inimigos</code>, <code>rivais</code>, <code>em_guerra_com</code>, <code>paz_tensa_com</code> e <code>vassalo_de</code>.</p>
   return (
     <div className="stack">
       <div className="diplomacy-graph card flat">
-        <GraphView data={data} groups={[]} forces={{ ...DEFAULT_FORCES, repulsion: 400, distance: 120, linkWidth: 2.5, nodeSize: 1.6, arrows: true }} labels="always" onOpen={(node) => navigate(noteRoute(node.path))} />
+        <GraphView data={data} groups={[]} forces={{ ...DEFAULT_FORCES, repulsion: 400, distance: 120, linkWidth: 2.5, nodeSize: 1.6, arrows: true }} labels="always" fitSignal={fit} onOpen={(node) => navigate(noteRoute(node.path))} />
       </div>
+      {/* A mesma teia em tabela: lida pelo teclado e pelo leitor de tela, e sem depender da cor. */}
+      <table className="graph-table relations-table">
+        <caption className="sr-only">Relações entre facções</caption>
+        <thead><tr><th scope="col">Quem</th><th scope="col">Relação</th><th scope="col">Com quem</th></tr></thead>
+        <tbody>{web.edges.map((edge, i) => (
+          <tr key={i}>
+            <th scope="row"><a href={href(noteRoute(edge.from))} className="wikilink">{noteName(edge.from)}</a></th>
+            <td><span className="relation-kind"><span className="relation-dot" style={{ background: DIPLOMACY_COLORS[edge.kind]?.color ?? "var(--line-strong)" }} aria-hidden="true" />{DIPLOMACY_COLORS[edge.kind]?.label ?? edge.label}</span></td>
+            <td><a href={href(noteRoute(edge.to))} className="wikilink">{noteName(edge.to)}</a></td>
+          </tr>
+        ))}</tbody>
+      </table>
       <div className="row-wrap">
         {Object.entries(DIPLOMACY_COLORS)
           .filter(([kind]) => web.edges.some((e) => e.kind === kind))

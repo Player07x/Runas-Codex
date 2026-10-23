@@ -244,7 +244,15 @@ A **F2** está no branch `rework/f2-acessibilidade`, empilhado sobre a F1: seç�
 legível embutida, contraste alto e barra inferior configurável (decisões na ADR 0026).
 
 A **F3** sai em duas partes empilhadas: **F3a** (`rework/f3-editor-livros`) é o editor compartilhado — barra única,
-formatação na seleção, menu `/`, galeria Formatar, Código mais legível e barra sobre o teclado; **F3b** refaz Livros.
+formatação na seleção, menu `/`, galeria Formatar, Código mais legível e barra sobre o teclado; **F3b**
+(`rework/f3b-livros`) refaz Livros: Escrever, Organizar e Prévia, sumário, painel Apoio e celular.
+
+A **F4** sai por espaço, em partes empilhadas: **F4a** Notas (`rework/f4a-notas`), **F4b** Wiki (`rework/f4b-wiki`),
+**F4c** Campanhas (`rework/f4c-campanhas`), **F4d** Agenda (`rework/f4d-agenda`) e **F4e** personalização com
+cores, capas, ícones e imagens (`rework/f4e-personalizacao`, ADR 0027).
+
+A **F5** (`rework/f5-inicio-config`) fecha o rework: próxima sessão de uma fonte só, Início compacto, Centelhas no
+cofre, Configurações com índice, Transferir por escolha e a tela do VTT (decisões na ADR 0026).
 
 **Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
 `app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a

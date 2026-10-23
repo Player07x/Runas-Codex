@@ -1,6 +1,8 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Link2, LogIn, Map, Plus, WifiOff, Wifi, Hash } from "lucide-react"
+import { Camera, Clock, DoorOpen, Dices, Download, Link2, LogIn, Map, Plus, Upload, Wifi, Hash } from "lucide-react"
+import { ListRow, Notice, PageHeader } from "../../components/kit/Layout"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { href, navigate } from "../../lib/router"
 import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal } from "../../components/ui"
@@ -17,25 +19,54 @@ export function VttScreen({ route }: { route: string[] }) {
   return <VttHome />
 }
 
-/** A tela do VTT tem só duas opções. */
+/**
+ * A tela do VTT tem só duas opções (regra fixa): Criar Sala e Entrar Sala. Embaixo, as mesas abertas por último para
+ * voltar direto a elas (VTT-1, rework F5), e no ⋯ o importar e exportar de mesas, que acontece em Importar e exportar.
+ */
 function VttHome() {
+  const [mesas, setMesas] = useState<WorldSummary[] | null>(null)
+  useEffect(() => {
+    vtt.listWorlds().then((list) => setMesas([...list].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4)), () => setMesas([]))
+  }, [])
   return (
     <div className="page vtt-home">
+      <PageHeader
+        title="VTT"
+        menu={<OverflowMenu label="Mais ações do VTT" items={[
+          { label: "Importar mesa…", icon: <Download size={16} />, onSelect: () => navigate("/transferir/importar") },
+          { label: "Exportar mesas…", icon: <Upload size={16} />, onSelect: () => navigate("/transferir") },
+        ]} />}
+      />
       <div className="vtt-choices">
         <a className="vtt-choice create" href={href("/vtt/criar")}>
-          <DoorOpen size={44} />
+          <DoorOpen size={48} aria-hidden="true" />
           <strong className="display">Criar Sala</strong>
           <span>Abrir uma das suas mesas para os jogadores entrarem.</span>
         </a>
         <a className="vtt-choice join" href={href("/vtt/entrar")}>
-          <LogIn size={44} />
+          <LogIn size={48} aria-hidden="true" />
           <strong className="display">Entrar Sala</strong>
           <span>Entrar na mesa de outra pessoa com link, código ou QR.</span>
         </a>
       </div>
-      <p className="muted small vtt-note">
-        <WifiOff size={14} /> Esta é a única parte do Runas-Codex que usa a rede, e só enquanto a sala estiver aberta.
-      </p>
+      {mesas && mesas.length > 0 && (
+        <section className="vtt-recent" aria-labelledby="vtt-recentes">
+          <h2 id="vtt-recentes" className="section-title">Mesas recentes</h2>
+          {mesas.map((mesa) => (
+            <ListRow
+              key={mesa.id}
+              media={<Map size={18} aria-hidden="true" />}
+              title={mesa.title}
+              meta={`${mesa.scenes ?? 0} ${mesa.scenes === 1 ? "cena" : "cenas"} · aberta ${relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}`}
+              trailing={<span className="small">Abrir</span>}
+              href={href(`/vtt/mesa/${mesa.id}`)}
+            />
+          ))}
+        </section>
+      )}
+      <Notice tone="info" title="A única parte do app que usa a rede">
+        Só enquanto a sala estiver aberta, e só entre você e os jogadores. Fechada a sala, nada sai do aparelho.
+      </Notice>
     </div>
   )
 }

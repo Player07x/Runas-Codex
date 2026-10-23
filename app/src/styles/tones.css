@@ -1,0 +1,50 @@
+/*
+ * Cor de cada campanha e categoria da Wiki (ADR 0027). O elemento com a classe `toned` recebe `--tone-dark` e
+ * `--tone-light` (core/tones.ts, já com contraste calculado) e o tema escolhe uma. Dentro dele, a cor de destaque
+ * (botões, abas, links) vira a do tom. Com “Usar a cor de cada campanha e categoria” desligado ou com o contraste alto,
+ * nada muda: a paleta continua valendo.
+ */
+:root:not([data-tones="off"]):not([data-contrast="high"]) .toned {
+  --tone: var(--tone-dark);
+  --cyan: var(--tone-dark);
+  --cyan-dim: var(--tone-dark);
+  --accent: var(--tone-dark);
+  --on-accent: #12141b;
+}
+:root[data-theme="light"]:not([data-tones="off"]):not([data-contrast="high"]) .toned {
+  --tone: var(--tone-light);
+  --cyan: var(--tone-light);
+  --cyan-dim: var(--tone-light);
+  --accent: var(--tone-light);
+  --on-accent: #fff;
+}
+
+/* Brasão: ícone (ou inicial) sobre o tom, quando não há imagem. A forma e o ícone dizem o mesmo que a cor. */
+.crest { display: inline-grid; place-items: center; flex: none; overflow: hidden; border: 1px solid color-mix(in srgb, var(--tone, var(--line-strong)) 60%, transparent); border-radius: 12px; background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--tone, var(--cyan)) 34%, var(--panel)), color-mix(in srgb, var(--tone, var(--cyan)) 12%, var(--panel-2))); color: var(--tone, var(--text)); font-family: var(--font-display, inherit); font-weight: 700; }
+.crest img { width: 100%; height: 100%; object-fit: cover; }
+.crest.round { border-radius: 50%; }
+
+/* Faixa de capa (campanha e categoria). */
+.cover-band { position: relative; overflow: hidden; border-radius: var(--radius, 14px); background: linear-gradient(135deg, color-mix(in srgb, var(--tone, var(--cyan)) 30%, var(--bg-deep)), var(--bg-deep)); }
+.cover-band img { display: block; width: 100%; height: 100%; object-fit: cover; }
+:root[data-solid="true"] .cover-band { background: color-mix(in srgb, var(--tone, var(--cyan)) 22%, var(--bg-deep)); }
+
+/* Etiqueta da categoria: ícone e nome sempre juntos da cor. */
+.tone-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid color-mix(in srgb, var(--tone, var(--line-strong)) 55%, transparent); border-radius: 999px; color: var(--tone, var(--muted)); font-size: calc(13px * var(--font-scale, 1)); font-weight: 600; }
+
+/* Diálogo Personalizar. */
+.personalize { display: grid; gap: var(--space-section, 18px); }
+.personalize fieldset { display: grid; gap: 10px; margin: 0; padding: 0; border: 0; }
+.personalize legend { margin-bottom: 8px; font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.tone-options, .emblem-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; }
+.emblem-options { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+.tone-option, .emblem-option { position: relative; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 10px 4px 6px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: calc(13px * var(--font-scale, 1)); }
+.emblem-option { justify-content: center; padding: 0; min-height: 44px; }
+.tone-option input, .emblem-option input { position: absolute; opacity: 0; pointer-events: none; }
+.tone-option.on, .emblem-option.on { border-color: var(--line-strong); box-shadow: inset 0 0 0 2px var(--line-strong); font-weight: 650; background: var(--panel-2); }
+.tone-option:has(input:focus-visible), .emblem-option:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.tone-dot { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--sw-dark, transparent); }
+:root[data-theme="light"] .tone-dot { background: var(--sw-light, transparent); }
+.tone-dot.none { border: 2px dashed var(--line-strong); }
+.personalize-preview { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.personalize-preview .cover-band { width: 120px; height: 64px; }
