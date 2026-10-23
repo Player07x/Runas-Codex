@@ -57,7 +57,7 @@ export function DocumentExport({ paths, initialTitle = "Exportação de notas", 
     {!journal && <label className="check"><input type="checkbox" checked={linked} onChange={e => setLinked(e.target.checked)} /> Incluir também as notas ligadas (até 200 notas)</label>}
     <label className="field"><span>Título do documento</span><input className="input" value={title} onChange={event => setTitle(event.target.value)} /></label>
     <div className="row-wrap"><label className="check"><input type="checkbox" checked={cover} onChange={event => setCover(event.target.checked)} /> Incluir capa</label><label className="check"><input type="checkbox" checked={players} onChange={event => setPlayers(event.target.checked)} /> Versão dos jogadores, sem artigos e blocos secretos</label></div>
-    <button className="btn" disabled={(!journal && (!notes.length || !selection.size)) || !vault.index} onClick={() => void open()}>Preparar documento</button>
+    <div className="transfer-actions"><button className="btn primary" disabled={(!journal && (!notes.length || !selection.size)) || !vault.index} onClick={() => void open()}>Preparar documento</button></div>
     {error && <p role="alert" className="transfer-error">{error}</p>}
     {prepared && <VaultView value={{ ...vault, info: vault.info ? { ...vault.info, readOnly: true } : null, index: prepared.index, save: deny, createNote: deny, createFile: deny, createFolder: deny, rename: deny, trash: deny, setProperty: deny, importTransfer: deny, addAttachment: deny }}>
       {prepared.excluded > 0 && <p role="status">{prepared.excluded} nota(s) secretas não entram nesta versão.</p>}

@@ -251,6 +251,9 @@ A **F4** sai por espaço, em partes empilhadas: **F4a** Notas (`rework/f4a-notas
 **F4c** Campanhas (`rework/f4c-campanhas`), **F4d** Agenda (`rework/f4d-agenda`) e **F4e** personalização com
 cores, capas, ícones e imagens (`rework/f4e-personalizacao`, ADR 0027).
 
+A **F5** (`rework/f5-inicio-config`) fecha o rework: próxima sessão de uma fonte só, Início compacto, Centelhas no
+cofre, Configurações com índice, Transferir por escolha e a tela do VTT (decisões na ADR 0026).
+
 **Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
 `app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a
 `Platform`, o processo principal do desktop, o Android nativo e o VTT por dentro (`app/src/vtt/**`). Quem precisar de

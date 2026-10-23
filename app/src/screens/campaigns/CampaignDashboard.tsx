@@ -10,7 +10,7 @@ import { noteRoute } from "../../lib/vault-notes"
 import { NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { CastCard, ClocksCard, QuestsCard, SafetyCard, SecretsCard, TimelineCard } from "./DashboardCards"
-import { NextSessionCard } from "./NextSessionCard"
+import { NextSessionCard, OverdueSessions } from "./NextSessionCard"
 
 function Stats({ data: { stats } }: { data: CampaignData }) {
   return (
@@ -79,6 +79,7 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
         )}
       </section>
 
+      <OverdueSessions data={data} />
       {narrow ? (
         // CAM-9: no celular vem primeiro o que se usa na mesa; as estatísticas ficam no fim, recolhidas.
         <div className="campaign-grid">
