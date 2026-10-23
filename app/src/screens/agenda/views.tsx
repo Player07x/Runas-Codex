@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react"
+import { toneStyle, type Tone } from "../../core/tones"
 import { isoDate, type AgendaEvent, type Occurrence } from "../../core/agenda"
 import { addDays, dayLabel, layoutDay, moveDay, startOfDay } from "../../core/agenda-grid"
 import { ListRow } from "../../components/kit/Layout"
@@ -15,6 +16,18 @@ export const hhmm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 /** Cor do evento: a escolhida na nota; sessão sem cor em dourado (vermelho é só perigo, ADR 0001); o resto em lavanda. */
 export function eventColor(event: AgendaEvent): string {
   return `var(--${event.color ?? (isSessionEvent(event) ? "gold" : "cyan")})`
+}
+
+/** Tom da campanha de um evento de sessão sem cor própria (ADR 0027); a Agenda fornece pelo contexto. */
+export const EventTones = createContext<(event: AgendaEvent) => Tone | null>(() => null)
+
+/** Classe e estilo do evento: `--ev` na cor dele, ou no tom da campanha quando houver (e as cores próprias valerem). */
+export function useEventLook() {
+  const toneOf = useContext(EventTones)
+  return (event: AgendaEvent, extra?: CSSProperties): { className: string; style: CSSProperties } => {
+    const tone = toneOf(event)
+    return { className: tone ? "toned" : "", style: { ...extra, ...toneStyle(tone), ["--ev" as string]: tone ? `var(--tone, ${eventColor(event)})` : eventColor(event) } }
+  }
 }
 
 export const isSessionEvent = (event: AgendaEvent) => Boolean(event.session) || /^sess/i.test(event.category ?? "")
@@ -55,6 +68,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
   const weeks = Array.from({ length: 6 }, (_, w) => Array.from({ length: 7 }, (_, i) => addDays(start, w * 7 + i)))
   const grid = useRef<HTMLDivElement>(null)
   const keyboard = useRef(false)
+  const lookOf = useEventLook()
   const selectedIso = isoDate(selectedDay)
   // O dia que recebe o Tab: o escolhido, se estiver na grade; senão o primeiro do mês.
   const focusIso = weeks.flat().some((d) => isoDate(d) === selectedIso) ? selectedIso : isoDate(first)
@@ -118,8 +132,8 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
                       key={o.key}
                       type="button"
                       tabIndex={-1}
-                      className={`event-pill ${o.key === selectedKey ? "active" : ""} ${o.event.completed ? "done" : ""} ${o.event.allDay ? "all-day" : ""}`}
-                      style={{ ["--ev" as string]: eventColor(o.event) }}
+                      className={`event-pill ${o.key === selectedKey ? "active" : ""} ${o.event.completed ? "done" : ""} ${o.event.allDay ? "all-day" : ""} ${lookOf(o.event).className}`}
+                      style={lookOf(o.event).style}
                       onClick={(event) => {
                         event.stopPropagation()
                         onPick(o)
@@ -138,7 +152,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
                 </span>
                 <span className="cell-dots" aria-hidden="true">
                   {items.slice(0, 4).map((o) => (
-                    <span key={o.key} className="dot" style={{ background: eventColor(o.event) }} />
+                    <span key={o.key} className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />
                   ))}
                 </span>
               </div>
@@ -157,6 +171,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
 export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCreate, onPickDay, onShowMore, freeLabel }: ViewProps & { days: Date[]; onShowMore(day: Date): void }) {
   const scroller = useRef<HTMLDivElement>(null)
   const columns = useRef<HTMLDivElement>(null)
+  const lookOf = useEventLook()
   const [focus, setFocus] = useState<{ day: number; hour: number } | null>(null)
   const [focusDay, setFocusDay] = useState(() => Math.max(0, days.findIndex((d) => sameDay(d, today))))
   useEffect(() => {
@@ -202,7 +217,7 @@ export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCrea
               </button>
               {freeLabel?.(day) && <span className="cell-free" title="Tempo livre no dia">{freeLabel(day)}</span>}
               {allDay.map((o) => (
-                <button key={o.key} type="button" className={`event-pill all-day ${o.key === selectedKey ? "active" : ""}`} style={{ ["--ev" as string]: eventColor(o.event) }} onClick={() => onPick(o)} aria-label={occurrenceLabel(o)}>
+                <button key={o.key} type="button" className={`event-pill all-day ${o.key === selectedKey ? "active" : ""} ${lookOf(o.event).className}`} style={lookOf(o.event).style} onClick={() => onPick(o)} aria-label={occurrenceLabel(o)}>
                   <span className="pill-title">{o.event.title}</span>
                 </button>
               ))}
@@ -240,8 +255,8 @@ export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCrea
                   <button
                     key={occurrence.key}
                     type="button"
-                    className={`week-event ${occurrence.key === selectedKey ? "active" : ""}`}
-                    style={{ top, height, left: `calc(${(column / count) * 100}% + 2px)`, width: `calc(${100 / count}% - 4px)`, ["--ev" as string]: eventColor(occurrence.event) }}
+                    className={`week-event ${occurrence.key === selectedKey ? "active" : ""} ${lookOf(occurrence.event).className}`}
+                    style={lookOf(occurrence.event, { top, height, left: `calc(${(column / count) * 100}% + 2px)`, width: `calc(${100 / count}% - 4px)` }).style}
                     onClick={() => onPick(occurrence)}
                     aria-label={occurrenceLabel(occurrence)}
                     title={occurrenceLabel(occurrence)}
@@ -274,6 +289,7 @@ export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCrea
 
 /** Lista (AGE-7): um título por dia e linhas do kit; “Mostrar mais” estende o período sem trocar de página. */
 export function ListView({ from, days, occurrences, selectedKey, onPick, onMore }: { from: Date; days: number; occurrences: Occurrence[]; selectedKey?: string; onPick(o: Occurrence): void; onMore(): void }) {
+  const lookOf = useEventLook()
   const groups = new Map<string, Occurrence[]>()
   for (const o of occurrences) {
     const day = isoDate(o.start < from ? from : o.start)
@@ -288,7 +304,7 @@ export function ListView({ from, days, occurrences, selectedKey, onPick, onMore 
           {list.map((o) => (
             <ListRow
               key={o.key}
-              media={<span className="dot" style={{ background: eventColor(o.event) }} />}
+              media={<span className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />}
               title={o.event.title}
               meta={[o.event.allDay ? "dia inteiro" : `${hhmm(o.start)}${o.event.endTime ? `–${hhmm(o.end)}` : ""}`, o.event.category, o.event.location].filter(Boolean).join(" · ")}
               onClick={() => onPick(o)}

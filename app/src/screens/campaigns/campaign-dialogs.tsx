@@ -144,7 +144,6 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
             skipDates: [],
             reminders: [1440],
             category: "Sessão",
-            color: "red",
             countdown: true,
             session: sessionPath,
           }

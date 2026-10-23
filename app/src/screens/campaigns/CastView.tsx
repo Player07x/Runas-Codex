@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { BookOpen, Minus, Plus, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
+import { NoteCrest } from "../../components/kit/Emblem"
 import { ATTITUDES, withCampaignPlayer, type PlayerCharacter, npcSightings, reputationOf, withoutPosition, withTrackedLink, type TrackedLink } from "../../core/campaigns"
 import { noteName } from "../../core/text"
 import { href, navigate } from "../../lib/router"
@@ -38,7 +39,7 @@ export function CastView({ data }: { data: CampaignData }) {
           {data.players.map((p) => (
             <div key={p.path} className="card tight stack">
               <a className="row link campaign-person" href={href(noteRoute(p.path))}>
-                <span className="campaign-avatar" style={p.color ? { background: p.color } : undefined}>{p.name[0]}</span>
+                <NoteCrest path={p.path} name={p.name} size={36} />
                 <span className="grow">
                   <strong className="small">{p.name}</strong>
                   <span className="tiny faint" style={{ display: "block" }}>{[p.player, p.concept].filter(Boolean).join(" · ") || "Sem jogador anotado"}</span>
@@ -90,6 +91,7 @@ function TrackedSection({ data, kind }: { data: CampaignData; kind: "npcs" | "fa
         const rep = reputationOf(item.extra)
         return (
           <div key={item.position} className="campaign-tracked">
+            <NoteCrest path={item.dest} name={noteName(item.target)} size={28} />
             {item.dest ? (
               <a className="wikilink cross grow truncate" href={href(noteRoute(item.dest))}>{noteName(item.target)}</a>
             ) : (

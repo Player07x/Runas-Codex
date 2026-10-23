@@ -2,7 +2,11 @@ import { CampaignTools } from "./CampaignTools"
 import { useMemo, useRef, useState } from "react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Plus, ScrollText, Shapes, Users } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Users } from "lucide-react"
+import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
+import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
+import { campaignHomePath, campaignLook } from "../../core/personalization"
+import { toneStyle } from "../../core/tones"
 import { CAMPAIGN_STATUS, listCampaigns, listPlayers, listSessions, upcomingSession } from "../../core/campaigns"
 import { href, navigate } from "../../lib/router"
 import { Empty, useToast } from "../../components/ui"
@@ -56,11 +60,16 @@ export function CampaignsScreen({ route }: { route: string[] }) {
 
 function CampaignPage({ name, section, id }: { name: string; section: string; id?: string }) {
   const data = useCampaignData(name)
+  const vault = useVault()
   const [screen, setScreen] = useState(false)
+  const [personalizing, setPersonalizing] = useState(false)
   const fill = section === "quadro" || (section === "sessoes" && Boolean(id))
+  // ADR 0027: tudo dentro da campanha herda a cor dela (botões, abas, sessões, missões, quadro, elenco).
+  const look = useMemo(() => campaignLook(vault.index!, name), [vault.index, vault.version, name])
   return (
-    <div className={fill ? "campaign-fill" : ""} style={data.campaign.color ? { ["--accent" as string]: data.campaign.color } : undefined}>
-      <CampaignHeader name={name} current={section} onScreen={() => setScreen(true)} />
+    <div className={`campaign-page${fill ? " campaign-fill" : ""}${look.tone ? " toned" : ""}`} style={toneStyle(look.tone)}>
+      <CampaignHeader name={name} current={section} onScreen={() => setScreen(true)} onPersonalize={() => setPersonalizing(true)} emblem={look.emblem} />
+      {personalizing && <PersonalizeDialog title={`Personalizar ${name}`} name={name} path={campaignHomePath(name)} onClose={() => setPersonalizing(false)} />}
       {section === "" && <CampaignDashboard data={data} onScreen={() => setScreen(true)} />}
       {section === "sessoes" && <SessionsView data={data} path={id} />}
       {section === "missoes" && <QuestBoard data={data} />}
@@ -72,7 +81,8 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
   )
 }
 
-function CampaignHeader({ name, current, onScreen }: { name: string; current: string; onScreen(): void }) {
+function CampaignHeader({ name, current, onScreen, onPersonalize, emblem }: { name: string; current: string; onScreen(): void; onPersonalize(): void; emblem: string | null }) {
+  const Emblem = emblemIcon(emblem) ?? ScrollText
   const vault = useVault()
   const campaigns = useMemo(() => listCampaigns(vault.index!), [vault.index, vault.version])
   // As telas que não cabem vão para “Mais”, como na Wiki (rework F4c).
@@ -83,10 +93,11 @@ function CampaignHeader({ name, current, onScreen }: { name: string; current: st
   return (
     <div className="campaign-header">
       <OverflowMenu label="Trocar de campanha" align="start" triggerClassName="btn ghost campaign-switch"
-        trigger={<><ScrollText size={16} color="var(--accent, var(--violet))" /><strong className="truncate">{name}</strong><ChevronDown size={15} /></>}
+        trigger={<><Emblem size={16} color="var(--accent, var(--violet))" /><strong className="truncate">{name}</strong><ChevronDown size={15} /></>}
         items={[
           ...campaigns.map((c) => ({ label: c.name, hint: CAMPAIGN_STATUS.find((s) => s.id === c.status)?.label, icon: c.name === name ? <Check size={15} /> : <ScrollText size={15} />, onSelect: () => navigate(campaignRoute(c.name)) })),
           "separator" as const,
+          { label: "Personalizar esta campanha…", icon: <Palette size={15} />, onSelect: onPersonalize, disabled: vault.info?.readOnly ?? true },
           { label: "Todas as campanhas", icon: <LayoutDashboard size={15} />, onSelect: () => navigate("/campanhas") },
         ]} />
       <select className="select mobile-space-nav" aria-label="Tela da campanha" value={current} onChange={event => navigate(campaignRoute(name, event.target.value))}>{TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select>
@@ -118,7 +129,7 @@ function CampaignList() {
     const today = new Date()
     return listCampaigns(index).map((c) => {
       const sessions = listSessions(index, c, today)
-      return { ...c, sessions: sessions.length, done: sessions.filter((s) => s.status === "realizada").length, next: upcomingSession(sessions, today), players: listPlayers(index, c).length }
+      return { ...c, look: campaignLook(index, c.name), sessions: sessions.length, done: sessions.filter((s) => s.status === "realizada").length, next: upcomingSession(sessions, today), players: listPlayers(index, c).length }
     })
   }, [index, vault.version])
   const create = () => (readOnly ? toast("Libere a gravação em Configurações para criar uma campanha.") : setCreating(true))
@@ -141,8 +152,11 @@ function CampaignList() {
       ) : (
         <div className="grid-cards">
           {campaigns.map((c) => (
-            <a key={c.name} className="card link campaign-card" href={href(campaignRoute(c.name))} style={c.color ? { ["--accent" as string]: c.color } : undefined}>
-              <div className="campaign-banner" />
+            <a key={c.name} className={`card link campaign-card${c.look.tone ? " toned" : ""}`} href={href(campaignRoute(c.name))} style={toneStyle(c.look.tone)}>
+              <div className="campaign-card-cover">
+                <CoverBand tone={c.look.tone} cover={c.look.cover} from={campaignHomePath(c.name)} height={88} className="campaign-banner" />
+                <Crest tone={c.look.tone} emblem={c.look.emblem} name={c.name} size={44} />
+              </div>
               <div className="row between">
                 <span className={`chip ${c.status === "ativa" ? "green" : c.status === "pausada" ? "gold" : ""}`}>{CAMPAIGN_STATUS.find((s) => s.id === c.status)?.label}</span>
                 <span className="muted small row">

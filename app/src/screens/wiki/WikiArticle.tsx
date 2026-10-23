@@ -11,6 +11,10 @@ import { useToast } from "../../components/ui"
 import { NoteView } from "../../components/vault/NoteView"
 import { LinksPanel } from "../../components/vault/VaultPanels"
 import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
+import { emblemIcon } from "../../components/kit/Emblem"
+import { articleCategory, categoryLook, EMPTY_LOOK } from "../../core/personalization"
+import { toneStyle } from "../../core/tones"
+import { categoryRoute } from "../../core/wiki-category"
 import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleExtras } from "./WikiArticleExtras"
 import { WIKI_INSERTS } from "./WikiTools"
@@ -43,6 +47,10 @@ export function WikiArticleView({ path }: { path: string }) {
     navigate("/wiki")
   }, [])
 
+  const category = wiki ? articleCategory(path, wiki.root) : null
+  const categoryStyle = useMemo(() => (category && vault.index ? categoryLook(vault.index, category) : EMPTY_LOOK), [category, vault.index, vault.version])
+  const CategoryEmblem = emblemIcon(categoryStyle.emblem)
+
   if (!note) {
     return (
       <div className="page">
@@ -52,7 +60,7 @@ export function WikiArticleView({ path }: { path: string }) {
   }
 
   return (
-    <div className={`wiki-article-layout ${panel ? "show-panel" : ""}`}>
+    <div className={`wiki-article-layout ${panel ? "show-panel" : ""}${categoryStyle.tone ? " toned" : ""}`} style={toneStyle(categoryStyle.tone)}>
       <section className="wiki-article-main">
         <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
       </section>
@@ -66,6 +74,7 @@ export function WikiArticleView({ path }: { path: string }) {
         <TabPanel idPrefix="artigo-painel" value={tab}>
         <NoteSetContext.Provider value={noteSet}>
           {tab === "ficha" && <>
+          {category && (categoryStyle.tone || categoryStyle.emblem) && <a className="tone-chip" href={href(categoryRoute(category))}>{CategoryEmblem && <CategoryEmblem size={14} aria-hidden="true" />}{category.split("/").at(-1)}</a>}
           <Infobox
             note={note}
             calendar={calendarRef && "calendar" in calendarRef ? calendarRef.calendar : null}

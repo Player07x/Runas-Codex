@@ -1,9 +1,10 @@
 import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { toneStyle, type Tone } from "../../core/tones"
 import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, Hourglass, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload, Vote } from "lucide-react"
 import { AGENDA_ROOT, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
-import { SESSION_STATUS, sessionInfo } from "../../core/campaigns"
+import { listCampaigns, listSessions, SESSION_STATUS, sessionInfo } from "../../core/campaigns"
 import { isDone, parseContext, parseTaskLine, type Task } from "../../core/tasks/task"
 import { checkboxLines } from "../../markdown/task-checkboxes"
 import { TaskRow } from "../../components/tasks/TaskRow"
@@ -27,7 +28,8 @@ import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { useVault } from "../../platform/VaultProvider"
 import { exactAlarmsAllowed, isAndroidApp, openExactAlarmSettings } from "../../platform/reminders"
 import { EventDialog } from "./EventDialog"
-import { addDays, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, onDay, sameDay, startOfDay, TimeGrid } from "./views"
+import { addDays, EventTones, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, onDay, sameDay, startOfDay, TimeGrid, useEventLook } from "./views"
+import { campaignLook, campaignOfPath } from "../../core/personalization"
 import "../agenda.css"
 import { useCreateRequest } from "../../lib/create-request"
 import { useAgendaActions, type AgendaAction } from "../../lib/agenda-request"
@@ -312,6 +314,33 @@ function AgendaView({ index }: { index: VaultIndex }) {
   useAgendaActions(runAction)
 
   const dayList = onDay(expandEvents(events, startOfDay(selectedDay), addDays(selectedDay, 1)), selectedDay)
+  // Eventos de sessão na cor da campanha (ADR 0027): pela sessão ligada ao evento (`sessao`) ou pelo evento que a nota
+  // da sessão aponta (`evento`). A cor da campanha vale mais que a cor gravada no evento.
+  const campaignTones = useMemo(() => {
+    const today = new Date()
+    const byCampaign = new Map<string, Tone | null>()
+    const byEvent = new Map<string, Tone | null>()
+    for (const c of listCampaigns(index)) {
+      const tone = campaignLook(index, c.name).tone
+      byCampaign.set(c.name, tone)
+      if (tone) for (const s of listSessions(index, c, today)) if (s.event) byEvent.set(s.event.replace(/\.md$/, ""), tone)
+    }
+    return { byCampaign, byEvent }
+  }, [index, vault.version])
+  const toneOf = useCallback((event: AgendaEvent) => {
+    const campaign = event.session ? campaignOfPath(`${event.session}.md`) : null
+    const linked = (campaign ? campaignTones.byCampaign.get(campaign) : null) ?? campaignTones.byEvent.get(event.path.replace(/\.md$/, ""))
+    if (linked) return linked
+    // Sem ligação: o título que a campanha dá aos eventos de sessão (“Sessão 13 — As Cinzas de Valdris”).
+    if (!isSessionEvent(event)) return null
+    for (const [name, tone] of campaignTones.byCampaign) if (tone && event.title.endsWith(` — ${name}`)) return tone
+    return null
+  }, [campaignTones])
+  // Este componente fornece o contexto; ele mesmo usa o tom direto.
+  const lookOf = (event: AgendaEvent, extra?: CSSProperties) => {
+    const tone = toneOf(event)
+    return { className: tone ? "toned" : "", style: { ...extra, ...toneStyle(tone), ["--ev" as string]: tone ? `var(--tone, ${eventColor(event)})` : eventColor(event) } }
+  }
 
   // “+ Novo › Evento na Agenda”: o mesmo diálogo do botão Evento, no dia escolhido.
   useCreateRequest("evento", () => { if (!readOnly) create(selectedDay) })
@@ -327,6 +356,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const needsExactAlarms = isAndroidApp() && !exactAlarms
 
   return (
+    <EventTones.Provider value={toneOf}>
     <div className="page agenda">
       {poll && <Modal title="Enquete de data pela sala" onClose={() => setPoll(false)} wide><CampaignRoomTools campaign="Agenda" root="Agenda/" readOnly={readOnly} onlyPoll /></Modal>}
       <PageHeader
@@ -420,7 +450,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
                   {dayList.length === 0 && <span className="muted small">Nada marcado.</span>}
                   {dayList.map((o) => (
                     <button key={o.key} className="list-item agenda-day-item" onClick={() => pick(o)} aria-label={occurrenceLabel(o)}>
-                      <span className="dot" style={{ background: eventColor(o.event) }} />
+                      <span className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />
                       <span className="grow truncate">{o.event.title}</span>
                       <span className="meta">{o.event.allDay ? "dia inteiro" : hhmm(o.start)}</span>
                     </button>
@@ -531,6 +561,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
         </ConfirmDialog>
       )}
     </div>
+    </EventTones.Provider>
   )
 }
 
@@ -555,6 +586,7 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
   const statusId = sessionNote ? sessionInfo(index, sessionNote, today).status : undefined
   const status = SESSION_STATUS.find((s) => s.id === statusId)?.label
   const kind = event.category ?? (isSessionEvent(event) ? "Sessão" : undefined)
+  const evLook = useEventLook()(event)
   const openSession = () => (sessionPath ? navigate(vaultRoute(sessionPath)) : undefined)
   const menu = [
     ...(event.repeat.kind !== "none" ? [{ label: "Pular esta data", icon: <SkipForward size={16} />, onSelect: onSkip, disabled: readOnly }] : []),
@@ -562,7 +594,7 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
     { label: "Mandar para a lixeira", icon: <Trash2 size={16} />, onSelect: onDelete, disabled: readOnly, danger: true },
   ]
   return (
-    <section className="event-detail" style={{ ["--ev" as string]: eventColor(event) }} aria-labelledby="agenda-evento-titulo">
+    <section className={`event-detail ${evLook.className}`} style={evLook.style} aria-labelledby="agenda-evento-titulo">
       <div className="row-wrap" style={{ gap: 6 }}>
         {kind && <span className="chip event-kind"><span className="dot" style={{ background: "var(--ev)" }} />{kind}</span>}
         {status && <span className={`chip session-status ${statusId}`}>{status}</span>}

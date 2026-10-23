@@ -764,3 +764,18 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Lembretes: no Android sem a permissão de alarmes exatos, o aviso aparece no painel e o botão leva à permissão.
 - [ ] Celular: o calendário vem primeiro; tocar num dia sobe o painel; Esc ou o botão do painel fecha; o botão
   flutuante cria um evento. Sem rolagem para os lados em 320 px.
+
+## Rework visual — F4e personalização (ADR 0027, 22/10/2026)
+
+- [ ] Campanha › menu do nome › Personalizar: escolher Brasa e a coroa; a barra, as abas, os botões e o “Nova
+  sessão” mudam de cor; o cartão em Campanhas mostra a capa e o brasão. Abrir a nota no Obsidian com o snippet ligado:
+  `cor: brasa`, `icone: coroa` e `cssclasses: [runas-cor-brasa]`; título e links no tom.
+- [ ] Cor livre muito clara (ex.: `#ffff00`): o diálogo avisa que ajustou; no tema claro o texto continua legível.
+- [ ] Agenda: os eventos de sessão da campanha ficam na cor dela (mesmo os antigos, com `cor: red`).
+- [ ] Wiki › categoria › ⋯ › Personalizar categoria: cria `Personagens/Personagens.md` com `tipo: categoria`; a nota
+  não aparece entre os artigos; cartões sem imagem mostram o ícone na cor; a descrição aparece no topo e no cartão da
+  página inicial; o artigo mostra a etiqueta da categoria na Ficha.
+- [ ] Elenco: personagens, NPCs e facções com retrato ou símbolo do artigo; sem imagem, o ícone da categoria.
+- [ ] Sessão com `capa`: a imagem aparece na lista de sessões.
+- [ ] Configurações › Aparência › desligar “Usar a cor de cada campanha e categoria”: tudo volta à paleta. Ligar o
+  contraste alto: idem.

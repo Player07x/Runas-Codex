@@ -1,4 +1,6 @@
 import { openDocumentExport } from "../../components/export/ExportDialog"
+import { Crest } from "../../components/kit/Emblem"
+import { imageTarget } from "../../core/personalization"
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, Download, FileDown, Globe, PanelRight, Plus, Users } from "lucide-react"
@@ -55,8 +57,11 @@ function SessionList({ data }: { data: CampaignData }) {
       <div className="campaign-session-list">
         {sessions.map((s) => {
           const done = s.prep.filter((p) => p.done).length
+          // Capa da sessão (`capa`, ADR 0027), quando houver.
+          const cover = imageTarget(vault.index?.note(s.path)?.meta.frontmatter?.data?.capa)
           return (
             <a key={s.path} className={`card link campaign-session-row ${s.status}`} href={href(sessionRoute(s))}>
+              {cover && <Crest image={cover} from={s.path} name={s.title} size={44} />}
               <span className="campaign-session-number mono">{s.number ?? "—"}</span>
               <span className="grow" style={{ minWidth: 0 }}>
                 <strong className="truncate" style={{ display: "block" }}>{s.title}</strong>
@@ -67,7 +72,7 @@ function SessionList({ data }: { data: CampaignData }) {
               </span>
               {s.status === "planejada" && s.prep.length > 0 && <span className="chip gold">Preparação {done}/{s.prep.length}</span>}
               {s.present.length > 0 && <span className="chip"><Users size={12} /> {s.present.length}</span>}
-              <span className={`chip ${s.status === "planejada" ? "red" : s.status === "cancelada" ? "" : "green"}`}>{SESSION_STATUS.find((x) => x.id === s.status)?.label}</span>
+              <span className={`chip ${s.status === "planejada" ? "gold" : s.status === "cancelada" ? "" : "green"}`}>{SESSION_STATUS.find((x) => x.id === s.status)?.label}</span>
             </a>
           )
         })}

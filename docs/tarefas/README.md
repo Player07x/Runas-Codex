@@ -248,8 +248,8 @@ formatação na seleção, menu `/`, galeria Formatar, Código mais legível e b
 (`rework/f3b-livros`) refaz Livros: Escrever, Organizar e Prévia, sumário, painel Apoio e celular.
 
 A **F4** sai por espaço, em partes empilhadas: **F4a** Notas (`rework/f4a-notas`), **F4b** Wiki (`rework/f4b-wiki`),
-**F4c** Campanhas (`rework/f4c-campanhas`), **F4d** Agenda (`rework/f4d-agenda`) e, por último, a personalização
-com cores, capas e imagens (ADR 0027).
+**F4c** Campanhas (`rework/f4c-campanhas`), **F4d** Agenda (`rework/f4d-agenda`) e **F4e** personalização com
+cores, capas, ícones e imagens (`rework/f4e-personalizacao`, ADR 0027).
 
 **Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
 `app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a
