@@ -2,7 +2,7 @@
 .skip-link { position:fixed;left:12px;top:-100px;z-index:200;padding:12px 18px;border-radius:var(--radius);background:var(--cyan);color:var(--on-accent); }
 .skip-link:focus { top:12px; }
 #runas-main:focus { outline:none; }
-.appearance-settings input[type=range] { width:180px;max-width:100%;min-height:44px;accent-color:var(--cyan); }
+:is(.appearance-settings,.a11y-settings) input[type=range] { width:180px;max-width:100%;min-height:44px;accent-color:var(--cyan); }
 .tour-step { display:grid;gap:18px;justify-items:start; }
 .tour-step > svg { color:var(--cyan); }
 .tour-step h2 { font-size:calc(24px * var(--font-scale,1)); }
@@ -31,8 +31,8 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
  *,*::before,*::after { animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
 }
 @media(max-width:860px),(pointer:coarse) {
- button:not(.month-cell):not(.fcell):not(.week-event):not(.map-pin), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
- button:not(.month-cell):not(.fcell):not(.week-event):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
+ button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
+ button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
  .segmented { width:100%; }
  .segmented button { flex:1 1 auto; }
  .tabs { flex-wrap:wrap;overflow:visible; }
@@ -61,7 +61,7 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
  .agenda-main { padding:0;border:0; }
  .month { gap:0;grid-template-columns:repeat(7,minmax(44px,1fr)); }
  .month-cell { border-radius:4px;min-height:60px; }
- .month-head { font-size:calc(10px * var(--font-scale,1)); }
+ .month-head { font-size:calc(12px * var(--font-scale,1)); }
  .timegrid-head { overflow:auto; }
  .page-head > .row { flex-wrap:wrap; }
 }
@@ -86,10 +86,8 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
 
 .image-moves { max-height:200px;overflow:auto;padding-left:20px;font-size:calc(12px * var(--font-scale,1));overflow-wrap:anywhere; }
 
-.editor-tools-toggle,.book-mobile-controls { display:none; }
+.book-mobile-controls { display:none; }
 @media(max-width:860px) {
- .editor-tools-toggle { display:inline-flex;margin-left:auto; }
- .editor-bar:not(.tools-expanded) > :not(.segmented):not(.editor-tools-toggle):not(.mobile-switch) { display:none; }
  .editor-bar .segmented { flex:1 1 100%; }
  .books-header .book-view-tabs,.books-header>.book-writing-option { display:none; }
  .book-mobile-controls { display:block;flex:1 1 auto; }
@@ -99,3 +97,76 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
 }
 
 @media(max-width:860px) { .books-focus .books-header>.book-focus-toggle { display:inline-flex; } }
+
+/* ---------- Configurações › Acessibilidade (rework F2) ----------
+   Cada opção só age quando a pessoa a escolhe: no padrão, nada daqui muda o leitor nem o editor. O "texto de
+   leitura" é o mesmo do tamanho do texto (notas, artigos, referências, prévias de link, quadros e a prévia da seção);
+   as páginas impressas dos Livros ficam de fora. */
+.a11y-sample .md { font-size: calc(16px * var(--font-scale,1)); }
+
+/* Espaçamento do texto; "muito amplo" usa os valores da WCAG 1.4.12. */
+:root[data-spacing="amplo"] { --read-leading: 1.9; --read-tracking: .03em; --read-words: .08em; --read-gap: 1.25em; }
+:root[data-spacing="muito-amplo"] { --read-leading: 2; --read-tracking: .12em; --read-words: .16em; --read-gap: 2em; }
+:root:is([data-spacing="amplo"],[data-spacing="muito-amplo"]) :is(:is(.note-editor,.article,.book-wiki-reference,.link-preview,.a11y-sample) .md,.canvas-md,.source-editor.live .cm-scroller) {
+  line-height:var(--read-leading);letter-spacing:var(--read-tracking);word-spacing:var(--read-words);
+}
+:root:is([data-spacing="amplo"],[data-spacing="muito-amplo"]) :is(.note-editor,.article,.book-wiki-reference,.link-preview,.a11y-sample) .md > * + * { margin-top:var(--read-gap); }
+
+/* Largura da linha das notas e dos artigos ("média" é a de sempre). */
+:root[data-line-width="estreita"] :is(.editor-body,.article) { max-width:calc(62ch + 64px); }
+:root[data-line-width="larga"] :is(.editor-body,.article) { max-width:1180px; }
+
+/* Fonte de leitura. A legível vale para o app inteiro, que é para isso que ela serve; o papel dos Livros mantém as
+   fontes do tema do livro. */
+:root[data-reading-font="garamond"] :is(:is(.note-editor,.article,.book-wiki-reference,.link-preview,.a11y-sample) .md,.canvas-md,.source-editor.live .cm-scroller) { font-family:var(--font-book); }
+:root[data-reading-font="legivel"] { --font-sans:"Atkinson Hyperlegible Next Variable",system-ui,sans-serif; --font-display:"Atkinson Hyperlegible Next Variable",system-ui,sans-serif; }
+:root[data-reading-font="legivel"] .book-paper { --font-sans:"Geist Variable",system-ui,sans-serif; }
+
+/* Sublinhar links: no texto e nos links de nota, não nos itens de navegação nem nos botões. */
+:root[data-underline="true"] :is(.md a,.wikilink,:is(p,li,td,dd,.tiny,.small,.hint) a:not(.btn,.nav-link)) { text-decoration:underline;text-decoration-thickness:from-font;text-underline-offset:.2em; }
+:root[data-underline="true"] .wikilink { border-bottom:0; }
+
+/* Sem transparências e brilhos: fundos chapados nas barras fixas e nada de desfoque nem gradiente decorativo.
+   As grades da Agenda e da linha do tempo são desenho de informação e ficam. */
+:root[data-solid="true"] *,:root[data-solid="true"] ::before,:root[data-solid="true"] ::after { backdrop-filter:none!important;text-shadow:none!important; }
+:root[data-solid="true"] :is(.pane-left,.pane-right,.pane-head,.wiki-header,.campaign-header) { background:var(--bg-deep)!important; }
+:root[data-solid="true"] .editor-bar { background:var(--bg)!important; }
+:root[data-solid="true"] .format-bar { background:var(--panel)!important; }
+:root[data-solid="true"] :is(.home-session,.wiki-cover,.campaign-cover,.vtt-choice,.vtt-stage,.graph-screen,.infobox-portrait) { background-image:none!important; }
+:root[data-solid="true"] .campaign-banner { background:color-mix(in srgb,var(--accent,var(--violet)) 25%,var(--bg-deep))!important; }
+:root[data-solid="true"] .md hr { background:var(--line-strong); }
+
+/* Rótulos junto aos ícones: o nome de cada botão de ícone (o mesmo do leitor de tela) aparece ao lado dele. */
+:root[data-labels="true"] .icon-btn[aria-label] { display:inline-flex;align-items:center;gap:6px;width:auto;height:auto;padding-inline:10px; }
+:root[data-labels="true"] .icon-btn[aria-label]::after { content:attr(aria-label);font-size:calc(13px * var(--font-scale,1));line-height:1.2;white-space:nowrap; }
+@media(max-width:860px) {
+ /* No celular o nome vai embaixo do ícone, em até duas linhas, para a barra não passar da tela. */
+ :root[data-labels="true"] { --topbar-height:72px; }
+ :root[data-labels="true"] .icon-btn[aria-label] { flex-direction:column;gap:2px;max-width:92px;padding:4px; }
+ :root[data-labels="true"] .icon-btn[aria-label]::after { font-size:calc(11px * var(--font-scale,1));white-space:normal;text-align:center; }
+}
+
+/* Foco reforçado: anel mais grosso, mais afastado e na cor do texto, que contrasta com qualquer fundo do tema. */
+:root[data-focus="strong"] :focus-visible { outline:4px solid var(--text);outline-offset:3px; }
+:root[data-focus="strong"] :is(.input,.select,.textarea):focus-visible { outline-offset:1px; }
+
+/* Cartão Acessibilidade: grupos à esquerda, prévia ao lado (embaixo, em telas estreitas). */
+.a11y-layout { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:var(--space-section);align-items:start; }
+.a11y-groups { display:grid;gap:var(--space-section);min-width:0; }
+.a11y-group { display:grid;gap:4px; }
+.a11y-group-title { margin:0;color:var(--muted);font-size:calc(12px * var(--font-scale,1));font-weight:650;letter-spacing:.08em;text-transform:uppercase; }
+.a11y-preview { position:sticky;top:12px;display:grid;gap:8px;margin:0;min-width:0; }
+.a11y-sample { display:grid;gap:14px;justify-items:start;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg); }
+.a11y-sample .md { width:100%; }
+.a11y-focus-demo { pointer-events:none;outline:3px solid var(--cyan);outline-offset:2px; }
+:root[data-focus="strong"] .a11y-focus-demo { outline:4px solid var(--text);outline-offset:3px; }
+.bottom-nav-slots { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;flex:1 1 220px; }
+.bottom-nav-slots .select { min-width:0;width:100%; }
+@media(max-width:860px) { .a11y-preview { position:static; } }
+.setting-row.stacked { flex-direction:column;align-items:stretch;gap:8px; }
+.setting-row.stacked > div { flex:none; }
+.setting-row.stacked .kit-choice { display:flex; }
+.setting-row.stacked .kit-choice-option { flex:1 1 auto;justify-content:center; }
+.a11y-group + .a11y-group { margin-top:8px; }
+.settings-card-head:has(.settings-card-title) { flex-wrap:wrap; }
+.settings-card-title { display:inline-flex;align-items:center;gap:8px;margin:0;overflow-wrap:normal; }

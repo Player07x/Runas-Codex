@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
   Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
-  ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords,
+  ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords, Accessibility,
 } from "lucide-react"
 import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
@@ -26,6 +26,8 @@ import { OverflowMenu } from "./kit/OverflowMenu"
 import { goBack, goForward } from "../lib/router"
 import { shortcutLabel, shortcutText, type ShortcutAction } from "../core/shortcuts"
 import { usePreferences } from "../lib/customization"
+import { useAppearance } from "../lib/appearance"
+import { requestAgendaAction } from "../lib/agenda-request"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -44,7 +46,6 @@ const TOOLS: NavItem[] = [
   { route: "/config", label: "Configurações", icon: <Settings size={18} />, match: "config" },
 ]
 
-const BOTTOM = ["", "notas", "agenda", "vtt"]
 
 export function Shell({ route, theme, onToggleTheme, fill, children }: { route: string[]; theme: string; onToggleTheme: () => void; fill?: boolean; children: ReactNode }) {
   const vault = useVault()
@@ -56,6 +57,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   const prefs = usePreferences()
   const announce = usePageChange(route, crumbs.map((c) => c.label))
   const readOnly = Boolean(vault.info?.readOnly)
+  // Os quatro atalhos da barra inferior são escolhidos em Configurações › Aparência (NAV-3).
+  const bottom = useAppearance().bottomNav
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -165,13 +168,13 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
       </div>
 
       <nav className="bottom-nav" aria-label="Navegação">
-        {NAV.filter((item) => BOTTOM.includes(item.match)).map((item) => (
+        {bottom.map((match) => NAV.find((item) => item.match === match)).filter((item) => item !== undefined).map((item) => (
           <a key={item.route} href={href(item.route)} className={current === item.match ? "active" : ""} aria-current={current === item.match ? "page" : undefined}>
             {item.icon}
             {item.label}
           </a>
         ))}
-        <button onClick={() => setMore(true)} className={!BOTTOM.includes(current) ? "active" : ""} aria-current={!BOTTOM.includes(current) ? "page" : undefined}>
+        <button onClick={() => setMore(true)} className={!bottom.includes(current) ? "active" : ""} aria-current={!bottom.includes(current) ? "page" : undefined}>
           <Ellipsis size={18} />
           Mais
         </button>
@@ -180,7 +183,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
       {more && (
         <Modal title="Mais" onClose={() => setMore(false)}>
           <div className="more-sheet" style={{ padding: 0 }}>
-            {[...NAV.filter((item) => !BOTTOM.includes(item.match)), ...TOOLS].map((item) => (
+            {[...NAV.filter((item) => !bottom.includes(item.match)), ...TOOLS].map((item) => (
               <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} onClick={() => setMore(false)} aria-current={current === item.match ? "page" : undefined}>
                 {item.icon}
                 <span>{item.label}</span>
@@ -223,20 +226,23 @@ function usePageChange(route: string[], crumbs: string[]): string {
     setAnnounce("")
     const focusHeading = (heading: HTMLElement) => {
       if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1")
-      heading.focus({ preventScroll: true })
+      // O título está no topo; uma seção pedida pela rota precisa rolar até aparecer.
+      heading.focus({ preventScroll: !heading.hasAttribute("data-route-focus") })
     }
     // Depois de os diálogos devolverem o foco (paleta, menus), para não perder a disputa.
     let observer: MutationObserver | undefined
     let timer = 0
+    // Uma seção pedida pela rota ([data-route-focus], como /config/acessibilidade) vem antes do título da tela.
+    const target = () => main?.querySelector<HTMLElement>("[data-route-focus]") ?? main?.querySelector<HTMLElement>("h1")
     const frame = requestAnimationFrame(() => {
       if (!main) return
-      const heading = main.querySelector<HTMLElement>("h1")
+      const heading = target()
       if (heading) return focusHeading(heading)
       // Telas que desenham o título depois de ler os dados (a Agenda): o foco espera no conteúdo e passa ao título
       // quando ele aparecer, se a pessoa ainda não tiver ido para outro lugar.
       main.focus({ preventScroll: true })
       observer = new MutationObserver(() => {
-        const late = main.querySelector<HTMLElement>("h1")
+        const late = target()
         if (!late) return
         observer?.disconnect()
         if (document.activeElement === main) focusHeading(late)
@@ -275,6 +281,14 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
       { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("toggleTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
       { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("editTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
+      { label: "Acessibilidade", icon: <Accessibility size={16} />, hint: "Configurações", run: () => navigate("/config/acessibilidade") },
+      { label: "Enquete de data", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("enquete") },
+      { label: "Tempo livre", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("tempo-livre") },
+      { label: "Importar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("importar-ics") },
+      { label: "Exportar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("exportar-ics") },
+      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
+      { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
+      { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
     ],
     [onToggleTheme, prefs.shortcuts, vault.platform.kind],
   )

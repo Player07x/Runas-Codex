@@ -1,16 +1,66 @@
 export const PALETTES = ["orbita", "floresta", "brasa"] as const
-export interface Appearance { scale: number; palette: typeof PALETTES[number]; motion: "system" | "reduce"; tablet: boolean }
-export const DEFAULT_APPEARANCE: Appearance = { scale: 100, palette: "orbita", motion: "system", tablet: false }
+/** Espaçamento do texto de leitura: "muito-amplo" usa os valores da WCAG 1.4.12. */
+export const SPACINGS = ["normal", "amplo", "muito-amplo"] as const
+export const LINE_WIDTHS = ["estreita", "media", "larga"] as const
+/** "legivel" é a Atkinson Hyperlegible Next, embutida no app (sem rede). */
+export const READING_FONTS = ["geist", "garamond", "legivel"] as const
+/** Espaços que podem ir para a barra inferior do celular (o `match` da navegação; "" é o Início). */
+export const BOTTOM_NAV_CHOICES = ["", "notas", "agenda", "wiki", "campanhas", "livros", "vtt"] as const
+export const DEFAULT_BOTTOM_NAV = ["", "notas", "agenda", "vtt"]
+
+export interface Appearance {
+  scale: number; palette: typeof PALETTES[number]; motion: "system" | "reduce"; tablet: boolean
+  spacing: typeof SPACINGS[number]; lineWidth: typeof LINE_WIDTHS[number]; readingFont: typeof READING_FONTS[number]
+  /** "system" segue `prefers-contrast: more`; "high" liga sempre. */
+  contrast: "system" | "high"; underlineLinks: boolean; solid: boolean; labels: boolean; strongFocus: boolean
+  bottomNav: string[]
+  /** Números de linha no modo Código (Configurações › Editor e barra de status). */
+  codeLineNumbers: boolean
+  /** Cor, capa e ícone de cada campanha e categoria da Wiki (ADR 0027); desligado, tudo fica na paleta. */
+  ownColors: boolean
+}
+
+/** O que o "Restaurar padrão" da seção Acessibilidade volta (paleta, tema e barra inferior ficam). */
+export const ACCESSIBILITY_DEFAULTS = {
+  scale: 100, motion: "system", tablet: false, spacing: "normal", lineWidth: "media", readingFont: "geist",
+  contrast: "system", underlineLinks: false, solid: false, labels: false, strongFocus: false,
+} satisfies Partial<Appearance>
+
+export const DEFAULT_APPEARANCE: Appearance = { ...ACCESSIBILITY_DEFAULTS, palette: "orbita", bottomNav: [...DEFAULT_BOTTOM_NAV], codeLineNumbers: false, ownColors: true }
+
+const oneOf = <T extends string>(list: readonly T[], value: unknown, fallback: T): T => (list.includes(value as T) ? value as T : fallback)
+
+/** Quatro espaços diferentes e conhecidos; o que faltar é completado pelo padrão, na ordem dele. */
+export function parseBottomNav(value: unknown): string[] {
+  const chosen = Array.isArray(value) ? value.filter((item): item is string => (BOTTOM_NAV_CHOICES as readonly string[]).includes(item as string)) : []
+  const unique = [...new Set(chosen)].slice(0, 4)
+  for (const item of [...DEFAULT_BOTTOM_NAV, ...BOTTOM_NAV_CHOICES]) if (unique.length < 4 && !unique.includes(item)) unique.push(item)
+  return unique
+}
+
+/** Troca o atalho de uma posição; se o espaço já estava em outra, as duas posições trocam de lugar. */
+export function setBottomSlot(current: readonly string[], slot: number, value: string): string[] {
+  const next = parseBottomNav(current)
+  if (!(BOTTOM_NAV_CHOICES as readonly string[]).includes(value) || slot < 0 || slot > 3) return next
+  const other = next.indexOf(value)
+  if (other !== -1) next[other] = next[slot]!
+  next[slot] = value
+  return next
+}
+
 /** Preferências antigas ou corrompidas nunca viram estilos arbitrários. */
 export function parseAppearance(raw: string | null): Appearance {
   try {
     const value: unknown = JSON.parse(raw ?? "null")
-    if (!value || typeof value !== "object") return { ...DEFAULT_APPEARANCE }
+    if (!value || typeof value !== "object") return { ...DEFAULT_APPEARANCE, bottomNav: [...DEFAULT_BOTTOM_NAV] }
     const p = value as Record<string, unknown>
     return { scale: typeof p.scale === "number" && Number.isFinite(p.scale) ? Math.round(Math.min(140, Math.max(85, p.scale))) : 100,
-      palette: PALETTES.includes(p.palette as Appearance["palette"]) ? p.palette as Appearance["palette"] : "orbita",
-      motion: p.motion === "reduce" ? "reduce" : "system", tablet: p.tablet === true }
-  } catch { return { ...DEFAULT_APPEARANCE } }
+      palette: oneOf(PALETTES, p.palette, "orbita"),
+      motion: p.motion === "reduce" ? "reduce" : "system", tablet: p.tablet === true,
+      spacing: oneOf(SPACINGS, p.spacing, "normal"), lineWidth: oneOf(LINE_WIDTHS, p.lineWidth, "media"), readingFont: oneOf(READING_FONTS, p.readingFont, "geist"),
+      contrast: p.contrast === "high" ? "high" : "system", underlineLinks: p.underlineLinks === true, solid: p.solid === true, labels: p.labels === true, strongFocus: p.strongFocus === true,
+      bottomNav: parseBottomNav(p.bottomNav), codeLineNumbers: p.codeLineNumbers === true, ownColors: p.ownColors !== false }
+  } catch { return { ...DEFAULT_APPEARANCE, bottomNav: [...DEFAULT_BOTTOM_NAV] } }
 }
 /** Contraste sRGB, usado na conferência das variáveis de tema. */
 export function contrastRatio(foreground: string, background: string): number {

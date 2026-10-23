@@ -1,11 +1,13 @@
 import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
-import { useState } from "react"
-import { CalendarDays, ChevronDown, Eye, EyeOff, GitFork, History, Library, Map, Network, Plus } from "lucide-react"
+import { useRef, useState } from "react"
+import { useFitCount } from "../../components/kit/useFitCount"
+import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Plus } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
 import { Empty, useToast } from "../../components/ui"
 import { NameDialog } from "../../components/vault/dialogs"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleView } from "./WikiArticle"
 import { WikiCalendar } from "./WikiCalendar"
@@ -105,63 +107,48 @@ function NoWiki() {
   )
 }
 
+
 function WikiHeader({ current }: { current: string }) {
   const vault = useVault()
   const toast = useToast()
   const { wikis, wiki, setWiki, players, setPlayers } = useWiki()
-  const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const create = useCreateWiki()
+  const newWiki = () => (vault.info?.readOnly ? toast("Libere a gravação em Configurações para criar uma wiki.") : setCreating(true))
+  // As telas que não cabem na fileira vão para “Mais” (rework F4b, WIK-1: a fileira não é mais cortada).
+  const nav = useRef<HTMLElement>(null), measure = useRef<HTMLDivElement>(null)
+  const fit = useFitCount(nav, measure, TABS.length)
+  const shown = TABS.slice(0, fit), more = TABS.slice(fit)
+  const moreCurrent = more.find((tab) => tab.id === current)
+  const tabHref = (id: string) => href(`/wiki${id ? `/${id}` : ""}`)
   return (
     <div className="wiki-header">
-      <div className="wiki-switcher">
-        <button className="btn ghost" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Trocar de wiki">
-          <Library size={16} color="var(--violet)" />
-          <strong>{wiki?.name}</strong>
-          <ChevronDown size={15} />
-        </button>
-        {open && (
-          <div className="menu" onMouseLeave={() => setOpen(false)}>
-            {wikis.map((w) => (
-              <button
-                key={w.name}
-                className={`list-item ${w.name === wiki?.name ? "active" : ""}`}
-                onClick={() => {
-                  setWiki(w.name)
-                  setOpen(false)
-                  navigate("/wiki")
-                }}
-              >
-                <Library size={15} /> <span className="grow">{w.name}</span>
-                <span className="meta">{w.articles} artigos</span>
-              </button>
-            ))}
-            <div className="divider" />
-            <button
-              className="list-item"
-              onClick={() => {
-                setOpen(false)
-                if (vault.info?.readOnly) toast("Libere a gravação em Configurações para criar uma wiki.")
-                else setCreating(true)
-              }}
-            >
-              <Plus size={15} /> Nova wiki
-            </button>
-          </div>
-        )}
-      </div>
-      <button className="btn" onClick={() => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players })}>Exportar wiki…</button>
+      <OverflowMenu label="Trocar de wiki" align="start" triggerClassName="btn ghost wiki-switch"
+        trigger={<><Library size={16} color="var(--violet)" /><strong>{wiki?.name}</strong><ChevronDown size={15} /></>}
+        items={[
+          ...wikis.map((w) => ({ label: w.name, hint: `${w.articles} artigos`, icon: w.name === wiki?.name ? <Check size={15} /> : <Library size={15} />, onSelect: () => { setWiki(w.name); navigate("/wiki") } })),
+          "separator" as const,
+          { label: "Nova wiki…", icon: <Plus size={15} />, onSelect: newWiki },
+        ]} />
       <select className="select mobile-space-nav" aria-label="Tela da Wiki" value={current} onChange={event => navigate(`/wiki${event.target.value ? "/" + event.target.value : ""}`)}>{TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select>
-      <nav className="tabs wiki-tabs">
-        {TABS.map((tab) => (
-          <a key={tab.id} href={href(`/wiki${tab.id ? `/${tab.id}` : ""}`)} className={current === tab.id ? "active" : ""}>
+      <nav ref={nav} className="tabs wiki-tabs" aria-label="Telas da Wiki">
+        <div ref={measure} className="tabs-measure" aria-hidden="true">{TABS.map((tab) => <span key={tab.id}>{tab.icon} {tab.label}</span>)}</div>
+        {shown.map((tab) => (
+          <a key={tab.id} href={tabHref(tab.id)} className={current === tab.id ? "active" : ""} aria-current={current === tab.id ? "page" : undefined}>
             {tab.icon} {tab.label}
           </a>
         ))}
+        {more.length > 0 && <OverflowMenu label="Mais telas da Wiki" triggerClassName={`wiki-more ${moreCurrent ? "active" : ""}`}
+          trigger={<>{moreCurrent?.icon}{moreCurrent ? moreCurrent.label : "Mais"}<ChevronDown size={14} /></>}
+          items={more.map((tab) => ({ label: tab.label, icon: tab.icon, onSelect: () => navigate(`/wiki${tab.id ? `/${tab.id}` : ""}`) }))} />}
       </nav>
       <button className={`btn sm ${players ? "primary" : "ghost"} wiki-players`} onClick={() => setPlayers(!players)} title="Esconde os segredos do mestre (callouts [!segredo], pinos secretos)" aria-pressed={players}>
         {players ? <EyeOff size={14} /> : <Eye size={14} />} {players ? "Versão dos jogadores" : "Visão do mestre"}
       </button>
+      <OverflowMenu label="Ações da wiki" items={[
+        { label: "Exportar wiki…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players }) },
+        { label: "Nova wiki…", icon: <Plus size={15} />, onSelect: newWiki },
+      ]} />
       {creating && <NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />}
     </div>
   )

@@ -9,12 +9,17 @@ import { useVault } from "../../platform/VaultProvider"
 import { NewQuestDialog } from "./campaign-dialogs"
 import type { CampaignData } from "./campaign-state"
 
-/** Missões em colunas pela propriedade `status`; arrastar (ou escolher no seletor, no celular) grava o status. */
+/**
+ * Missões em colunas pela propriedade `status`; arrastar (ou escolher no seletor, no celular) grava o status. No
+ * computador as colunas têm largura mínima e a rolagem para o lado fica à vista; no celular aparece uma coluna por vez,
+ * escolhida no seletor (rework F4c, CAM-4).
+ */
 export function QuestBoard({ data }: { data: CampaignData }) {
   const vault = useVault()
   const toast = useToast()
   const [dragging, setDragging] = useState<string | null>(null)
   const [creating, setCreating] = useState<QuestStatus | null>(null)
+  const [column, setColumn] = useState<QuestStatus>("ativa")
   const move = (quest: QuestInfo, status: QuestStatus) => {
     if (quest.status === status) return
     if (data.readOnly) return toast("Cofre em somente leitura: libere a gravação em Configurações.")
@@ -31,13 +36,22 @@ export function QuestBoard({ data }: { data: CampaignData }) {
           <Plus size={16} /> Missão
         </button>
       </div>
-      <div className="campaign-kanban">
+      <label className="field campaign-kanban-pick">
+        <span>Coluna</span>
+        <select className="select" value={column} onChange={(e) => setColumn(e.target.value as QuestStatus)}>
+          {QUEST_STATUS.map((s) => (
+            <option key={s.id} value={s.id}>{s.label} ({data.quests.filter((q) => q.status === s.id).length})</option>
+          ))}
+        </select>
+      </label>
+      <div className="campaign-kanban" tabIndex={0} role="region" aria-label="Quadro de missões">
         {QUEST_STATUS.map((col) => {
           const quests = data.quests.filter((q) => q.status === col.id)
           return (
             <div
               key={col.id}
               className="campaign-kanban-col"
+              data-current={col.id === column || undefined}
               style={{ ["--col" as string]: `var(--${col.color})` }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => {

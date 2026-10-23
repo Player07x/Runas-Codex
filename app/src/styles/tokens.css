@@ -91,3 +91,21 @@
  --text:#432d23;--muted:#765343;--faint:#7d5945;--line:#ddc7b3;--line-strong:#97765e;
  --cyan:#8d4828;--cyan-dim:#9d5735;--on-accent:#fff;
 }
+
+/* Contraste alto (Configurações › Acessibilidade, ou prefers-contrast: more): texto e bordas neutros e mais fortes,
+   iguais nas três paletas; o fundo e a cor de destaque continuam os da paleta. Texto a 7:1 e bordas de controles a
+   4,5:1, cobrados em styles/tokens.test.ts. Fica no fim do arquivo para vencer as paletas. */
+:root[data-contrast="high"] {
+  --text: #ffffff;
+  --muted: #e2e6f0;
+  --faint: #d3d8e4;
+  --line: #8c97b0;
+  --line-strong: #c0c8dc;
+}
+:root[data-contrast="high"][data-theme="light"] {
+  --text: #05070d;
+  --muted: #232a3d;
+  --faint: #2c3448;
+  --line: #6b7690;
+  --line-strong: #353f57;
+}

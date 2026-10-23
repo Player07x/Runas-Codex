@@ -24,3 +24,9 @@ describe("atalho escrito para a pessoa", () => {
     expect(shortcutText("Alt+F4")).toBe("Alt+F4")
   })
 })
+
+it("os modos da nota e a galeria Formatar têm atalho próprio, como no Obsidian", () => {
+  expect(shortcutAction({ ...event, key: "e" }, {})).toBe("readingMode")
+  expect(shortcutAction({ ...event, key: "E", shiftKey: true }, {})).toBe("codeMode")
+  expect(shortcutAction({ ...event, key: "/" }, {})).toBe("format")
+})
