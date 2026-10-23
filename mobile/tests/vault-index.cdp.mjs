@@ -19,7 +19,7 @@ let id = 0
 const pending = new Map()
 socket.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m.result); pending.delete(m.id) } }
 const run = expression => new Promise(resolve => { const n = ++id; pending.set(n, r => resolve(r?.result?.value)); socket.send(JSON.stringify({ id: n, method: 'Runtime.evaluate', params: { expression, returnByValue: true } })) })
-await run(`location.hash = '#/config'; true`)
+await run(`location.hash = '#/config/cofre'; true`)
 const wanted = `${total} notas Markdown no índice`
 let indexedAt = null
 for (let n = 0; n < 1200 && !indexedAt; n++) {

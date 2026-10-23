@@ -37,7 +37,7 @@ export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-b
   let n = -1
   return <span className="kit-menu-wrap">
     <button ref={button} type="button" className={triggerClassName} aria-label={trigger ? undefined : label} title={label} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined}
-      onClick={() => setOpen((v) => !v)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true) } }}>
+      onClick={() => setOpen((v) => !v)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true) } else if (event.key === "Escape" && open) { event.preventDefault(); setOpen(false) } }}>
       {trigger ?? <Ellipsis size={18} />}
     </button>
     {open && <div ref={menu} id={menuId} className={`kit-menu ${align}`} role="menu" aria-label={label} onKeyDown={(event) => {

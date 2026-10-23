@@ -107,7 +107,7 @@ try {
   if (saf) check(external ? 'SAF de outro aplicativo com acesso amplo já liberado' : 'SAF sem acesso a todos os arquivos', (await run(call('access'))).ok?.granted === external)
   const expected = await localFiles(localVault)
   // O plugin fica disponível antes de o VaultProvider terminar a leitura e ligar sua observação.
-  await run(`location.hash = '#/config'; true`)
+  await run(`location.hash = '#/config/cofre'; true`)
   await until(`document.body.innerText.includes(${JSON.stringify(`${expected.filter(p => p.endsWith('.md')).length} notas Markdown no índice`)})`)
   const listed = await run(call('list', { prefix: '' }))
   const paths = (listed.ok?.entries ?? []).map(e => e.path).sort()

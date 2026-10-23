@@ -4,6 +4,7 @@ import { vaultTasks, useTasksSettings, useTasksVault } from "../../lib/tasks"
 import { navigate } from "../../lib/router"
 import { noteName } from "../../core/text"
 import { vaultRoute } from "../../lib/vault-notes"
+import { useNotesLock } from "../../lib/notes-lock"
 import { Modal } from "../ui"
 
 /** Busca rápida do Tasks: procura uma parte da descrição e abre a nota de origem. */
@@ -11,18 +12,20 @@ export function TaskQuickSearch({ onClose }: { onClose: () => void }) {
   const { vault } = useTasksVault()
   const settings = useTasksSettings(vault?.info?.path)
   const [needle, setNeedle] = useState("")
+  // Com o PIN bloqueado, as tarefas do espaço Notas não aparecem (como na Agenda e nas consultas).
+  const { locked } = useNotesLock()
   const matches = useMemo(() => {
     if (!vault?.index) return []
     const query = needle.trim().toLocaleLowerCase("pt-BR")
     if (!query) return []
     const filter = settings.globalFilter.toLocaleLowerCase("pt-BR")
-    return vaultTasks(vault.index, settings)
+    return vaultTasks(vault.index, settings, { notesLocked: locked })
       .filter((task) => {
         const description = filter ? task.description.toLocaleLowerCase("pt-BR").replace(filter, "").trim() : task.description.toLocaleLowerCase("pt-BR")
         return description.includes(query)
       })
       .slice(0, 50)
-  }, [needle, settings, vault])
+  }, [needle, settings, vault, vault?.version, locked])
 
   return (
     <Modal title="Busca rápida de tarefas" onClose={onClose} wide>

@@ -15,6 +15,8 @@ import { displayTitle, editedAgo, spaceOf } from "../core/relative-time"
 import { addSpark, parseSparks, removeSpark, removeUsedSparks, SPARKS_FOLDER, SPARKS_NAME, SPARKS_PATH, toggleSpark } from "../core/sparks"
 import { CoverBand, Crest } from "../components/kit/Emblem"
 import { useToast } from "../components/ui"
+import { useNotesLock } from "../lib/notes-lock"
+import { scopeOf } from "../core/spaces"
 import { campaignRoute, sessionRoute } from "./campaigns/campaign-state"
 import "./home.css"
 
@@ -150,11 +152,16 @@ function Spaces() {
   )
 }
 
+/** O que o PIN do espaço Notas esconde: as notas de Notas/ e as de fora dos espaços (lib/tasks.ts faz igual). */
+const isLockedNote = (path: string) => { const space = scopeOf(path).space; return space === "notas" || space === null }
+
 /** INI-4: o título da nota, o espaço e quando foi editada. */
 function Recent() {
   const vault = useVault()
   const now = Date.now()
-  const recent = useMemo(() => vault.index?.allNotes().sort((a, b) => b.mtime - a.mtime).slice(0, 4) ?? [], [vault.index, vault.version])
+  // Com o PIN das Notas bloqueado, nem o título delas aparece aqui (como nas tarefas da Agenda).
+  const { locked } = useNotesLock()
+  const recent = useMemo(() => vault.index?.allNotes().filter((note) => !locked || !isLockedNote(note.path)).sort((a, b) => b.mtime - a.mtime).slice(0, 4) ?? [], [vault.index, vault.version, locked])
   return (
     <section className="home-block" aria-labelledby="home-recent">
       <div className="home-section-head"><h2 id="home-recent">Retome o fio</h2></div>
@@ -211,7 +218,9 @@ function Sparks() {
   const [text, setText] = useState("")
   const [undo, setUndo] = useState<{ label: string; before: string } | null>(null)
   const note = vault.index?.note(SPARKS_PATH)
-  const sparks = useMemo(() => (note ? parseSparks(note.text) : []), [note?.text])
+  // A nota de entrada fica em Notas/: com o PIN bloqueado, dá para capturar, mas as ideias não aparecem.
+  const { locked } = useNotesLock()
+  const sparks = useMemo(() => (note && !locked ? parseSparks(note.text) : []), [note?.text, locked])
   const used = sparks.filter((s) => s.used).length
   const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
 
@@ -226,7 +235,7 @@ function Sparks() {
     <section className="home-quick" aria-labelledby="home-sparks">
       <div className="home-section-head">
         <h2 id="home-sparks">Centelhas</h2>
-        {note && <a href={href(vaultRoute(SPARKS_PATH))}>Abrir a nota <ArrowUpRight size={15} aria-hidden="true" /></a>}
+        {note && !locked && <a href={href(vaultRoute(SPARKS_PATH))}>Abrir a nota <ArrowUpRight size={15} aria-hidden="true" /></a>}
       </div>
       <form
         className="home-capture"
@@ -242,8 +251,8 @@ function Sparks() {
           <Plus size={16} /> Capturar
         </button>
       </form>
-      <p className="small muted">{readOnly ? "Cofre em somente leitura: libere a gravação em Configurações para capturar." : <>Grava em <code>{SPARKS_PATH}</code>.</>}</p>
-      {undo && (
+      <p className="small muted">{readOnly ? "Cofre em somente leitura: libere a gravação em Configurações para capturar." : locked ? <>Grava em <code>{SPARKS_PATH}</code>. As ideias guardadas aparecem depois de desbloquear as Notas com o PIN.</> : <>Grava em <code>{SPARKS_PATH}</code>.</>}</p>
+      {undo && !locked && (
         <div className="home-undo" role="status">
           <span>{undo.label}</span>
           <button className="btn sm ghost" onClick={() => void vault.save(SPARKS_PATH, undo.before).then(() => setUndo(null), fail)}><Undo2 size={14} /> Desfazer</button>

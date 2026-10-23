@@ -44,7 +44,8 @@ export function PersonalizeDialog({ title, name, path, createIn, withDescription
     setBusy(true)
     try {
       let text = note?.text ?? `# ${name}\n`
-      if (!note) text = setProperty(text, "tipo", "categoria")
+      // Só a nota nova de uma categoria leva `tipo: categoria`; a de uma campanha que ainda não tem nota fica sem tipo.
+      if (!note && createIn) text = setProperty(text, "tipo", "categoria")
       for (const [key, value] of lookProperties(look, data, withDescription)) text = setProperty(text, key, value)
       if (note) await vault.save(path, text)
       else await vault.createNote(createIn ?? path.slice(0, path.lastIndexOf("/")), name, text)
@@ -139,7 +140,7 @@ export function PersonalizeDialog({ title, name, path, createIn, withDescription
             </label>
           </fieldset>
         )}
-        <p className="small muted">Fica na nota {note ? <code>{path}</code> : <>nova <code>{path}</code>, com <code>tipo: categoria</code></>}, então vale em todos os aparelhos. Em Configurações › Aparência dá para desligar as cores próprias.</p>
+        <p className="small muted">Fica na nota {note ? <code>{path}</code> : <>nova <code>{path}</code>{createIn ? <>, com <code>tipo: categoria</code></> : null}</>}, então vale em todos os aparelhos. Em Configurações › Aparência dá para desligar as cores próprias.</p>
       </div>
     </Modal>
   )

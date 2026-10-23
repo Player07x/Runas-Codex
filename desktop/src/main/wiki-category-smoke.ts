@@ -34,7 +34,7 @@ export const WIKI_CATEGORY_SMOKE = `
   categoryMenu()?.click()
   const exportItem = await until(() => [...document.querySelectorAll("[role=menuitem]")].find(item => item.textContent.includes("Exportar categoria")))
   categoryMenu()?.click()
-  result.wikiCategory.public = cards().length === allCount - 1 && !document.querySelector(".wiki-category-page .page-head button.primary") && Boolean(exportItem)
+  result.wikiCategory.public = cards().length === allCount - 1 && !document.querySelector(".wiki-category-page .page-head button.primary") && Boolean(exportItem) && !document.querySelector(".wiki-category-page").textContent.includes("Incógnito")
   document.querySelector(".wiki-players")?.click()
   await until(() => document.querySelector(".wiki-players[aria-pressed=false]"))
   await until(() => cards().length === allCount)

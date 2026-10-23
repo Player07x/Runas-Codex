@@ -137,9 +137,13 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
     }
   }
 
-  // Seções opcionais abrem sozinhas quando já têm valor (ao editar), para nada ficar escondido.
-  const hasDetails = Boolean(location || category || color || !occupies)
-  const hasSession = Boolean(session || createSession)
+  // Seções opcionais abrem sozinhas quando já têm valor (ao editar), para nada ficar escondido. Só na abertura: se o
+  // `open` acompanhasse os campos, apagar o local fecharia a seção com o cursor dentro dela.
+  const [opened] = useState(() => ({
+    details: Boolean(initial.location || initial.category || initial.color || initial.busy === false),
+    session: Boolean(initial.session),
+    notes: Boolean(initial.notes),
+  }))
 
   return (
     <Modal
@@ -301,7 +305,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
           </div>
         </fieldset>
 
-        <details className="event-section" open={hasDetails || undefined}>
+        <details className="event-section" open={opened.details || undefined}>
           <summary><span>Detalhes</span> <small className="muted">local, categoria, cor, ocupa o tempo · opcional</small></summary>
           <div className="form-grid">
             <label className="field">
@@ -334,7 +338,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
           </div>
         </details>
 
-        <details className="event-section" open={hasSession || undefined}>
+        <details className="event-section" open={opened.session || undefined}>
           <summary><span>Sessão</span> <small className="muted">ligar ou criar a nota da sessão · opcional</small></summary>
           <label className="field">
             <span>Nota da sessão (link)</span>
@@ -361,7 +365,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
         </details>
 
         {!editing && (
-          <details className="event-section" open={Boolean(notes) || undefined}>
+          <details className="event-section" open={opened.notes || undefined}>
             <summary><span>Preparação</span> <small className="muted">anotações e tarefas · opcional</small></summary>
             <label className="field">
               <span>Anotações e checklist de preparação</span>

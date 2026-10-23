@@ -44,7 +44,8 @@ function TasksQuery({ code }: CodeBlockProps) {
   const from = set.from
   const note = from ? vault?.index?.note(from) : undefined
   const properties = note?.meta.frontmatter?.data as Record<string, unknown> | undefined
-  const links = from ? (vault?.index?.outgoing(from) ?? []) : []
+  // A lista muda só com o índice; nova a cada desenho, refaria a consulta toda vez.
+  const links = useMemo(() => (from ? (vault?.index?.outgoing(from) ?? []) : []), [vault?.index, vault?.version, from])
   const outlinks = useMemo(() => links.flatMap((link) => link.dest ? [link.dest] : []), [links])
   const outlinksInBody = useMemo(() => links.flatMap((link) => !link.link.inFrontmatter && link.dest ? [link.dest] : []), [links])
   const outlinksInProperties = useMemo(() => links.flatMap((link) => link.link.inFrontmatter && link.dest ? [link.dest] : []), [links])
