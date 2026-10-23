@@ -185,3 +185,36 @@ A proposta (AGE-1 a AGE-11) está no documento do rework, com maquetes. Os itens
 - **Cores (AGE-11):** hoje e a linha da hora atual na cor de destaque, não em vermelho (ADR 0001). Sessão sem cor
   própria em dourado; a cor da campanha entra com a personalização (ADR 0027). Segue a proposta, ainda sem resposta
   explícita do dono: evento na cor da campanha e o estado da sessão escrito ao lado.
+
+## F5 — Início, Configurações, Transferir e VTT (decisões)
+- **Próxima sessão de uma fonte só (INI-1):** `core/next-session.ts` responde ao Início, ao painel da campanha e à Tela
+  do Mestre. Entram as sessões planejadas (pela data da nota) e os eventos de sessão da Agenda; um evento ligado a uma
+  sessão conta uma vez só; vence a mais próxima, e a sessão sem data fica por último. A campanha de um evento sai da
+  sessão ligada (`sessao` ou `evento`) ou, sem ligação, do título “Sessão N — Campanha” (a mesma regra da Agenda, ADR
+  0027). Um evento sem nota de sessão aparece como próxima sessão, com “Criar a nota da sessão”.
+- **Sessão com data passada (CAM-1):** sessão com `status: planejada` e data anterior a hoje vira um aviso no painel
+  e na Tela do Mestre, com “Marcar como realizada”, “Cancelada” e “Remarcar” (abre a sessão). Sem `status`, a data já
+  decide (realizada), como antes.
+- **Início (INI-1 a INI-4):** destaque compacto, um estado por vez (próxima sessão com quando, contagem, preparação e
+  presença; ou “Nenhuma sessão marcada” com o próximo passo), na cor e com o brasão da campanha. Espaços sem números.
+  “Retome o fio” mostra o título (o `title` do evento, o `# título` ou o nome sem a data na frente), o espaço e
+  “editada há…”. Nada abaixo de 12 px.
+- **Centelhas (INI-2):** gravam em `Notas/Entrada.md` (`core/sparks.ts`), uma ideia por item de lista com a hora. A
+  ideia usada fica riscada (`~~…~~`), que não vira tarefa do Tasks; “Limpar as usadas” tira as riscadas; remover e
+  limpar podem ser desfeitos logo em seguida.
+- **Configurações (CFG-1):** índice de seções ao lado (Cofre, Backups, Obsidian e anexos, Aparência, Acessibilidade,
+  Editor e atalhos, Agenda e tarefas, Sala do VTT, Privacidade e atualizações, Ajuda e exemplos), com todas as seções
+  na página no computador; no celular, `/config` é a lista e `/config/<seção>` mostra só ela. Backups ganhou seção
+  própria (o backup de texto e o caminho para o pacote do cofre). Nenhuma opção saiu.
+- **Transferir (TRF-1, TRF-2):** primeiro “O que você quer fazer?” em três cartões (Levar para outro aparelho, Gerar
+  documento ou site, Pasta para o Obsidian), depois só o formulário escolhido, com um resumo antes de salvar. Um botão
+  principal por formulário, no canto inferior direito (no celular, na largura toda). `/transferir/importar` abre na
+  importação. O smoke de transferência (`desktop/src/main/transfer-smoke.ts`) passou a escolher o cartão antes de cada
+  formulário.
+- **VTT (VTT-1):** cartões maiores, “Mesas recentes” embaixo (as quatro abertas por último), o aviso de rede como
+  `Notice` em texto normal e um ⋯ com Importar mesa e Exportar mesas (que levam a Importar e exportar). A regra fixa
+  continua: só Criar Sala e Entrar Sala como escolhas.
+- **Lugares de Ajuda, Backups e Importar mesa:** seções “Ajuda e exemplos” e “Backups” nas Configurações e cartão
+  “Mesas do VTT” em Transferir, também pela busca `Ctrl K`. Um painel de ajuda por tela fica para a C9, que escreve o
+  conteúdo: um botão de ajuda sem texto contrariaria a regra 10.
+- A contagem da Wiki na navegação deixou de contar a nota da categoria (`tipo: categoria`).

@@ -1,4 +1,5 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from "react"
+import { OverdueSessions } from "./NextSessionCard"
 import { Dices, MonitorPlay, Pin, PinOff, X } from "lucide-react"
 import { linkItem, listValue, resolveTarget } from "../../core/campaigns"
 import { noteBody } from "../../core/sections"
@@ -85,9 +86,12 @@ function NowColumn({ data, onClose }: { data: CampaignData; onClose(): void }) {
   }
   return (
     <>
+      <OverdueSessions data={data} />
       <section className="card tight stack">
         <span className="eyebrow">Próxima sessão</span>
-        {session ? (
+        {!session && data.next?.event ? (
+          <span className="small"><strong>{data.next.title}</strong> · {data.next.event.start.toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}, marcada na Agenda sem nota de sessão</span>
+        ) : session ? (
           <>
             <a className="small" href={href(sessionRoute(session))} onClick={onClose}><strong>{session.title}</strong></a>
             {session.prep.map((p) => (

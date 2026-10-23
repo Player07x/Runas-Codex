@@ -764,3 +764,34 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Lembretes: no Android sem a permissão de alarmes exatos, o aviso aparece no painel e o botão leva à permissão.
 - [ ] Celular: o calendário vem primeiro; tocar num dia sobe o painel; Esc ou o botão do painel fecha; o botão
   flutuante cria um evento. Sem rolagem para os lados em 320 px.
+
+## Rework visual — F4e personalização (ADR 0027, 22/10/2026)
+
+- [ ] Campanha › menu do nome › Personalizar: escolher Brasa e a coroa; a barra, as abas, os botões e o “Nova
+  sessão” mudam de cor; o cartão em Campanhas mostra a capa e o brasão. Abrir a nota no Obsidian com o snippet ligado:
+  `cor: brasa`, `icone: coroa` e `cssclasses: [runas-cor-brasa]`; título e links no tom.
+- [ ] Cor livre muito clara (ex.: `#ffff00`): o diálogo avisa que ajustou; no tema claro o texto continua legível.
+- [ ] Agenda: os eventos de sessão da campanha ficam na cor dela (mesmo os antigos, com `cor: red`).
+- [ ] Wiki › categoria › ⋯ › Personalizar categoria: cria `Personagens/Personagens.md` com `tipo: categoria`; a nota
+  não aparece entre os artigos; cartões sem imagem mostram o ícone na cor; a descrição aparece no topo e no cartão da
+  página inicial; o artigo mostra a etiqueta da categoria na Ficha.
+- [ ] Elenco: personagens, NPCs e facções com retrato ou símbolo do artigo; sem imagem, o ícone da categoria.
+- [ ] Sessão com `capa`: a imagem aparece na lista de sessões.
+- [ ] Configurações › Aparência › desligar “Usar a cor de cada campanha e categoria”: tudo volta à paleta. Ligar o
+  contraste alto: idem.
+
+## Rework visual — F5 Início, Configurações, Transferir e VTT (22/10/2026)
+
+- [ ] Início, Painel da campanha e Tela do Mestre mostram a mesma próxima sessão (com evento na Agenda e sem nota de
+  sessão; com nota de sessão e sem evento; com os dois ligados).
+- [ ] Campanha com uma sessão `status: planejada` de data passada: aviso no painel e na Tela do Mestre; “Marcar como
+  realizada” grava `status: realizada` na nota (conferir no Obsidian); “Remarcar” abre a sessão.
+- [ ] Início em 1366 px: destaque, espaços, Retome o fio, No horizonte e Centelhas na primeira tela. Em 375 px, sem
+  rolagem para os lados.
+- [ ] Centelhas: capturar duas ideias cria `Notas/Entrada.md`; riscar uma, “Limpar as usadas” e “Desfazer”; abrir a
+  nota no Obsidian (riscadas aparecem riscadas e não entram nas consultas do Tasks).
+- [ ] Configurações no computador: o índice leva a cada seção; Ctrl K › “Acessibilidade” cai na seção. No celular:
+  `/config` lista as seções; cada uma abre sozinha, com “Configurações” para voltar.
+- [ ] Importar e exportar: os três cartões; o resumo muda com a seleção; Gerar documento mostra a prévia; Pasta para o
+  Obsidian gera ZIP Markdown; o botão principal fica no canto (no celular, na largura toda).
+- [ ] VTT: cartões maiores, Mesas recentes com uma mesa aberta antes; ⋯ › Importar mesa abre a importação.

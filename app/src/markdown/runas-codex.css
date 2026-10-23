@@ -94,3 +94,33 @@ figcaption::before { counter-increment: figura; content: "Figura " counter(figur
 .image-embed[alt="esquerda"] img, .image-embed[alt="direita"] img { float: none; max-width: 100%; margin: 0; }
 .image-embed[alt="centro"], img[alt="centro"] { display: block; margin-inline: auto; text-align: center; }
 .image-embed[alt="largo"], .image-embed[alt="largo"] img, img[alt="largo"] { display: block; width: 100%; }
+
+/* Cor de campanha e de categoria da Wiki (ADR 0027): o app grava `cssclasses: [runas-cor-<tom>]` junto com `cor`.
+   Os valores são os mesmos que o app calcula para o contraste (core/tones.ts). */
+.theme-dark .runas-cor-brasa { --runas-tom: #e0805d; }
+.theme-light .runas-cor-brasa { --runas-tom: #ab4621; }
+.theme-dark .runas-cor-ambar { --runas-tom: #e0902a; }
+.theme-light .runas-cor-ambar { --runas-tom: #8f5915; }
+.theme-dark .runas-cor-ouro { --runas-tom: #c9a227; }
+.theme-light .runas-cor-ouro { --runas-tom: #7c6418; }
+.theme-dark .runas-cor-musgo { --runas-tom: #88a53e; }
+.theme-light .runas-cor-musgo { --runas-tom: #5a6e29; }
+.theme-dark .runas-cor-jade { --runas-tom: #32af83; }
+.theme-light .runas-cor-jade { --runas-tom: #217356; }
+.theme-dark .runas-cor-mare { --runas-tom: #2eaac0; }
+.theme-light .runas-cor-mare { --runas-tom: #1e6f7f; }
+.theme-dark .runas-cor-ceu { --runas-tom: #649fe4; }
+.theme-light .runas-cor-ceu { --runas-tom: #2066b9; }
+.theme-dark .runas-cor-lavanda { --runas-tom: #9393f1; }
+.theme-light .runas-cor-lavanda { --runas-tom: #5050e8; }
+.theme-dark .runas-cor-ametista { --runas-tom: #b787e0; }
+.theme-light .runas-cor-ametista { --runas-tom: #8c3ece; }
+.theme-dark .runas-cor-rosa { --runas-tom: #df7daa; }
+.theme-light .runas-cor-rosa { --runas-tom: #b92d6e; }
+.theme-dark .runas-cor-sangue { --runas-tom: #d98282; }
+.theme-light .runas-cor-sangue { --runas-tom: #b93838; }
+.theme-dark .runas-cor-pedra { --runas-tom: #959aa5; }
+.theme-light .runas-cor-pedra { --runas-tom: #616673; }
+[class*="runas-cor-"] :is(h1, h2, h3, .inline-title) { color: var(--runas-tom); }
+[class*="runas-cor-"] { --link-color: var(--runas-tom); --link-external-color: var(--runas-tom); }
+[class*="runas-cor-"] .markdown-preview-sizer, [class*="runas-cor-"] .cm-sizer { border-top: 3px solid var(--runas-tom); }

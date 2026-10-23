@@ -30,6 +30,7 @@ export function AppearanceRuntime({ skipLink = true }: { skipLink?: boolean }) {
     root.dataset.solid = String(prefs.solid)
     root.dataset.labels = String(prefs.labels)
     root.dataset.focus = prefs.strongFocus ? "strong" : "normal"
+    root.dataset.tones = prefs.ownColors ? "on" : "off"
     root.style.setProperty("--font-scale", String(prefs.scale / 100))
   }, [prefs, systemContrast])
   return skipLink ? <a className="skip-link" href="#runas-main" onClick={event => { event.preventDefault(); document.getElementById("runas-main")?.focus() }}>Pular para o conteúdo</a> : null
@@ -53,11 +54,12 @@ export function AppearanceSettings({ theme, onTheme, bottomNav = true }: { theme
     {/* O botão fica fora do título, para o nome da seção ser só “Aparência”. */}
     <div className="row settings-card-head">
       <h2 id="appearance-title" className="section-title settings-card-title"><Palette size={16} /> Aparência</h2>
-      <button className="btn sm ghost" onClick={() => updateAppearance({ palette: "orbita", bottomNav: [...DEFAULT_BOTTOM_NAV] })}>Restaurar padrão</button>
+      <button className="btn sm ghost" onClick={() => updateAppearance({ palette: "orbita", bottomNav: [...DEFAULT_BOTTOM_NAV], ownColors: true })}>Restaurar padrão</button>
     </div>
     <p className="tiny muted">Ajustes deste aparelho, em todos os espaços. Tamanho do texto, contraste e o resto da leitura estão em Acessibilidade.</p>
     <Row title="Luminosidade"><select className="select" aria-label="Luminosidade" value={theme} onChange={e => onTheme(e.target.value)}><option value="dark">Escuro</option><option value="light">Claro</option></select></Row>
     <Row title="Paleta temática"><select className="select" aria-label="Paleta temática" value={prefs.palette} onChange={e => updateAppearance({ palette: e.target.value as Appearance["palette"] })}><option value="orbita">Órbita · lavanda e grafite</option><option value="floresta">Floresta · musgo e névoa</option><option value="brasa">Brasa · cobre e carvão</option></select></Row>
+    <Row title="Usar a cor de cada campanha e categoria" hint="A cor, a capa e o ícone escolhidos em “Personalizar”. Desligado, tudo fica na paleta temática."><Switch label="Usar a cor de cada campanha e categoria" on={prefs.ownColors} onChange={ownColors => updateAppearance({ ownColors })} /></Row>
     {bottomNav && <div className="setting-row bottom-nav-setting" role="group" aria-labelledby="bottom-nav-title">
       <div><strong className="small" id="bottom-nav-title">Barra inferior do celular</strong><span className="tiny muted">Os quatro atalhos da barra; os outros espaços ficam em “Mais”. Escolher um que já está na barra troca os dois de lugar.</span></div>
       <div className="bottom-nav-slots">

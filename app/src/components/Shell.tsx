@@ -286,6 +286,9 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Tempo livre", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("tempo-livre") },
       { label: "Importar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("importar-ics") },
       { label: "Exportar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("exportar-ics") },
+      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
+      { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
+      { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
     ],
     [onToggleTheme, prefs.shortcuts, vault.platform.kind],
   )
