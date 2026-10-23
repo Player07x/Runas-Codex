@@ -1,8 +1,10 @@
-import { ResizablePanel } from "../../components/ResizablePanel"
+import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { toneStyle, type Tone } from "../../core/tones"
+import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, Hourglass, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload, Vote } from "lucide-react"
 import { AGENDA_ROOT, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
+import { listCampaigns, listSessions, SESSION_STATUS, sessionInfo } from "../../core/campaigns"
 import { isDone, parseContext, parseTaskLine, type Task } from "../../core/tasks/task"
 import { checkboxLines } from "../../markdown/task-checkboxes"
 import { TaskRow } from "../../components/tasks/TaskRow"
@@ -20,15 +22,22 @@ import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { Empty, Modal, Segmented, useToast } from "../../components/ui"
 import { ConfirmDialog } from "../../components/vault/dialogs"
+import { Notice, PageHeader } from "../../components/kit/Layout"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
+import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { useVault } from "../../platform/VaultProvider"
 import { exactAlarmsAllowed, isAndroidApp, openExactAlarmSettings } from "../../platform/reminders"
 import { EventDialog } from "./EventDialog"
-import { addDays, eventColor, hhmm, ListView, MonthView, onDay, sameDay, startOfDay, TimeGrid } from "./views"
+import { addDays, EventTones, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, onDay, sameDay, startOfDay, TimeGrid, useEventLook } from "./views"
+import { campaignLook, campaignOfPath } from "../../core/personalization"
 import "../agenda.css"
 import { useCreateRequest } from "../../lib/create-request"
+import { useAgendaActions, type AgendaAction } from "../../lib/agenda-request"
 
 type View = "mes" | "semana" | "dia" | "lista"
+type Tab = "dia" | "evento" | "tarefas"
 const VIEW_KEY = "runas-codex:agenda-visao"
+const TAB_KEY = "runas-codex:agenda-aba"
 const LIST_DAYS = 60
 
 function savedView(): View {
@@ -39,6 +48,17 @@ function savedView(): View {
     return "mes"
   }
 }
+
+function savedTab(): Tab {
+  try {
+    return localStorage.getItem(TAB_KEY) === "tarefas" ? "tarefas" : "dia"
+  } catch {
+    return "dia"
+  }
+}
+
+/** No celular (AGE-10), o painel abre por cima do calendário ao escolher um dia; no computador, fica ao lado. */
+const narrow = () => typeof window !== "undefined" && window.matchMedia?.("(max-width: 860px)").matches === true
 
 export function AgendaScreen() {
   const vault = useVault()
@@ -70,8 +90,10 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const vault = useVault()
   const toast = useToast()
   const readOnly = vault.info?.readOnly ?? true
-  const [poll,setPoll]=useState(false)
+  const [poll, setPoll] = useState(false)
   const [view, setViewState] = useState<View>(savedView)
+  const [tab, setTabState] = useState<Tab>(savedTab)
+  const [listDays, setListDays] = useState(LIST_DAYS)
   // Anda de minuto em minuto: o "livre restante" e a virada do dia (hoje muda à meia-noite).
   const now = useNow()
   const todayKey = isoDate(new Date(now))
@@ -93,9 +115,36 @@ function AgendaView({ index }: { index: VaultIndex }) {
       /* só não é lembrado */
     }
   }
+  // A aba Evento depende de um evento escolhido; lembrar só Dia ou Tarefas.
+  const setTab = (next: Tab) => {
+    setTabState(next)
+    if (next === "evento") return
+    try {
+      localStorage.setItem(TAB_KEY, next)
+    } catch {
+      /* só não é lembrada */
+    }
+  }
+  const showPanel = (next: Tab) => {
+    setTab(next)
+    if (narrow()) setPanelCollapsed("agenda", false)
+  }
 
   useEffect(() => {
     void exactAlarmsAllowed().then(setExactAlarms)
+  }, [])
+  // No celular o painel começa fechado: o calendário vem primeiro e o dia abre por cima ao ser escolhido; Esc fecha.
+  useEffect(() => {
+    if (narrow()) setPanelCollapsed("agenda", true)
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented || !narrow() || document.querySelector(".modal, [role=dialog]")) return
+      const panel = document.querySelector<HTMLElement>("[data-panel-id=agenda]")
+      if (panel?.dataset.panelCollapsed !== "false") return
+      setPanelCollapsed("agenda", true)
+      panel.querySelector<HTMLElement>(".panel-collapse")?.focus()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
   }, [])
 
   const events = useMemo(() => agendaEvents(index), [index, vault.version])
@@ -126,8 +175,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
       return { start, end: addDays(start, 7) }
     }
     if (view === "dia") return { start: cursor, end: addDays(cursor, 1) }
-    return { start: cursor, end: addDays(cursor, LIST_DAYS) }
-  }, [view, cursor])
+    return { start: cursor, end: addDays(cursor, listDays) }
+  }, [view, cursor, listDays])
   const occurrences = useMemo(() => expandEvents(events, range.start, range.end), [events, range])
   const selected = useMemo(() => {
     if (!selectedKey) return undefined
@@ -143,21 +192,33 @@ function AgendaView({ index }: { index: VaultIndex }) {
     if (view === "mes") setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + direction, 1))
     else if (view === "semana") setCursor(addDays(cursor, 7 * direction))
     else if (view === "dia") setCursor(addDays(cursor, direction))
-    else setCursor(addDays(cursor, LIST_DAYS * direction))
+    else {
+      setCursor(addDays(cursor, LIST_DAYS * direction))
+      setListDays(LIST_DAYS)
+    }
   }
-  const title =
+  const period =
     view === "mes" ? cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
     : view === "semana" ? `${range.start.toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} – ${addDays(range.end, -1).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })}`
-    : view === "dia" ? cursor.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+    : view === "dia" ? cursor.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
     : `A partir de ${cursor.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}`
+  const unit = view === "mes" ? "mês" : view === "semana" ? "semana" : view === "dia" ? "dia" : "período"
 
   const pickDay = (day: Date) => {
     setSelectedDay(day)
     setSelectedKey(undefined)
+    if (tab === "evento") setTab("dia")
+    // No mês, o teclado pode levar a escolha para outro mês: a grade acompanha.
+    if (view === "mes" && (day.getMonth() !== cursor.getMonth() || day.getFullYear() !== cursor.getFullYear())) setCursor(new Date(day.getFullYear(), day.getMonth(), 1))
+  }
+  const openDay = (day: Date) => {
+    pickDay(day)
+    showPanel("dia")
   }
   const pick = (o: Occurrence) => {
     setSelectedKey(o.key)
     setSelectedDay(startOfDay(o.start))
+    showPanel("evento")
   }
   const create = (day: Date, time?: string) => {
     if (readOnly) return toast("Cofre em somente leitura: libere a gravação em Configurações para criar eventos.")
@@ -200,6 +261,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
       const created = await vault.createNote(folder, name, eventNote(eventInput))
       setSelectedKey(`${created}@${input.date}`)
       setSelectedDay(new Date(`${input.date}T00:00`))
+      setTab("evento")
       toast("Evento criado")
     }
   }
@@ -218,6 +280,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
     void path
     await vault.save(event.path, updateEventNote(note.text, { ...rest, repeat, skipDates: [...new Set([...event.skipDates, day])].sort() }))
     setSelectedKey(undefined)
+    setTab("dia")
     toast(`Pulado: ${new Date(`${day}T12:00`).toLocaleDateString("pt-BR")}`)
   }
 
@@ -239,159 +302,215 @@ function AgendaView({ index }: { index: VaultIndex }) {
     toast(`${list.length} evento(s) importado(s) em ${folder}/`)
   }
 
-  const dayList = onDay(occurrences.length ? expandEvents(events, startOfDay(selectedDay), addDays(selectedDay, 1)) : [], selectedDay)
+  const runAction = (action: AgendaAction) => {
+    if (action === "enquete") setPoll(true)
+    else if (action === "tempo-livre") setFreeDialog(true)
+    else if (action === "importar-ics") {
+      if (readOnly) toast("Cofre em somente leitura: libere a gravação em Configurações para importar.")
+      else fileInput.current?.click()
+    } else if (!events.length) toast("Nenhum evento para exportar.")
+    else void exportAll().catch(fail)
+  }
+  useAgendaActions(runAction)
+
+  const dayList = onDay(expandEvents(events, startOfDay(selectedDay), addDays(selectedDay, 1)), selectedDay)
+  // Eventos de sessão na cor da campanha (ADR 0027): pela sessão ligada ao evento (`sessao`) ou pelo evento que a nota
+  // da sessão aponta (`evento`). A cor da campanha vale mais que a cor gravada no evento.
+  const campaignTones = useMemo(() => {
+    const today = new Date()
+    const byCampaign = new Map<string, Tone | null>()
+    const byEvent = new Map<string, Tone | null>()
+    for (const c of listCampaigns(index)) {
+      const tone = campaignLook(index, c.name).tone
+      byCampaign.set(c.name, tone)
+      if (tone) for (const s of listSessions(index, c, today)) if (s.event) byEvent.set(s.event.replace(/\.md$/, ""), tone)
+    }
+    return { byCampaign, byEvent }
+  }, [index, vault.version])
+  const toneOf = useCallback((event: AgendaEvent) => {
+    const campaign = event.session ? campaignOfPath(`${event.session}.md`) : null
+    const linked = (campaign ? campaignTones.byCampaign.get(campaign) : null) ?? campaignTones.byEvent.get(event.path.replace(/\.md$/, ""))
+    if (linked) return linked
+    // Sem ligação: o título que a campanha dá aos eventos de sessão (“Sessão 13 — As Cinzas de Valdris”).
+    if (!isSessionEvent(event)) return null
+    for (const [name, tone] of campaignTones.byCampaign) if (tone && event.title.endsWith(` — ${name}`)) return tone
+    return null
+  }, [campaignTones])
+  // Este componente fornece o contexto; ele mesmo usa o tom direto.
+  const lookOf = (event: AgendaEvent, extra?: CSSProperties) => {
+    const tone = toneOf(event)
+    return { className: tone ? "toned" : "", style: { ...extra, ...toneStyle(tone), ["--ev" as string]: tone ? `var(--tone, ${eventColor(event)})` : eventColor(event) } }
+  }
 
   // “+ Novo › Evento na Agenda”: o mesmo diálogo do botão Evento, no dia escolhido.
   useCreateRequest("evento", () => { if (!readOnly) create(selectedDay) })
+
+  const menu = [
+    { label: "Enquete de data…", icon: <Vote size={16} />, onSelect: () => runAction("enquete") },
+    { label: "Tempo livre…", icon: <Hourglass size={16} />, onSelect: () => runAction("tempo-livre") },
+    "separator" as const,
+    { label: "Importar .ics…", icon: <Upload size={16} />, onSelect: () => runAction("importar-ics"), disabled: readOnly },
+    { label: "Exportar .ics…", icon: <Download size={16} />, onSelect: () => runAction("exportar-ics"), disabled: !events.length },
+  ]
+  const needsNotifications = !isAndroidApp() && vault.platform.kind === "memory" && permission === "default"
+  const needsExactAlarms = isAndroidApp() && !exactAlarms
+
   return (
+    <EventTones.Provider value={toneOf}>
     <div className="page agenda">
-      {poll&&<Modal title="Enquete de data pela sala" onClose={()=>setPoll(false)} wide><CampaignRoomTools campaign="Agenda" root="Agenda/" readOnly={readOnly} onlyPoll/></Modal>}
-      <div className="page-head">
-        <div>
-          <span className="eyebrow">Agenda · {events.length} evento(s) em Agenda/</span>
-          <h1 className="page-title agenda-title">{title}</h1>
-        </div>
-        <div className="row-wrap">
-          <button className="btn" onClick={()=>setPoll(true)}>Enquete de data</button>
-          <div className="row" style={{ gap: 2 }}>
-            <button className="icon-btn" aria-label="Anterior" onClick={() => move(-1)}>
-              <ChevronLeft size={18} />
-            </button>
-            <button className="btn sm" onClick={() => (setCursor(today), pickDay(today))}>
-              Hoje
-            </button>
-            <button className="icon-btn" aria-label="Próximo" onClick={() => move(1)}>
-              <ChevronRight size={18} />
-            </button>
-          </div>
-          <Segmented<View>
-            label="Visão"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "mes", label: "Mês", icon: <CalendarDays size={14} /> },
-              { value: "semana", label: "Semana", icon: <Columns3 size={14} /> },
-              { value: "dia", label: "Dia", icon: <CalendarRange size={14} /> },
-              { value: "lista", label: "Lista", icon: <List size={14} /> },
-            ]}
-          />
-          <button className="btn primary" onClick={() => create(selectedDay)} disabled={readOnly} title={readOnly ? "Cofre em somente leitura" : "Novo evento"} aria-label="Novo evento">
+      {poll && <Modal title="Enquete de data pela sala" onClose={() => setPoll(false)} wide><CampaignRoomTools campaign="Agenda" root="Agenda/" readOnly={readOnly} onlyPoll /></Modal>}
+      <PageHeader
+        title="Agenda"
+        primary={
+          <button className="btn primary" onClick={() => create(selectedDay)} disabled={readOnly} title={readOnly ? "Cofre em somente leitura" : "Novo evento no dia escolhido"} aria-label="Novo evento">
             <Plus size={16} /> Evento
           </button>
+        }
+        menu={<OverflowMenu label="Mais ações da agenda" items={menu} />}
+      />
+      <div className="agenda-nav" role="group" aria-label="Período">
+        <div className="row" style={{ gap: 4 }}>
+          <button className="icon-btn" aria-label={`${unit === "semana" ? "Semana anterior" : unit === "mês" ? "Mês anterior" : unit === "dia" ? "Dia anterior" : "Período anterior"}`} onClick={() => move(-1)}>
+            <ChevronLeft size={18} />
+          </button>
+          <button className="btn sm" onClick={() => (setCursor(view === "mes" ? new Date(today.getFullYear(), today.getMonth(), 1) : today), pickDay(today))}>
+            Hoje
+          </button>
+          <button className="icon-btn" aria-label={`${unit === "semana" ? "Próxima semana" : unit === "mês" ? "Próximo mês" : unit === "dia" ? "Próximo dia" : "Próximo período"}`} onClick={() => move(1)}>
+            <ChevronRight size={18} />
+          </button>
         </div>
+        <h2 className="agenda-period" aria-live="polite">{period}</h2>
+        <Segmented<View>
+          label="Visão"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "mes", label: "Mês", icon: <CalendarDays size={14} /> },
+            { value: "semana", label: "Semana", icon: <Columns3 size={14} /> },
+            { value: "dia", label: "Dia", icon: <CalendarRange size={14} /> },
+            { value: "lista", label: "Lista", icon: <List size={14} /> },
+          ]}
+        />
       </div>
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
+          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
           {(view === "semana" || view === "dia") && (
             <TimeGrid
+              key={`${view}-${isoDate(range.start)}`}
               days={view === "dia" ? [cursor] : Array.from({ length: 7 }, (_, i) => addDays(range.start, i))}
               occurrences={occurrences}
               today={today}
               selectedDay={selectedDay}
               selectedKey={selectedKey}
               onPickDay={(day) => (setCursor(day), setView("dia"), pickDay(day))}
+              onShowMore={(day) => (view === "semana" ? (setCursor(day), setView("dia"), pickDay(day)) : openDay(day))}
               onPick={pick}
               onCreate={create}
               freeLabel={freeLabel}
             />
           )}
-          {view === "lista" && <ListView from={cursor} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} />}
+          {view === "lista" && <ListView from={cursor} days={listDays} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} onMore={() => setListDays((d) => d + LIST_DAYS)} />}
         </div>
 
-        <ResizablePanel id="agenda" label="Detalhes da agenda" side="right" width={320} className="stack-lg agenda-side">
-          {selected ? (
-            <EventDetail
-              occurrence={selected}
-              index={index}
-              readOnly={readOnly}
-              onEdit={() => setDialog({ kind: "edit", event: selected.event })}
-              onDelete={() => setDialog({ kind: "delete", event: selected.event })}
-              onSkip={() => void skipDate(selected).catch(fail)}
-              actions={actions}
-              today={todayIso}
-              onClose={() => setSelectedKey(undefined)}
-            />
-          ) : (
-            <section className="card">
-              <span className="eyebrow">{selectedDay.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span>
-              <div className="list" style={{ marginTop: 8 }}>
-                {dayList.length === 0 && <span className="muted small">Nada marcado.</span>}
-                {dayList.map((o) => (
-                  <button key={o.key} className="list-item" onClick={() => pick(o)}>
-                    <span className="dot" style={{ background: eventColor(o.event) }} />
-                    <span className="grow truncate">{o.event.title}</span>
-                    <span className="meta">{o.event.allDay ? "dia todo" : hhmm(o.start)}</span>
-                  </button>
-                ))}
-              </div>
-              {!readOnly && (
-                <button className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => create(selectedDay)}>
-                  <Plus size={14} /> Evento neste dia
-                </button>
-              )}
-              <FreeTimePanel day={freeOf(isoDate(selectedDay))} timeZone={freePrefs.timeZone} onConfigure={() => setFreeDialog(true)} />
-              <DayTasks tasks={allTasks} day={isoDate(selectedDay)} actions={actions} today={todayIso} />
-            </section>
+        <ResizablePanel id="agenda" label="Painel da agenda" side="right" width={320} className="agenda-side">
+          {(needsNotifications || needsExactAlarms) && (
+            <Notice
+              tone="warn"
+              title="Os lembretes ainda não podem disparar"
+              actions={
+                needsNotifications ? (
+                  <button className="btn sm" onClick={() => void Notification.requestPermission().then(setPermission)}>Permitir notificações</button>
+                ) : (
+                  <button className="btn sm" onClick={() => void openExactAlarmSettings().then(() => exactAlarmsAllowed().then(setExactAlarms))}>Permitir alarmes na hora exata</button>
+                )
+              }
+            >
+              {needsNotifications ? "No navegador, eles precisam da permissão de notificação e desta aba aberta." : "O Android precisa da permissão de alarmes na hora exata para avisar na hora certa."}
+            </Notice>
           )}
-
-          <section className="card">
-            <span className="section-title">Tarefas com prazo</span>
-            <ul className="task-list" style={{ marginTop: 8 }}>
-              {tasks.length === 0 && <li className="muted small">Nenhuma tarefa por fazer com 📅 nas notas.</li>}
-              {tasks.slice(0, 12).map((t) => (
-                <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today: todayIso, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />
+          <PanelTabs<Tab>
+            label="Painel da agenda"
+            idPrefix="agenda-painel"
+            value={tab}
+            onChange={setTab}
+            tabs={[
+              { value: "dia", label: "Dia" },
+              { value: "evento", label: "Evento" },
+              { value: "tarefas", label: "Tarefas", count: tasks.length },
+            ]}
+          />
+          <TabPanel idPrefix="agenda-painel" value={tab}>
+            {tab === "dia" && (
+              <div className="stack agenda-day">
+                <h3 className="agenda-day-title">{selectedDay.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</h3>
+                <div className="list">
+                  {dayList.length === 0 && <span className="muted small">Nada marcado.</span>}
+                  {dayList.map((o) => (
+                    <button key={o.key} className="list-item agenda-day-item" onClick={() => pick(o)} aria-label={occurrenceLabel(o)}>
+                      <span className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />
+                      <span className="grow truncate">{o.event.title}</span>
+                      <span className="meta">{o.event.allDay ? "dia inteiro" : hhmm(o.start)}</span>
+                    </button>
+                  ))}
+                </div>
+                {!readOnly && (
+                  <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => create(selectedDay)}>
+                    <Plus size={14} /> Evento neste dia
+                  </button>
+                )}
+                <FreeTimePanel day={freeOf(isoDate(selectedDay))} timeZone={freePrefs.timeZone} onConfigure={() => setFreeDialog(true)} />
+                <DayTasks tasks={allTasks} day={isoDate(selectedDay)} actions={actions} today={todayIso} />
+              </div>
+            )}
+            {tab === "evento" &&
+              (selected ? (
+                <EventDetail
+                  occurrence={selected}
+                  index={index}
+                  readOnly={readOnly}
+                  onEdit={() => setDialog({ kind: "edit", event: selected.event })}
+                  onDelete={() => setDialog({ kind: "delete", event: selected.event })}
+                  onSkip={() => void skipDate(selected).catch(fail)}
+                  actions={actions}
+                  today={today}
+                />
+              ) : (
+                <p className="muted small">Escolha um evento no calendário ou na aba Dia.</p>
               ))}
-            </ul>
-            {tasks.length > 12 && <span className="tiny faint">E mais {tasks.length - 12}. Use um bloco ```tasks numa nota para ver todas.</span>}
-            <span className="tiny faint">Tarefas das notas no formato do plugin Tasks: “- [ ] texto 📅 2026-10-17”. O clique segue o Tasks (data de conclusão, recorrência).</span>
-          </section>
-
-          <section className="card stack">
-            <span className="section-title row">
-              <Bell size={15} /> Lembretes
-            </span>
-            <span className="small muted">
-              {isAndroidApp()
-                ? "Disparam pelo Android, mesmo com o app fechado."
-                : vault.platform.kind === "electron"
-                  ? "Disparam como notificação do sistema enquanto o app está aberto (mesmo minimizado)."
-                  : "No navegador, só disparam com esta aba aberta."}
-            </span>
-            {!isAndroidApp() && vault.platform.kind === "memory" && permission === "default" && (
-              <button className="btn sm" onClick={() => void Notification.requestPermission().then(setPermission)}>
-                Permitir notificações
-              </button>
+            {tab === "tarefas" && (
+              <div className="stack">
+                <ul className="task-list">
+                  {tasks.length === 0 && <li className="muted small">Nenhuma tarefa por fazer com 📅 nas notas.</li>}
+                  {tasks.slice(0, 12).map((t) => (
+                    <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today: todayIso, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />
+                  ))}
+                </ul>
+                {tasks.length > 12 && <span className="small muted">E mais {tasks.length - 12}. Use um bloco ```tasks numa nota para ver todas.</span>}
+                <span className="small muted">Tarefas das notas no formato do plugin Tasks: “- [ ] texto 📅 2026-10-17”. O clique segue o Tasks (data de conclusão, recorrência).</span>
+              </div>
             )}
-            {isAndroidApp() && !exactAlarms && (
-              <button className="btn sm" onClick={() => void openExactAlarmSettings().then(() => exactAlarmsAllowed().then(setExactAlarms))}>
-                Permitir alarmes na hora exata
-              </button>
-            )}
-          </section>
-
-          <div className="row-wrap">
-            <button className="btn sm" onClick={() => fileInput.current?.click()} disabled={readOnly} title={readOnly ? "Cofre em somente leitura" : "Importar eventos de um arquivo .ics"}>
-              <Upload size={14} /> Importar .ics
-            </button>
-            <button className="btn sm" onClick={() => void exportAll().catch(fail)} disabled={!events.length}>
-              <Download size={14} /> Exportar .ics
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".ics,text/calendar"
-              hidden
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                e.target.value = ""
-                if (file) void importFile(file).catch(fail)
-              }}
-            />
-          </div>
+          </TabPanel>
         </ResizablePanel>
       </div>
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".ics,text/calendar"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ""
+          if (file) void importFile(file).catch(fail)
+        }}
+      />
+      {!readOnly && (
+        <button className="agenda-fab" onClick={() => create(selectedDay)} aria-label="Novo evento no dia escolhido (atalho)">
+          <Plus size={22} />
+        </button>
+      )}
 
       {freeDialog && <FreeTimeDialog vault={vault.info?.path} prefs={freePrefs} calendars={calendars} onClose={() => setFreeDialog(false)} />}
       {dialog?.kind === "new" && (
@@ -422,6 +541,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
           onConfirm={async () => {
             await vault.trash(dialog.event.path)
             setSelectedKey(undefined)
+            setTab("dia")
           }}
         >
           “{dialog.event.title}”{dialog.event.repeat.kind !== "none" ? " e todas as repetições" : ""} vai para a lixeira do cofre (<code>.trash</code>).
@@ -441,6 +561,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
         </ConfirmDialog>
       )}
     </div>
+    </EventTones.Provider>
   )
 }
 
@@ -451,7 +572,8 @@ function eventChecklist(path: string, text: string, actions: TaskActions): Task[
   return checkboxLines(text).flatMap((line) => parseTaskLine(lines[line]!, path, line, ctx) ?? [])
 }
 
-function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDelete, onSkip, onClose }: { occurrence: Occurrence; index: VaultIndex; readOnly: boolean; actions: TaskActions; today: string; onEdit(): void; onDelete(): void; onSkip(): void; onClose(): void }) {
+/** Aba Evento (AGE-5): a ação principal à vista, o que é raro no ⋯ do evento. */
+function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDelete, onSkip }: { occurrence: Occurrence; index: VaultIndex; readOnly: boolean; actions: TaskActions; today: Date; onEdit(): void; onDelete(): void; onSkip(): void }) {
   const { event } = occurrence
   const vault = useVault()
   const toast = useToast()
@@ -460,21 +582,31 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
   const items = useMemo(() => eventChecklist(event.path, text, actions), [event.path, text, actions])
   const repeat = describeRepeat(event)
   const sessionPath = event.session ? index.resolve({ kind: "wiki", embed: false, target: event.session, start: 0, end: 0, raw: "", inFrontmatter: true }, event.path).dest : null
+  const sessionNote = sessionPath ? index.note(sessionPath) : undefined
+  const statusId = sessionNote ? sessionInfo(index, sessionNote, today).status : undefined
+  const status = SESSION_STATUS.find((s) => s.id === statusId)?.label
+  const kind = event.category ?? (isSessionEvent(event) ? "Sessão" : undefined)
+  const evLook = useEventLook()(event)
+  const openSession = () => (sessionPath ? navigate(vaultRoute(sessionPath)) : undefined)
+  const menu = [
+    ...(event.repeat.kind !== "none" ? [{ label: "Pular esta data", icon: <SkipForward size={16} />, onSelect: onSkip, disabled: readOnly }] : []),
+    ...(event.repeat.kind !== "none" ? ["separator" as const] : []),
+    { label: "Mandar para a lixeira", icon: <Trash2 size={16} />, onSelect: onDelete, disabled: readOnly, danger: true },
+  ]
   return (
-    <section className="card event-detail" style={{ ["--ev" as string]: eventColor(event) }} aria-label="Evento escolhido">
-      <div className="row between">
-        {event.category ? <span className="chip" style={{ color: "var(--ev)" }}>{event.category}</span> : <span />}
-        <button className="btn ghost sm" onClick={onClose}>
-          Fechar
-        </button>
+    <section className={`event-detail ${evLook.className}`} style={evLook.style} aria-labelledby="agenda-evento-titulo">
+      <div className="row-wrap" style={{ gap: 6 }}>
+        {kind && <span className="chip event-kind"><span className="dot" style={{ background: "var(--ev)" }} />{kind}</span>}
+        {status && <span className={`chip session-status ${statusId}`}>{status}</span>}
       </div>
-      <h2 style={{ fontSize: 18 }}>{event.title}</h2>
+      <h3 id="agenda-evento-titulo" className="event-detail-title">{event.title}</h3>
       <div className="stack small">
         <span className="row muted">
           <Clock size={15} />
           {occurrence.start.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}
           {!event.allDay && ` · ${hhmm(occurrence.start)}${event.endTime ? `–${hhmm(occurrence.end)}` : ""}`}
           {event.allDay && !sameDay(occurrence.start, addDays(occurrence.end, -1)) && ` – ${addDays(occurrence.end, -1).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`}
+          {event.allDay && sameDay(occurrence.start, addDays(occurrence.end, -1)) && " · dia inteiro"}
         </span>
         {event.location && (
           <span className="row muted">
@@ -492,14 +624,14 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
       </div>
       {(items.length > 0 || !readOnly) && (
         <div className="stack" style={{ gap: 4 }}>
-          <span className="eyebrow">Preparação</span>
+          <span className="eyebrow">Preparação{items.length ? ` · ${items.filter(isDone).length} de ${items.length}` : ""}</span>
           <ul className="task-list">
             {items.map((item) => (
-              <TaskRow key={item.line} task={item} actions={actions} options={{ today, hidden: new Set(["backlink", "urgency"]) }} />
+              <TaskRow key={item.line} task={item} actions={actions} options={{ today: isoDate(today), hidden: new Set(["backlink", "urgency"]) }} />
             ))}
           </ul>
           {!readOnly && (
-            <button className="btn sm ghost" onClick={() => setAdding(true)}>
+            <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => setAdding(true)}>
               <Plus size={14} /> Tarefa de preparação
             </button>
           )}
@@ -517,32 +649,28 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
           onClose={() => setAdding(false)}
         />
       )}
-      <div className="row-wrap">
-        {event.session && (
-          <button className="btn sm primary" onClick={() => (sessionPath ? navigate(vaultRoute(sessionPath)) : undefined)} disabled={!sessionPath} title={sessionPath ?? `“${event.session}” ainda não existe`}>
+      <div className="row-wrap event-actions">
+        {event.session ? (
+          <button className="btn sm primary" onClick={openSession} disabled={!sessionPath} title={sessionPath ?? `“${event.session}” ainda não existe`}>
             <ScrollText size={14} /> Abrir sessão
           </button>
-        )}
-        <button className="btn sm" onClick={() => navigate(vaultRoute(event.path))}>
-          <FileText size={14} /> Abrir nota
-        </button>
-        {!readOnly && (
-          <>
-            <button className="btn sm" onClick={onEdit} aria-label="Editar evento">
+        ) : (
+          !readOnly && (
+            <button className="btn sm primary" onClick={onEdit} aria-label="Editar evento">
               <Pencil size={14} /> Editar
             </button>
-            {event.repeat.kind !== "none" && (
-              <button className="btn sm" onClick={onSkip} title="Pular só esta data">
-                <SkipForward size={14} /> Pular esta data
-              </button>
-            )}
-            <button className="btn sm danger" onClick={onDelete} aria-label="Excluir evento">
-              <Trash2 size={14} />
-            </button>
-          </>
+          )
         )}
+        <button className="btn sm" onClick={() => navigate(vaultRoute(event.path))} title={event.path}>
+          <FileText size={14} /> Abrir nota
+        </button>
+        {event.session && !readOnly && (
+          <button className="btn sm" onClick={onEdit} aria-label="Editar evento">
+            <Pencil size={14} /> Editar
+          </button>
+        )}
+        <OverflowMenu label="Mais ações do evento" items={menu} />
       </div>
-      <span className="tiny faint mono truncate">{event.path}</span>
     </section>
   )
 }
@@ -552,8 +680,8 @@ function DayTasks({ tasks, day, actions, today }: { tasks: Task[]; day: string; 
   const list = tasks.filter((t) => t.dueDate === day || t.scheduledDate === day || t.startDate === day)
   if (!list.length) return null
   return (
-    <div className="stack" style={{ gap: 4, marginTop: 10 }}>
-      <span className="eyebrow">Tarefas do dia</span>
+    <div className="stack" style={{ gap: 4 }}>
+      <span className="eyebrow">Tarefas do dia · {list.length}</span>
       <ul className="task-list">
         {list.slice(0, 20).map((t) => (
           <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />

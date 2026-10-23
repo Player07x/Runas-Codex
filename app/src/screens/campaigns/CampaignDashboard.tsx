@@ -1,4 +1,7 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { useVault } from "../../platform/VaultProvider"
+import { CoverBand, Crest } from "../../components/kit/Emblem"
+import { campaignLook } from "../../core/personalization"
 import { BarChart3, Globe } from "lucide-react"
 import { worldDateText } from "../../core/calendar"
 import { href, navigate } from "../../lib/router"
@@ -7,7 +10,7 @@ import { noteRoute } from "../../lib/vault-notes"
 import { NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { CastCard, ClocksCard, QuestsCard, SafetyCard, SecretsCard, TimelineCard } from "./DashboardCards"
-import { NextSessionCard } from "./NextSessionCard"
+import { NextSessionCard, OverdueSessions } from "./NextSessionCard"
 
 function Stats({ data: { stats } }: { data: CampaignData }) {
   return (
@@ -39,6 +42,8 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
   const { campaign, upcoming } = data
   const [creating, setCreating] = useState(false)
   const narrow = useSinglePane()
+  const vault = useVault()
+  const look = useMemo(() => campaignLook(vault.index!, campaign.name), [vault.index, vault.version, campaign.name])
   const cards = (
     <>
       <ClocksCard data={data} />
@@ -52,9 +57,10 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
   return (
     <div className="page campaign-dashboard">
       <section className="campaign-cover card">
+        {(look.cover || look.tone) && <CoverBand tone={look.tone} cover={look.cover} from={campaign.home ?? campaign.root} height={look.cover ? 140 : 56} className="campaign-cover-band" />}
         <div className="stack" style={{ gap: 6 }}>
-          <span className="eyebrow">Campanha · {campaign.root}</span>
-          <h1 className="page-title">{campaign.name}</h1>
+          <span className="eyebrow">Campanha</span>
+          <h1 className="page-title row" style={{ gap: 12 }}><Crest tone={look.tone} emblem={look.emblem} name={campaign.name} size={40} /> {campaign.name}</h1>
           {campaign.summary && <p className="muted">{campaign.summary}</p>}
           <div className="row-wrap">
             {campaign.wiki && (
@@ -73,6 +79,7 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
         )}
       </section>
 
+      <OverdueSessions data={data} />
       {narrow ? (
         // CAM-9: no celular vem primeiro o que se usa na mesa; as estatísticas ficam no fim, recolhidas.
         <div className="campaign-grid">
