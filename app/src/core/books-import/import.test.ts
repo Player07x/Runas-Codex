@@ -35,6 +35,12 @@ describe("Importação de livros", () => {
     expect(book.chapters[0].markdown).toContain("`\\page`")
     expect(book.chapters[1].markdown).toContain("> [!largo]")
   })
+  it("mantém todas as linhas de código cercado dentro da caixa", () => {
+    const source = `# Código\n\n{{note\n\`\`\`text\nprimeira linha\nsegunda linha\n\`\`\`\n}}\n\n<div class="note">\n\`\`\`js\nconst valor = 1\nconsole.log(valor)\n\`\`\`\n</div>`
+    const markdown = importHomebrewery(source, options).chapters[0]!.markdown
+    expect(markdown).toContain("> [!nota]\n> \`\`\`text\n> primeira linha\n> segunda linha\n> \`\`\`")
+    expect(markdown).toContain("> [!nota]\n> \`\`\`js\n> const valor = 1\n> console.log(valor)\n> \`\`\`")
+  })
   it("importa DOCX com títulos, ênfase, lista, tabela e imagem e permite escolher H2", async () => {
     const bytes = fixture("exemplo.docx")
     const book = await importDocx(bytes, options)

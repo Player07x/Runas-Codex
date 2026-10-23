@@ -1,4 +1,7 @@
 import { ArticleArt } from "./ArticleArt"
+import { CoverBand, emblemIcon } from "../../components/kit/Emblem"
+import { categoryLook, isCategoryNote } from "../../core/personalization"
+import { toneStyle } from "../../core/tones"
 import { categoryRoute } from "../../core/wiki-category"
 import { useMemo, useState } from "react"
 import { Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
@@ -15,6 +18,7 @@ import { Markdown } from "../../components/Markdown"
 import { Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, iconByName, KindIcon, takeWikiSearch, useWiki } from "./wiki-state"
+import { useCreateRequest } from "../../lib/create-request"
 
 interface FolderNode {
   name: string
@@ -66,6 +70,7 @@ export function WikiHome() {
   const home = wiki!.home ? index.note(wiki!.home) : undefined
   const noteSet = useMemo(() => vaultNoteSet(index, home?.path ?? root, {}, vault.platform), [index, home, root, vault.platform, vault.version])
   const readOnly = vault.info?.readOnly ?? true
+  useCreateRequest("artigo", () => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true)))
 
   return (
     <div className="page wiki-home">
@@ -166,12 +171,18 @@ export function WikiHome() {
 }
 
 function Category({ folder }: { folder: FolderNode }) {
+  const vault = useVault()
+  const look = useMemo(() => categoryLook(vault.index!, folder.path), [vault.index, vault.version, folder.path])
+  const Emblem = emblemIcon(look.emblem)
   const collect = (node: FolderNode): IndexedNote[] => [...node.notes,...node.folders.flatMap(collect)]
-  const notes = collect(folder).sort((a,b)=>b.mtime-a.mtime || a.name.localeCompare(b.name,"pt-BR"))
+  // A nota da categoria (tipo: categoria) personaliza a pasta e não conta como artigo (ADR 0027).
+  const notes = collect(folder).filter(note => !isCategoryNote(note)).sort((a,b)=>b.mtime-a.mtime || a.name.localeCompare(b.name,"pt-BR"))
   const kinds = notes.map(note => articleKind(note.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
   const main = ARTICLE_KINDS.find(kind=>kind.folder === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
-  return <section className="card category-card" style={{["--cat" as string]:"var(--violet)"}}>
-    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{countNotes(folder)}</span></a>
+  return <section className={`card category-card${look.tone ? " toned" : ""}`} style={{["--cat" as string]: look.tone ? "var(--tone, var(--violet))" : "var(--violet)", ...toneStyle(look.tone)}}>
+    {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" />}
+    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{notes.length}</span></a>
+    {look.description && <p className="small muted wiki-category-description">{look.description}</p>}
     <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
     <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>Ver todos os {notes.length}</a>
   </section>

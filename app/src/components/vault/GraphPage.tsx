@@ -1,7 +1,7 @@
 import { ResizablePanel } from "../ResizablePanel"
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, Crosshair, Play, Plus, Search, SlidersHorizontal, Square, X } from "lucide-react"
-import { buildGraph, type GraphGroup, type GraphNode } from "../../core/graph-data"
+import { ChevronLeft, Crosshair, List, Play, Plus, Search, SlidersHorizontal, Square, X } from "lucide-react"
+import { buildGraph, type GraphData, type GraphGroup, type GraphNode } from "../../core/graph-data"
 import { creationTime, timelapseFrame, timelapseOrder } from "../../core/graph-timelapse"
 import type { VaultIndex } from "../../core/vault-index"
 import { navigate } from "../../lib/router"
@@ -35,6 +35,9 @@ function load(): Saved {
 export function GraphPage({ index, root, version, onBroken }: { index: VaultIndex; root: string; version: number; onBroken(target: string): void }) {
   const [settings, setSettings] = useState<Saved>(load)
   const [panel, setPanel] = useState(() => window.innerWidth > 760)
+  // A lista é a alternativa ao gráfico em WebGL pelo teclado e pelo leitor de tela (rework F4a, NOT-3).
+  const [asList, setAsList] = useState(() => { try { return localStorage.getItem("runas-codex:grafico:lista") === "true" } catch { return false } })
+  useEffect(() => { try { localStorage.setItem("runas-codex:grafico:lista", String(asList)) } catch { /* só não é lembrado */ } }, [asList])
   const [find, setFind] = useState("")
   const [focus, setFocus] = useState<string>()
   const [fit, setFit] = useState(0)
@@ -86,7 +89,7 @@ export function GraphPage({ index, root, version, onBroken }: { index: VaultInde
 
   return (
     <div className="graph-page">
-      <GraphView data={data} groups={groups} forces={forces} focus={focus} fitSignal={fit} onOpen={open} />
+      {asList ? <GraphList data={data} onOpen={open} /> : <GraphView data={data} groups={groups} forces={forces} focus={focus} fitSignal={fit} onOpen={open} />}
       <div className="graph-toolbar">
         <button className="icon-btn mobile-switch" onClick={() => navigate("/notas")} aria-label="Voltar para as notas">
           <ChevronLeft size={18} />
@@ -103,7 +106,10 @@ export function GraphPage({ index, root, version, onBroken }: { index: VaultInde
         >
           {lapse ? <Square size={15} /> : <Play size={16} />}
         </button>
-        <button className="icon-btn" onClick={() => setFit((n) => n + 1)} title="Enquadrar tudo" aria-label="Enquadrar o gráfico">
+        <button className={`btn sm ghost ${asList ? "active" : ""}`} aria-pressed={asList} onClick={() => setAsList(!asList)} title="Ver as notas e ligações como lista">
+          <List size={16} /> Lista
+        </button>
+        <button className="icon-btn" onClick={() => setFit((n) => n + 1)} title="Enquadrar tudo" aria-label="Enquadrar o gráfico" disabled={asList}>
           <Crosshair size={17} />
         </button>
         <button className={`icon-btn ${panel ? "active" : ""}`} onClick={() => setPanel(!panel)} title="Filtros, grupos e forças" aria-label="Configurar o gráfico">
@@ -191,4 +197,40 @@ function Slider({ label, min, max, step, value, onChange }: { label: string; min
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
     </label>
   )
+}
+
+const KIND_LABEL: Record<GraphNode["kind"], string> = { note: "nota", attachment: "anexo", missing: "a escrever", portal: "outro espaço" }
+
+/**
+ * O gráfico como tabela: cada nota, quantas ligações tem e com quem, e um botão para abrir. Mostra as mais ligadas
+ * primeiro; em cofres grandes, só as 500 primeiras (os filtros do gráfico valem aqui também).
+ */
+export function GraphList({ data, onOpen, compact = false, exclude }: { data: GraphData; onOpen(node: GraphNode): void; compact?: boolean; exclude?: string }) {
+  const byId = new Map(data.nodes.map((node) => [node.id, node]))
+  const neighbors = new Map<string, string[]>()
+  const add = (from: string, to: string) => { const label = byId.get(to)?.label; if (label) neighbors.set(from, [...(neighbors.get(from) ?? []), label]) }
+  for (const edge of data.edges) { add(edge.source, edge.target); add(edge.target, edge.source) }
+  const limit = compact ? 30 : 500
+  const nodes = data.nodes.filter((node) => node.id !== exclude).sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, "pt-BR"))
+  const shown = nodes.slice(0, limit)
+  if (compact) return <ul className="graph-node-list" aria-label="Notas do gráfico local">
+    {shown.map((node) => <li key={node.id}><button type="button" className="list-item small" disabled={node.kind === "attachment"} onClick={() => onOpen(node)}>
+      <span className="grow truncate">{node.label}</span><span className="meta">{node.kind === "note" ? `${node.degree} ${node.degree === 1 ? "ligação" : "ligações"}` : KIND_LABEL[node.kind]}</span>
+    </button></li>)}
+  </ul>
+  return <div className="graph-list">
+    {nodes.length > limit && <p className="small muted">Mostrando as {limit} notas mais ligadas de {nodes.length}. Use os filtros para achar as outras.</p>}
+    <table className="graph-table">
+      <caption className="sr-only">Notas do gráfico, quantas ligações cada uma tem e com quem</caption>
+      <thead><tr><th scope="col">Nota</th><th scope="col">Ligações</th><th scope="col">Liga com</th></tr></thead>
+      <tbody>{shown.map((node) => {
+        const linked = neighbors.get(node.id) ?? []
+        return <tr key={node.id}>
+          <th scope="row"><button type="button" className="graph-open" disabled={node.kind === "attachment"} onClick={() => onOpen(node)}>{node.label}</button>{node.kind !== "note" && <small className="muted"> · {KIND_LABEL[node.kind]}</small>}</th>
+          <td>{node.degree}</td>
+          <td className="muted">{linked.slice(0, 5).join(", ")}{linked.length > 5 ? ` e mais ${linked.length - 5}` : ""}</td>
+        </tr>
+      })}</tbody>
+    </table>
+  </div>
 }

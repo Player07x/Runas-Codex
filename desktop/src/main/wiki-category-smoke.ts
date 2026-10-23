@@ -29,7 +29,12 @@ export const WIKI_CATEGORY_SMOKE = `
   document.querySelector(".wiki-players")?.click()
   await until(() => document.querySelector(".wiki-players[aria-pressed=true]"))
   await until(() => !cards().some(el => el.textContent.includes("Visitante Oculto")))
-  result.wikiCategory.public = cards().length === allCount - 1 && !document.querySelector(".wiki-category-page .page-head button.primary") && [...document.querySelectorAll(".wiki-category-page .page-head button")].some(button => button.textContent.includes("Exportar categoria")) && !document.querySelector(".wiki-category-page").textContent.includes("Incógnito")
+  // O exportar da categoria fica no menu ⋯ (rework F4b, WIK-7): abre o menu e confere o item.
+  const categoryMenu = () => document.querySelector('.wiki-category-page .page-head [aria-label="Ações da categoria"]')
+  categoryMenu()?.click()
+  const exportItem = await until(() => [...document.querySelectorAll("[role=menuitem]")].find(item => item.textContent.includes("Exportar categoria")))
+  categoryMenu()?.click()
+  result.wikiCategory.public = cards().length === allCount - 1 && !document.querySelector(".wiki-category-page .page-head button.primary") && Boolean(exportItem) && !document.querySelector(".wiki-category-page").textContent.includes("Incógnito")
   document.querySelector(".wiki-players")?.click()
   await until(() => document.querySelector(".wiki-players[aria-pressed=false]"))
   await until(() => cards().length === allCount)

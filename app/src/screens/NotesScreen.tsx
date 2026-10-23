@@ -1,7 +1,8 @@
 import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
+import { OverflowMenu, type MenuEntry } from "../components/kit/OverflowMenu"
 import { useCallback, useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react"
-import { Archive, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
+import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
@@ -427,56 +428,41 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     return content
   }
 
+  const sep = "separator" as const
+  const listMenu: MenuEntry[] = [
+    ...(!readOnly ? [
+      { label: "Nova pasta…", icon: <FolderPlus size={16} />, onSelect: () => setDialog({ kind: "folder", folder: currentFolder }) },
+      { label: "Nota do dia", icon: <CalendarCheck size={16} />, onSelect: () => navigate("/notas/hoje") },
+    ] : []),
+    { label: "Nota aleatória", icon: <Shuffle size={16} />, onSelect: () => { const picked = pickRandom(); if (picked) navigate(vaultRoute(picked)); else toast("Não há notas para sortear.") } },
+    { label: "Gráfico", icon: <Network size={16} />, onSelect: () => navigate("/notas/grafico") },
+    sep,
+    ...(!readOnly ? [{ label: "Buscar e substituir…", icon: <Replace size={16} />, onSelect: () => void flushOpenNotes().then(() => setReplacing(true)) }] : []),
+    { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(currentFolder ? currentFolder + "/" : root).map((note) => note.path), title: currentFolder || root || vault.info?.name || "Notas" }) },
+    { label: "Lixeira do cofre…", icon: <Archive size={16} />, onSelect: () => setTrashOpen(true) },
+    ...(hasPin ? [{ label: "Bloquear as Notas", icon: <LockKeyhole size={16} />, onSelect: lockNotes }] : []),
+  ]
+
   return (
     <div className={`workspace ${path || graph ? "" : "show-left"} ${showRight ? "show-right" : ""} ${graph ? "no-right" : ""}`}>
       <ResizablePanel id="notes-left" label="Lista de notas" side="left" width={280} className="pane-left">
         <div className="pane-head">
-          <div className="row between">
-            <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong><button className="btn sm" onClick={() => openDocumentExport({ paths: index.notesIn(currentFolder ? currentFolder + "/" : root).map(note => note.path), title: currentFolder || root || vault.info?.name || "Notas" })}>Exportar…</button>
-            <div className="row" style={{ gap: 2 }}>
-              <button className="icon-btn sm" title="Lixeira" aria-label="Abrir lixeira" onClick={() => setTrashOpen(true)}><Archive size={16} /></button>
-              <button className="icon-btn sm" title="Gráfico" aria-label="Abrir o gráfico" onClick={() => navigate("/notas/grafico")}>
-                <Network size={16} />
-              </button>
-              <button
-                className="icon-btn sm"
-                title="Nota aleatória"
-                aria-label="Abrir uma nota aleatória"
-                onClick={() => {
-                  const picked = pickRandom()
-                  if (picked) navigate(vaultRoute(picked))
-                  else toast("Não há notas para sortear.")
-                }}
-              >
-                <Shuffle size={16} />
-              </button>
-              <button className="icon-btn sm" title={`Ordem: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-label="Ordem das notas" aria-expanded={orderMenu} onClick={() => setOrderMenu(!orderMenu)}>
-                <ArrowUpDown size={16} />
-              </button>
-              {!readOnly && (
-                <button className="icon-btn sm" title="Buscar e substituir em várias notas" aria-label="Buscar e substituir" onClick={() => void flushOpenNotes().then(() => setReplacing(true))}>
-                  <Replace size={16} />
-                </button>
-              )}
-              {hasPin && (
-                <button className="icon-btn sm" title="Bloquear as Notas (pede o PIN de novo)" aria-label="Bloquear as Notas" onClick={lockNotes}>
-                  <LockKeyhole size={16} />
-                </button>
-              )}
-              {!readOnly && (
-                <>
-                  <button className="icon-btn sm" title="Nota do dia" aria-label="Nota do dia" onClick={() => navigate("/notas/hoje")}>
-                    <CalendarCheck size={16} />
-                  </button>
-                  <button className="icon-btn sm" title="Nova pasta" aria-label="Nova pasta" onClick={() => setDialog({ kind: "folder", folder: currentFolder })}>
-                    <FolderPlus size={16} />
-                  </button>
-                  <button className="icon-btn sm" title="Nova nota" aria-label="Nova nota" onClick={() => setDialog({ kind: "note", folder: currentFolder })}>
-                    <Plus size={16} />
-                  </button>
-                </>
-              )}
+          {/* Cabeçalho da lista (rework F4a, NOT-1): título, uma ação principal e o resto no ⋯, com nome. */}
+          <div className="row between notes-head">
+            <strong className="truncate">{root ? "Notas" : vault.info?.name}</strong>
+            <div className="row" style={{ gap: 4 }}>
+              {!readOnly && <button className="btn sm primary notes-new" onClick={() => setDialog({ kind: "note", folder: currentFolder })}><Plus size={15} /> Nova nota</button>}
+              <OverflowMenu label="Ações das notas" items={listMenu} />
             </div>
+          </div>
+          <div className="row notes-filter">
+            <label className="search grow">
+              <Search size={15} />
+              <input className="input" placeholder="Buscar (tag:, path:, line:, [prop:valor], /regex/)" title="Termos, “frase”, -excluir, OR, path:, file:, tag:, content:, line:(…), section:(…), [propriedade], [propriedade:valor] e /regex/" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
+            </label>
+            <button className="icon-btn sm" title={`Ordem: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-label={`Ordem das notas: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-expanded={orderMenu} onClick={() => setOrderMenu(!orderMenu)}>
+              <ArrowUpDown size={16} />
+            </button>
           </div>
           {orderMenu && (
             <div className="card tight order-menu" role="menu" aria-label="Ordem das notas">
@@ -487,10 +473,6 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               ))}
             </div>
           )}
-          <label className="search">
-            <Search size={15} />
-            <input className="input" placeholder="Buscar (tag:, path:, line:, [prop:valor], /regex/)" title="Termos, “frase”, -excluir, OR, path:, file:, tag:, content:, line:(…), section:(…), [propriedade], [propriedade:valor] e /regex/" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
-          </label>
           {hasNotesSpace && (
             <div className="segmented" role="tablist" aria-label="Onde mostrar">
               <button className={!wholeVault ? "active" : ""} onClick={() => setWholeVault(false)} aria-label="Mostrar só o espaço Notas">

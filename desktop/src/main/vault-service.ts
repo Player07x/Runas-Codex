@@ -9,11 +9,14 @@ import { VaultWatcher } from "./watcher"
 import { listTrash, restoreTrash } from "./trash"
 import { WriteQueue } from "./write-queue"
 import { listTransferFiles, writeManagedTransfer } from "./vault-transfer"
+import { DEFAULT_BACKUP_SCHEDULE, nextBackupAt, normalizeBackupSchedule, type BackupSchedule } from "../../../app/src/core/backup-schedule"
+import { detectSyncConflict, findSyncConflicts, type SyncConflict } from "../../../app/src/core/sync-conflicts"
 
 interface Config {
   vaultPath?: string
   /** Cofres em que o usuário liberou a gravação (ou que o app criou). */
   writable?: string[]
+  backupSchedule?: BackupSchedule
 }
 
 const DAY = 24 * 60 * 60 * 1000
@@ -37,6 +40,7 @@ export class VaultService {
   /** No teste, o cofre vem da linha de comando e nada é lembrado. */
   private ephemeral = false
   private ephemeralWritable = false
+  private scheduleTimer: NodeJS.Timeout | null = null
   private readonly writes = new WriteQueue()
 
   constructor(
@@ -59,6 +63,7 @@ export class VaultService {
     } catch {
       this.config = {}
     }
+    this.config.backupSchedule = normalizeBackupSchedule(this.config.backupSchedule)
     if (this.config.vaultPath && (await isFolder(this.config.vaultPath))) await this.open(this.config.vaultPath)
   }
 
@@ -84,12 +89,33 @@ export class VaultService {
   private async open(path: string): Promise<void> {
     await this.beforeSwitch()
     this.watcher?.stop()
+    this.clearScheduledBackup()
     this.path = path
     // Todas as janelas do app (a principal e as de nota) ficam sabendo do que mudou fora do app.
     this.watcher = new VaultWatcher(path, (changes: VaultChange[]) => this.send(changes))
     await this.watcher.start().catch(() => {
       this.watcher = null
     })
+    this.armScheduledBackup()
+  }
+
+  private clearScheduledBackup(): void {
+    if (this.scheduleTimer) clearTimeout(this.scheduleTimer)
+    this.scheduleTimer = null
+  }
+
+  private armScheduledBackup(): void {
+    this.clearScheduledBackup()
+    const schedule = normalizeBackupSchedule(this.config.backupSchedule)
+    this.config.backupSchedule = schedule
+    const at = nextBackupAt(new Date(), schedule)
+    if (!at || !this.path || this.ephemeral) return
+    // setTimeout accepts a signed 32-bit delay; re-arm in chunks for a distant occurrence.
+    const delay = Math.max(1, Math.min(at.getTime() - Date.now(), 2_147_000_000))
+    this.scheduleTimer = setTimeout(() => {
+      this.scheduleTimer = null
+      void this.backup().catch(() => undefined).finally(() => this.armScheduledBackup())
+    }, delay)
   }
 
   private send(changes: VaultChange[]): void {
@@ -189,6 +215,17 @@ export class VaultService {
     if (!last || Date.now() - last.createdAt > DAY) await this.backup()
   }
 
+  backupSchedule(): BackupSchedule {
+    return normalizeBackupSchedule(this.config.backupSchedule ?? DEFAULT_BACKUP_SCHEDULE)
+  }
+
+  async setBackupSchedule(schedule: Partial<BackupSchedule>): Promise<BackupSchedule> {
+    this.config.backupSchedule = normalizeBackupSchedule({ ...this.backupSchedule(), ...schedule })
+    await this.save()
+    this.armScheduledBackup()
+    return this.config.backupSchedule
+  }
+
   async write(path: string, content: string, expected: { mtime: number; size: number } | null | undefined): Promise<VaultEntry> {
     const root = this.writableRoot()
     return this.writes.run(root + "\0" + path, async () => {
@@ -244,7 +281,7 @@ export class VaultService {
   }
 
   backup(): Promise<BackupInfo> {
-    return backupVault(this.root(), this.backupsDir)
+    return backupVault(this.root(), this.backupsDir, this.backupSchedule().keep)
   }
 
   listBackups(): Promise<BackupInfo[]> {
@@ -268,8 +305,24 @@ export class VaultService {
     await shell.openPath(this.backupsDir)
   }
 
+  async listSyncConflicts(): Promise<SyncConflict[]> {
+    return findSyncConflicts((await this.list("")).map((entry) => entry.path))
+  }
+
+  async archiveSyncConflict(path: string): Promise<string> {
+    const conflict = detectSyncConflict(path)
+    if (!conflict) throw new Error("O arquivo não é uma cópia de conflito reconhecida.")
+    const root = this.writableRoot()
+    await this.dailyBackup()
+    this.watcher?.forget(path)
+    const archived = await trashPath(root, path)
+    this.notify([{ type: "deleted", path }])
+    return archived
+  }
+
   stop(): void {
     this.watcher?.stop()
+    this.clearScheduledBackup()
   }
 
   listTrash(): Promise<VaultEntry[]> { return listTrash(this.root()) }

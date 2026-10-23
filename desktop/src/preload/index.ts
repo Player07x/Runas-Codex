@@ -34,6 +34,10 @@ const bridge: RunasCodexBridge = {
     },
     backup: () => invoke(IPC.vaultBackup),
     listBackups: () => invoke(IPC.vaultListBackups),
+    backupSchedule: () => invoke(IPC.vaultBackupSchedule),
+    setBackupSchedule: (schedule) => invoke(IPC.vaultSetBackupSchedule, schedule),
+    listSyncConflicts: () => invoke(IPC.vaultListSyncConflicts),
+    archiveSyncConflict: (path) => invoke(IPC.vaultArchiveSyncConflict, path),
     revealBackups: () => invoke(IPC.vaultRevealBackups),
     openFile: (path) => invoke(IPC.vaultOpenFile, path),
     installSnippet: (css) => invoke(IPC.vaultInstallSnippet, css),
@@ -160,6 +164,11 @@ const bridge: RunasCodexBridge = {
   },
   openWindow: (route) => invoke(IPC.openWindow, route),
   setTrayEnabled: enabled=>invoke(IPC.trayEnabled,enabled),
+  systemShortcut: {
+    status: () => invoke(IPC.systemShortcutStatus),
+    create: () => invoke(IPC.systemShortcutCreate),
+    remove: () => invoke(IPC.systemShortcutRemove),
+  },
 }
 
 bridge.vtt.collaboration = {state:()=>invoke(VTT.collaborationState),command:command=>invoke(VTT.collaborationCommand,command)}

@@ -638,3 +638,219 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
   existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
 - **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.
+
+## Rework visual — F1 fundações (21/10/2026)
+
+- [ ] Desktop: abrir Início, Notas, Agenda, Wiki, Campanhas, Livros, VTT, Importar e exportar e Configurações; conferir
+  que o título da aba acompanha a rota, a migalha usa nomes legíveis e o item atual tem `aria-current`.
+- [ ] Navegar apenas pelo teclado: abrir e fechar a paleta (`Ctrl+K`), o menu `Novo`, menus ⋯ e o seletor de abas; conferir
+  foco visível de 3 px, setas/Home/End, Escape e retorno do foco ao acionador.
+- [ ] Navegar entre duas rotas: conferir que o foco vai para o título da tela nova; ao trocar apenas o conteúdo no mesmo
+  espaço, conferir o anúncio da mudança sem retirar o foco do conteúdo.
+- [ ] Recolher e reabrir a navegação pelo botão e por `Ctrl+\`; conferir trilho de ícones, rótulos acessíveis e a
+  preferência preservada ao recarregar. Repetir nos painéis laterais com botão de recolhimento.
+- [ ] Repetir em tema escuro, claro, Floresta e Brasa, em 320 px, tablet e desktop; conferir sem rolagem horizontal,
+  controles com alvo de toque de 44 px e texto legível.
+- [ ] Em cofre somente leitura, conferir que `Novo` mantém as ações disponíveis e desabilita as que gravam; em cofre
+  gravável, conferir que Evento, Artigo, Campanha e Livro abrem os mesmos diálogos dos botões de cada tela.
+
+## Rework visual — F2 acessibilidade (21/10/2026)
+
+- [ ] Configurações › Acessibilidade (ou `Ctrl+K` › “Acessibilidade”): a página rola até a seção e o foco vai para o
+  título dela. Mudar cada opção e conferir a prévia ao lado mudando na hora.
+- [ ] Espaçamento “Amplo” e “Muito amplo”, largura “Estreita” e “Larga” e fonte Garamond: abrir uma nota e um artigo da
+  Wiki (leitura e edição ao vivo). Abrir a prévia de um Livro e conferir que as páginas **não** mudam.
+- [ ] Fonte “Legível”: o app inteiro passa para a Atkinson Hyperlegible, inclusive sem internet; a prévia dos Livros
+  continua com as fontes do tema do livro.
+- [ ] Contraste alto nos temas claro e escuro e nas paletas Órbita, Floresta e Brasa. Com o contraste alto do sistema
+  ligado, conferir se o app acompanha com a opção desligada (só funciona onde o sistema informa
+  `prefers-contrast: more` ao app; no Linux isso não foi conferido).
+- [ ] Sublinhar links, Sem transparências e Foco reforçado (navegar com Tab); Mostrar rótulos junto aos ícones no
+  desktop e no celular (a barra do topo cresce e nada passa da tela em 320 px).
+- [ ] “Restaurar padrão” da Acessibilidade volta só as opções dela; paleta, tema e barra inferior ficam.
+- [ ] Android: Configurações › Aparência › Barra inferior do celular — trocar os atalhos e conferir a barra e o “Mais”.
+- [ ] Sala do VTT (jogador e mestre pelo celular): o botão Aparência da sala mostra Aparência e Acessibilidade, sem a
+  barra inferior.
+
+## Rework visual — F3a editor compartilhado (22/10/2026)
+
+- [ ] Abrir uma nota, um artigo da Wiki e uma sessão de campanha: uma barra só (voltar, título, modo, Salvo, Painel, ⋯).
+  Conferir no menu ⋯ cada ação que antes era ícone: inserir link, imagem e modelo, renomear, favoritar, fixar/cor/ícone,
+  arquivar, copiar links, histórico, extrair, mesclar, renomear imagens, exportar e mandar para a lixeira.
+- [ ] Selecionar texto no Editar e no Código: a barra aparece sobre a seleção; Negrito, Itálico, Tachado, Destaque, Link e
+  Mais funcionam; Alt+F10 entra na barra, setas andam, Esc volta ao texto. Ctrl+B e Ctrl+I também.
+- [ ] Digitar `/` no começo de uma linha: o menu mostra Ações, Comandos e os grupos; digitar “tabe” filtra; Enter insere.
+  Na Wiki, aparece também a seção Wiki (segredo de jogador, spoiler, tabela rolável…).
+- [ ] Ctrl+/ abre a galeria Formatar com o foco na busca; “italico” acha Itálico; com uma palavra selecionada, Negrito a
+  envolve e Quebra de página entra depois da linha, **sem apagar a palavra**.
+- [ ] Código: frontmatter numa faixa e sem negrito, `%% revisão: … %%` em dourado, barra de status com linha e coluna;
+  “Números de linha” liga e desliga e fica lembrado.
+- [ ] Ctrl+E e Ctrl+Shift+E trocam o modo; o modo fica lembrado por espaço (Notas em Código, Wiki em Leitura…).
+- [ ] Celular/Android: ao tocar no texto, a barra sobre o teclado aparece no lugar da barra inferior; Aa abre a galeria,
+  `/` abre o menu de blocos, B/I/link/tarefa funcionam; a barra fica colada no teclado.
+- [ ] Livros: o editor não mostra mais a faixa de formatadores; os modos e o menu ⋯ ficam no trilho (a F3b refaz a tela).
+
+## Rework visual — F3b Livros (22/10/2026)
+
+- [ ] Abrir um livro: a navegação do app recolhe para o trilho e volta ao sair. Barra: Livros, Sumário, título, Escrever ·
+  Organizar · Prévia, estado e ⋯ do capítulo, Foco, Apoio e ⋯ do livro. Conferir cada item do ⋯ do livro.
+- [ ] Sumário: pontos de status, palavras, capítulo atual marcado; “Novo capítulo” cria o capítulo no lugar certo da
+  estrutura; “Fora do livro” recolhido, com “Incluir”.
+- [ ] Linha do capítulo acima da página; clicar abre Apoio › Capítulo; mudar status e resumo e salvar atualiza o sumário
+  sem conflito com o texto em edição.
+- [ ] Selecionar um trecho: Comentar insere `%% revisão: … %%` depois dele; Apoio › Revisão lista, “Ir” seleciona e
+  “Remover” tira. Citar da Wiki abre as Referências com o trecho; Citar e Transcluir inserem o link.
+- [ ] Barra de status: palavras iguais às do sumário, “Modo: Visual/Código” troca o modo, máquina de escrever liga e
+  desliga e fica lembrada.
+- [ ] Organizar: cartões e lista; arrastar; menu de cada capítulo; Alt+↑/↓ com o capítulo focado (posição anunciada).
+- [ ] Prévia: pagina, exporta e imprime como antes; “Fechar prévia” volta a Escrever.
+- [ ] Foco: só a página e uma barra discreta; Esc sai.
+- [ ] ⋯ do livro › Excluir livro: o diálogo diz quantos capítulos vão para a lixeira e quais ficam (fora da pasta ou usados
+  por outro livro); confirmar manda o livro e os capítulos para `.trash` e volta à estante; dá para recuperar pela lixeira.
+- [ ] Celular/Android: barra de uma linha; sumário e Apoio abrem por cima, um por vez; escolher capítulo fecha o
+  sumário; Organizar e Prévia no fim do sumário; barra de formatação sobre o teclado.
+
+## Rework visual — F4a Notas (22/10/2026)
+
+- [ ] Lista de Notas: “+ Nova nota” e o menu ⋯ (nova pasta, nota do dia, nota aleatória, gráfico, buscar e substituir,
+  exportar, lixeira, bloquear com PIN). A ordem fica ao lado da busca e diz a ordem atual.
+- [ ] Painel da nota: abas Links, Propriedades, Sumário e Gráfico pelo teclado (setas), com os contadores.
+- [ ] Gráfico: botão Lista mostra a tabela (nota, ligações, liga com); abrir pela tabela; a escolha fica lembrada. No
+  gráfico local, as notas ligadas aparecem como botões embaixo do desenho.
+
+## Rework visual — F4b Wiki (22/10/2026)
+
+- [ ] Barra da Wiki: trocar de wiki pelo menu; estreitar a janela e conferir que as telas que não cabem vão para “Mais”
+  (sem cortar nem rolar); Exportar e Nova wiki no ⋯.
+- [ ] Artigo: abas Ficha, Relações, Citado em e Links, com contadores; Mostrar pela sala e mídia na Ficha.
+- [ ] Categoria: “Novo …” como ação principal e Exportar no ⋯.
+- [ ] Calendário: “+1 dia” ao lado de Hoje; abas Dia, Hoje no mundo, Sincronizar (com dois calendários) e Ajuda.
+- [ ] Linha do tempo: Calendários e Filtros abrem e fecham; zoom, Ajustar à tela e Lista (tabela com data, acontecimento,
+  trilha e fim); rótulos perto da borda direita aparecem do lado esquerdo do ponto.
+- [ ] Relações: a teia enquadra ao abrir; tabela “quem · relação · com quem” com links.
+- [ ] Ferramentas: escolher um gerador na lista gera na hora; “Gerar de novo”; guardar como nota.
+
+## Rework visual — F4c Campanhas (22/10/2026)
+
+- [ ] Barra da campanha: trocar de campanha pelo menu; estreitar a janela e conferir “Mais”; Tela do Mestre no fim.
+- [ ] Cores das sessões: planejada dourada, jogada verde, cancelada apagada no painel, na lista e na linha do tempo.
+- [ ] Sessões: “+ Nova sessão” e o ⋯ com as duas exportações do diário (Markdown e PDF/HTML).
+- [ ] Missões no computador: com a janela estreita, a quinta coluna fica cortada com sombra e barra de rolagem à vista;
+  arrastar entre colunas grava o status. No celular: seletor de coluna com as contagens e uma coluna por vez.
+- [ ] Elenco: o ⋯ de cada NPC e facção abre na Wiki e tira da campanha.
+- [ ] Ferramentas: escolher na lista; a escolhida volta ao reabrir.
+- [ ] Quadro (campanha e Notas): “continua…” nos cartões cortados; Ajustar altura; escrever num cartão pequeno faz ele
+  crescer; Tab passa pelos cartões, setas movem, Shift+setas move mais, Enter edita; o arquivo abre igual no Obsidian.
+- [ ] Tela do Mestre: tela inteira com Agora, Elenco e Notas fixadas; iniciativa funciona dali; fixar e desafixar nota;
+  Esc fecha e o foco volta. No celular: abas Agora, Elenco e Notas fixadas.
+- [ ] Painel no celular: próxima sessão primeiro, estatísticas no fim e recolhidas.
+
+## Rework visual — F4d Agenda (22/10/2026)
+
+- [ ] Cabeçalho: “+ Evento” cria no dia escolhido; o ⋯ abre Enquete de data, Tempo livre, Importar .ics e Exportar .ics.
+  Na busca `Ctrl K`, “Tempo livre” e “Exportar .ics” levam à Agenda e abrem o mesmo diálogo.
+- [ ] Mês só pelo teclado: Tab entra na grade uma vez; setas, Home/End, PageUp/PageDown (com e sem Shift) movem o dia;
+  ao passar do fim do mês, a grade troca de mês e o foco continua no dia. Com o leitor de tela (Orca ou NVDA), cada
+  dia é lido com o nome completo, “hoje” e a quantidade de eventos; trocar de mês com ‹ › é anunciado.
+- [ ] Mês com o mouse: o título do evento aparece antes da hora; “+N no dia” abre o dia no painel.
+- [ ] Painel: Dia, Evento e Tarefas; escolher um evento abre a aba Evento; a aba Dia ou Tarefas volta ao reabrir a Agenda.
+- [ ] Evento de sessão: “Abrir sessão” leva à nota; o estado da sessão aparece; Pular esta data (evento repetido) e
+  Mandar para a lixeira estão no ⋯.
+- [ ] Semana e Dia: Tab numa coluna, setas escolhem a hora, Enter abre o diálogo com a hora preenchida; com quatro
+  eventos ao mesmo tempo aparece “+N”, que leva ao dia.
+- [ ] Lista: “Mostrar mais 60 dias” estende a lista.
+- [ ] Diálogo: salvar sem título mostra o aviso e põe o foco no título; editar um evento com local e sessão abre
+  Detalhes e Sessão; a nota gravada abre igual no Obsidian (Full Calendar).
+- [ ] Lembretes: no Android sem a permissão de alarmes exatos, o aviso aparece no painel e o botão leva à permissão.
+- [ ] Celular: o calendário vem primeiro; tocar num dia sobe o painel; Esc ou o botão do painel fecha; o botão
+  flutuante cria um evento. Sem rolagem para os lados em 320 px.
+
+## Rework visual — F4e personalização (ADR 0027, 22/10/2026)
+
+- [ ] Campanha › menu do nome › Personalizar: escolher Brasa e a coroa; a barra, as abas, os botões e o “Nova
+  sessão” mudam de cor; o cartão em Campanhas mostra a capa e o brasão. Abrir a nota no Obsidian com o snippet ligado:
+  `cor: brasa`, `icone: coroa` e `cssclasses: [runas-cor-brasa]`; título e links no tom.
+- [ ] Cor livre muito clara (ex.: `#ffff00`): o diálogo avisa que ajustou; no tema claro o texto continua legível.
+- [ ] Agenda: os eventos de sessão da campanha ficam na cor dela (mesmo os antigos, com `cor: red`).
+- [ ] Wiki › categoria › ⋯ › Personalizar categoria: cria `Personagens/Personagens.md` com `tipo: categoria`; a nota
+  não aparece entre os artigos; cartões sem imagem mostram o ícone na cor; a descrição aparece no topo e no cartão da
+  página inicial; o artigo mostra a etiqueta da categoria na Ficha.
+- [ ] Elenco: personagens, NPCs e facções com retrato ou símbolo do artigo; sem imagem, o ícone da categoria.
+- [ ] Sessão com `capa`: a imagem aparece na lista de sessões.
+- [ ] Configurações › Aparência › desligar “Usar a cor de cada campanha e categoria”: tudo volta à paleta. Ligar o
+  contraste alto: idem.
+
+## Rework visual — F5 Início, Configurações, Transferir e VTT (22/10/2026)
+
+- [ ] Início, Painel da campanha e Tela do Mestre mostram a mesma próxima sessão (com evento na Agenda e sem nota de
+  sessão; com nota de sessão e sem evento; com os dois ligados).
+- [ ] Campanha com uma sessão `status: planejada` de data passada: aviso no painel e na Tela do Mestre; “Marcar como
+  realizada” grava `status: realizada` na nota (conferir no Obsidian); “Remarcar” abre a sessão.
+- [ ] Início em 1366 px: destaque, espaços, Retome o fio, No horizonte e Centelhas na primeira tela. Em 375 px, sem
+  rolagem para os lados.
+- [ ] Centelhas: capturar duas ideias cria `Notas/Entrada.md`; riscar uma, “Limpar as usadas” e “Desfazer”; abrir a
+  nota no Obsidian (riscadas aparecem riscadas e não entram nas consultas do Tasks).
+- [ ] Configurações no computador: o índice leva a cada seção; Ctrl K › “Acessibilidade” cai na seção. No celular:
+  `/config` lista as seções; cada uma abre sozinha, com “Configurações” para voltar.
+- [ ] Importar e exportar: os três cartões; o resumo muda com a seleção; Gerar documento mostra a prévia; Pasta para o
+  Obsidian gera ZIP Markdown; o botão principal fica no canto (no celular, na largura toda).
+- [ ] VTT: cartões maiores, Mesas recentes com uma mesa aberta antes; ⋯ › Importar mesa abre a importação.
+
+## Correções do Codex durante o rework (21/10/2026)
+
+- [ ] Android: abrir uma mesa hospedada no celular e conferir o aviso de que o link público pela internet ainda não está
+  disponível; na mesma rede Wi-Fi ou no ponto de acesso, o link local e o QR continuam funcionando. Hospedar no desktop
+  e conferir o link público pela Cloudflare.
+- [ ] Livros: importar um Homebrewery com bloco cercado de várias linhas dentro de `{{note …}}` e de
+  `<div class="note">`; conferir que todas as linhas, inclusive a cerca de fechamento, permanecem dentro da caixa.
+- [ ] PIN: executar o teste do app repetidamente; conferir que o hash é validado pelo formato e pelo PIN, sem depender
+  de uma sequência específica aparecer no hash aleatório.
+
+## Wayland e fechamento da mesa X6 (22/10/2026)
+
+- [ ] Linux Wayland: executar `runas-codex --captura` com o app fechado e aberto; conferir que a nota nova aparece. Em
+  GNOME, criar e remover o atalho do sistema em Configurações quando o botão do rework estiver disponível; no KDE,
+  conferir a ação “Captura rápida” do arquivo `.desktop`.
+- [ ] VTT: importar um `.uvtt`/`.dd2vtt` com mapa embutido e paredes, uma cena JSON do Foundry com porta, token e luz,
+  e uma lista de tokens em lote. Conferir que imagens externas geram aviso e não são baixadas.
+- [ ] VTT: criar um pino com caminho `Wikis/...md`, abrir pelo duplo clique e conferir que o caminho não aparece na
+  projeção dos jogadores. Com a sala aberta, mover um token e conferir que o mapa permanece e só o objeto alterado é
+  atualizado na Vista dos Jogadores.
+
+## C9 sem interface (22/10/2026)
+
+- [ ] Rodar os dois `--smoke` do Electron e conferir no JSON `network.violations: []`; simular uma URL externa fora da
+  sala/atualização e conferir que o smoke falha.
+- [ ] Conferir os artefatos do workflow Release: `.deb`, AppImage, NSIS e APK assinado; abrir, criar atalho e desinstalar
+  cada um conforme o sistema, preservando o perfil do app.
+- [ ] Repetir o benchmark de 10 mil notas no aparelho Android e registrar índice, busca, gráfico, heap e tempo de abertura.
+  A referência local do desktop está na [ADR 0030](adr/0030-c9-desempenho-rede-instaladores.md).
+
+## C7 — backups agendados e conflitos de sincronização (22/10/2026)
+
+- [ ] Em Configurações, definir um horário e retenção, fechar/reabrir o app e conferir que a agenda permanece; esperar o
+  disparo ou avançar o relógio do sistema e conferir um ZIP novo fora do cofre.
+- [ ] Criar uma cópia `Nota.sync-conflict-YYYYMMDD-HHMMSS-dispositivo.md` pelo Syncthing e uma `Nota (conflicted copy).md`
+  pelo Obsidian Sync; conferir o aviso, a indicação do original e que nenhuma versão é sobrescrita.
+- [ ] Arquivar uma cópia pelo aviso, conferir que ela foi para `.trash` e que o original continua abrindo; testar também
+  a restauração da lixeira. A implementação está descrita na [ADR 0031](adr/0031-c7-backups-conflitos-sync.md).
+
+## Tasks — pendências da matriz (22/10/2026)
+
+- [ ] Na paleta, usar cada comando “Definir tarefa: …” sobre uma linha com tarefa e conferir que o estado, as datas e a
+  recorrência seguem as regras do Tasks.
+- [ ] Em uma consulta, usar `path includes {{query.file.outlinks}}`, `{{query.file.outlinksInBody}}` e
+  `{{query.file.outlinksInProperties}}`; conferir os mesmos resultados no Obsidian com Tasks 8.6.0.
+- [ ] Abrir “Busca rápida de tarefas”, digitar parte da descrição e conferir que a nota de origem abre no ponto certo.
+
+## Versão 0.1.0-beta.16 (23/10/2026)
+
+Entram o rework inteiro (F1–F5, PRs #54–#65), os itens do Codex (#58 e #62) e as correções da revisão. As listas de
+cada fase e do Codex estão acima; nesta versão, conferir também:
+
+- [ ] Atualizar da beta.15 para a beta.16 pelo botão “Verificar atualizações” (desktop e Android) e conferir que o cofre,
+  o PIN e as preferências continuam.
+- [ ] Com o PIN das Notas bloqueado: o Início não mostra as Centelhas nem notas de Notas/ em “Retome o fio”; a captura
+  continua gravando; a Busca rápida de tarefas não mostra tarefas das Notas.
+- [ ] Agenda: editar um evento com local, apagar o local e conferir que a seção Detalhes continua aberta.
+- [ ] Instalar de novo o snippet `runas-codex.css` e conferir no Obsidian a cor de uma campanha personalizada.

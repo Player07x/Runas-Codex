@@ -3,7 +3,7 @@ import type { DocumentChange, PlayerBarVisibility, PlayerSeatState, PlayerState,
 import type { LogData, SceneData, TokenData, TileData, DrawingData, NoteData } from "./scene"
 import type { RegionData } from "./region"
 import type { WorldDocument } from "./world"
-import { normalizeRuler, projectScene, type PlayerProjection, type PlayerRuler } from "./player"
+import { normalizeRuler, projectScene, type PlayerProjection, type PlayerProjectionPatch, type PlayerRuler } from "./player"
 import type { PlayerTransport, PlayerTransportOptions, JoinedPlayerSeat, PlayerSeatConnection } from "./transport"
 import type { PlayerWireMessage } from "./player"
 import type { DocumentDatabase } from "./database"
@@ -288,7 +288,11 @@ export class RoomAuthority {
       this.attachAssignedTokens()
       this.emit()
     }
-    if (change.kind === "put" || change.kind === "delete") this.publishSnapshot()
+    if (change.kind === "put" || change.kind === "delete") {
+      const before = this.lastProjection
+      this.refreshProjection()
+      this.publishProjectionPatch(before)
+    }
   }
 
   /** Repete o texto flutuante do Registro só para tokens que os jogadores veem. */
@@ -397,6 +401,25 @@ export class RoomAuthority {
     this.refreshProjection()
     if (this.ruler && this.ruler.sceneId !== this.lastProjection.scene?.id) this.ruler = null
     this.server.publishTo((seat) => this.snapshotMessage(seat))
+  }
+
+  private publishProjectionPatch(before: PlayerProjection): void {
+    const after = this.lastProjection
+    const beforeChildren = new Map(before.children.map((child) => [child.id, child]))
+    const afterChildren = new Map(after.children.map((child) => [child.id, child]))
+    const upsert = [...afterChildren.values()].filter((child) => JSON.stringify(child) !== JSON.stringify(beforeChildren.get(child.id)))
+    const removed = [...beforeChildren.keys()].filter((id) => !afterChildren.has(id))
+    const patch: PlayerProjectionPatch = { type: "projection-patch", upsert, removed }
+    const sceneChanged = JSON.stringify(before.scene) !== JSON.stringify(after.scene)
+    const assetsChanged = JSON.stringify(before.assets) !== JSON.stringify(after.assets)
+    const visionChanged = JSON.stringify(before.vision) !== JSON.stringify(after.vision)
+    const regionsChanged = JSON.stringify(before.regions) !== JSON.stringify(after.regions)
+    if (sceneChanged) patch.scene = after.scene
+    if (assetsChanged) patch.assets = after.assets
+    if (visionChanged) patch.vision = after.vision
+    if (regionsChanged) patch.regions = after.regions
+    if (!sceneChanged && !assetsChanged && !visionChanged && !regionsChanged && !patch.upsert.length && !patch.removed.length) return
+    this.server.publish(patch)
   }
 
   private snapshotMessage(seat?: PlayerSeatConnection | null): PlayerWireMessage {

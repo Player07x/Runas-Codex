@@ -1,4 +1,5 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
+import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
@@ -135,6 +136,7 @@ export function WikiCalendar({ path }: { path?: string }) {
   const calendar = ref?.calendar ?? null
   const [shown, setShown] = useState<{ year: number; month: number } | null>(null)
   const [selected, setSelected] = useState<WorldDate | null>(null)
+  const [sideTab, setSideTab] = useState<"dia" | "hoje" | "sincronizar" | "ajuda">("dia")
   const readOnly = vault.info?.readOnly ?? true
 
   const today = calendar?.today ?? { year: 1, month: 1, day: 1 }
@@ -243,6 +245,8 @@ export function WikiCalendar({ path }: { path?: string }) {
             <button className="btn sm" onClick={() => (setShown(null), setSelected(null))}>
               Hoje
             </button>
+            {/* O passo mais usado do mestre fica ao lado de Hoje (rework F4b, WIK-2). */}
+            {!readOnly && <button className="btn sm" onClick={() => advance(1)} title="Avança o dia de hoje no mundo">+1 dia</button>}
             <button className="icon-btn" onClick={() => setShown(view.month === calendar.months.length ? { year: view.year + 1, month: 1 } : { year: view.year, month: view.month + 1 })} aria-label="Próximo mês">
               <ChevronRight size={18} />
             </button>
@@ -258,8 +262,15 @@ export function WikiCalendar({ path }: { path?: string }) {
           <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />
         </div>
         <ResizablePanel id="agenda" label="Detalhes do calendário" side="right" width={320} className="stack-lg agenda-side">
-          <section className="card stack">
-            <span className="eyebrow">Dia escolhido</span>
+          {/* Abas no lugar de cartões empilhados (rework F4b, WIK-2): Dia · Hoje no mundo · Sincronizar · Ajuda. */}
+          <PanelTabs label="Detalhes do calendário" idPrefix="calendario-painel" value={sideTab} onChange={setSideTab} tabs={[
+            { value: "dia", label: "Dia" },
+            { value: "hoje", label: "Hoje no mundo" },
+            ...(refs.length > 1 ? [{ value: "sincronizar" as const, label: "Sincronizar" }] : []),
+            { value: "ajuda", label: "Ajuda" },
+          ]} />
+          <TabPanel idPrefix="calendario-painel" value={sideTab}>
+          {sideTab === "dia" && <section className="stack">
             {pickProblem ? (
               <span className="small" style={{ color: "var(--red)" }}>{pickProblem}</span>
             ) : (
@@ -294,14 +305,10 @@ export function WikiCalendar({ path }: { path?: string }) {
                 {calendar.today && <span className="tiny faint">Em relação a hoje: {relative(calendar, pick, calendar.today)}</span>}
               </>
             )}
-          </section>
-          <section className="card stack">
-            <span className="eyebrow">Avançar o dia do mundo</span>
-            <span className="tiny muted">Atualiza idades, luas e "há quanto tempo" em toda a wiki.</span>
+          </section>}
+          {sideTab === "hoje" && <section className="stack">
+            <span className="tiny muted">Atualiza idades, luas e "há quanto tempo" em toda a wiki. O “+1 dia” fica no cabeçalho, ao lado de Hoje.</span>
             <div className="row-wrap">
-              <button className="btn sm" onClick={() => advance(1)} disabled={readOnly}>
-                +1 dia
-              </button>
               <button className="btn sm" onClick={() => advance(calendar.weekdays.length || 7)} disabled={readOnly}>
                 +1 semana
               </button>
@@ -320,9 +327,10 @@ export function WikiCalendar({ path }: { path?: string }) {
                 <input type="checkbox" checked={syncToday} onChange={(e) => setSyncToday(e.target.checked)} /> Atualizar também {linked.map((c) => c.calendar.name).join(", ")}
               </label>
             )}
-          </section>
-          {refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
-          <CalendarHelp compact />
+          </section>}
+          {sideTab === "sincronizar" && refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
+          {sideTab === "ajuda" && <CalendarHelp />}
+          </TabPanel>
         </ResizablePanel>
       </div>
     </div>

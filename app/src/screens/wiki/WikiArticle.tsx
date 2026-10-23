@@ -9,9 +9,18 @@ import { href, navigate } from "../../lib/router"
 import { noteRoute, vaultNoteSet } from "../../lib/vault-notes"
 import { useToast } from "../../components/ui"
 import { NoteView } from "../../components/vault/NoteView"
+import { LinksPanel } from "../../components/vault/VaultPanels"
+import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
+import { emblemIcon } from "../../components/kit/Emblem"
+import { articleCategory, categoryLook, EMPTY_LOOK } from "../../core/personalization"
+import { toneStyle } from "../../core/tones"
+import { categoryRoute } from "../../core/wiki-category"
 import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleExtras } from "./WikiArticleExtras"
 import { WIKI_INSERTS } from "./WikiTools"
+
+/** Recursos da Wiki: aba Wiki na galeria Formatar e seção no menu `/` (rework F3). */
+const WIKI_FORMATTERS = WIKI_INSERTS.map(([label, syntax]) => ({ label, syntax, group: "Wiki" }))
 import { Infobox } from "./Infobox"
 import { NewArticleDialog } from "./WikiHome"
 import { askWikiSearch, useWiki } from "./wiki-state"
@@ -23,6 +32,10 @@ export function WikiArticleView({ path }: { path: string }) {
   const index = vault.index!
   const note = index.note(path)
   const [panel, setPanel] = useState(false)
+  // Painel com abas (rework F4b, WIK-6): Ficha aberta por padrão, depois Relações, Citado em e Links.
+  const [tab, setTab] = useState<"ficha" | "relacoes" | "citado" | "links">("ficha")
+  const relationCount = useMemo(() => relationsOf(index, path, wiki?.root ?? "").length, [index, path, wiki?.root, vault.version])
+  const citedCount = useMemo(() => index.backlinks(path).length, [index, path, vault.version])
   const [create, setCreate] = useState<string | null>(null)
   const readOnly = vault.info?.readOnly ?? true
   const folders = useMemo(() => [...new Set(index.allFiles().map((f) => dirname(f.path)))].filter(Boolean), [index, vault.version])
@@ -34,6 +47,10 @@ export function WikiArticleView({ path }: { path: string }) {
     navigate("/wiki")
   }, [])
 
+  const category = wiki ? articleCategory(path, wiki.root) : null
+  const categoryStyle = useMemo(() => (category && vault.index ? categoryLook(vault.index, category) : EMPTY_LOOK), [category, vault.index, vault.version])
+  const CategoryEmblem = emblemIcon(categoryStyle.emblem)
+
   if (!note) {
     return (
       <div className="page">
@@ -43,12 +60,21 @@ export function WikiArticleView({ path }: { path: string }) {
   }
 
   return (
-    <div className={`wiki-article-layout ${panel ? "show-panel" : ""}`}>
+    <div className={`wiki-article-layout ${panel ? "show-panel" : ""}${categoryStyle.tone ? " toned" : ""}`} style={toneStyle(categoryStyle.tone)}>
       <section className="wiki-article-main">
-        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} toolbar={insert=><label className="wiki-resource-insert">Inserir recurso da Wiki<select className="input" value="" onChange={e=>{if(e.target.value)insert(e.target.value)}}><option value="">Escolha um recurso…</option>{WIKI_INSERTS.map(([label,syntax])=><option key={label} value={syntax}>{label}</option>)}</select></label>} />
+        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
       </section>
       <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side">
+        <PanelTabs label="Detalhes do artigo" idPrefix="artigo-painel" value={tab} onChange={setTab} tabs={[
+          { value: "ficha", label: "Ficha" },
+          { value: "relacoes", label: "Relações", count: relationCount },
+          { value: "citado", label: "Citado em", count: citedCount },
+          { value: "links", label: "Links" },
+        ]} />
+        <TabPanel idPrefix="artigo-painel" value={tab}>
         <NoteSetContext.Provider value={noteSet}>
+          {tab === "ficha" && <>
+          {category && (categoryStyle.tone || categoryStyle.emblem) && <a className="tone-chip" href={href(categoryRoute(category))}>{CategoryEmblem && <CategoryEmblem size={14} aria-hidden="true" />}{category.split("/").at(-1)}</a>}
           <Infobox
             note={note}
             calendar={calendarRef && "calendar" in calendarRef ? calendarRef.calendar : null}
@@ -59,9 +85,12 @@ export function WikiArticleView({ path }: { path: string }) {
           />
           {!players && <ShowArticle note={note} />}
           <WikiArticleExtras key={note.path} note={note} players={players} />
-          <Relations path={path} root={wiki?.root ?? ""} readOnly={readOnly} />
-          <Mentions path={path} />
+          </>}
+          {tab === "relacoes" && <Relations path={path} root={wiki?.root ?? ""} readOnly={readOnly} />}
+          {tab === "citado" && (citedCount ? <Mentions path={path} /> : <p className="small muted">Nenhuma nota cita este artigo ainda.</p>)}
+          {tab === "links" && <LinksPanel index={index} path={path} readOnly={readOnly} onCreate={onCreate} onSaveNote={vault.save} />}
         </NoteSetContext.Provider>
+        </TabPanel>
       </ResizablePanel>
       {create !== null && <NewArticleDialog initialName={create} onClose={() => setCreate(null)} />}
     </div>

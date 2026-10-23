@@ -1,6 +1,8 @@
 import type { VttApi } from "../vtt/shared/ipc"
 import type { Reminder } from "../core/agenda"
 import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
+import type { BackupSchedule } from "../core/backup-schedule"
+import type { SyncConflict } from "../core/sync-conflicts"
 
 /**
  * Fronteira entre o app (igual nas três plataformas) e a casca nativa.
@@ -29,7 +31,7 @@ export interface VaultInfo {
 }
 
 /** Mudança feita fora do app (Obsidian, sincronização) ou pelo próprio app em outra janela. */
-export type VaultChange = { type: "changed"; entry: VaultEntry } | { type: "deleted"; path: string }
+export type VaultChange = { type: "changed"; entry: VaultEntry } | { type: "deleted"; path: string } | { type: "conflict"; conflict: SyncConflict }
 
 export interface BackupInfo {
   id: string
@@ -44,6 +46,8 @@ export interface RoomHostInfo {
   internetUrl?: string
   code: string
 }
+
+export interface SystemShortcutStatus { supported: boolean; registered: boolean; desktop: "gnome" | "kde" | null }
 
 export interface Platform {
   /** Autoridade nativa da sala no Android (X7). */
@@ -75,6 +79,11 @@ export interface Platform {
   watch(listener: (changes: VaultChange[]) => void): () => void
   backup(): Promise<BackupInfo>
   listBackups(): Promise<BackupInfo[]>
+  /** Agenda persistida no processo principal; a tela de Configurações será entregue no rework. */
+  backupSchedule?(): Promise<BackupSchedule>
+  setBackupSchedule?(schedule: Partial<BackupSchedule>): Promise<BackupSchedule>
+  listSyncConflicts?(): Promise<SyncConflict[]>
+  archiveSyncConflict?(path: string): Promise<string>
   /** Abre a pasta dos backups no gerenciador de arquivos. */
   revealBackups(): Promise<void>
   /** Endereço que a interface carrega para um anexo do cofre (imagem, áudio, vídeo); `null` se não dá para mostrar. */
@@ -115,6 +124,11 @@ export interface Platform {
   listTrash?(): Promise<VaultEntry[]>
   restoreTrash?(path: string, target: string): Promise<VaultEntry>
   setTrayEnabled?(enabled:boolean):Promise<boolean>
+  systemShortcut?: {
+    status(): Promise<SystemShortcutStatus>
+    create(): Promise<SystemShortcutStatus>
+    remove(): Promise<SystemShortcutStatus>
+  }
   /** Arquivos transportáveis: notas/anexos e, opcionalmente, dados internos das mesas. Não inclui preferências. */
   listTransferFiles?(includeWorlds?: boolean): Promise<VaultEntry[]>
   /** Importa somente a área interna autorizada das mesas, com versão obrigatória; usada pelo VaultProvider. */

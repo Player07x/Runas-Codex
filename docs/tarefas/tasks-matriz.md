@@ -39,7 +39,7 @@ Legenda: ✅ igual ao Tasks · ⚠️ funciona com diferença (explicada) · ❌
 | `setDoneDate`, `setCancelledDate`, `setCreatedDate` | ✅ | "respeita setDoneDate desligado…" |
 | Estado desconhecido vira TODO que vai para `x` | ✅ | `StatusRegistry.bySymbolOrCreate` |
 | Mudar para qualquer estado (menu da tarefa, botão direito) | ✅ | nas listas, consultas e checklist |
-| Comandos "Set status to …" por estado no editor | ❌ | no editor há Ctrl+L (alternar) e a janela de edição, que muda o estado; falta um comando por estado |
+| Comandos "Set status to …" por estado no editor | ✅ | a paleta de comandos oferece cada estado configurado como "Definir tarefa: …" e aplica a mudança na linha sob o cursor |
 | Coleções prontas de estados (temas Minimal, ITS…) | ⚠️ | não há botão de coleção; os estados vêm do `data.json` importado ou são editados à mão |
 | Fora do filtro global, a caixa só alterna ` `/`x` | ✅ | "fora do filtro global, a caixa só alterna" |
 
@@ -75,13 +75,13 @@ Legenda: ✅ igual ao Tasks · ⚠️ funciona com diferença (explicada) · ❌
 | `view list`, `view columns by …` com arrastar entre colunas (prioridade e datas) | ✅ | conferido no navegador (arrastar mudou 🔽 para 🔼) |
 | `preset`, predefinições padrão do Tasks, consulta global, `ignore global query`, propriedades `TQ_…` da nota | ✅ | "consulta global…", "propriedades TQ_…" |
 | Marcadores `{{query.file.path/folder/root/filename…}}`, `query.file.property('…')`, `hasProperty` | ✅ | "this_file e this_folder…", "marcador de propriedade" |
-| `{{query.file.outlinks…}}` | ❌ | não implementado |
+| `{{query.file.outlinks…}}` | ✅ | `outlinks`, `outlinksInBody` e `outlinksInProperties` viram filtros de caminho sem executar JavaScript |
 | `filter/sort/group by function` e marcadores com JavaScript | ⚠️ | dão o mesmo erro do Tasks com o JavaScript desligado, que é o padrão dele desde a 8.0. O Runas-Codex não executa JavaScript de notas (CSP sem `unsafe-eval`, regra 6): ligar o JavaScript **não é possível** aqui. A predefinição padrão `this_folder_only` depende disso. |
 | `show tree` | ⚠️ | mostra subtarefas debaixo da mãe quando as duas estão no resultado; itens de lista comuns (sem caixa) não aparecem |
 | Barra de ferramentas: filtrar pela descrição e copiar em Markdown | ✅ | |
 | Texto do `explain` | ⚠️ | em português e mais curto que o do Tasks (as datas resolvidas aparecem) |
 | Títulos de grupo por backlink/arquivo | ⚠️ | aparecem como texto `[[Nota]]`, não como link |
-| Busca rápida de tarefas (Quick Search, 8.4/8.5) | ❌ | não implementada |
+| Busca rápida de tarefas (Quick Search, 8.4/8.5) | ✅ | comando na paleta; procura parte da descrição e abre a nota de origem |
 
 ## Edição e telas
 

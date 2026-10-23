@@ -8,6 +8,7 @@ import { BookImport } from "./BookImport"
 import "../notes.css"
 import "./books.css"
 import "./book-workspace.css"
+import { useCreateRequest } from "../../lib/create-request"
 
 export function BooksScreen({ bookId }: { bookId?: string }) {
   const vault = useVault()
@@ -29,6 +30,7 @@ function BookList() {
   const vault = useVault()
   const index = vault.index!
   const [creating, setCreating] = useState(false)
+  useCreateRequest("livro", () => { if (!vault.info?.readOnly) setCreating(true) })
   const [importing, setImporting] = useState(false)
   const [title, setTitle] = useState("")
   const [busy, setBusy] = useState(false)

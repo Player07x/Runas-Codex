@@ -12,7 +12,7 @@ import type { PlayerRegion, RegionData } from "./region"
 /** Formato sanitizado que atravessa a rede. */
 export interface PlayerScene { id: string; data: SceneData }
 export interface PlayerTokenData extends Omit<TokenData, "bars" | "vision" | "light"> { bars: TokenData["bars"] }
-export interface PlayerNoteData extends Omit<NoteData, "url"> {}
+export interface PlayerNoteData extends Omit<NoteData, "url" | "notePath"> {}
 export type PlayerChild =
   | { id: string; type: "token"; parentId: string; sort: number; data: PlayerTokenData }
   | { id: string; type: "tile"; parentId: string; sort: number; data: TileData }
@@ -28,6 +28,17 @@ export interface PlayerProjection {
   regions: PlayerRegion[]
 }
 
+/** Mudança incremental da projeção: a cena inteira só é reenviada ao trocar de cena. */
+export interface PlayerProjectionPatch {
+  type: "projection-patch"
+  scene?: PlayerScene | null
+  upsert: PlayerChild[]
+  removed: string[]
+  assets?: AssetPath[]
+  vision?: RenderVision | null
+  regions?: PlayerProjection["regions"]
+}
+
 /** Régua em coordenadas da cena. */
 export interface PlayerRuler { sceneId: string; from: { x: number; y: number }; to: { x: number; y: number } }
 
@@ -39,6 +50,7 @@ export type PlayerWireMessage =
   | { type:"collaboration"; collaboration:PublicCollaboration }
   | { type:"collaboration-result"; requestType?:"safety"|"reply"; ok:boolean; reason?:string }
   | { type: "snapshot"; collaboration?:PublicCollaboration; projection: PlayerProjection; ruler: PlayerRuler | null; audio: AudioState | null; moves: boolean }
+  | PlayerProjectionPatch
   /** Resposta ao espectador que pediu para mover um token (só para ele). */
   | { type: "move-result"; tokenId: string; ok: boolean; reason?: string }
   /** O mestre ligou ou desligou o movimento de tokens Jogador pelos espectadores. */

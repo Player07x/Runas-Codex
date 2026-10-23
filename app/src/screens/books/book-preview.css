@@ -36,9 +36,10 @@
   body.book-preview-open .book-preview-output .pagedjs_page { margin: 0; box-shadow: none; break-after: page; }
   body.book-preview-open .book-preview-output .pagedjs_page:last-child { break-after: auto; }
   body.book-preview-open .book-preview-output { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  body.book-preview-open .books-editor, body.book-preview-open .books-layout, body.book-preview-open .book-preview,
+  /* A prévia mora dentro da área principal do livro (rework F3b): ela aparece, e a barra, o sumário e os avisos saem. */
+  body.book-preview-open .books-editor, body.book-preview-open .books-layout, body.book-preview-open .books-main, body.book-preview-open .book-preview,
   body.book-preview-open .book-preview-scroll { display: block !important; position: static; overflow: visible !important; height: auto !important; padding: 0; }
-  body.book-preview-open .books-header, body.book-preview-open .books-binder, body.book-preview-open .books-main,
+  body.book-preview-open .book-bar, body.book-preview-open .books-binder, body.book-preview-open .doc-notice, body.book-preview-open .book-finish-settings,
   body.book-preview-open .book-preview-controls, body.book-preview-open .book-metadata, body.book-preview-open .book-preview-source { display: none !important; }
 }
 .books-layout.has-preview .books-main .editor-bar { flex-wrap: wrap; }

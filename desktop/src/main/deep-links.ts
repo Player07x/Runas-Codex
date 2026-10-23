@@ -1,6 +1,8 @@
 import { app, type BrowserWindow } from "electron"
 import { DEEP_LINK_SCHEME, notePathFromArgv, notePathFromUrl } from "../../../app/src/core/deep-link"
 
+export function quickCaptureRequested(argv: readonly string[]): boolean { return argv.some((arg) => arg === "--captura") }
+
 /**
  * `runas://abrir?nota=…`: o sistema abre o app com o endereço (Windows e Linux, na linha de comando; macOS, no evento
  * `open-url`). Com o app já aberto, a segunda cópia passa o endereço para a primeira e fecha — o que também evita duas
@@ -8,10 +10,12 @@ import { DEEP_LINK_SCHEME, notePathFromArgv, notePathFromUrl } from "../../../ap
  */
 export class DeepLinks {
   private pending: string | null = notePathFromArgv(process.argv)
+  private pendingCapture = quickCaptureRequested(process.argv)
 
   constructor(
     private readonly window: () => BrowserWindow | null,
     private readonly open: (path: string) => void,
+    private readonly capture: () => void,
   ) {}
 
   /** Antes do "ready". `false`: já há um app aberto com este perfil, e esta cópia deve sair. */
@@ -25,6 +29,7 @@ export class DeepLinks {
       }
       const path = notePathFromArgv(argv)
       if (path) this.deliver(path)
+      if (quickCaptureRequested(argv)) this.deliverCapture()
     })
     app.on("open-url", (event, url) => {
       event.preventDefault()
@@ -44,6 +49,10 @@ export class DeepLinks {
     const path = this.pending
     this.pending = null
     if (path) setTimeout(() => this.deliver(path), 1500)
+    if (this.pendingCapture) {
+      this.pendingCapture = false
+      setTimeout(() => this.deliverCapture(), path ? 1600 : 1500)
+    }
   }
 
   private deliver(path: string): void {
@@ -52,5 +61,17 @@ export class DeepLinks {
       return
     }
     this.open(path)
+  }
+
+  private deliverCapture(): void {
+    const window = this.window()
+    if (!window) {
+      this.pendingCapture = true
+      return
+    }
+    if (window.isMinimized()) window.restore()
+    window.show()
+    window.focus()
+    this.capture()
   }
 }

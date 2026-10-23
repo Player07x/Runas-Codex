@@ -1,10 +1,10 @@
 import { ExportDialog } from "./export/ExportDialog"
-import { ResizablePanel } from "./ResizablePanel"
+import { ResizablePanel, togglePanel } from "./ResizablePanel"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
   Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
-  ArrowLeft, ArrowRight, Shuffle,
+  ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords, Accessibility,
 } from "lucide-react"
 import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
@@ -12,6 +12,9 @@ import { ALL_NOTES } from "../lib/links"
 import { routeOfNote } from "../lib/navigation"
 import { vaultRoute } from "../lib/vault-notes"
 import { noteName } from "../core/text"
+import { pageTitle } from "../core/page-title"
+import { crumbsFor } from "../lib/crumbs"
+import { requestCreate } from "../lib/create-request"
 import { useVault } from "../platform/VaultProvider"
 import { NOTES } from "../data/notes"
 import { ARTICLES } from "../data/wiki"
@@ -19,9 +22,14 @@ import { CAMPAIGNS } from "../data/campaigns"
 import { BOOKS } from "../data/books"
 import { MESAS } from "../data/mesas"
 import { Modal, useToast } from "./ui"
+import { OverflowMenu } from "./kit/OverflowMenu"
 import { goBack, goForward } from "../lib/router"
-import { shortcutLabel, type ShortcutAction } from "../core/shortcuts"
+import { shortcutLabel, shortcutText, type ShortcutAction } from "../core/shortcuts"
 import { usePreferences } from "../lib/customization"
+import { useAppearance } from "../lib/appearance"
+import { requestAgendaAction } from "../lib/agenda-request"
+import { useTasksSettings } from "../lib/tasks"
+import { TaskQuickSearch } from "./tasks/TaskQuickSearch"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -36,51 +44,24 @@ export const NAV: NavItem[] = [
 ]
 
 const TOOLS: NavItem[] = [
-  { route: "/transferir", label: "Importar / Exportar", icon: <ArrowDownUp size={18} />, match: "transferir" },
+  { route: "/transferir", label: "Importar e exportar", icon: <ArrowDownUp size={18} />, match: "transferir" },
   { route: "/config", label: "Configurações", icon: <Settings size={18} />, match: "config" },
 ]
 
-const BOTTOM = ["", "notas", "agenda", "vtt"]
-
-function crumbsFor(route: string[]): { label: string; to?: string }[] {
-  const [first, second, third, fourth] = route
-  const item = [...NAV, ...TOOLS].find((n) => n.match === (first ?? ""))
-  const crumbs: { label: string; to?: string }[] = [{ label: item?.label ?? "Início", to: item?.route }]
-  if (first === "notas" && second) crumbs.push({ label: second === "nova" ? "Nova nota" : second === "hoje" ? "Nota do dia" : second === "grafico" ? "Gráfico" : noteName(second) })
-  if (first === "wiki" && second) {
-    // Artigos, mapas e calendários abertos levam o caminho da nota na rota.
-    const path = third ?? ""
-    const labels: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapas", categoria: "Categoria", relacoes: "Relações", grafico: "Gráfico" }
-    if (second === "artigo") crumbs.push({ label: path ? noteName(path) : "Artigo" })
-    else {
-      crumbs.push({ label: labels[second] ?? second, ...(path && second !== "categoria" ? { to: `/wiki/${second}` } : {}) })
-      if (path) crumbs.push({ label: noteName(path) })
-    }
-  }
-  if (first === "campanhas" && second) {
-    crumbs.push({ label: CAMPAIGNS.find((c) => c.id === second)?.title ?? second, to: `/campanhas/${second}` })
-    const labels: Record<string, string> = { sessao: "Sessão", missoes: "Missões", canvas: "Quadro", sessoes: "Sessões", elenco: "Elenco", quadro: "Quadro" }
-    if (third) crumbs.push({ label: third === "sessao" ? `Sessão ${fourth?.replace("s", "")}` : labels[third] ?? third })
-    // Campanhas da etapa 7: o quarto segmento é o caminho da nota (sessão) ou do quadro.
-    if (third && third !== "sessao" && fourth) crumbs.push({ label: fourth.split("/").pop()!.replace(/\.(md|canvas)$/i, "") })
-  }
-  if (first === "livros" && second) crumbs.push({ label: BOOKS.find((b) => b.id === second)?.title ?? second })
-  if (first === "vtt" && second) {
-    const labels: Record<string, string> = { criar: "Criar Sala", entrar: "Entrar Sala", jogador: "Vista do jogador" }
-    if (second === "mesa") crumbs.push({ label: "Criar Sala", to: "/vtt/criar" }, { label: "Mesa" })
-    else crumbs.push({ label: labels[second] ?? second })
-  }
-  return crumbs
-}
 
 export function Shell({ route, theme, onToggleTheme, fill, children }: { route: string[]; theme: string; onToggleTheme: () => void; fill?: boolean; children: ReactNode }) {
   const vault = useVault()
   const [palette, setPalette] = useState(false)
+  const [quickTaskSearch, setQuickTaskSearch] = useState(false)
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
   const crumbs = crumbsFor(route)
   const counts = useVaultCounts()
   const prefs = usePreferences()
+  const announce = usePageChange(route, crumbs.map((c) => c.label))
+  const readOnly = Boolean(vault.info?.readOnly)
+  // Os quatro atalhos da barra inferior são escolhidos em Configurações › Aparência (NAV-3).
+  const bottom = useAppearance().bottomNav
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -88,6 +69,11 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
       if ((event.ctrlKey || event.metaKey) && ["k", "p", "o"].includes(event.key.toLowerCase())) {
         event.preventDefault()
         setPalette(true)
+      }
+      // Ctrl+\ recolhe e expande a navegação, como nos editores de código.
+      if ((event.ctrlKey || event.metaKey) && event.key === "\\") {
+        event.preventDefault()
+        togglePanel("navigation")
       }
     }
     window.addEventListener("keydown", onKey)
@@ -108,10 +94,23 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
   }, [onToggleTheme])
   useEffect(() => vault.platform.onQuickCapture?.(() => navigate("/notas/nova")), [vault.platform])
 
+  // “+ Novo”: as mesmas criações dos botões de cada tela, sem atalhos novos para regras que já existem lá.
+  const mac = typeof navigator !== "undefined" && /Mac/.test(navigator.platform)
+  const newNoteHint = vault.platform.kind === "capacitor" ? undefined : shortcutText(shortcutLabel("newNote", prefs.shortcuts), mac)
+  const create = [
+    { label: "Nota", icon: <FilePlus size={16} />, hint: newNoteHint, onSelect: () => navigate("/notas/nova"), disabled: readOnly },
+    { label: "Nota do dia", icon: <CalendarDays size={16} />, onSelect: () => navigate("/notas/hoje"), disabled: readOnly },
+    "separator" as const,
+    { label: "Evento na Agenda", icon: <CalendarPlus size={16} />, onSelect: () => requestCreate("evento"), disabled: readOnly },
+    { label: "Artigo da Wiki", icon: <Library size={16} />, onSelect: () => requestCreate("artigo"), disabled: readOnly },
+    { label: "Campanha", icon: <Swords size={16} />, onSelect: () => requestCreate("campanha"), disabled: readOnly },
+    { label: "Livro", icon: <BookPlus size={16} />, onSelect: () => requestCreate("livro"), disabled: readOnly },
+  ]
+
   return (
     <div className="shell">
-      <ResizablePanel id="navigation" label="Navegação" side="left" width={240} as="nav" className="sidebar" aria-label="Espaços">
-        <a className="brand" href={href("/")}>
+      <ResizablePanel id="navigation" label="Navegação" side="left" width={240} as="nav" className="sidebar" aria-label="Espaços" collapsedMode="rail">
+        <a className="brand" href={href("/")} aria-label="Runas-Codex, início">
           <img src={runa} alt="" />
           <div>
             <strong>Runas-Codex</strong>
@@ -120,17 +119,17 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         </a>
         <div className="nav-group">
           {NAV.map((item) => (
-            <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
+            <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label} aria-label={item.label} aria-current={current === item.match ? "page" : undefined}>
               {item.icon}
               <span>{item.label}</span>
-              {item.count !== undefined && <span className="count">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
+              {item.count !== undefined && <span className="count" aria-hidden="true">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
             </a>
           ))}
         </div>
         <div className="nav-label">Cofre</div>
         <div className="nav-group">
           {TOOLS.map((item) => (
-            <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label}>
+            <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} title={item.label} aria-label={item.label} aria-current={current === item.match ? "page" : undefined}>
               {item.icon}
               <span>{item.label}</span>
             </a>
@@ -138,7 +137,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         </div>
         <div className="sidebar-foot">
           <div className="offline-pill" title="Nenhuma chamada de rede fora da sala do VTT">
-            <WifiOff size={15} />
+            <WifiOff size={15} aria-hidden="true" />
             <span>Offline · cofre local</span>
           </div>
 
@@ -147,39 +146,38 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
 
       <div className="main">
         <header className="topbar">
-          <div className="crumbs">
+          <nav className="crumbs" aria-label="Você está em">
             {crumbs.map((crumb, index) => (
               <span key={index} className="row" style={{ gap: 6, minWidth: 0 }}>
-                {index > 0 && <ChevronRight size={14} />}
-                {crumb.to && index < crumbs.length - 1 ? <a href={href(crumb.to)}>{crumb.label}</a> : <strong>{crumb.label}</strong>}
+                {index > 0 && <ChevronRight size={14} aria-hidden="true" />}
+                {crumb.to && index < crumbs.length - 1 ? <a href={href(crumb.to)}>{crumb.label}</a> : <strong aria-current="page">{crumb.label}</strong>}
               </span>
             ))}
-          </div>
-          <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Buscar e comandos">
+          </nav>
+          <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Buscar notas e comandos">
             <Search size={16} />
             <span>Buscar notas e comandos…</span>
             {vault.platform.kind !== "capacitor" && <kbd>Ctrl K</kbd>}
           </button>
           <div className="top-actions">
-            <button className="icon-btn hide-mobile" onClick={() => navigate("/notas/nova")} title={vault.platform.kind === "capacitor" ? "Nova nota" : `Nova nota (${shortcutLabel("newNote", prefs.shortcuts)})`}>
-              <Plus size={18} />
-            </button>
-            <button className="icon-btn" onClick={onToggleTheme} title={theme === "dark" ? "Tema claro" : "Tema escuro"}>
+            <OverflowMenu label="Novo" heading="Criar" items={create} triggerClassName="btn new-trigger" trigger={<><Plus size={17} /><span>Novo</span></>} />
+            <button className="icon-btn" onClick={onToggleTheme} title={theme === "dark" ? "Tema claro" : "Tema escuro"} aria-label={theme === "dark" ? "Usar o tema claro" : "Usar o tema escuro"}>
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
         </header>
         <main id="runas-main" tabIndex={-1} className={`content ${fill ? "fill" : ""}`}>{children}</main>
+        <div className="sr-only" role="status">{announce}</div>
       </div>
 
       <nav className="bottom-nav" aria-label="Navegação">
-        {NAV.filter((item) => BOTTOM.includes(item.match)).map((item) => (
-          <a key={item.route} href={href(item.route)} className={current === item.match ? "active" : ""}>
+        {bottom.map((match) => NAV.find((item) => item.match === match)).filter((item) => item !== undefined).map((item) => (
+          <a key={item.route} href={href(item.route)} className={current === item.match ? "active" : ""} aria-current={current === item.match ? "page" : undefined}>
             {item.icon}
             {item.label}
           </a>
         ))}
-        <button onClick={() => setMore(true)} className={!BOTTOM.includes(current) ? "active" : ""}>
+        <button onClick={() => setMore(true)} className={!bottom.includes(current) ? "active" : ""} aria-current={!bottom.includes(current) ? "page" : undefined}>
           <Ellipsis size={18} />
           Mais
         </button>
@@ -188,8 +186,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
       {more && (
         <Modal title="Mais" onClose={() => setMore(false)}>
           <div className="more-sheet" style={{ padding: 0 }}>
-            {[...NAV.filter((item) => !BOTTOM.includes(item.match)), ...TOOLS].map((item) => (
-              <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} onClick={() => setMore(false)}>
+            {[...NAV.filter((item) => !bottom.includes(item.match)), ...TOOLS].map((item) => (
+              <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} onClick={() => setMore(false)} aria-current={current === item.match ? "page" : undefined}>
                 {item.icon}
                 <span>{item.label}</span>
                 {item.count !== undefined && <span className="count">{item.count}</span>}
@@ -202,22 +200,78 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         </Modal>
       )}
       <ExportDialog />
-      {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} />}
+      {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} onOpenQuickSearch={() => setQuickTaskSearch(true)} />}
+      {quickTaskSearch && <TaskQuickSearch onClose={() => setQuickTaskSearch(false)} />}
     </div>
   )
 }
 
-function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
+/**
+ * Ao trocar de tela: título da aba (WCAG 2.4.2) e foco no título da tela nova (2.4.3), para quem usa teclado ou
+ * leitor de tela não ficar no link que clicou. Dentro do mesmo espaço, quem estava no conteúdo (lista, editor)
+ * continua onde está, e a troca é só anunciada.
+ */
+function usePageChange(route: string[], crumbs: string[]): string {
+  const key = route.join("/")
+  const space = route[0] ?? ""
+  const title = pageTitle(crumbs)
+  const [announce, setAnnounce] = useState("")
+  const previous = useRef<{ key: string; space: string } | null>(null)
+  useEffect(() => { document.title = title }, [title])
+  useEffect(() => {
+    const before = previous.current
+    previous.current = { key, space }
+    if (!before || before.key === key) return
+    const main = document.getElementById("runas-main")
+    if (before.space === space && main?.contains(document.activeElement)) {
+      setAnnounce(crumbs.at(-1) ?? "")
+      return
+    }
+    setAnnounce("")
+    const focusHeading = (heading: HTMLElement) => {
+      if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1")
+      // O título está no topo; uma seção pedida pela rota precisa rolar até aparecer.
+      heading.focus({ preventScroll: !heading.hasAttribute("data-route-focus") })
+    }
+    // Depois de os diálogos devolverem o foco (paleta, menus), para não perder a disputa.
+    let observer: MutationObserver | undefined
+    let timer = 0
+    // Uma seção pedida pela rota ([data-route-focus], como /config/acessibilidade) vem antes do título da tela.
+    const target = () => main?.querySelector<HTMLElement>("[data-route-focus]") ?? main?.querySelector<HTMLElement>("h1")
+    const frame = requestAnimationFrame(() => {
+      if (!main) return
+      const heading = target()
+      if (heading) return focusHeading(heading)
+      // Telas que desenham o título depois de ler os dados (a Agenda): o foco espera no conteúdo e passa ao título
+      // quando ele aparecer, se a pessoa ainda não tiver ido para outro lugar.
+      main.focus({ preventScroll: true })
+      observer = new MutationObserver(() => {
+        const late = target()
+        if (!late) return
+        observer?.disconnect()
+        if (document.activeElement === main) focusHeading(late)
+      })
+      observer.observe(main, { childList: true, subtree: true })
+      timer = window.setTimeout(() => observer?.disconnect(), 1500)
+    })
+    return () => { cancelAnimationFrame(frame); observer?.disconnect(); clearTimeout(timer) }
+    // A migalha muda junto com a rota; reagir à rota basta.
+  }, [key])
+  return announce
+}
+
+function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose: () => void; onToggleTheme: () => void; onOpenQuickSearch: () => void }) {
   const prefs = usePreferences()
   const dialogRef = useRef<HTMLDivElement>(null)
   useDialogFocus(dialogRef, onClose)
   const vault = useVault()
   const toast = useToast()
+  const taskSettings = useTasksSettings(vault.info?.path)
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
     () => [
-      { label: "Nova nota", icon: <Plus size={16} />, hint: vault.platform.kind === "capacitor" ? "" : shortcutLabel("newNote", prefs.shortcuts), run: () => navigate("/notas/nova") },
+      { label: "Nova nota", icon: <Plus size={16} />, hint: vault.platform.kind === "capacitor" ? "" : shortcutText(shortcutLabel("newNote", prefs.shortcuts)), run: () => navigate("/notas/nova") },
       { label: "Nota do dia", icon: <CalendarDays size={16} />, hint: "Notas", run: () => navigate("/notas/hoje") },
       { label: "Criar Sala", icon: <DoorOpen size={16} />, hint: "VTT", run: () => navigate("/vtt/criar") },
       { label: "Entrar Sala", icon: <LogIn size={16} />, hint: "VTT", run: () => navigate("/vtt/entrar") },
@@ -230,10 +284,22 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Avançar", icon: <ArrowRight size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Alt →", run: goForward },
       { label: "Nota aleatória", icon: <Shuffle size={16} />, hint: "Notas", run: () => navigate("/notas/aleatoria") },
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
-      { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutLabel("toggleTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
-      { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutLabel("editTask", prefs.shortcuts), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
+      { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("toggleTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
+      { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("editTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
+      { label: "Acessibilidade", icon: <Accessibility size={16} />, hint: "Configurações", run: () => navigate("/config/acessibilidade") },
+      { label: "Enquete de data", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("enquete") },
+      { label: "Tempo livre", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("tempo-livre") },
+      { label: "Importar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("importar-ics") },
+      { label: "Exportar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("exportar-ics") },
+      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
+      { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
+      { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
+      { label: "Busca rápida de tarefas (Tasks)", icon: <Search size={16} />, hint: "Tasks", run: onOpenQuickSearch },
+      ...[...taskSettings.coreStatuses, ...taskSettings.customStatuses]
+        .filter((status, index, statuses) => status.availableAsCommand && statuses.findIndex((other) => other.symbol === status.symbol) === index)
+        .map((status) => ({ label: `Definir tarefa: ${status.name}`, icon: <FileText size={16} />, hint: "Tasks", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: `set-task-status:${encodeURIComponent(status.symbol)}` })) })),
     ],
-    [onToggleTheme, prefs.shortcuts, vault.platform.kind],
+    [onOpenQuickSearch, onToggleTheme, prefs.shortcuts, taskSettings, vault.platform.kind],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
   // Notas do cofre (pelo índice); no exemplo do navegador, as que têm tela própria (wiki, campanhas) abrem nela.

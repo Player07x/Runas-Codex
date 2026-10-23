@@ -42,9 +42,21 @@ function TasksQuery({ code }: CodeBlockProps) {
   const { settings } = actions
   const [filter, setFilter] = useState("")
   const from = set.from
-  const properties = from ? (vault?.index?.note(from)?.meta.frontmatter?.data as Record<string, unknown> | undefined) : undefined
+  const note = from ? vault?.index?.note(from) : undefined
+  const properties = note?.meta.frontmatter?.data as Record<string, unknown> | undefined
+  // A lista muda só com o índice; nova a cada desenho, refaria a consulta toda vez.
+  const links = useMemo(() => (from ? (vault?.index?.outgoing(from) ?? []) : []), [vault?.index, vault?.version, from])
+  const outlinks = useMemo(() => links.flatMap((link) => link.dest ? [link.dest] : []), [links])
+  const outlinksInBody = useMemo(() => links.flatMap((link) => !link.link.inFrontmatter && link.dest ? [link.dest] : []), [links])
+  const outlinksInProperties = useMemo(() => links.flatMap((link) => link.link.inFrontmatter && link.dest ? [link.dest] : []), [links])
 
-  const query = useMemo(() => parseQuery(code, { settings, ...(from ? { file: { path: from, ...(properties ? { properties } : {}) } } : {}) }), [code, settings, from, properties])
+  const query = useMemo(
+    () => parseQuery(code, {
+      settings,
+      ...(from ? { file: { path: from, ...(properties ? { properties } : {}), outlinks, outlinksInBody, outlinksInProperties } } : {}),
+    }),
+    [code, settings, from, properties, outlinks, outlinksInBody, outlinksInProperties],
+  )
   const tasks = useMemo(() => (vault?.index ? vaultTasks(vault?.index, settings, { notesLocked: locked }) : []), [vault?.index, vault?.version, settings, locked])
   const result = useMemo(() => runQuery(query, tasks, settings), [query, tasks, settings])
   const today = parseContext(settings).today

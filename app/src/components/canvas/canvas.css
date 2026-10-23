@@ -3,7 +3,8 @@
 .canvas-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 88%, transparent); }
 .canvas-sep { width: 1px; height: 22px; background: var(--line); }
 .canvas-colors { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; color: var(--muted); }
-.canvas-swatch { width: 18px; height: 18px; padding: 0; border: 2px solid var(--panel); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); }
+/* 24 px no mouse (WCAG 2.5.8); o toque já sobe para 44 px nas regras do celular. */
+.canvas-swatch { width: 24px; height: 24px; padding: 0; border: 2px solid var(--panel); border-radius: 50%; box-shadow: 0 0 0 1px var(--line-strong); }
 .canvas-swatch:disabled { opacity: 0.35; }
 .canvas-zoom { min-width: 40px; text-align: center; }
 .canvas-inspector { position: absolute; z-index: 4; top: 56px; right: 12px; width: 240px; padding: 10px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-sm); }
@@ -25,6 +26,10 @@
 .canvas-card.type-group { border-style: dashed; border-width: 1.5px; border-color: color-mix(in srgb, var(--card) 70%, var(--line)); background: color-mix(in srgb, var(--card) 6%, transparent); box-shadow: none; }
 .canvas-group-label { position: absolute; top: -26px; left: 4px; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; white-space: nowrap; }
 .canvas-card-body { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; }
+/* CAM-7: quando o texto passa da altura gravada, uma faixa “continua…” avisa; Ajustar altura mostra tudo. */
+.canvas-more { position: absolute; right: 1px; bottom: 1px; left: 1px; padding: 14px 12px 4px; border-radius: 0 0 11px 11px; background: linear-gradient(transparent, var(--panel) 55%); color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-style: italic; text-align: right; pointer-events: none; }
+.canvas-card.colored .canvas-more { background: linear-gradient(transparent, color-mix(in srgb, var(--card) 10%, var(--panel)) 55%); }
+.canvas-card:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 .canvas-md { font-size: calc(13px * var(--font-scale, 1)); line-height: 1.5; }
 .canvas-md > * + * { margin-top: 0.4em; }
 .canvas-file-title { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--cyan); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; text-decoration: none; word-break: break-all; }

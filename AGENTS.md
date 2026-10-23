@@ -66,6 +66,12 @@ um VTT. Leia antes de mexer:
 9. **Interface em português (pt-BR)**, no visual Órbita: cores pelas variáveis de `app/src/styles/tokens.css`
    (`--cyan`, `--gold`, `--panel`…), temas escuro e claro, funcionar a partir de 320 px de largura (celular) sem
    rolagem para os lados, alvos de toque de 44 px no celular.
+10. **UX/UI e acessibilidade são regras de aceite.** Toda nova tela, componente ou alteração visual cumpre
+    [`docs/ux-ui-acessibilidade.md`](docs/ux-ui-acessibilidade.md): WCAG 2.2 AA, foco e navegação por teclado,
+    `aria-current` e título por rota, contraste nos temas (o teste `styles/tokens.test.ts` cobra), alternativas
+    acessíveis para gráficos, Canvas e WebGL, reflow em 320 px, redução de movimento e estados completos. Use os
+    componentes de `app/src/components/kit/` (ADR 0026) em vez de criar outro cabeçalho, menu ou painel. A interface
+    não pode simular, remover ou duplicar funcionalidades já implementadas.
 
 ## Arquivos compartilhados
 

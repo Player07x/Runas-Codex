@@ -20,11 +20,12 @@ export const NOTES_C5C_SMOKE = `
   document.querySelector('.workspace-menu input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   clickC5('Fechar o painel 2')
   await until(() => document.querySelectorAll('.tab-pane').length === 1)
-  clickC5('Ferramentas da nota')
-  await until(() => [...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'Histórico de versões'))
+  // As ferramentas da nota ficam no menu ⋯ (rework F3).
+  document.querySelector('.doc-bar [aria-label="Ações da nota"]')?.click()
+  const historyItem = await until(() => [...document.querySelectorAll('[role=menuitem]')].find(item => item.textContent.startsWith('Histórico de versões')))
   const c5Visible = (element) => { const r = element?.getBoundingClientRect(); return Boolean(r && r.top >= -1 && r.left >= -1 && r.bottom <= innerHeight + 1 && r.right <= innerWidth + 1) }
-  result.notesC5c.menuBounds = c5Visible(document.querySelector('.note-tools-menu'))
-  clickC5('Histórico de versões')
+  result.notesC5c.menuBounds = c5Visible(document.querySelector('.kit-menu'))
+  historyItem?.click()
   await until(() => document.querySelector('[aria-label="Versão da nota"]'))
   result.notesC5c.dialogBounds = c5Visible(document.querySelector('.modal'))
   await until(() => [...document.querySelectorAll('.modal button')].some(button => button.textContent.trim() === 'Guardar versão agora' && !button.disabled))

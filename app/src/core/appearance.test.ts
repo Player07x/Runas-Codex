@@ -1,4 +1,4 @@
-import { contrastRatio, parseAppearance } from "./appearance"
+import { contrastRatio, DEFAULT_APPEARANCE, parseAppearance, parseBottomNav, setBottomSlot } from "./appearance"
 import { readFileSync } from "node:fs"
 const tokens = readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8")
 import { starterNotes, exampleNotes } from "./onboarding"
@@ -8,9 +8,26 @@ import { parseEvent } from "./agenda"
 
 describe("Aparência e primeiros passos", () => {
   it("recupera preferências inválidas e limita o tamanho do texto", () => {
-    expect(parseAppearance("{")).toEqual({ scale: 100, palette: "orbita", motion: "system", tablet: false })
+    expect(parseAppearance("{")).toEqual(DEFAULT_APPEARANCE)
     expect(parseAppearance('{"scale":999,"palette":"url(//externo)","tablet":"sim"}')).toMatchObject({ scale: 140, palette: "orbita", tablet: false })
-    expect(parseAppearance('{"scale":50,"palette":"brasa","motion":"reduce","tablet":true}')).toEqual({ scale: 85, palette: "brasa", motion: "reduce", tablet: true })
+    expect(parseAppearance('{"scale":50,"palette":"brasa","motion":"reduce","tablet":true}')).toMatchObject({ scale: 85, palette: "brasa", motion: "reduce", tablet: true })
+  })
+  it("guarda as opções de acessibilidade só com valores conhecidos", () => {
+    const ok = parseAppearance('{"spacing":"muito-amplo","lineWidth":"estreita","readingFont":"legivel","contrast":"high","underlineLinks":true,"solid":true,"labels":true,"strongFocus":true}')
+    expect(ok).toMatchObject({ spacing: "muito-amplo", lineWidth: "estreita", readingFont: "legivel", contrast: "high", underlineLinks: true, solid: true, labels: true, strongFocus: true })
+    const bad = parseAppearance('{"spacing":"2em","lineWidth":"999px","readingFont":"Comic Sans","contrast":"sim","underlineLinks":"sim","labels":1}')
+    expect(bad).toMatchObject({ spacing: "normal", lineWidth: "media", readingFont: "geist", contrast: "system", underlineLinks: false, labels: false })
+  })
+  it("mantém quatro espaços diferentes na barra inferior", () => {
+    expect(parseBottomNav(undefined)).toEqual(["", "notas", "agenda", "vtt"])
+    expect(parseBottomNav(["wiki", "wiki", "config", "campanhas"])).toEqual(["wiki", "campanhas", "", "notas"])
+    expect(parseBottomNav(["", "notas", "wiki", "campanhas", "livros"])).toEqual(["", "notas", "wiki", "campanhas"])
+    expect(parseAppearance('{"bottomNav":["campanhas","wiki","notas",""]}').bottomNav).toEqual(["campanhas", "wiki", "notas", ""])
+  })
+  it("troca de lugar quando o espaço escolhido já está na barra", () => {
+    expect(setBottomSlot(["", "notas", "agenda", "vtt"], 2, "wiki")).toEqual(["", "notas", "wiki", "vtt"])
+    expect(setBottomSlot(["", "notas", "agenda", "vtt"], 0, "vtt")).toEqual(["vtt", "notas", "agenda", ""])
+    expect(setBottomSlot(["", "notas", "agenda", "vtt"], 1, "config")).toEqual(["", "notas", "agenda", "vtt"])
   })
   it("mantém contraste AA dos textos e controles nas seis combinações de tema", () => {
     const blocks = [...tokens.matchAll(/(:root[^{}]*)\{([^{}]*)\}/g)].map(m => ({ selector: m[1]!, colors: Object.fromEntries([...m[2]!.matchAll(/--([\w-]+):\s*(#[\da-fA-F]{3,6})\s*;/g)].map(c => [c[1]!, c[2]!])) }))
@@ -19,6 +36,7 @@ describe("Aparência e primeiros passos", () => {
       for (const block of blocks) {
         if (block.selector.includes('data-theme="light"') && !light) continue
         if (block.selector.includes("data-palette") && !block.selector.includes(`data-palette="${palette}"`)) continue
+        if (block.selector.includes("data-contrast")) continue
         Object.assign(colors, block.colors)
       }
       for (const text of ["text", "muted", "faint", "cyan", "green", "red", "gold", "violet"]) for (const surface of ["bg", "bg-deep", "panel", "panel-2", "panel-hover"]) {

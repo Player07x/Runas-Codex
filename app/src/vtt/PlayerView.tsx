@@ -102,6 +102,20 @@ export function PlayerView() {
       let message: PlayerWireMessage
       try { message = JSON.parse(String(event.data)) as PlayerWireMessage } catch { return }
       if (message.type === "snapshot") { setActivity(message.collaboration??{prompt:null,handout:null,safetySignals:0}); projection.current = message.projection; ruler.current = message.ruler; audio.current = message.audio; setMoves(message.moves) }
+      else if (message.type === "projection-patch") {
+        const current = projection.current
+        const byId = new Map(current.children.map((child) => [child.id, child]))
+        for (const id of message.removed) byId.delete(id)
+        for (const child of message.upsert) byId.set(child.id, child)
+        projection.current = {
+          ...current,
+          ...(Object.prototype.hasOwnProperty.call(message, "scene") ? { scene: message.scene ?? null } : {}),
+          children: [...byId.values()].sort((a, b) => a.sort - b.sort || a.id.localeCompare(b.id)),
+          ...(message.assets ? { assets: message.assets } : {}),
+          ...(Object.prototype.hasOwnProperty.call(message, "vision") ? { vision: message.vision ?? null } : {}),
+          ...(message.regions ? { regions: message.regions } : {}),
+        }
+      }
       else if(message.type === "collaboration"){setActivity(message.collaboration);setActivityStatus("")}
       else if(message.type === "collaboration-result"){if(message.requestType==="safety")setNotice(message.ok?"Carta X enviada sem identificação.":message.reason??"Não foi possível enviar.");else setActivityStatus(message.ok?"Resposta recebida.":message.reason??"Não foi possível enviar.")}
       else if (message.type === "moves") setMoves(message.moves)

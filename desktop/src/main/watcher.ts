@@ -3,6 +3,7 @@ import { realpath, stat } from "node:fs/promises"
 import { join } from "node:path"
 import type { VaultChange, VaultEntry } from "../shared/ipc"
 import { listVault, sameVersion } from "./vault"
+import { detectSyncConflict } from "../../../app/src/core/sync-conflicts"
 
 /**
  * Observa o cofre e junta as mudanças feitas fora do app (Obsidian, Syncthing…) em lotes. Pastas e arquivos com
@@ -50,6 +51,9 @@ export class VaultWatcher {
     const now = Date.now()
     for (const [path, own] of this.ownWrites) if (now - own.at > 5000) this.ownWrites.delete(path)
     for (const path of paths) {
+      // A cópia de conflito é avisada e também segue como mudança comum: o índice precisa mostrá-la e esquecê-la.
+      const conflict = detectSyncConflict(path)
+      if (conflict) changes.push({ type: "conflict", conflict })
       const own = this.ownWrites.get(path)
       try {
         const info = await stat(join(realRoot, ...path.split("/")))

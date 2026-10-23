@@ -1,6 +1,8 @@
 import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 import type { VttApi } from "../vtt/shared/ipc"
-import type { BackupInfo, VaultChange, VaultEntry, VaultInfo } from "./platform"
+import type { BackupInfo, SystemShortcutStatus, VaultChange, VaultEntry, VaultInfo } from "./platform"
+import type { BackupSchedule } from "../core/backup-schedule"
+import type { SyncConflict } from "../core/sync-conflicts"
 
 /** Esquema dos anexos do cofre na interface do desktop: `vault-file://cofre/<caminho>`. */
 export const VAULT_FILE_SCHEME = "vault-file"
@@ -26,6 +28,10 @@ export interface RunasCodexBridge {
     onChange(listener: (changes: VaultChange[]) => void): () => void
     backup(): Promise<BackupInfo>
     listBackups(): Promise<BackupInfo[]>
+    backupSchedule(): Promise<BackupSchedule>
+    setBackupSchedule(schedule: Partial<BackupSchedule>): Promise<BackupSchedule>
+    listSyncConflicts(): Promise<SyncConflict[]>
+    archiveSyncConflict(path: string): Promise<string>
     revealBackups(): Promise<void>
     /** Abre um anexo (PDF, imagem, áudio, vídeo) no programa padrão do sistema. */
     openFile(path: string): Promise<void>
@@ -64,4 +70,9 @@ export interface RunasCodexBridge {
   /** Abre uma nota (`/notas/<caminho>`) numa janela extra. */
   openWindow(route: string): Promise<void>
   setTrayEnabled?(enabled:boolean):Promise<boolean>
+  readonly systemShortcut: {
+    status(): Promise<SystemShortcutStatus>
+    create(): Promise<SystemShortcutStatus>
+    remove(): Promise<SystemShortcutStatus>
+  }
 }

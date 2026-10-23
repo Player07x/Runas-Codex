@@ -237,6 +237,23 @@ X7 voltaram à `main` pelo #52.
 | **F5** Início, Configurações, Transferir, VTT | Claude Code | próxima sessão de uma fonte só; Centelhas no cofre; lugares de Ajuda e Backups |
 | Itens 1 a 9 de [codex-durante-rework.md](codex-durante-rework.md) | Codex | sala pela internet no Android, Homebrewery, PIN, atalho no Wayland, X6, C9 sem tela, C7, Tasks |
 
+A **F1** está no branch `rework/f1-fundacoes` (começada pelo Claude Code, conferida pelo Codex); a conferência manual de
+rotas, foco, painéis, temas e criação pelo menu `Novo` está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
+
+A **F2** está no branch `rework/f2-acessibilidade`, empilhado sobre a F1: seção Acessibilidade nas Configurações, fonte
+legível embutida, contraste alto e barra inferior configurável (decisões na ADR 0026).
+
+A **F3** sai em duas partes empilhadas: **F3a** (`rework/f3-editor-livros`) é o editor compartilhado — barra única,
+formatação na seleção, menu `/`, galeria Formatar, Código mais legível e barra sobre o teclado; **F3b**
+(`rework/f3b-livros`) refaz Livros: Escrever, Organizar e Prévia, sumário, painel Apoio e celular.
+
+A **F4** sai por espaço, em partes empilhadas: **F4a** Notas (`rework/f4a-notas`), **F4b** Wiki (`rework/f4b-wiki`),
+**F4c** Campanhas (`rework/f4c-campanhas`), **F4d** Agenda (`rework/f4d-agenda`) e **F4e** personalização com
+cores, capas, ícones e imagens (`rework/f4e-personalizacao`, ADR 0027).
+
+A **F5** (`rework/f5-inicio-config`) fecha o rework: próxima sessão de uma fonte só, Início compacto, Centelhas no
+cofre, Configurações com índice, Transferir por escolha e a tela do VTT (decisões na ADR 0026).
+
 **Quem mexe em quê durante o rework:** telas, componentes e estilos (`app/src/screens/**`, `app/src/components/**`,
 `app/src/styles/**`) são do Claude Code, inclusive Livros e as telas do VTT fora da mesa; o Codex fica com o núcleo, a
 `Platform`, o processo principal do desktop, o Android nativo e o VTT por dentro (`app/src/vtt/**`). Quem precisar de
@@ -245,3 +262,24 @@ algo do outro lado pede no PR.
 **ADRs:** 0025 é a regra de lançamentos. Reservadas: **0026** rework visual e **0027** cores, capas e imagens por
 campanha e categoria (Claude Code); **0028** em diante para o Codex. Há duas ADRs com o número 0020 (Tasks e
 Transferências); ficam como estão para não quebrar links.
+
+## Itens do Codex durante o rework — situação (22/10/2026)
+
+Feitos pelo Codex na pasta principal, sem commit; reunidos e conferidos pelo Claude Code no branch
+`codex/itens-rework-1-7`. As telas de cada um entram nas fases do rework (pedidas nas ADRs).
+
+| Item de [codex-durante-rework.md](codex-durante-rework.md) | Situação |
+|---|---|
+| 1. Sala pela internet no Android | aviso claro na sala; estudo e decisão na [ADR 0032](../adr/0032-tunel-publico-android.md) (o túnel em si fica para depois) |
+| 2. Código cercado do Homebrewery | corrigido, com teste |
+| 3. Teste do PIN | determinístico |
+| 4. Captura no Wayland | `--captura` e atalho do sistema no processo principal ([ADR 0029](../adr/0029-captura-wayland.md)); o botão é da F5 |
+| 5. X6, fechamento da mesa | importar Universal VTT, Foundry e tokens em lote, pinos ligados a notas, projeção incremental ([ADR 0028](../adr/0028-fechamento-mesa-x6.md)) |
+| 6. C9 sem interface | guarda de rede no smoke, teste dos instaladores, gerador de cofre grande ([ADR 0030](../adr/0030-c9-desempenho-rede-instaladores.md)) |
+| 7. C7 | backups agendados e conflitos do Syncthing e do Obsidian Sync no núcleo ([ADR 0031](../adr/0031-c7-backups-conflitos-sync.md)); a tela é da F5 |
+| 8. Tasks: o que falta na matriz | feito no #62: comandos “Definir tarefa” por estado, marcadores de outlinks e Busca rápida; falta conferir no Obsidian com o Tasks 8.6.0 |
+| 9. Depois do rework | aguardando |
+
+A ADR do túnel foi criada como 0027 e renumerada para **0032**: a 0027 é do rework (cores, capas e imagens).
+
+O inventário das frentes ainda abertas e dos responsáveis está em [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md).
