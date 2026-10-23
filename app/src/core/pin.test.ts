@@ -9,7 +9,8 @@ describe("PIN do espaço Notas", () => {
 
   it("guarda só o hash com sal, e confere o PIN certo", async () => {
     const stored = await createPin("2468")
-    expect(stored.hash).not.toContain("2468")
+    // O hash é aleatório: procurar o texto do PIN nele deixava o teste instável.
+    expect(stored.hash).toMatch(/^[0-9a-f]{64}$/)
     expect(stored.salt).toMatch(/^[0-9a-f]{32}$/)
     expect(await checkPin("2468", stored)).toBe(true)
     expect(await checkPin("2469", stored)).toBe(false)

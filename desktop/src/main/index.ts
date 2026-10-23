@@ -4,7 +4,7 @@ import { exportBookPdf } from "./books-pdf"
 import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { app, BrowserWindow, dialog, ipcMain, protocol, shell, type IpcMainInvokeEvent } from "electron"
+import { app, BrowserWindow, dialog, ipcMain, protocol, session, shell, type IpcMainInvokeEvent } from "electron"
 import { IPC } from "../shared/ipc"
 import { ReminderScheduler, validReminders } from "./reminders"
 import { checkBookFiles, checkMaster, checkPdf, checkRoom, SMOKE_SCRIPT, smokePassed } from "./smoke"
@@ -16,9 +16,11 @@ import { checkForUpdate, downloadUpdate, installUpdate, updateTarget } from "./u
 import { attachContextMenu, configureSpellchecker, installDictionary, spellcheckPassed, spellcheckReport } from "./spellcheck"
 import { DeepLinks } from "./deep-links"
 import { enableShortcutPortal, registerQuickCapture } from "./quick-capture"
+import { createSystemShortcut, removeSystemShortcut, systemShortcut } from "./system-shortcut"
 import type { UpdateInfo } from "../../../app/src/core/updates"
 import { NoteWindows } from "./windows"
 import { checkNoteWindows } from "./notes-windows-smoke"
+import { NetworkGuard } from "./network-guard"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -38,6 +40,7 @@ protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege
  * imprime o resultado e sai. Com `--write`, trabalha numa cópia temporária do cofre e testa as gravações.
  */
 const smoke = process.argv.includes("--smoke")
+const networkGuard = smoke ? new NetworkGuard() : null
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
 const desktopTray=new DesktopTray()
@@ -47,7 +50,11 @@ const vault = new VaultService(() => mainWindow, async () => { await noteWindows
 const vtt = new VttHost(() => vault.rootPath, () => vault.info()?.readOnly === false)
 const reminders = new ReminderScheduler(() => mainWindow, (path) => mainWindow?.webContents.send(IPC.agendaOpen, path))
 // `runas://abrir?nota=…` abre a nota pelo mesmo caminho que um lembrete tocado usa. O smoke roda sem a trava de cópia única.
-const deepLinks = new DeepLinks(() => mainWindow, (path) => mainWindow?.webContents.send(IPC.agendaOpen, path))
+const deepLinks = new DeepLinks(
+  () => mainWindow,
+  (path) => mainWindow?.webContents.send(IPC.agendaOpen, path),
+  () => mainWindow?.webContents.send(IPC.quickCapture),
+)
 if (!smoke && !deepLinks.claim()) app.exit(0)
 
 /** Só a janela do app conversa com o processo principal. */
@@ -86,6 +93,18 @@ function registerIpc(): void {
   handle(IPC.vaultTrash, (_event, path) => vault.trash(text(path, "caminho")))
   handle(IPC.vaultBackup, () => vault.backup())
   handle(IPC.vaultListBackups, () => vault.listBackups())
+  handle(IPC.vaultBackupSchedule, () => vault.backupSchedule())
+  handle(IPC.vaultSetBackupSchedule, (_event, value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Configuração de backup inválida.")
+    const input = value as { enabled?: unknown; time?: unknown; keep?: unknown }
+    return vault.setBackupSchedule({
+      ...(typeof input.enabled === "boolean" ? { enabled: input.enabled } : {}),
+      ...(typeof input.time === "string" ? { time: input.time } : {}),
+      ...(typeof input.keep === "number" ? { keep: input.keep } : {}),
+    })
+  })
+  handle(IPC.vaultListSyncConflicts, () => vault.listSyncConflicts())
+  handle(IPC.vaultArchiveSyncConflict, (_event, path) => vault.archiveSyncConflict(text(path, "caminho")))
   handle(IPC.vaultRevealBackups, () => vault.revealBackups())
   handle(IPC.vaultOpenFile, (_event, path) => vault.openFile(text(path, "caminho")))
   handle(IPC.vaultInstallSnippet, (_event, css) => vault.installSnippet(text(css, "snippet")))
@@ -98,6 +117,9 @@ function registerIpc(): void {
     return result.filePath
   })
   handle(IPC.trayEnabled,(_event,enabled)=>desktopTray.set(enabled===true))
+  handle(IPC.systemShortcutStatus, () => systemShortcut())
+  handle(IPC.systemShortcutCreate, () => createSystemShortcut())
+  handle(IPC.systemShortcutRemove, () => removeSystemShortcut())
   handle(IPC.booksPdf, (_event, name) => exportBookPdf(mainWindow!, text(name, "nome"), smoke && process.argv.includes("--write")))
   vtt.register(handle)
   handle(IPC.vaultReadBinary, (_event, path) => vault.readBinary(text(path, "caminho")))
@@ -226,6 +248,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     result.spellcheck = spellcheckReport()
+    result.network = networkGuard?.report() ?? { requests: 0, violations: [] }
     console.log(JSON.stringify(result, null, 2))
     ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true)
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
@@ -241,6 +264,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
 
 void app.whenReady().then(async () => {
   configureSpellchecker()
+  networkGuard?.attach(session.defaultSession)
   if (smoke) await vault.openForSmoke(argValue("vault"), process.argv.includes("--write"))
   else await vault.load()
   registerIpc()

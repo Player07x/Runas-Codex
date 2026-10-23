@@ -84,7 +84,7 @@ describe("autoridade compartilhada da sala", () => {
     expect(options.joinSeat!(state.seats[0]!.code!)).toBeNull()
   })
   it("recusa espectador, outro assento, parede e movimentos desativados", async () => {
-    const { authority, options, db } = await room(),
+    const { authority, options, db, sent } = await room(),
       move = { type: "move", tokenId: "hero", x: 250, y: 250 }
     expect(options.onClientMessage!(move, null)).toMatchObject({ ok: false })
     expect(options.onClientMessage!(move, { slotId: "player-2", label: "Outro" })).toMatchObject({ ok: false })
@@ -92,6 +92,12 @@ describe("autoridade compartilhada da sala", () => {
     expect(options.onClientMessage!({ ...move, x: 750 }, seat)).toMatchObject({ ok: false })
     expect(options.onClientMessage!(move, seat)).toMatchObject({ ok: true })
     expect(db.get("hero")?.data).toMatchObject({ x: 250, y: 250 })
+    const patch = [...sent].reverse().find((message) => message.type === "projection-patch")
+    expect(patch).toBeDefined()
+    if (patch?.type === "projection-patch") {
+      expect(patch.upsert.some((child) => child.id === "hero")).toBe(true)
+      expect(JSON.stringify(patch)).not.toContain("SEGREDO")
+    }
     authority.setMovesEnabled(false)
     expect(options.onClientMessage!(move, seat)).toMatchObject({ ok: false })
   })

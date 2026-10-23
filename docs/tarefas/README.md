@@ -262,3 +262,22 @@ algo do outro lado pede no PR.
 **ADRs:** 0025 é a regra de lançamentos. Reservadas: **0026** rework visual e **0027** cores, capas e imagens por
 campanha e categoria (Claude Code); **0028** em diante para o Codex. Há duas ADRs com o número 0020 (Tasks e
 Transferências); ficam como estão para não quebrar links.
+
+## Itens do Codex durante o rework — situação (22/10/2026)
+
+Feitos pelo Codex na pasta principal, sem commit; reunidos e conferidos pelo Claude Code no branch
+`codex/itens-rework-1-7`. As telas de cada um entram nas fases do rework (pedidas nas ADRs).
+
+| Item de [codex-durante-rework.md](codex-durante-rework.md) | Situação |
+|---|---|
+| 1. Sala pela internet no Android | aviso claro na sala; estudo e decisão na [ADR 0032](../adr/0032-tunel-publico-android.md) (o túnel em si fica para depois) |
+| 2. Código cercado do Homebrewery | corrigido, com teste |
+| 3. Teste do PIN | determinístico |
+| 4. Captura no Wayland | `--captura` e atalho do sistema no processo principal ([ADR 0029](../adr/0029-captura-wayland.md)); o botão é da F5 |
+| 5. X6, fechamento da mesa | importar Universal VTT, Foundry e tokens em lote, pinos ligados a notas, projeção incremental ([ADR 0028](../adr/0028-fechamento-mesa-x6.md)) |
+| 6. C9 sem interface | guarda de rede no smoke, teste dos instaladores, gerador de cofre grande ([ADR 0030](../adr/0030-c9-desempenho-rede-instaladores.md)) |
+| 7. C7 | backups agendados e conflitos do Syncthing e do Obsidian Sync no núcleo ([ADR 0031](../adr/0031-c7-backups-conflitos-sync.md)); a tela é da F5 |
+| 8. Tasks: o que falta na matriz | não começado |
+| 9. Depois do rework | aguardando |
+
+A ADR do túnel foi criada como 0027 e renumerada para **0032**: a 0027 é do rework (cores, capas e imagens).

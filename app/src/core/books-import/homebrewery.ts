@@ -6,12 +6,17 @@ const boxes: Record<string, string> = {
   monster: "statblock", statblock: "statblock", wide: "largo", largo: "largo",
   sidebar: "barra-lateral", warning: "aviso", aviso: "aviso", columns: "colunas",
 }
-const callout = (type: string, body: string) => `\n\n> [!${type}]\n${body.trim().split("\n").map((line) => `> ${line}`).join("\n")}\n\n`
 
 /** Homebrewery v3 e GM Binder: converte contêineres aninhados sem interpretar exemplos de código. */
 export function importHomebrewery(source: string, options: ImportOptions): ImportedBook {
   const warnings = new Set<string>()
   const code = protectCode(source.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n"))
+  const callout = (type: string, body: string) => {
+    // O marcador de código ocupa uma linha só; prefixar o texto protegido antes
+    // de montar o callout faz o `>` chegar também às linhas internas do fenced block.
+    const prepared = code.prefixLines(body, "> ")
+    return `\n\n> [!${type}]\n${prepared.trim().split("\n").map((line) => `> ${line}`).join("\n")}\n\n`
+  }
   const convert = (input: string, nesting = 0): string => {
     if (nesting >= 64) { warnings.add("Blocos com mais de 64 níveis foram mantidos como texto."); return input }
     let output = "", cursor = 0
@@ -52,7 +57,8 @@ export function importHomebrewery(source: string, options: ImportOptions): Impor
       return (wrappers.slice(0, -1).filter(Boolean).map(() => "> ").join("")) + (type ? `> [!${type}]` : "")
     }
     if (/^\s*<\/div>\s*$/i.test(line) && wrappers.length) { wrappers.pop(); return "" }
-    return wrappers.filter(Boolean).map(() => "> ").join("") + line
+    const prefix = wrappers.filter(Boolean).map(() => "> ").join("")
+    return prefix + code.prefixLines(line, prefix)
   }).join("\n")
   if (wrappers.length) warnings.add("Um contêiner HTML não foi fechado; confira o último capítulo.")
   // Cada página que contém uma quebra de coluna ganha seu contêiner, preservando callouts internos.
