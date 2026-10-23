@@ -113,3 +113,51 @@ export const FORMATTER_GROUPS: { title: string; items: Formatter[] }[] = [
     ],
   },
 ]
+
+export interface FormatterEntry extends Formatter { group: string }
+
+/** Todos os formatadores numa lista só, com o grupo de cada um (galeria, menu `/` e busca). */
+export const FORMATTERS: FormatterEntry[] = FORMATTER_GROUPS.flatMap((group) => group.items.map((item) => ({ ...item, group: group.title })))
+
+/** Para buscar sem acento e sem caixa: “italico” acha “Itálico”. */
+export const foldSearch = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR")
+
+/** Formatadores cujo nome ou grupo contém a busca; os que começam pela busca vêm antes. */
+export function searchFormatters(query: string, list: readonly FormatterEntry[] = FORMATTERS): FormatterEntry[] {
+  const q = foldSearch(query.trim())
+  if (!q) return [...list]
+  const hits = list.filter((item) => foldSearch(item.label).includes(q) || foldSearch(item.group).includes(q))
+  const starts = (item: FormatterEntry) => (foldSearch(item.label).startsWith(q) ? 0 : 1)
+  return hits.sort((a, b) => starts(a) - starts(b))
+}
+
+/** Item do menu `/`: insere um texto ou pede uma ação do editor (abrir a galeria, escolher imagem ou modelo). */
+export type SlashItem =
+  | { kind: "insert"; label: string; detail: string; insert: string; block: boolean }
+  | { kind: "action"; label: string; detail: string; action: "format" | "image" | "template" | "link" | "date" }
+
+/** Formatadores que viram bloco próprio (título, lista, caixa, tabela…) entram numa linha só deles. */
+export const isBlockSyntax = (syntax: string) => /^(#{1,6} |> |- |\d+\. |\||```|:::|<(div|table|figure|details|p|hr)\b|\$\$|---$)/.test(syntax.trimStart()) || syntax.startsWith("\n")
+
+/**
+ * O menu `/` do editor: primeiro as ações (galeria, imagem, modelo, link, data) e os comandos que já existiam, depois o
+ * catálogo inteiro de formatadores, filtrado pelo que se digita depois da barra.
+ */
+export function slashItems(query: string, commands: readonly { label: string; detail: string; insert: string }[], extra: readonly FormatterEntry[] = []): SlashItem[] {
+  const actions: SlashItem[] = [
+    { kind: "action", label: "Formatar…", detail: "Todos os formatadores, com busca", action: "format" },
+    { kind: "action", label: "Imagem…", detail: "Escolher imagens do computador", action: "image" },
+    { kind: "action", label: "Modelo…", detail: "Inserir um modelo do cofre", action: "template" },
+    { kind: "action", label: "Link…", detail: "Ligar outra nota", action: "link" },
+    { kind: "action", label: "Data de hoje", detail: "AAAA-MM-DD", action: "date" },
+  ]
+  const legacy: SlashItem[] = commands.filter((c) => !["link", "imagem", "data"].includes(c.label)).map((c) => ({ kind: "insert", label: c.label.charAt(0).toLocaleUpperCase("pt-BR") + c.label.slice(1), detail: c.detail, insert: c.insert, block: true }))
+  // Os do espaço (a aba Wiki, por exemplo) vêm antes do catálogo geral.
+  const formatters: SlashItem[] = [...extra, ...FORMATTERS].map((f) => ({ kind: "insert", label: f.label, detail: f.group, insert: f.syntax, block: isBlockSyntax(f.syntax) }))
+  const q = foldSearch(query.trim())
+  const all = [...actions, ...legacy, ...formatters]
+  if (!q) return all
+  const hits = all.filter((item) => foldSearch(item.label).includes(q) || foldSearch(item.detail).includes(q))
+  const starts = (item: SlashItem) => (foldSearch(item.label).startsWith(q) ? 0 : 1)
+  return hits.sort((a, b) => starts(a) - starts(b))
+}

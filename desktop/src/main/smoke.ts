@@ -220,7 +220,10 @@ export const SMOKE_SCRIPT = `(async () => {
     location.hash = "/notas/" + encodeURIComponent(aldren.path)
     // Espera a nota trocar (o botão da nota anterior ainda pode estar na tela).
     await until(() => document.querySelector(".editor-status")?.getAttribute("title") === aldren.path)
-    const button = await until(() => document.querySelector("[aria-label='Renomear nota']"))
+    // Renomear fica no menu ⋯ da nota (rework F3).
+    const menu = await until(() => document.querySelector(".doc-bar [aria-label='Ações da nota']"))
+    menu.click()
+    const button = await until(() => [...document.querySelectorAll("[role=menuitem]")].find((item) => item.textContent.startsWith("Renomear ou mover")))
     button.click()
     const input = await until(() => document.querySelector("[aria-label='Novo nome']"))
     setter.call(input, "Aldren Vael")
@@ -283,7 +286,8 @@ export const SMOKE_SCRIPT = `(async () => {
   // Livros: a criação pela tela precisa persistir o capítulo e seu link na estrutura.
   const bookPath = "Livros/Guia de Valdris/Guia de Valdris.md"
   location.hash = "/livros/" + encodeURIComponent(bookPath)
-  ;(await until(() => document.querySelector("[aria-label='Criar capítulo']")))?.click()
+  // O sumário do livro (rework F3b) tem “Novo capítulo” no fim da lista.
+  ;(await until(() => [...document.querySelectorAll(".book-toc-new")].find((b) => b.textContent.trim() === "Novo capítulo")))?.click()
   const chapterTitle = await until(() => document.querySelector("[aria-label='Título do capítulo']"))
   if (chapterTitle) {
     setter.call(chapterTitle, "Capítulo do smoke")

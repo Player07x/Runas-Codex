@@ -6,6 +6,9 @@ import "./resizable-panel.css"
 /** Pede a um painel que recolha ou expanda (atalhos de teclado e botões de outras barras). */
 export const TOGGLE_PANEL_EVENT = "runas-codex:alternar-painel"
 export const togglePanel = (id: string) => window.dispatchEvent(new CustomEvent<string>(TOGGLE_PANEL_EVENT, { detail: id }))
+/** Recolhe ou expande um painel de vez (pedir duas vezes dá o mesmo resultado, ao contrário de alternar). */
+export const SET_PANEL_EVENT = "runas-codex:definir-painel"
+export const setPanelCollapsed = (id: string, collapsed: boolean): void => { window.dispatchEvent(new CustomEvent<{ id: string; collapsed: boolean }>(SET_PANEL_EVENT, { detail: { id, collapsed } })) }
 
 /**
  * Painel lateral redimensionável e recolhível: o mesmo controle em todas as telas (ADR 0026). A barra do painel
@@ -25,8 +28,10 @@ export function ResizablePanel({ id, label, side = "right", width = 300, as: Tag
   useEffect(() => { if (reveal) setPrefs(p => ({ ...p, collapsed: false })) }, [reveal])
   useEffect(() => {
     const toggle = (event: Event) => { if ((event as CustomEvent<string>).detail === id) setPrefs(p => ({ ...p, collapsed: !p.collapsed })) }
+    const set = (event: Event) => { const { detail } = event as CustomEvent<{ id: string; collapsed: boolean }>; if (detail.id === id) setPrefs(p => ({ ...p, collapsed: detail.collapsed })) }
     window.addEventListener(TOGGLE_PANEL_EVENT, toggle)
-    return () => window.removeEventListener(TOGGLE_PANEL_EVENT, toggle)
+    window.addEventListener(SET_PANEL_EVENT, set)
+    return () => { window.removeEventListener(TOGGLE_PANEL_EVENT, toggle); window.removeEventListener(SET_PANEL_EVENT, set) }
   }, [id])
   const ref = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; width: number } | null>(null)
