@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { NoteCrest } from "../../components/kit/Emblem"
 import { Eye, EyeOff, Minus, Plus, ShieldCheck, Trash, X } from "lucide-react"
 import { appendToSection, SECRETS_HEADING, setClocks, setSecretRevealed, type Clock } from "../../core/campaigns"
 import { noteName } from "../../core/text"
@@ -171,7 +172,7 @@ export function CastCard({ data }: { data: CampaignData }) {
       </div>
       {data.players.map((p) => (
         <a key={p.path} className="row campaign-person" href={href(noteRoute(p.path))}>
-          <span className="campaign-avatar" style={p.color ? { background: p.color } : undefined}>{p.name[0]}</span>
+          <NoteCrest path={p.path} name={p.name} size={32} />
           <span className="grow">
             <strong className="small">{p.name}</strong>
             <span className="tiny faint" style={{ display: "block" }}>{[p.player, p.concept].filter(Boolean).join(" · ")}</span>

@@ -16,3 +16,25 @@
 .setting-row:first-of-type, .settings-card-head + .setting-row { border-top: 0; }
 .setting-row > div { display: grid; gap: 2px; min-width: 0; }
 .setting-row .select, .setting-row .input { width: auto; min-width: 140px; }
+
+/* Configurações com índice (rework F5, CFG-1). No computador, o índice fica ao lado e todas as seções seguem na
+   página; no celular, /config é a lista de seções e /config/<seção> mostra só a escolhida. */
+.settings-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--space-column); align-items: start; max-width: 1100px; }
+.settings-index { position: sticky; top: 12px; display: grid; gap: 2px; }
+.settings-index a { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 12px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: calc(14px * var(--font-scale, 1)); }
+.settings-index a:hover { background: var(--panel-hover); color: var(--text); }
+.settings-index a[aria-current] { background: var(--cyan-soft, color-mix(in srgb, var(--cyan) 14%, transparent)); color: var(--text); font-weight: 650; box-shadow: inset 3px 0 0 var(--cyan); }
+.settings-sections { display: grid; gap: var(--space-column); min-width: 0; }
+.settings-section { display: grid; gap: var(--space-column); min-width: 0; scroll-margin-top: 12px; }
+.settings-section:focus { outline: none; }
+.settings-section:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; border-radius: var(--radius); }
+.settings-back { display: none; }
+@media (max-width: 860px) {
+  .settings-layout { grid-template-columns: minmax(0, 1fr); }
+  .settings-index { position: static; }
+  .settings-index a { min-height: 48px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+  .settings-page:not(.has-current) .settings-sections { display: none; }
+  .settings-page.has-current .settings-index { display: none; }
+  .settings-page.has-current .settings-section:not(.is-current) { display: none; }
+  .settings-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; justify-self: start; color: var(--cyan); }
+}
