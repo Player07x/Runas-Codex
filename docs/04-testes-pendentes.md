@@ -744,3 +744,23 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Tela do Mestre: tela inteira com Agora, Elenco e Notas fixadas; iniciativa funciona dali; fixar e desafixar nota;
   Esc fecha e o foco volta. No celular: abas Agora, Elenco e Notas fixadas.
 - [ ] Painel no celular: próxima sessão primeiro, estatísticas no fim e recolhidas.
+
+## Rework visual — F4d Agenda (22/10/2026)
+
+- [ ] Cabeçalho: “+ Evento” cria no dia escolhido; o ⋯ abre Enquete de data, Tempo livre, Importar .ics e Exportar .ics.
+  Na busca `Ctrl K`, “Tempo livre” e “Exportar .ics” levam à Agenda e abrem o mesmo diálogo.
+- [ ] Mês só pelo teclado: Tab entra na grade uma vez; setas, Home/End, PageUp/PageDown (com e sem Shift) movem o dia;
+  ao passar do fim do mês, a grade troca de mês e o foco continua no dia. Com o leitor de tela (Orca ou NVDA), cada
+  dia é lido com o nome completo, “hoje” e a quantidade de eventos; trocar de mês com ‹ › é anunciado.
+- [ ] Mês com o mouse: o título do evento aparece antes da hora; “+N no dia” abre o dia no painel.
+- [ ] Painel: Dia, Evento e Tarefas; escolher um evento abre a aba Evento; a aba Dia ou Tarefas volta ao reabrir a Agenda.
+- [ ] Evento de sessão: “Abrir sessão” leva à nota; o estado da sessão aparece; Pular esta data (evento repetido) e
+  Mandar para a lixeira estão no ⋯.
+- [ ] Semana e Dia: Tab numa coluna, setas escolhem a hora, Enter abre o diálogo com a hora preenchida; com quatro
+  eventos ao mesmo tempo aparece “+N”, que leva ao dia.
+- [ ] Lista: “Mostrar mais 60 dias” estende a lista.
+- [ ] Diálogo: salvar sem título mostra o aviso e põe o foco no título; editar um evento com local e sessão abre
+  Detalhes e Sessão; a nota gravada abre igual no Obsidian (Full Calendar).
+- [ ] Lembretes: no Android sem a permissão de alarmes exatos, o aviso aparece no painel e o botão leva à permissão.
+- [ ] Celular: o calendário vem primeiro; tocar num dia sobe o painel; Esc ou o botão do painel fecha; o botão
+  flutuante cria um evento. Sem rolagem para os lados em 320 px.

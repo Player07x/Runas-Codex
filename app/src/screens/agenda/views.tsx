@@ -1,17 +1,28 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { isoDate, type AgendaEvent, type Occurrence } from "../../core/agenda"
+import { addDays, dayLabel, layoutDay, moveDay, startOfDay } from "../../core/agenda-grid"
+import { ListRow } from "../../components/kit/Layout"
 
+export { addDays, startOfDay }
 export const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]
+const WEEKDAY_NAMES = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"]
 const HOUR = 44
 
-export const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
-export const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 export const sameDay = (a: Date, b: Date) => isoDate(a) === isoDate(b)
 const pad = (n: number) => String(n).padStart(2, "0")
 export const hhmm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 
+/** Cor do evento: a escolhida na nota; sessão sem cor em dourado (vermelho é só perigo, ADR 0001); o resto em lavanda. */
 export function eventColor(event: AgendaEvent): string {
-  return `var(--${event.color ?? (/^sess/i.test(event.category ?? "") ? "red" : "cyan")})`
+  return `var(--${event.color ?? (isSessionEvent(event) ? "gold" : "cyan")})`
+}
+
+export const isSessionEvent = (event: AgendaEvent) => Boolean(event.session) || /^sess/i.test(event.category ?? "")
+
+/** Nome completo de um evento para o leitor de tela e a dica: título, horário, local e categoria. */
+export function occurrenceLabel(o: Occurrence): string {
+  const when = o.event.allDay ? "dia inteiro" : `${hhmm(o.start)}${o.event.endTime ? ` às ${hhmm(o.end)}` : ""}`
+  return [o.event.title, when, o.event.location, o.event.category].filter(Boolean).join(", ")
 }
 
 /** Ocorrências que encostam no dia. */
@@ -29,107 +40,155 @@ interface ViewProps {
   onPickDay(day: Date): void
   onPick(occurrence: Occurrence): void
   onCreate(day: Date, time?: string): void
-  /** Resumo do tempo livre do dia (ex.: "6 h livres"), quando configurado. */
+  /** Resumo do tempo livre do dia (ex.: "6h"), quando configurado. */
   freeLabel?(day: Date): string | null
 }
 
-export function MonthView({ month, occurrences, today, selectedDay, selectedKey, onPickDay, onPick, onCreate, freeLabel }: ViewProps & { month: Date }) {
+/**
+ * Mês (AGE-1, AGE-2): grade de datas da WAI-ARIA, com uma parada de Tab. As setas, Home/End e PageUp/PageDown
+ * escolhem o dia (core/agenda-grid.ts); Enter abre o dia no painel. Os eventos ficam fora do Tab: o painel Dia lista
+ * os mesmos como botões.
+ */
+export function MonthView({ month, occurrences, today, selectedDay, selectedKey, onPickDay, onPick, onCreate, freeLabel, onOpenDay }: ViewProps & { month: Date; onOpenDay(day: Date): void }) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1)
   const start = addDays(first, -first.getDay())
-  const days = Array.from({ length: 42 }, (_, i) => addDays(start, i))
+  const weeks = Array.from({ length: 6 }, (_, w) => Array.from({ length: 7 }, (_, i) => addDays(start, w * 7 + i)))
+  const grid = useRef<HTMLDivElement>(null)
+  const keyboard = useRef(false)
+  const selectedIso = isoDate(selectedDay)
+  // O dia que recebe o Tab: o escolhido, se estiver na grade; senão o primeiro do mês.
+  const focusIso = weeks.flat().some((d) => isoDate(d) === selectedIso) ? selectedIso : isoDate(first)
+
+  // O foco acompanha o dia escolhido pelo teclado, mesmo quando a grade troca de mês.
+  useEffect(() => {
+    if (!keyboard.current) return
+    keyboard.current = false
+    grid.current?.querySelector<HTMLElement>(`[data-day="${focusIso}"]`)?.focus()
+  }, [focusIso])
+
+  const onKey = (event: KeyboardEvent<HTMLDivElement>, day: Date) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onOpenDay(day)
+      return
+    }
+    const next = moveDay(day, event.key, event.shiftKey)
+    if (!next) return
+    event.preventDefault()
+    keyboard.current = true
+    onPickDay(next)
+  }
+
   return (
-    <div className="month" role="grid" aria-label="Mês">
-      {WEEKDAYS.map((w) => (
-        <div key={w} className="month-head">
-          {w}
+    <div ref={grid} className="month" role="grid" aria-label={month.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}>
+      <div role="row" className="month-row month-head-row">
+        {WEEKDAYS.map((w, i) => (
+          <div key={w} role="columnheader" className="month-head" aria-label={WEEKDAY_NAMES[i]}>
+            {w}
+          </div>
+        ))}
+      </div>
+      {weeks.map((week) => (
+        <div key={isoDate(week[0]!)} role="row" className="month-row">
+          {week.map((day) => {
+            const iso = isoDate(day)
+            const items = onDay(occurrences, day)
+            const free = freeLabel?.(day) ?? null
+            const picked = iso === selectedIso
+            return (
+              <div
+                key={iso}
+                role="gridcell"
+                tabIndex={iso === focusIso ? 0 : -1}
+                aria-selected={picked}
+                aria-label={dayLabel(day, today, items.length, free)}
+                className={`month-cell ${day.getMonth() !== month.getMonth() ? "outside" : ""} ${sameDay(day, today) ? "today" : ""} ${picked ? "picked" : ""}`}
+                onClick={() => onPickDay(day)}
+                onDoubleClick={() => onCreate(day)}
+                onKeyDown={(event) => onKey(event, day)}
+                data-day={iso}
+              >
+                <span className="cell-top" aria-hidden="true">
+                  <span className="day-number">{day.getDate()}</span>
+                  {free && <span className="cell-free">{free}</span>}
+                </span>
+                <span className="cell-events" aria-hidden="true">
+                  {items.slice(0, 3).map((o) => (
+                    <button
+                      key={o.key}
+                      type="button"
+                      tabIndex={-1}
+                      className={`event-pill ${o.key === selectedKey ? "active" : ""} ${o.event.completed ? "done" : ""} ${o.event.allDay ? "all-day" : ""}`}
+                      style={{ ["--ev" as string]: eventColor(o.event) }}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onPick(o)
+                      }}
+                      title={occurrenceLabel(o)}
+                    >
+                      <span className="pill-title">{o.event.title}</span>
+                      {!o.event.allDay && sameDay(o.start, day) && <span className="pill-time">{hhmm(o.start)}</span>}
+                    </button>
+                  ))}
+                  {items.length > 3 && (
+                    <button type="button" tabIndex={-1} className="cell-more" onClick={(event) => (event.stopPropagation(), onOpenDay(day))}>
+                      +{items.length - 3} no dia
+                    </button>
+                  )}
+                </span>
+                <span className="cell-dots" aria-hidden="true">
+                  {items.slice(0, 4).map((o) => (
+                    <span key={o.key} className="dot" style={{ background: eventColor(o.event) }} />
+                  ))}
+                </span>
+              </div>
+            )
+          })}
         </div>
       ))}
-      {days.map((day) => {
-        const items = onDay(occurrences, day)
-        return (
-          <div
-            key={day.toISOString()}
-            role="gridcell"
-            tabIndex={0}
-            className={`month-cell ${day.getMonth() !== month.getMonth() ? "outside" : ""} ${sameDay(day, today) ? "today" : ""} ${sameDay(day, selectedDay) ? "picked" : ""}`}
-            onClick={() => onPickDay(day)}
-            onDoubleClick={() => onCreate(day)}
-            onKeyDown={(event) => event.key === "Enter" && onPickDay(day)}
-            data-day={isoDate(day)}
-          >
-            <span className="day-number">{day.getDate()}</span>
-            {freeLabel?.(day) && <span className="cell-free tiny" title="Tempo livre no dia">{freeLabel(day)}</span>}
-            <span className="cell-events">
-              {items.slice(0, 3).map((o) => (
-                <button
-                  key={o.key}
-                  className={`event-pill ${o.key === selectedKey ? "active" : ""} ${o.event.completed ? "done" : ""}`}
-                  style={{ ["--ev" as string]: eventColor(o.event) }}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onPick(o)
-                  }}
-                  title={o.event.title}
-                >
-                  {!o.event.allDay && sameDay(o.start, day) && <b>{hhmm(o.start)}</b>} {o.event.title}
-                </button>
-              ))}
-              {items.length > 3 && <span className="tiny faint">+{items.length - 3}</span>}
-            </span>
-            <span className="cell-dots">
-              {items.slice(0, 4).map((o) => (
-                <span key={o.key} className="dot" style={{ background: eventColor(o.event) }} />
-              ))}
-            </span>
-          </div>
-        )
-      })}
     </div>
   )
 }
 
-/** Eventos com horário lado a lado quando se sobrepõem. */
-function layoutDay(list: Occurrence[], day: Date): { occurrence: Occurrence; top: number; height: number; column: number; columns: number }[] {
-  const dayStart = startOfDay(day).getTime()
-  const items = list
-    .map((occurrence) => {
-      const from = Math.max(occurrence.start.getTime(), dayStart)
-      const to = Math.min(occurrence.end.getTime(), dayStart + 86_400_000)
-      return { occurrence, from, to, column: 0, columns: 1 }
-    })
-    .sort((a, b) => a.from - b.from || b.to - a.to)
-  let cluster: typeof items = []
-  let clusterEnd = 0
-  const close = () => {
-    const columns = Math.max(1, ...cluster.map((i) => i.column + 1))
-    for (const item of cluster) item.columns = columns
-    cluster = []
-  }
-  for (const item of items) {
-    if (cluster.length && item.from >= clusterEnd) close()
-    const used = new Set(cluster.filter((i) => i.to > item.from).map((i) => i.column))
-    while (used.has(item.column)) item.column++
-    cluster.push(item)
-    clusterEnd = Math.max(clusterEnd, item.to)
-  }
-  close()
-  return items.map(({ occurrence, from, to, column, columns }) => ({
-    occurrence,
-    top: ((from - dayStart) / 3_600_000) * HOUR,
-    height: Math.max(22, ((to - from) / 3_600_000) * HOUR - 2),
-    column,
-    columns,
-  }))
-}
-
-/** Semana ou dia: grade de horas, com os eventos de dia inteiro em cima. */
-export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCreate, onPickDay, freeLabel }: ViewProps & { days: Date[] }) {
+/**
+ * Semana ou dia (AGE-6): grade de horas, com os eventos de dia inteiro em cima. Cada coluna é uma parada de Tab: as
+ * setas para cima e para baixo escolhem a hora, para os lados trocam de dia, e Enter cria o evento na hora escolhida.
+ */
+export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCreate, onPickDay, onShowMore, freeLabel }: ViewProps & { days: Date[]; onShowMore(day: Date): void }) {
   const scroller = useRef<HTMLDivElement>(null)
+  const columns = useRef<HTMLDivElement>(null)
+  const [focus, setFocus] = useState<{ day: number; hour: number } | null>(null)
+  const [focusDay, setFocusDay] = useState(() => Math.max(0, days.findIndex((d) => sameDay(d, today))))
   useEffect(() => {
     // Começa às 7h (ou na hora atual, se for depois).
     if (scroller.current) scroller.current.scrollTop = Math.max(0, Math.min(new Date().getHours() - 1, 7)) * HOUR
   }, [])
   const now = new Date()
+  const maxColumns = days.length === 1 ? 6 : 3
+
+  const onKey = (event: KeyboardEvent<HTMLDivElement>, index: number) => {
+    if (event.target !== event.currentTarget) return
+    const hour = focus?.day === index ? focus.hour : Math.max(7, Math.min(23, now.getHours()))
+    let next = { day: index, hour }
+    if (event.key === "ArrowDown") next = { day: index, hour: Math.min(23, hour + 1) }
+    else if (event.key === "ArrowUp") next = { day: index, hour: Math.max(0, hour - 1) }
+    else if (event.key === "ArrowRight" && index < days.length - 1) next = { day: index + 1, hour }
+    else if (event.key === "ArrowLeft" && index > 0) next = { day: index - 1, hour }
+    else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onCreate(days[index]!, `${pad(hour)}:00`)
+      return
+    } else return
+    event.preventDefault()
+    setFocus(next)
+    setFocusDay(next.day)
+    if (next.day !== index) columns.current?.querySelectorAll<HTMLElement>(".timegrid-col")[next.day]?.focus()
+    if (scroller.current) {
+      const top = next.hour * HOUR
+      if (top < scroller.current.scrollTop || top + HOUR > scroller.current.scrollTop + scroller.current.clientHeight) scroller.current.scrollTop = Math.max(0, top - HOUR)
+    }
+  }
+
   return (
     <div className="timegrid" style={{ ["--days" as string]: days.length }}>
       <div className="timegrid-head">
@@ -138,13 +197,13 @@ export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCrea
           const allDay = onDay(occurrences, day).filter((o) => o.event.allDay)
           return (
             <div key={day.toISOString()} className={`timegrid-day-head ${sameDay(day, today) ? "today" : ""}`}>
-              <button className="ghost-link" onClick={() => onPickDay(day)}>
+              <button type="button" className="ghost-link" onClick={() => onPickDay(day)} aria-label={`${day.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}${sameDay(day, today) ? ", hoje" : ""}: ver o dia`}>
                 {WEEKDAYS[day.getDay()]} <strong>{day.getDate()}</strong>
               </button>
-              {freeLabel?.(day) && <span className="cell-free tiny" title="Tempo livre no dia">{freeLabel(day)}</span>}
+              {freeLabel?.(day) && <span className="cell-free" title="Tempo livre no dia">{freeLabel(day)}</span>}
               {allDay.map((o) => (
-                <button key={o.key} className={`event-pill ${o.key === selectedKey ? "active" : ""}`} style={{ ["--ev" as string]: eventColor(o.event) }} onClick={() => onPick(o)}>
-                  {o.event.title}
+                <button key={o.key} type="button" className={`event-pill all-day ${o.key === selectedKey ? "active" : ""}`} style={{ ["--ev" as string]: eventColor(o.event) }} onClick={() => onPick(o)} aria-label={occurrenceLabel(o)}>
+                  <span className="pill-title">{o.event.title}</span>
                 </button>
               ))}
             </div>
@@ -152,67 +211,95 @@ export function TimeGrid({ days, occurrences, today, selectedKey, onPick, onCrea
         })}
       </div>
       <div className="timegrid-body" ref={scroller}>
-        <div className="timegrid-hours">
+        <div className="timegrid-hours" aria-hidden="true">
           {Array.from({ length: 24 }, (_, h) => (
             <span key={h}>{pad(h)}h</span>
           ))}
         </div>
-        {days.map((day) => (
-          <div
-            key={day.toISOString()}
-            className={`timegrid-col ${sameDay(day, today) ? "today" : ""}`}
-            onDoubleClick={(event) => {
-              const y = event.clientY - event.currentTarget.getBoundingClientRect().top
-              const hour = Math.max(0, Math.min(23, Math.floor(y / HOUR)))
-              onCreate(day, `${pad(hour)}:00`)
-            }}
-          >
-            {layoutDay(
-              onDay(occurrences, day).filter((o) => !o.event.allDay),
-              day,
-            ).map(({ occurrence, top, height, column, columns }) => (
-              <button
-                key={occurrence.key}
-                className={`week-event ${occurrence.key === selectedKey ? "active" : ""}`}
-                style={{ top, height, left: `calc(${(column / columns) * 100}% + 2px)`, width: `calc(${100 / columns}% - 4px)`, ["--ev" as string]: eventColor(occurrence.event) }}
-                onClick={() => onPick(occurrence)}
+        <div className="timegrid-cols" ref={columns}>
+          {days.map((day, index) => {
+            const { placed, overflow } = layoutDay(onDay(occurrences, day).filter((o) => !o.event.allDay), day, HOUR, maxColumns)
+            const hour = focus?.day === index ? focus.hour : null
+            return (
+              <div
+                key={day.toISOString()}
+                className={`timegrid-col ${sameDay(day, today) ? "today" : ""}`}
+                tabIndex={index === focusDay ? 0 : -1}
+                aria-label={`${day.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}${hour !== null ? `, ${pad(hour)}:00` : ""}. Setas escolhem a hora; Enter cria um evento.`}
+                onFocus={(event) => event.target === event.currentTarget && !focus && setFocus({ day: index, hour: Math.max(7, Math.min(23, now.getHours())) })}
+                onBlur={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && !columns.current?.contains(event.relatedTarget as Node) && setFocus(null)}
+                onKeyDown={(event) => onKey(event, index)}
+                onDoubleClick={(event) => {
+                  const y = event.clientY - event.currentTarget.getBoundingClientRect().top
+                  const h = Math.max(0, Math.min(23, Math.floor(y / HOUR)))
+                  onCreate(day, `${pad(h)}:00`)
+                }}
               >
-                <b>{hhmm(occurrence.start)}</b> {occurrence.event.title}
-                {occurrence.event.location && height > 40 && <span className="tiny faint block">{occurrence.event.location}</span>}
-              </button>
-            ))}
-            {sameDay(day, now) && <span className="now-line" style={{ top: ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR }} />}
-          </div>
-        ))}
+                {hour !== null && <span className="hour-cursor" style={{ top: hour * HOUR }} aria-hidden="true">{pad(hour)}:00</span>}
+                {placed.map(({ occurrence, top, height, column, columns: count }) => (
+                  <button
+                    key={occurrence.key}
+                    type="button"
+                    className={`week-event ${occurrence.key === selectedKey ? "active" : ""}`}
+                    style={{ top, height, left: `calc(${(column / count) * 100}% + 2px)`, width: `calc(${100 / count}% - 4px)`, ["--ev" as string]: eventColor(occurrence.event) }}
+                    onClick={() => onPick(occurrence)}
+                    aria-label={occurrenceLabel(occurrence)}
+                    title={occurrenceLabel(occurrence)}
+                  >
+                    <span className="week-event-title">{occurrence.event.title}</span> <span className="week-event-time">{hhmm(occurrence.start)}</span>
+                    {occurrence.event.location && height > 40 && <span className="week-event-place">{occurrence.event.location}</span>}
+                  </button>
+                ))}
+                {overflow.map((group) => (
+                  <button
+                    key={`mais-${group.top}`}
+                    type="button"
+                    className="week-more"
+                    style={{ top: group.top, height: group.height, left: `calc(${(group.column / group.columns) * 100}% + 2px)`, width: `calc(${100 / group.columns}% - 4px)` }}
+                    onClick={() => onShowMore(day)}
+                    aria-label={`Mais ${group.hidden.length}: ${group.hidden.map((o) => o.event.title).join(", ")}`}
+                  >
+                    +{group.hidden.length}
+                  </button>
+                ))}
+                {sameDay(day, now) && <span className="now-line" style={{ top: ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR }} />}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
 }
 
-export function ListView({ from, occurrences, selectedKey, onPick }: { from: Date; occurrences: Occurrence[]; selectedKey?: string; onPick(o: Occurrence): void }) {
+/** Lista (AGE-7): um título por dia e linhas do kit; “Mostrar mais” estende o período sem trocar de página. */
+export function ListView({ from, days, occurrences, selectedKey, onPick, onMore }: { from: Date; days: number; occurrences: Occurrence[]; selectedKey?: string; onPick(o: Occurrence): void; onMore(): void }) {
   const groups = new Map<string, Occurrence[]>()
   for (const o of occurrences) {
     const day = isoDate(o.start < from ? from : o.start)
     groups.set(day, [...(groups.get(day) ?? []), o])
   }
-  if (!groups.size) return <p className="muted small">Nada marcado nos próximos 60 dias.</p>
   return (
-    <div className="stack-lg">
+    <div className="agenda-list">
+      {!groups.size && <p className="muted">Nada marcado nos próximos {days} dias.</p>}
       {[...groups].map(([day, list]) => (
-        <div key={day} className="stack">
-          <span className="eyebrow">{new Date(`${day}T12:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span>
+        <section key={day} className="agenda-list-day" aria-labelledby={`dia-${day}`}>
+          <h3 id={`dia-${day}`} className="agenda-list-title">{new Date(`${day}T12:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</h3>
           {list.map((o) => (
-            <button key={o.key} className={`list-item ${o.key === selectedKey ? "active" : ""}`} onClick={() => onPick(o)}>
-              <span className="dot" style={{ background: eventColor(o.event) }} />
-              <span className="mono small" style={{ width: 52 }}>
-                {o.event.allDay ? "dia" : hhmm(o.start)}
-              </span>
-              <span className="grow truncate">{o.event.title}</span>
-              {o.event.category && <span className="chip">{o.event.category}</span>}
-            </button>
+            <ListRow
+              key={o.key}
+              media={<span className="dot" style={{ background: eventColor(o.event) }} />}
+              title={o.event.title}
+              meta={[o.event.allDay ? "dia inteiro" : `${hhmm(o.start)}${o.event.endTime ? `–${hhmm(o.end)}` : ""}`, o.event.category, o.event.location].filter(Boolean).join(" · ")}
+              onClick={() => onPick(o)}
+              current={o.key === selectedKey}
+            />
           ))}
-        </div>
+        </section>
       ))}
+      <button type="button" className="btn agenda-list-more" onClick={onMore}>
+        Mostrar mais 60 dias
+      </button>
     </div>
   )
 }
