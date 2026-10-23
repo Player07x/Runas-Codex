@@ -1,16 +1,19 @@
 /* ---------- Tela inicial do VTT: só duas opções ---------- */
-.vtt-home { min-height: 100%; align-content: center; }
-.vtt-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 340px)); justify-content: center; gap: 24px; }
-.vtt-choice { display: grid; justify-items: center; gap: 12px; padding: 40px 24px; border: 1px solid var(--line-strong); border-radius: 22px; color: var(--text); text-align: center; text-decoration: none; transition: transform 120ms, border-color 120ms; }
+/* VTT-1 (rework F5): cartões maiores, mesas recentes embaixo e o aviso de rede em texto normal. */
+.vtt-home { display: grid; gap: var(--space-section); max-width: 960px; margin: 0 auto; }
+.vtt-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.vtt-choice { display: grid; justify-items: center; align-content: center; gap: 14px; min-height: 260px; padding: 44px 28px; border: 1px solid var(--line-strong); border-radius: 22px; color: var(--text); text-align: center; text-decoration: none; transition: transform 120ms, border-color 120ms; }
 .vtt-choice:hover { transform: translateY(-2px); }
 .vtt-choice strong { font-size: calc(26px * var(--font-scale, 1)); }
-.vtt-choice span { color: var(--muted); max-width: 240px; }
+.vtt-choice span { color: var(--muted); max-width: 300px; font-size: calc(16px * var(--font-scale, 1)); }
+.vtt-recent { display: grid; gap: 4px; }
+.vtt-recent .section-title { margin-bottom: 4px; }
 .vtt-choice.create { background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--red) 28%, transparent), transparent 70%), var(--panel); }
 .vtt-choice.create svg { color: var(--red); }
 .vtt-choice.join { background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--cyan) 22%, transparent), transparent 70%), var(--panel); }
 .vtt-choice.join svg { color: var(--cyan); }
 .vtt-note { display: flex; justify-content: center; align-items: center; gap: 6px; text-align: center; }
-@media (max-width: 640px) { .vtt-choices { grid-template-columns: minmax(0, 1fr); gap: 14px; } .vtt-choice { padding: 28px 18px; } }
+@media (max-width: 640px) { .vtt-choices { grid-template-columns: minmax(0, 1fr); gap: 14px; } .vtt-choice { min-height: 0; padding: 28px 18px; } }
 
 /* ---------- Criar Sala ---------- */
 .mesa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: var(--space-column); }

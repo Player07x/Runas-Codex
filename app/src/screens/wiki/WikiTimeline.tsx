@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { History, Users } from "lucide-react"
+import { ChevronDown, History, List, Users } from "lucide-react"
 import { dayNumber, formatDate, formatYear, fromDayNumber, type Calendar, type WorldDate } from "../../core/calendar"
 import { calendarOffsets } from "../../core/calendar-sync"
 import { listMaps, timelineEvents, type CalendarRef, type TimelineEvent } from "../../core/wiki"
@@ -69,6 +69,8 @@ export function WikiTimeline() {
   const index = vault.index!
   const [people, setPeople] = useState(false)
   const [zoom, setZoom] = useState(1)
+  // A lista é a vista equivalente ao gráfico, pelo teclado e pelo leitor de tela (rework F4b, WIK-3).
+  const [asList, setAsList] = useState(false)
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const [tag, setTag] = useState("")
   const [picked, setPicked] = useState<string[] | null>(() => (wiki ? storedPaths(wiki.name) : null))
@@ -126,44 +128,57 @@ export function WikiTimeline() {
             <History size={22} /> Linha do tempo
           </h1>
         </div>
-        <div className="row-wrap">
-          <label className="check small">
-            <input type="checkbox" checked={people} onChange={(e) => setPeople(e.target.checked)} /> <Users size={14} /> Nascimentos e mortes
-          </label>
-          <input className="input sm" placeholder="Filtrar por tag" value={tag} onChange={(e) => setTag(e.target.value)} aria-label="Filtrar por tag" style={{ width: 150 }} />
-          <label className="field graph-slider" style={{ width: 160 }}>
-            <span className="tiny muted">Zoom</span>
-            <input type="range" min={1} max={20} step={0.5} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} aria-label="Zoom da linha do tempo" />
-          </label>
-        </div>
       </div>
-      {calendars.length > 1 && (
-        <fieldset className="card row-wrap timeline-calendars">
-          <legend className="small" style={{ fontWeight: 650 }}>Calendários exibidos</legend>
-          {calendars.map((c) => (
-            <label key={c.path} className="check small">
-              <input type="checkbox" checked={chosen.some((x) => x.path === c.path)} onChange={(e) => toggle(c.path, e.target.checked)} /> {c.calendar.name} <span className="chip">{c.calendar.abbr}</span>
+      {/* Uma linha de controles (rework F4b, WIK-3): Calendários e Filtros recolhidos, zoom, ajustar e lista. */}
+      <div className="timeline-controls" role="group" aria-label="Controles da linha do tempo">
+        {calendars.length > 1 && (
+          <details className="dropdown">
+            <summary className="btn sm">Calendários · {chosen.length} <ChevronDown size={14} /></summary>
+            <fieldset className="dropdown-panel card stack">
+              <legend className="sr-only">Calendários exibidos</legend>
+              {calendars.map((c) => (
+                <label key={c.path} className="check small">
+                  <input type="checkbox" checked={chosen.some((x) => x.path === c.path)} onChange={(e) => toggle(c.path, e.target.checked)} /> {c.calendar.name} <span className="chip">{c.calendar.abbr}</span>
+                </label>
+              ))}
+              <span className="tiny muted">Calendários sincronizados (Wiki › Calendário › Sincronizar) dividem o mesmo eixo; os outros aparecem em gráficos separados.</span>
+            </fieldset>
+          </details>
+        )}
+        <details className="dropdown">
+          <summary className="btn sm">Filtros{(people ? 1 : 0) + (tag.trim() ? 1 : 0) + hidden.size ? ` · ${(people ? 1 : 0) + (tag.trim() ? 1 : 0) + hidden.size}` : ""} <ChevronDown size={14} /></summary>
+          <div className="dropdown-panel card stack">
+            <label className="check small">
+              <input type="checkbox" checked={people} onChange={(e) => setPeople(e.target.checked)} /> <Users size={14} /> Nascimentos e mortes
             </label>
-          ))}
-          <span className="tiny muted" style={{ flexBasis: "100%" }}>Calendários sincronizados (Wiki › Calendário › Sincronizar) dividem o mesmo eixo; os outros aparecem em gráficos separados.</span>
-        </fieldset>
-      )}
-      {calendar && <section className="card row-wrap"><strong>Crônicas: mapa por era</strong><label>Era<select className="input" value={eraYear} onChange={e=>setEraYear(Number(e.target.value))}>{calendar.eras.map(era=><option key={era.start} value={era.start}>{era.name} ({era.start})</option>)}<option value={calendar.today?.year??0}>Hoje ({calendar.today?.year??0})</option></select></label><label>Mapa<select className="input" value={mapPath} onChange={e=>setMapPath(e.target.value)}><option value="">Escolha um mapa…</option>{listMaps(index,wiki!.root).filter(n=>!players||n.meta.frontmatter?.data?.segredo!==true).map(n=><option key={n.path} value={n.path}>{n.name}</option>)}</select></label><button className="btn" disabled={!mapPath} onClick={()=>{try{sessionStorage.setItem("runas-codex:era-mapa",String(eraYear))}catch{}navigate(`/wiki/mapa/${encodeURIComponent(mapPath)}`)}}>Ver mapa nesta era</button></section>}
-      {tracks.length > 1 && (
-        <div className="row-wrap" role="group" aria-label="Trilhas">
-          {tracks.map((t, i) => (
-            <button key={t} className={`chip track-chip ${hidden.has(t) ? "off" : ""}`} style={{ ["--tr" as string]: TRACK_COLORS[i % TRACK_COLORS.length] }} aria-pressed={!hidden.has(t)} onClick={() => setHidden((h) => (h.has(t) ? new Set([...h].filter((v) => v !== t)) : new Set([...h, t])))}>
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
+            <label className="field"><span>Tag</span><input className="input sm" placeholder="Filtrar por tag" value={tag} onChange={(e) => setTag(e.target.value)} /></label>
+            {tracks.length > 1 && (
+              <div className="row-wrap" role="group" aria-label="Trilhas">
+                {tracks.map((t, i) => (
+                  <button key={t} className={`chip track-chip ${hidden.has(t) ? "off" : ""}`} style={{ ["--tr" as string]: TRACK_COLORS[i % TRACK_COLORS.length] }} aria-pressed={!hidden.has(t)} onClick={() => setHidden((h) => (h.has(t) ? new Set([...h].filter((v) => v !== t)) : new Set([...h, t])))}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </details>
+        <label className="field graph-slider timeline-zoom">
+          <span className="tiny muted">Zoom</span>
+          <input type="range" min={1} max={20} step={0.5} value={zoom} disabled={asList} onChange={(e) => setZoom(Number(e.target.value))} aria-label="Zoom da linha do tempo" />
+        </label>
+        <button className="btn sm ghost" disabled={asList || zoom === 1} onClick={() => setZoom(1)}>Ajustar à tela</button>
+        <button className={`btn sm ghost ${asList ? "active" : ""}`} aria-pressed={asList} onClick={() => setAsList(!asList)}><List size={15} /> Lista</button>
+      </div>
+      {calendar && <details className="card timeline-chronicles"><summary><strong>Crônicas: mapa por era</strong></summary><div className="row-wrap"><label>Era<select className="input" value={eraYear} onChange={e=>setEraYear(Number(e.target.value))}>{calendar.eras.map(era=><option key={era.start} value={era.start}>{era.name} ({era.start})</option>)}<option value={calendar.today?.year??0}>Hoje ({calendar.today?.year??0})</option></select></label><label>Mapa<select className="input" value={mapPath} onChange={e=>setMapPath(e.target.value)}><option value="">Escolha um mapa…</option>{listMaps(index,wiki!.root).filter(n=>!players||n.meta.frontmatter?.data?.segredo!==true).map(n=><option key={n.path} value={n.path}>{n.name}</option>)}</select></label><button className="btn" disabled={!mapPath} onClick={()=>{try{sessionStorage.setItem("runas-codex:era-mapa",String(eraYear))}catch{}navigate(`/wiki/mapa/${encodeURIComponent(mapPath)}`)}}>Ver mapa nesta era</button></div></details>}
       {!chosen.length ? (
         <p className="muted">Marque ao menos um calendário acima.</p>
       ) : charts.every((c) => c.events.length === 0) ? (
         <p className="muted">Nenhum acontecimento com data nos calendários marcados. Ponha <code>data_mundo: "AAAA-MM-DD SIGLA"</code> (e <code>data_fim_mundo</code>) nos artigos; a propriedade <code>trilha</code> escolhe a faixa (um país, um personagem…).</p>
       ) : (
-        charts.filter((c) => c.events.length > 0).map((chart) => (
+        charts.filter((c) => c.events.length > 0).map((chart) => asList ? (
+          <TimelineList key={chart.base.path} calendar={chart.base.calendar} events={chart.events} title={charts.length > 1 || chart.synced ? (chart.synced ? `No eixo do ${chart.base.calendar.name}` : chart.base.calendar.name) : undefined} />
+        ) : (
           <TimelineChart key={chart.base.path} calendar={chart.base.calendar} events={chart.events} tracks={tracks.filter((t) => !hidden.has(t))} zoom={zoom} title={charts.length > 1 || chart.synced ? (chart.synced ? `No eixo do ${chart.base.calendar.name}` : chart.base.calendar.name) : undefined} />
         ))
       )}
@@ -245,12 +260,15 @@ function TimelineChart({ calendar, events, tracks, zoom, title }: { calendar: Ca
                   </span>
                   <div className="tl-lane tl-track" style={{ width, height: rows * ROW + 12 }}>
                     {today !== null && <span className="tl-today" style={{ left: x(today) }} />}
-                    {placed.map(({ event, x: left, width: w, row }) => (
+                    {placed.map(({ event, x: left, width: w, row }) => {
+                      // Perto da borda direita, o rótulo vai para o lado esquerdo do ponto, para não ser cortado.
+                      const flip = event.endDay <= event.startDay && left > width - 220
+                      return (
                       <a
                         key={`${event.path}:${event.title}`}
-                        className={`tl-event ${event.endDay > event.startDay ? "range" : ""} ${event.life ?? ""}`}
+                        className={`tl-event ${event.endDay > event.startDay ? "range" : ""} ${event.life ?? ""} ${flip ? "flip" : ""}`}
                         href={href(articleRoute(event.path))}
-                        style={{ left, top: row * ROW + 6 }}
+                        style={flip ? { right: width - left - 6, top: row * ROW + 6 } : { left, top: row * ROW + 6 }}
                         title={`${event.title} — ${own(event, event.start)}${event.end ? ` a ${own(event, event.end)}` : ""}`}
                       >
                         {event.endDay > event.startDay ? <span className="tl-bar" style={{ width: w }} /> : <span className="tl-dot" />}
@@ -258,7 +276,8 @@ function TimelineChart({ calendar, events, tracks, zoom, title }: { calendar: Ca
                           {event.kind && <KindIcon tipo={event.kind.id} size={12} />} {event.title}
                         </span>
                       </a>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -266,6 +285,28 @@ function TimelineChart({ calendar, events, tracks, zoom, title }: { calendar: Ca
         </div>
       </div>
       {today !== null && <span className="tiny faint" style={{ padding: "6px 12px", display: "block" }}>A linha vertical marca hoje no mundo: {formatDate(calendar, calendar.today!)}.</span>}
+    </div>
+  )
+}
+
+/** A linha do tempo como tabela, na ordem das datas: data, acontecimento, trilha e fim (rework F4b, WIK-3). */
+function TimelineList({ calendar, events, title }: { calendar: Calendar; events: Shown[]; title?: string | undefined }) {
+  const own = (e: Shown, d: WorldDate) => `${formatDate(e.calendar, d)}${e.calendar === calendar ? "" : ` (${e.calendar.abbr})`}`
+  return (
+    <div className="card timeline-list">
+      {title && <span className="eyebrow">{title}</span>}
+      <table className="graph-table">
+        <caption className="sr-only">Acontecimentos na ordem das datas{title ? `, ${title}` : ""}</caption>
+        <thead><tr><th scope="col">Data</th><th scope="col">Acontecimento</th><th scope="col">Trilha</th><th scope="col">Até</th></tr></thead>
+        <tbody>{events.map((event) => (
+          <tr key={`${event.path}:${event.title}:${event.startDay}`}>
+            <td>{own(event, event.start)}</td>
+            <th scope="row"><a href={href(articleRoute(event.path))} className="wikilink">{event.title}</a>{event.life && <small className="muted"> · {event.life}</small>}</th>
+            <td>{event.track}</td>
+            <td>{event.end ? own(event, event.end) : "—"}</td>
+          </tr>
+        ))}</tbody>
+      </table>
     </div>
   )
 }

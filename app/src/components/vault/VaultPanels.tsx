@@ -56,7 +56,8 @@ export function VaultPanels(props: Props) {
   )
 }
 
-function LinksPanel({ index, path, onCreate, readOnly, onSaveNote }: Props) {
+/** Links da nota: quem cita, para onde ela aponta e menções sem link (também a aba Links do artigo da Wiki). */
+export function LinksPanel({ index, path, onCreate, readOnly, onSaveNote }: Pick<Props, "index" | "path" | "onCreate" | "readOnly" | "onSaveNote">) {
   const backs = index.backlinks(path)
   const same = backs.filter((b) => !b.crossScope)
   const other = backs.filter((b) => b.crossScope)

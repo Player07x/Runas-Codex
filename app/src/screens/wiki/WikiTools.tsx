@@ -26,7 +26,30 @@ export const WIKI_INSERTS=[
  ["Tabela rolável",'```runas-tabela\nnome: Rumores\nresultados:\n  - texto: Uma caravana desapareceu.\n    peso: 2\n  - texto: Um visitante traz novidades.\n    tabela: "[[Outra tabela]]"\n```'],
  ["Dicionário",'```runas-idioma\nnome: Élfico\nregras: As vogais são longas.\npalavras:\n  - palavra: aelin\n    traducao: lago\n    pronuncia: áe-lin\n```'],
 ] as const
+/**
+ * Ferramentas do mundo (rework F4b, WIK-5): a lista de geradores à esquerda e o resultado à direita, do tamanho dele.
+ * Gerar de novo troca o resultado; ele pode ser editado e guardado como nota da Wiki.
+ */
 export function WikiTools() {
  const vault=useVault(),toast=useToast(),{wiki}=useWiki(),[kind,setKind]=useState<GeneratorKind>("nome"),[result,setResult]=useState(""),[name,setName]=useState(""),[busy,setBusy]=useState(false)
- return <div className="page wiki-tools"><h1>Ferramentas do mundo</h1><p className="muted">Geradores por sorteio, disponíveis sem internet. Revise o resultado antes de guardar.</p><section className="card stack"><label>Gerador<select className="input" value={kind} onChange={e=>setKind(e.target.value as GeneratorKind)}>{Object.entries(GENERATOR_KINDS).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><button className="btn primary" onClick={()=>setResult(generateWorld(kind))}>Gerar</button><label>Resultado<textarea className="input" rows={10} value={result} onChange={e=>setResult(e.target.value)}/></label><label>Nome da nota<input className="input" value={name} onChange={e=>setName(e.target.value)}/></label><button className="btn" disabled={busy||vault.info?.readOnly||!name.trim()||!result.trim()} onClick={()=>{setBusy(true);void vault.createNote(`${wiki!.root}Geradores`,name.trim(),`# ${name.trim()}\n\n${result}\n`).then(()=>toast("Resultado guardado na Wiki.")).catch(e=>toast(String(e))).finally(()=>setBusy(false))}}>Guardar resultado como nota</button></section><section className="card stack"><h2>Tabelas, idiomas e mídia nos artigos</h2><p>No editor do artigo, digite / ou abra a galeria Formatar (Ctrl+/) na aba Wiki. Tabelas podem encadear outra nota pela chave tabela; o dicionário aceita tradução, pronúncia e regras.</p></section></div>
+ const generate=(next:GeneratorKind)=>{setKind(next);setResult(generateWorld(next))}
+ const save=()=>{setBusy(true);void vault.createNote(`${wiki!.root}Geradores`,name.trim(),`# ${name.trim()}\n\n${result}\n`).then(()=>toast("Resultado guardado na Wiki.")).catch(e=>toast(String(e))).finally(()=>setBusy(false))}
+ return <div className="page wiki-tools">
+  <h1 className="page-title">Ferramentas do mundo</h1>
+  <p className="muted">Geradores por sorteio, disponíveis sem internet. Revise o resultado antes de guardar.</p>
+  <div className="wiki-tools-layout">
+   <nav className="wiki-tools-list" aria-label="Geradores">
+    {Object.entries(GENERATOR_KINDS).map(([id,label])=><button key={id} type="button" className={`list-item ${kind===id?"active":""}`} aria-current={kind===id?"true":undefined} onClick={()=>generate(id as GeneratorKind)}>{label}</button>)}
+   </nav>
+   <section className="card stack wiki-tools-result" aria-label={`Resultado: ${GENERATOR_KINDS[kind]}`}>
+    <div className="row between"><strong>{GENERATOR_KINDS[kind]}</strong><button className="btn sm primary" onClick={()=>generate(kind)}>{result?"Gerar de novo":"Gerar"}</button></div>
+    {result ? <>
+     <label className="field"><span>Resultado (dá para editar)</span><textarea className="input" rows={Math.min(16,Math.max(3,result.split("\n").length+1))} value={result} onChange={e=>setResult(e.target.value)}/></label>
+     <div className="row-wrap"><label className="field grow"><span>Nome da nota</span><input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex.: Taverna da Raposa"/></label><button className="btn" disabled={busy||vault.info?.readOnly||!name.trim()||!result.trim()} onClick={save}>Guardar como nota</button></div>
+     <span className="tiny muted">Vai para {wiki!.root}Geradores/.</span>
+    </> : <p className="small muted">Escolha um gerador à esquerda ou clique em Gerar.</p>}
+   </section>
+  </div>
+  <section className="card stack"><h2>Tabelas, idiomas e mídia nos artigos</h2><p>No editor do artigo, digite / ou abra a galeria Formatar (Ctrl+/) na aba Wiki. Tabelas podem encadear outra nota pela chave tabela; o dicionário aceita tradução, pronúncia e regras.</p></section>
+ </div>
 }

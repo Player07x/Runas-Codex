@@ -114,3 +114,107 @@ não minimalista”: todo recurso continua acessível, cada um num lugar fixo e 
   botões embaixo do desenho.
 - **Fileira de abas das notas** continua mesmo com uma nota só: ela guarda ações que não têm outro lugar (abrir em
   janela, fixar, dividir, workspaces). Some quando essas ações tiverem lugar fixo.
+
+## F4b — Wiki (decisões)
+- **Barra da Wiki (WIK-1):** a troca de wiki vira menu de verdade; as telas que não cabem vão para “Mais”, medido pelo
+  espaço (`kit/useFitCount`), em vez de serem cortadas; Exportar e Nova wiki no ⋯ da Wiki. As telas têm `aria-current`.
+- **Artigo (WIK-6):** o painel lateral vira abas — Ficha (com Mostrar pela sala e mídia), Relações, Citado em e Links —
+  com contadores. A ficha continua sendo a aba aberta por padrão.
+- **Categoria (WIK-7):** “Novo …” é a ação principal; Exportar categoria no ⋯.
+- **Calendário (WIK-2):** a coluna da direita vira abas (Dia, Hoje no mundo, Sincronizar, Ajuda); “+1 dia” fica no
+  cabeçalho, ao lado de Hoje.
+- **Linha do tempo (WIK-3):** uma linha de controles (Calendários e Filtros recolhidos, zoom, Ajustar à tela, Lista);
+  Crônicas recolhida; vista em tabela; rótulos perto da borda direita mudam de lado.
+- **Relações (WIK-4):** a teia diplomática enquadra ao abrir e ganha a tabela “quem · relação · com quem”, com a cor num
+  ponto ao lado do nome (as cores fixas da teia não passariam de contraste como texto).
+- **Ferramentas (WIK-5):** geradores numa lista à esquerda e o resultado à direita, do tamanho dele.
+
+## F4c — Campanhas (decisões)
+- **Barra da campanha (CAM-2):** a mesma da Wiki — troca de campanha por menu (com “Todas as campanhas”), as telas que
+  não cabem vão para “Mais”, `aria-current` na tela aberta e “Tela do Mestre” no fim.
+- **Sessões e próxima sessão (CAM-3):** planejada em dourado, jogada em verde, cancelada apagada, igual no painel, na
+  lista e na linha do tempo. Na lista de sessões, “+ Nova sessão” é a ação principal e as exportações do diário vão
+  para o ⋯.
+- **Missões (CAM-4):** colunas com largura mínima; quando não cabem, a barra de rolagem fica à vista e uma sombra marca
+  o lado que continua. No celular, uma coluna por vez, escolhida num seletor com a contagem de cada uma.
+- **Elenco (CAM-5):** cada NPC e facção tem um ⋯ (Abrir na Wiki, Tirar da campanha) no lugar da lixeira solta. Os
+  cartões dos personagens dos jogadores ficam como estavam.
+- **Ferramentas (CAM-6):** lista à esquerda e só a ferramenta escolhida à direita; a última fica lembrada no aparelho.
+- **Quadro (CAM-7), em todos os `.canvas`:** o cartão guarda o tamanho do arquivo (como no Obsidian) e não cresce
+  sozinho ao abrir, para não cobrir os vizinhos nem gravar sem pedido. Quando o texto não cabe aparece “continua…”;
+  depois de escrever num cartão ele cresce até 520 px para o texto caber, e “Ajustar altura” mostra tudo do cartão
+  escolhido. Os cartões entram no Tab, as setas movem os selecionados (Shift: 50 px), Enter edita ou abre a nota e o
+  foco traz para a vista o cartão que estava fora dela. As amostras de cor já tinham 24 px (X8).
+- **Tela do Mestre (CAM-8):** deixa de ser janela sobre a página e ocupa a tela inteira, em três colunas com rolagem
+  própria: Agora (próxima sessão, pistas guardadas, iniciativa presencial, relógios e dados), Elenco (personagens,
+  NPCs e facções) e Notas fixadas, uma por aba e inteira. No celular, uma coluna por vez, nas abas de cima. Esc fecha.
+- **Painel no celular (CAM-9):** próxima sessão, relógios, missões ativas, segredos e pistas, elenco, limites e linha do
+  tempo; as estatísticas vão para o fim, recolhidas. A ordem muda no HTML (não só no CSS), para o leitor de tela e o
+  Tab seguirem o que se vê.
+
+## F4d — Agenda (decisões)
+A proposta (AGE-1 a AGE-11) está no documento do rework, com maquetes. Os itens AGE-1 a AGE-3 são os de 21/10.
+- **Cabeçalho (AGE-3):** `PageHeader` com o título “Agenda”, “+ Evento” como ação principal e um ⋯ com Enquete de
+  data, Tempo livre, Importar .ics e Exportar .ics (os quatro também na busca `Ctrl K`, por `lib/agenda-request.ts`).
+  Logo abaixo, uma linha com ‹ Hoje ›, o período num título anunciado ao mudar e o seletor de visão. Sai o caminho
+  “N evento(s) em Agenda/”. A Enquete fica no ⋯, como na proposta (o dono pediu em 22/10 para concluir a F4 sem responder a esta pergunta; dá
+  para trazê-la de volta como segundo botão no PR).
+- **Mês navegável (AGE-1, AGE-2):** grade de datas da WAI-ARIA, com linhas e uma parada de Tab. Setas andam um dia
+  ou uma semana, Home/End vão ao domingo e ao sábado, PageUp/PageDown trocam de mês (com Shift, de ano) e o foco
+  acompanha a grade quando o mês muda; Enter abre o dia no painel. A conta está em `core/agenda-grid.ts`, com testes.
+  Cada dia tem nome completo (“quinta-feira, 22 de outubro de 2026, hoje, 4 eventos, 2h livres”) e `aria-selected`.
+  No evento, o título vem antes da hora, e a hora some numa célula estreita (consulta de contêiner); o “+N” vira
+  botão que abre o dia. Os eventos ficam fora do Tab: a aba Dia lista os mesmos como botões.
+- **Painel em abas (AGE-4):** Dia (eventos, tempo livre, tarefas do dia e “+ Evento neste dia”), Evento (abre ao
+  escolher um evento) e Tarefas (as com prazo, com contador). A aba Dia ou Tarefas fica lembrada no aparelho
+  (`runas-codex:agenda-aba`).
+- **Evento (AGE-5):** “Abrir sessão” é a ação principal quando há sessão (sem ela, “Editar”); “Abrir nota” e
+  “Editar” à vista; Pular esta data e Mandar para a lixeira no ⋯ do evento. O caminho do arquivo fica na dica do
+  “Abrir nota”. Sessão ligada mostra o estado (planejada, realizada, cancelada) em texto.
+- **Semana e Dia (AGE-6):** nada abaixo de 12 px; cada bloco com nome completo; numa faixa com mais de três
+  eventos lado a lado (seis na visão Dia), os de sobra viram “+N”. Cada coluna é uma parada de Tab: setas escolhem a
+  hora e o dia, Enter cria o evento na hora escolhida. A disposição (`layoutDay`) foi para o núcleo, com testes.
+- **Lista (AGE-7):** `ListRow` do kit, um título por dia e “Mostrar mais 60 dias” no fim.
+- **Diálogo (AGE-8):** Quando e Avisos abertos; Detalhes, Sessão e Preparação recolhidos e marcados como opcionais,
+  abrindo sozinhos quando já têm valor. Cores como rádios de verdade, com nome. O erro usa o `Notice`, fica ligado ao
+  campo (`aria-describedby`, `aria-invalid`) e o campo recebe o foco. Nenhum campo saiu e a nota gravada é a mesma.
+- **Lembretes (AGE-9):** o cartão fixo sai; um `Notice` aparece só quando falta permissão (notificações no
+  navegador, alarmes na hora exata no Android). A explicação de cada plataforma virou a dica do campo Lembrete.
+- **Celular (AGE-10):** até 860 px o painel começa fechado e sobe por cima do calendário ao escolher um dia ou
+  evento; Esc fecha. Botão flutuante “+ Evento”, que some com o painel aberto.
+- **Cores (AGE-11):** hoje e a linha da hora atual na cor de destaque, não em vermelho (ADR 0001). Sessão sem cor
+  própria em dourado; a cor da campanha entra com a personalização (ADR 0027). Segue a proposta, ainda sem resposta
+  explícita do dono: evento na cor da campanha e o estado da sessão escrito ao lado.
+
+## F5 — Início, Configurações, Transferir e VTT (decisões)
+- **Próxima sessão de uma fonte só (INI-1):** `core/next-session.ts` responde ao Início, ao painel da campanha e à Tela
+  do Mestre. Entram as sessões planejadas (pela data da nota) e os eventos de sessão da Agenda; um evento ligado a uma
+  sessão conta uma vez só; vence a mais próxima, e a sessão sem data fica por último. A campanha de um evento sai da
+  sessão ligada (`sessao` ou `evento`) ou, sem ligação, do título “Sessão N — Campanha” (a mesma regra da Agenda, ADR
+  0027). Um evento sem nota de sessão aparece como próxima sessão, com “Criar a nota da sessão”.
+- **Sessão com data passada (CAM-1):** sessão com `status: planejada` e data anterior a hoje vira um aviso no painel
+  e na Tela do Mestre, com “Marcar como realizada”, “Cancelada” e “Remarcar” (abre a sessão). Sem `status`, a data já
+  decide (realizada), como antes.
+- **Início (INI-1 a INI-4):** destaque compacto, um estado por vez (próxima sessão com quando, contagem, preparação e
+  presença; ou “Nenhuma sessão marcada” com o próximo passo), na cor e com o brasão da campanha. Espaços sem números.
+  “Retome o fio” mostra o título (o `title` do evento, o `# título` ou o nome sem a data na frente), o espaço e
+  “editada há…”. Nada abaixo de 12 px.
+- **Centelhas (INI-2):** gravam em `Notas/Entrada.md` (`core/sparks.ts`), uma ideia por item de lista com a hora. A
+  ideia usada fica riscada (`~~…~~`), que não vira tarefa do Tasks; “Limpar as usadas” tira as riscadas; remover e
+  limpar podem ser desfeitos logo em seguida.
+- **Configurações (CFG-1):** índice de seções ao lado (Cofre, Backups, Obsidian e anexos, Aparência, Acessibilidade,
+  Editor e atalhos, Agenda e tarefas, Sala do VTT, Privacidade e atualizações, Ajuda e exemplos), com todas as seções
+  na página no computador; no celular, `/config` é a lista e `/config/<seção>` mostra só ela. Backups ganhou seção
+  própria (o backup de texto e o caminho para o pacote do cofre). Nenhuma opção saiu.
+- **Transferir (TRF-1, TRF-2):** primeiro “O que você quer fazer?” em três cartões (Levar para outro aparelho, Gerar
+  documento ou site, Pasta para o Obsidian), depois só o formulário escolhido, com um resumo antes de salvar. Um botão
+  principal por formulário, no canto inferior direito (no celular, na largura toda). `/transferir/importar` abre na
+  importação. O smoke de transferência (`desktop/src/main/transfer-smoke.ts`) passou a escolher o cartão antes de cada
+  formulário.
+- **VTT (VTT-1):** cartões maiores, “Mesas recentes” embaixo (as quatro abertas por último), o aviso de rede como
+  `Notice` em texto normal e um ⋯ com Importar mesa e Exportar mesas (que levam a Importar e exportar). A regra fixa
+  continua: só Criar Sala e Entrar Sala como escolhas.
+- **Lugares de Ajuda, Backups e Importar mesa:** seções “Ajuda e exemplos” e “Backups” nas Configurações e cartão
+  “Mesas do VTT” em Transferir, também pela busca `Ctrl K`. Um painel de ajuda por tela fica para a C9, que escreve o
+  conteúdo: um botão de ajuda sem texto contrariaria a regra 10.
+- A contagem da Wiki na navegação deixou de contar a nota da categoria (`tipo: categoria`).
