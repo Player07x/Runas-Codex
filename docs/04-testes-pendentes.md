@@ -842,3 +842,15 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
 - [ ] Em uma consulta, usar `path includes {{query.file.outlinks}}`, `{{query.file.outlinksInBody}}` e
   `{{query.file.outlinksInProperties}}`; conferir os mesmos resultados no Obsidian com Tasks 8.6.0.
 - [ ] Abrir “Busca rápida de tarefas”, digitar parte da descrição e conferir que a nota de origem abre no ponto certo.
+
+## Versão 0.1.0-beta.16 (23/10/2026)
+
+Entram o rework inteiro (F1–F5, PRs #54–#65), os itens do Codex (#58 e #62) e as correções da revisão. As listas de
+cada fase e do Codex estão acima; nesta versão, conferir também:
+
+- [ ] Atualizar da beta.15 para a beta.16 pelo botão “Verificar atualizações” (desktop e Android) e conferir que o cofre,
+  o PIN e as preferências continuam.
+- [ ] Com o PIN das Notas bloqueado: o Início não mostra as Centelhas nem notas de Notas/ em “Retome o fio”; a captura
+  continua gravando; a Busca rápida de tarefas não mostra tarefas das Notas.
+- [ ] Agenda: editar um evento com local, apagar o local e conferir que a seção Detalhes continua aberta.
+- [ ] Instalar de novo o snippet `runas-codex.css` e conferir no Obsidian a cor de uma campanha personalizada.
