@@ -1,10 +1,11 @@
 import { useMemo } from "react"
 import { formatDate as formatWorld, parseWorldDate, sameAbbr, type Calendar } from "../../core/calendar"
 import {
-  campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks, upcomingSession,
+  campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks,
   type CampaignInfo, type CampaignStats, type Clock, type PlayerCharacter, type QuestInfo, type SecretItem, type SessionInfo, type TrackedLink,
 } from "../../core/campaigns"
 import { listWikis, mainCalendar } from "../../core/wiki"
+import { nextSession, overdueSessions, type NextSession } from "../../core/next-session"
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
 
@@ -24,6 +25,10 @@ export interface CampaignData {
   data: Record<string, unknown>
   sessions: SessionInfo[]
   upcoming?: SessionInfo
+  /** A próxima sessão, a mesma resposta do Início (INI-1): pode ser só um evento da Agenda, sem nota de sessão. */
+  next: NextSession | null
+  /** CAM-1: sessões ainda “planejadas” com a data já passada. */
+  overdue: SessionInfo[]
   quests: QuestInfo[]
   players: PlayerCharacter[]
   npcs: TrackedLink[]
@@ -48,6 +53,7 @@ export function useCampaignData(name: string): CampaignData {
     const home = campaign.home ? index.note(campaign.home) : undefined
     const sessions = listSessions(index, campaign, today)
     const players = listPlayers(index, campaign)
+    const next = nextSession(index, today, name)
     // O calendário principal da wiki da campanha (o da nota inicial ou o que as datas mais usam).
     const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
     const calendar = mainCalendar(index, root, listWikis(index).find((w) => w.root === root)?.home)?.calendar ?? null
@@ -56,7 +62,9 @@ export function useCampaignData(name: string): CampaignData {
       ...(home ? { home } : {}),
       data: home?.meta.frontmatter?.data ?? {},
       sessions,
-      ...(upcomingSession(sessions, today) ? { upcoming: upcomingSession(sessions, today) } : {}),
+      ...(next?.session ? { upcoming: next.session } : {}),
+      next,
+      overdue: overdueSessions(sessions, today),
       quests: listQuests(index, campaign),
       players,
       npcs: trackedLinks(index, campaign, "npcs"),
