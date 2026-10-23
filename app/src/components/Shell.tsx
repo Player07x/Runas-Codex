@@ -28,6 +28,8 @@ import { shortcutLabel, shortcutText, type ShortcutAction } from "../core/shortc
 import { usePreferences } from "../lib/customization"
 import { useAppearance } from "../lib/appearance"
 import { requestAgendaAction } from "../lib/agenda-request"
+import { useTasksSettings } from "../lib/tasks"
+import { TaskQuickSearch } from "./tasks/TaskQuickSearch"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -50,6 +52,7 @@ const TOOLS: NavItem[] = [
 export function Shell({ route, theme, onToggleTheme, fill, children }: { route: string[]; theme: string; onToggleTheme: () => void; fill?: boolean; children: ReactNode }) {
   const vault = useVault()
   const [palette, setPalette] = useState(false)
+  const [quickTaskSearch, setQuickTaskSearch] = useState(false)
   const [more, setMore] = useState(false)
   const current = route[0] ?? ""
   const crumbs = crumbsFor(route)
@@ -197,7 +200,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         </Modal>
       )}
       <ExportDialog />
-      {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} />}
+      {palette && <CommandPalette onClose={() => setPalette(false)} onToggleTheme={onToggleTheme} onOpenQuickSearch={() => setQuickTaskSearch(true)} />}
+      {quickTaskSearch && <TaskQuickSearch onClose={() => setQuickTaskSearch(false)} />}
     </div>
   )
 }
@@ -256,12 +260,13 @@ function usePageChange(route: string[], crumbs: string[]): string {
   return announce
 }
 
-function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onToggleTheme: () => void }) {
+function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose: () => void; onToggleTheme: () => void; onOpenQuickSearch: () => void }) {
   const prefs = usePreferences()
   const dialogRef = useRef<HTMLDivElement>(null)
   useDialogFocus(dialogRef, onClose)
   const vault = useVault()
   const toast = useToast()
+  const taskSettings = useTasksSettings(vault.info?.path)
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState(0)
   const commands = useMemo(
@@ -289,8 +294,12 @@ function CommandPalette({ onClose, onToggleTheme }: { onClose: () => void; onTog
       { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
       { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
       { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
+      { label: "Busca rápida de tarefas (Tasks)", icon: <Search size={16} />, hint: "Tasks", run: onOpenQuickSearch },
+      ...[...taskSettings.coreStatuses, ...taskSettings.customStatuses]
+        .filter((status, index, statuses) => status.availableAsCommand && statuses.findIndex((other) => other.symbol === status.symbol) === index)
+        .map((status) => ({ label: `Definir tarefa: ${status.name}`, icon: <FileText size={16} />, hint: "Tasks", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: `set-task-status:${encodeURIComponent(status.symbol)}` })) })),
     ],
-    [onToggleTheme, prefs.shortcuts, vault.platform.kind],
+    [onOpenQuickSearch, onToggleTheme, prefs.shortcuts, taskSettings, vault.platform.kind],
   )
   const q = query.trim().toLocaleLowerCase("pt-BR")
   // Notas do cofre (pelo índice); no exemplo do navegador, as que têm tela própria (wiki, campanhas) abrem nela.

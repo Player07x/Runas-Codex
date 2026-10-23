@@ -40,6 +40,8 @@ export interface SourceEditorHandle {
   openSlash(): void
   /** Seleciona um trecho e rola até ele (o “Ir” dos comentários de revisão). */
   select(from: number, to?: number): void
+  /** Foca e rola até uma linha do arquivo. */
+  scrollToLine(line: number): void
 }
 
 /** Seleção com texto, em relação ao canto do editor: onde a barra de formatação aparece. */
@@ -413,6 +415,13 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
       v.dispatch({ changes: { from: at, insert }, selection: { anchor: at + insert.length } })
       v.focus()
       startCompletion(v)
+    },
+    scrollToLine(line: number) {
+      const v = view.current
+      if (!v) return
+      const target = v.state.doc.line(Math.max(1, Math.min(v.state.doc.lines, line + 1))).from
+      v.dispatch({ selection: { anchor: target }, effects: EditorView.scrollIntoView(target, { y: "center" }) })
+      v.focus()
     },
   }))
 

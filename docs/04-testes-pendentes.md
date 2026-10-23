@@ -834,3 +834,11 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
   pelo Obsidian Sync; conferir o aviso, a indicação do original e que nenhuma versão é sobrescrita.
 - [ ] Arquivar uma cópia pelo aviso, conferir que ela foi para `.trash` e que o original continua abrindo; testar também
   a restauração da lixeira. A implementação está descrita na [ADR 0031](adr/0031-c7-backups-conflitos-sync.md).
+
+## Tasks — pendências da matriz (22/10/2026)
+
+- [ ] Na paleta, usar cada comando “Definir tarefa: …” sobre uma linha com tarefa e conferir que o estado, as datas e a
+  recorrência seguem as regras do Tasks.
+- [ ] Em uma consulta, usar `path includes {{query.file.outlinks}}`, `{{query.file.outlinksInBody}}` e
+  `{{query.file.outlinksInProperties}}`; conferir os mesmos resultados no Obsidian com Tasks 8.6.0.
+- [ ] Abrir “Busca rápida de tarefas”, digitar parte da descrição e conferir que a nota de origem abre no ponto certo.

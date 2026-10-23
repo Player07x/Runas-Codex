@@ -16,6 +16,10 @@ export interface QueryFile {
   /** Caminho da nota que tem a consulta. */
   path: string
   properties?: Record<string, unknown>
+  /** Destinos das ligações da nota, usados pelos marcadores do Tasks 8.6.0. */
+  outlinks?: string[]
+  outlinksInBody?: string[]
+  outlinksInProperties?: string[]
 }
 
 export interface SearchInfo {
@@ -116,6 +120,8 @@ export function expandPlaceholders(line: string, file: QueryFile | undefined): s
     const key = inner.trim()
     const simple = /^query\.file\.(path|pathWithoutExtension|root|folder|filename|filenameWithoutExtension)$/.exec(key)
     if (simple) return info[simple[1] as keyof typeof info]
+    const links = /^query\.file\.(outlinks|outlinksInBody|outlinksInProperties)$/.exec(key)
+    if (links) return (file[links[1] as "outlinks" | "outlinksInBody" | "outlinksInProperties"] ?? []).join(", ")
     const prop = /^query\.file\.(property|hasProperty)\(\s*(['"])(.*)\2\s*\)$/.exec(key)
     if (prop) {
       const value = prop[1] === "hasProperty" ? file.properties?.[prop[3]!] !== undefined : (file.properties?.[prop[3]!] ?? null)
@@ -125,6 +131,24 @@ export function expandPlaceholders(line: string, file: QueryFile | undefined): s
     if (/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(key)) return match
     throw new Error(JS_DISABLED)
   })
+}
+
+/**
+ * Expande os marcadores de links da nota em uma expressão booleana que o núcleo consegue avaliar sem JavaScript.
+ * O Tasks expõe esses marcadores como listas de Link; no Runas-Codex, consultas de função continuam bloqueadas pela
+ * CSP, então `path includes {{query.file.outlinks}}` vira uma combinação OR/AND equivalente.
+ */
+function expandOutlinkInstruction(line: string, file: QueryFile | undefined): string | null {
+  const match = /^(path|folder|root|filename) (includes|does not include) \{\{query\.file\.(outlinks|outlinksInBody|outlinksInProperties)\}\}$/i.exec(line.trim())
+  if (!match || !file) return null
+  const values = file[match[3]!.toLowerCase() as "outlinks" | "outlinksInBody" | "outlinksInProperties"] ?? []
+  const field = match[1]!
+  const operator = match[2]!.toLowerCase()
+  const empty = "\u0000"
+  if (!values.length) return `${field} ${operator} ${empty}`
+  const joiner = operator === "includes" ? " OR " : " AND "
+  const pieces = values.map((value) => `${field} ${operator} ${value}`)
+  return pieces.length === 1 ? pieces[0]! : pieces.map((piece) => `"${piece.replaceAll('"', '\\"')}"`).join(joiner)
 }
 
 // ---------- Campos ----------
@@ -653,7 +677,7 @@ function parseQuerySource(source: string, ctx: ParseCtx, file: QueryFile | undef
   const handle = (raw: string, depth: number): boolean => {
     let line: string
     try {
-      line = /^#/.test(raw.trim()) ? raw.trim() : expandPlaceholders(raw, file).trim()
+      line = /^#/.test(raw.trim()) ? raw.trim() : (expandOutlinkInstruction(raw, file) ?? expandPlaceholders(raw, file)).trim()
     } catch (error) {
       q.error = error instanceof Error ? error.message : String(error)
       return false

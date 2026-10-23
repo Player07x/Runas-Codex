@@ -22,7 +22,8 @@ import { useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
 import { checkboxLines } from "../../markdown/task-checkboxes"
-import { toggleLineCommand } from "../../core/tasks/edit"
+import { editForLine, toggleLineCommand } from "../../core/tasks/edit"
+import { statusRegistry } from "../../core/tasks/settings"
 import { currentParseContext, tasksSettingsOf } from "../../lib/tasks"
 import { TaskEditDialog } from "../tasks/TaskEditDialog"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
@@ -351,6 +352,17 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     setTimeout(() => reader.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[position]?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
   }, [headingRequest, index, path])
 
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const detail = (event as CustomEvent<{ path?: string; line?: number }>).detail
+      if (detail?.path !== path || typeof detail.line !== "number") return
+      setModeState("fonte")
+      window.setTimeout(() => editor.current?.scrollToLine(detail.line!), 100)
+    }
+    window.addEventListener("runas-codex:ir-para-tarefa", listener)
+    return () => window.removeEventListener("runas-codex:ir-para-tarefa", listener)
+  }, [path])
+
   const copied = (link: string) =>
     void copyText(link).then((ok) => toast(ok ? `Copiado: ${link}` : "O sistema não deixou copiar."))
   const copyNoteLink = () => copied(`[[${copyLinkTarget(index, path)}]]`)
@@ -424,6 +436,23 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
         const cursor = editor.current.cursor() ?? 0
         const line = draft.slice(0, cursor).split("\n").length - 1
         setTaskEdit({ line, text: draft.split("\n")[line] ?? "" })
+      }
+      const setStatus = /^set-task-status:(.*)$/.exec(kind)
+      if (setStatus) {
+        let symbol = ""
+        try { symbol = decodeURIComponent(setStatus[1] ?? "") } catch { return }
+        const ctx = currentParseContext()
+        const status = statusRegistry(ctx.settings).bySymbol(symbol)
+        if (!status.symbol) return
+        editor.current.transform((doc, cursor) => {
+          const start = doc.lastIndexOf("\n", cursor - 1) + 1
+          const end = doc.indexOf("\n", cursor) < 0 ? doc.length : doc.indexOf("\n", cursor)
+          const original = doc.slice(start, end)
+          const edit = editForLine(original, 0, ctx, { status })
+          if (!edit) return { text: doc, cursor }
+          const replacement = edit.lines.join("\n")
+          return { text: doc.slice(0, start) + replacement + doc.slice(end), cursor: Math.min(start + replacement.length, start + Math.max(0, cursor - start)) }
+        })
       }
     }
     const fromShortcut = (event: Event) => run((event as CustomEvent<string>).detail)

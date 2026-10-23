@@ -277,7 +277,9 @@ Feitos pelo Codex na pasta principal, sem commit; reunidos e conferidos pelo Cla
 | 5. X6, fechamento da mesa | importar Universal VTT, Foundry e tokens em lote, pinos ligados a notas, projeção incremental ([ADR 0028](../adr/0028-fechamento-mesa-x6.md)) |
 | 6. C9 sem interface | guarda de rede no smoke, teste dos instaladores, gerador de cofre grande ([ADR 0030](../adr/0030-c9-desempenho-rede-instaladores.md)) |
 | 7. C7 | backups agendados e conflitos do Syncthing e do Obsidian Sync no núcleo ([ADR 0031](../adr/0031-c7-backups-conflitos-sync.md)); a tela é da F5 |
-| 8. Tasks: o que falta na matriz | não começado |
+| 8. Tasks: o que falta na matriz | feito no #62: comandos “Definir tarefa” por estado, marcadores de outlinks e Busca rápida; falta conferir no Obsidian com o Tasks 8.6.0 |
 | 9. Depois do rework | aguardando |
 
 A ADR do túnel foi criada como 0027 e renumerada para **0032**: a 0027 é do rework (cores, capas e imagens).
+
+O inventário das frentes ainda abertas e dos responsáveis está em [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md).
