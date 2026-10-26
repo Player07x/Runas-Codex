@@ -13,7 +13,4 @@
 .book-import details > section { padding-block: 12px; border-bottom: 1px solid var(--line); }
 
 .book-wiki-reference { max-height:35vh; overflow:auto; padding:12px; border:1px solid var(--line); border-radius:var(--radius); }
-.book-finish-settings { border-bottom:1px solid var(--line); }
-.book-finish-settings summary { padding:12px; cursor:pointer; min-height:44px; }
-.book-finish-settings .book-metadata { max-height:45vh; }
 .book-print .book-section a[href^="#book-chapter-"]::after { content: " (p. " target-counter(attr(href),page) ")"; }

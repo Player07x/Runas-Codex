@@ -3,6 +3,11 @@
  * guarda só o que muda por cima, em propriedades simples que o Obsidian mostra. Ordem: modelo pronto → nota de modelo
  * (`modelo: "[[…]]"`, `tipo: modelo-livro`) → propriedades do livro. Só valores conferidos viram CSS.
  */
+import { bookProperties } from "./books"
+import { parseNote } from "./parse"
+import { setProperty, type PropertyValue } from "./properties"
+import type { IndexedNote, VaultIndex } from "./vault-index"
+
 export type ModelId = "manual" | "grimorio" | "romance" | "moderno" | "facil"
 export type Leading = "justa" | "normal" | "folgada"
 export type FichaStyle = "tipografica" | "fundo" | "faixa"
@@ -71,4 +76,50 @@ export function styleCss(style: BookStyle): string {
   return `.book-paper{--paper:${style.paper};--panel:${style.paper};--bg:${style.paper};--ink:${style.ink};--text:${style.ink};--accent:${style.accent};--cyan:${style.accent};--rule:${style.rule};` +
     `--font-display:${serif(style.titleFont, "Georgia, serif")};--book-body:${serif(style.textFont, '"EB Garamond", Georgia, serif')};` +
     `--book-size:${style.sizePt}pt;--book-leading:${LEADING[style.leading]};--book-align:${style.justify ? "justify" : "left"};--book-columns:${style.columns}}`
+}
+
+/** Propriedades de estilo que o livro (ou a nota de modelo) pode mudar por cima do modelo. */
+export const STYLE_KEYS = ["fonte_titulos", "fonte_texto", "corpo_pt", "entrelinha", "alinhamento", "colunas", "cor_papel", "cor_texto", "cor_destaque", "fichas"] as const
+
+/** Nome da fonte de um arquivo do cofre (`Anexos/Fontes/Minha Fonte.ttf` → “Minha Fonte”), se o nome serve no CSS. */
+export function fontFromFile(path: string): string | null {
+  const match = /(?:^|\/)([^/]+)\.(?:ttf|otf|woff2?)$/i.exec(path)
+  return (match && font(match[1])) ?? null
+}
+
+/** As notas de modelo do cofre (`tipo: modelo-livro`), em ordem alfabética. */
+export function vaultModels(index: VaultIndex): IndexedNote[] {
+  return index.allNotes().filter((note) => bookProperties(note).tipo === "modelo-livro").sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+}
+
+/** A nota de modelo para onde `modelo: "[[…]]"` aponta, quando existe e é mesmo um modelo de livro. */
+export function modelNoteFor(index: VaultIndex, book: IndexedNote, props: Props = bookProperties(book)): IndexedNote | undefined {
+  if (typeof props.modelo !== "string" || !props.modelo.startsWith("[[")) return undefined
+  const link = parseNote(props.modelo).links[0]
+  const dest = link ? index.resolve(link, book.path).dest : undefined
+  const note = dest ? index.note(dest) : undefined
+  return note && bookProperties(note).tipo === "modelo-livro" ? note : undefined
+}
+
+/** O estilo do livro com a nota de modelo resolvida pelo índice. */
+export function bookStyle(index: VaultIndex, book: IndexedNote, props: Props = bookProperties(book)): BookStyle {
+  const note = modelNoteFor(index, book, props)
+  return resolveStyle(props, note ? bookProperties(note) : undefined)
+}
+
+/** As propriedades que gravam um estilo inteiro (para “Salvar como modelo”: o modelo não depende do livro). */
+export function styleProperties(style: BookStyle): Record<(typeof STYLE_KEYS)[number], PropertyValue> {
+  return {
+    fonte_titulos: style.titleFont, fonte_texto: style.textFont, corpo_pt: style.sizePt, entrelinha: style.leading,
+    alinhamento: style.justify ? "justificado" : "esquerda", colunas: style.columns, cor_papel: style.paper, cor_texto: style.ink,
+    cor_destaque: style.accent, fichas: style.fichas,
+  }
+}
+
+/** Texto da nota `Livros/Modelos/<nome>.md`: uma nota comum, que o Obsidian mostra e deixa editar. */
+export function modelNoteText(style: BookStyle): string {
+  let text = "---\ntipo: modelo-livro\n---\n\nModelo de livro do Runas-Codex. Os livros com `modelo: \"[[nome desta nota]]\"` usam estas propriedades; mudar uma delas muda todos esses livros.\n"
+  text = setProperty(text, "modelo", style.model)
+  for (const [key, value] of Object.entries(styleProperties(style))) text = setProperty(text, key, value)
+  return text
 }

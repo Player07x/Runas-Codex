@@ -54,9 +54,34 @@ hifenização. A tarefa está em [`docs/tarefas/livro-impresso.md`](../tarefas/l
 - As páginas da prévia ao lado ficam fora do leitor de tela (`aria-hidden`): o texto já está no editor. A troca de
   página é anunciada uma vez.
 
+### Como a L3 funciona
+- `core/book-style.ts` resolve o estilo: o modelo pronto (`modelo: manual|grimorio|romance|moderno|facil`), a nota de
+  modelo (`modelo: "[[…]]"` com `tipo: modelo-livro`) e, por cima, o que o livro muda (`fonte_titulos`, `fonte_texto`,
+  `corpo_pt`, `entrelinha`, `alinhamento`, `colunas`, `cor_papel`, `cor_texto`, `cor_destaque`, `fichas`). Só valores
+  conferidos (cor `#rrggbb`, nome de fonte com letras e números, números dentro de limites) viram CSS, em variáveis no
+  `.book-paper` (`styleCss`). O `tema:` antigo continua valendo pela tradução (pergaminho → Grimório, minimalista →
+  Moderno em preto e branco) e sai quando a pessoa escolhe um modelo no painel; `fundo_pagina` vale como `cor_papel`.
+- O painel **Estilo do livro** (`BookStylePanel.tsx`) fica à esquerda do Diagramar (no celular, abaixo do botão “Estilo
+  do livro”). Cada mudança vale na prévia na hora; o Diagramar junta as mudanças e grava no livro um segundo depois da
+  última, numa gravação só, e também ao sair ou antes de exportar. Desfazer volta o último ajuste (digitar ou arrastar
+  uma cor conta como um). Escolher de novo o valor do modelo apaga o ajuste em vez de gravá-lo, e trocar de modelo apaga
+  os ajustes de antes (Desfazer traz de volta).
+- Os ajustes que ficavam em “Índice, glossário e acabamento” (margem, sangria, marcas de corte, textura, marca d’água,
+  CSS do livro, índice e glossário) entraram nos grupos do painel; o formulário antigo saiu.
+- **Salvar como modelo…** cria `Livros/Modelos/<nome>.md` com o estilo inteiro (o modelo não depende do livro) e passa
+  o livro a usá-lo; os modelos do cofre aparecem ao lado dos cinco prontos.
+- Fontes: 11 famílias livres em versões estáticas (`@fontsource`, só o subconjunto latino, 400/700 e itálicos onde
+  há); fontes do cofre (`.ttf`, `.otf`, `.woff`, `.woff2`, o nome é o do arquivo) são lidas pelo `Platform` e
+  registradas com `FontFace` antes de paginar. EPUB e HTML levam o estilo e as fontes escolhidas; o DOCX leva a cor de
+  destaque e o nome da fonte do texto.
+- Colunas do livro: o capítulo pode pedir outra com `colunas:`; quem já usa `::: runas-colunas-N` ou `[!colunas]` fica
+  com uma (sem colunas dentro de colunas).
+
 ## Consequências
 - O smoke do desktop procura “Diagramar” no lugar de “Prévia” e confere a prévia ao lado (abrir, paginar, marcar a
   página do capítulo e refazer ao digitar no `--write`).
 - No celular, Foco saiu da barra do livro para o menu ⋯ (o lugar ficou para “Ver a página”), e a barra passou a caber em
   320 px, o que já não acontecia antes.
+- No celular, o Diagramar voltou a aparecer: desde a F3b uma regra antiga escondia a área principal do livro no modo
+  Diagramar em telas estreitas.
 - As regras antigas `.books-layout.has-preview` (prévia lateral da X4, sem uso desde a F3b) saíram do CSS.

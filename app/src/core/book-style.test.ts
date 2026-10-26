@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { BOOK_MODELS, bookModel, resolveStyle, styleCss } from "./book-style"
+import { BOOK_MODELS, STYLE_KEYS, bookModel, fontFromFile, modelNoteText, resolveStyle, styleCss, styleProperties } from "./book-style"
+import { parseFrontmatter } from "./parse"
 
 describe("estilo do livro (L3)", () => {
   it("parte do modelo e aplica só o que o livro muda", () => {
@@ -29,5 +30,24 @@ describe("estilo do livro (L3)", () => {
     expect(css).toContain('--book-body:"Atkinson Hyperlegible Next"')
     expect(css).toContain("--book-align:left")
     expect(css).toContain("--book-columns:1")
+  })
+})
+
+describe("modelos e fontes do cofre (L3)", () => {
+  it("lê o nome da fonte pelo arquivo", () => {
+    expect(fontFromFile("Anexos/Fontes/Minha Fonte.ttf")).toBe("Minha Fonte")
+    expect(fontFromFile("Rúnica-Bold.WOFF2")).toBe("Rúnica-Bold")
+    expect(fontFromFile("Anexos/x.png")).toBeNull()
+    expect(fontFromFile('Anexos/a"b.otf')).toBeNull()
+  })
+  it("a nota de modelo guarda o estilo inteiro e volta igual", () => {
+    const style = resolveStyle({ modelo: "grimorio", corpo_pt: 9.5, cor_destaque: "#112233", alinhamento: "esquerda" })
+    const text = modelNoteText(style)
+    const data = parseFrontmatter(text)!.data!
+    expect(data).toMatchObject({ tipo: "modelo-livro", modelo: "grimorio", corpo_pt: 9.5, cor_destaque: "#112233", alinhamento: "esquerda", colunas: 2 })
+    expect(resolveStyle({ modelo: "[[Meu]]" }, data)).toEqual(style)
+  })
+  it("styleProperties cobre todas as chaves de estilo", () => {
+    expect(Object.keys(styleProperties(resolveStyle({})))).toEqual([...STYLE_KEYS])
   })
 })

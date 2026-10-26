@@ -893,3 +893,23 @@ Decisões na [ADR 0033](adr/0033-livro-impresso.md).
   documento é o do livro e o PDF é marcado para leitor de tela.
 - [ ] Imprimir (Ctrl+P): sai sem o fundo creme; com “Fundo do papel na impressão” ligado, sai com ele. O PDF exportado
   continua com o fundo.
+
+## Livros L3 — Estilo do livro e modelos (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Diagramar: o painel **Estilo do livro** à esquerda. Trocar entre Manual de RPG, Grimório (com moldura), Romance,
+  Moderno e Leitura fácil: a prévia muda na hora e, um segundo depois, o livro ganha `modelo:` (o `tema:` antigo some).
+- [ ] Livros antigos com `tema: pergaminho`, `moderno` ou `minimalista` abrem com o modelo equivalente marcado.
+- [ ] Tipografia: trocar as fontes de títulos e de texto, o tamanho (− e +), a entrelinha e o alinhamento; voltar ao
+  valor do modelo apaga a propriedade do livro. **Desfazer** volta o último ajuste.
+- [ ] Cores: papel, texto e destaque; “Fundo também na impressão”; textura e marca d’água.
+- [ ] Página: tamanho, colunas do livro (1, 2, 3), capítulos em página nova, margem, sangria e marcas de corte. Um
+  capítulo com `colunas: 1` nas propriedades sai em uma coluna; o que usa `::: runas-colunas-2` continua como está.
+- [ ] **Salvar como modelo…**: cria `Livros/Modelos/<nome>.md` (abra no Obsidian: propriedades comuns) e o livro passa a
+  usá-lo; outro livro pode escolher o mesmo modelo no painel; mudar uma propriedade da nota de modelo muda os dois.
+- [ ] Fonte do cofre: pôr um `.ttf` ou `.otf` em `Anexos/Fontes`; ele aparece em “Do cofre” nas listas de fontes e o PDF
+  sai com ela.
+- [ ] Exportar EPUB e HTML com o Grimório e com o Moderno: cores e fontes iguais às da prévia; DOCX com a cor de destaque.
+- [ ] Celular: Diagramar aparece (antes ficava em branco); o botão **Estilo do livro** abre o painel acima das páginas;
+  sem rolagem para os lados em 320 px.

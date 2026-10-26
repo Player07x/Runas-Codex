@@ -4,7 +4,7 @@ import { parseMap } from "../wiki"
 import { VaultIndex as Index } from "../vault-index"
 import { publicWikiIndex } from "../wiki-public"
 import type { VaultIndex } from "../vault-index"
-import { nodeXml, xml, type ExportBook, type ExportNode } from "./book"
+import { nodeXml, paperClass, xml, type ExportBook, type ExportNode } from "./book"
 
 /** Fecha a seleção por links só quando solicitado, usando a projeção pública antes de seguir qualquer ligação. */
 export function documentPaths(index: VaultIndex, paths: string[], linked: boolean, players: boolean): string[] {
@@ -28,7 +28,7 @@ export function generateStaticSite(book: ExportBook): Uint8Array {
   const sections = book.sections.filter(section => !["capa", "creditos", "contracapa"].includes(section.kind))
   const pages = new Map(sections.map((section, i) => [section.path, `nota-${i + 1}.html`]))
   const files: Zippable = {}
-  const page = (title: string, body: string, root = false) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${xml(title)}</title><link rel="stylesheet" href="${root ? "" : "../"}book.css"></head><body class="book-paper tema-${book.theme}"><main class="book-print offline-site">${body}</main></body></html>`
+  const page = (title: string, body: string, root = false) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${xml(title)}</title><link rel="stylesheet" href="${root ? "" : "../"}book.css"></head><body class="${paperClass(book)}"><main class="book-print offline-site">${body}</main></body></html>`
   function rewrite(node: ExportNode): ExportNode {
     if (typeof node === "string") return node
     const attrs = { ...node.attrs }

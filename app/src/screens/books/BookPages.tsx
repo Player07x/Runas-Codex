@@ -3,12 +3,12 @@ import { Markdown } from "../../components/Markdown"
 import { bookProperties } from "../../core/books"
 import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings } from "../../core/books-preview"
 import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
-import { resolveStyle, styleCss } from "../../core/book-style"
-import { parseNote } from "../../core/parse"
+import { bookStyle, styleCss } from "../../core/book-style"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteSetContext } from "../../lib/note-set"
 import { vaultNoteSet } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
+import { loadVaultFonts } from "./vault-fonts"
 import { IMAGE_PPI, paginate, printableHtml, readyForPagination, type ImageQuality, type Pagination } from "./pagination"
 // EB Garamond estática só para o livro: a variável (a do app) sai como fonte Type 3 no PDF (L2, ADR 0033).
 import "@fontsource/eb-garamond/latin-400.css"
@@ -54,14 +54,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
   try { decoration = bookDecorationCss(book) } catch (e) { cssError = String(e) }
   const data = bookProperties(book)
   // Estilo do livro (L3): modelo pronto, nota de modelo (`modelo: "[[…]]"` com `tipo: modelo-livro`) e o que o livro muda.
-  const modelNote = (() => {
-    if (typeof data.modelo !== "string" || !data.modelo.startsWith("[[")) return undefined
-    const link = parseNote(data.modelo).links[0]
-    const dest = link ? index.resolve(link, book.path).dest : undefined
-    const note = dest ? index.note(dest) : undefined
-    return note && bookProperties(note).tipo === "modelo-livro" ? bookProperties(note) : undefined
-  })()
-  const style = resolveStyle(data, modelNote)
+  const style = bookStyle(index, book, data)
   const source = useRef<HTMLDivElement>(null)
   const output = useRef<HTMLDivElement>(null)
   const scroll = useRef<HTMLDivElement>(null)
@@ -83,7 +76,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
   const chapters = onlyPath ? all.filter((chapter) => chapter.path === onlyPath) : all
   const whole = !onlyPath
   // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
-  const signature = JSON.stringify([book.text, chapters, vault.version, onlyPath, style])
+  const signature = JSON.stringify([book.text, data, chapters, vault.version, onlyPath, style])
   const paperClass = `book-paper modelo-${style.model} fichas-${style.fichas}`
 
   useEffect(() => {
@@ -98,6 +91,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
         document.body.append(stage)
         let next: Pagination | null = null
         try {
+          const missingFonts = await loadVaultFonts(index, vault.platform, [style.titleFont, style.textFont])
           await readyForPagination(source.current, controller.signal)
           const quality: ImageQuality = typeof data.imagens === "string" && Object.hasOwn(IMAGE_PPI, data.imagens) ? data.imagens as ImageQuality : "tela"
           const printable = await printableHtml(source.current, quality, async (src) => {
@@ -115,7 +109,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
           output.current.dataset.paginationMs = next.milliseconds.toFixed(0)
           if (scroll.current) scroll.current.scrollTop = top
           const low = printable.lowResolution ? ` · ${printable.lowResolution === 1 ? "1 imagem fica" : `${printable.lowResolution} imagens ficam`} abaixo de 200 ppi impressa` : ""
-          update({ ready: true, error: "", total: next.total, lowResolution: printable.lowResolution, status: `${next.total} páginas · ${(next.milliseconds / 1000).toFixed(2)} s${low}` })
+          update({ ready: true, error: "", total: next.total, lowResolution: printable.lowResolution, status: `${next.total} páginas · ${(next.milliseconds / 1000).toFixed(2)} s${low}${missingFonts.length ? ` · fonte do cofre que não abriu: ${missingFonts.join(", ")}` : ""}` })
           paginated.current?.(output.current)
         } catch (err) {
           if (!controller.signal.aborted) update({ error: err instanceof Error ? err.message : String(err), status: "Prévia não atualizada" })
