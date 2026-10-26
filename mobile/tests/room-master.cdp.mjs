@@ -102,6 +102,7 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
           masterBrowser = await connectDevtools(chromeEndpoint, tab => tab.url === masterUrl)
           await masterBrowser.until(`document.querySelector('.table-title')?.textContent.includes('Sala Android X7') && document.querySelector('canvas')`)
           await masterBrowser.until(`Number(document.querySelector('canvas')?.dataset.viewZoom) > 0`)
+          await masterBrowser.run('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
           const point = await masterBrowser.run(`(() => {
             const canvas = document.querySelector('canvas'), box = canvas.getBoundingClientRect(), zoom = Number(canvas.dataset.viewZoom)
             return { x: box.x + Number(canvas.dataset.viewX) + 450 * zoom, y: box.y + Number(canvas.dataset.viewY) + 150 * zoom }
