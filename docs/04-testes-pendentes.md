@@ -854,3 +854,23 @@ cada fase e do Codex estão acima; nesta versão, conferir também:
   continua gravando; a Busca rápida de tarefas não mostra tarefas das Notas.
 - [ ] Agenda: editar um evento com local, apagar o local e conferir que a seção Detalhes continua aberta.
 - [ ] Instalar de novo o snippet `runas-codex.css` e conferir no Obsidian a cor de uma campanha personalizada.
+
+
+## R5 — mestre pelo navegador com a sala no Android (25/10/2026)
+
+- [ ] Celular hospedando e tablet/notebook na mesma rede: revelar o link/QR do mestre no painel Sala; confirmar o aviso
+  de controle da mesa. QR/link permanecem escondidos até pedir. Conferir também teclado, temas e largura de 320 px
+  quando o Claude Code concluir os textos/estados do painel.
+- [ ] Pelo navegador, criar token, trocar a cena transmitida e tocar/parar áudio; com um jogador conectado, conferir
+  projeção, visão, segredos e persistência ao reabrir a mesa no celular.
+- [ ] Um segundo mestre é recusado. “Desconectar” encerra o primeiro; “Trocar chave” também invalida o link anterior.
+- [ ] Repetir com cofre em pasta direta e no SAF: importar imagem e ler mapa/áudio com Range sem revelar assets privados
+  ao jogador.
+- [ ] Apagar a tela do celular e continuar comandando pelo tablet; confirmar o serviço ativo e repetir por alguns minutos
+  com a política de bateria do aparelho. A notificação nunca mostra a chave do mestre.
+- [ ] Desligar/religar sala, trocar mesa/cofre ou retirar permissão de gravação: navegador anterior perde acesso; a sala
+  nova tem outra chave. Conferir fechar o navegador e entrar novamente sem precisar “Desconectar”.
+
+O núcleo e o transporte reutilizam o contrato do mestre remoto do desktop. A interface existente reconhece
+`VttApi.master`; ajustes de texto e revisão visual do painel pertencem ao Claude Code (PR #67). Não há mudança na
+`RemoteVttApi`, na CSP, no túnel público nem nos testes do mestre remoto desktop.

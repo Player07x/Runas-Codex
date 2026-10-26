@@ -2,6 +2,7 @@
 import {mkdir,readFile,readdir,writeFile} from 'node:fs/promises'
 import {execFileSync} from 'node:child_process'
 import {connectDevtools,sleep} from './devtools-client.mjs'
+import {checkRemoteMaster} from './room-master.cdp.mjs'
 const output=process.argv[2] ?? '/tmp/runas-android-room'
 const endpoint=process.argv[3] ?? 'http://127.0.0.1:9224'
 const chromeEndpoint=process.argv[4] ?? 'http://127.0.0.1:9225'
@@ -9,7 +10,7 @@ const fixture=JSON.parse(await readFile(output+'/fixture.json','utf8'))
 const adb=(...args)=>execFileSync('adb',args,{timeout:30000,maxBuffer:16*1024*1024}).toString()
 const result={checks:[],errors:[]},check=(label,condition)=>{if(!condition)throw new Error(label);result.checks.push(label);console.log("OK:",label)}
 const app=await connectDevtools(endpoint,t=>t.url.startsWith('https://localhost'))
-let browser,guest,androidPlayer
+let browser,guest,androidPlayer,master
 async function screenshot(client,name){const shot=await client.send('Page.captureScreenshot',{format:'png'});await writeFile(`${output}/${name}.png`,Buffer.from(shot.data,'base64'))}
 async function click(client,selector){await client.until(`document.querySelector(${JSON.stringify(selector)})`);await client.run(`document.querySelector(${JSON.stringify(selector)}).click();true`)}
 async function appButton(text){await app.until(`[...document.querySelectorAll('button')].some(b=>b.textContent.trim()===${JSON.stringify(text)})`);await app.run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(text)}).click();true`)}
@@ -57,6 +58,7 @@ try {
   await browser.until(`window.__testWire?.readyState===WebSocket.OPEN`)
   await browser.until(`document.querySelector('canvas')`)
   check('jogador do navegador autenticado',true)
+  master=await checkRemoteMaster({app,browser,base,playerKey:key,fixture,output,chromeEndpoint,check,adb})
   check('projeção não revela token nem parede privados',!JSON.stringify(browser.frames).includes('SEGREDO-X7') && !JSON.stringify(browser.frames).includes('"wall"'))
   browser.frames.length=0
   await browser.run(`window.__testWire.send(JSON.stringify({type:'move',tokenId:'hero',x:250,y:250}));true`)
@@ -76,6 +78,7 @@ try {
   await browser.run(`window.__testWire.send(JSON.stringify({type:'move',tokenId:'hero',x:350,y:350}));true`)
   await waitFrames(browser,m=>m.type==='move-result' && m.ok)
   check('autoridade ativa em segundo plano e com tela apagada',true)
+  await master.background()
   const services=adb('shell','dumpsys','activity','services','dev.runas.codex')
   check('serviço em primeiro plano ativo',services.includes('RoomService') && /isForeground=true/.test(services))
   await writeFile(output+'/service.txt',services)
@@ -84,6 +87,7 @@ try {
   check('nota preservada',adb('exec-out','cat','/sdcard/Documents/cofre-room/Notas/Intacta.md')==='# Nota intacta\n')
   adb('shell','input','keyevent','224');adb('shell','input','keyevent','82');adb('shell','am','start','-n','dev.runas.codex/.MainActivity')
   await app.until('document.hasFocus()')
+  await master.afterWake()
   await app.run(`[...document.querySelectorAll('.player-seats button')].find(b=>b.textContent.includes('Regenerar')).click();true`)
   await browser.until(`window.__testWire.readyState===WebSocket.CLOSED`)
   check('regenerar revoga conexão anterior',true)
@@ -116,4 +120,4 @@ try {
   try{await screenshot(app,'falha-android')}catch{}
   throw error
 }
-finally {guest?.close();browser?.close();androidPlayer?.close();app.close();await mkdir(output,{recursive:true});await writeFile(output+'/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2))}
+finally {master?.close();guest?.close();browser?.close();androidPlayer?.close();app.close();await mkdir(output,{recursive:true});await writeFile(output+'/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2))}
