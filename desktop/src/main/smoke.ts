@@ -311,7 +311,8 @@ export const SMOKE_SCRIPT = `(async () => {
     await until(() => document.querySelector(".book-side .book-preview-output[aria-busy=false]"), 200)
     ;(await until(() => document.querySelector(".books-main .cm-content")))?.focus()
     document.execCommand("insertText", false, "Texto da prévia ao lado. ")
-    result.bookSideTyping = Boolean(await until(() => document.querySelector(".book-side .book-preview-output[aria-busy=false]")?.textContent.includes("Texto da prévia ao lado"), 200))
+    // As páginas hifenizam (L5): os hífens suaves não contam na comparação.
+    result.bookSideTyping = Boolean(await until(() => document.querySelector(".book-side .book-preview-output[aria-busy=false]")?.textContent.replace(/\u00ad/g, "").includes("Texto da prévia ao lado"), 200))
     document.querySelector("[data-panel-control='book-preview'] button")?.click()
   }
 
