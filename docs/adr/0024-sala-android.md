@@ -70,3 +70,6 @@ O controle de revelar conserva o foco ao expandir/recolher e o recebe após troc
 44 px, os estados usam regiões de status/alerta e o layout refluí a partir de 320 px com os tokens dos dois temas.
 O job `android-room` verifica revelar/esconder e estado conectado, e troca a chave e desconecta pela interface real
 do hospedeiro, em vez de chamar esses métodos diretamente na ponte de teste.
+Os botões são acionados por toque nas coordenadas visíveis, depois de conferir que nenhum elemento os cobre.
+O aviso global de sala aberta aparece fora da mesa; dentro dela, os controles já ficam no painel Sala, evitando que
+o aviso flutuante cubra o painel móvel. A Carta X continua aparecendo em qualquer rota até confirmar a pausa.

@@ -5,9 +5,15 @@ import { connectDevtools, sleep } from './devtools-client.mjs'
 export async function checkRemoteMaster({ app, browser, base, playerKey, fixture, output, chromeEndpoint, check, adb }) {
   const panel = '[data-master-remote]'
   const panelButton = async text => {
-    await app.until(`[...document.querySelectorAll('${panel} button')].some(button => button.textContent.trim() === ${JSON.stringify(text)} && !button.disabled)`)
-    await app.run(`[...document.querySelectorAll('${panel} button')].find(button => button.textContent.trim() === ${JSON.stringify(text)}).click();true`)
+    const find = `[...document.querySelectorAll('${panel} button')].find(button => button.textContent.trim() === ${JSON.stringify(text)} && !button.disabled)`
+    await app.until(find)
+    await app.run(`(${find}).scrollIntoView({ block: 'center' });true`)
+    await app.until(`(() => { const button = ${find}; if (!button) return false; const box = button.getBoundingClientRect(); return button.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)) })()`)
+    const point = await app.run(`(() => { const box = (${find}).getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 } })()`)
+    await app.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 0 }] })
+    await app.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
   }
+  check('aviso global não cobre os controles dentro da mesa', await app.run(`!document.querySelector('.active-room')`))
   await app.until(`document.querySelector('${panel} [aria-expanded="false"]:not(:disabled)')`)
   check('painel explica controle por outro aparelho e gravação no celular', await app.run(`document.querySelector('${panel}').innerText.includes('Controlar por outro aparelho') && document.querySelector('${panel}').innerText.includes('gravada neste celular')`))
   check('link e QR do mestre começam ocultos', await app.run(`!document.querySelector('${panel} input') && !document.querySelector('${panel} img')`))

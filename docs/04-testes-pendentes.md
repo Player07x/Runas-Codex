@@ -896,3 +896,6 @@ Verificação local automatizada do componente: teclado/foco, estados de falha/r
 desconexão; reflow e alvos de 44 px em 320, 768 e 1280 px nos dois temas. A árvore de acessibilidade foi inspecionada;
 leitura falada em TalkBack/leitor desktop e uso físico permanecem não verificados. O teste da sala no emulador também
 exercita os controles reais do painel e registra `android-controle-mestre.png`.
+
+- [ ] Na própria mesa, o aviso global de sala aberta não cobre o painel. Ao navegar para outra tela, o aviso volta a
+  oferecer “Voltar à mesa” e “Encerrar sala”. A Carta X permanece visível também dentro da mesa até confirmar a pausa.
