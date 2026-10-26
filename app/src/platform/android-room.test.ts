@@ -2,10 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { Platform, VaultEntry } from "./platform"
 const native = vi.hoisted(() => ({
   callbacks: new Map<string, (event: unknown) => void>(),
-  start: vi.fn(async () => ({ port: 30000, address: "192.168.0.8" })),
+  start: vi.fn(async (_options: { roomId: string }) => ({ port: 30000, address: "192.168.0.8" })),
   stop: vi.fn(async () => undefined),
   answer: vi.fn(async (_value: { id: string; result: unknown }) => undefined),
   publish: vi.fn(async () => undefined),
+  masterState: vi.fn(async () => ({ key: "a".repeat(32), connected: false })),
+  masterRotate: vi.fn(async () => ({ key: "b".repeat(32), connected: false })),
+  masterDisconnect: vi.fn(async () => ({ key: "a".repeat(32), connected: false })),
+  masterEmit: vi.fn(async (_value: { channel: string; payload: unknown }) => undefined),
   openUrl: vi.fn(async () => undefined),
   addListener: vi.fn(async (name: string, callback: (event: unknown) => void) => {
     native.callbacks.set(name, callback)
@@ -35,7 +39,7 @@ function fixture() {
 }
 async function rpc(kind: string, payload: object): Promise<Record<string, unknown>> {
   const id = crypto.randomUUID()
-  native.callbacks.get("request")!({ id, kind, payload })
+  native.callbacks.get("request")!({ id, kind, payload, roomId: native.start.mock.calls.at(-1)?.[0].roomId ?? "" })
   await vi.waitFor(() => expect(native.answer.mock.calls.some(([value]) => value.id === id)).toBe(true))
   return native.answer.mock.calls.find(([value]) => value.id === id)![0].result as Record<string, unknown>
 }
@@ -85,6 +89,62 @@ describe("ponte da sala Android", () => {
     expect((await rpc("authenticate", { token: joined.token })).seat).toBeNull()
     await api.player.stop()
     expect((await api.player.state()).enabled).toBe(false)
+  })
+  it("o mestre remoto grava pela mesma API, publica aos jogadores e recebe eventos locais", async () => {
+    const { api, files } = fixture()
+    const world = await api.createWorld({ title: "Mesa remota" })
+    await api.openWorld(world.id)
+    await api.documents.put({ id: "scene", type: "scene", parentId: null, data: { name: "Pátio" } })
+    await api.table.report({ sceneId: "scene", selection: [], center: null })
+    await api.player.start()
+    expect((await rpc("master-world", {})).world).toMatchObject({ id: world.id })
+    const document = { id: "remote-hero", type: "token", parentId: "scene", data: { name: "Criado pelo tablet", x: 150, y: 250 } }
+    const result = await rpc("master", { channel: "vtt:documents-put", args: [document] })
+    expect(result.result).toMatchObject({ id: document.id, data: document.data })
+    expect(new TextDecoder().decode(files.get(`${world.path}/cenas/scene.json`)!.bytes)).toContain("Criado pelo tablet")
+    expect(native.publish).toHaveBeenCalled()
+    expect(native.masterEmit).toHaveBeenCalledWith(expect.objectContaining({ channel: "vtt:documents-changed", payload: expect.objectContaining({ kind: "put" }) }))
+    expect((await rpc("master", { channel: "vtt:player-set-scene", args: ["scene"] })).error).toBeUndefined()
+    expect((await api.player.state()).sceneId).toBe("scene")
+    expect((await rpc("master", { channel: "vtt:worlds-create", args: [{ title: "Proibida" }] })).error).toBeDefined()
+    expect((await rpc("master", { channel: "vtt:player-set-bars", args: ["inexistente"] })).error).toBeDefined()
+    expect((await rpc("master", { channel: "vtt:documents-put", args: [{ ...document, id: "invalido", parentId: "sem-cena" }] })).error).toBeDefined()
+    expect(await api.listWorlds()).toHaveLength(1)
+    await api.player.stop()
+    expect((await rpc("master", { channel: "vtt:documents-put", args: [document] })).error).toBeDefined()
+  })
+  it("importa pela gravação versionada e encaminha áudio, chaves e desconexão", async () => {
+    const { api, files } = fixture()
+    const world = await api.createWorld({ title: "Mesa" })
+    await api.openWorld(world.id)
+    await api.player.start()
+    const asset = await rpc("master-asset", { kind: "audio", name: "sino.mp3", base64: btoa("som") })
+    expect(files.has(`${world.path}/assets/${String(asset.result)}`)).toBe(true)
+    await api.documents.put({ id: "playlist", type: "playlist", parentId: null, data: { name: "Sons", mode: "soundboard" } })
+    await api.documents.put({ id: "track", type: "track", parentId: "playlist", data: { name: "Sino", audio: asset.result } })
+    await rpc("master", { channel: "vtt:audio-play-track", args: ["track"] })
+    expect((await api.audio.state()).sounds).toHaveLength(1)
+    expect(native.masterEmit).toHaveBeenCalledWith(expect.objectContaining({ channel: "vtt:audio-state-changed" }))
+    expect((await rpc("master-asset", { kind: "../cofre", name: "x.png", base64: btoa("imagem") })).error).toBeDefined()
+    expect((await rpc("master-asset", { kind: "maps", name: "x.exe", base64: btoa("imagem") })).error).toBeDefined()
+    const listener = vi.fn(), off = api.master!.onState(listener)
+    native.callbacks.get("master-state")!({ key: "a".repeat(32), connected: true })
+    expect(listener).toHaveBeenCalledWith({ key: "a".repeat(32), connected: true })
+    off()
+    await api.master!.state(); await api.master!.rotate(); await api.master!.disconnect()
+    expect(native.masterRotate).toHaveBeenCalledOnce()
+    expect(native.masterDisconnect).toHaveBeenCalledOnce()
+    await api.closeWorld()
+    expect(native.stop).toHaveBeenCalled()
+  })
+  it("recusa pedidos de uma sessão anterior depois de reabrir a sala", async () => {
+    const { api } = fixture(), world = await api.createWorld({ title: "Mesa" })
+    await api.openWorld(world.id)
+    await api.player.start()
+    const id = crypto.randomUUID()
+    native.callbacks.get("request")!({ id, roomId: "sala-antiga", kind: "master-world", payload: {} })
+    await vi.waitFor(() => expect(native.answer).toHaveBeenCalledWith({ id, result: { error: expect.any(String) } }))
+    await api.player.stop()
   })
   it("encerra a sala ao receber a ação de parar do serviço", async () => {
     const { api } = fixture(),

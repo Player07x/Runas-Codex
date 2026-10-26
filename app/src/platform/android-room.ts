@@ -3,7 +3,7 @@ import { sha256 } from "@noble/hashes/sha256"
 import { bytesToHex } from "@noble/hashes/utils"
 import type { Platform } from "./platform"
 import type { AudioState } from "../vtt/shared/audio"
-import type { DocumentChange, PlayerState, VttApi } from "../vtt/shared/ipc"
+import { IPC, type DocumentChange, type PlayerState, type VttApi } from "../vtt/shared/ipc"
 import type { PlayerWireMessage } from "../vtt/shared/player"
 import { PortableWorldStore } from "../vtt/shared/portable-world-store"
 import { RoomAuthority } from "../vtt/shared/room-authority"
@@ -13,17 +13,26 @@ import { RegionService } from "../vtt/shared/region-service"
 import { clearLog, deleteDocument, putDocument } from "../vtt/shared/world-documents"
 import type { PlayerSeatConnection, PlayerTransport, PlayerTransportOptions } from "../vtt/shared/transport"
 import { isAssetPath } from "../vtt/shared/scene"
+import { MASTER_CHANNELS, MASTER_EVENTS, type MasterState } from "../vtt/shared/master"
+import { dispatchMaster } from "../vtt/shared/master-dispatch"
+import { ASSET_KINDS } from "../vtt/shared/world"
 
 interface NativeRequest {
   id: string
-  kind: "join" | "authenticate" | "snapshot" | "message"
-  payload: { code?: string; token?: string; seat?: PlayerSeatConnection | null; message?: unknown }
+  kind: "join" | "authenticate" | "snapshot" | "message" | "master" | "master-world" | "master-asset"
+  payload: { code?: string; token?: string; seat?: PlayerSeatConnection | null; message?: unknown; channel?: string; args?: unknown[]; kind?: string; name?: string; base64?: string }
+  roomId: string
 }
 interface RoomPlugin {
-  start(options: { port: number; key: string; worldPath: string }): Promise<{ port: number; address: string }>
+  start(options: { port: number; key: string; worldPath: string; roomId: string; masterChannels: readonly string[]; masterEvents: readonly string[] }): Promise<{ port: number; address: string }>
   stop(): Promise<void>
   answer(options: { id: string; result: object }): Promise<void>
   publish(options: { message?: PlayerWireMessage; perSeat?: Record<string, PlayerWireMessage>; assets: readonly string[] }): Promise<void>
+  masterState(): Promise<MasterState>
+  masterRotate(): Promise<MasterState>
+  masterDisconnect(): Promise<MasterState>
+  masterEmit(options: { channel: string; payload: unknown }): Promise<void>
+  addListener(event: "master-state", listener: (state: MasterState) => void): Promise<PluginListenerHandle>
   openUrl(options: { url: string }): Promise<void>
   addListener(event: "request", listener: (request: NativeRequest) => void): Promise<PluginListenerHandle>
   addListener(event: "counts", listener: (counts: { players: number; spectators: number }) => void): Promise<PluginListenerHandle>
@@ -37,10 +46,13 @@ class AndroidTransport implements PlayerTransport {
   address = "127.0.0.1"
   private seats = new Map<string, PlayerSeatConnection>()
   private ready: Promise<unknown>
+  private roomId = ""
   constructor(
     private options: PlayerTransportOptions,
     private flush: () => Promise<void>,
     onStop: () => void,
+    private master: (request: NativeRequest) => Promise<object>,
+    onMasterState: (state: MasterState) => void,
   ) {
     this.ready = Promise.all([
       native.addListener("request", (request) => {
@@ -52,10 +64,12 @@ class AndroidTransport implements PlayerTransport {
         options.onPlayers?.(value.players)
       }),
       native.addListener("stopped", onStop),
+      native.addListener("master-state", onMasterState),
     ])
   }
   private async request(request: NativeRequest): Promise<void> {
     try {
+      if (request.roomId !== this.roomId) throw new Error("Sala encerrada.")
       const { payload } = request
       let result: object = {}
       if (request.kind === "join") result = this.options.joinSeat?.(payload.code ?? "") ?? {}
@@ -66,6 +80,7 @@ class AndroidTransport implements PlayerTransport {
         await this.flush()
         result = { message }
       }
+      if (request.kind.startsWith("master")) result = await this.master(request)
       if (payload.seat) this.seats.set(payload.seat.slotId, payload.seat)
       await native.answer({ id: request.id, result })
     } catch {
@@ -74,11 +89,13 @@ class AndroidTransport implements PlayerTransport {
   }
   async start(port: number, key: string): Promise<void> {
     await this.ready
-    const result = await native.start({ port, key, worldPath: this.options.worldPath() ?? "" })
+    this.roomId = crypto.randomUUID()
+    const result = await native.start({ port, key, worldPath: this.options.worldPath() ?? "", roomId: this.roomId, masterChannels: MASTER_CHANNELS, masterEvents: MASTER_EVENTS })
     this.addressPort = result.port
     this.address = result.address
   }
   async stop(): Promise<void> {
+    this.roomId = ""
     this.seats.clear()
     await native.stop()
   }
@@ -105,6 +122,10 @@ export function createAndroidVttApi(platform: Platform): VttApi {
   const documentListeners = new Set<(change: DocumentChange) => void>(),
     playerListeners = new Set<(state: PlayerState) => void>(),
     audioListeners = new Set<(state: AudioState) => void>()
+  const masterListeners = new Set<(state: MasterState) => void>()
+  const emitMaster = (channel: string, payload: unknown) => {
+    if (authority?.isEnabled) void native.masterEmit({ channel, payload }).catch(fail)
+  }
   const vision = new VisionService(() => store.openWorld?.database ?? null)
   let transport: AndroidTransport
   let stopping = false
@@ -125,10 +146,25 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         () => {
           if (authority?.isEnabled && !stopping) void stop().catch(() => undefined)
         },
+        async (request) => {
+          if (!authority.isEnabled || !store.openWorld) throw new Error("Sala encerrada.")
+          const { payload } = request
+          if (request.kind === "master-world") return { world: store.openWorld.summary }
+          if (request.kind === "master-asset") {
+            if (!(ASSET_KINDS as readonly string[]).includes(payload.kind ?? "") || typeof payload.base64 !== "string" || payload.base64.length > Math.ceil(50 * 1024 * 1024 / 3) * 4) throw new Error("Arquivo inválido.")
+            const binary = atob(payload.base64)
+            const bytes = new Uint8Array(binary.length)
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+            return { result: await api.assets.import(payload.kind as typeof ASSET_KINDS[number], payload.name ?? "", bytes) }
+          }
+          return { result: await dispatchMaster(api, payload.channel ?? "", payload.args ?? []) ?? null }
+        },
+        (state) => masterListeners.forEach(listener => listener(state)),
       )),
     (state) => {
       transport?.rememberSeats(state)
       playerListeners.forEach((listener) => listener(state))
+      emitMaster(IPC.playerStateChanged, state)
     },
     vision,
     () => transport.address,
@@ -139,6 +175,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     (state) => {
       authority.setAudio(state)
       audioListeners.forEach((listener) => listener(state))
+      emitMaster(IPC.audioStateChanged, state)
     },
   )
   const publish = (change: DocumentChange) => {
@@ -146,6 +183,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     audio.onDocumentChange(change)
     authority.onDocumentChange(change)
     documentListeners.forEach((listener) => listener(change))
+    emitMaster(IPC.documentsChanged, change)
     regions.onDocumentChange(change)
   }
   const regions = new RegionService(
@@ -307,9 +345,16 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         await save()
       },
     },
+    master: {
+      state: () => native.masterState(),
+      rotate: () => native.masterRotate(),
+      disconnect: () => native.masterDisconnect(),
+      onState: (listener) => { masterListeners.add(listener); return () => { masterListeners.delete(listener) } },
+    },
     assets: {
       url: (path) => (store.openWorld && isAssetPath(path) ? platform.fileUrl(`${store.openWorld.summary.path}/assets/${path}`) : null),
       import: async (kind, name, bytes) => {
+        if (!(ASSET_KINDS as readonly string[]).includes(kind)) throw new Error("Tipo de asset inválido.")
         const extension = name.split(".").pop()?.toLowerCase() ?? ""
         const allowed =
           kind === "audio" ? ["mp3", "ogg", "wav", "m4a", "flac", "webm", "opus"] : ["png", "jpg", "jpeg", "webp", "gif", "avif"]
@@ -317,8 +362,11 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         if (!bytes.length || bytes.length > 50 * 1024 * 1024) throw new Error("Escolha um arquivo de até 50 MB.")
         const path = `${kind}/${bytesToHex(sha256(bytes))}.${extension === "jpeg" ? "jpg" : extension}`
         if (!isAssetPath(path)) throw new Error("Asset inválido.")
-        const full = `${store.database().path}/assets/${path}`
-        if (!(await platform.listTransferFiles!(true)).some((entry) => entry.path === full))
+        const database = store.database()
+        const full = `${database.path}/assets/${path}`
+        const files = await platform.listTransferFiles!(true)
+        if (store.openWorld?.database !== database) throw new Error("A mesa foi fechada durante a importação.")
+        if (!files.some((entry) => entry.path === full))
           await platform.writeManagedTransfer!(full, bytes, null)
         return path
       },

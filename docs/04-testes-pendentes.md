@@ -854,3 +854,48 @@ cada fase e do Codex estão acima; nesta versão, conferir também:
   continua gravando; a Busca rápida de tarefas não mostra tarefas das Notas.
 - [ ] Agenda: editar um evento com local, apagar o local e conferir que a seção Detalhes continua aberta.
 - [ ] Instalar de novo o snippet `runas-codex.css` e conferir no Obsidian a cor de uma campanha personalizada.
+
+
+## R5 — mestre pelo navegador com a sala no Android (25/10/2026)
+
+- [ ] Celular hospedando e tablet/notebook na mesma rede: revelar o link/QR do mestre no painel Sala; confirmar o aviso
+  de controle da mesa. QR/link permanecem escondidos até pedir. Conferir também teclado, temas e largura de 320 px
+  quando o Claude Code concluir os textos/estados do painel.
+- [ ] Pelo navegador, criar token, trocar a cena transmitida e tocar/parar áudio; com um jogador conectado, conferir
+  projeção, visão, segredos e persistência ao reabrir a mesa no celular.
+- [ ] Um segundo mestre é recusado. “Desconectar” encerra o primeiro; “Trocar chave” também invalida o link anterior.
+- [ ] Repetir com cofre em pasta direta e no SAF: importar imagem e ler mapa/áudio com Range sem revelar assets privados
+  ao jogador.
+- [ ] Apagar a tela do celular e continuar comandando pelo tablet; confirmar o serviço ativo e repetir por alguns minutos
+  com a política de bateria do aparelho. A notificação nunca mostra a chave do mestre.
+- [ ] Desligar/religar sala, trocar mesa/cofre ou retirar permissão de gravação: navegador anterior perde acesso; a sala
+  nova tem outra chave. Conferir fechar o navegador e entrar novamente sem precisar “Desconectar”.
+
+O núcleo e o transporte reutilizam o contrato do mestre remoto do desktop. A interface existente reconhece
+`VttApi.master`; ajustes de texto e revisão visual do painel pertencem ao Claude Code (PR #67). Não há mudança na
+`RemoteVttApi`, na CSP, no túnel público nem nos testes do mestre remoto desktop.
+
+- [ ] Mestre remoto no desktop: confirmar que cenas existentes carregam tokens, paredes e demais objetos da cena. A R5
+  também corrige o argumento opcional da consulta remota, mantendo a diferença entre “todos” e “sem pai”.
+
+## R5 — painel de controle por outro aparelho (25/10/2026)
+
+A interface foi concluída pelo Codex por solicitação explícita do dono, substituindo o encaminhamento ao Claude Code
+registrado acima. O mesmo bloco atende Android e desktop com instruções específicas para cada hospedeiro.
+
+- [ ] Em celular/tablet físicos, nos temas claro e escuro: abrir Sala, conferir “Controlar por outro aparelho”, revelar
+  e esconder link/QR. A mesa continua no celular que hospeda; somente um aparelho controla pelo navegador.
+- [ ] Com TalkBack e leitor de tela desktop: conferir título do bloco, rótulo do link, estado expandido, avisos de
+  conexão, erro e sucesso. Com teclado, conferir Tab, Shift+Tab, Enter e Espaço e o retorno de foco após as ações.
+- [ ] Copiar o link; se o sistema negar a cópia, conferir a mensagem e a seleção do campo para copiar manualmente.
+- [ ] Com mestre conectado, usar “Trocar chave” e “Desconectar” no painel: o navegador perde acesso, o estado se
+  atualiza e o foco retorna ao controle de revelar. Trocar chave deixa o novo link/QR ocultos até pedir novamente.
+- [ ] Repetir no desktop, com link local e público, conferindo a indicação de gravação no computador.
+
+Verificação local automatizada do componente: teclado/foco, estados de falha/recuperação, cópia, troca de chave e
+desconexão; reflow e alvos de 44 px em 320, 768 e 1280 px nos dois temas. A árvore de acessibilidade foi inspecionada;
+leitura falada em TalkBack/leitor desktop e uso físico permanecem não verificados. O teste da sala no emulador também
+exercita os controles reais do painel e registra `android-controle-mestre.png`.
+
+- [ ] Na própria mesa, o aviso global de sala aberta não cobre o painel. Ao navegar para outra tela, o aviso volta a
+  oferecer “Voltar à mesa” e “Encerrar sala”. A Carta X permanece visível também dentro da mesa até confirmar a pausa.

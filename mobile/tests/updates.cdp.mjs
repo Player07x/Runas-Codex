@@ -106,6 +106,9 @@ try {
   let installed=false
   for(let i=0;i<150;i++){if(adb('shell','dumpsys','package','dev.runas.codex').includes('versionName=0.1.0-beta.14')){installed=true;break}await sleep(200)}
   check('o Android instala após confirmação explícita',installed)
+  // versionName muda antes de PACKAGE_REPLACED encerrar a instância antiga. Esperar o
+  // sucesso do instalador impede que esse encerramento mate também a abertura do teste.
+  check('instalador conclui a substituição antes de reabrir o app',await foreground(/packageinstaller.*InstallSuccess/))
   socket.close();
   adb('shell','am','force-stop','dev.runas.codex');
   adb('shell','am','start','-n','dev.runas.codex/.MainActivity');
