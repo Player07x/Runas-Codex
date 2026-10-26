@@ -99,7 +99,8 @@ export function layoutPageRules(page: Page, margin: number, layout: BookLayout, 
     `@page cover { ${none} } @page sumario { ${noHead} } @page parte { ${noHead} } @page :blank { ${none} }`,
     newChapter ? `.book-print.chapters-new-page .book-chapter { page: capitulo; } @page capitulo:first { ${noHead} }` : "",
     `.book-print .book-part { page: parte; } .book-print-toc { page: sumario; break-after: page; }`,
-    layout.mirrored ? `.book-print .book-part, .book-print.chapters-new-page .book-chapter { break-before: right; }` : "",
+    // Depois do `page:`: o Paged.js só quebra a página nomeada quando o nome muda, e os capítulos têm todos o mesmo.
+    `.book-print .book-part, .book-print.chapters-new-page .book-chapter { break-before: ${layout.mirrored ? "right" : "page"}; }`,
     `.book-print-toc a::after { content: target-counter(attr(href), page); }`,
     // A capa e a abertura em página inteira ocupam a área do texto (um pouco menos, para não empurrar uma página vazia).
     `.book-print .book-print-cover { height: ${(height - 2).toFixed(1)}mm; min-height: 0; }`,

@@ -29,6 +29,8 @@ describe("capa, sumário, aberturas e cabeçalhos (L4)", () => {
     expect(css).toContain("@page sumario {")
     expect(css).toContain("target-counter(attr(href), page)")
     expect(layoutPageRules(A4, 18, bookLayout({}), false)).not.toContain("page: capitulo")
+    // A quebra vem depois do nome da página: todos os capítulos se chamam `capitulo`.
+    expect(css.indexOf("break-before: page")).toBeGreaterThan(css.indexOf("page: capitulo"))
   })
   it("páginas espelhadas: margem interna maior, número do lado de fora, capítulo à direita", () => {
     const css = layoutPageRules(A4, 18, bookLayout({ espelhadas: true }), true)
