@@ -51,3 +51,13 @@ describe("modelos e fontes do cofre (L3)", () => {
     expect(Object.keys(styleProperties(resolveStyle({})))).toEqual([...STYLE_KEYS])
   })
 })
+
+describe("hifenização (L5)", () => {
+  it("hifeniza por padrão quem justifica, e o livro pode escolher", () => {
+    expect(resolveStyle({ modelo: "manual" }).hyphenate).toBe(true)
+    expect(resolveStyle({ modelo: "facil" }).hyphenate).toBe(false)
+    expect(resolveStyle({ modelo: "manual", alinhamento: "esquerda" }).hyphenate).toBe(false)
+    expect(resolveStyle({ modelo: "manual", hifenizar: false }).hyphenate).toBe(false)
+    expect(resolveStyle({ modelo: "[[M]]" }, { tipo: "modelo-livro", modelo: "facil", hifenizar: true }).hyphenate).toBe(true)
+  })
+})

@@ -1,4 +1,5 @@
-import { BookOpen, ChevronLeft, FileDown, History, LayoutGrid, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { BookOpen, ChevronLeft, FileDown, History, LayoutGrid, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, moveBookItem, readBook, type BookItem } from "../../core/books"
 import { reviewComment } from "../../core/books-review"
@@ -271,6 +272,15 @@ export function BookEditor({ book }: { book: IndexedNote }) {
               selectionActions={(editor) => [
                 { label: "Comentar", icon: <MessageSquarePlus size={15} />, run: () => setComment({ editor, at: editor.selection()?.to ?? 0 }) },
                 { label: "Citar da Wiki", icon: <Library size={15} />, run: () => { const range = editor.selection(); setRefQuery(range ? editor.text.slice(range.from, range.to) : ""); showSupport("referencias") } },
+                // L5: a magia no formato antigo (nome em negrito, custo e tipo embaixo, o texto) vira a ficha `[!magia]`.
+                { label: "Converter em ficha", icon: <ScrollText size={15} />, run: () => {
+                  const range = editor.selection()
+                  const ficha = range ? toFicha(editor.text.slice(range.from, range.to)) : null
+                  if (!range || !ficha) { setAnnouncement("Selecione o nome em negrito, a linha do custo e o texto da magia para converter em ficha."); setError("Converter em ficha: selecione o nome em negrito (ou ###), a linha do custo e o texto."); return }
+                  setError("")
+                  editor.replaceAll((text) => text.slice(0, range.from) + ficha + text.slice(range.to))
+                  setAnnouncement("Ficha criada.")
+                } },
               ]}
               sidebar={focus ? undefined : (editor) => (
                 <ResizablePanel id="book-tools" label="Apoio" width={300} controlsTarget={supportSlot} defaultCollapsed reveal={revealSupport} className="book-tools-panel" onCollapsedChange={toolsChanged}>

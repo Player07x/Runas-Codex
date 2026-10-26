@@ -6,6 +6,8 @@ import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-
 import { bookStyle, styleCss } from "../../core/book-style"
 import { bookLayout, chapterLabel, chapterNumbers } from "../../core/book-layout"
 import { insertToc, markDropCaps } from "./book-toc"
+import { layoutFichas } from "./book-fichas"
+import { hyphenateBook, loadHyphenator } from "./book-hyphen"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteSetContext } from "../../lib/note-set"
 import { vaultNoteSet } from "../../lib/vault-notes"
@@ -82,7 +84,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
   const chapters = (onlyPath ? all.map((chapter, i) => ({ chapter, n: numbers[i] })).filter(({ chapter }) => chapter.path === onlyPath) : all.map((chapter, i) => ({ chapter, n: numbers[i] })))
   const whole = !onlyPath
   // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
-  const signature = JSON.stringify([book.text, data, chapters, vault.version, onlyPath, style])
+  const signature = JSON.stringify([book.text, data, chapters, vault.version, onlyPath, style, showSecrets])
   const paperClass = `book-paper modelo-${style.model} fichas-${style.fichas}`
 
   useEffect(() => {
@@ -98,13 +100,16 @@ export const BookPages = forwardRef<BookPagesHandle, {
         let next: Pagination | null = null
         try {
           const missingFonts = await loadVaultFonts(index, vault.platform, [style.titleFont, style.textFont])
+          const hyphenate = style.hyphenate ? await loadHyphenator() : null
           await readyForPagination(source.current, controller.signal)
           const quality: ImageQuality = typeof data.imagens === "string" && Object.hasOwn(IMAGE_PPI, data.imagens) ? data.imagens as ImageQuality : "tela"
           const printable = await printableHtml(source.current, quality, async (src) => {
             const url = new URL(src)
             return url.host === "cofre" && !/^(?:https?|blob|data):$/.test(url.protocol) ? vault.platform.readBinary(url.pathname.slice(1).split("/").map(decodeURIComponent).join("/")) : null
           }, (clone) => {
+            layoutFichas(clone)
             if (layout.dropCap) markDropCaps(clone)
+            if (hyphenate) hyphenateBook(clone, hyphenate)
             if (whole && layout.toc) insertToc(clone)
           })
           if (controller.signal.aborted) return

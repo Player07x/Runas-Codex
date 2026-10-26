@@ -99,6 +99,27 @@ hifenização. A tarefa está em [`docs/tarefas/livro-impresso.md`](../tarefas/l
   **Capitular**: só no primeiro parágrafo com corpo (160 caracteres ou mais), com `float`; `initial-letter` deixava a
   paginação até 80 vezes mais lenta.
 
+### Como a L5 funciona
+- **Fichas** são callouts comuns nas notas (`> [!magia] Torreta de Fogo`, e `runa`, `habilidade`, `item`, `criatura`,
+  `raca`/`raça`, `classe`, `efeito`; o `statblock` da migração usa o desenho da criatura). O Obsidian e o leitor do app
+  mostram um callout normal; o snippet `runas-codex.css` dá cor, ícone e nome em versalete no Obsidian. Só o livro
+  reorganiza, na cópia que vai para o Paged.js (`screens/books/book-fichas.ts`): a primeira linha de campos
+  (`**Custo:** 1 PV · **Tipo:** Feitiço · **Alcance:** Área`) vira “1 PV · Feitiço · Área” (rótulos que o valor explica
+  somem: custo, tipo, alcance, grupo, categoria, raridade, origem), os outros rótulos ficam (Requisito, Dano…), campo
+  vazio não sai, a criatura ganha a linha de atributos e “**Ampliação:**” vira “Ampliação.” em versalete. Regras puras em
+  `core/fichas.ts`, com testes.
+- **Sem réguas:** fichas e caixas perderam bordas, sombras e fundos no livro. Fichas: tipográfica (padrão), fundo suave
+  ou faixa no nome (`fichas:`, grupo Fichas do Estilo); Romance e Leitura fácil escondem as imagens das fichas. Caixas:
+  descritivo em itálico sobre fundo suave, barra lateral com fundo suave e letra menor, observações só com o título
+  pequeno na cor do tipo.
+- **Converter em ficha** (barra da seleção, em Escrever): o formato antigo — nome em negrito (ou `###`), custo e tipo na
+  linha de baixo, o texto — vira o callout; custo em pontos vira `[!runa]`, o resto `[!magia]`.
+- **Versão dos jogadores** (Diagramar): sem os `[!segredo]` na prévia, na impressão e nos arquivos exportados (que ganham
+  “(jogadores)” no nome); o Markdown, que leva as notas como estão, sai das opções.
+- **Hifenização em português** com o pacote `hyphen` 1.14.1 (ISC, sem dependências nem script de instalação; só os
+  padrões do português, 6 KB, carregados quando o livro hifeniza): hífens suaves nas palavras de 6 letras ou mais do
+  texto corrido, só na cópia que vai para o Paged.js. Liga por padrão quando o texto é justificado (`hifenizar:` muda).
+
 ## Consequências
 - O smoke do desktop procura “Diagramar” no lugar de “Prévia” e confere a prévia ao lado (abrir, paginar, marcar a
   página do capítulo e refazer ao digitar no `--write`).
