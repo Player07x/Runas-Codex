@@ -126,8 +126,15 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
           await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...creation, button: 'left', buttons: 1, clickCount: 1 })
           await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...creation, button: 'left', buttons: 0, clickCount: 1 })
           await masterBrowser.until(`[...document.querySelectorAll('.properties input')].some(input => input.value === 'Token')`)
-          const created = JSON.parse(adb('exec-out', 'cat', '/sdcard/Documents/cofre-room/.runas/mesas/ci-x7/cenas/scene.json'))
-          check('interface cria e grava token sem randomUUID, como em HTTP na LAN', created.some(document => document.type === 'token' && document.data.name === 'Token' && document.data.x === 250 && document.data.y === 450))
+          // A projeção pode chegar pelo SSE antes da conclusão da gravação versionada.
+          let committed = false, created = []
+          for (let attempt = 0; attempt < 100 && !committed; attempt++) {
+            created = JSON.parse(adb('exec-out', 'cat', '/sdcard/Documents/cofre-room/.runas/mesas/ci-x7/cenas/scene.json'))
+            committed = created.some(document => document.type === 'token' && document.data.name === 'Token' && document.data.x === 250 && document.data.y === 450)
+            if (!committed) await sleep(100)
+          }
+          await writeFile(`${output}/mestre-cena-gravada.json`, JSON.stringify(created, null, 2))
+          check('interface cria e grava token sem randomUUID, como em HTTP na LAN', committed)
           check('mesma RemoteVttApi abre mesa real pelo navegador', masterBrowser.errors.length === 0)
           const shot = await masterBrowser.send('Page.captureScreenshot', { format: 'png' })
           await writeFile(`${output}/mestre-no-navegador.png`, Buffer.from(shot.data, 'base64'))
