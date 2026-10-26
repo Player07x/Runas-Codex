@@ -3,6 +3,28 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { connectDevtools, sleep } from './devtools-client.mjs'
 
 export async function checkRemoteMaster({ app, browser, base, playerKey, fixture, output, chromeEndpoint, check, adb }) {
+  const panel = '[data-master-remote]'
+  const panelButton = async text => {
+    const find = `[...document.querySelectorAll('${panel} button')].find(button => button.textContent.trim() === ${JSON.stringify(text)} && !button.disabled)`
+    await app.until(find)
+    await app.run(`(${find}).scrollIntoView({ block: 'center' });true`)
+    await app.until(`(() => { const button = ${find}; if (!button) return false; const box = button.getBoundingClientRect(); return button.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)) })()`)
+    const point = await app.run(`(() => { const box = (${find}).getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 } })()`)
+    await app.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 0 }] })
+    await app.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  }
+  check('aviso global não cobre os controles dentro da mesa', await app.run(`!document.querySelector('.active-room')`))
+  await app.until(`document.querySelector('${panel} [aria-expanded="false"]:not(:disabled)')`)
+  check('painel explica controle por outro aparelho e gravação no celular', await app.run(`document.querySelector('${panel}').innerText.includes('Controlar por outro aparelho') && document.querySelector('${panel}').innerText.includes('gravada neste celular')`))
+  check('link e QR do mestre começam ocultos', await app.run(`!document.querySelector('${panel} input') && !document.querySelector('${panel} img')`))
+  await panelButton('Mostrar link e QR do mestre')
+  await app.until(`document.querySelector('${panel} input')?.value && document.querySelector('${panel} img')`)
+  check('revelar mostra link, QR e aviso de controle da mesa', await app.run(`document.querySelector('${panel} [aria-expanded="true"]') && document.querySelector('${panel}').innerText.includes('Quem tem este link controla a mesa inteira')`))
+  await app.run(`document.querySelector('${panel}').scrollIntoView({ block: 'start' });true`)
+  const panelShot = await app.send('Page.captureScreenshot', { format: 'png' })
+  await writeFile(`${output}/android-controle-mestre.png`, Buffer.from(panelShot.data, 'base64'))
+  await panelButton('Esconder link e QR')
+  check('esconder remove link e QR do documento', await app.run(`!document.querySelector('${panel} input') && !document.querySelector('${panel} img')`))
   let state = await app.run('window.Capacitor.Plugins.RunasRoom.masterState()')
   const key = state.key, url = `${base}/master?m=${key}`
   check('mestre tem chave própria de 128 bits', /^[a-f0-9]{32}$/.test(key) && key !== playerKey)
@@ -39,6 +61,8 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
   }
   try {
     const hello = await wait(message => message.event === 'hello'), session = hello.data.session
+    await app.until(`document.querySelector('${panel} [role="status"]')?.textContent.trim() === 'Aparelho conectado'`)
+    check('painel recebe conexão real do mestre', true)
     check('SSE identifica a mesa hospedada no Android', hello.data.world.id === 'x7-ci')
     check('segundo mestre recebe 409', (await fetch(`${base}/master/events?m=${key}`)).status === 409)
     const request = (channel, args = [], token = session) => fetch(`${base}/master/rpc?m=${key}`, {
@@ -90,7 +114,19 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
         check('mestre comanda e grava com tela do celular apagada', persisted.find(document => document.id === token.id)?.data.x === 450)
       },
       async afterWake() {
-        state = await app.run('window.Capacitor.Plugins.RunasRoom.masterRotate()')
+        await panelButton('Mostrar link e QR do mestre')
+        await app.until(`document.querySelector('${panel} img')`)
+        await panelButton('Trocar chave')
+        await app.until(`document.querySelector('${panel}').innerText.includes('Chave trocada.') && document.querySelector('${panel} [aria-expanded="false"]')`)
+        check('trocar chave pelo painel oculta o novo link e QR', await app.run(`!document.querySelector('${panel} input') && !document.querySelector('${panel} img')`))
+        await app.until(`document.activeElement === document.querySelector('${panel} [aria-expanded]')`)
+        check('trocar chave devolve foco ao controle de revelar', true)
+        await panelButton('Mostrar link e QR do mestre')
+        await app.until(`document.querySelector('${panel} input')?.value && document.querySelector('${panel} img')`)
+        const revealed = await app.run(`document.querySelector('${panel} input').value`)
+        state = { key: new URL(revealed).searchParams.get('m') }
+        check('painel revela chave nova após a troca', state.key !== key)
+        await panelButton('Esconder link e QR')
         for (let i = 0; i < 50 && !finished; i++) await sleep(100)
         check('trocar chave derruba stream antigo', finished)
         await pump
@@ -138,8 +174,9 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
           check('mesma RemoteVttApi abre mesa real pelo navegador', masterBrowser.errors.length === 0)
           const shot = await masterBrowser.send('Page.captureScreenshot', { format: 'png' })
           await writeFile(`${output}/mestre-no-navegador.png`, Buffer.from(shot.data, 'base64'))
-          await app.run('window.Capacitor.Plugins.RunasRoom.masterDisconnect()')
+          await panelButton('Desconectar')
           await masterBrowser.until(`document.querySelector('[role="alert"]')`)
+          await app.until(`document.querySelector('${panel} [role="status"]')?.textContent.trim() === 'Nenhum aparelho conectado'`)
           check('desconectar encerra mestre no navegador', true)
         } finally {
           if (masterBrowser) {
