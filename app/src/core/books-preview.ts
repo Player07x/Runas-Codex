@@ -47,3 +47,17 @@ export function pageRules(size: BookSize, options?: PrintOptions): string {
   .book-print tr, .book-print figure, .book-print .callout { break-inside: avoid; }
   `
 }
+
+const titleKey = (text: string) => text.replace(/[*_`~=]/g, "").replace(/\s+/g, " ").trim().toLocaleLowerCase("pt-BR")
+
+/**
+ * Um título por capítulo (L2, ADR 0033). Capítulo, parte e apêndice mostram o nome da nota; o `#` do começo da nota
+ * só sai se for diferente dele (senão repetiria). A seção usa o próprio título do começo da nota e só ganha o nome
+ * da nota quando não tem nenhum.
+ */
+export function chapterTitle(chapter: PreviewChapter): { title: string | null; body: string } {
+  const first = /^(?:[ \t]*\r?\n)*[ \t]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*(?:\r?\n|$)/.exec(chapter.body)
+  if (chapter.kind === "secao") return { title: first ? null : chapter.title, body: chapter.body }
+  if (first && first[1] === "#" && titleKey(first[2]!) === titleKey(chapter.title)) return { title: chapter.title, body: chapter.body.slice(first[0].length) }
+  return { title: chapter.title, body: chapter.body }
+}

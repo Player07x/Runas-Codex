@@ -1,13 +1,13 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type MouseEvent } from "react"
 import { Markdown } from "../../components/Markdown"
 import { bookProperties } from "../../core/books"
-import { BOOK_SIZES, previewChapters, previewSettings } from "../../core/books-preview"
+import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings } from "../../core/books-preview"
 import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteSetContext } from "../../lib/note-set"
 import { vaultNoteSet } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
-import { paginate, readyForPagination, type Pagination } from "./pagination"
+import { IMAGE_PPI, paginate, printableHtml, readyForPagination, type ImageQuality, type Pagination } from "./pagination"
 // EB Garamond estática só para o livro: a variável (a do app) sai como fonte Type 3 no PDF (L2, ADR 0033).
 import "@fontsource/eb-garamond/latin-400.css"
 import "@fontsource/eb-garamond/latin-400-italic.css"
@@ -20,7 +20,7 @@ import "./book-preview.css"
 
 /** Largura do painel, página inteira à vista ou duas páginas lado a lado (o livro aberto). */
 export type PagesZoom = "largura" | "pagina" | "duas"
-export interface PagesState { ready: boolean; status: string; error: string; total: number }
+export interface PagesState { ready: boolean; status: string; error: string; total: number; lowResolution?: number }
 export interface BookPagesHandle { source: HTMLDivElement | null; output: HTMLDivElement | null; scroll: HTMLDivElement | null }
 
 const MM = 96 / 25.4
@@ -87,7 +87,13 @@ export const BookPages = forwardRef<BookPagesHandle, {
         let next: Pagination | null = null
         try {
           await readyForPagination(source.current, controller.signal)
-          next = await paginate(source.current, stage, settings.size, printOptions(book))
+          const quality: ImageQuality = typeof data.imagens === "string" && Object.hasOwn(IMAGE_PPI, data.imagens) ? data.imagens as ImageQuality : "tela"
+          const printable = await printableHtml(source.current, quality, async (src) => {
+            const url = new URL(src)
+            return url.host === "cofre" && !/^(?:https?|blob|data):$/.test(url.protocol) ? vault.platform.readBinary(url.pathname.slice(1).split("/").map(decodeURIComponent).join("/")) : null
+          })
+          if (controller.signal.aborted) return
+          next = await paginate(printable.html, stage, settings.size, printOptions(book))
           if (controller.signal.aborted || !output.current) { next.dispose(); return }
           const top = scroll.current?.scrollTop ?? 0
           active.current?.dispose()
@@ -96,7 +102,8 @@ export const BookPages = forwardRef<BookPagesHandle, {
           output.current.dataset.pages = String(next.total)
           output.current.dataset.paginationMs = next.milliseconds.toFixed(0)
           if (scroll.current) scroll.current.scrollTop = top
-          update({ ready: true, error: "", total: next.total, status: `${next.total} páginas · ${(next.milliseconds / 1000).toFixed(2)} s` })
+          const low = printable.lowResolution ? ` · ${printable.lowResolution === 1 ? "1 imagem fica" : `${printable.lowResolution} imagens ficam`} abaixo de 200 ppi impressa` : ""
+          update({ ready: true, error: "", total: next.total, lowResolution: printable.lowResolution, status: `${next.total} páginas · ${(next.milliseconds / 1000).toFixed(2)} s${low}` })
           paginated.current?.(output.current)
         } catch (err) {
           if (!controller.signal.aborted) update({ error: err instanceof Error ? err.message : String(err), status: "Prévia não atualizada" })
@@ -138,10 +145,13 @@ export const BookPages = forwardRef<BookPagesHandle, {
           {typeof data.autor === "string" && <p className="book-print-author">{data.autor}</p>}
         </section>}
         {whole && typeof data.creditos === "string" && data.creditos.trim() && <section className="book-print-credits"><h1>Créditos</h1><p>{data.creditos}</p></section>}
-        {chapters.map((chapter, i) => <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
-          <h2 className="book-chapter-heading">{chapter.title}</h2>
-          {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={chapter.body} showSecrets={showSecrets} />}
-        </section>)}
+        {chapters.map((chapter, i) => {
+          const { title, body } = chapterTitle(chapter)
+          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
+            {title !== null && (chapter.kind === "secao" ? <h2 className="book-chapter-heading book-section-title">{title}</h2> : <h1 className="book-chapter-heading">{title}</h1>)}
+            {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={body} showSecrets={showSecrets} />}
+          </section>
+        })}
         {whole && typeof data.contracapa === "string" && data.contracapa.trim() && <section className="book-print-back"><h1>{book.name}</h1><p>{data.contracapa}</p></section>}
       </div>
     </div>

@@ -74,3 +74,8 @@
 /* A imagem logo depois de um parágrafo fica com ele (nas notas ela vem depois do texto a que pertence). */
 .book-print p:has(> img:only-child), .book-print p:has(> .embed-image:only-child), .book-print figure { break-before: avoid; break-inside: avoid; }
 .book-print p:has(> img) { break-inside: avoid; }
+/* Um título por capítulo: o nome da nota é o título (antes era um sobretítulo pequeno sobre o # da nota). Sem a régua
+   embaixo dos títulos de seção: o tamanho da letra já separa. */
+.book-print h1.book-chapter-heading { font-size: 24pt; line-height: 1.15; letter-spacing: .02em; margin: 0 0 6mm; }
+.book-print h2.book-section-title { font-size: 16pt; letter-spacing: 0; margin: 5mm 0 3mm; }
+.book-print h2 { border-bottom: 0; padding-bottom: 0; }

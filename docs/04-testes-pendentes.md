@@ -877,3 +877,19 @@ Decisões na [ADR 0033](adr/0033-livro-impresso.md). Capturas em `docs/imagens/l
 - [ ] No celular: o ícone de livro na barra (“Ver a página”) abre a página do cursor em tela cheia; as setas trocam de
   página; **Texto** (ou Esc, com teclado) volta ao mesmo ponto. Conferir também o que o botão Voltar do Android faz com a página aberta. **Foco** agora fica no menu ⋯ do livro.
 - [ ] Em 320 px, a barra do livro cabe inteira (antes o último ⋯ ficava fora da tela).
+
+## Livros L2 — limpeza do PDF (25/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Exportar o PDF do Valknut: sem as caixas tracejadas em volta dos blocos `::: runas-colunas-2`; o arquivo bem menor
+  que os 17 MB de antes (Imagens: Tela); `pdffonts` (ou as propriedades do PDF) mostra a EB Garamond como TrueType.
+- [ ] Cada capítulo com um título só: “Magias” e “Equipamentos” não se repetem; a Introdução mostra “Introdução” e
+  depois “Início”; as seções (Magias de Fogo…) com o próprio título, sem sobretítulo nem régua.
+- [ ] Nas colunas: “Manter Magia” não se parte em 4 linhas + 1; o nome de uma magia (**NOME**\ + custo) não fica sozinho
+  no pé da coluna; a imagem que vem logo depois do texto fica junto dele.
+- [ ] Diagramar › Imagens: Tela, Gráfica e Original; a prévia avisa quando uma imagem fica abaixo de 200 ppi impressa.
+- [ ] Abrir o PDF num leitor com painel de marcadores (Okular, Acrobat): os títulos aparecem como marcadores, o título do
+  documento é o do livro e o PDF é marcado para leitor de tela.
+- [ ] Imprimir (Ctrl+P): sai sem o fundo creme; com “Fundo do papel na impressão” ligado, sai com ele. O PDF exportado
+  continua com o fundo.
