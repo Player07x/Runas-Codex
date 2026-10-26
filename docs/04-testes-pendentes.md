@@ -1015,3 +1015,9 @@ nesta versão, conferir também:
   fora do `>` na nota, como no Obsidian).
 - [ ] Converter em ficha uma magia de Vida (nome em negrito, “Custo: 1 PV · Feitiço”, “Requisito: …”, texto e imagem):
   a imagem vai junto para dentro do `>` e não aparece “Custo: Custo:”.
+
+## Agenda — tarefas no painel (26/10/2026)
+
+- [ ] Agenda › painel › Tarefas: o texto da tarefa usa a largura toda; o prazo (📅) e a nota de origem ficam numa linha
+  embaixo, com reticências quando o nome da nota é longo. Clicar no nome da nota ainda abre a nota.
+- [ ] Numa consulta ```tasks numa nota larga, as tarefas continuam numa linha só (texto, prazo e nota).

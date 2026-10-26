@@ -114,14 +114,15 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
             )
           })}
           {show("urgency") && <span className="task-field faint" title="Urgência">{urgency(task, options.today).toFixed(2)}</span>}
-        </span>
-        <span className="task-actions">
+          {/* A nota de origem fica com as datas, não com os botões: ao lado deles ela espremia o texto da tarefa. */}
           {show("backlink") && (
-            <a href="#" className="task-backlink tiny faint" onClick={(e) => (e.preventDefault(), navigate(vaultRoute(task.path)))} title={task.path}>
+            <a href="#" className="task-backlink tiny" onClick={(e) => (e.preventDefault(), navigate(vaultRoute(task.path)))} title={task.path}>
               <FileText size={12} /> {noteName(task.path)}
               {task.heading ? ` › ${task.heading}` : ""}
             </a>
           )}
+        </span>
+        <span className="task-actions">
           {canPostpone && (
             <button className="icon-btn task-btn" title="Adiar um dia (botão direito: mais opções)" aria-label="Adiar um dia" onClick={() => void actions.postpone(task, 1)} onContextMenu={(e) => (e.preventDefault(), setMenu(true))}>
               <SkipForward size={14} />
