@@ -4,6 +4,10 @@ import { bookProperties } from "../../core/books"
 import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings } from "../../core/books-preview"
 import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
 import { bookStyle, styleCss } from "../../core/book-style"
+import { bookLayout, chapterLabel, chapterNumbers } from "../../core/book-layout"
+import { insertToc, markDropCaps } from "./book-toc"
+import { layoutFichas } from "./book-fichas"
+import { hyphenateBook, loadHyphenator } from "./book-hyphen"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteSetContext } from "../../lib/note-set"
 import { vaultNoteSet } from "../../lib/vault-notes"
@@ -55,6 +59,8 @@ export const BookPages = forwardRef<BookPagesHandle, {
   const data = bookProperties(book)
   // Estilo do livro (L3): modelo pronto, nota de modelo (`modelo: "[[…]]"` com `tipo: modelo-livro`) e o que o livro muda.
   const style = bookStyle(index, book, data)
+  // Capa, sumário, aberturas e cabeçalhos (L4).
+  const layout = bookLayout(data)
   const source = useRef<HTMLDivElement>(null)
   const output = useRef<HTMLDivElement>(null)
   const scroll = useRef<HTMLDivElement>(null)
@@ -73,10 +79,12 @@ export const BookPages = forwardRef<BookPagesHandle, {
   const update = (next: Partial<PagesState>) => { current.current = { ...current.current, ...next }; setState(current.current); report.current?.(current.current) }
 
   const all = previewChapters(index, book, draft)
-  const chapters = onlyPath ? all.filter((chapter) => chapter.path === onlyPath) : all
+  // O número do capítulo é o do livro inteiro, mesmo mostrando só um capítulo.
+  const numbers = chapterNumbers(all.map((chapter) => chapter.kind))
+  const chapters = (onlyPath ? all.map((chapter, i) => ({ chapter, n: numbers[i] })).filter(({ chapter }) => chapter.path === onlyPath) : all.map((chapter, i) => ({ chapter, n: numbers[i] })))
   const whole = !onlyPath
   // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
-  const signature = JSON.stringify([book.text, data, chapters, vault.version, onlyPath, style])
+  const signature = JSON.stringify([book.text, data, chapters, vault.version, onlyPath, style, showSecrets])
   const paperClass = `book-paper modelo-${style.model} fichas-${style.fichas}`
 
   useEffect(() => {
@@ -92,14 +100,20 @@ export const BookPages = forwardRef<BookPagesHandle, {
         let next: Pagination | null = null
         try {
           const missingFonts = await loadVaultFonts(index, vault.platform, [style.titleFont, style.textFont])
+          const hyphenate = style.hyphenate ? await loadHyphenator() : null
           await readyForPagination(source.current, controller.signal)
           const quality: ImageQuality = typeof data.imagens === "string" && Object.hasOwn(IMAGE_PPI, data.imagens) ? data.imagens as ImageQuality : "tela"
           const printable = await printableHtml(source.current, quality, async (src) => {
             const url = new URL(src)
             return url.host === "cofre" && !/^(?:https?|blob|data):$/.test(url.protocol) ? vault.platform.readBinary(url.pathname.slice(1).split("/").map(decodeURIComponent).join("/")) : null
+          }, (clone) => {
+            layoutFichas(clone)
+            if (layout.dropCap) markDropCaps(clone)
+            if (hyphenate) hyphenateBook(clone, hyphenate)
+            if (whole && layout.toc) insertToc(clone)
           })
           if (controller.signal.aborted) return
-          next = await paginate(printable.html, stage, settings.size, printOptions(book))
+          next = await paginate(printable.html, stage, settings.size, printOptions(book), layout, settings.newChapter)
           if (controller.signal.aborted || !output.current) { next.dispose(); return }
           const top = scroll.current?.scrollTop ?? 0
           active.current?.dispose()
@@ -144,23 +158,33 @@ export const BookPages = forwardRef<BookPagesHandle, {
       <div className={`book-preview-output ${paperClass} zoom-${zoom}`} ref={output} style={{ zoom: scale }} aria-busy={!state.ready} aria-hidden={decorative || undefined} onClick={onPagesClick} />
     </div>
     <div className={`book-preview-source ${paperClass}`} ref={source} aria-hidden="true" inert>
-      <div className={`book-print ${settings.newChapter ? "chapters-new-page" : ""}`}>
-        {whole && data.exportar_capa !== false && <section className="book-print-cover">
-          <h1 className="book-print-title">{book.name}</h1>
-          {typeof data.subtitulo === "string" && <p className="book-print-subtitle">{data.subtitulo}</p>}
-          {typeof data.capa === "string" && data.capa.startsWith("[[") && <PreviewMarkdown path={book.path} text={`!${data.capa}`} />}
-          {typeof data.autor === "string" && <p className="book-print-author">{data.autor}</p>}
+      <div className={`book-print ${settings.newChapter ? "chapters-new-page" : ""} abertura-${layout.opening}${layout.dropCap ? " capitular-auto" : ""}${layout.mirrored ? " espelhadas" : ""}`}>
+        {whole && data.exportar_capa !== false && <section className={`book-print-cover capa-${layout.cover}`}>
+          <div className="book-cover-text">
+            <h1 className="book-print-title">{text(data.titulo_capa) ?? book.name}</h1>
+            {text(data.edicao) && <p className="book-print-edition">{text(data.edicao)}</p>}
+            {text(data.subtitulo) && <p className="book-print-subtitle">{text(data.subtitulo)}</p>}
+          </div>
+          {typeof data.capa === "string" && data.capa.startsWith("[[") && <div className="book-cover-art"><PreviewMarkdown path={book.path} text={`!${data.capa}`} /></div>}
+          {text(data.autor) && <p className="book-print-author">{text(data.autor)}</p>}
         </section>}
         {whole && typeof data.creditos === "string" && data.creditos.trim() && <section className="book-print-credits"><h1>Créditos</h1><p>{data.creditos}</p></section>}
-        {chapters.map((chapter, i) => {
+        {chapters.map(({ chapter, n }, i) => {
           const { title, body } = chapterTitle(chapter)
+          const label = n !== null ? chapterLabel(n, layout.numbering) : null
+          const chapterNote = index.note(chapter.path)
+          const image = layout.opening === "pagina" && chapter.kind === "capitulo" && chapterNote ? [bookProperties(chapterNote).imagem, bookProperties(chapterNote).capa].find((v): v is string => typeof v === "string" && v.startsWith("[[")) : undefined
           // Colunas do livro: o capítulo pode pedir outra (`colunas:`); quem já arruma as próprias colunas com
           // `::: runas-colunas-N` (ou `[!colunas]`) fica com uma, para não haver colunas dentro de colunas.
           const own = /^(?:::: *runas-colunas-\d|> *\[!colunas\])/m.test(body)
           const asked = index.note(chapter.path) ? bookProperties(index.note(chapter.path)!).colunas : undefined
           const columns = own ? 1 : asked === 1 || asked === 2 || asked === 3 ? asked : undefined
-          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"} style={columns ? { ["--book-columns" as string]: columns } : undefined}>
-            {title !== null && (chapter.kind === "secao" ? <h2 className="book-chapter-heading book-section-title">{title}</h2> : <h1 className="book-chapter-heading">{title}</h1>)}
+          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} data-book-kind={chapter.kind} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"} style={columns ? { ["--book-columns" as string]: columns } : undefined}>
+            {title !== null && (chapter.kind === "secao" ? <h2 className="book-chapter-heading book-section-title">{title}</h2> : <header className="book-chapter-opening">
+              {label && <p className="book-chapter-kicker" data-toc={n !== null ? chapterLabel(n, layout.numbering, true) ?? "" : ""}>{label}</p>}
+              <h1 className="book-chapter-heading">{title}</h1>
+              {image && <div className="book-opening-art"><PreviewMarkdown path={chapter.path} text={`!${image}`} /></div>}
+            </header>)}
             {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={body} showSecrets={showSecrets} />}
           </section>
         })}
@@ -169,6 +193,8 @@ export const BookPages = forwardRef<BookPagesHandle, {
     </div>
   </>
 })
+
+const text = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : undefined)
 
 function PreviewMarkdown({ path, text, showSecrets = true }: { path: string; text: string; showSecrets?: boolean }) {
   const vault = useVault()

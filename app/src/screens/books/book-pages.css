@@ -15,7 +15,7 @@
 .book-print h3 { font-size: 13pt; }
 .book-print .book-chapter-heading { font-size: 11pt; letter-spacing: .08em; margin: 0 0 4mm; color: var(--accent); }
 .book-print .book-part { text-align: center; padding-top: 20mm; }
-.book-print .book-print-cover { min-height: 175mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 7mm; }
+.book-print .book-print-cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 7mm; }
 .book-print .book-print-cover h1 { font-size: 32pt; margin: 0; }
 .book-print .book-print-cover .md { width: 100%; }
 .book-print .book-print-cover img { max-height: 85mm; width: auto; max-width: 100%; margin: auto; object-fit: contain; }
@@ -29,11 +29,6 @@
 .book-print .quebra-coluna, .book-print .quebra-pagina { border: 0; margin: 0; height: 0; }
 .book-print .quebra-pagina::after { display: none; }
 .book-print .capitular { color: var(--accent); }
-.book-print .callout { border-radius: 0; border: 1px solid var(--rule); background: var(--panel-2); box-shadow: 0 1px 3px #0002; padding: 3mm; }
-.book-print .callout-title { font-family: var(--font-display); font-size: 10pt; color: var(--accent); }
-.book-print .callout.descritivo { border-width: 2px 0; background: transparent; font-family: var(--book-body); }
-.book-print .callout.statblock { border-width: 3px 0; border-color: var(--accent); background: var(--paper); }
-.book-print .callout.barra-lateral { max-width: 42%; font-size: 9pt; }
 .book-print .callout.segredo.hidden .callout-body { filter: none; }
 .book-print .callout-title button { display: none; }
 .book-print .table-wrap { overflow: visible; }
@@ -49,8 +44,6 @@
 .book-print .footnotes { font-size: 9pt; }
 .book-print .md-sumario a { font-size: 9pt; }
 .book-print .embed-note { padding: 2mm; border-radius: 0; }
-.book-paper.modelo-facil .callout { box-shadow: none; border-width: 0 0 0 2px; background: transparent; }
-.book-paper.modelo-moderno .callout { border-left: 3px solid var(--accent); }
 
 :is(.book-print,.books-editor) .runas-colunas-1 { column-count:1; }
 :is(.book-print,.books-editor) .runas-colunas-2 { column-count:2; }
@@ -81,6 +74,90 @@
 .book-print { font-size: var(--book-size, 11pt); line-height: var(--book-leading, 1.4); }
 .book-print p, .book-print li { text-align: var(--book-align, left); }
 .book-print :is(.book-chapter, .book-section) > .md { column-count: var(--book-columns, 1); column-gap: 6mm; }
-.book-paper.modelo-moderno .callout, .book-paper.modelo-facil .callout { box-shadow: none; }
 /* Grimório: moldura dupla na página, herdada do tema Pergaminho. */
 .book-paper.modelo-grimorio .pagedjs_pagebox { outline: 3px double var(--rule); outline-offset: -5mm; }
+
+/* L4 (ADR 0033): capa, sumário, aberturas de capítulo. A altura da capa e da abertura em página inteira vem das regras
+   de página (dependem do tamanho e da margem). */
+.book-print .book-print-cover { position: relative; box-sizing: border-box; padding: 10mm 8mm; gap: 4mm; overflow: hidden; }
+.book-print .book-cover-text { display: grid; gap: 3mm; justify-items: center; position: relative; }
+.book-print .book-print-cover h1.book-print-title { font-size: 36pt; line-height: 1.05; letter-spacing: .03em; }
+.book-print .book-print-edition { font-style: italic; font-size: 17pt; margin: 0; }
+.book-print .book-print-subtitle { margin: 0; }
+.book-print .book-cover-art { width: 100%; display: flex; justify-content: center; position: relative; }
+.book-print .book-cover-art .md { width: auto; }
+.book-print .book-print-cover .book-print-author { margin-top: auto; font-size: 12pt; letter-spacing: .08em; position: relative; }
+/* Clássica: moldura, título no alto, imagem pequena. */
+.book-print .capa-classica { justify-content: flex-start; padding-top: 28mm; border: .8mm solid var(--rule); outline: .3mm solid var(--rule); outline-offset: -2.6mm; }
+.book-print .capa-classica .book-cover-art img { max-height: 55mm; margin-top: 8mm; }
+/* Ilustrada: a imagem em destaque, o título embaixo dela. */
+.book-print .capa-ilustrada { justify-content: flex-start; padding-top: 6mm; }
+.book-print .capa-ilustrada .book-cover-art { order: -1; }
+.book-print .capa-ilustrada .book-cover-art img { max-height: 135mm; }
+/* Faixa: o título numa faixa na cor de destaque, de borda a borda (fundo da página da capa; no EPUB, o bloco do título). */
+.book-paper .pagedjs_page.pagedjs_capafaixa_page { background: linear-gradient(to bottom, var(--accent) 0 42%, var(--paper) 42%); }
+.book-print .capa-faixa { justify-content: flex-start; }
+.book-print .capa-faixa .book-cover-text { width: 100%; box-sizing: border-box; padding: 8mm 0; background: var(--accent); }
+.book-print .capa-faixa .book-cover-text, .book-print .capa-faixa h1.book-print-title { color: var(--paper); }
+.book-print .capa-faixa .book-cover-art { margin-top: 8mm; }
+.book-print .capa-faixa .book-cover-art img { max-height: 90mm; }
+
+/* Sumário: título, capítulos com “Cap. 1”, seções recuadas, pontos até o número da página. */
+.book-print-toc .book-toc-title { font-family: var(--font-display); color: var(--accent); font-size: 24pt; margin: 0 0 7mm; }
+.book-print-toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.8mm; }
+.book-print-toc a { display: flex; align-items: baseline; gap: 2mm; color: inherit; text-decoration: none; }
+.book-print-toc a::after { font-variant-numeric: oldstyle-nums; }
+.book-print-toc small { font-family: var(--font-display); font-size: .72em; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.book-print-toc .toc-pontos { flex: 1; min-width: 4mm; border-bottom: .3mm dotted var(--rule); transform: translateY(-1mm); }
+.book-print-toc .toc-nivel-0 { margin-top: 3mm; font-family: var(--font-display); letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.book-print-toc .toc-nivel-2 { padding-left: 7mm; font-size: .92em; color: var(--muted); }
+
+/* Abertura do capítulo: número em versalete sobre o título. */
+.book-print .book-chapter-opening { margin: 0 0 6mm; break-after: avoid; break-inside: avoid; }
+.book-print .book-chapter-opening h1.book-chapter-heading { margin: 0; }
+/* Sem página nova, o capítulo seguinte ganha espaço antes da abertura (senão o “Capítulo 2” colava no texto de cima). */
+.book-print:not(.chapters-new-page) .book-chapter > .book-chapter-opening { margin-top: 9mm; }
+.book-print .book-chapter-kicker { margin: 0 0 1.5mm; font-family: var(--font-display); font-size: 8.5pt; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+/* Faixa: o título numa faixa na cor de destaque. */
+.book-print.abertura-faixa .book-chapter > .book-chapter-opening { padding: 6mm 6mm 5mm; background: var(--accent); }
+.book-print.abertura-faixa .book-chapter > .book-chapter-opening :is(h1, p) { color: var(--paper); }
+/* Página inteira: o título sozinho no meio da página (com a imagem do capítulo, se houver), o texto na seguinte. */
+.book-print.abertura-pagina .book-chapter > .book-chapter-opening { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 4mm; margin: 0; }
+.book-print.abertura-pagina .book-chapter > .book-chapter-opening h1 { font-size: 34pt; }
+.book-print .book-opening-art img { max-height: 110mm; max-width: 100%; }
+/* Capitular automática no primeiro parágrafo do capítulo, quando ele tem corpo (book-toc.ts › markDropCaps); a
+   continuação de um parágrafo partido não repete. `initial-letter` deixava o Paged.js até 80 vezes mais lento. */
+.book-print.capitular-auto p.book-capitular:not([data-split-from]) { display: flow-root; }
+.book-print.capitular-auto p.book-capitular:not([data-split-from])::first-letter { float: left; font-family: var(--font-display); font-size: 3.4em; line-height: .8; padding: .06em .08em 0 0; color: var(--accent); }
+
+/* L5 (ADR 0033): caixas e fichas sem réguas. As caixas se separam do texto pelo espaço e pelo título pequeno na cor do
+   tipo; as fichas (book-fichas.ts) pelo nome em versalete colorido. Nada disso muda o leitor fora do livro. */
+.book-print .callout { margin: 3.5mm 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.book-print .callout-title { gap: 0; margin: 0 0 .6mm; padding: 0; background: transparent; color: var(--accent); font-family: var(--book-body); font-size: 1em; font-variant: small-caps; font-weight: 700; letter-spacing: .05em; }
+.book-print .callout-title svg { display: none; }
+.book-print .callout-body { padding: 0; }
+.book-print .callout-body > :last-child { margin-bottom: 0; }
+.book-print .callout:is(.aviso) .callout-title { color: var(--gold); }
+.book-print .callout:is(.perigo) .callout-title { color: var(--red); }
+.book-print .callout:is(.segredo) .callout-title { color: var(--violet); }
+.book-print .callout:is(.dica, .sucesso) .callout-title { color: var(--green); }
+.book-print .callout.descritivo { padding: 3mm 3.5mm; border-radius: 1mm; background: color-mix(in srgb, var(--accent) 6%, var(--paper)); font-style: italic; }
+.book-print .callout.descritivo .callout-title { font-style: normal; }
+.book-print .callout.barra-lateral { max-width: 42%; padding: 2.5mm 3mm; border-radius: 1mm; background: color-mix(in srgb, #3f4d66 9%, var(--paper)); font-size: .86em; }
+.book-print .callout.barra-lateral .callout-title { color: #3f4d66; }
+
+/* Fichas: tipográfica (padrão), fundo suave ou faixa no nome (Estilo do livro › Fichas). */
+.book-print .ficha { margin: 0 0 4.5mm; break-inside: avoid; }
+.book-print .ficha .callout-title { margin: 0; color: var(--accent); font-family: var(--font-display); font-size: 1.04em; font-variant: normal; letter-spacing: .07em; }
+.book-print .ficha-tags { margin: .2mm 0 1.4mm; color: var(--muted); font-style: italic; }
+.book-print .ficha-campos { display: flex; flex-wrap: wrap; gap: .3mm 3mm; margin: 0 0 1.4mm; }
+.book-print .ficha-campo b, .book-print .ficha .ficha-rotulo { color: var(--accent); font-variant: small-caps; font-weight: 700; letter-spacing: .04em; }
+.book-print .ficha-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(13mm, 1fr)); gap: 1mm 2mm; margin: .4mm 0 1.8mm; font-variant-numeric: lining-nums tabular-nums; font-weight: 600; }
+.book-print .ficha-stats small { display: block; color: var(--accent); font-size: .78em; font-variant: small-caps; font-weight: 700; letter-spacing: .05em; }
+.book-print .ficha .callout-body > p { margin: 0 0 1.2mm; }
+.book-print .ficha img { display: block; max-width: 70%; max-height: 45mm; margin: 2mm auto 0; }
+.book-paper.fichas-fundo .book-print .ficha { padding: 3mm 3.5mm 2.5mm; border-radius: 1mm; background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
+.book-paper.fichas-faixa .book-print .ficha .callout-title { padding: .8mm 2.5mm; border-radius: .6mm; background: var(--accent); color: var(--paper); }
+.book-paper.fichas-faixa .book-print .ficha .ficha-tags { padding-left: 2.5mm; }
+/* Romance e Leitura fácil: fichas sem as imagens. */
+.book-paper:is(.modelo-romance, .modelo-facil) .book-print .ficha img { display: none; }

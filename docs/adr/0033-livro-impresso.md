@@ -77,6 +77,49 @@ hifenização. A tarefa está em [`docs/tarefas/livro-impresso.md`](../tarefas/l
 - Colunas do livro: o capítulo pode pedir outra com `colunas:`; quem já usa `::: runas-colunas-N` ou `[!colunas]` fica
   com uma (sem colunas dentro de colunas).
 
+### Como a L4 funciona
+- `core/book-layout.ts` lê do livro `capa_estilo` (clássica, ilustrada, faixa), `sumario`, `abertura` (simples, faixa,
+  página inteira), `numeracao` (Capítulo 1, Capítulo I, sem número), `capitular`, `espelhadas`, `cabecalho` (livro e
+  capítulo, só o capítulo, nenhum) e `numero_pagina` (margem externa, centro, nenhum) e gera as regras de página do
+  Paged.js. As regras do layout vão por último: o Paged.js escolhe a página nomeada (`page:`) pela ordem das regras, não
+  pela especificidade.
+- **Cabeçalho** só nas páginas que não abrem capítulo: com “capítulos em página nova”, o capítulo usa a página nomeada
+  `capitulo` e `@page capitulo:first` tira o cabeçalho; capa, sumário, partes e páginas em branco também ficam sem ele.
+  **Páginas espelhadas**: margem interna 4 mm maior, número e cabeçalho do lado de fora (livro à esquerda, capítulo à
+  direita) e capítulos e partes abrindo na página da direita.
+- **Capa**: `titulo_capa` e `edicao` separados do nome da nota; a imagem (`capa:`) é escolhida num seletor com as
+  imagens do cofre ou uma nova do computador, gravada como anexo. A faixa da capa é o fundo da página nomeada
+  `capafaixa`, de borda a borda; no EPUB ela vira o fundo do bloco do título.
+- **Sumário**: montado na cópia que vai para o Paged.js (`screens/books/book-toc.ts`), depois da capa e dos créditos,
+  com partes, capítulos (“Cap. 1”), os `##` de cada capítulo e as seções recuadas; o número da página vem de
+  `target-counter` e o link leva ao lugar no PDF. Ele não entra na fonte do livro, então a prévia ao lado e as
+  exportações EPUB/DOCX não mudam.
+- **Abertura**: “Capítulo 1” em versalete sobre o título (o número é o do livro inteiro, também em “só este capítulo”);
+  em página inteira, o título fica sozinho no meio da página, com a imagem de `imagem:` (ou `capa:`) do capítulo.
+  **Capitular**: só no primeiro parágrafo com corpo (160 caracteres ou mais), com `float`; `initial-letter` deixava a
+  paginação até 80 vezes mais lenta.
+
+### Como a L5 funciona
+- **Fichas** são callouts comuns nas notas (`> [!magia] Torreta de Fogo`, e `runa`, `habilidade`, `item`, `criatura`,
+  `raca`/`raça`, `classe`, `efeito`; o `statblock` da migração usa o desenho da criatura). O Obsidian e o leitor do app
+  mostram um callout normal; o snippet `runas-codex.css` dá cor, ícone e nome em versalete no Obsidian. Só o livro
+  reorganiza, na cópia que vai para o Paged.js (`screens/books/book-fichas.ts`): a primeira linha de campos
+  (`**Custo:** 1 PV · **Tipo:** Feitiço · **Alcance:** Área`) vira “1 PV · Feitiço · Área” (rótulos que o valor explica
+  somem: custo, tipo, alcance, grupo, categoria, raridade, origem), os outros rótulos ficam (Requisito, Dano…), campo
+  vazio não sai, a criatura ganha a linha de atributos e “**Ampliação:**” vira “Ampliação.” em versalete. Regras puras em
+  `core/fichas.ts`, com testes.
+- **Sem réguas:** fichas e caixas perderam bordas, sombras e fundos no livro. Fichas: tipográfica (padrão), fundo suave
+  ou faixa no nome (`fichas:`, grupo Fichas do Estilo); Romance e Leitura fácil escondem as imagens das fichas. Caixas:
+  descritivo em itálico sobre fundo suave, barra lateral com fundo suave e letra menor, observações só com o título
+  pequeno na cor do tipo.
+- **Converter em ficha** (barra da seleção, em Escrever): o formato antigo — nome em negrito (ou `###`), custo e tipo na
+  linha de baixo, o texto — vira o callout; custo em pontos vira `[!runa]`, o resto `[!magia]`.
+- **Versão dos jogadores** (Diagramar): sem os `[!segredo]` na prévia, na impressão e nos arquivos exportados (que ganham
+  “(jogadores)” no nome); o Markdown, que leva as notas como estão, sai das opções.
+- **Hifenização em português** com o pacote `hyphen` 1.14.1 (ISC, sem dependências nem script de instalação; só os
+  padrões do português, 6 KB, carregados quando o livro hifeniza): hífens suaves nas palavras de 6 letras ou mais do
+  texto corrido, só na cópia que vai para o Paged.js. Liga por padrão quando o texto é justificado (`hifenizar:` muda).
+
 ## Consequências
 - O smoke do desktop procura “Diagramar” no lugar de “Prévia” e confere a prévia ao lado (abrir, paginar, marcar a
   página do capítulo e refazer ao digitar no `--write`).

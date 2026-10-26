@@ -1,15 +1,16 @@
 import type { PrintOptions } from "../../core/books-finish"
 import { Previewer } from "./vendor/paged-0.4.3.js"
 import { pageRules, type BookSize } from "../../core/books-preview"
+import type { BookLayout } from "../../core/book-layout"
 
 export interface Pagination { total: number; milliseconds: number; dispose(): void }
 /** O HTML vem da fonte desenhada pelo Markdown compartilhado (e sanitizada por ele); ver `printableHtml`. */
-export async function paginate(html: string, target: HTMLElement, size: BookSize, options?: PrintOptions): Promise<Pagination> {
+export async function paginate(html: string, target: HTMLElement, size: BookSize, options?: PrintOptions, layout?: BookLayout, newChapter = true): Promise<Pagination> {
   const previewer = new Previewer()
   const started = performance.now()
   // Passar uma lista explícita impede o Paged.js de retirar folhas de estilo da aplicação.
   try {
-    const flow = await previewer.preview(html, [{ [location.href]: pageRules(size, options) }], target)
+    const flow = await previewer.preview(html, [{ [location.href]: pageRules(size, options, layout, newChapter) }], target)
     return { total: flow.total, milliseconds: performance.now() - started, dispose() {
       previewer.chunker.stop()
       previewer.chunker.destroy()
@@ -81,7 +82,7 @@ function reduce(img: HTMLImageElement, ppi: number, readBytes?: (src: string) =>
  * Valknut tinha 17 MB com as ilustrações no tamanho original). Os arquivos do cofre não mudam. Também conta as imagens
  * que ficam abaixo de 200 ppi no tamanho impresso, para avisar.
  */
-export async function printableHtml(source: HTMLElement, quality: ImageQuality, readBytes?: (src: string) => Promise<Uint8Array | null>): Promise<{ html: string; lowResolution: number }> {
+export async function printableHtml(source: HTMLElement, quality: ImageQuality, readBytes?: (src: string) => Promise<Uint8Array | null>, transform?: (clone: HTMLElement) => void): Promise<{ html: string; lowResolution: number }> {
   const images = [...source.querySelectorAll("img")]
   const clone = source.cloneNode(true) as HTMLElement
   const copies = [...clone.querySelectorAll("img")]
@@ -92,5 +93,6 @@ export async function printableHtml(source: HTMLElement, quality: ImageQuality, 
     const url = await reduce(img, IMAGE_PPI[quality], readBytes)
     if (url && copies[i]) { copies[i]!.src = url; copies[i]!.removeAttribute("srcset") }
   }))
+  transform?.(clone)
   return { html: clone.innerHTML, lowResolution }
 }

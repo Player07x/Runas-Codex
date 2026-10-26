@@ -52,3 +52,4 @@
 @media print {
   body.book-print-plain .book-preview-output .pagedjs_page, body.book-print-plain .book-preview-output .pagedjs_sheet { background: #fff !important; background-image: none !important; }
 }
+.book-diagram .book-metadata { max-width: 860px; }

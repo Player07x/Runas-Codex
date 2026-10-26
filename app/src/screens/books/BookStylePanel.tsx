@@ -6,6 +6,7 @@ import { BOOK_MODELS, STYLE_KEYS, bookModel, modelNoteFor, modelNoteText, resolv
 import { bookProperties } from "../../core/books"
 import { scopeBookCss } from "../../core/books-finish"
 import { BOOK_SIZES, previewSettings, type BookSize } from "../../core/books-preview"
+import { COVER_STYLES, NUMBERINGS, OPENINGS, PAGE_NUMBERS, RUNNING_HEADS, bookLayout } from "../../core/book-layout"
 import type { PropertyValue } from "../../core/properties"
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
@@ -38,6 +39,8 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
   const readOnly = Boolean(vault.info?.readOnly)
   const props = bookProperties(book)
   const settings = previewSettings(book)
+  const layout = bookLayout(props)
+  const options = <T extends Record<string, string>>(table: T) => Object.entries(table).map(([value, label]) => ({ value: value as keyof T & string, label }))
   const own = modelNoteFor(index, book, props)
   // O estilo sem os ajustes do livro: escolher de novo o valor do modelo apaga o ajuste em vez de gravá-lo.
   const base = resolveStyle(Object.fromEntries(Object.entries(props).filter(([key]) => !RESET_KEYS.includes(key) || key === "tema")), own ? bookProperties(own) : undefined)
@@ -114,6 +117,7 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         </div>
         <div className="book-style-row"><span>Entrelinha</span><ChoiceGroup label="Entrelinha" value={style.leading} options={[{ value: "justa", label: "Justa" }, { value: "normal", label: "Normal" }, { value: "folgada", label: "Folgada" }]} onChange={(v) => set("entrelinha", v, base.leading)} /></div>
         <div className="book-style-row"><span>Alinhamento</span><ChoiceGroup label="Alinhamento" value={style.justify ? "justificado" : "esquerda"} options={[{ value: "esquerda", label: "Esquerda" }, { value: "justificado", label: "Justificado" }]} onChange={(v) => set("alinhamento", v, base.justify ? "justificado" : "esquerda")} /></div>
+        <label className="check"><input type="checkbox" checked={style.hyphenate} onChange={(e) => set("hifenizar", e.target.checked, base.hyphenate)} />Hifenizar em português</label>
       </Group>
       <Group title="Cores">
         {([["cor_papel", "Papel", style.paper, base.paper], ["cor_texto", "Texto", style.ink, base.ink], ["cor_destaque", "Destaque", style.accent, base.accent]] as const).map(([key, label, value, baseValue]) =>
@@ -126,13 +130,31 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         <div className="book-style-row"><span>Tamanho</span><ChoiceGroup label="Tamanho da página" value={settings.size} options={(Object.keys(BOOK_SIZES) as BookSize[]).map((size) => ({ value: size, label: size === "6x9" ? "6×9" : size }))} onChange={(v) => set("pagina", v, "A4")} /></div>
         <div className="book-style-row"><span>Colunas do livro</span><ChoiceGroup label="Colunas do livro" value={String(style.columns) as "1" | "2" | "3"} options={[{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }]} onChange={(v) => set("colunas", Number(v), base.columns)} /></div>
         <p className="small muted">Um capítulo pode pedir outra com <code>colunas:</code> nas propriedades; quem já usa <code>::: runas-colunas</code> fica como está.</p>
-        <label className="check"><input type="checkbox" checked={settings.newChapter} onChange={(e) => onChange({ capitulos_nova_pagina: e.target.checked })} />Capítulos em página nova</label>
+        <label className="check"><input type="checkbox" checked={layout.mirrored} onChange={(e) => onChange({ espelhadas: e.target.checked || undefined })} />Páginas espelhadas (margem interna maior)</label>
         <label className="book-style-row"><span>Margem (mm)</span><input className="input book-number" type="number" min="0" max="40" step="0.5" placeholder={String(BOOK_SIZES[settings.size].margin)} value={typeof props.margem_mm === "number" ? props.margem_mm : ""} onChange={(e) => set("margem_mm", e.target.value === "" ? undefined : Number(e.target.value), undefined, "margem_mm")} /></label>
         <label className="book-style-row"><span>Sangria (mm)</span><input className="input book-number" type="number" min="0" max="10" step="0.5" value={typeof props.sangria_mm === "number" ? props.sangria_mm : 0} onChange={(e) => set("sangria_mm", e.target.value === "" ? undefined : Number(e.target.value), 0, "sangria_mm")} /></label>
         <label className="check"><input type="checkbox" checked={props.marcas_corte === true} onChange={(e) => set("marcas_corte", e.target.checked || undefined)} />Marcas de corte</label>
       </Group>
+      <Group title="Fichas">
+        <div className="book-style-row"><span>Desenho</span><ChoiceGroup label="Desenho das fichas" value={style.fichas} options={[{ value: "tipografica", label: "Tipográfica" }, { value: "fundo", label: "Fundo suave" }, { value: "faixa", label: "Faixa no nome" }]} onChange={(v) => set("fichas", v, base.fichas)} /></div>
+        <p className="small muted">Fichas são callouts <code>[!magia]</code>, <code>[!runa]</code>, <code>[!habilidade]</code>, <code>[!item]</code>, <code>[!criatura]</code>, <code>[!raca]</code>, <code>[!classe]</code> e <code>[!efeito]</code>. No texto, selecione uma magia no formato antigo e use “Converter em ficha”.</p>
+      </Group>
+      <Group title="Capítulos">
+        <div className="book-style-row"><span>Abertura</span><ChoiceGroup label="Abertura dos capítulos" value={layout.opening} options={options(OPENINGS)} onChange={(v) => set("abertura", v, "simples")} /></div>
+        {layout.opening === "pagina" && <p className="small muted">A imagem da abertura vem de <code>imagem:</code> (ou <code>capa:</code>) nas propriedades do capítulo.</p>}
+        <div className="book-style-row"><span>Numeração</span><ChoiceGroup label="Numeração dos capítulos" value={layout.numbering} options={options(NUMBERINGS)} onChange={(v) => set("numeracao", v, "arabico")} /></div>
+        <label className="check"><input type="checkbox" checked={layout.dropCap} onChange={(e) => set("capitular", e.target.checked || undefined)} />Letra capitular no começo do capítulo</label>
+        <label className="check"><input type="checkbox" checked={settings.newChapter} onChange={(e) => onChange({ capitulos_nova_pagina: e.target.checked })} />Capítulos em página nova</label>
+      </Group>
+      <Group title="Cabeçalho e rodapé">
+        <label className="book-style-row"><span>Cabeçalho</span><select className="select" value={layout.head} onChange={(e) => set("cabecalho", e.target.value, "livro-capitulo")}>{options(RUNNING_HEADS).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+        <label className="book-style-row"><span>Número da página</span><select className="select" value={layout.pageNumber} onChange={(e) => set("numero_pagina", e.target.value, layout.mirrored ? "externo" : "centro")}>{options(PAGE_NUMBERS).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+        <p className="small muted">O cabeçalho não aparece na capa, no sumário, nas partes nem na página que abre um capítulo.</p>
+      </Group>
       <Group title="Partes do livro">
+        <div className="book-style-row"><span>Capa</span><ChoiceGroup label="Desenho da capa" value={layout.cover} options={options(COVER_STYLES)} onChange={(v) => set("capa_estilo", v, "classica")} /></div>
         <button type="button" className="btn sm" onClick={onEditCover}>Editar capa e créditos…</button>
+        <label className="check"><input type="checkbox" checked={layout.toc} onChange={(e) => set("sumario", e.target.checked || undefined)} />Sumário com o número das páginas</label>
         <label className="check"><input type="checkbox" checked={props.indice_remissivo === true} onChange={(e) => set("indice_remissivo", e.target.checked || undefined)} />Índice remissivo</label>
         <label className="check"><input type="checkbox" checked={props.glossario === true} onChange={(e) => set("glossario", e.target.checked || undefined)} />Glossário da Wiki</label>
         <label className="field"><span>Termos do índice (um por linha)</span><textarea className="input" rows={3} value={terms} onChange={(e) => { setTerms(e.target.value); const list = e.target.value.split("\n").map((s) => s.trim()).filter(Boolean); set("indice_termos", list.length ? list : undefined, undefined, "indice_termos") }} /></label>

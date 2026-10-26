@@ -24,9 +24,11 @@ export interface BookStyle {
   accent: string
   rule: string
   fichas: FichaStyle
+  /** Hifenizar em português (L5): por padrão, quando o texto é justificado. */
+  hyphenate: boolean
 }
 
-export const BOOK_MODELS: Record<ModelId, { label: string; style: Omit<BookStyle, "model"> }> = {
+export const BOOK_MODELS: Record<ModelId, { label: string; style: Omit<BookStyle, "model" | "hyphenate"> }> = {
   manual: { label: "Manual de RPG", style: { titleFont: "Cinzel", textFont: "EB Garamond", sizePt: 10.5, leading: "normal", justify: true, columns: 2, paper: "#f6efdf", ink: "#30251e", accent: "#7b251c", rule: "#bea56f", fichas: "tipografica" } },
   grimorio: { label: "Grimório", style: { titleFont: "Uncial Antiqua", textFont: "EB Garamond", sizePt: 10.5, leading: "normal", justify: true, columns: 2, paper: "#e3d0a6", ink: "#3a2716", accent: "#55331a", rule: "#8a6a3a", fichas: "tipografica" } },
   romance: { label: "Romance", style: { titleFont: "Libre Baskerville", textFont: "Libre Baskerville", sizePt: 10, leading: "folgada", justify: true, columns: 1, paper: "#fbf8f1", ink: "#1e1c19", accent: "#1e1c19", rule: "#cfc8ba", fichas: "tipografica" } },
@@ -49,6 +51,7 @@ export function bookModel(props: Props): ModelId {
 }
 
 function overrides(props: Props): Partial<Omit<BookStyle, "model">> {
+  const hyphenate = typeof props.hifenizar === "boolean" ? props.hifenizar : undefined
   const size = typeof props.corpo_pt === "number" && Number.isFinite(props.corpo_pt) ? Math.min(16, Math.max(8, props.corpo_pt)) : undefined
   const columns = props.colunas === 1 || props.colunas === 2 || props.colunas === 3 ? props.colunas : undefined
   const align = pick(props.alinhamento, ["esquerda", "justificado"] as const)
@@ -56,7 +59,7 @@ function overrides(props: Props): Partial<Omit<BookStyle, "model">> {
     titleFont: font(props.fonte_titulos), textFont: font(props.fonte_texto), sizePt: size,
     leading: pick(props.entrelinha, ["justa", "normal", "folgada"] as const), justify: align ? align === "justificado" : undefined, columns,
     paper: color(props.cor_papel) ?? color(props.fundo_pagina), ink: color(props.cor_texto), accent: color(props.cor_destaque),
-    fichas: pick(props.fichas, ["tipografica", "fundo", "faixa"] as const),
+    fichas: pick(props.fichas, ["tipografica", "fundo", "faixa"] as const), hyphenate,
   }
   return Object.fromEntries(Object.entries(out).filter(([, v]) => v !== undefined))
 }
@@ -64,10 +67,13 @@ function overrides(props: Props): Partial<Omit<BookStyle, "model">> {
 /** Estilo final do livro; `modelNote` são as propriedades da nota de modelo, quando `modelo:` aponta para uma. */
 export function resolveStyle(book: Props, modelNote?: Props): BookStyle {
   const model = modelNote ? bookModel(modelNote) : bookModel(book)
-  const base: BookStyle = { model, ...BOOK_MODELS[model].style }
+  const base: BookStyle = { model, ...BOOK_MODELS[model].style, hyphenate: BOOK_MODELS[model].style.justify }
   // O tema antigo “minimalista” é o Moderno em preto e branco.
   if (!modelNote && !isModel(book.modelo) && book.tema === "minimalista") Object.assign(base, { accent: "#222222", rule: "#bbbbbb", fichas: "tipografica" })
-  return { ...base, ...(modelNote ? overrides(modelNote) : {}), ...overrides(book) }
+  const style = { ...base, ...(modelNote ? overrides(modelNote) : {}), ...overrides(book) }
+  // Sem escolha própria, hifeniza quem justifica (o texto alinhado à esquerda não precisa).
+  const asked = [book.hifenizar, modelNote?.hifenizar].find((v) => typeof v === "boolean")
+  return { ...style, hyphenate: typeof asked === "boolean" ? asked : style.justify }
 }
 
 /** Variáveis CSS do papel do livro (o restante do desenho fica em book-pages.css). */
@@ -79,7 +85,7 @@ export function styleCss(style: BookStyle): string {
 }
 
 /** Propriedades de estilo que o livro (ou a nota de modelo) pode mudar por cima do modelo. */
-export const STYLE_KEYS = ["fonte_titulos", "fonte_texto", "corpo_pt", "entrelinha", "alinhamento", "colunas", "cor_papel", "cor_texto", "cor_destaque", "fichas"] as const
+export const STYLE_KEYS = ["fonte_titulos", "fonte_texto", "corpo_pt", "entrelinha", "alinhamento", "colunas", "cor_papel", "cor_texto", "cor_destaque", "fichas", "hifenizar"] as const
 
 /** Nome da fonte de um arquivo do cofre (`Anexos/Fontes/Minha Fonte.ttf` → “Minha Fonte”), se o nome serve no CSS. */
 export function fontFromFile(path: string): string | null {
@@ -112,7 +118,7 @@ export function styleProperties(style: BookStyle): Record<(typeof STYLE_KEYS)[nu
   return {
     fonte_titulos: style.titleFont, fonte_texto: style.textFont, corpo_pt: style.sizePt, entrelinha: style.leading,
     alinhamento: style.justify ? "justificado" : "esquerda", colunas: style.columns, cor_papel: style.paper, cor_texto: style.ink,
-    cor_destaque: style.accent, fichas: style.fichas,
+    cor_destaque: style.accent, fichas: style.fichas, hifenizar: style.hyphenate,
   }
 }
 
