@@ -3,6 +3,23 @@ import { fichaKind, splitFicha, type FichaField } from "../../core/fichas"
 const isTag = (node: Node | null, tag: string): node is HTMLElement => node instanceof HTMLElement && node.tagName === tag
 const isLabel = (node: Node | null): node is HTMLElement => isTag(node, "STRONG") && /:\s*$/.test(node.textContent ?? "")
 
+/** Parágrafo que é só uma imagem (com a legenda, se houver). */
+function isImageOnly(el: Element | null): el is HTMLElement {
+  if (!(el instanceof HTMLElement) || !["P", "FIGURE"].includes(el.tagName) || !el.querySelector("img")) return false
+  const copy = el.cloneNode(true) as HTMLElement
+  for (const caption of copy.querySelectorAll("figcaption, .md-legenda")) caption.remove()
+  return !copy.textContent?.trim()
+}
+
+/** Rótulo no meio do texto da ficha: “**Ampliação:**”, “**Truque**:” ou “*<u>Ampliação:</u>*”, curto. */
+function textLabel(node: Element): boolean {
+  const text = node.textContent ?? ""
+  if (text.length > 30 || !text.trim()) return false
+  if (/:\s*$/.test(text)) return true
+  const after = node.nextSibling
+  return node.tagName === "STRONG" && after?.nodeType === Node.TEXT_NODE && /^\s*:/.test(after.textContent ?? "")
+}
+
 /** Lê `**Rótulo:** valor · **Outro:** valor` (com quebras de linha entre eles); `null` se o parágrafo não é só isso. */
 function readFields(p: Element): FichaField[] | null {
   const fields: FichaField[] = []
@@ -34,6 +51,8 @@ export function layoutFichas(root: HTMLElement): void {
     callout.classList.add("ficha", `ficha-${kind}`)
     const body = callout.querySelector(":scope > .callout-body")
     if (!body) continue
+    // A imagem logo depois da ficha (fora do `>`, como no formato antigo) é a arte dela: entra na ficha.
+    for (let next = callout.nextElementSibling; isImageOnly(next); next = callout.nextElementSibling) body.append(next)
     const first = body.querySelector(":scope > p")
     const fields = first ? readFields(first) : null
     if (first && fields) {
@@ -44,8 +63,11 @@ export function layoutFichas(root: HTMLElement): void {
       if (split.fields.length) parts.push(element("p", "ficha-campos", split.fields.map((field) => element("span", "ficha-campo", [element("b", "", [field.label]), ` ${field.value}`]))))
       first.replaceWith(...parts)
     }
-    for (const strong of [...body.querySelectorAll("p > strong")]) {
-      if (!isLabel(strong)) continue
+    for (const strong of [...body.querySelectorAll("p strong, p u")]) {
+      if (strong.closest(".ficha-tags, .ficha-campos, .ficha-stats") || !textLabel(strong)) continue
+      // “**Truque**:”: os dois-pontos ficam fora do negrito.
+      const colon = strong.nextSibling
+      if (!/:\s*$/.test(strong.textContent ?? "") && colon?.nodeType === Node.TEXT_NODE) colon.textContent = (colon.textContent ?? "").replace(/^\s*:/, "")
       let next = strong.nextSibling, content = ""
       while (next && !isTag(next, "BR")) { content += next.textContent ?? ""; next = next.nextSibling }
       if (!content.trim()) {
@@ -58,7 +80,7 @@ export function layoutFichas(root: HTMLElement): void {
         if (p && !p.textContent?.trim() && !p.querySelector("img, svg")) p.remove()
         continue
       }
-      strong.textContent = (strong.textContent ?? "").replace(/:\s*$/, ".")
+      strong.textContent = (strong.textContent ?? "").replace(/:?\s*$/, ".")
       strong.classList.add("ficha-rotulo")
     }
   }

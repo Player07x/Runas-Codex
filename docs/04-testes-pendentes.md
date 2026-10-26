@@ -1008,3 +1008,10 @@ nesta versão, conferir também:
 - [ ] Exportar o PDF do Valknut com o modelo e as fichas: comparar com o PDF de 25/10 (tamanho, fontes, títulos).
 - [ ] Instalar de novo o snippet `runas-codex.css` (Configurações › Obsidian e anexos) e conferir uma ficha `[!magia]`
   no Obsidian.
+
+## Livros — imagens dentro das fichas (26/10/2026)
+
+- [ ] No Valknut, as magias de Fogo e de Água mostram a arte dentro da ficha no Diagramar e no PDF (a imagem continua
+  fora do `>` na nota, como no Obsidian).
+- [ ] Converter em ficha uma magia de Vida (nome em negrito, “Custo: 1 PV · Feitiço”, “Requisito: …”, texto e imagem):
+  a imagem vai junto para dentro do `>` e não aparece “Custo: Custo:”.
