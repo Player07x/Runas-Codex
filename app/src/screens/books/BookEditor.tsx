@@ -1,5 +1,6 @@
-import { ChevronLeft, Eye, FileDown, History, LayoutGrid, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, SlidersHorizontal, Trash2, Type } from "lucide-react"
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
+import { BookOpen, ChevronLeft, FileDown, History, LayoutGrid, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { toFicha } from "../../core/fichas"
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, moveBookItem, readBook, type BookItem } from "../../core/books"
 import { reviewComment } from "../../core/books-review"
 import { dirname } from "../../core/text"
@@ -16,8 +17,10 @@ import { flushOpenNotes, vaultRoute } from "../../lib/vault-notes"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { useVault } from "../../platform/VaultProvider"
 import { BookSupport, type SupportTab } from "./BookSupport"
+import { createCursorStore } from "./cursor-store"
 
 const BookPreview = lazy(() => import("./BookPreview"))
+const BookSidePreview = lazy(() => import("./BookSidePreview"))
 
 type View = "escrever" | "organizar" | "previa"
 const TYPEWRITER_KEY = "runas-codex:livros:maquina"
@@ -34,9 +37,10 @@ const closePanel = (id: string) => setPanelCollapsed(id, true)
 const words = (count: number) => `${count.toLocaleString("pt-BR")} ${count === 1 ? "palavra" : "palavras"}`
 
 /**
- * Livros: a mesa do escritor (rework F3b). Três modos — Escrever, Organizar e Prévia — no lugar de sete botões; o
+ * Livros: a mesa do escritor (rework F3b). Três modos — Escrever, Organizar e Diagramar — no lugar de sete botões; o
  * sumário recolhível à esquerda; a formatação aparece onde o cursor está (barra da seleção, menu `/`, galeria); o
- * Apoio (referências, revisão, capítulo) fica fechado até ser pedido. Foco é a única ação solta.
+ * Apoio (referências, revisão, capítulo) fica fechado até ser pedido. Foco é a única ação solta. Em Escrever, a
+ * prévia ao lado mostra as páginas enquanto se escreve (L1); no celular, “Ver a página” abre a página do cursor em tela cheia.
  */
 export function BookEditor({ book }: { book: IndexedNote }) {
   const vault = useVault(), index = vault.index!
@@ -63,6 +67,38 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const [announcement, setAnnouncement] = useState("")
   const [deleting, setDeleting] = useState(false)
   const narrow = useNarrow()
+  // Prévia ao lado (L1): o cursor vai para um repositório próprio, para só a prévia redesenhar a cada movimento.
+  const cursor = useMemo(createCursorStore, [])
+  const onCursorLine = useCallback((line: number) => { if (selected) cursor.set({ path: selected, line }) }, [selected, cursor])
+  const [previewSlot, setPreviewSlot] = useState<HTMLDivElement | null>(null)
+  const [sideOpen, setSideOpen] = useState(false)
+  const [sheet, setSheet] = useState(false)
+  const sheetButton = useRef<HTMLButtonElement>(null)
+  const [lineRequest, setLineRequest] = useState<{ path: string; line: number; at: number }>()
+  // O pedido de linha vale para a nota que está abrindo; depois some, para não repetir ao voltar ao capítulo.
+  useEffect(() => { if (!lineRequest) return; const timer = setTimeout(() => setLineRequest(undefined), 1500); return () => clearTimeout(timer) }, [lineRequest])
+  // Abaixo de 1400 px, Apoio e prévia dividem o lado direito: abrir um fecha o outro. Só reage quando um deles abre
+  // (ao montar, os dois só informam como estavam).
+  const sideWas = useRef<boolean | null>(null), toolsWas = useRef<boolean | null>(null)
+  const sideChanged = useCallback((collapsed: boolean) => {
+    const opening = !collapsed && sideWas.current === false
+    sideWas.current = !collapsed
+    setSideOpen(!collapsed)
+    if (!opening) return
+    if (window.innerWidth < 1400) setPanelCollapsed("book-tools", true)
+    if (window.innerWidth < 1200) setPanelCollapsed("book-binder", true)
+  }, [])
+  const toolsChanged = useCallback((collapsed: boolean) => {
+    const opening = !collapsed && toolsWas.current === false
+    toolsWas.current = !collapsed
+    if (opening && window.innerWidth < 1400) setPanelCollapsed("book-preview", true)
+  }, [])
+  const openAt = (path: string, line: number) => {
+    if (path !== selected) setSelected(path)
+    setLineRequest({ path, line, at: Date.now() })
+    if (sheet) closeSheet()
+  }
+  const closeSheet = () => { setSheet(false); requestAnimationFrame(() => sheetButton.current?.focus()) }
   const locked = Boolean(vault.info?.readOnly || busy || structure.error)
   const current = selected ? index.note(selected) : undefined
   const currentItem = structure.items.find((item) => item.note?.path === selected)
@@ -117,7 +153,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     await vault.setProperty(book.path, "estrutura", moveBookItem(structure.items.map((i) => i.link), from, to))
     setAnnouncement(`Capítulo movido para a posição ${to + 1}.`)
   })
-  const open = (path: string) => { setSelected(path); setView("escrever"); if (narrow) closePanel("book-binder") }
+  const open = (path: string) => { setSelected(path); setLineRequest(undefined); setView("escrever"); if (narrow) closePanel("book-binder") }
   const showSupport = (tab: SupportTab) => { if (narrow) closePanel("book-binder"); setSupportTab(tab); setRevealSupport(true); setTimeout(() => setRevealSupport(false)) }
   const newChapter = () => { setCreating(true); setView("escrever") }
 
@@ -125,6 +161,8 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     { label: "Novo capítulo…", icon: <Plus size={16} />, disabled: locked, onSelect: newChapter },
     { label: "Metadados do livro…", icon: <SlidersHorizontal size={16} />, onSelect: () => navigate(vaultRoute(book.path)) },
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => setView("previa") },
+    // No celular, Foco sai da barra (o lugar fica para “Ver a página”) e mora aqui.
+    ...(narrow && view === "escrever" ? [{ label: "Foco (só a página)", icon: <Maximize2 size={16} />, onSelect: () => setFocus(true) }] : []),
     "separator",
     { label: typewriter ? "Desligar a máquina de escrever" : "Ligar a máquina de escrever", icon: <Type size={16} />, onSelect: () => setTypewriter(!typewriter) },
     { label: "Snapshots do capítulo", icon: <History size={16} />, disabled: !current || view !== "escrever", onSelect: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "history" })) },
@@ -137,7 +175,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const toTrash = chapters.filter((path) => path.startsWith(folder) && !otherBooks.has(path))
   const kept = chapters.filter((path) => !toTrash.includes(path))
   bookMenu.push("separator", { label: "Excluir livro…", icon: <Trash2 size={16} />, danger: true, disabled: locked, onSelect: () => setDeleting(true) })
-  const views = [{ value: "escrever" as const, label: "Escrever", icon: <PenLine size={14} /> }, { value: "organizar" as const, label: "Organizar", icon: <LayoutGrid size={14} /> }, { value: "previa" as const, label: "Prévia", icon: <Eye size={14} /> }]
+  const views = [{ value: "escrever" as const, label: "Escrever", icon: <PenLine size={14} /> }, { value: "organizar" as const, label: "Organizar", icon: <LayoutGrid size={14} /> }, { value: "previa" as const, label: "Diagramar", icon: <LayoutTemplate size={14} /> }]
 
   return <div className={`books-editor books-view-${view} ${focus ? "books-focus" : ""}`}>
     {focus ? (
@@ -154,7 +192,9 @@ export function BookEditor({ book }: { book: IndexedNote }) {
         <Segmented<View> label="Modo do livro" value={view} onChange={setView} options={views} />
         <div className="doc-end">
           {view === "escrever" && <div className="book-slot" ref={setChapterSlot} />}
-          {view === "escrever" && <button type="button" className="btn sm ghost book-focus-toggle" onClick={() => setFocus(true)} title="Só a página (Esc sai)"><Maximize2 size={16} /><span>Foco</span></button>}
+          {view === "escrever" && !narrow && <div className="book-slot book-preview-slot" ref={setPreviewSlot} />}
+          {view === "escrever" && narrow && current && <button ref={sheetButton} type="button" className="btn sm ghost" onClick={() => setSheet(true)} aria-label="Ver a página" title="Ver a página do cursor"><BookOpen size={16} /></button>}
+          {view === "escrever" && !narrow && <button type="button" className="btn sm ghost book-focus-toggle" onClick={() => setFocus(true)} title="Só a página (Esc sai)"><Maximize2 size={16} /><span>Foco</span></button>}
           {view === "escrever" && <div className="book-slot" ref={setSupportSlot} />}
           <OverflowMenu label="Ações do livro" items={bookMenu} />
         </div>
@@ -222,6 +262,8 @@ export function BookEditor({ book }: { book: IndexedNote }) {
               hideBackControl
               typewriter={typewriter}
               onDraftChange={onDraftChange}
+              onCursorLine={onCursorLine}
+              lineRequest={lineRequest?.path === current.path ? lineRequest : undefined}
               onTrashed={() => setSelected(structure.items.find((item) => item.note && item.note.path !== current.path)?.note?.path)}
               onShowPanel={() => showSupport("capitulo")}
               onBack={() => navigate("/livros")}
@@ -230,9 +272,18 @@ export function BookEditor({ book }: { book: IndexedNote }) {
               selectionActions={(editor) => [
                 { label: "Comentar", icon: <MessageSquarePlus size={15} />, run: () => setComment({ editor, at: editor.selection()?.to ?? 0 }) },
                 { label: "Citar da Wiki", icon: <Library size={15} />, run: () => { const range = editor.selection(); setRefQuery(range ? editor.text.slice(range.from, range.to) : ""); showSupport("referencias") } },
+                // L5: a magia no formato antigo (nome em negrito, custo e tipo embaixo, o texto) vira a ficha `[!magia]`.
+                { label: "Converter em ficha", icon: <ScrollText size={15} />, run: () => {
+                  const range = editor.selection()
+                  const ficha = range ? toFicha(editor.text.slice(range.from, range.to)) : null
+                  if (!range || !ficha) { setAnnouncement("Selecione o nome em negrito, a linha do custo e o texto da magia para converter em ficha."); setError("Converter em ficha: selecione o nome em negrito (ou ###), a linha do custo e o texto."); return }
+                  setError("")
+                  editor.replaceAll((text) => text.slice(0, range.from) + ficha + text.slice(range.to))
+                  setAnnouncement("Ficha criada.")
+                } },
               ]}
               sidebar={focus ? undefined : (editor) => (
-                <ResizablePanel id="book-tools" label="Apoio" width={300} controlsTarget={supportSlot} defaultCollapsed reveal={revealSupport} className="book-tools-panel">
+                <ResizablePanel id="book-tools" label="Apoio" width={300} controlsTarget={supportSlot} defaultCollapsed reveal={revealSupport} className="book-tools-panel" onCollapsedChange={toolsChanged}>
                   <BookSupport book={book} chapter={current} editor={editor} tab={supportTab} onTab={setSupportTab} query={refQuery} onQuery={setRefQuery} />
                 </ResizablePanel>
               )}
@@ -243,7 +294,15 @@ export function BookEditor({ book }: { book: IndexedNote }) {
             />
           </> : <div className="page"><p>Escolha um capítulo no sumário. Links quebrados podem ser corrigidos nos metadados do livro.</p></div>}
       </main>
+      {view === "escrever" && !narrow && <ResizablePanel id="book-preview" label="Prévia ao lado" width={460} maxWidth={960} controlsTarget={previewSlot} defaultCollapsed hidden={focus} className="book-side-panel" onCollapsedChange={sideChanged}>
+        {sideOpen && <Suspense fallback={<p className="book-side-loading">Carregando a prévia…</p>}>
+          <BookSidePreview book={book} draft={draft} chapterPath={selected} cursor={cursor} onOpenAt={openAt} onDiagramar={() => setView("previa")} />
+        </Suspense>}
+      </ResizablePanel>}
     </div>
+    {sheet && narrow && view === "escrever" && <Suspense fallback={null}>
+      <BookSidePreview variant="tela" book={book} draft={draft} chapterPath={selected} cursor={cursor} onOpenAt={openAt} onDiagramar={() => { setSheet(false); setView("previa") }} onClose={closeSheet} />
+    </Suspense>}
     {deleting && <ConfirmDialog title="Excluir livro" confirmLabel="Mandar para a lixeira" danger onClose={() => setDeleting(false)} onConfirm={async () => {
       await flushOpenNotes()
       // Capítulos antes; a nota do livro por último (sem ela a tela do livro fecha).

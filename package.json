@@ -1,6 +1,6 @@
 {
   "name": "runas-codex",
-  "version": "0.1.0-beta.16",
+  "version": "0.1.0-beta.17",
   "private": true,
   "description": "Runas-Codex: notas compatíveis com o Obsidian, wiki, campanhas, livros, agenda e VTT, offline",
   "workspaces": [

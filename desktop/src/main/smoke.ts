@@ -93,7 +93,7 @@ export const SMOKE_SCRIPT = `(async () => {
 
   // Livros 8b: a prévia lazy precisa paginar com a CSP real, inclusive em somente leitura.
   location.hash = "/livros/" + encodeURIComponent("Livros/Caderno de formatadores/Caderno de formatadores.md")
-  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Prévia")))?.click()
+  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Diagramar")))?.click()
   await until(() => Number(document.querySelector(".book-preview-output[aria-busy=false]")?.dataset.pages) > 1, 200)
   const bookPages = document.querySelector(".book-preview-output")
   result.bookPreview = { pages: Number(bookPages?.dataset.pages ?? 0), milliseconds: Number(bookPages?.dataset.paginationMs ?? 0),
@@ -107,6 +107,14 @@ export const SMOKE_SCRIPT = `(async () => {
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", ctrlKey: true, bubbles: true, cancelable: true }))
   window.print = originalPrint
   result.bookPreview.printShortcut = printRequested
+
+  // L1: a prévia ao lado do texto pagina em Escrever e marca a página do capítulo aberto. Fecha no fim, como estava.
+  ;[...document.querySelectorAll(".segmented button")].find((b) => b.textContent === "Escrever")?.click()
+  ;(await until(() => document.querySelector("[data-panel-control='book-preview'] button")))?.click()
+  await until(() => Number(document.querySelector(".book-side .book-preview-output[aria-busy=false]")?.dataset.pages) > 1, 200)
+  const sidePages = document.querySelector(".book-side .book-preview-output")
+  result.bookSidePreview = { pages: Number(sidePages?.dataset.pages ?? 0), marked: Boolean(await until(() => sidePages?.querySelector(".pagedjs_page[data-cursor-page]"), 50)), decorative: sidePages?.getAttribute("aria-hidden") === "true" }
+  document.querySelector("[data-panel-control='book-preview'] button")?.click()
 
   // Campanhas (etapa 7): o painel lê sessões, missões, pistas e relógios das notas; o quadro .canvas é desenhado.
   const campaignRoute = "/campanhas/" + encodeURIComponent("Cinzas de Valdris")
@@ -298,15 +306,23 @@ export const SMOKE_SCRIPT = `(async () => {
     const chapterPath = "Livros/Guia de Valdris/Capítulo do smoke.md"
     const bookTexts = await bridge.vault.read([bookPath, chapterPath])
     result.books = Boolean(bookTexts[chapterPath]?.includes("tipo: capitulo") && bookTexts[bookPath]?.includes("[[Capítulo do smoke]]"))
+    // L1: digitar no capítulo novo refaz a prévia ao lado com o texto ainda não gravado.
+    ;(await until(() => document.querySelector("[data-panel-control='book-preview'] button")))?.click()
+    await until(() => document.querySelector(".book-side .book-preview-output[aria-busy=false]"), 200)
+    ;(await until(() => document.querySelector(".books-main .cm-content")))?.focus()
+    document.execCommand("insertText", false, "Texto da prévia ao lado. ")
+    // As páginas hifenizam (L5): os hífens suaves não contam na comparação.
+    result.bookSideTyping = Boolean(await until(() => document.querySelector(".book-side .book-preview-output[aria-busy=false]")?.textContent.replace(/\u00ad/g, "").includes("Texto da prévia ao lado"), 200))
+    document.querySelector("[data-panel-control='book-preview'] button")?.click()
   }
 
   // Livros 8c: exportar o PDF pela prévia (no smoke ele vai para uma pasta temporária, sem diálogo); o processo
   // principal confere depois que o PDF tem as páginas da prévia (checkPdf).
-  // Passa pela lista antes: o botão "Prévia" do livro anterior ainda estaria na tela.
+  // Passa pela lista antes: o botão "Diagramar" do livro anterior ainda estaria na tela.
   location.hash = "/livros"
-  await until(() => ![...document.querySelectorAll("button")].some((b) => b.textContent === "Prévia"))
+  await until(() => ![...document.querySelectorAll("button")].some((b) => b.textContent === "Diagramar"))
   location.hash = "/livros/" + encodeURIComponent("Livros/Caderno de formatadores/Caderno de formatadores.md")
-  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Prévia")))?.click()
+  ;(await until(() => [...document.querySelectorAll("button")].find((b) => b.textContent === "Diagramar")))?.click()
   await until(() => Number(document.querySelector(".book-preview-output[aria-busy=false]")?.dataset.pages) > 1, 200)
   const previewPages = Number(document.querySelector(".book-preview-output")?.dataset.pages ?? 0)
   ;(await until(() => [...document.querySelectorAll(".book-preview-controls button")].find((b) => b.textContent === "Exportar arquivo" && !b.disabled)))?.click()
@@ -570,6 +586,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!wikiCategory || Object.keys(wikiCategory).length !== 7 || !Object.values(wikiCategory).every(value => value === true)) return false
   const bookPreview = result.bookPreview as Record<string, unknown> | undefined
   if (!bookPreview || Number(bookPreview.pages) <= 1 || !bookPreview.math || !bookPreview.diagram || !bookPreview.columns || Number(bookPreview.images) < 1 || bookPreview.printShortcut !== true) return false
+  const bookSide = result.bookSidePreview as Record<string, unknown> | undefined
+  if (!bookSide || Number(bookSide.pages) <= 1 || bookSide.marked !== true || bookSide.decorative !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
   if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
   if (result.migrationFound !== 4) return false
@@ -612,6 +630,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
     (result.roomCheck as Record<string, unknown>).join === 200 &&
     result.books === true &&
+    result.bookSideTyping === true &&
     typeof result.campaignSession === "object" &&
     (result.campaignSession as Record<string, unknown>).note === "OK" &&
     (result.campaignSession as Record<string, unknown>).event === "OK" &&

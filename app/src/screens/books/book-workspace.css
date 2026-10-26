@@ -13,7 +13,7 @@
 .book-back span { font-weight: 500; }
 
 /* ---------- Sumário, página e Apoio ---------- */
-.books-layout { display: grid; flex: 1; grid-template-columns: var(--panel-book-binder, 0px) minmax(0, 1fr); min-height: 0; }
+.books-layout { display: grid; flex: 1; grid-template-columns: var(--panel-book-binder, 0px) minmax(0, 1fr) var(--panel-book-preview, 0px); min-height: 0; }
 .books-binder { grid-column: 1; min-height: 0; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); }
 .books-binder[data-panel-collapsed=true] { display: none; }
 .books-main { grid-column: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: auto; background: var(--bg-deep); }
@@ -112,4 +112,10 @@ body.book-focus-active .main { padding-bottom: env(safe-area-inset-bottom); }
   .books-editor .editor-body { width: 100%; min-height: 60vh; margin: 0; padding: 20px 16px 60px; border: 0; border-radius: 0; box-shadow: none; }
   .book-chapter-meta { width: 100%; margin: 8px 0 0; padding: 6px 16px; }
   .book-toc-item, .book-ref-name { min-height: 44px; }
+}
+/* Até 400 px a barra precisa caber em 320 px com alvos de 44 px: menos espaço entre os botões e “Salvo” só com o
+   ponto (o texto continua para o leitor de tela; o erro continua escrito). */
+@media (max-width: 400px) {
+  .book-bar { gap: 4px; padding-inline: 6px; }
+  .book-bar .kit-save:not(.erro) { gap: 0; font-size: 0; }
 }

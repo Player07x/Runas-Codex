@@ -1,11 +1,11 @@
 import { strToU8, zipSync, type Zippable } from "fflate"
-import { nodeXml, xml, type ExportBook, type ExportNode } from "./book"
+import { nodeXml, paperClass, xml, type ExportBook, type ExportNode } from "./book"
 
 const hasTag = (nodes: ExportNode[], tag: string): boolean => nodes.some((n) => typeof n !== "string" && (n.tag === tag || hasTag(n.children, tag)))
 /** EPUB 3 sem recursos remotos. O primeiro registro ZIP é mimetype, sem compressão. */
 export function generateEpub(book: ExportBook, modified = new Date()): Uint8Array {
   const files: Zippable = { mimetype: [strToU8("application/epub+zip"), { level: 0 }] }
-  const page = (title: string, body: string) => `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${xml(book.language)}" lang="${xml(book.language)}"><head><title>${xml(title)}</title><link rel="stylesheet" type="text/css" href="book.css" /></head><body class="book-paper tema-${book.theme}"><main class="book-print">${body}</main></body></html>`
+  const page = (title: string, body: string) => `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${xml(book.language)}" lang="${xml(book.language)}"><head><title>${xml(title)}</title><link rel="stylesheet" type="text/css" href="book.css" /></head><body class="${paperClass(book)}"><main class="book-print">${body}</main></body></html>`
   files["META-INF/container.xml"] = strToU8('<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml" /></rootfiles></container>')
   const manifest: string[] = ['<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>', '<item id="css" href="book.css" media-type="text/css"/>']
   book.sections.forEach((section, i) => {

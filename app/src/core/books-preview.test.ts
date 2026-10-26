@@ -1,4 +1,4 @@
-import { BOOK_SIZES, pageRules, previewChapters, previewSettings } from "./books-preview"
+import { BOOK_SIZES, chapterTitle, pageRules, previewChapters, previewSettings } from "./books-preview"
 import { newBookText } from "./books"
 import { VaultIndex } from "./vault-index"
 function fixture() {
@@ -29,4 +29,19 @@ it("a prévia usa o rascunho sem gravar e mantém a ordem e os avisos de links q
   expect(chapters[0]).toMatchObject({ kind: "parte", body: "Ainda não salvo" })
   expect(chapters[1]?.title).toBe("Link quebrado")
   expect(index.note("Livros/L/Capítulo.md")?.text).toContain("Texto salvo")
+})
+
+describe("um título por capítulo (L2)", () => {
+  const chapter = (kind: string, title: string, body: string) => ({ path: `Livros/X/${title}.md`, title, kind, body })
+  it("tira o # do começo quando repete o nome da nota", () => {
+    expect(chapterTitle(chapter("capitulo", "Magias", "\n# Magias\n\nTexto."))).toEqual({ title: "Magias", body: "\nTexto." })
+    expect(chapterTitle(chapter("capitulo", "Equipamentos", "# **Equipamentos**\n| a |"))).toEqual({ title: "Equipamentos", body: "| a |" })
+  })
+  it("mantém o # diferente do nome como primeiro título do capítulo", () => {
+    expect(chapterTitle(chapter("capitulo", "Introdução", "# Início\nTexto."))).toEqual({ title: "Introdução", body: "# Início\nTexto." })
+  })
+  it("seção usa o próprio título e só ganha o nome quando não tem", () => {
+    expect(chapterTitle(chapter("secao", "Magias de Fogo", "## Magias de Fogo\n::: runas-colunas-2"))).toEqual({ title: null, body: "## Magias de Fogo\n::: runas-colunas-2" })
+    expect(chapterTitle(chapter("secao", "Notas soltas", "Só texto."))).toEqual({ title: "Notas soltas", body: "Só texto." })
+  })
 })

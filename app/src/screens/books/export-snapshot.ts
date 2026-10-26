@@ -1,5 +1,8 @@
 import { exportHeadingId } from "../../core/export/documents"
 import { bookDecorationCss } from "../../core/books-finish"
+import { styleCss } from "../../core/book-style"
+import { FONT_FILES } from "./book-fonts"
+import { vaultFonts } from "./vault-fonts"
 import type { ExportAsset, ExportBook, ExportNode } from "../../core/export/book"
 import { bookExportPlan } from "../../core/export/book"
 import type { IndexedNote, VaultIndex } from "../../core/vault-index"
@@ -128,6 +131,24 @@ export async function captureBook(source: HTMLElement, index: VaultIndex, book: 
     if (!response.ok) throw new Error(`Não foi possível incluir a fonte ${family}.`)
     assets.push({ name: `assets/${name}.woff2`, mime: "font/woff2", bytes: new Uint8Array(await response.arrayBuffer()) })
     css += `\n@font-face{font-family:'${family}';src:url('assets/${name}.woff2') format('woff2');font-weight:100 900}`
+  }
+  // As fontes escolhidas no Estilo do livro (L3) também vão junto: as do app em 400 e 700, as do cofre como estão.
+  if (plan.style) {
+    css += `\n${styleCss(plan.style)}`
+    // Cinzel, EB Garamond e Geist já foram acima (as variáveis servem como as estáticas): só o nome muda.
+    const included: Record<string, string> = { "EB Garamond": "garamond", Geist: "geist", Cinzel: "cinzel" }
+    for (const family of new Set([plan.style.titleFont, plan.style.textFont])) {
+      if (included[family]) { if (family !== "Cinzel") css += `\n@font-face{font-family:'${family}';src:url('assets/${included[family]}.woff2') format('woff2');font-weight:100 900}`; continue }
+      const own = vaultFonts(index).find((f) => f.name === family)
+      const files: [string, string, string][] = own ? [["normal", own.path, ""]] : (FONT_FILES[family] ?? []).map(([weight, url]) => [String(weight), "", url])
+      for (const [weight, path, url] of files) {
+        const ext = path ? path.split(".").at(-1)!.toLowerCase() : "woff2"
+        const bytes = path ? await platform.readBinary(path) : new Uint8Array(await (await fetch(url)).arrayBuffer())
+        const name = `assets/font-${assets.length}.${ext}`
+        assets.push({ name, mime: ext === "ttf" ? "font/ttf" : ext === "otf" ? "font/otf" : `font/${ext}`, bytes })
+        css += `\n@font-face{font-family:'${family}';src:url('${name}');font-weight:${weight}}`
+      }
+    }
   }
   return { ...plan, sections: rendered, assets, css, warnings: [...warnings] }
 }

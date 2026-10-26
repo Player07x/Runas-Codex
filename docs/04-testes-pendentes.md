@@ -899,3 +899,112 @@ exercita os controles reais do painel e registra `android-controle-mestre.png`.
 
 - [ ] Na própria mesa, o aviso global de sala aberta não cobre o painel. Ao navegar para outra tela, o aviso volta a
   oferecer “Voltar à mesa” e “Encerrar sala”. A Carta X permanece visível também dentro da mesa até confirmar a pausa.
+
+## Livros L1 — prévia ao lado do texto (25/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md). Capturas em `docs/imagens/livros-l1/`.
+
+- [ ] Abrir um livro em Escrever e clicar em **Prévia ao lado** na barra: as páginas aparecem à direita, com a página do
+  capítulo aberto contornada e o título mais próximo do cursor marcado.
+- [ ] Digitar no capítulo (inclusive um título novo `## …`): cerca de meio segundo depois a página se refaz com o texto
+  ainda não gravado, sem piscar, e a marca acompanha o cursor.
+- [ ] Trocar de capítulo pelo sumário: a prévia vai até a página onde ele começa. Com **Seguir o texto** desligado, ela
+  fica parada onde você deixou.
+- [ ] Clicar num título dentro da página (inclusive o título de outro capítulo): o editor abre aquele capítulo com o
+  cursor no título.
+- [ ] Testar **Largura**, **Página** e **Duas** (livro aberto: a capa sozinha à direita) e arrastar a borda do painel.
+- [ ] No ⋯ da prévia: “Ir para a página do cursor”, “Mostrar só este capítulo” (a numeração recomeça em 1) e “Diagramar e
+  exportar…”.
+- [ ] Abaixo de 1400 px de largura, abrir o Apoio fecha a prévia e vice-versa; abaixo de 1200 px, abrir a prévia recolhe
+  o sumário.
+- [ ] O modo que era “Prévia” agora se chama **Diagramar**; exportar PDF, EPUB e DOCX e imprimir com Ctrl+P continuam
+  iguais.
+- [ ] No celular: o ícone de livro na barra (“Ver a página”) abre a página do cursor em tela cheia; as setas trocam de
+  página; **Texto** (ou Esc, com teclado) volta ao mesmo ponto. Conferir também o que o botão Voltar do Android faz com a página aberta. **Foco** agora fica no menu ⋯ do livro.
+- [ ] Em 320 px, a barra do livro cabe inteira (antes o último ⋯ ficava fora da tela).
+
+## Livros L2 — limpeza do PDF (25/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Exportar o PDF do Valknut: sem as caixas tracejadas em volta dos blocos `::: runas-colunas-2`; o arquivo bem menor
+  que os 17 MB de antes (Imagens: Tela); `pdffonts` (ou as propriedades do PDF) mostra a EB Garamond como TrueType.
+- [ ] Cada capítulo com um título só: “Magias” e “Equipamentos” não se repetem; a Introdução mostra “Introdução” e
+  depois “Início”; as seções (Magias de Fogo…) com o próprio título, sem sobretítulo nem régua.
+- [ ] Nas colunas: “Manter Magia” não se parte em 4 linhas + 1; o nome de uma magia (**NOME**\ + custo) não fica sozinho
+  no pé da coluna; a imagem que vem logo depois do texto fica junto dele.
+- [ ] Diagramar › Imagens: Tela, Gráfica e Original; a prévia avisa quando uma imagem fica abaixo de 200 ppi impressa.
+- [ ] Abrir o PDF num leitor com painel de marcadores (Okular, Acrobat): os títulos aparecem como marcadores, o título do
+  documento é o do livro e o PDF é marcado para leitor de tela.
+- [ ] Imprimir (Ctrl+P): sai sem o fundo creme; com “Fundo do papel na impressão” ligado, sai com ele. O PDF exportado
+  continua com o fundo.
+
+## Livros L3 — Estilo do livro e modelos (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Diagramar: o painel **Estilo do livro** à esquerda. Trocar entre Manual de RPG, Grimório (com moldura), Romance,
+  Moderno e Leitura fácil: a prévia muda na hora e, um segundo depois, o livro ganha `modelo:` (o `tema:` antigo some).
+- [ ] Livros antigos com `tema: pergaminho`, `moderno` ou `minimalista` abrem com o modelo equivalente marcado.
+- [ ] Tipografia: trocar as fontes de títulos e de texto, o tamanho (− e +), a entrelinha e o alinhamento; voltar ao
+  valor do modelo apaga a propriedade do livro. **Desfazer** volta o último ajuste.
+- [ ] Cores: papel, texto e destaque; “Fundo também na impressão”; textura e marca d’água.
+- [ ] Página: tamanho, colunas do livro (1, 2, 3), capítulos em página nova, margem, sangria e marcas de corte. Um
+  capítulo com `colunas: 1` nas propriedades sai em uma coluna; o que usa `::: runas-colunas-2` continua como está.
+- [ ] **Salvar como modelo…**: cria `Livros/Modelos/<nome>.md` (abra no Obsidian: propriedades comuns) e o livro passa a
+  usá-lo; outro livro pode escolher o mesmo modelo no painel; mudar uma propriedade da nota de modelo muda os dois.
+- [ ] Fonte do cofre: pôr um `.ttf` ou `.otf` em `Anexos/Fontes`; ele aparece em “Do cofre” nas listas de fontes e o PDF
+  sai com ela.
+- [ ] Exportar EPUB e HTML com o Grimório e com o Moderno: cores e fontes iguais às da prévia; DOCX com a cor de destaque.
+- [ ] Celular: Diagramar aparece (antes ficava em branco); o botão **Estilo do livro** abre o painel acima das páginas;
+  sem rolagem para os lados em 320 px.
+
+## Livros L4 — capa, sumário, aberturas e cabeçalhos (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Estilo do livro › Partes do livro › Capa: Clássica (moldura), Ilustrada (imagem grande) e Faixa (faixa colorida de
+  borda a borda). Em “Editar capa e créditos…”: título na capa e edição separados do nome da nota; a imagem escolhida
+  nas miniaturas do cofre ou “Do computador…” (vira anexo perto do livro).
+- [ ] “Sumário com o número das páginas”: o sumário sai depois da capa e dos créditos, com “Cap. 1”, as seções recuadas e
+  o número certo de cada página; no PDF exportado, clicar numa linha leva à página.
+- [ ] Capítulos: abertura Simples (“Capítulo 1” sobre o título), Faixa e Página inteira (com a imagem de `imagem:` do
+  capítulo, se houver); numeração em algarismos, romanos ou sem número; letra capitular (não aparece num primeiro
+  parágrafo de uma linha).
+- [ ] Cabeçalho e rodapé: o cabeçalho não aparece na capa, no sumário nem na página que abre o capítulo; trocar para “Só
+  o capítulo” e “Nenhum”; número da página no centro, na margem externa ou sem número.
+- [ ] Páginas espelhadas: margem de dentro maior, número do lado de fora, capítulo sempre começando numa página da
+  direita (com uma página em branco antes, quando precisa). Imprimir em frente e verso numa impressora de verdade.
+
+## Livros L5 — fichas de RPG e hifenização (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Escrever uma magia como ficha (`> [!magia] Nome`, `> **Custo:** 1 PV · **Tipo:** Feitiço · **Alcance:** Área`, o
+  texto, `> **Ampliação:** …`, a imagem): no livro sai o nome em versalete, “1 PV · Feitiço · Área” em itálico, Ampliação
+  e Truque marcados e a imagem dentro da ficha, sem nenhuma régua. Um `**Material:**` vazio não aparece.
+- [ ] As outras fichas: `[!runa]`, `[!habilidade]`, `[!item]`, `[!criatura]` (atributos em linha), `[!raca]`,
+  `[!classe]`, `[!efeito]`. No Obsidian (com o snippet ligado), cada uma é um callout com cor e ícone próprios.
+- [ ] Estilo do livro › Fichas: Tipográfica, Fundo suave e Faixa no nome.
+- [ ] Caixas sem réguas no livro: descritivo (itálico, fundo suave), barra lateral, nota/dica/aviso/perigo (só o título
+  pequeno colorido), segredo.
+- [ ] Em Escrever, selecionar uma magia no formato antigo (nome em negrito, custo embaixo, o texto) › “Converter em ficha”
+  na barra da seleção.
+- [ ] Diagramar › “Versão dos jogadores (sem segredos)”: os segredos somem da prévia e do PDF; o arquivo sai com
+  “(jogadores)” no nome.
+- [ ] Hifenização: com o texto justificado, as palavras longas se partem no fim da linha com hífen (sem buracos grandes
+  nas colunas); “Hifenizar em português” desligado volta ao de antes. Conferir se copiar texto do PDF não traz hífens
+  estranhos.
+
+## Versão 0.1.0-beta.17 (26/10/2026)
+
+Entram os Livros L1–L5 (PRs #69, #71, #72, #73 e #74) e a R5 (PRs #67, #68 e #70). As listas de cada fase estão acima;
+nesta versão, conferir também:
+
+- [ ] Atualizar da beta.16 para a beta.17 pelo botão “Verificar atualizações” (desktop e Android) e conferir que o cofre,
+  o PIN e as preferências continuam.
+- [ ] Abrir no Diagramar um livro antigo (com `tema:`): ele abre com o modelo equivalente; trocar de modelo apaga o
+  `tema:` do livro.
+- [ ] Exportar o PDF do Valknut com o modelo e as fichas: comparar com o PDF de 25/10 (tamanho, fontes, títulos).
+- [ ] Instalar de novo o snippet `runas-codex.css` (Configurações › Obsidian e anexos) e conferir uma ficha `[!magia]`
+  no Obsidian.

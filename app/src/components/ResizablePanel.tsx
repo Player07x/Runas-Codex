@@ -15,14 +15,18 @@ export const setPanelCollapsed = (id: string, collapsed: boolean): void => { win
  * mostra o nome dele e um botão de recolher; recolhido, vira uma faixa estreita (ou um trilho de ícones, na
  * navegação). Preferências locais; arrastar altera só o espaço do painel, nunca os dados do cofre.
  */
-export function ResizablePanel({ id, label, side = "right", width = 300, as: Tag = "aside", className = "", children, hidden, controlsTarget, defaultCollapsed = false, reveal = false, collapsedMode = "hide" }: {
+export function ResizablePanel({ id, label, side = "right", width = 300, maxWidth = 600, as: Tag = "aside", className = "", children, hidden, controlsTarget, defaultCollapsed = false, reveal = false, collapsedMode = "hide", onCollapsedChange }: {
   id: string; label: string; side?: "left" | "right"; width?: number; as?: "aside" | "nav" | "section"; className?: string; children: ReactNode; hidden?: boolean; controlsTarget?: HTMLElement | null; defaultCollapsed?: boolean; reveal?: boolean
+  /** Largura máxima ao arrastar (a prévia das páginas do livro pede mais que os painéis de lista). */
+  maxWidth?: number
   /** `rail`: recolhido, mostra só os ícones (navegação principal). */
   collapsedMode?: "hide" | "rail"
+  /** Avisa quando o painel abre ou fecha (também ao montar), para quem só quer desenhar o conteúdo aberto. */
+  onCollapsedChange?(collapsed: boolean): void
 }) {
   const key = `runas-codex:painel:${id}`
   const [prefs, setPrefs] = useState(() => {
-    try { const saved = JSON.parse(localStorage.getItem(key) ?? "null"); return { width: Math.min(600, Math.max(180, Number(saved?.width) || width)), collapsed: saved ? saved.collapsed === true : defaultCollapsed } }
+    try { const saved = JSON.parse(localStorage.getItem(key) ?? "null"); return { width: Math.min(maxWidth, Math.max(180, Number(saved?.width) || width)), collapsed: saved ? saved.collapsed === true : defaultCollapsed } }
     catch { return { width, collapsed: defaultCollapsed } }
   })
   useEffect(() => { if (reveal) setPrefs(p => ({ ...p, collapsed: false })) }, [reveal])
@@ -36,6 +40,9 @@ export function ResizablePanel({ id, label, side = "right", width = 300, as: Tag
   const ref = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; width: number } | null>(null)
   const collapsedWidth = controlsTarget ? 0 : collapsedMode === "rail" ? 68 : 44
+  const collapsedChange = useRef(onCollapsedChange)
+  collapsedChange.current = onCollapsedChange
+  useEffect(() => { collapsedChange.current?.(prefs.collapsed) }, [prefs.collapsed])
   useLayoutEffect(() => {
     const parent = ref.current?.parentElement
     parent?.style.setProperty(`--panel-${id}`, `${prefs.collapsed ? collapsedWidth : prefs.width}px`)
@@ -46,7 +53,7 @@ export function ResizablePanel({ id, label, side = "right", width = 300, as: Tag
     if (!drag.current) return
     const available = ref.current?.parentElement?.clientWidth ?? window.innerWidth
     const next = drag.current.width + (event.clientX - drag.current.x) * (side === "left" ? 1 : -1)
-    setPrefs({ collapsed: false, width: Math.max(180, Math.min(600, available - 260, next)) })
+    setPrefs({ collapsed: false, width: Math.max(180, Math.min(maxWidth, available - 260, next)) })
   }
   const Icon = side === "left" ? (prefs.collapsed ? PanelLeftOpen : PanelLeftClose) : (prefs.collapsed ? PanelRightOpen : PanelRightClose)
   const action = `${prefs.collapsed ? "Expandir" : "Recolher"} ${label}`
@@ -61,9 +68,9 @@ export function ResizablePanel({ id, label, side = "right", width = 300, as: Tag
   return <Tag ref={ref} hidden={hidden} className={`resizable-panel ${className}`} data-panel-id={id} data-panel-mode={collapsedMode} data-panel-detached={Boolean(controlsTarget)} data-panel-collapsed={prefs.collapsed} aria-label={label}>
     {controlsTarget ? createPortal(control, controlsTarget) : control}
     {children}
-    <div className={`panel-edge panel-edge-${side}`} role="separator" aria-label={`Largura de ${label}`} aria-orientation="vertical" aria-valuemin={180} aria-valuemax={600} aria-valuenow={prefs.width} tabIndex={0}
+    <div className={`panel-edge panel-edge-${side}`} role="separator" aria-label={`Largura de ${label}`} aria-orientation="vertical" aria-valuemin={180} aria-valuemax={maxWidth} aria-valuenow={prefs.width} tabIndex={0}
       onDoubleClick={() => setPrefs({ width, collapsed: false })}
-      onKeyDown={event => { if (["ArrowLeft", "ArrowRight", "Home"].includes(event.key)) { event.preventDefault(); const delta = (event.key === "ArrowRight" ? 20 : -20) * (side === "left" ? 1 : -1); setPrefs(p => ({ collapsed: false, width: event.key === "Home" ? width : Math.min(600, Math.max(180, p.width + delta)) })) } }}
+      onKeyDown={event => { if (["ArrowLeft", "ArrowRight", "Home"].includes(event.key)) { event.preventDefault(); const delta = (event.key === "ArrowRight" ? 20 : -20) * (side === "left" ? 1 : -1); setPrefs(p => ({ collapsed: false, width: event.key === "Home" ? width : Math.min(maxWidth, Math.max(180, p.width + delta)) })) } }}
       onPointerDown={event => { if (event.button !== 0) return; event.preventDefault(); drag.current = { x: event.clientX, width: ref.current?.getBoundingClientRect().width ?? prefs.width }; event.currentTarget.setPointerCapture(event.pointerId) }}
       onPointerMove={resize} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }} />
   </Tag>

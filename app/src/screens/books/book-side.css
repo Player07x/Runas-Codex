@@ -1,0 +1,27 @@
+/* Prévia ao lado do texto (L1). `--follow` guarda o destaque do app antes de entrar no papel do livro, que troca as
+   cores (dentro dele, --cyan é a cor do livro). */
+.book-side { --follow: var(--cyan); display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; background: var(--bg-deep); }
+.book-side-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.book-side-page { flex: 1 1 150px; min-width: 0; overflow: hidden; color: var(--muted); font-size: calc(13px * var(--font-scale, 1)); font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.book-side-page b { color: var(--text); font-weight: 600; }
+.book-side-head .btn[aria-pressed=true] { border-color: color-mix(in srgb, var(--cyan) 45%, var(--line)); background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--text); }
+.book-side-note { margin: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+.book-side .book-preview-scroll { flex: 1; min-height: 0; }
+.book-side .pagedjs_page { transition: outline-color .2s; outline: 3px solid transparent; outline-offset: 3px; }
+.book-side .pagedjs_page[data-cursor-page] { outline-color: var(--follow); }
+.book-side [data-cursor-heading] { border-radius: 2px; background: color-mix(in srgb, var(--follow) 20%, transparent); box-shadow: 0 0 0 .35em color-mix(in srgb, var(--follow) 20%, transparent); }
+.book-side .pagedjs_page :is(h1, h2, h3, h4, h5, h6) { cursor: pointer; }
+.book-side .pagedjs_page :is(h1, h2, h3, h4, h5, h6):hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.book-side-loading { margin: 0; padding: 16px; color: var(--muted); }
+
+/* Painel à direita do editor (só no desktop). */
+.book-side-panel { grid-column: 3; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-left: 1px solid var(--line); background: var(--bg-deep); }
+.book-side-panel[data-panel-collapsed=true] { display: none; }
+@media (max-width: 860px) { .book-side-panel { display: none; } }
+
+/* Celular: a página do cursor em tela cheia, com voltar ao texto e a troca de página no pé. */
+.book-side.tela { position: fixed; inset: 0; z-index: 90; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+.book-side-bar { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left)); border-bottom: 1px solid var(--line); background: var(--panel); }
+.book-side-bar .book-side-page { text-align: center; }
+.book-side-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); font-variant-numeric: tabular-nums; }
+.book-side-bar .btn, .book-side-pager .btn { min-width: 44px; min-height: 44px; }

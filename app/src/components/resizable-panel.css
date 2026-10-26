@@ -27,8 +27,7 @@
  body .shell:has(>.resizable-panel) { grid-template-columns:var(--panel-navigation,240px) minmax(0,1fr); }
  body .workspace { grid-template-columns:var(--panel-notes-left,280px) minmax(0,1fr) var(--panel-notes-right,300px); }
  body .workspace.no-right { grid-template-columns:var(--panel-notes-left,280px) minmax(0,1fr); }
- body .books-layout { grid-template-columns:var(--panel-book-binder,270px) minmax(0,1fr); }
- body .books-layout.has-preview { grid-template-columns:var(--panel-book-binder,230px) minmax(240px,1fr) var(--panel-book-preview,minmax(280px,1fr)); }
+ body .books-layout { grid-template-columns:var(--panel-book-binder,270px) minmax(0,1fr) var(--panel-book-preview,0px); }
  body .wiki-article-layout { grid-template-columns:minmax(0,1fr) var(--panel-wiki-article,340px); }
  body .campaign-session-layout { grid-template-columns:minmax(0,1fr) var(--panel-campaign-session,360px); }
  body .agenda-layout { grid-template-columns:minmax(0,1fr) var(--panel-agenda,320px); }
@@ -37,7 +36,7 @@
 @media(min-width:861px) and (max-width:1180px) {
  body .workspace:not(.no-right) { grid-template-columns:var(--panel-notes-left,260px) minmax(0,1fr); }
 }
-@media(min-width:1200px) { .books-layout:not(.has-preview) .books-writing-area { grid-template-columns:minmax(0,1fr) var(--panel-book-tools,300px); } }
+@media(min-width:1200px) { .books-layout .books-writing-area { grid-template-columns:minmax(0,1fr) var(--panel-book-tools,300px); } }
 @media(max-width:860px) {
  .panel-edge { display:none; }
  .resizable-panel[data-panel-collapsed=true] { min-height:44px; height:auto; }
@@ -60,7 +59,7 @@
  body .shell:has(>.resizable-panel) { grid-template-columns:min(var(--panel-navigation,240px),40vw) minmax(0,1fr); }
  body .workspace { grid-template-columns:min(var(--panel-notes-left,280px),34%) minmax(0,1fr) min(var(--panel-notes-right,300px),34%); }
  body .workspace.no-right { grid-template-columns:min(var(--panel-notes-left,280px),40%) minmax(0,1fr); }
- body .books-layout.has-preview { grid-template-columns:min(var(--panel-book-binder,270px),28%) minmax(0,1fr) min(var(--panel-book-preview,480px),48%); }
+ body .books-layout { grid-template-columns:min(var(--panel-book-binder,270px),28%) minmax(0,1fr) min(var(--panel-book-preview,0px),60%); }
  body .wiki-article-layout { grid-template-columns:minmax(0,1fr) min(var(--panel-wiki-article,340px),45%); }
  body .campaign-session-layout { grid-template-columns:minmax(0,1fr) min(var(--panel-campaign-session,360px),45%); }
  body .agenda-layout { grid-template-columns:minmax(0,1fr) min(var(--panel-agenda,320px),45%); }
@@ -73,8 +72,4 @@
  body :is(.pane-right,.wiki-article-side,.campaign-session-side,.graph-panel,.properties)[data-panel-collapsed=true] .panel-collapse span { display:none; }
  body .graph-page>.graph-panel[data-panel-collapsed=true] { width:44px; height:44px; bottom:auto; }
  body .scene-canvas>.properties[data-panel-collapsed=true] { width:44px; height:44px; left:auto; }
-}
-@media(min-width:861px) {
- body .books-layout.has-preview>.books-binder { display:block; }
- body .books-layout.has-preview>.books-main { display:flex; }
 }

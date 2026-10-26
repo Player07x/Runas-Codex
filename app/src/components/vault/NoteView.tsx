@@ -116,6 +116,10 @@ interface Props {
   extraFormatters?: readonly FormatterEntry[]
   /** Pedido de rolar até um título (linha), vindo do sumário. */
   headingRequest?: { line: number; at: number }
+  /** Livros: leva o cursor a uma linha (a partir de 0) sem trocar de modo (clique num título da prévia ao lado). */
+  lineRequest?: { line: number; at: number }
+  /** Livros: linha do cursor (a partir de 1) a cada movimento, para a prévia ao lado acompanhar. */
+  onCursorLine?(line: number): void
   /** `false` esconde os segredos do mestre no modo leitura (versão dos jogadores). */
   showSecrets?: boolean
 }
@@ -124,7 +128,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra }: Props) {
+export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -351,6 +355,18 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
     const position = headings.findIndex((h) => h.line === headingRequest.line)
     setTimeout(() => reader.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[position]?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
   }, [headingRequest, index, path])
+
+  useEffect(() => {
+    if (!lineRequest) return
+    // Somente leitura: não há cursor; rola a leitura até o título daquela linha, se houver.
+    if (mode === "leitura") {
+      const position = (index.note(path)?.meta.headings ?? []).findIndex((h) => h.line === lineRequest.line)
+      const timer = window.setTimeout(() => reader.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[position]?.scrollIntoView({ block: "start" }), 60)
+      return () => window.clearTimeout(timer)
+    }
+    const timer = window.setTimeout(() => editor.current?.scrollToLine(lineRequest.line), 60)
+    return () => window.clearTimeout(timer)
+  }, [lineRequest])
 
   useEffect(() => {
     const listener = (event: Event) => {
@@ -659,7 +675,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
             }}
           >
             <SourceEditor onImageLinkContext={at => { const image = imageLinkAt(index,path,draft,at); if (!image) return false; renameImage(image); return true }} typewriter={typewriter} ref={editor} value={draft} docKey={`${path}:${docKey}`} readOnly={readOnly} onChange={setDraft} onSave={() => void flush()} suggestLinks={suggestLinks} livePreview={mode === "live" ? previewHost : null} onFiles={readOnly ? undefined : (files, at, how) => void addFiles(files, at, how === "colar")}
-              onSelection={setSelectionAt} onCursor={mode === "fonte" ? (line, column) => setCursorAt({ line, column }) : undefined} onSlashAction={slashAction} lineNumbers={appearance.codeLineNumbers} extraFormatters={extraFormatters} />
+              onSelection={setSelectionAt} onCursor={mode === "fonte" || onCursorLine ? (line, column) => { if (mode === "fonte") setCursorAt({ line, column }); onCursorLine?.(line) } : undefined} onSlashAction={slashAction} lineNumbers={appearance.codeLineNumbers} extraFormatters={extraFormatters} />
             {showSelectionBar && selectionAt && (
               <SelectionBar
                 ref={selectionBar}

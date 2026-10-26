@@ -1,5 +1,5 @@
 import { strToU8, zipSync, type Zippable } from "fflate"
-import { bookExportPlan, nodeXml, xml, type ExportBook, type ExportNode } from "./book"
+import { bookExportPlan, nodeXml, paperClass, xml, type ExportBook, type ExportNode } from "./book"
 import { bookProperties } from "../books"
 import { parseNote } from "../parse"
 import type { IndexedNote, VaultIndex } from "../vault-index"
@@ -23,7 +23,7 @@ export function generateHtml(book: ExportBook): Uint8Array {
     body = body.split(`"${asset.name}"`).join(`"${data}"`)
     css = css.split(asset.name).join(data)
   }
-  return strToU8(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'"><title>${xml(book.title)}</title><style>${css.replace(/<\/style/gi,"< /style")}</style><body class="book-paper tema-${book.theme}"><main class="book-print">${body}</main></body></html>`)
+  return strToU8(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'"><title>${xml(book.title)}</title><style>${css.replace(/<\/style/gi,"< /style")}</style><body class="${paperClass(book)}"><main class="book-print">${body}</main></body></html>`)
 }
 const rtfText = (text: string) => text.split("").map(c => c === "\\" || c === "{" || c === "}" ? "\\"+c : c === "\n" ? "\\line " : c.charCodeAt(0)>127 ? `\\u${c.charCodeAt(0)>32767?c.charCodeAt(0)-65536:c.charCodeAt(0)}?` : c).join("")
 export function generateRtf(book: ExportBook): Uint8Array {

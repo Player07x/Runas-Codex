@@ -41,7 +41,7 @@ Um branch e um PR por tarefa, a partir da `main` atualizada.
 | R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | R1 |
 | R3 | Cofre de 10 mil notas no emulador Android do CI | sim | pode começar |
 | R4 | Sala do celular pela internet (túnel no APK) | só se o dono decidir (D1) | decisão D1 |
-| R5 | Mestre pelo navegador na sala hospedada pelo celular | só se o dono pedir (D2) | decisão D2 |
+| R5 | Mestre pelo navegador na sala hospedada pelo celular | feita a pedido do dono (PRs #68 e #70, beta.17) | — |
 
 ### R1 — revisão completa com Android
 
