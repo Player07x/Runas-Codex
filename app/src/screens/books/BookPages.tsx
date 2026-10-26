@@ -17,6 +17,7 @@ import "@fontsource/eb-garamond/latin-500.css"
 import "@fontsource/eb-garamond/latin-600.css"
 import "@fontsource/eb-garamond/latin-700.css"
 import "@fontsource/eb-garamond/latin-700-italic.css"
+import "./book-fonts"
 import "./book-pages.css"
 import "./book-preview.css"
 
