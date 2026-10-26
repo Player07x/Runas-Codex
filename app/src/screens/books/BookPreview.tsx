@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { useNarrow } from "../../components/editor/use-narrow"
 import { bookStyle } from "../../core/book-style"
+import { CoverImagePicker } from "./CoverImagePicker"
 import { bookProperties, bookRoute } from "../../core/books"
 import { dirname } from "../../core/text"
 import { setProperty as setPropertyText, type PropertyValue } from "../../core/properties"
@@ -176,22 +177,29 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
   </section>
 }
 
+const COVER_FIELDS = [["titulo_capa", "Título na capa"], ["edicao", "Edição"], ["subtitulo", "Subtítulo"], ["autor", "Autor"], ["creditos", "Créditos"], ["contracapa", "Contracapa"]] as const
+
+/** Capa e créditos (L4): título e edição separados do nome da nota e a imagem pelo seletor (o desenho fica no Estilo). */
 function BookMetadata({ book, onClose }: { book: IndexedNote; onClose(): void }) {
   const vault = useVault()
-  const [base] = useState(book.text)
   const props = bookProperties(book)
+  const initial = useMemo<Record<string, string>>(() => Object.fromEntries([...COVER_FIELDS.map(([key]) => key), "capa"].map((key) => [key, typeof props[key] === "string" ? String(props[key]) : ""])), [book.path])
   const [title, setTitle] = useState(book.name)
-  const [values, setValues] = useState(() => Object.fromEntries(["subtitulo", "autor", "capa", "creditos", "contracapa"].map((key) => [key, typeof props[key] === "string" ? props[key] : ""])))
+  const [values, setValues] = useState<Record<string, string>>(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  return <form className="book-metadata" onSubmit={(event) => {
+  return <form className="book-metadata" aria-label="Capa e créditos" onSubmit={(event) => {
     event.preventDefault()
     if (busy) return
     setBusy(true)
     void (async () => {
       try {
-        if (vault.index?.note(book.path)?.text !== base) throw new Error("O livro mudou enquanto este formulário estava aberto. Feche e reabra para conferir os dados atuais.")
-        for (const [key, value] of Object.entries(values)) if (value !== (props[key] ?? "")) await vault.setProperty(book.path, key, value)
+        // Só o que mudou neste formulário vai para o livro, sobre o texto mais novo (o Estilo pode ter gravado no meio).
+        const note = vault.index?.note(book.path)
+        if (!note) throw new Error("O livro não está mais no cofre.")
+        let text = note.text
+        for (const [key, value] of Object.entries(values)) if (value !== initial[key]) text = setPropertyText(text, key, value.trim() ? value : undefined)
+        if (text !== note.text) await vault.save(book.path, text)
         if (title.trim() !== book.name) {
           const next = `${dirname(book.path)}/${title.trim()}.md`
           await vault.rename(book.path, next)
@@ -201,9 +209,10 @@ function BookMetadata({ book, onClose }: { book: IndexedNote; onClose(): void })
       } catch (err) { setError(String(err)); setBusy(false) }
     })()
   }}>
-    <label>Título (nome da nota)<input className="input" aria-label="Título da capa" required value={title} onChange={(e) => setTitle(e.target.value)} /></label>
-    {[["subtitulo", "Subtítulo"], ["autor", "Autor"], ["capa", "Imagem da capa (link para anexo)"], ["creditos", "Créditos"], ["contracapa", "Contracapa"]].map(([key, label]) => <label key={key}>{label}<textarea className="input" rows={key === "creditos" || key === "contracapa" ? 3 : 1} aria-label={label} value={values[key!] ?? ""} onChange={(e) => setValues({ ...values, [key!]: e.target.value })} /></label>)}
-    {error && <p role="alert">{error} As propriedades já gravadas permanecem na nota.</p>}
+    <label className="field"><span>Nome da nota</span><input className="input" aria-label="Nome da nota do livro" required value={title} onChange={(e) => setTitle(e.target.value)} /></label>
+    {COVER_FIELDS.map(([key, label]) => <label key={key} className="field"><span>{label}</span><textarea className="input" rows={key === "creditos" || key === "contracapa" ? 3 : 1} aria-label={label} placeholder={key === "titulo_capa" ? book.name : undefined} value={values[key] ?? ""} onChange={(e) => setValues({ ...values, [key]: e.target.value })} /></label>)}
+    <CoverImagePicker value={values.capa ?? ""} nearNote={book.path} onChange={(link) => setValues({ ...values, capa: link })} />
+    {error && <p role="alert">{error}</p>}
     <div className="row-wrap"><button className="btn primary" disabled={busy}>Salvar capa e créditos</button><button type="button" className="btn" disabled={busy} onClick={onClose}>Cancelar</button></div>
   </form>
 }

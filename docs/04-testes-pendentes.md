@@ -913,3 +913,20 @@ Decisões na [ADR 0033](adr/0033-livro-impresso.md).
 - [ ] Exportar EPUB e HTML com o Grimório e com o Moderno: cores e fontes iguais às da prévia; DOCX com a cor de destaque.
 - [ ] Celular: Diagramar aparece (antes ficava em branco); o botão **Estilo do livro** abre o painel acima das páginas;
   sem rolagem para os lados em 320 px.
+
+## Livros L4 — capa, sumário, aberturas e cabeçalhos (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Estilo do livro › Partes do livro › Capa: Clássica (moldura), Ilustrada (imagem grande) e Faixa (faixa colorida de
+  borda a borda). Em “Editar capa e créditos…”: título na capa e edição separados do nome da nota; a imagem escolhida
+  nas miniaturas do cofre ou “Do computador…” (vira anexo perto do livro).
+- [ ] “Sumário com o número das páginas”: o sumário sai depois da capa e dos créditos, com “Cap. 1”, as seções recuadas e
+  o número certo de cada página; no PDF exportado, clicar numa linha leva à página.
+- [ ] Capítulos: abertura Simples (“Capítulo 1” sobre o título), Faixa e Página inteira (com a imagem de `imagem:` do
+  capítulo, se houver); numeração em algarismos, romanos ou sem número; letra capitular (não aparece num primeiro
+  parágrafo de uma linha).
+- [ ] Cabeçalho e rodapé: o cabeçalho não aparece na capa, no sumário nem na página que abre o capítulo; trocar para “Só
+  o capítulo” e “Nenhum”; número da página no centro, na margem externa ou sem número.
+- [ ] Páginas espelhadas: margem de dentro maior, número do lado de fora, capítulo sempre começando numa página da
+  direita (com uma página em branco antes, quando precisa). Imprimir em frente e verso numa impressora de verdade.
