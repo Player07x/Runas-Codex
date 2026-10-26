@@ -1008,3 +1008,23 @@ nesta versão, conferir também:
 - [ ] Exportar o PDF do Valknut com o modelo e as fichas: comparar com o PDF de 25/10 (tamanho, fontes, títulos).
 - [ ] Instalar de novo o snippet `runas-codex.css` (Configurações › Obsidian e anexos) e conferir uma ficha `[!magia]`
   no Obsidian.
+
+## Livros — imagens dentro das fichas (26/10/2026)
+
+- [ ] No Valknut, as magias de Fogo e de Água mostram a arte dentro da ficha no Diagramar e no PDF (a imagem continua
+  fora do `>` na nota, como no Obsidian).
+- [ ] Converter em ficha uma magia de Vida (nome em negrito, “Custo: 1 PV · Feitiço”, “Requisito: …”, texto e imagem):
+  a imagem vai junto para dentro do `>` e não aparece “Custo: Custo:”.
+
+## Agenda — tarefas no painel (26/10/2026)
+
+- [ ] Agenda › painel › Tarefas: o texto da tarefa usa a largura toda; o prazo (📅) e a nota de origem ficam numa linha
+  embaixo, com reticências quando o nome da nota é longo. Clicar no nome da nota ainda abre a nota.
+- [ ] Numa consulta ```tasks numa nota larga, as tarefas continuam numa linha só (texto, prazo e nota).
+
+## Versão 0.1.0-beta.18 (26/10/2026)
+
+Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas acima); conferir também:
+
+- [ ] Atualizar da beta.17 para a beta.18 pelo botão “Verificar atualizações” (desktop e Android).
+- [ ] Exportar o PDF do Valknut e conferir as artes das magias de Fogo e de Água dentro das fichas.

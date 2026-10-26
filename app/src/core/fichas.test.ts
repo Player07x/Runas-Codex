@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { fichaKind, splitFicha, titleCase, toFicha } from "./fichas"
+import { fichaEnd, fichaKind, splitFicha, titleCase, toFicha } from "./fichas"
 
 describe("fichas de RPG (L5)", () => {
   it("reconhece os tipos de ficha, com e sem acento", () => {
@@ -32,5 +32,27 @@ describe("fichas de RPG (L5)", () => {
   it("recusa o que não está no formato", () => {
     expect(toFicha("Texto corrido sem nome em negrito.")).toBeNull()
     expect(toFicha("> [!magia] Já é ficha")).toBeNull()
+  })
+})
+
+describe("fichas do Valknut (correções de 26/10)", () => {
+  it("o rótulo repetido no valor não sai no livro", () => {
+    expect(splitFicha("magia", [{ label: "Custo", value: "Custo: 1 PV · " }, { label: "Tipo", value: "Feitiço" }]).tags).toEqual(["1 PV", "Feitiço"])
+  })
+  it("a linha do custo com rótulo e os campos das linhas seguintes", () => {
+    const text = "**CURA EM MASSA**\\\nCusto: 8 PV · Ritual\nMaterial: \\\nRequisito: Curar Feridas\n\nPara realizar o ritual…"
+    expect(toFicha(text)).toBe("> [!magia] Cura em Massa\n> **Custo:** 8 PV · **Tipo:** Ritual\n> **Requisito:** Curar Feridas\n>\n> Para realizar o ritual…")
+  })
+  it("a imagem logo depois do texto entra na ficha", () => {
+    const text = "**CURA MENTAL**\\\nCusto: 1 PV · Feitiço\n\nRemove 1 nível de Insanidade.\n\n**Truque**: Concede prevenção.\n\n![[Anexos/Imagens/Cura.png]]\n\n**CURAR FERIDAS**\\"
+    const to = text.indexOf("prevenção.") + "prevenção.".length
+    const end = fichaEnd(text, to)
+    expect(text.slice(0, end).endsWith("![[Anexos/Imagens/Cura.png]]")).toBe(true)
+    expect(toFicha(text.slice(0, end))).toBe("> [!magia] Cura Mental\n> **Custo:** 1 PV · **Tipo:** Feitiço\n>\n> Remove 1 nível de Insanidade.\n>\n> **Truque**: Concede prevenção.\n>\n> ![[Anexos/Imagens/Cura.png]]")
+  })
+  it("sem imagem logo depois, a ficha termina na seleção", () => {
+    const text = "**A**\\\n1 PV\n\nTexto.\n\nOutro parágrafo."
+    expect(fichaEnd(text, text.indexOf("Texto.") + 6)).toBe(text.indexOf("Texto.") + 6)
+    expect(fichaEnd("x\n![alt](arte.webp)\n", 1)).toBe(19)
   })
 })

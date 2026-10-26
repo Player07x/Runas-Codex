@@ -159,5 +159,5 @@
 .book-paper.fichas-fundo .book-print .ficha { padding: 3mm 3.5mm 2.5mm; border-radius: 1mm; background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
 .book-paper.fichas-faixa .book-print .ficha .callout-title { padding: .8mm 2.5mm; border-radius: .6mm; background: var(--accent); color: var(--paper); }
 .book-paper.fichas-faixa .book-print .ficha .ficha-tags { padding-left: 2.5mm; }
-/* Romance e Leitura fácil: fichas sem as imagens. */
-.book-paper:is(.modelo-romance, .modelo-facil) .book-print .ficha img { display: none; }
+/* O rótulo no texto (“Ampliação.”) é versalete reto, mesmo vindo de itálico sublinhado na nota. */
+.book-print .ficha .ficha-rotulo { font-style: normal; text-decoration: none; }

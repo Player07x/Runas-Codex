@@ -10,7 +10,7 @@
 .task-group-title { margin: 8px 0 2px; font-size: calc(13.5px * var(--font-scale, 1)); color: var(--muted); }
 h5.task-group-title { font-size: calc(12.5px * var(--font-scale, 1)); }
 h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
-.task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; container-type: inline-size; }
 .task-list.nested { padding-left: 22px; }
 .task-row { position: relative; }
 .task-main { display: flex; align-items: flex-start; gap: 8px; min-height: 30px; padding: 3px 0; }
@@ -22,7 +22,15 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
 .task-field { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); white-space: nowrap; }
 .task-field.late { color: var(--red); font-weight: 650; }
 .task-actions { display: flex; align-items: center; gap: 2px; flex: none; }
-.task-backlink { display: inline-flex; align-items: center; gap: 3px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-backlink { display: inline-block; max-width: min(100%, 260px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; color: var(--muted); text-decoration: none; }
+.task-backlink:hover { color: var(--text); text-decoration: underline; }
+.task-backlink svg { vertical-align: -2px; margin-right: 3px; }
+/* Lista estreita (o painel da Agenda): o texto da tarefa ocupa a linha toda; prazo e nota de origem vão embaixo. */
+@container (max-width: 560px) {
+  .task-text { flex: 1 1 100%; }
+  /* A nota de origem divide a linha com o prazo e encurta com reticências. */
+  .task-backlink { flex: 1 1 0; min-width: 6em; max-width: 100%; }
+}
 .task-btn { width: 26px; height: 26px; }
 .task-menu { position: absolute; z-index: 30; left: 22px; top: 100%; display: flex; flex-direction: column; gap: 2px; min-width: 190px; max-width: calc(100vw - 40px); padding: 8px; box-shadow: var(--shadow); }
 .task-menu .menu-item { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 8px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); text-align: left; cursor: pointer; }

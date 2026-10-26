@@ -120,6 +120,16 @@ hifenização. A tarefa está em [`docs/tarefas/livro-impresso.md`](../tarefas/l
   padrões do português, 6 KB, carregados quando o livro hifeniza): hífens suaves nas palavras de 6 letras ou mais do
   texto corrido, só na cópia que vai para o Paged.js. Liga por padrão quando o texto é justificado (`hifenizar:` muda).
 
+### Ajustes depois da beta.17 (26/10)
+- No Valknut, a imagem de cada magia fica **depois** do callout, fora do `>` (para o Markdown e o Obsidian, o callout acaba
+  ali). No livro, a imagem sozinha logo depois de uma ficha passa a ser a arte dela e entra na ficha; “Converter em
+  ficha” também leva junto a imagem que vem logo depois da seleção.
+- As fichas mostram as imagens em todos os modelos: esconder no Romance e no Leitura fácil (como na proposta) sumia com a
+  arte de quem escolheu esses modelos.
+- “Converter em ficha” reconhece “Custo: 1 PV” (antes saía `**Custo:** Custo: 1 PV`) e as linhas “Requisito: …” e
+  “Material: …” logo depois do custo; campo vazio não entra. No livro, o rótulo repetido no valor também some, e
+  “**Truque**:” e “*<u>Ampliação:</u>*” viram rótulos como “**Ampliação:**”. Rótulos não são hifenizados.
+
 ## Consequências
 - O smoke do desktop procura “Diagramar” no lugar de “Prévia” e confere a prévia ao lado (abrir, paginar, marcar a
   página do capítulo e refazer ao digitar no `--write`).

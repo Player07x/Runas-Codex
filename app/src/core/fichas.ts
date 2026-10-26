@@ -24,8 +24,11 @@ const OBVIOUS = new Set(["custo", "tipo", "alcance", "grupo", "categoria", "rari
 export function splitFicha(kind: FichaKind | "statblock", fields: FichaField[]): { tags: string[]; stats: FichaField[]; fields: FichaField[] } {
   const out = { tags: [] as string[], stats: [] as FichaField[], fields: [] as FichaField[] }
   for (const field of fields) {
-    const value = field.value.replace(/^[\s·•|,;]+|[\s·•|,;]+$/g, "")
     const label = field.label.replace(/[:.]+\s*$/, "").trim()
+    let value = field.value.replace(/^[\s·•|,;]+|[\s·•|,;]+$/g, "")
+    // “**Custo:** Custo: 1 PV” (o rótulo repetido no valor) sai como “1 PV”.
+    const repeated = /^(\p{L}[\p{L} ]*?)\s*:\s*/u.exec(value)
+    if (repeated && norm(repeated[1]!) === norm(label)) value = value.slice(repeated[0].length).trim()
     if (!value) continue
     if (OBVIOUS.has(norm(label))) out.tags.push(value)
     else if ((kind === "criatura" || kind === "statblock") && /\d/.test(value) && value.length <= 10) out.stats.push({ label, value })
@@ -44,32 +47,63 @@ export function titleCase(name: string): string {
 const SPELL_TYPES = new Set(["feitico", "ritual", "aura", "rapida", "encantamento"])
 const RANGES = new Set(["toque", "pessoal", "projetil", "alvos", "area", "cone", "linha"])
 
+/** Uma linha só com uma imagem (`![[arte.png]]` ou `![](arte.png)`). */
+const IMAGE_LINE = /^[ \t]*!\[(?:\[[^\]\n]+\]\]|[^\]\n]*\]\([^)\n]+\))[ \t]*$/
+
+/**
+ * Onde termina a ficha a converter: se logo depois do trecho (pulando linhas em branco) vem uma imagem sozinha, ela é a
+ * arte da magia e entra junto — no formato antigo a imagem fica depois do texto, e fora do `>` ela sairia da ficha.
+ */
+export function fichaEnd(text: string, to: number): number {
+  const match = /^(?:[ \t]*\r?\n)*([^\n]*)/.exec(text.slice(to))
+  return match && IMAGE_LINE.test(match[1]!.replace(/\r$/, "")) ? to + match[0].replace(/\r$/, "").length : to
+}
+
+/** “Rótulo: valor” de uma linha de campos (`Requisito: Cura Mental\`). */
+const LABELED = /^(\p{L}[\p{L} ]{0,24}?)\s*:\s*(.*)$/u
+
 /**
  * “Converter em ficha”: uma magia (ou runa) no formato antigo — nome em negrito numa linha, custo e tipo na linha de
- * baixo, depois o texto — vira o callout da ficha. Devolve `null` se o trecho não tem esse formato.
+ * baixo, outros campos (“Requisito: …”) em seguida, depois o texto e a imagem — vira o callout da ficha. Campo vazio
+ * (“Material:”) não entra. Devolve `null` se o trecho não tem esse formato.
  */
 export function toFicha(text: string, kind?: FichaKind): string | null {
   const lines = text.replace(/\r\n?/g, "\n").trim().split("\n")
   const name = /^(?:\*\*(.+?)\*\*|#{2,6}\s+(.+?))\s*\\?\s*$/.exec(lines[0] ?? "")
   if (!name) return null
   let rest = lines.slice(1)
-  let meta: string[] = []
-  const second = rest[0]?.trim() ?? ""
-  if (second && !second.startsWith("**") && second.length <= 100 && (/[·•|]/.test(second) || /\d\s*(?:PV|PA|PE|PR|pontos?)\b/i.test(second))) {
-    meta = second.replace(/\\$/, "").split(/\s*[·•|]\s*/).map((part) => part.trim()).filter(Boolean)
+  const tokens: string[] = []
+  const labeled: FichaField[] = []
+  // As linhas de campos vêm logo depois do nome, até a primeira linha em branco.
+  for (let first = true; rest.length; first = false) {
+    const line = rest[0]!.trim().replace(/\s*\\$/, "")
+    if (!line || line.startsWith("**") || line.length > 160) break
+    const isCost = first && (/[·•|]/.test(line) || /\d\s*(?:PV|PA|PE|PR|pontos?)\b/i.test(line))
+    if (isCost) tokens.push(...line.split(/\s*[·•|]\s*/).map((part) => part.trim()).filter(Boolean))
+    else if (LABELED.test(line)) { const [, label, value] = LABELED.exec(line)!; labeled.push({ label: label!.trim(), value: value!.trim() }) }
+    else break
     rest = rest.slice(1)
+  }
+  // “Custo: 1 PV” na linha do custo já traz o rótulo.
+  const meta: string[] = []
+  for (const token of tokens) {
+    const own = LABELED.exec(token)
+    if (own && norm(own[1]!) !== "custo") labeled.unshift({ label: own[1]!.trim(), value: own[2]!.trim() })
+    else meta.push(own ? own[2]!.trim() : token)
   }
   const cost = meta.filter((part) => /\d/.test(part) && /(?:PV|PA|PE|PR|pontos?)\b/i.test(part))
   const type = meta.filter((part) => !cost.includes(part) && SPELL_TYPES.has(norm(part)))
   const range = meta.filter((part) => !cost.includes(part) && RANGES.has(norm(part)))
   const other = meta.filter((part) => !cost.includes(part) && !type.includes(part) && !range.includes(part))
   const resolved = kind ?? (cost.some((part) => /pontos?/i.test(part)) ? "runa" : "magia")
-  const fields = [
+  const first = [
     cost.length ? `**Custo:** ${cost.join(" · ")}` : "",
     type.length || other.length ? `**Tipo:** ${[...type, ...other].join(" · ")}` : "",
     range.length ? `**Alcance:** ${range.join(" · ")}` : "",
   ].filter(Boolean).join(" · ")
+  const fields = [first, ...labeled.filter((field) => field.value).map((field) => `**${field.label}:** ${field.value}`)].filter(Boolean)
   while (rest.length && !rest[0]!.trim()) rest = rest.slice(1)
+  while (rest.length && !rest.at(-1)!.trim()) rest = rest.slice(0, -1)
   const body = rest.map((line) => (line.trim() ? `> ${line}` : ">"))
-  return [`> [!${resolved}] ${titleCase((name[1] ?? name[2])!.trim())}`, ...(fields ? [`> ${fields}`] : []), ...(body.length ? [">", ...body] : [])].join("\n")
+  return [`> [!${resolved}] ${titleCase((name[1] ?? name[2])!.trim())}`, ...fields.map((line) => `> ${line}`), ...(body.length ? [">", ...body] : [])].join("\n")
 }

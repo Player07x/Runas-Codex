@@ -25,7 +25,7 @@ export function loadHyphenator(): Promise<Hyphenate> {
 }
 
 /** Títulos, código, fórmulas, sumário, capa e as etiquetas das fichas não se partem. */
-const SKIP = "h1, h2, h3, h4, h5, h6, pre, code, kbd, .katex, .math, svg, .mermaid, .callout-title, .book-print-toc, .book-print-cover, .ficha-tags, .ficha-stats, .book-chapter-kicker"
+const SKIP = "h1, h2, h3, h4, h5, h6, pre, code, kbd, .katex, .math, svg, .mermaid, .callout-title, .book-print-toc, .book-print-cover, .ficha-tags, .ficha-stats, .ficha-campo, .ficha-rotulo, .book-chapter-kicker"
 
 export function hyphenateBook(root: HTMLElement, hyphenate: Hyphenate): void {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {

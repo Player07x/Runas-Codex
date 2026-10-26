@@ -1,5 +1,5 @@
 import { BookOpen, ChevronLeft, FileDown, History, LayoutGrid, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
-import { toFicha } from "../../core/fichas"
+import { fichaEnd, toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, moveBookItem, readBook, type BookItem } from "../../core/books"
 import { reviewComment } from "../../core/books-review"
@@ -274,7 +274,9 @@ export function BookEditor({ book }: { book: IndexedNote }) {
                 { label: "Citar da Wiki", icon: <Library size={15} />, run: () => { const range = editor.selection(); setRefQuery(range ? editor.text.slice(range.from, range.to) : ""); showSupport("referencias") } },
                 // L5: a magia no formato antigo (nome em negrito, custo e tipo embaixo, o texto) vira a ficha `[!magia]`.
                 { label: "Converter em ficha", icon: <ScrollText size={15} />, run: () => {
-                  const range = editor.selection()
+                  const selected = editor.selection()
+                  // A imagem que vem logo depois do texto é a arte da magia: entra na ficha (senão ficaria fora do `>`).
+                  const range = selected ? { from: selected.from, to: fichaEnd(editor.text, selected.to) } : null
                   const ficha = range ? toFicha(editor.text.slice(range.from, range.to)) : null
                   if (!range || !ficha) { setAnnouncement("Selecione o nome em negrito, a linha do custo e o texto da magia para converter em ficha."); setError("Converter em ficha: selecione o nome em negrito (ou ###), a linha do custo e o texto."); return }
                   setError("")
