@@ -4,7 +4,7 @@
   --text: var(--ink); --muted: #66594b; --faint: #776a5e; --cyan: #7b251c; --gold: #86672b;
   --violet: #665075; --red: #8b291d; --green: #3c5d36; --line: #cfbd99; --line-strong: #99814e;
   --panel: #f6efdf; --panel-2: #e9dfc9; --bg: #f6efdf; --bg-deep: #eee4cf;
-  --font-display: "Cinzel", serif; --book-body: "EB Garamond Variable", Georgia, serif;
+  --font-display: "Cinzel", serif; --book-body: "EB Garamond", "EB Garamond Variable", Georgia, serif;
   color: var(--ink); background: var(--paper); color-scheme: light;
 }
 .book-paper.tema-pergaminho { --paper: #ead7b2; --panel: #ead7b2; --panel-2: #dcca9e; --bg: #ead7b2; --ink: #493522; --accent: #694421; }
@@ -62,3 +62,15 @@
 :is(.book-print,.books-editor) :is(.runas-colunas-1,.runas-colunas-2,.runas-colunas-3,.runas-colunas-4) { column-gap:6mm; column-fill:balance; widows:2; orphans:2; }
 :is(.book-print,.books-editor) :is(.runas-colunas-1,.runas-colunas-2,.runas-colunas-3,.runas-colunas-4)>:is(h1,h2,h3,h4) { break-after:avoid; }
 @media(max-width:600px) { .books-editor .note-editor .md :is(.runas-colunas-2,.runas-colunas-3,.runas-colunas-4) { column-count:1; } }
+
+/* L2 (ADR 0033): o papel não leva os guias do editor e o texto não se parte em lugares ruins. */
+/* O contorno tracejado dos blocos ::: ajuda a editar; impresso, virava moldura. */
+.book-print .md-container { border: 0; border-radius: 0; padding: 0; }
+/* No mínimo 3 linhas de cada lado de uma quebra: textos curtos não se dividem entre as colunas. */
+.book-print p, .book-print li { orphans: 3; widows: 3; }
+.book-print :is(.runas-colunas-1, .runas-colunas-2, .runas-colunas-3, .runas-colunas-4) { widows: 3; orphans: 3; }
+/* Título nunca no pé da coluna ou da página; o “título de bloco” à mão (**NOME**\ + linha de baixo) também conta. */
+.book-print :is(h1, h2, h3, h4, h5, h6), .book-print p:has(> strong:first-child + br) { break-after: avoid; break-inside: avoid; }
+/* A imagem logo depois de um parágrafo fica com ele (nas notas ela vem depois do texto a que pertence). */
+.book-print p:has(> img:only-child), .book-print p:has(> .embed-image:only-child), .book-print figure { break-before: avoid; break-inside: avoid; }
+.book-print p:has(> img) { break-inside: avoid; }

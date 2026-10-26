@@ -24,9 +24,16 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
   // O atalho lê o estado na hora da tecla (registrar de novo a cada mudança deixava uma janela sem o atalho certo).
   const readyNow = useRef(ready)
   readyNow.current = ready
+  // Na impressora, o fundo do papel só sai se o livro pedir (gasta tinta); o PDF para ler continua com ele (L2).
+  const plainPrint = bookProperties(book).fundo_impressao !== true
+  const plainNow = useRef(plainPrint)
+  plainNow.current = plainPrint
   function requestPrint(name?: string) {
-    try { void Promise.resolve(vault.platform.printDocument?.(name)).catch(error => setError(String(error))) }
-    catch (error) { setError(String(error)) }
+    const plain = plainNow.current
+    if (plain) document.body.classList.add("book-print-plain")
+    const done = () => document.body.classList.remove("book-print-plain")
+    try { void Promise.resolve(vault.platform.printDocument?.(name)).catch(error => setError(String(error))).finally(done) }
+    catch (error) { setError(String(error)); done() }
   }
   useEffect(() => {
     const print = (event: KeyboardEvent) => {
@@ -84,6 +91,7 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
       <label>Página<select className="input" aria-label="Tamanho da página" value={settings.size} disabled={vault.info?.readOnly} onChange={(e) => void change("pagina", e.target.value as BookSize)}>{Object.keys(BOOK_SIZES).map((size) => <option key={size}>{size}</option>)}</select></label>
       <label className="check"><input type="checkbox" checked={settings.newChapter} disabled={vault.info?.readOnly} onChange={(e) => void change("capitulos_nova_pagina", e.target.checked)} />Capítulos em página nova</label>
       <button className="btn" onClick={() => setMetadata(!metadata)} disabled={vault.info?.readOnly}>Editar capa e créditos</button>
+      <label className="check"><input type="checkbox" checked={!plainPrint} disabled={vault.info?.readOnly} onChange={(e) => void change("fundo_impressao", e.target.checked)} />Fundo do papel na impressão</label>
       </>}
       <button className="btn" disabled={!ready || !vault.platform.printDocument} onClick={() => requestPrint(book.name)}>{vault.platform.kind === "capacitor" ? "Imprimir" : "Imprimir (Ctrl+P)"}</button>
       <label>Formato<select className="input" aria-label="Formato de exportação" value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="docx">DOCX</option><option value="html">HTML offline</option><option value="rtf">RTF</option>{siteEnabled && <option value="site">Site offline (ZIP, uma página por nota)</option>}{!documentMode && <><option value="md">Markdown único</option><option value="zip">Pasta Markdown (ZIP)</option></>}</select></label>

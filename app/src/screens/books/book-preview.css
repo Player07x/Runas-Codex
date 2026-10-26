@@ -43,3 +43,8 @@
 @media print {
  body.book-preview-open .panel-controls,body.book-preview-open .panel-edge { display:none!important; }
 }
+
+/* Imprimir sem o fundo do papel (padrão; “Fundo do papel na impressão” liga). O PDF exportado não usa esta classe. */
+@media print {
+  body.book-print-plain .book-preview-output .pagedjs_page, body.book-print-plain .book-preview-output .pagedjs_sheet { background: #fff !important; background-image: none !important; }
+}

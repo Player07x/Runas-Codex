@@ -8,6 +8,13 @@ import { NoteSetContext } from "../../lib/note-set"
 import { vaultNoteSet } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { paginate, readyForPagination, type Pagination } from "./pagination"
+// EB Garamond estática só para o livro: a variável (a do app) sai como fonte Type 3 no PDF (L2, ADR 0033).
+import "@fontsource/eb-garamond/latin-400.css"
+import "@fontsource/eb-garamond/latin-400-italic.css"
+import "@fontsource/eb-garamond/latin-500.css"
+import "@fontsource/eb-garamond/latin-600.css"
+import "@fontsource/eb-garamond/latin-700.css"
+import "@fontsource/eb-garamond/latin-700-italic.css"
 import "./book-pages.css"
 import "./book-preview.css"
 
