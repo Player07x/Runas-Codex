@@ -1,5 +1,8 @@
 # Tarefas abertas e responsáveis — 22/10/2026
 
+> **Desatualizado desde 23/10/2026.** Várias fases listadas abaixo como abertas já estão na `main` (beta.16). O que
+> falta para a 1.0 está em [`rumo-a-1.0.md`](rumo-a-1.0.md).
+
 Este inventário cruza a fila e a tabela de situação de [`README.md`](README.md), o handoff do rework
 ([`codex-durante-rework.md`](codex-durante-rework.md)) e as conferências manuais de
 [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md). “Aberta” inclui implementação local sem publicação,
