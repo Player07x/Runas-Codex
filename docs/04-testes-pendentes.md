@@ -877,3 +877,22 @@ O núcleo e o transporte reutilizam o contrato do mestre remoto do desktop. A in
 
 - [ ] Mestre remoto no desktop: confirmar que cenas existentes carregam tokens, paredes e demais objetos da cena. A R5
   também corrige o argumento opcional da consulta remota, mantendo a diferença entre “todos” e “sem pai”.
+
+## R5 — painel de controle por outro aparelho (25/10/2026)
+
+A interface foi concluída pelo Codex por solicitação explícita do dono, substituindo o encaminhamento ao Claude Code
+registrado acima. O mesmo bloco atende Android e desktop com instruções específicas para cada hospedeiro.
+
+- [ ] Em celular/tablet físicos, nos temas claro e escuro: abrir Sala, conferir “Controlar por outro aparelho”, revelar
+  e esconder link/QR. A mesa continua no celular que hospeda; somente um aparelho controla pelo navegador.
+- [ ] Com TalkBack e leitor de tela desktop: conferir título do bloco, rótulo do link, estado expandido, avisos de
+  conexão, erro e sucesso. Com teclado, conferir Tab, Shift+Tab, Enter e Espaço e o retorno de foco após as ações.
+- [ ] Copiar o link; se o sistema negar a cópia, conferir a mensagem e a seleção do campo para copiar manualmente.
+- [ ] Com mestre conectado, usar “Trocar chave” e “Desconectar” no painel: o navegador perde acesso, o estado se
+  atualiza e o foco retorna ao controle de revelar. Trocar chave deixa o novo link/QR ocultos até pedir novamente.
+- [ ] Repetir no desktop, com link local e público, conferindo a indicação de gravação no computador.
+
+Verificação local automatizada do componente: teclado/foco, estados de falha/recuperação, cópia, troca de chave e
+desconexão; reflow e alvos de 44 px em 320, 768 e 1280 px nos dois temas. A árvore de acessibilidade foi inspecionada;
+leitura falada em TalkBack/leitor desktop e uso físico permanecem não verificados. O teste da sala no emulador também
+exercita os controles reais do painel e registra `android-controle-mestre.png`.

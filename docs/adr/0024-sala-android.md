@@ -41,8 +41,9 @@ Criar/abrir/fechar mesas, ligar/desligar a sala e administrar a chave continuam 
   pedidos atrasados de uma sala anterior. Trocar de mesa/cofre ou retirar a gravação fecha o transporte e revoga o mestre.
 - `VttApi.master` no Android fornece `state`, `onState`, `rotate` e `disconnect`, com o mesmo `MasterState` do desktop.
   O link é `masterLink(playerState.localUrl, masterState.key)`. O painel existente já detecta essa capacidade e mantém
-  link/QR escondidos até pedir. O ajuste de textos para “Controlar por outro aparelho”, estados e acessibilidade do painel
-  fica com o Claude Code, conforme a divisão do PR #67; não foi criado outro fluxo de tela nesta tarefa.
+  link/QR escondidos até pedir. O painel compartilhado “Controlar por outro aparelho” orienta sobre o hospedeiro correto
+  (celular ou computador), avisa sobre o controle da mesa e recebe o estado real da conexão. A interface da R5 foi
+  concluída pelo Codex após autorização explícita do dono, substituindo a atribuição inicial ao Claude Code do PR #67.
 - O serviço em primeiro plano, as travas e as regras de segundo plano permanecem os da X7. Não há túnel público novo.
 
 Validação da R5: testes Java de chave, sessão, canais, SSE, revogação, origem/Host/cotas, importação e Range; testes
@@ -60,3 +61,12 @@ A criação de objetos no navegador usa `newDocumentId`, com 128 bits de `crypto
 HTTP na LAN. `crypto.randomUUID` exige contexto seguro e não pode ser usado para criar tokens, cenas ou desenhos
 quando o mestre abre um IP privado por HTTP. O teste da interface retira essa API do localhost confiável do `adb forward`,
 cria um token pela ferramenta do canvas e confere sua gravação, além de selecionar o token existente.
+
+O painel consulta o estado com tratamento de falha e nova tentativa. Durante copiar, trocar chave e desconectar,
+recusa ações repetidas e anuncia o resultado ou o erro. Link e QR só entram no documento após revelar; ao mudar a
+chave ou o endereço, ficam ocultos novamente. A geração assíncrona do QR descarta resultados antigos. A cópia só
+anuncia sucesso depois da confirmação do clipboard; se indisponível, seleciona o campo rotulado para cópia manual.
+O controle de revelar conserva o foco ao expandir/recolher e o recebe após trocar chave ou desconectar. Os alvos têm
+44 px, os estados usam regiões de status/alerta e o layout refluí a partir de 320 px com os tokens dos dois temas.
+O job `android-room` verifica revelar/esconder e estado conectado, e troca a chave e desconecta pela interface real
+do hospedeiro, em vez de chamar esses métodos diretamente na ponte de teste.
