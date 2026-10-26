@@ -97,18 +97,21 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
         check('link antigo deixa de funcionar', (await fetch(url)).status === 404)
         const masterUrl = `${base}/master?m=${state.key}`
         const target = await browser.send('Target.createTarget', { url: masterUrl })
-        let masterBrowser
+        let masterBrowser, clickPoint
         try {
           masterBrowser = await connectDevtools(chromeEndpoint, tab => tab.url === masterUrl)
           await masterBrowser.until(`document.querySelector('.table-title')?.textContent.includes('Sala Android X7') && document.querySelector('canvas')`)
+          await masterBrowser.send('Page.bringToFront')
           await masterBrowser.until(`Number(document.querySelector('canvas')?.dataset.viewZoom) > 0`)
           await masterBrowser.run('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
           const point = await masterBrowser.run(`(() => {
             const canvas = document.querySelector('canvas'), box = canvas.getBoundingClientRect(), zoom = Number(canvas.dataset.viewZoom)
             return { x: box.x + Number(canvas.dataset.viewX) + 450 * zoom, y: box.y + Number(canvas.dataset.viewY) + 150 * zoom }
           })()`)
-          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
-          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
+          clickPoint = point
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point, button: 'none', buttons: 0 })
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', buttons: 1, clickCount: 1 })
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', buttons: 0, clickCount: 1 })
           await masterBrowser.until(`[...document.querySelectorAll('.properties input')].some(input => input.value === 'Token do tablet R5')`)
           check('mestre seleciona no canvas o token gravado pelo tablet', true)
           check('mesma RemoteVttApi abre mesa real pelo navegador', masterBrowser.errors.length === 0)
@@ -118,6 +121,12 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
           await masterBrowser.until(`document.querySelector('[role="alert"]')`)
           check('desconectar encerra mestre no navegador', true)
         } finally {
+          if (masterBrowser) {
+            const evidence = await masterBrowser.run(`({ body: document.body.innerText, inputs: [...document.querySelectorAll('.properties input')].map(input => input.value), canvas: [...document.querySelectorAll('canvas')].map(canvas => ({ view: {...canvas.dataset}, box: canvas.getBoundingClientRect().toJSON() })) })`)
+            await writeFile(`${output}/mestre-diagnostico.json`, JSON.stringify({ clickPoint, evidence, errors: masterBrowser.errors, network: masterBrowser.network }, null, 2))
+            const last = await masterBrowser.send('Page.captureScreenshot', { format: 'png' })
+            await writeFile(`${output}/mestre-ultimo-estado.png`, Buffer.from(last.data, 'base64'))
+          }
           masterBrowser?.close()
           await browser.send('Target.closeTarget', { targetId: target.targetId })
         }
