@@ -893,3 +893,60 @@ Decisões na [ADR 0033](adr/0033-livro-impresso.md).
   documento é o do livro e o PDF é marcado para leitor de tela.
 - [ ] Imprimir (Ctrl+P): sai sem o fundo creme; com “Fundo do papel na impressão” ligado, sai com ele. O PDF exportado
   continua com o fundo.
+
+## Livros L3 — Estilo do livro e modelos (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Diagramar: o painel **Estilo do livro** à esquerda. Trocar entre Manual de RPG, Grimório (com moldura), Romance,
+  Moderno e Leitura fácil: a prévia muda na hora e, um segundo depois, o livro ganha `modelo:` (o `tema:` antigo some).
+- [ ] Livros antigos com `tema: pergaminho`, `moderno` ou `minimalista` abrem com o modelo equivalente marcado.
+- [ ] Tipografia: trocar as fontes de títulos e de texto, o tamanho (− e +), a entrelinha e o alinhamento; voltar ao
+  valor do modelo apaga a propriedade do livro. **Desfazer** volta o último ajuste.
+- [ ] Cores: papel, texto e destaque; “Fundo também na impressão”; textura e marca d’água.
+- [ ] Página: tamanho, colunas do livro (1, 2, 3), capítulos em página nova, margem, sangria e marcas de corte. Um
+  capítulo com `colunas: 1` nas propriedades sai em uma coluna; o que usa `::: runas-colunas-2` continua como está.
+- [ ] **Salvar como modelo…**: cria `Livros/Modelos/<nome>.md` (abra no Obsidian: propriedades comuns) e o livro passa a
+  usá-lo; outro livro pode escolher o mesmo modelo no painel; mudar uma propriedade da nota de modelo muda os dois.
+- [ ] Fonte do cofre: pôr um `.ttf` ou `.otf` em `Anexos/Fontes`; ele aparece em “Do cofre” nas listas de fontes e o PDF
+  sai com ela.
+- [ ] Exportar EPUB e HTML com o Grimório e com o Moderno: cores e fontes iguais às da prévia; DOCX com a cor de destaque.
+- [ ] Celular: Diagramar aparece (antes ficava em branco); o botão **Estilo do livro** abre o painel acima das páginas;
+  sem rolagem para os lados em 320 px.
+
+## Livros L4 — capa, sumário, aberturas e cabeçalhos (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Estilo do livro › Partes do livro › Capa: Clássica (moldura), Ilustrada (imagem grande) e Faixa (faixa colorida de
+  borda a borda). Em “Editar capa e créditos…”: título na capa e edição separados do nome da nota; a imagem escolhida
+  nas miniaturas do cofre ou “Do computador…” (vira anexo perto do livro).
+- [ ] “Sumário com o número das páginas”: o sumário sai depois da capa e dos créditos, com “Cap. 1”, as seções recuadas e
+  o número certo de cada página; no PDF exportado, clicar numa linha leva à página.
+- [ ] Capítulos: abertura Simples (“Capítulo 1” sobre o título), Faixa e Página inteira (com a imagem de `imagem:` do
+  capítulo, se houver); numeração em algarismos, romanos ou sem número; letra capitular (não aparece num primeiro
+  parágrafo de uma linha).
+- [ ] Cabeçalho e rodapé: o cabeçalho não aparece na capa, no sumário nem na página que abre o capítulo; trocar para “Só
+  o capítulo” e “Nenhum”; número da página no centro, na margem externa ou sem número.
+- [ ] Páginas espelhadas: margem de dentro maior, número do lado de fora, capítulo sempre começando numa página da
+  direita (com uma página em branco antes, quando precisa). Imprimir em frente e verso numa impressora de verdade.
+
+## Livros L5 — fichas de RPG e hifenização (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Escrever uma magia como ficha (`> [!magia] Nome`, `> **Custo:** 1 PV · **Tipo:** Feitiço · **Alcance:** Área`, o
+  texto, `> **Ampliação:** …`, a imagem): no livro sai o nome em versalete, “1 PV · Feitiço · Área” em itálico, Ampliação
+  e Truque marcados e a imagem dentro da ficha, sem nenhuma régua. Um `**Material:**` vazio não aparece.
+- [ ] As outras fichas: `[!runa]`, `[!habilidade]`, `[!item]`, `[!criatura]` (atributos em linha), `[!raca]`,
+  `[!classe]`, `[!efeito]`. No Obsidian (com o snippet ligado), cada uma é um callout com cor e ícone próprios.
+- [ ] Estilo do livro › Fichas: Tipográfica, Fundo suave e Faixa no nome.
+- [ ] Caixas sem réguas no livro: descritivo (itálico, fundo suave), barra lateral, nota/dica/aviso/perigo (só o título
+  pequeno colorido), segredo.
+- [ ] Em Escrever, selecionar uma magia no formato antigo (nome em negrito, custo embaixo, o texto) › “Converter em ficha”
+  na barra da seleção.
+- [ ] Diagramar › “Versão dos jogadores (sem segredos)”: os segredos somem da prévia e do PDF; o arquivo sai com
+  “(jogadores)” no nome.
+- [ ] Hifenização: com o texto justificado, as palavras longas se partem no fim da linha com hífen (sem buracos grandes
+  nas colunas); “Hifenizar em português” desligado volta ao de antes. Conferir se copiar texto do PDF não traz hífens
+  estranhos.

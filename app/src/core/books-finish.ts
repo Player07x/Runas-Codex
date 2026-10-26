@@ -65,6 +65,6 @@ export function scopeBookCss(input: string): string {
 export function bookDecorationCss(book: IndexedNote): string {
   const o = printOptions(book)
   const texture = o.texture === "linho" ? "repeating-linear-gradient(90deg, #00000006 0 1px, transparent 1px 3px),repeating-linear-gradient(0deg,#00000006 0 1px,transparent 1px 3px)" : o.texture === "papel" ? "radial-gradient(#00000012 .5px, transparent .5px)" : "none"
-  const color = o.background ? `--paper:${o.background};--panel:${o.background};` : ""
-  return `.book-paper {${color}} .book-paper .pagedjs_sheet,.book-paper .book-print {background-image:${texture};background-size:${o.texture === "papel"?"5px 5px":"auto"}} .book-paper .pagedjs_pagebox::after,body.book-paper > .book-print::before {content:${JSON.stringify(o.watermark).replace(/</g,"\\3c ")}; position:absolute;inset:40% 0 auto;text-align:center;transform:rotate(-30deg);font:40pt serif;opacity:.12;pointer-events:none} ${scopeBookCss(o.css)}`
+  // A cor do papel (`fundo_pagina`, hoje `cor_papel`) vem do estilo do livro (core/book-style.ts, L3).
+  return `.book-paper .pagedjs_sheet,.book-paper .book-print {background-image:${texture};background-size:${o.texture === "papel"?"5px 5px":"auto"}} .book-paper .pagedjs_pagebox::after,body.book-paper > .book-print::before {content:${JSON.stringify(o.watermark).replace(/</g,"\\3c ")}; position:absolute;inset:40% 0 auto;text-align:center;transform:rotate(-30deg);font:40pt serif;opacity:.12;pointer-events:none} ${scopeBookCss(o.css)}`
 }
