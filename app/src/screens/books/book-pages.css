@@ -52,8 +52,8 @@
 .book-print .footnotes { font-size: 9pt; }
 .book-print .md-sumario a { font-size: 9pt; }
 .book-print .embed-note { padding: 2mm; border-radius: 0; }
-.book-paper.tema-minimalista .callout { box-shadow: none; border-width: 0 0 0 2px; background: transparent; }
-.book-paper.tema-moderno .callout { border-left: 3px solid var(--accent); }
+.book-paper.modelo-facil .callout { box-shadow: none; border-width: 0 0 0 2px; background: transparent; }
+.book-paper.modelo-moderno .callout { border-left: 3px solid var(--accent); }
 
 :is(.book-print,.books-editor) .runas-colunas-1 { column-count:1; }
 :is(.book-print,.books-editor) .runas-colunas-2 { column-count:2; }
@@ -79,3 +79,9 @@
 .book-print h1.book-chapter-heading { font-size: 24pt; line-height: 1.15; letter-spacing: .02em; margin: 0 0 6mm; }
 .book-print h2.book-section-title { font-size: 16pt; letter-spacing: 0; margin: 5mm 0 3mm; }
 .book-print h2 { border-bottom: 0; padding-bottom: 0; }
+
+/* L3: o estilo resolvido (core/book-style.ts) chega como variáveis no .book-paper; os temas antigos viraram modelos. */
+.book-print { font-size: var(--book-size, 11pt); line-height: var(--book-leading, 1.4); }
+.book-print p, .book-print li { text-align: var(--book-align, left); }
+.book-print :is(.book-chapter, .book-section) > .md { column-count: var(--book-columns, 1); column-gap: 6mm; }
+.book-paper.modelo-moderno .callout, .book-paper.modelo-facil .callout { box-shadow: none; }

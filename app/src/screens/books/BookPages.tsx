@@ -3,6 +3,8 @@ import { Markdown } from "../../components/Markdown"
 import { bookProperties } from "../../core/books"
 import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings } from "../../core/books-preview"
 import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
+import { resolveStyle, styleCss } from "../../core/book-style"
+import { parseNote } from "../../core/parse"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteSetContext } from "../../lib/note-set"
 import { vaultNoteSet } from "../../lib/vault-notes"
@@ -50,6 +52,15 @@ export const BookPages = forwardRef<BookPagesHandle, {
   let decoration = "", cssError = ""
   try { decoration = bookDecorationCss(book) } catch (e) { cssError = String(e) }
   const data = bookProperties(book)
+  // Estilo do livro (L3): modelo pronto, nota de modelo (`modelo: "[[…]]"` com `tipo: modelo-livro`) e o que o livro muda.
+  const modelNote = (() => {
+    if (typeof data.modelo !== "string" || !data.modelo.startsWith("[[")) return undefined
+    const link = parseNote(data.modelo).links[0]
+    const dest = link ? index.resolve(link, book.path).dest : undefined
+    const note = dest ? index.note(dest) : undefined
+    return note && bookProperties(note).tipo === "modelo-livro" ? bookProperties(note) : undefined
+  })()
+  const style = resolveStyle(data, modelNote)
   const source = useRef<HTMLDivElement>(null)
   const output = useRef<HTMLDivElement>(null)
   const scroll = useRef<HTMLDivElement>(null)
@@ -71,8 +82,8 @@ export const BookPages = forwardRef<BookPagesHandle, {
   const chapters = onlyPath ? all.filter((chapter) => chapter.path === onlyPath) : all
   const whole = !onlyPath
   // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
-  const signature = JSON.stringify([book.text, chapters, vault.version, onlyPath])
-  const paperClass = `book-paper tema-${settings.theme}`
+  const signature = JSON.stringify([book.text, chapters, vault.version, onlyPath, style])
+  const paperClass = `book-paper modelo-${style.model} fichas-${style.fichas}`
 
   useEffect(() => {
     const controller = new AbortController()
@@ -132,6 +143,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
 
   return <>
     {(state.error || cssError) && <p className="proto-note" role="alert">{state.error || cssError}</p>}
+    <style>{styleCss(style)}</style>
     {decoration && <style>{decoration}</style>}
     <div className={`book-preview-scroll ${className}`} ref={scroll} onScroll={onScroll}>
       <div className={`book-preview-output ${paperClass} zoom-${zoom}`} ref={output} style={{ zoom: scale }} aria-busy={!state.ready} aria-hidden={decorative || undefined} onClick={onPagesClick} />
@@ -147,7 +159,12 @@ export const BookPages = forwardRef<BookPagesHandle, {
         {whole && typeof data.creditos === "string" && data.creditos.trim() && <section className="book-print-credits"><h1>Créditos</h1><p>{data.creditos}</p></section>}
         {chapters.map((chapter, i) => {
           const { title, body } = chapterTitle(chapter)
-          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
+          // Colunas do livro: o capítulo pode pedir outra (`colunas:`); quem já arruma as próprias colunas com
+          // `::: runas-colunas-N` (ou `[!colunas]`) fica com uma, para não haver colunas dentro de colunas.
+          const own = /^(?:::: *runas-colunas-\d|> *\[!colunas\])/m.test(body)
+          const asked = index.note(chapter.path) ? bookProperties(index.note(chapter.path)!).colunas : undefined
+          const columns = own ? 1 : asked === 1 || asked === 2 || asked === 3 ? asked : undefined
+          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"} style={columns ? { ["--book-columns" as string]: columns } : undefined}>
             {title !== null && (chapter.kind === "secao" ? <h2 className="book-chapter-heading book-section-title">{title}</h2> : <h1 className="book-chapter-heading">{title}</h1>)}
             {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={body} showSecrets={showSecrets} />}
           </section>
