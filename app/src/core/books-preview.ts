@@ -1,4 +1,5 @@
 import { bookAppendices, type PrintOptions } from "./books-finish"
+import { bookLayout, layoutPageRules, type BookLayout } from "./book-layout"
 import { bookProperties, readBook } from "./books"
 import { noteBody } from "./sections"
 import type { IndexedNote, VaultIndex } from "./vault-index"
@@ -24,15 +25,14 @@ export function previewChapters(index: VaultIndex, book: IndexedNote, draft?: { 
     ? { path: item.note.path, title: item.note.name, kind: item.kind, body: noteBody(draft?.path === item.note.path ? draft.text : item.note.text) }
     : { path: item.link, title: "Link quebrado", kind: "secao", body: `Nota não encontrada: ${item.link}` }), ...bookAppendices(index, book, draft)]
 }
-/** Só valores enumerados e dimensões conhecidas entram no CSS; metadados não viram regras. */
-export function pageRules(size: BookSize, options?: PrintOptions): string {
+/**
+ * Só valores enumerados e dimensões conhecidas entram no CSS; metadados não viram regras. As regras do layout vão por
+ * último: o Paged.js escolhe a página nomeada (`page:`) pela ordem das regras, não pela especificidade.
+ */
+export function pageRules(size: BookSize, options?: PrintOptions, layout: BookLayout = bookLayout({}), newChapter = true): string {
   const page = BOOK_SIZES[size]
-  return `@page { size: ${page.width}mm ${page.height}mm; margin: ${options?.margin ?? page.margin}mm; bleed: ${options?.bleed ?? 0}mm; marks: ${options?.crop ? "crop" : "none"};
-    @top-left { content: string(book-title); font-size: 8pt; }
-    @top-right { content: string(chapter-title); font-size: 8pt; }
-    @bottom-center { content: counter(page); font-size: 9pt; }
-  }
-  @page cover { @top-left { content: none; } @top-right { content: none; } @bottom-center { content: none; } }
+  const margin = options?.margin ?? page.margin
+  return `@page { size: ${page.width}mm ${page.height}mm; margin: ${margin}mm; bleed: ${options?.bleed ?? 0}mm; marks: ${options?.crop ? "crop" : "none"}; }
   .book-print-title { string-set: book-title content(text); }
   .book-chapter-heading { string-set: chapter-title content(text); }
   .book-print-cover { page: cover; break-after: page; }
@@ -45,5 +45,20 @@ export function pageRules(size: BookSize, options?: PrintOptions): string {
   .book-print h1, .book-print h2, .book-print h3 { break-after: avoid; }
   .book-print p { orphans: 3; widows: 3; }
   .book-print tr, .book-print figure, .book-print .callout { break-inside: avoid; }
+  ${layoutPageRules(page, margin, layout, newChapter)}
   `
+}
+
+const titleKey = (text: string) => text.replace(/[*_`~=]/g, "").replace(/\s+/g, " ").trim().toLocaleLowerCase("pt-BR")
+
+/**
+ * Um título por capítulo (L2, ADR 0033). Capítulo, parte e apêndice mostram o nome da nota; o `#` do começo da nota
+ * só sai se for diferente dele (senão repetiria). A seção usa o próprio título do começo da nota e só ganha o nome
+ * da nota quando não tem nenhum.
+ */
+export function chapterTitle(chapter: PreviewChapter): { title: string | null; body: string } {
+  const first = /^(?:[ \t]*\r?\n)*[ \t]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*(?:\r?\n|$)/.exec(chapter.body)
+  if (chapter.kind === "secao") return { title: first ? null : chapter.title, body: chapter.body }
+  if (first && first[1] === "#" && titleKey(first[2]!) === titleKey(chapter.title)) return { title: chapter.title, body: chapter.body.slice(first[0].length) }
+  return { title: chapter.title, body: chapter.body }
 }

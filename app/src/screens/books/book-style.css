@@ -1,0 +1,57 @@
+/* Estilo do livro (L3): painel à esquerda do Diagramar, em grupos recolhíveis. Cores só pelos tokens do app; as
+   miniaturas dos modelos usam as cores do papel de cada modelo (são amostras do livro, não da interface). */
+.book-style-panel { min-height: 0; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); }
+.book-style-head { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.book-style-head h2 { margin: 0 auto 0 0; font-size: calc(15px * var(--font-scale, 1)); }
+.book-style-save { display: grid; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.book-style-error { color: var(--red); font-size: calc(13px * var(--font-scale, 1)); }
+.book-style-groups { margin: 0; padding: 0; border: 0; min-width: 0; }
+.book-style-group { border-bottom: 1px solid var(--line); }
+.book-style-group > summary { display: flex; align-items: center; min-height: 40px; padding: 8px 14px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.book-style-group > summary:hover { color: var(--text); }
+.book-style-group[open] > summary { color: var(--text); }
+.book-style-body { display: grid; gap: 10px; padding: 0 14px 14px; }
+.book-style-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: calc(13px * var(--font-scale, 1)); }
+.book-style-row > span:first-child { color: var(--muted); }
+.book-style-row .select { width: auto; max-width: 170px; }
+.book-style-row .kit-choice-option { min-height: 30px; padding: 0 9px; }
+.book-number { width: 90px; }
+.book-color { width: 44px; height: 30px; padding: 2px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--bg); cursor: pointer; }
+.book-stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg); }
+.book-stepper output { min-width: 58px; text-align: center; font-variant-numeric: tabular-nums; }
+.book-css { font-family: var(--font-mono, monospace); font-size: calc(12.5px * var(--font-scale, 1)); }
+
+/* Modelos: uma miniatura de página por modelo, escolhida como rádio (setas trocam). */
+.book-models { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.book-model { position: relative; display: grid; gap: 4px; justify-items: center; padding: 4px; border: 1px solid transparent; border-radius: 10px; color: var(--muted); font-size: calc(11.5px * var(--font-scale, 1)); text-align: center; cursor: pointer; }
+.book-model input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.book-model:hover { color: var(--text); background: var(--panel-2); }
+.book-model.on { border-color: var(--cyan); color: var(--text); font-weight: 650; background: color-mix(in srgb, var(--cyan) 10%, transparent); }
+.book-model:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.book-model-page { display: grid; align-content: start; gap: 4px; width: 100%; aspect-ratio: 210 / 297; padding: 14% 12%; border-radius: 2px; box-shadow: 0 0 0 1px var(--line), 0 2px 6px rgb(0 0 0 / 18%); overflow: hidden; }
+.book-model-page b { font-size: 17px; line-height: 1; }
+.book-model-lines { display: flex; gap: 8%; height: 46px; opacity: .4; }
+.book-model-lines i { flex: 1; background: repeating-linear-gradient(to bottom, currentColor 0 2px, transparent 2px 6px); }
+.book-model-name { overflow-wrap: anywhere; }
+
+@media (max-width: 860px) {
+  .book-style-panel { flex: none; max-height: 60vh; border-right: 0; border-bottom: 1px solid var(--line); }
+  .book-style-group > summary, .book-style-head .btn, .book-stepper .btn, .book-model { min-height: 44px; }
+  .book-style-row .kit-choice-option, .book-style-body .check, .book-color { min-height: 44px; }
+  .book-style-row .select { min-height: 44px; }
+}
+
+/* Seletor da imagem da capa (L4): miniaturas do cofre como rádios, com filtro. */
+.book-cover-picker { display: grid; gap: 8px; margin: 0; padding: 10px; border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.book-cover-picker legend { padding: 0 4px; color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); font-weight: 650; }
+.book-cover-picker input[type=search] { flex: 1 1 160px; width: auto; }
+.book-cover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 260px; overflow: auto; padding: 2px; }
+.book-cover-thumb { position: relative; display: grid; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); cursor: pointer; }
+.book-cover-thumb input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.book-cover-thumb img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; background: var(--panel-2); }
+.book-cover-thumb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-cover-thumb.on { border-color: var(--cyan); color: var(--text); font-weight: 650; box-shadow: 0 0 0 1px var(--cyan); }
+.book-cover-thumb:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
+/* Escolhas com rótulos longos ficam embaixo do nome, em vez de apertar a coluna. */
+.book-style-row:has(.kit-choice) { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+@media (max-width: 860px) { .book-cover-thumb { min-height: 44px; } }

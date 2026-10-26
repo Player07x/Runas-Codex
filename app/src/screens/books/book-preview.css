@@ -1,4 +1,7 @@
-.book-preview { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); }
+/* Diagramar: Estilo do livro à esquerda, as páginas no meio (L3). A prévia de documento não tem o painel. */
+.book-preview { flex: 1; min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(270px, 310px) minmax(0, 1fr); border-left: 1px solid var(--line); }
+.book-preview.document-mode { display: flex; flex-direction: column; }
+.book-diagram { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .book-preview-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
 .book-preview-controls > strong { margin-right: auto; }
 .book-preview-controls label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: calc(12px * var(--font-scale, 1)); }
@@ -16,7 +19,8 @@
 .book-metadata { padding: 12px; display: grid; gap: 10px; max-height: 55vh; overflow: auto; border-bottom: 1px solid var(--line); }
 .book-metadata label { display: grid; gap: 5px; }
 @media (max-width: 860px) {
-  .books-view-previa .books-main, .books-view-previa .books-binder { display: none; }
+  .book-preview { display: flex; flex-direction: column; overflow: auto; }
+  .book-diagram { flex: 1 0 auto; }
   .book-preview-controls button, .book-preview-controls select { min-height: 44px; }
   .book-preview-controls .check { min-height: 44px; }
 }
@@ -31,8 +35,8 @@
   body.book-preview-open .book-preview-output { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   /* A prévia mora dentro da área principal do livro (rework F3b): ela aparece, e a barra, o sumário e os avisos saem. */
   body.book-preview-open .books-editor, body.book-preview-open .books-layout, body.book-preview-open .books-main, body.book-preview-open .book-preview,
-  body.book-preview-open .book-preview-scroll { display: block !important; position: static; overflow: visible !important; height: auto !important; padding: 0; }
-  body.book-preview-open .book-bar, body.book-preview-open .books-binder, body.book-preview-open .doc-notice, body.book-preview-open .book-finish-settings,
+  body.book-preview-open .book-diagram, body.book-preview-open .book-preview-scroll { display: block !important; position: static; overflow: visible !important; height: auto !important; padding: 0; }
+  body.book-preview-open .book-bar, body.book-preview-open .books-binder, body.book-preview-open .doc-notice, body.book-preview-open .book-style-panel,
   body.book-preview-open .book-preview-controls, body.book-preview-open .book-metadata, body.book-preview-open .book-preview-source { display: none !important; }
 }
 @media print {
@@ -43,3 +47,9 @@
 @media print {
  body.book-preview-open .panel-controls,body.book-preview-open .panel-edge { display:none!important; }
 }
+
+/* Imprimir sem o fundo do papel (padrão; “Fundo do papel na impressão” liga). O PDF exportado não usa esta classe. */
+@media print {
+  body.book-print-plain .book-preview-output .pagedjs_page, body.book-print-plain .book-preview-output .pagedjs_sheet { background: #fff !important; background-image: none !important; }
+}
+.book-diagram .book-metadata { max-width: 860px; }

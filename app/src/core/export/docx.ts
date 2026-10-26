@@ -19,7 +19,8 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
   const page = BOOK_SIZES[book.size]
   const width = (page.width - 2 * page.margin) * 96 / 25.4
   let contentWidth = width
-  const theme = { manual: "7B251C", pergaminho: "694421", moderno: "215A79", minimalista: "222222" }[book.theme]
+  // Cor de destaque e fonte do texto do estilo do livro (L3); o Word usa a fonte se ela estiver instalada.
+  const theme = (book.style?.accent ?? "#7b251c").slice(1).toUpperCase()
   const assets = new Map(book.assets.map((a) => [a.name, a]))
   function inline(nodes: ExportNode[], style: IRunOptions = {}): ParagraphChild[] {
     return nodes.flatMap((node): ParagraphChild[] => {
@@ -137,6 +138,6 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
   book.sections.forEach((section, i) => { if (i) pending.push(new Paragraph({ children: [new PageBreak()] })); flow(section.nodes) })
   flush()
   if (!sections.length) sections.push({ properties: properties(), children: [new Paragraph(book.title)] })
-  const document = new Document({ title: book.title, creator: book.author, description: "Exportado das notas do Runas-Codex", sections, numbering: { config: numbering }, styles: { default: { document: { run: { font: book.theme === "manual" || book.theme === "pergaminho" ? "EB Garamond" : "Geist", size: 22, language: { value: "pt-BR" } } }, heading1: { run: { color: theme, bold: true, size: 36 } }, heading2: { run: { color: theme, bold: true, size: 28 } } } } })
+  const document = new Document({ title: book.title, creator: book.author, description: "Exportado das notas do Runas-Codex", sections, numbering: { config: numbering }, styles: { default: { document: { run: { font: book.style?.textFont ?? "EB Garamond", size: 22, language: { value: "pt-BR" } } }, heading1: { run: { color: theme, bold: true, size: 36 } }, heading2: { run: { color: theme, bold: true, size: 28 } } } } })
   return new Uint8Array(await (await Packer.toBlob(document)).arrayBuffer())
 }

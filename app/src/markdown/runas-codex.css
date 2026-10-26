@@ -32,6 +32,22 @@
   border-bottom: 2px solid rgb(var(--callout-color));
 }
 
+/* Fichas de RPG (Livros, L5): no Obsidian são callouts comuns, com cor e ícone próprios e o nome em versalete. O livro
+   impresso do Runas-Codex reorganiza os campos; aqui nada muda nas notas. */
+.callout[data-callout="magia"] { --callout-color: 214, 104, 82; --callout-icon: lucide-sparkles; }
+.callout[data-callout="runa"] { --callout-color: 214, 160, 72; --callout-icon: lucide-gem; }
+.callout[data-callout="habilidade"] { --callout-color: 96, 168, 132; --callout-icon: lucide-star; }
+.callout[data-callout="item"] { --callout-color: 141, 154, 219; --callout-icon: lucide-sword; }
+.callout[data-callout="criatura"] { --callout-color: 222, 103, 77; --callout-icon: lucide-paw-print; }
+.callout[data-callout="raca"],
+.callout[data-callout="raça"] { --callout-color: 150, 120, 220; --callout-icon: lucide-users; }
+.callout[data-callout="classe"] { --callout-color: 105, 150, 200; --callout-icon: lucide-shield; }
+.callout[data-callout="efeito"] { --callout-color: 120, 180, 190; --callout-icon: lucide-flask-conical; }
+.callout:is([data-callout="magia"], [data-callout="runa"], [data-callout="habilidade"], [data-callout="item"], [data-callout="criatura"], [data-callout="raca"], [data-callout="raça"], [data-callout="classe"], [data-callout="efeito"]) .callout-title-inner {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+
 /* Colunas e bloco largo: callouts sem a caixa */
 .callout[data-callout="colunas"],
 .callout[data-callout="largo"] {

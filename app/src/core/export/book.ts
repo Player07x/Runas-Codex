@@ -1,4 +1,5 @@
 import { bookProperties, readBook } from "../books"
+import { bookStyle, type BookStyle } from "../book-style"
 import { previewChapters, previewSettings } from "../books-preview"
 import type { IndexedNote, VaultIndex } from "../vault-index"
 
@@ -13,6 +14,8 @@ export interface ExportSection { title: string; kind: string; path: string; node
 export interface ExportBook {
   title: string; author: string; language: string; identifier: string
   theme: ReturnType<typeof previewSettings>["theme"]; size: ReturnType<typeof previewSettings>["size"]
+  /** Estilo do livro (L3); sem ele, o Manual de RPG. */
+  style?: BookStyle
   sections: ExportSection[]; assets: ExportAsset[]; css: string; warnings: string[]
   navigation?: boolean
 }
@@ -24,7 +27,7 @@ export function bookExportPlan(index: VaultIndex, book: IndexedNote, draft?: { p
   const data = bookProperties(book)
   return {
     title: book.name, author: typeof data.autor === "string" ? data.autor : "", language: "pt-BR",
-    identifier: `urn:runas:${encodeURIComponent(book.path)}`, ...previewSettings(book),
+    identifier: `urn:runas:${encodeURIComponent(book.path)}`, ...previewSettings(book), style: bookStyle(index, book),
     sections: [
       ...(data.exportar_capa === false ? [] : [{ path: book.path, title: book.name, kind: "capa", body: "" }]),
       ...(typeof data.creditos === "string" && data.creditos.trim() ? [{ path: book.path, title: "Créditos", kind: "creditos", body: data.creditos }] : []),
@@ -42,3 +45,6 @@ export function nodeXml(node: ExportNode): string {
   if (["img", "br", "hr", "input", "wbr", "source", "col"].includes(node.tag)) return `<${node.tag}${attrs} />`
   return `<${node.tag}${attrs}>${node.children.map(nodeXml).join("")}</${node.tag}>`
 }
+
+/** Classes do corpo dos arquivos exportados: as mesmas do papel da prévia (o CSS do livro vem junto). */
+export const paperClass = (book: Pick<ExportBook, "style">) => `book-paper modelo-${book.style?.model ?? "manual"} fichas-${book.style?.fichas ?? "tipografica"}`
