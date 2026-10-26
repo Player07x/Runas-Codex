@@ -283,3 +283,9 @@ Feitos pelo Codex na pasta principal, sem commit; reunidos e conferidos pelo Cla
 A ADR do túnel foi criada como 0027 e renumerada para **0032**: a 0027 é do rework (cores, capas e imagens).
 
 O inventário das frentes ainda abertas e dos responsáveis está em [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md).
+
+## Rumo à 1.0 (25/10/2026)
+
+O rework visual e os itens do Codex saíram na beta.16. O que falta para a versão 1.0, por responsável (Codex, Claude
+Code e dono), com as decisões pendentes do dono, está em [`rumo-a-1.0.md`](rumo-a-1.0.md). Ele substitui o inventário
+[`abertas-e-responsaveis.md`](abertas-e-responsaveis.md).
