@@ -995,3 +995,16 @@ Decisões na [ADR 0033](adr/0033-livro-impresso.md).
 - [ ] Hifenização: com o texto justificado, as palavras longas se partem no fim da linha com hífen (sem buracos grandes
   nas colunas); “Hifenizar em português” desligado volta ao de antes. Conferir se copiar texto do PDF não traz hífens
   estranhos.
+
+## Versão 0.1.0-beta.17 (26/10/2026)
+
+Entram os Livros L1–L5 (PRs #69, #71, #72, #73 e #74) e a R5 (PRs #67, #68 e #70). As listas de cada fase estão acima;
+nesta versão, conferir também:
+
+- [ ] Atualizar da beta.16 para a beta.17 pelo botão “Verificar atualizações” (desktop e Android) e conferir que o cofre,
+  o PIN e as preferências continuam.
+- [ ] Abrir no Diagramar um livro antigo (com `tema:`): ele abre com o modelo equivalente; trocar de modelo apaga o
+  `tema:` do livro.
+- [ ] Exportar o PDF do Valknut com o modelo e as fichas: comparar com o PDF de 25/10 (tamanho, fontes, títulos).
+- [ ] Instalar de novo o snippet `runas-codex.css` (Configurações › Obsidian e anexos) e conferir uma ficha `[!magia]`
+  no Obsidian.
