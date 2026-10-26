@@ -101,6 +101,15 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
         try {
           masterBrowser = await connectDevtools(chromeEndpoint, tab => tab.url === masterUrl)
           await masterBrowser.until(`document.querySelector('.table-title')?.textContent.includes('Sala Android X7') && document.querySelector('canvas')`)
+          await masterBrowser.until(`Number(document.querySelector('canvas')?.dataset.viewZoom) > 0`)
+          const point = await masterBrowser.run(`(() => {
+            const canvas = document.querySelector('canvas'), box = canvas.getBoundingClientRect(), zoom = Number(canvas.dataset.viewZoom)
+            return { x: box.x + Number(canvas.dataset.viewX) + 450 * zoom, y: box.y + Number(canvas.dataset.viewY) + 150 * zoom }
+          })()`)
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
+          await masterBrowser.until(`[...document.querySelectorAll('.properties input')].some(input => input.value === 'Token do tablet R5')`)
+          check('mestre seleciona no canvas o token gravado pelo tablet', true)
           check('mesma RemoteVttApi abre mesa real pelo navegador', masterBrowser.errors.length === 0)
           const shot = await masterBrowser.send('Page.captureScreenshot', { format: 'png' })
           await writeFile(`${output}/mestre-no-navegador.png`, Buffer.from(shot.data, 'base64'))
