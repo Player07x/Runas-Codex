@@ -20,6 +20,20 @@ public final class RoomHttpServer implements AutoCloseable {
 
     void counts(int players, int spectators);
 
+    default String masterWorld() throws Exception {
+      throw new IOException("Mesa indisponível.");
+    }
+
+    default String masterCall(String channel, String body, Set<String> allowed) throws Exception {
+      throw new SecurityException();
+    }
+
+    default String masterImport(String kind, String name, byte[] bytes) throws Exception {
+      throw new SecurityException();
+    }
+
+    default void masterState(String key, boolean connected) {}
+
     default String slotId(String seat) {
       return seat;
     }
@@ -81,6 +95,16 @@ public final class RoomHttpServer implements AutoCloseable {
             return t;
           });
   private volatile boolean closed;
+  private volatile RoomMasterRemote master;
+
+  public synchronized void enableMaster(Collection<String> channels, Collection<String> events) {
+    if (master != null) master.close();
+    master = new RoomMasterRemote(authority, files, channels, events);
+  }
+
+  RoomMasterRemote master() {
+    return master;
+  }
 
   private static final class Client {
     final Socket socket;
@@ -198,6 +222,21 @@ public final class RoomHttpServer implements AutoCloseable {
       String path = uri.getPath();
       boolean authorized = key.equals(query(uri, "k"));
       boolean origin = validOrigin(headers.get("origin"), host);
+      if (path.equals("/master") || path.startsWith("/master/")) {
+        String address = socket.getInetAddress().getHostAddress();
+        if (blocked(address, false)) {
+          respond(out, 429, "application/json", new byte[0], false, headers("Retry-After", "60"));
+          return;
+        }
+        RoomMasterRemote current = master;
+        if (current == null || !origin || !current.authorized(query(uri, "m"))) {
+          blocked(address, true);
+          respond(out, 404, "text/plain", new byte[0], false, headers());
+          return;
+        }
+        current.handle(socket, in, out, request[0], uri, headers);
+        return;
+      }
       if (path.equals("/socket") && "GET".equals(request[0])) {
         upgrade(socket, in, out, headers, authorized, origin);
         return;
@@ -294,29 +333,7 @@ public final class RoomHttpServer implements AutoCloseable {
         respond(out, 404, "text/plain", new byte[0], head, headers());
         return;
       }
-      try (ResourceStream body = new ResourceStream(resource.stream)) {
-        long start = 0, end = resource.size - 1;
-        String range = headers.get("range");
-        Map<String, String> extra = new LinkedHashMap<>();
-        extra.put("Accept-Ranges", "bytes");
-        if (range != null) {
-          long[] parsed = range(range, resource.size);
-          if (parsed == null) {
-            extra.put("Content-Range", "bytes */" + resource.size);
-            respond(out, 416, resource.mime, new byte[0], head, extra);
-            return;
-          }
-          start = parsed[0];
-          end = parsed[1];
-          extra.put("Content-Range", "bytes " + start + "-" + end + "/" + resource.size);
-        }
-        long length = Math.max(0, end - start + 1);
-        writeHeaders(out, range == null ? 200 : 206, resource.mime, length, extra);
-        if (!head) {
-          skip(body.stream, start);
-          copy(body.stream, out, length);
-        }
-      }
+      serve(out, resource, headers, head);
     } catch (Exception ignored) {
       /* Entrada inválida ou conexão encerrada: nunca enviar detalhes do cofre. */
     } finally {
@@ -324,6 +341,37 @@ public final class RoomHttpServer implements AutoCloseable {
       try {
         socket.close();
       } catch (IOException ignored) {
+      }
+    }
+  }
+
+  static void serve(OutputStream out, Resource resource, Map<String, String> headers, boolean head)
+      throws IOException {
+    if (resource == null) {
+      respond(out, 404, "text/plain", new byte[0], head, headers());
+      return;
+    }
+    try (ResourceStream body = new ResourceStream(resource.stream)) {
+      long start = 0, end = resource.size - 1;
+      String range = headers.get("range");
+      Map<String, String> extra = new LinkedHashMap<>();
+      extra.put("Accept-Ranges", "bytes");
+      if (range != null) {
+        long[] parsed = range(range, resource.size);
+        if (parsed == null) {
+          extra.put("Content-Range", "bytes */" + resource.size);
+          respond(out, 416, resource.mime, new byte[0], head, extra);
+          return;
+        }
+        start = parsed[0];
+        end = parsed[1];
+        extra.put("Content-Range", "bytes " + start + "-" + end + "/" + resource.size);
+      }
+      long length = Math.max(0, end - start + 1);
+      writeHeaders(out, range == null ? 200 : 206, resource.mime, length, extra);
+      if (!head) {
+        skip(body.stream, start);
+        copy(body.stream, out, length);
       }
     }
   }
@@ -368,7 +416,7 @@ public final class RoomHttpServer implements AutoCloseable {
     return origin == null || origin.equals("http://" + host);
   }
 
-  private static Map<String, String> headers(String... pairs) {
+  static Map<String, String> headers(String... pairs) {
     Map<String, String> result = new LinkedHashMap<>();
     for (int i = 0; i < pairs.length; i += 2) result.put(pairs[i], pairs[i + 1]);
     return result;
@@ -390,10 +438,16 @@ public final class RoomHttpServer implements AutoCloseable {
     return out.toString();
   }
 
-  private static String query(URI uri, String name) {
+  static String query(URI uri, String name) {
     for (String part : (uri.getRawQuery() == null ? "" : uri.getRawQuery()).split("&")) {
       String[] pair = part.split("=", 2);
-      if (pair.length == 2 && pair[0].equals(name)) return pair[1];
+      if (pair.length == 2 && pair[0].equals(name)) {
+        try {
+          return URLDecoder.decode(pair[1], "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          return "";
+        }
+      }
     }
     return "";
   }
@@ -547,6 +601,8 @@ public final class RoomHttpServer implements AutoCloseable {
   @Override
   public void close() {
     closed = true;
+    RoomMasterRemote currentMaster = master;
+    if (currentMaster != null) currentMaster.close();
     try {
       listener.close();
     } catch (IOException ignored) {
@@ -570,7 +626,7 @@ public final class RoomHttpServer implements AutoCloseable {
     return b;
   }
 
-  private static byte[] readExactly(InputStream in, int size) throws IOException {
+  static byte[] readExactly(InputStream in, int size) throws IOException {
     byte[] result = new byte[size];
     int offset = 0;
     while (offset < size) {
@@ -640,7 +696,7 @@ public final class RoomHttpServer implements AutoCloseable {
     return out.toByteArray();
   }
 
-  private static void respond(
+  static void respond(
       OutputStream out,
       int status,
       String mime,

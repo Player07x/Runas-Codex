@@ -1,3 +1,4 @@
+import { newDocumentId } from "../shared/document-id"
 // O PixiJS gera shaders com `new Function` por padrão; este módulo oficial
 // troca isso por código pré-compilado, e a CSP da interface continua sem unsafe-eval.
 import "pixi.js/unsafe-eval"
@@ -1421,14 +1422,14 @@ export class SceneView {
         this.drawRuler(point, point, true)
         break
       case "token": {
-        const id = crypto.randomUUID().replaceAll("-", "")
+        const id = newDocumentId()
         const center = this.freePlacement ? point : snapTokenCenter(point, 1, grid)
         this.handlers.onPut({ id, type: "token", parentId, data: { name: "Token", x: center.x, y: center.y, size: 1, disposition: "hostile" } })
         this.pendingSelection = id
         break
       }
       case "note": {
-        const id = crypto.randomUUID().replaceAll("-", "")
+        const id = newDocumentId()
         const center = this.freePlacement || grid.type === "none" ? point : cellCenter(point, grid)
         this.handlers.onPut({ id, type: "note", parentId, data: { x: center.x, y: center.y, label: "Nota" } })
         this.pendingSelection = id
@@ -1441,14 +1442,14 @@ export class SceneView {
         this.interaction = { type: "region", start: this.snapHalfCell(point, (event.altKey || this.freePlacement)) }
         break
       case "sound": {
-        const id = crypto.randomUUID().replaceAll("-", "")
+        const id = newDocumentId()
         const center = (event.altKey || this.freePlacement) || grid.type === "none" ? point : cellCenter(point, grid)
         this.handlers.onPut({ id, type: "sound", parentId, data: { x: center.x, y: center.y } })
         this.pendingSelection = id
         break
       }
       case "light": {
-        const id = crypto.randomUUID().replaceAll("-", "")
+        const id = newDocumentId()
         const center = (event.altKey || this.freePlacement) || grid.type === "none" ? point : cellCenter(point, grid)
         this.handlers.onPut({ id, type: "light", parentId, data: { x: center.x, y: center.y } })
         this.pendingSelection = id
@@ -1456,7 +1457,7 @@ export class SceneView {
       }
       case "draw":
         if (this.drawOptions.shape === "text") {
-          const id = crypto.randomUUID().replaceAll("-", "")
+          const id = newDocumentId()
           this.handlers.onPut({ id, type: "drawing", parentId, data: { ...this.drawOptions, shape: "text", x: point.x, y: point.y, text: "Texto" } })
           this.pendingSelection = id
           break
@@ -1606,7 +1607,7 @@ export class SceneView {
       this.overlay.clear()
       const end = this.snapWallPoint(point, (event.altKey || this.freePlacement))
       if (Math.hypot(end.x - interaction.start.x, end.y - interaction.start.y) * this.world.scale.x < 4) return
-      const id = crypto.randomUUID().replaceAll("-", "")
+      const id = newDocumentId()
       this.handlers.onPut({ id, type: "wall", parentId: scene.id, data: { x1: interaction.start.x, y1: interaction.start.y, x2: end.x, y2: end.y, kind: this.wallKind } })
       return
     }
@@ -1616,7 +1617,7 @@ export class SceneView {
       const width = Math.abs(end.x - interaction.start.x)
       const height = Math.abs(end.y - interaction.start.y)
       if (width * this.world.scale.x < 6 || height * this.world.scale.x < 6) return
-      const id = crypto.randomUUID().replaceAll("-", "")
+      const id = newDocumentId()
       this.handlers.onPut({ id, type: "region", parentId: scene.id, data: { name: "Região", shape: this.regionShape, x: Math.min(interaction.start.x, end.x), y: Math.min(interaction.start.y, end.y), width, height } })
       this.pendingSelection = id
       return
@@ -1650,7 +1651,7 @@ export class SceneView {
     if (interaction.type === "draw") {
       this.overlay.clear()
       const options = this.drawOptions
-      const id = crypto.randomUUID().replaceAll("-", "")
+      const id = newDocumentId()
       if (options.shape === "freehand") {
         const xs = interaction.points.filter((_, index) => index % 2 === 0)
         const ys = interaction.points.filter((_, index) => index % 2 === 1)

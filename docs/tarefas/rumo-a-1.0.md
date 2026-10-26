@@ -41,7 +41,7 @@ Um branch e um PR por tarefa, a partir da `main` atualizada.
 | R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | R1 |
 | R3 | Cofre de 10 mil notas no emulador Android do CI | sim | pode começar |
 | R4 | Sala do celular pela internet (túnel no APK) | só se o dono decidir (D1) | decisão D1 |
-| R5 | Mestre pelo navegador, sem o app | só se o dono pedir (D2) | decisão D2 |
+| R5 | Mestre pelo navegador na sala hospedada pelo celular | só se o dono pedir (D2) | decisão D2 |
 
 ### R1 — revisão completa com Android
 
@@ -83,6 +83,49 @@ documento da R1 (núcleo ou tela).
 Não começar sem a resposta do dono (decisões D1 e D2 abaixo). O estudo do túnel está na
 [ADR 0032](../adr/0032-tunel-publico-android.md).
 
+### R5 — mestre pelo navegador na sala hospedada pelo celular
+
+**O que já existe e não entra aqui.** Com a sala aberta **no computador**, o mestre já controla a mesa pelo navegador de
+qualquer celular ou tablet, sem instalar nada: a sala serve `/master?m=<chave>` (C3, [ADR 0016](../adr/0016-mestre-remoto.md)).
+O que falta é o mesmo quando a sala está hospedada **no celular** (X7, [ADR 0024](../adr/0024-sala-android.md)): hoje o
+servidor Java do Android serve só a página dos jogadores e, de propósito, não expõe a interface do mestre. Caso de uso:
+o celular fica na mesa hospedando a sala e o mestre comanda de um tablet ou notebook pelo navegador.
+
+**Como fazer** (mesmo contrato da ADR 0016, para a página do mestre não mudar):
+
+1. **Servidor Java** (`mobile/android/.../room/RoomHttpServer.java`): servir `master.html` e os arquivos do build em
+   `/master`, com uma **chave do mestre** separada da dos jogadores (128 bits, nova a cada vez que a sala liga,
+   comparada em tempo constante). Um aparelho de mestre por vez: o canal de eventos abre uma sessão, as chamadas
+   exigem `x-runas-session`, um segundo aparelho recebe 409. Valem as regras da ADR 0024: só endereços privados ou de
+   loopback, `Host` numérico, `Origin` igual, limites de tamanho e de frequência.
+2. **Ponte para a mesa** (`app/src/platform/android-room.ts`): a autoridade continua sendo a mesa no WebView. Cada
+   chamada `POST /master/call/<canal>` vira um pedido novo na ponte que já existe (`kind: "master"`, ao lado de
+   `join`, `snapshot` e `message`), que chama o mesmo tratador da mesa local. Só os canais de `MASTER_CHANNELS`
+   (`app/src/vtt/shared/master.ts`); o resto recebe 403. As mudanças voltam por Server-Sent Events, como no desktop,
+   e a `RemoteVttApi` (`app/src/vtt/remote-api.ts`) não muda.
+3. **Assets:** `GET /master/asset/<tipo>/<arquivo>` lê da pasta da mesa (também no SAF, com streams e Range);
+   `POST /master/asset` importa imagens até 50 MB, o limite que o Android já usa.
+4. **Revogar:** “Trocar chave” e “Desconectar” derrubam o aparelho na hora; desligar a sala, trocar de mesa ou de cofre,
+   ou retirar a gravação também encerram a sessão do mestre. A chave nunca aparece na notificação da sala.
+5. **Segundo plano:** a sessão do mestre continua com a tela apagada, como a sala (o serviço em primeiro plano que já
+   existe).
+6. **Tela (Claude Code):** no painel Sala do Android, “Controlar por outro aparelho” com o QR escondido até pedir, o
+   aviso de que quem tem o link controla a mesa, “Trocar chave” e “Desconectar” — o mesmo bloco do desktop. O Codex
+   expõe o estado (link, aparelho conectado) pela `VttApi`; o Claude Code desenha.
+
+**Testes:** no job `android-room` do CI, com o emulador hospedando a sala: um script abre `/master` com a chave (via
+`adb forward`), cria um token, e a mesa do celular grava; um segundo aparelho recebe 409; um canal fora da lista recebe
+403; trocar a chave invalida o link; um jogador no navegador vê o token novo. Os testes do desktop não mudam.
+
+**Documentação:** atualizar a ADR 0024 (seção do mestre) e acrescentar no fim de `docs/04-testes-pendentes.md` a
+conferência num aparelho físico: celular hospedando, tablet comandando, um jogador entrando, tela do celular apagada.
+
+**Pronto quando:** com a sala no celular, um tablet na mesma rede comanda a mesa pelo navegador (cria token, troca a
+cena transmitida, toca áudio), um jogador vê as mudanças, trocar a chave derruba o tablet e o CI passa inteiro.
+
+**Fora do escopo:** controlar pela internet (depende da R4), mais de um aparelho de mestre ao mesmo tempo, e abrir,
+criar ou fechar mesas pelo navegador (no desktop isso também é só do computador).
+
 ## Claude Code
 
 | # | Tarefa | Obrigatória? | Depende de |
@@ -117,7 +160,7 @@ Cada uma muda o que entra na 1.0. A recomendação é do Claude Code; nada come�
 | # | Pergunta | Recomendação | Alternativa |
 |---|---|---|---|
 | D1 | A sala do celular pela internet entra na 1.0? | Depois da 1.0: o APK continua leve; pela internet, hospedar no desktop | Entra: o Codex embute o `cloudflared` (cerca de 20 MB) e mede a bateria (R4) |
-| D2 | Mestre pelo navegador, sem o app? | Depois da 1.0: o mestre pelo celular já cobre a mesa presencial | Antes da 1.0 (R5) |
+| D2 | Comandar pelo navegador a sala hospedada no celular? (com a sala no computador isso já existe) | Depois da 1.0: hospedando no computador, o mestre já comanda pelo navegador de qualquer aparelho | Antes da 1.0 (R5) |
 | D3 | Captura rápida no GNOME com Wayland | Aceitar o atalho do sistema criado por um botão do app (T3) | Esperar o portal de atalhos globais do GNOME, sem data |
 | D4 | Qual versão vira 1.0.0 | A que sair depois da sessão real (V4) e da revisão com Android (R1, R2) | A que sair quando T1 a T6 ficarem prontas |
 
@@ -137,5 +180,5 @@ marcada; o que foi até a beta.13 e o Android logo depois já foi aprovado pelo 
 
 - Migrar do Notion, Kanka e World Anvil (o plano deixa para depois; a migração do Obsidian e dos plugins de RPG já
   existe, C4).
-- A sala do celular pela internet e o mestre pelo navegador, se o dono deixar para depois (D1 e D2).
+- A sala do celular pela internet e o mestre pelo navegador na sala do celular, se o dono deixar para depois (D1 e D2).
 - Fora do plano: voz, vídeo e sincronização pela rede local (decisão do dono, 14/10).
