@@ -1021,3 +1021,10 @@ nesta versão, conferir também:
 - [ ] Agenda › painel › Tarefas: o texto da tarefa usa a largura toda; o prazo (📅) e a nota de origem ficam numa linha
   embaixo, com reticências quando o nome da nota é longo. Clicar no nome da nota ainda abre a nota.
 - [ ] Numa consulta ```tasks numa nota larga, as tarefas continuam numa linha só (texto, prazo e nota).
+
+## Versão 0.1.0-beta.18 (26/10/2026)
+
+Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas acima); conferir também:
+
+- [ ] Atualizar da beta.17 para a beta.18 pelo botão “Verificar atualizações” (desktop e Android).
+- [ ] Exportar o PDF do Valknut e conferir as artes das magias de Fogo e de Água dentro das fichas.
