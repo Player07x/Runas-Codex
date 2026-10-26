@@ -50,3 +50,8 @@ TypeScript de gravação, projeção aos jogadores, áudio, importação e pedid
 pelo roteiro existente do job `android-room`: cria/grava token, confere o jogador, importa asset, troca cena, aciona áudio,
 opera com tela apagada, troca chave e abre a interface real `/master` no Chromium do job. A conferência física (incluindo
 SAF e gerenciamento de bateria do fabricante) permanece na lista de testes manuais.
+
+O teste pela interface revelou uma falha do cliente remoto existente: `documents.list(tipo)` serializava o argumento
+opcional `undefined` como `null`, filtrando os documentos sem pai e omitindo os tokens da cena. O cliente agora omite
+esse argumento quando ausente; `null` explícito continua significando a raiz. É uma correção de serialização com o mesmo
+contrato HTTP e a mesma interface, aplicada também ao mestre remoto do desktop, coberta por teste de regressão.

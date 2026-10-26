@@ -874,3 +874,6 @@ cada fase e do Codex estão acima; nesta versão, conferir também:
 O núcleo e o transporte reutilizam o contrato do mestre remoto do desktop. A interface existente reconhece
 `VttApi.master`; ajustes de texto e revisão visual do painel pertencem ao Claude Code (PR #67). Não há mudança na
 `RemoteVttApi`, na CSP, no túnel público nem nos testes do mestre remoto desktop.
+
+- [ ] Mestre remoto no desktop: confirmar que cenas existentes carregam tokens, paredes e demais objetos da cena. A R5
+  também corrige o argumento opcional da consulta remota, mantendo a diferença entre “todos” e “sem pai”.
