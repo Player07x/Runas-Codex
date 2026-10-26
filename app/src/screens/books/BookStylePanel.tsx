@@ -117,6 +117,7 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         </div>
         <div className="book-style-row"><span>Entrelinha</span><ChoiceGroup label="Entrelinha" value={style.leading} options={[{ value: "justa", label: "Justa" }, { value: "normal", label: "Normal" }, { value: "folgada", label: "Folgada" }]} onChange={(v) => set("entrelinha", v, base.leading)} /></div>
         <div className="book-style-row"><span>Alinhamento</span><ChoiceGroup label="Alinhamento" value={style.justify ? "justificado" : "esquerda"} options={[{ value: "esquerda", label: "Esquerda" }, { value: "justificado", label: "Justificado" }]} onChange={(v) => set("alinhamento", v, base.justify ? "justificado" : "esquerda")} /></div>
+        <label className="check"><input type="checkbox" checked={style.hyphenate} onChange={(e) => set("hifenizar", e.target.checked, base.hyphenate)} />Hifenizar em português</label>
       </Group>
       <Group title="Cores">
         {([["cor_papel", "Papel", style.paper, base.paper], ["cor_texto", "Texto", style.ink, base.ink], ["cor_destaque", "Destaque", style.accent, base.accent]] as const).map(([key, label, value, baseValue]) =>
@@ -133,6 +134,10 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         <label className="book-style-row"><span>Margem (mm)</span><input className="input book-number" type="number" min="0" max="40" step="0.5" placeholder={String(BOOK_SIZES[settings.size].margin)} value={typeof props.margem_mm === "number" ? props.margem_mm : ""} onChange={(e) => set("margem_mm", e.target.value === "" ? undefined : Number(e.target.value), undefined, "margem_mm")} /></label>
         <label className="book-style-row"><span>Sangria (mm)</span><input className="input book-number" type="number" min="0" max="10" step="0.5" value={typeof props.sangria_mm === "number" ? props.sangria_mm : 0} onChange={(e) => set("sangria_mm", e.target.value === "" ? undefined : Number(e.target.value), 0, "sangria_mm")} /></label>
         <label className="check"><input type="checkbox" checked={props.marcas_corte === true} onChange={(e) => set("marcas_corte", e.target.checked || undefined)} />Marcas de corte</label>
+      </Group>
+      <Group title="Fichas">
+        <div className="book-style-row"><span>Desenho</span><ChoiceGroup label="Desenho das fichas" value={style.fichas} options={[{ value: "tipografica", label: "Tipográfica" }, { value: "fundo", label: "Fundo suave" }, { value: "faixa", label: "Faixa no nome" }]} onChange={(v) => set("fichas", v, base.fichas)} /></div>
+        <p className="small muted">Fichas são callouts <code>[!magia]</code>, <code>[!runa]</code>, <code>[!habilidade]</code>, <code>[!item]</code>, <code>[!criatura]</code>, <code>[!raca]</code>, <code>[!classe]</code> e <code>[!efeito]</code>. No texto, selecione uma magia no formato antigo e use “Converter em ficha”.</p>
       </Group>
       <Group title="Capítulos">
         <div className="book-style-row"><span>Abertura</span><ChoiceGroup label="Abertura dos capítulos" value={layout.opening} options={options(OPENINGS)} onChange={(v) => set("abertura", v, "simples")} /></div>

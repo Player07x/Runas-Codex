@@ -47,6 +47,7 @@
     "hast-util-from-html": "2.0.3",
     "hast-util-sanitize": "5.0.2",
     "hast-util-to-html": "9.0.5",
+    "hyphen": "1.14.1",
     "ical.js": "2.2.1",
     "katex": "0.18.9",
     "lucide-react": "^1.56.0",

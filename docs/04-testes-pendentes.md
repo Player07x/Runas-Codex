@@ -930,3 +930,23 @@ Decisões na [ADR 0033](adr/0033-livro-impresso.md).
   o capítulo” e “Nenhum”; número da página no centro, na margem externa ou sem número.
 - [ ] Páginas espelhadas: margem de dentro maior, número do lado de fora, capítulo sempre começando numa página da
   direita (com uma página em branco antes, quando precisa). Imprimir em frente e verso numa impressora de verdade.
+
+## Livros L5 — fichas de RPG e hifenização (26/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md).
+
+- [ ] Escrever uma magia como ficha (`> [!magia] Nome`, `> **Custo:** 1 PV · **Tipo:** Feitiço · **Alcance:** Área`, o
+  texto, `> **Ampliação:** …`, a imagem): no livro sai o nome em versalete, “1 PV · Feitiço · Área” em itálico, Ampliação
+  e Truque marcados e a imagem dentro da ficha, sem nenhuma régua. Um `**Material:**` vazio não aparece.
+- [ ] As outras fichas: `[!runa]`, `[!habilidade]`, `[!item]`, `[!criatura]` (atributos em linha), `[!raca]`,
+  `[!classe]`, `[!efeito]`. No Obsidian (com o snippet ligado), cada uma é um callout com cor e ícone próprios.
+- [ ] Estilo do livro › Fichas: Tipográfica, Fundo suave e Faixa no nome.
+- [ ] Caixas sem réguas no livro: descritivo (itálico, fundo suave), barra lateral, nota/dica/aviso/perigo (só o título
+  pequeno colorido), segredo.
+- [ ] Em Escrever, selecionar uma magia no formato antigo (nome em negrito, custo embaixo, o texto) › “Converter em ficha”
+  na barra da seleção.
+- [ ] Diagramar › “Versão dos jogadores (sem segredos)”: os segredos somem da prévia e do PDF; o arquivo sai com
+  “(jogadores)” no nome.
+- [ ] Hifenização: com o texto justificado, as palavras longas se partem no fim da linha com hífen (sem buracos grandes
+  nas colunas); “Hifenizar em português” desligado volta ao de antes. Conferir se copiar texto do PDF não traz hífens
+  estranhos.
