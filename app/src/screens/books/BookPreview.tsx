@@ -1,87 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Markdown } from "../../components/Markdown"
+import { useEffect, useRef, useState } from "react"
 import { bookProperties, bookRoute } from "../../core/books"
-import { BOOK_SIZES, BOOK_THEMES, previewChapters, previewSettings, type BookSize, type BookTheme } from "../../core/books-preview"
-import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
+import { BOOK_SIZES, BOOK_THEMES, previewSettings, type BookSize, type BookTheme } from "../../core/books-preview"
 import { BookFinishSettings } from "./BookFinishSettings"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
-import { NoteSetContext } from "../../lib/note-set"
 import { navigate } from "../../lib/router"
-import { vaultNoteSet } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
-import { paginate, readyForPagination, type Pagination } from "./pagination"
-import "./book-pages.css"
-import "./book-preview.css"
+import { BookPages, type BookPagesHandle, type PagesState } from "./BookPages"
+import { readyForPagination } from "./pagination"
 
 export default function BookPreview({ book, draft, onClose, documentMode = false, showSecrets = true, siteEnabled = false }: { book: IndexedNote; draft?: { path: string; text: string }; onClose(): void; documentMode?: boolean; showSecrets?: boolean; siteEnabled?: boolean }) {
   const vault = useVault(), index = vault.index!
   const settings = previewSettings(book)
-  let decoration = "", cssError = ""
-  try { decoration = bookDecorationCss(book) } catch (e) { cssError = String(e) }
-  const data = bookProperties(book)
-  const source = useRef<HTMLDivElement>(null)
-  const output = useRef<HTMLDivElement>(null)
-  const scroll = useRef<HTMLDivElement>(null)
-  const active = useRef<Pagination | null>(null)
-  const queue = useRef(Promise.resolve())
-  const [status, setStatus] = useState("Preparando prévia…")
-  const [ready, setReady] = useState(false)
+  const pages = useRef<BookPagesHandle>(null)
+  const [pagesState, setPagesState] = useState<PagesState>({ ready: false, status: "Preparando prévia…", error: "", total: 0 })
+  const { ready, status } = pagesState
   const [error, setError] = useState("")
   const [metadata, setMetadata] = useState(false)
   const [format, setFormat] = useState("pdf")
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState("")
-  const [zoom, setZoom] = useState(1)
-  const chapters = previewChapters(index, book, draft)
-  // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
-  const signature = JSON.stringify([book.text, chapters, vault.version])
-  const paperClass = `book-paper tema-${settings.theme}`
 
-  useEffect(() => {
-    const controller = new AbortController()
-    setReady(false)
-    setStatus("Atualizando prévia…")
-    const timer = setTimeout(() => {
-      queue.current = queue.current.catch(() => {}).then(async () => {
-        if (controller.signal.aborted || !source.current || !output.current) return
-        const stage = document.createElement("div")
-        stage.className = `book-pagination-stage ${paperClass}`
-        stage.setAttribute("aria-hidden", "true")
-        document.body.append(stage)
-        let next: Pagination | null = null
-        try {
-          await readyForPagination(source.current, controller.signal)
-          next = await paginate(source.current, stage, settings.size, printOptions(book))
-          if (controller.signal.aborted || !output.current) { next.dispose(); return }
-          const top = scroll.current?.scrollTop ?? 0
-          active.current?.dispose()
-          output.current.replaceChildren(...Array.from(stage.childNodes))
-          active.current = next
-          output.current.dataset.pages = String(next.total)
-          output.current.dataset.paginationMs = next.milliseconds.toFixed(0)
-          if (scroll.current) scroll.current.scrollTop = top
-          setStatus(`${next.total} páginas · ${(next.milliseconds / 1000).toFixed(2)} s`)
-          setError("")
-          setReady(true)
-        } catch (err) {
-          if (!controller.signal.aborted) { setError(err instanceof Error ? err.message : String(err)); setStatus("Prévia não atualizada") }
-        } finally { stage.remove() }
-      })
-    }, 500)
-    return () => { controller.abort(); clearTimeout(timer) }
-  }, [signature])
-
-  useEffect(() => () => { void queue.current.finally(() => { active.current?.dispose(); active.current = null }) }, [])
-  useEffect(() => {
-    const container = scroll.current
-    if (!container) return
-    const resize = () => setZoom(Math.min(1, Math.max(.1, (container.clientWidth - 24) / (BOOK_SIZES[settings.size].width * 96 / 25.4))))
-    const observer = new ResizeObserver(resize)
-    observer.observe(container)
-    resize()
-    return () => observer.disconnect()
-  }, [settings.size])
   // O atalho lê o estado na hora da tecla (registrar de novo a cada mudança deixava uma janela sem o atalho certo).
   const readyNow = useRef(ready)
   readyNow.current = ready
@@ -102,11 +41,12 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
   }, [vault.platform])
 
   async function exportFile() {
-    if (!ready || exporting || !source.current) return
+    const source = pages.current?.source
+    if (!ready || exporting || !source) return
     setExporting(true); setExportStatus("")
     try {
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-      if (source.current) await readyForPagination(source.current, new AbortController().signal)
+      await readyForPagination(source, new AbortController().signal)
       if (format === "pdf") {
         if (vault.platform.exportPdf) {
           const path = await vault.platform.exportPdf(`${book.name}.pdf`)
@@ -123,7 +63,7 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
         setExportStatus(path ? `Arquivo salvo: ${path}` : "Exportação cancelada.")
       } else {
         const { captureBook } = await import("./export-snapshot")
-        const snapshot = await captureBook(source.current, index, book, vault.platform, draft)
+        const snapshot = await captureBook(source, index, book, vault.platform, draft)
         if (documentMode && format === "html") snapshot.navigation = true
         const bytes = format === "site" ? (await import("../../core/export/documents")).generateStaticSite(snapshot) : format === "html" ? (await import("../../core/export/book-extra")).generateHtml(snapshot) : format === "rtf" ? (await import("../../core/export/book-extra")).generateRtf(snapshot) : format === "epub" ? (await import("../../core/export/epub")).generateEpub(snapshot) : await (await import("../../core/export/docx")).generateDocx(snapshot)
         const path = await vault.platform.saveBytes(`${book.name}.${format === "site" ? "site.zip" : format}`, bytes, format === "site" ? "application/zip" : format === "html" ? "text/html" : format === "rtf" ? "application/rtf" : format === "epub" ? "application/epub+zip" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
@@ -138,7 +78,7 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
   }
   return <section className="book-preview" aria-label="Prévia paginada">
     <div className="book-preview-controls">
-      <strong>{documentMode ? "Prévia do documento" : "Prévia do livro"}</strong><button className="btn" onClick={onClose}>Fechar prévia</button>
+      <strong>{documentMode ? "Prévia do documento" : "Diagramar e exportar"}</strong><button className="btn" onClick={onClose}>{documentMode ? "Fechar prévia" : "Voltar ao texto"}</button>
       {!documentMode && <>
       <label>Tema<select className="input" aria-label="Tema do livro" value={settings.theme} disabled={vault.info?.readOnly} onChange={(e) => void change("tema", e.target.value as BookTheme)}>{Object.entries(BOOK_THEMES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       <label>Página<select className="input" aria-label="Tamanho da página" value={settings.size} disabled={vault.info?.readOnly} onChange={(e) => void change("pagina", e.target.value as BookSize)}>{Object.keys(BOOK_SIZES).map((size) => <option key={size}>{size}</option>)}</select></label>
@@ -152,29 +92,10 @@ export default function BookPreview({ book, draft, onClose, documentMode = false
       {exportStatus && <p role="status" data-book-export-status>{exportStatus}</p>}
       <span className="small muted" role="status" data-book-pagination-status>{status}</span>
     </div>
-    {(error || cssError) && <p className="proto-note" role="alert">{error || cssError}</p>}
-    {decoration && <style>{decoration}</style>}
+    {error && <p className="proto-note" role="alert">{error}</p>}
     {!documentMode && <BookFinishSettings key={book.path} book={book} />}
     {metadata && <BookMetadata book={book} onClose={() => setMetadata(false)} />}
-    <div className="book-preview-scroll" ref={scroll}>
-      <div className={`book-preview-output ${paperClass}`} ref={output} style={{ zoom }} aria-busy={!ready} />
-    </div>
-    <div className={`book-preview-source ${paperClass}`} ref={source} aria-hidden="true" inert>
-      <div className={`book-print ${settings.newChapter ? "chapters-new-page" : ""}`}>
-        {data.exportar_capa !== false && <section className="book-print-cover">
-          <h1 className="book-print-title">{book.name}</h1>
-          {typeof data.subtitulo === "string" && <p className="book-print-subtitle">{data.subtitulo}</p>}
-          {typeof data.capa === "string" && data.capa.startsWith("[[") && <PreviewMarkdown path={book.path} text={`!${data.capa}`} />}
-          {typeof data.autor === "string" && <p className="book-print-author">{data.autor}</p>}
-        </section>}
-        {typeof data.creditos === "string" && data.creditos.trim() && <section className="book-print-credits"><h1>Créditos</h1><p>{data.creditos}</p></section>}
-        {chapters.map((chapter, i) => <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
-          <h2 className="book-chapter-heading">{chapter.title}</h2>
-          {chapter.kind === "indice" ? <ul>{indexEntries(index,book,draft).map(entry=><li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number,i)=><span key={number}>{i>0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number+1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={chapter.body} showSecrets={showSecrets} />}
-        </section>)}
-        {typeof data.contracapa === "string" && data.contracapa.trim() && <section className="book-print-back"><h1>{book.name}</h1><p>{data.contracapa}</p></section>}
-      </div>
-    </div>
+    <BookPages ref={pages} book={book} draft={draft} showSecrets={showSecrets} onState={setPagesState} />
   </section>
 }
 
@@ -208,10 +129,4 @@ function BookMetadata({ book, onClose }: { book: IndexedNote; onClose(): void })
     {error && <p role="alert">{error} As propriedades já gravadas permanecem na nota.</p>}
     <div className="row-wrap"><button className="btn primary" disabled={busy}>Salvar capa e créditos</button><button type="button" className="btn" disabled={busy} onClick={onClose}>Cancelar</button></div>
   </form>
-}
-
-function PreviewMarkdown({ path, text, showSecrets = true }: { path: string; text: string; showSecrets?: boolean }) {
-  const vault = useVault()
-  const notes = useMemo(() => vaultNoteSet(vault.index!, path, {}, vault.platform), [vault.index, vault.version, path, vault.platform])
-  return <NoteSetContext.Provider value={notes}><Markdown source={text} space="livros" showSecrets={showSecrets} /></NoteSetContext.Provider>
 }

@@ -289,3 +289,9 @@ O inventário das frentes ainda abertas e dos responsáveis está em [`abertas-e
 O rework visual e os itens do Codex saíram na beta.16. O que falta para a versão 1.0, por responsável (Codex, Claude
 Code e dono), com as decisões pendentes do dono, está em [`rumo-a-1.0.md`](rumo-a-1.0.md). Ele substitui o inventário
 [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md).
+
+## Livro impresso — rework do PDF dos Livros (25/10/2026)
+
+Pedido do dono depois da beta.16: prévia ao lado do texto e o rework do PDF, em cinco fases (L1–L5) com o Claude Code.
+Fases, arquivos e situação em [`livro-impresso.md`](livro-impresso.md); decisões na
+[ADR 0033](../adr/0033-livro-impresso.md).

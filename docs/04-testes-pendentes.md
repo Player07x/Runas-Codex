@@ -854,3 +854,26 @@ cada fase e do Codex estão acima; nesta versão, conferir também:
   continua gravando; a Busca rápida de tarefas não mostra tarefas das Notas.
 - [ ] Agenda: editar um evento com local, apagar o local e conferir que a seção Detalhes continua aberta.
 - [ ] Instalar de novo o snippet `runas-codex.css` e conferir no Obsidian a cor de uma campanha personalizada.
+
+## Livros L1 — prévia ao lado do texto (25/10/2026)
+
+Decisões na [ADR 0033](adr/0033-livro-impresso.md). Capturas em `docs/imagens/livros-l1/`.
+
+- [ ] Abrir um livro em Escrever e clicar em **Prévia ao lado** na barra: as páginas aparecem à direita, com a página do
+  capítulo aberto contornada e o título mais próximo do cursor marcado.
+- [ ] Digitar no capítulo (inclusive um título novo `## …`): cerca de meio segundo depois a página se refaz com o texto
+  ainda não gravado, sem piscar, e a marca acompanha o cursor.
+- [ ] Trocar de capítulo pelo sumário: a prévia vai até a página onde ele começa. Com **Seguir o texto** desligado, ela
+  fica parada onde você deixou.
+- [ ] Clicar num título dentro da página (inclusive o título de outro capítulo): o editor abre aquele capítulo com o
+  cursor no título.
+- [ ] Testar **Largura**, **Página** e **Duas** (livro aberto: a capa sozinha à direita) e arrastar a borda do painel.
+- [ ] No ⋯ da prévia: “Ir para a página do cursor”, “Mostrar só este capítulo” (a numeração recomeça em 1) e “Diagramar e
+  exportar…”.
+- [ ] Abaixo de 1400 px de largura, abrir o Apoio fecha a prévia e vice-versa; abaixo de 1200 px, abrir a prévia recolhe
+  o sumário.
+- [ ] O modo que era “Prévia” agora se chama **Diagramar**; exportar PDF, EPUB e DOCX e imprimir com Ctrl+P continuam
+  iguais.
+- [ ] No celular: o ícone de livro na barra (“Ver a página”) abre a página do cursor em tela cheia; as setas trocam de
+  página; **Texto** (ou Esc, com teclado) volta ao mesmo ponto. Conferir também o que o botão Voltar do Android faz com a página aberta. **Foco** agora fica no menu ⋯ do livro.
+- [ ] Em 320 px, a barra do livro cabe inteira (antes o último ⋯ ficava fora da tela).

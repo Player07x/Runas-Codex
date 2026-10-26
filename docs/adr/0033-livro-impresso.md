@@ -1,0 +1,62 @@
+# ADR 0033 — O livro impresso: prévia ao lado, Diagramar, modelos e fichas
+
+- **Status:** aceita (2026-10-25)
+
+## Contexto
+Em 25/10 o dono pediu um rework do PDF gerado pelos Livros, comparando o PDF do seu livro com as notas do cofre, e,
+antes dele, uma forma de ver a prévia ao lado do texto enquanto escreve. A avaliação (proposta publicada em
+https://claude.ai/artifact/4EzzHLiUXutEE4GkZ2kw22) achou:
+
+- o contorno tracejado que o leitor desenha em volta dos blocos `:::` (`.md-container`) vai para o papel;
+- cada capítulo tem dois títulos (o nome da nota e o `#` da nota), e as seções três sinais (sobretítulo, título e régua);
+- colunas equilibradas partem textos curtos, títulos ficam no pé da coluna e as imagens se afastam do texto a que
+  pertencem;
+- a EB Garamond variável sai como fonte Type 3 no PDF; as imagens entram no tamanho original (17,3 MB em 7 páginas);
+- não há sumário, marcadores nem marcação de acessibilidade no PDF, e o título interno é o da janela;
+- `hyphens: auto` não funciona no Electron 44 no Linux (testado);
+- os quatro temas mudam só cores e fonte; fonte, tamanho, colunas, cabeçalho, numeração e sumário só mudam com CSS;
+- a prévia toma o lugar do editor.
+
+## Decisão
+O dono aprovou a proposta inteira e as oito decisões abertas nela:
+
+1. **Prévia ao lado primeiro (L1).** Em Escrever, um painel à direita mostra as páginas, refeitas meio segundo depois
+   da última tecla, acompanha o cursor, marca a página e o título do trecho em edição e leva ao texto quem clica num
+   título da página. No celular, “Ver a página” abre a página do cursor em tela cheia.
+2. **O terceiro modo se chama Diagramar** (antes “Prévia”): é onde ficam o estilo do livro e a exportação.
+3. **O título do capítulo vem do nome da nota.** O primeiro `#` da nota só aparece se for diferente do nome; seções não
+   ganham sobretítulo (L2).
+4. **Fontes:** entram cerca de dez fontes livres (OFL), em versões estáticas, e fontes do próprio cofre, lidas como bytes
+   pelo `Platform` (sem rede e sem mudar a CSP) (L3).
+5. **Hifenização em português** com uma dependência própria, já que o Chromium do Electron não hifeniza (L5).
+6. **Fundo do papel desligado por padrão na impressão**; na tela e no PDF para ler ele continua (L2/L3).
+7. **Todas as fichas propostas:** `[!magia]`, `[!runa]`, `[!habilidade]`, `[!item]`, `[!criatura]`, `[!raca]`,
+   `[!classe]` e `[!efeito]`, como callouts que o Obsidian abre (L5).
+8. **Fichas sem réguas, no desenho tipográfico por padrão**; fundo suave e faixa no nome ficam como opção (L5).
+
+Fases, cada uma um PR a partir da `main`: **L1** prévia ao lado; **L2** limpeza do PDF (sem caixas no papel, um título
+por capítulo, fluxo das colunas, fonte estática, imagens reduzidas, título, marcadores e marcação do PDF); **L3**
+Estilo do livro, cinco modelos (Manual de RPG, Grimório, Romance, Moderno, Leitura fácil), modelos próprios como notas
+`tipo: modelo-livro`, colunas do livro e fontes; **L4** capa, sumário, aberturas e cabeçalhos; **L5** fichas e
+hifenização. A tarefa está em [`docs/tarefas/livro-impresso.md`](../tarefas/livro-impresso.md).
+
+### Como a L1 funciona
+- `screens/books/BookPages.tsx` pagina (Paged.js, o mesmo leitor das notas) e serve ao Diagramar e à prévia ao lado;
+  cada um pagina por conta própria. `BookPreview.tsx` ficou com os controles, a exportação e o Ctrl+P.
+- Cada seção do livro leva `data-book-chapter` e `data-book-path`. A ponte entre o cursor e a página são os títulos,
+  que aparecem na nota e nas páginas na mesma ordem; entre dois títulos, a página é estimada pela proporção de linhas
+  (`core/books-follow.ts`, com testes).
+- O cursor vai do editor (`NoteView.onCursorLine`) para um repositório próprio (`cursor-store.ts`): só a prévia
+  redesenha a cada movimento. Clicar num título usa `NoteView.lineRequest`, que leva o cursor à linha sem trocar de modo.
+- O painel é um `ResizablePanel` (ganhou `maxWidth` e `onCollapsedChange`) com o botão na barra do livro. O Paged.js só
+  carrega com o painel aberto. Abaixo de 1400 px, Apoio e prévia dividem o lado direito; abaixo de 1200 px, abrir a
+  prévia recolhe o sumário.
+- As páginas da prévia ao lado ficam fora do leitor de tela (`aria-hidden`): o texto já está no editor. A troca de
+  página é anunciada uma vez.
+
+## Consequências
+- O smoke do desktop procura “Diagramar” no lugar de “Prévia” e confere a prévia ao lado (abrir, paginar, marcar a
+  página do capítulo e refazer ao digitar no `--write`).
+- No celular, Foco saiu da barra do livro para o menu ⋯ (o lugar ficou para “Ver a página”), e a barra passou a caber em
+  320 px, o que já não acontecia antes.
+- As regras antigas `.books-layout.has-preview` (prévia lateral da X4, sem uso desde a F3b) saíram do CSS.

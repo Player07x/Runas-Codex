@@ -1,0 +1,148 @@
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type MouseEvent } from "react"
+import { Markdown } from "../../components/Markdown"
+import { bookProperties } from "../../core/books"
+import { BOOK_SIZES, previewChapters, previewSettings } from "../../core/books-preview"
+import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
+import type { IndexedNote } from "../../core/vault-index"
+import { NoteSetContext } from "../../lib/note-set"
+import { vaultNoteSet } from "../../lib/vault-notes"
+import { useVault } from "../../platform/VaultProvider"
+import { paginate, readyForPagination, type Pagination } from "./pagination"
+import "./book-pages.css"
+import "./book-preview.css"
+
+/** Largura do painel, página inteira à vista ou duas páginas lado a lado (o livro aberto). */
+export type PagesZoom = "largura" | "pagina" | "duas"
+export interface PagesState { ready: boolean; status: string; error: string; total: number }
+export interface BookPagesHandle { source: HTMLDivElement | null; output: HTMLDivElement | null; scroll: HTMLDivElement | null }
+
+const MM = 96 / 25.4
+
+/**
+ * As páginas do livro, paginadas pelo Paged.js a partir do mesmo leitor Markdown das notas. Usadas pelo Diagramar
+ * (com os controles de exportação) e pela prévia ao lado do texto; cada uma pagina por conta própria.
+ */
+export const BookPages = forwardRef<BookPagesHandle, {
+  book: IndexedNote
+  draft?: { path: string; text: string }
+  /** Só este capítulo, sem capa, créditos nem contracapa (livros grandes); a numeração recomeça em 1. */
+  onlyPath?: string
+  zoom?: PagesZoom
+  showSecrets?: boolean
+  /** A prévia ao lado é só visual: o texto já está no editor, e o leitor de tela não o lê duas vezes. */
+  decorative?: boolean
+  onState?(state: PagesState): void
+  /** Depois de cada paginação, com as páginas novas já na tela. */
+  onPaginated?(output: HTMLDivElement): void
+  onScroll?(): void
+  onPagesClick?(event: MouseEvent<HTMLDivElement>): void
+  className?: string
+}>(function BookPages({ book, draft, onlyPath, zoom = "largura", showSecrets = true, decorative = false, onState, onPaginated, onScroll, onPagesClick, className = "" }, ref) {
+  const vault = useVault(), index = vault.index!
+  const settings = previewSettings(book)
+  let decoration = "", cssError = ""
+  try { decoration = bookDecorationCss(book) } catch (e) { cssError = String(e) }
+  const data = bookProperties(book)
+  const source = useRef<HTMLDivElement>(null)
+  const output = useRef<HTMLDivElement>(null)
+  const scroll = useRef<HTMLDivElement>(null)
+  const active = useRef<Pagination | null>(null)
+  const queue = useRef(Promise.resolve())
+  const [state, setState] = useState<PagesState>({ ready: false, status: "Preparando prévia…", error: "", total: 0 })
+  const [scale, setScale] = useState(1)
+  useImperativeHandle(ref, () => ({ get source() { return source.current }, get output() { return output.current }, get scroll() { return scroll.current } }), [])
+  const report = useRef(onState)
+  report.current = onState
+  const paginated = useRef(onPaginated)
+  paginated.current = onPaginated
+  // Avisa quem usa as páginas no mesmo passo em que elas mudam: o Diagramar libera Ctrl+P e Exportar junto com o
+  // aria-busy das páginas (avisar num efeito depois deixava um instante com as páginas prontas e os botões não).
+  const current = useRef(state)
+  const update = (next: Partial<PagesState>) => { current.current = { ...current.current, ...next }; setState(current.current); report.current?.(current.current) }
+
+  const all = previewChapters(index, book, draft)
+  const chapters = onlyPath ? all.filter((chapter) => chapter.path === onlyPath) : all
+  const whole = !onlyPath
+  // Inclui as notas transcluídas: mudanças no cofre também refazem a prévia.
+  const signature = JSON.stringify([book.text, chapters, vault.version, onlyPath])
+  const paperClass = `book-paper tema-${settings.theme}`
+
+  useEffect(() => {
+    const controller = new AbortController()
+    update({ ready: false, status: "Atualizando prévia…" })
+    const timer = setTimeout(() => {
+      queue.current = queue.current.catch(() => {}).then(async () => {
+        if (controller.signal.aborted || !source.current || !output.current) return
+        const stage = document.createElement("div")
+        stage.className = `book-pagination-stage ${paperClass}`
+        stage.setAttribute("aria-hidden", "true")
+        document.body.append(stage)
+        let next: Pagination | null = null
+        try {
+          await readyForPagination(source.current, controller.signal)
+          next = await paginate(source.current, stage, settings.size, printOptions(book))
+          if (controller.signal.aborted || !output.current) { next.dispose(); return }
+          const top = scroll.current?.scrollTop ?? 0
+          active.current?.dispose()
+          output.current.replaceChildren(...Array.from(stage.childNodes))
+          active.current = next
+          output.current.dataset.pages = String(next.total)
+          output.current.dataset.paginationMs = next.milliseconds.toFixed(0)
+          if (scroll.current) scroll.current.scrollTop = top
+          update({ ready: true, error: "", total: next.total, status: `${next.total} páginas · ${(next.milliseconds / 1000).toFixed(2)} s` })
+          paginated.current?.(output.current)
+        } catch (err) {
+          if (!controller.signal.aborted) update({ error: err instanceof Error ? err.message : String(err), status: "Prévia não atualizada" })
+        } finally { stage.remove() }
+      })
+    }, 500)
+    return () => { controller.abort(); clearTimeout(timer) }
+  }, [signature])
+
+  useEffect(() => () => { void queue.current.finally(() => { active.current?.dispose(); active.current = null }) }, [])
+  useEffect(() => {
+    const container = scroll.current
+    if (!container) return
+    const page = BOOK_SIZES[settings.size]
+    const resize = () => {
+      const width = container.clientWidth - 24, height = container.clientHeight - 24
+      const w = page.width * MM, h = page.height * MM
+      const fit = zoom === "duas" ? width / (2 * w) : zoom === "pagina" ? Math.min(width / w, height / h) : width / w
+      setScale(Math.min(1, Math.max(.1, fit)))
+    }
+    const observer = new ResizeObserver(resize)
+    observer.observe(container)
+    resize()
+    return () => observer.disconnect()
+  }, [settings.size, zoom])
+
+  return <>
+    {(state.error || cssError) && <p className="proto-note" role="alert">{state.error || cssError}</p>}
+    {decoration && <style>{decoration}</style>}
+    <div className={`book-preview-scroll ${className}`} ref={scroll} onScroll={onScroll}>
+      <div className={`book-preview-output ${paperClass} zoom-${zoom}`} ref={output} style={{ zoom: scale }} aria-busy={!state.ready} aria-hidden={decorative || undefined} onClick={onPagesClick} />
+    </div>
+    <div className={`book-preview-source ${paperClass}`} ref={source} aria-hidden="true" inert>
+      <div className={`book-print ${settings.newChapter ? "chapters-new-page" : ""}`}>
+        {whole && data.exportar_capa !== false && <section className="book-print-cover">
+          <h1 className="book-print-title">{book.name}</h1>
+          {typeof data.subtitulo === "string" && <p className="book-print-subtitle">{data.subtitulo}</p>}
+          {typeof data.capa === "string" && data.capa.startsWith("[[") && <PreviewMarkdown path={book.path} text={`!${data.capa}`} />}
+          {typeof data.autor === "string" && <p className="book-print-author">{data.autor}</p>}
+        </section>}
+        {whole && typeof data.creditos === "string" && data.creditos.trim() && <section className="book-print-credits"><h1>Créditos</h1><p>{data.creditos}</p></section>}
+        {chapters.map((chapter, i) => <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"}>
+          <h2 className="book-chapter-heading">{chapter.title}</h2>
+          {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={chapter.body} showSecrets={showSecrets} />}
+        </section>)}
+        {whole && typeof data.contracapa === "string" && data.contracapa.trim() && <section className="book-print-back"><h1>{book.name}</h1><p>{data.contracapa}</p></section>}
+      </div>
+    </div>
+  </>
+})
+
+function PreviewMarkdown({ path, text, showSecrets = true }: { path: string; text: string; showSecrets?: boolean }) {
+  const vault = useVault()
+  const notes = useMemo(() => vaultNoteSet(vault.index!, path, {}, vault.platform), [vault.index, vault.version, path, vault.platform])
+  return <NoteSetContext.Provider value={notes}><Markdown source={text} space="livros" showSecrets={showSecrets} /></NoteSetContext.Provider>
+}
