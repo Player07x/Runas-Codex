@@ -55,3 +55,8 @@ O teste pela interface revelou uma falha do cliente remoto existente: `documents
 opcional `undefined` como `null`, filtrando os documentos sem pai e omitindo os tokens da cena. O cliente agora omite
 esse argumento quando ausente; `null` explícito continua significando a raiz. É uma correção de serialização com o mesmo
 contrato HTTP e a mesma interface, aplicada também ao mestre remoto do desktop, coberta por teste de regressão.
+
+A criação de objetos no navegador usa `newDocumentId`, com 128 bits de `crypto.getRandomValues`, também disponível em
+HTTP na LAN. `crypto.randomUUID` exige contexto seguro e não pode ser usado para criar tokens, cenas ou desenhos
+quando o mestre abre um IP privado por HTTP. O teste da interface retira essa API do localhost confiável do `adb forward`,
+cria um token pela ferramenta do canvas e confere sua gravação, além de selecionar o token existente.

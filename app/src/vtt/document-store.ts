@@ -1,3 +1,4 @@
+import { newDocumentId } from "./shared/document-id"
 import { useSyncExternalStore } from "react"
 import type { DocumentChange, DocumentInput } from "./shared/ipc"
 import { SCENE_CHILD_TYPES, type DrawingData, type LightData, type LogData, type NoteData, type SceneData, type TileData, type TokenData, type WallData } from "./shared/scene"
@@ -121,5 +122,5 @@ export function useDocumentsVersion(store: DocumentStore): number {
 }
 
 export function newId(): string {
-  return crypto.randomUUID().replaceAll("-", "")
+  return newDocumentId()
 }

@@ -114,6 +114,20 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
           await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', buttons: 0, clickCount: 1 })
           await masterBrowser.until(`[...document.querySelectorAll('.properties input')].some(input => input.value === 'Token do tablet R5')`)
           check('mestre seleciona no canvas o token gravado pelo tablet', true)
+          // HTTP em IP da LAN não tem randomUUID. O localhost do adb forward é origem confiável;
+          // retiramos somente essa API no teste para reproduzir a capacidade do navegador do tablet.
+          await masterBrowser.run(`Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true }); document.querySelector('[aria-label="Fechar propriedades"]').click(); document.querySelector('[aria-label="Novo token"]').click(); true`)
+          await masterBrowser.run('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+          const creation = await masterBrowser.run(`(() => {
+            const canvas = document.querySelector('canvas'), box = canvas.getBoundingClientRect(), zoom = Number(canvas.dataset.viewZoom)
+            return { x: box.x + Number(canvas.dataset.viewX) + 250 * zoom, y: box.y + Number(canvas.dataset.viewY) + 450 * zoom }
+          })()`)
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...creation, button: 'none', buttons: 0 })
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...creation, button: 'left', buttons: 1, clickCount: 1 })
+          await masterBrowser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...creation, button: 'left', buttons: 0, clickCount: 1 })
+          await masterBrowser.until(`[...document.querySelectorAll('.properties input')].some(input => input.value === 'Token')`)
+          const created = JSON.parse(adb('exec-out', 'cat', '/sdcard/Documents/cofre-room/.runas/mesas/ci-x7/cenas/scene.json'))
+          check('interface cria e grava token sem randomUUID, como em HTTP na LAN', created.some(document => document.type === 'token' && document.data.name === 'Token' && document.data.x === 250 && document.data.y === 450))
           check('mesma RemoteVttApi abre mesa real pelo navegador', masterBrowser.errors.length === 0)
           const shot = await masterBrowser.send('Page.captureScreenshot', { format: 'png' })
           await writeFile(`${output}/mestre-no-navegador.png`, Buffer.from(shot.data, 'base64'))

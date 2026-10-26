@@ -99,7 +99,8 @@ try {
   await androidPlayer.until(`document.querySelector('.player-lobby input')`)
   await androidPlayer.run(`(()=>{const input=document.querySelector('.player-lobby input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(rotatedCode)});input.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
   await click(androidPlayer,'.player-lobby button[type="submit"]')
-  await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1') && document.querySelector('.player-host canvas') && document.querySelector('.player-tools')`)
+  await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`,400)
+  await androidPlayer.until(`document.querySelector('.player-host canvas') && document.querySelector('.player-tools')`,400)
   check('Android entra como jogador da sala hospedada no próprio aparelho',true)
   await writeFile(output+'/android-jogador.png',execFileSync('adb',['exec-out','screencap','-p'],{timeout:15000,maxBuffer:16*1024*1024}))
   adb('shell','am','start','-n','dev.runas.codex/.MainActivity');await app.until('document.hasFocus()')
@@ -116,6 +117,11 @@ try {
     result.browserErrors=browser.errors;result.network=browser.network;result.frames=browser.frames
     result.cookies=(await browser.send('Network.getCookies')).cookies.map(({name,domain,path,sameSite,secure})=>({name,domain,path,sameSite,secure}))
     await screenshot(browser,'falha-jogador')
+  }catch{}
+  if(androidPlayer)try{
+    result.androidPlayer=await androidPlayer.run(`({url:location.href,ready:document.readyState,body:document.body?.innerText})`)
+    result.androidPlayerErrors=androidPlayer.errors;result.androidPlayerNetwork=androidPlayer.network;result.androidPlayerFrames=androidPlayer.frames
+    await screenshot(androidPlayer,'falha-android-jogador')
   }catch{}
   try{await screenshot(app,'falha-android')}catch{}
   throw error
