@@ -154,7 +154,9 @@
 .book-print .ficha-campo b, .book-print .ficha .ficha-rotulo { color: var(--accent); font-variant: small-caps; font-weight: 700; letter-spacing: .04em; }
 .book-print .ficha-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(13mm, 1fr)); gap: 1mm 2mm; margin: .4mm 0 1.8mm; font-variant-numeric: lining-nums tabular-nums; font-weight: 600; }
 .book-print .ficha-stats small { display: block; color: var(--accent); font-size: .78em; font-variant: small-caps; font-weight: 700; letter-spacing: .05em; }
-.book-print .ficha .callout-body > p { margin: 0 0 1.2mm; }
+.book-print .ficha .callout-body > p { margin: 0 0 .45em; }
+/* O texto da ficha começa depois de um respiro: a linha em branco (`>`) depois dos campos, na nota, vira espaço. */
+.book-print .ficha .callout-body > :is(.ficha-tags, .ficha-stats, .ficha-campos) + p { margin-top: .7em; }
 .book-print .ficha img { display: block; max-width: 70%; max-height: 45mm; margin: 2mm auto 0; }
 .book-paper.fichas-fundo .book-print .ficha { padding: 3mm 3.5mm 2.5mm; border-radius: 1mm; background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
 .book-paper.fichas-faixa .book-print .ficha .callout-title { padding: .8mm 2.5mm; border-radius: .6mm; background: var(--accent); color: var(--paper); }
