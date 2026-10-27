@@ -29,6 +29,8 @@
 .settings-section:focus { outline: none; }
 .settings-section:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; border-radius: var(--radius); }
 .settings-back { display: none; }
+/* Uma seção por página, também no computador (o índice ao lado leva às outras). */
+.settings-page.has-current .settings-section:not(.is-current) { display: none; }
 @media (max-width: 860px) {
   .settings-layout { grid-template-columns: minmax(0, 1fr); }
   .settings-index { position: static; }

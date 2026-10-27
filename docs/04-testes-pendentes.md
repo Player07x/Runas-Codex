@@ -1034,3 +1034,6 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Atualizar da beta.18 para a beta.19 pelo botão “Verificar atualizações” (desktop e Android).
 - [ ] Numa ficha com “Requisito …” e uma linha `>` vazia antes do texto, conferir o espaço entre os campos e o texto, no
   Diagramar e no PDF.
+- [ ] Livros: o Valknut aparece com a imagem de capa na lista; um livro sem `capa:` continua com a capa desenhada.
+- [ ] Configurações no computador: cada item do índice mostra só a sua seção; Ctrl K › “Acessibilidade” abre a seção
+  certa.

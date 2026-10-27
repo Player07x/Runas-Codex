@@ -5,6 +5,7 @@ import { OnboardingSettings } from "../components/Onboarding"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
 import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
+import { useNarrow } from "../components/editor/use-narrow"
 import { Modal, Switch, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
@@ -201,12 +202,14 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     ) },
     { id: "ajuda", title: "Ajuda e exemplos", icon: <CircleHelp size={16} />, body: <OnboardingSettings /> },
   ]
-  // CFG-1: no computador, o índice fica ao lado e todas as seções seguem na página; no celular, /config é a lista
-  // de seções e /config/<seção> mostra só ela, com o caminho de volta.
-  const current = sections.some((item) => item.id === section) ? section : undefined
+  // Cada seção é uma página: /config/<seção> mostra só ela. No computador o índice fica ao lado e /config abre a
+  // primeira seção; no celular /config é a lista de seções e a seção tem o caminho de volta.
+  const narrow = useNarrow()
+  const asked = sections.some((item) => item.id === section) ? section : undefined
+  const current = asked ?? (narrow ? undefined : sections[0]!.id)
   useEffect(() => {
-    if (current) document.getElementById(`config-${current}`)?.scrollIntoView({ block: "start" })
-  }, [current])
+    if (asked) document.getElementById(`config-${asked}`)?.scrollIntoView({ block: "start" })
+  }, [asked])
   return (
     <div className={`page settings-page${current ? " has-current" : ""}`}>
       <div className="page-head">
