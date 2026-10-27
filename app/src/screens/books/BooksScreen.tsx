@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { bookProperties, bookRoute, findBooks, newBookText, readBook } from "../../core/books"
 import { nameProblem } from "../../core/names"
+import { parseNote } from "../../core/parse"
+import type { IndexedNote, VaultIndex } from "../../core/vault-index"
 import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
 import { BookEditor } from "./BookEditor"
@@ -26,6 +28,14 @@ export function BooksScreen({ bookId }: { bookId?: string }) {
   }
   return <BookList />
 }
+/** O arquivo da imagem de capa do livro (`capa: "[[Anexos/capa.png]]"`), se existe no cofre. */
+function coverImage(index: VaultIndex, book: IndexedNote): string | null {
+  const capa = bookProperties(book).capa
+  if (typeof capa !== "string" || !capa.includes("[[")) return null
+  const link = parseNote(capa.replace(/^!/, "")).links[0]
+  return link ? index.resolve(link, book.path).dest : null
+}
+
 function BookList() {
   const vault = useVault()
   const index = vault.index!
@@ -73,9 +83,14 @@ function BookList() {
     <div className="book-shelf">{findBooks(index).map((book) => {
       const stats = readBook(index, book), data = bookProperties(book)
       return <a key={book.path} className="book-card" href={href(bookRoute(book.path))}>
-        <div className="book-cover">
-          <span className="display">{book.name}</span>
-        </div>
+        {(() => {
+          const image = coverImage(index, book)
+          const url = image ? vault.platform.fileUrl(image) : null
+          // Com a imagem de capa escolhida no livro, ela é a capa; sem, fica a capa desenhada com o título.
+          return url ? <div className="book-cover has-image"><img src={url} alt="" loading="lazy" /></div> : <div className="book-cover">
+            <span className="display">{typeof data.titulo_capa === "string" && data.titulo_capa.trim() ? data.titulo_capa : book.name}</span>
+          </div>
+        })()}
         <div className="stack">
           <strong>{book.name}</strong>
           <span>{String(data.subtitulo ?? "")}</span>
