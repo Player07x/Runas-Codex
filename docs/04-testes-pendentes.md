@@ -1028,3 +1028,9 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 
 - [ ] Atualizar da beta.17 para a beta.18 pelo botão “Verificar atualizações” (desktop e Android).
 - [ ] Exportar o PDF do Valknut e conferir as artes das magias de Fogo e de Água dentro das fichas.
+
+## Versão 0.1.0-beta.19 (26/10/2026)
+
+- [ ] Atualizar da beta.18 para a beta.19 pelo botão “Verificar atualizações” (desktop e Android).
+- [ ] Numa ficha com “Requisito …” e uma linha `>` vazia antes do texto, conferir o espaço entre os campos e o texto, no
+  Diagramar e no PDF.
