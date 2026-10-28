@@ -1,7 +1,7 @@
 import { flushOpenNotes } from "../lib/vault-notes"
 import { ImageFolderSettings } from "../components/vault/NoteImages"
 import { AccessibilitySettings, AppearanceSettings } from "../components/Appearance"
-import { OnboardingSettings } from "../components/Onboarding"
+import { HelpScreen } from "./HelpScreen"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
 import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
@@ -200,7 +200,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         <PinRow />
       </SettingsCard>
     ) },
-    { id: "ajuda", title: "Ajuda e exemplos", icon: <CircleHelp size={16} />, body: <OnboardingSettings /> },
+    { id: "ajuda", title: "Ajuda e exemplos", icon: <CircleHelp size={16} />, body: <HelpScreen /> },
   ]
   // Cada seção é uma página: /config/<seção> mostra só ela. No computador o índice fica ao lado e /config abre a
   // primeira seção; no celular /config é a lista de seções e a seção tem o caminho de volta.
