@@ -326,3 +326,22 @@
 .category-card-cover { margin: calc(-1 * var(--space-card, 16px)) calc(-1 * var(--space-card, 16px)) 10px; border-radius: var(--radius) var(--radius) 0 0; }
 .wiki-category-description { max-width: 70ch; margin: 4px 0 0; color: var(--muted); }
 .wiki-article-side .tone-chip { justify-self: start; text-decoration: none; }
+
+/* Filtros escolhidos por categoria e ficha das categorias criadas pelo usuário. */
+.wiki-category-filters-head { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding-bottom:4px; }
+.wiki-category-filters .chip-count { margin-left:6px;color:var(--faint);font-variant-numeric:tabular-nums; }
+.wiki-category-filters .chip.cyan .chip-count { color:inherit;opacity:.8; }
+.wiki-category-select { max-width:320px;padding:8px 0; }
+.category-filter-chooser fieldset { display:grid;gap:4px;border:0;margin:0;padding:0;min-width:0; }
+.category-filter-chooser legend { margin-bottom:6px;color:var(--muted);font-size:calc(12px * var(--font-scale,1));font-weight:700;letter-spacing:.08em;text-transform:uppercase; }
+.category-filter-option { align-items:flex-start;gap:10px;padding:6px 4px;border-radius:var(--radius-sm); }
+.category-filter-option:hover { background:var(--panel-2); }
+.category-filter-option input { margin-top:3px; }
+.category-filter-out { display:grid;gap:4px;margin:6px 0 0;padding-left:18px; }
+.category-kind-fields { display:grid;gap:10px;border:1px solid var(--line);border-radius:var(--radius);margin:0;padding:12px;min-width:0; }
+.category-kind-fields legend { padding:0 6px;font-weight:650; }
+.category-kind-row { display:flex;flex-wrap:wrap;align-items:center;gap:8px; }
+.category-kind-row .field.grow { flex:1 1 180px;min-width:0; }
+.category-kind-row .select { min-width:150px; }
+.category-kind-key { flex-basis:100%;padding-left:2px; }
+.new-article-custom { display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:8px 0 0; }

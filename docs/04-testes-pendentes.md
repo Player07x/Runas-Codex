@@ -1057,3 +1057,17 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   continua dentro do cartão.
 - [ ] Configurações: os interruptores têm o tamanho normal (no celular continuam fáceis de tocar); as pílulas de
   filtro de uma categoria têm 32 px de altura.
+
+## Wiki: filtros escolhidos por categoria e categorias novas
+
+- [ ] Personagens › Filtros › “Escolher filtros”: Espécie, Ocupação, Situação… aparecem em “Servem de filtro”;
+  Retrato (imagem), Nascimento e Morte (data) e campos com mais de um valor numa nota aparecem em “Não servem”, com o
+  motivo. Deixar só Espécie e Situação, salvar e ver só esses dois; conferir `filtros` na nota
+  `Personagens/Personagens.md` no Obsidian. “Voltar ao automático” apaga a escolha.
+- [ ] Um filtro com mais de 8 valores aparece como lista de escolha; cada pílula mostra quantos artigos têm o valor.
+- [ ] Wiki › “Nova categoria”: criar “Monstros” (artigo “Monstro”) com campos Imagem, Habitat (link) e Perigo; a
+  categoria aparece na página inicial e a página dela tem “Novo monstro”, que cria o artigo com essa ficha.
+- [ ] Novo artigo › “Criar uma categoria”: criar “Plantas” e voltar ao Novo artigo com o tipo Planta escolhido.
+- [ ] Monstros › ⋯ › “Ficha da categoria”: acrescentar um campo e ver o campo novo ao editar a ficha de um monstro que
+  já existia; tirar um campo não apaga o valor gravado nos artigos.
+- [ ] A nota `Monstros/Monstros.md` abre no Obsidian com `artigo`, `campos`, `secoes` como propriedades comuns.

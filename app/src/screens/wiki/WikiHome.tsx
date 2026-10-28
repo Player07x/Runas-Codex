@@ -4,13 +4,14 @@ import { categoryLook, isCategoryNote } from "../../core/personalization"
 import { toneStyle } from "../../core/tones"
 import { categoryRoute } from "../../core/wiki-category"
 import { useMemo, useState } from "react"
-import { Folder, PenLine, Plus, Search, Unlink } from "lucide-react"
+import { Folder, FolderPlus, PenLine, Plus, Search, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
 import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
 import { dirname, noteName } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
-import { ARTICLE_KINDS, articleKind, newArticleNote, newCalendarNote, newMapNote, type ArticleKind } from "../../core/wiki"
+import { articleKind, articleKinds, newArticleNote, newCalendarNote, newMapNote, type ArticleKind } from "../../core/wiki"
+import { CategoryKindDialog } from "./CategoryDialogs"
 import { NoteSetContext } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
 import { vaultNoteSet } from "../../lib/vault-notes"
@@ -61,6 +62,7 @@ export function WikiHome() {
   const index = vault.index!
   const [query, setQuery] = useState(takeWikiSearch)
   const [creating, setCreating] = useState(false)
+  const [newCategory, setNewCategory] = useState(false)
   const root = wiki!.root
   const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
   const tree = useMemo(() => folderTree(notes, root, wiki!.home), [notes, root, wiki])
@@ -99,6 +101,9 @@ export function WikiHome() {
               <PenLine size={15} /> Página inicial
             </a>
           )}
+          <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar categorias.") : setNewCategory(true))}>
+            <FolderPlus size={16} /> Nova categoria
+          </button>
           <button className="btn primary" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true))} aria-label="Novo artigo">
             <Plus size={16} /> Novo artigo
           </button>
@@ -166,6 +171,7 @@ export function WikiHome() {
         </>
       )}
       {creating && <NewArticleDialog onClose={() => setCreating(false)} />}
+      {newCategory && <CategoryKindDialog root={root} wikiName={wiki!.name} onClose={() => setNewCategory(false)} />}
     </div>
   )
 }
@@ -178,7 +184,7 @@ function Category({ folder }: { folder: FolderNode }) {
   // A nota da categoria (tipo: categoria) personaliza a pasta e não conta como artigo (ADR 0027).
   const notes = collect(folder).filter(note => !isCategoryNote(note)).sort((a,b)=>b.mtime-a.mtime || a.name.localeCompare(b.name,"pt-BR"))
   const kinds = notes.map(note => articleKind(note.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
-  const main = ARTICLE_KINDS.find(kind=>kind.folder === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
+  const main = articleKinds().find(kind=>kind.folder.split("/").at(-1) === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
   return <section className={`card category-card${look.tone ? " toned" : ""}`} style={{["--cat" as string]: look.tone ? "var(--tone, var(--violet))" : "var(--violet)", ...toneStyle(look.tone)}}>
     {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" />}
     <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{notes.length}</span></a>
@@ -195,9 +201,11 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
   const vault = useVault()
   const { wiki } = useWiki()
   const index = vault.index!
-  const [kind, setKind] = useState<ArticleKind>(() => articleKind(initialKind) ?? ARTICLE_KINDS[0]!)
+  const kinds = articleKinds(wiki!.root)
+  const [kind, setKind] = useState<ArticleKind>(() => articleKind(initialKind) ?? kinds[0]!)
+  const [newCategory, setNewCategory] = useState(false)
   const [name, setName] = useState(initialName)
-  const [folder, setFolder] = useState(initialFolder ?? (articleKind(initialKind) ?? ARTICLE_KINDS[0]!).folder)
+  const [folder, setFolder] = useState(initialFolder ?? (articleKind(initialKind) ?? kinds[0]!).folder)
   const [image, setImage] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
@@ -224,6 +232,8 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
     }
   }
 
+  // Categoria nova criada daqui: volta ao Novo artigo com o tipo dela escolhido.
+  if (newCategory) return <CategoryKindDialog root={wiki!.root} wikiName={wiki!.name} onClose={() => setNewCategory(false)} onCreated={(created) => { setKind(created); setFolder(created.folder) }} />
   return (
     <Modal
       title="Novo artigo"
@@ -241,7 +251,7 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
       }
     >
       <div className="template-grid" role="radiogroup" aria-label="Tipo do artigo">
-        {ARTICLE_KINDS.map((k) => {
+        {kinds.map((k) => {
           const Icon = iconByName(k.icon)
           return (
             <button
@@ -261,6 +271,12 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
           )
         })}
       </div>
+      <p className="small muted new-article-custom">
+        Não achou o tipo?{" "}
+        <button type="button" className="btn sm ghost" onClick={() => setNewCategory(true)} disabled={vault.info?.readOnly ?? true}>
+          <FolderPlus size={14} /> Criar uma categoria
+        </button>
+      </p>
       <form
         className="stack"
         onSubmit={(e) => {
