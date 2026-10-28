@@ -1,4 +1,4 @@
-import { ResizablePanel } from "../../components/ResizablePanel"
+import { ResizablePanel, togglePanel } from "../../components/ResizablePanel"
 import { ShowArticle } from "./ShowArticle"
 import { useCallback, useMemo, useState } from "react"
 import { GitFork, Link2, Network, Plus } from "lucide-react"
@@ -46,6 +46,14 @@ export function WikiArticleView({ path }: { path: string }) {
     askWikiSearch(`tag:${tag}`)
     navigate("/wiki")
   }, [])
+  const onShowPanel = useCallback(() => {
+    const narrow = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 1100px)").matches
+    if (narrow) {
+      setPanel(value => !value)
+      return
+    }
+    togglePanel("wiki-article")
+  }, [])
 
   const category = wiki ? articleCategory(path, wiki.root) : null
   const categoryStyle = useMemo(() => (category && vault.index ? categoryLook(vault.index, category) : EMPTY_LOOK), [category, vault.index, vault.version])
@@ -62,7 +70,7 @@ export function WikiArticleView({ path }: { path: string }) {
   return (
     <div className={`wiki-article-layout ${panel ? "show-panel" : ""}${categoryStyle.tone ? " toned" : ""}`} style={toneStyle(categoryStyle.tone)}>
       <section className="wiki-article-main">
-        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={() => setPanel(!panel)} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
+        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={onShowPanel} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
       </section>
       <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side">
         <PanelTabs label="Detalhes do artigo" idPrefix="artigo-painel" value={tab} onChange={setTab} tabs={[

@@ -218,8 +218,9 @@
 .map-toolbar .map-layers { flex-wrap:wrap; }
 
 /* W1 — categorias resumidas e navegação por arte, sem estilos no leitor compartilhado. */
-.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px; }
-.wiki-category-heading h2 { font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere; }
+.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:flex-start; }
+.wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere;word-break:break-word; }
+.wiki-category-heading > .chip { flex:0 0 auto;margin-left:auto; }
 .wiki-category-preview { display:grid;gap:2px; }
 .wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }
 .wiki-category-all,.wiki-category-back { display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:calc(13px * var(--font-scale,1)); }
