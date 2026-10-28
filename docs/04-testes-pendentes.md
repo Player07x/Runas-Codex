@@ -1045,36 +1045,10 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Na lateral de um personagem ou organização, abrir Relações e adicionar um vínculo; conferir o contador e a visualização.
 - [ ] Criar ou abrir uma categoria com título muito longo e conferir que o contador permanece dentro do cartão.
 
-## Wiki: painel do artigo, cartões e botões arredondados (depois da beta.20)
+## Versão 0.1.0-beta.21 (28/10/2026)
 
-- [ ] Wiki › um personagem: o painel mostra as abas Ficha, Relações, Citado em e Links logo abaixo de “Detalhes do
-  artigo”, mesmo quando a ficha é mais alta que a tela; rolar o painel mexe só no conteúdo da aba.
-- [ ] Aba Relações › “Adicionar”: escolher o tipo e a nota, gravar e ver o contador da aba subir.
-- [ ] Botão “Painel” da barra da nota recolhe e expande o painel no computador; com a janela estreita (até 1100 px) e
-  no celular, abre o painel por cima do texto, e o botão de recolher do painel fecha.
-- [ ] O mesmo botão “Painel” numa sessão de campanha.
-- [ ] Página inicial da Wiki: um artigo de nome comprido quebra em duas linhas dentro do cartão e o número de artigos
-  continua dentro do cartão.
-- [ ] Configurações: os interruptores têm o tamanho normal (no celular continuam fáceis de tocar); as pílulas de
-  filtro de uma categoria têm 32 px de altura.
-
-## Wiki: filtros escolhidos por categoria e categorias novas
-
-- [ ] Personagens › Filtros › “Escolher filtros”: Espécie, Ocupação, Situação… aparecem em “Servem de filtro”;
-  Retrato (imagem), Nascimento e Morte (data) e campos com mais de um valor numa nota aparecem em “Não servem”, com o
-  motivo. Deixar só Espécie e Situação, salvar e ver só esses dois; conferir `filtros` na nota
-  `Personagens/Personagens.md` no Obsidian. “Voltar ao automático” apaga a escolha.
-- [ ] Um filtro com mais de 8 valores aparece como lista de escolha; cada pílula mostra quantos artigos têm o valor.
-- [ ] Wiki › “Nova categoria”: criar “Monstros” (artigo “Monstro”) com campos Imagem, Habitat (link) e Perigo; a
-  categoria aparece na página inicial e a página dela tem “Novo monstro”, que cria o artigo com essa ficha.
-- [ ] Novo artigo › “Criar uma categoria”: criar “Plantas” e voltar ao Novo artigo com o tipo Planta escolhido.
-- [ ] Monstros › ⋯ › “Ficha da categoria”: acrescentar um campo e ver o campo novo ao editar a ficha de um monstro que
-  já existia; tirar um campo não apaga o valor gravado nos artigos.
-- [ ] A nota `Monstros/Monstros.md` abre no Obsidian com `artigo`, `campos`, `secoes` como propriedades comuns.
-
-## Wiki: geradores com mais opções
-
-- [ ] Wiki › Ferramentas: 15 geradores (Nome, NPC, Taverna, Tesouro, Clima, Gancho, Rumor, Nome de lugar, Item mágico,
-  Facção, Divindade, Sala de masmorra, Lenda, Mercador, Aventura). “Gerar de novo” várias vezes dá resultados
-  diferentes; NPC e Taverna concordam o gênero (“Ana…, cartógrafa”, “O Javali Dourado”).
-- [ ] Campanhas › Ferramentas › Gerar aventura traz também “Onde”.
+- [ ] Atualizar da beta.20 para a beta.21 pelo botão “Verificar atualizações” no desktop e no Android.
+- [ ] Configurações › Ajuda: pesquisar “formatadores”, abrir o catálogo e conferir sintaxe, finalidade e rolagem da tabela em 320 px.
+- [ ] Abrir os 22 tópicos da Ajuda, usar o índice por grupo e avançar pelo botão Próximo; conferir que o tour e as notas de exemplo continuam no fim.
+- [ ] Wiki: repetir a conferência dos PRs #80–#82 (Painel/Relações, filtros e categorias personalizadas, 15 geradores).
+- [ ] A sala Android: repetir a entrada do jogador e conferir que o selo “Jogador 1” aparece após a conexão.
