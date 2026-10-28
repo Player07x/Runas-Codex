@@ -1,4 +1,5 @@
 import { parseCalendar } from "./calendar"
+import * as Tables from "./generator-tables"
 import { generateWorld, GENERATOR_KINDS, parseDictionary, parseRollTable, rollTable, worldEventOn, type GeneratorKind } from "./wiki-tools"
 import { inEra, mapExtrasYaml, parseMapExtras } from "./wiki-map-extras"
 import { parseMap } from "./wiki"
@@ -21,6 +22,20 @@ describe("Ferramentas de fechamento da Wiki",()=>{
   for(const kind of Object.keys(GENERATOR_KINDS) as GeneratorKind[]) expect(generateWorld(kind,()=>.25).length).toBeGreaterThan(5)
   expect(generateWorld("aventura",()=>0)).toContain("## Encontro")
   expect(generateWorld("nome",()=>0)).toBe("Ana das Neves")
+ })
+ it("tem pelo menos dez vezes as opções de antes, sem itens repetidos nas listas",()=>{
+  const lists:[string,unknown[]][]=Object.entries(Tables).flatMap(([name,value]):[string,unknown[]][]=>Array.isArray(value)?[[name,value]]:Object.entries(value as Record<string,unknown[]>).map(([season,list]):[string,unknown[]]=>[`${name}.${season}`,list]))
+  for(const [name,list] of lists) expect(new Set(list.map(item=>JSON.stringify(item))).size,name).toBe(list.length)
+  // Antes da beta.21 eram 84 opções em 7 geradores.
+  expect(lists.reduce((sum,[,list])=>sum+list.length,0)).toBeGreaterThanOrEqual(840)
+  expect(Object.keys(GENERATOR_KINDS).length).toBeGreaterThanOrEqual(14)
+ })
+ it("concorda o gênero do nome com a profissão e o da taverna com o adjetivo",()=>{
+  const seq=(values:number[])=>{let i=0;return ()=>values[i++%values.length]!}
+  expect(generateWorld("npc",seq([.99,0,0,0]))).toMatch(/^João das Neves, cartógrafo\./)
+  expect(generateWorld("npc",seq([0]))).toMatch(/^Ana das Neves, cartógrafa\./)
+  expect(generateWorld("taverna",seq([0]))).toMatch(/^A Raposa Dourada\./)
+  expect(generateWorld("taverna",seq([4/40,0]))).toMatch(/^O Javali Dourado\./)
  })
  it("repete por dias do calendário fictício e respeita início, intervalo e fim",()=>{
   const data={data_mundo:"0001-01-29",recorrencia_mundo:"dias",intervalo_mundo:3,fim_recorrencia_mundo:"0001-02-05"}

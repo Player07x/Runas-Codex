@@ -36,7 +36,7 @@ export function WikiTools() {
  const save=()=>{setBusy(true);void vault.createNote(`${wiki!.root}Geradores`,name.trim(),`# ${name.trim()}\n\n${result}\n`).then(()=>toast("Resultado guardado na Wiki.")).catch(e=>toast(String(e))).finally(()=>setBusy(false))}
  return <div className="page wiki-tools">
   <h1 className="page-title">Ferramentas do mundo</h1>
-  <p className="muted">Geradores por sorteio, disponíveis sem internet. Revise o resultado antes de guardar.</p>
+  <p className="muted">{Object.keys(GENERATOR_KINDS).length} geradores por sorteio, disponíveis sem internet. Revise o resultado antes de guardar.</p>
   <div className="wiki-tools-layout">
    <nav className="wiki-tools-list" aria-label="Geradores">
     {Object.entries(GENERATOR_KINDS).map(([id,label])=><button key={id} type="button" className={`list-item ${kind===id?"active":""}`} aria-current={kind===id?"true":undefined} onClick={()=>generate(id as GeneratorKind)}>{label}</button>)}
