@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 import { ResizablePanel, togglePanel } from "../../components/ResizablePanel"
 import { ShowArticle } from "./ShowArticle"
 import { useCallback, useMemo, useState } from "react"
