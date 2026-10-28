@@ -1044,3 +1044,16 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Abrir um artigo da Wiki e confirmar que o botão Painel alterna a lateral no desktop e no celular.
 - [ ] Na lateral de um personagem ou organização, abrir Relações e adicionar um vínculo; conferir o contador e a visualização.
 - [ ] Criar ou abrir uma categoria com título muito longo e conferir que o contador permanece dentro do cartão.
+
+## Wiki: painel do artigo, cartões e botões arredondados (depois da beta.20)
+
+- [ ] Wiki › um personagem: o painel mostra as abas Ficha, Relações, Citado em e Links logo abaixo de “Detalhes do
+  artigo”, mesmo quando a ficha é mais alta que a tela; rolar o painel mexe só no conteúdo da aba.
+- [ ] Aba Relações › “Adicionar”: escolher o tipo e a nota, gravar e ver o contador da aba subir.
+- [ ] Botão “Painel” da barra da nota recolhe e expande o painel no computador; com a janela estreita (até 1100 px) e
+  no celular, abre o painel por cima do texto, e o botão de recolher do painel fecha.
+- [ ] O mesmo botão “Painel” numa sessão de campanha.
+- [ ] Página inicial da Wiki: um artigo de nome comprido quebra em duas linhas dentro do cartão e o número de artigos
+  continua dentro do cartão.
+- [ ] Configurações: os interruptores têm o tamanho normal (no celular continuam fáceis de tocar); as pílulas de
+  filtro de uma categoria têm 32 px de altura.

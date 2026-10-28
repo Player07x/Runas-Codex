@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom"
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type PointerEvent, type ReactNode } from "react"
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react"
 import "./resizable-panel.css"
 
@@ -9,6 +9,47 @@ export const togglePanel = (id: string) => window.dispatchEvent(new CustomEvent<
 /** Recolhe ou expande um painel de vez (pedir duas vezes dá o mesmo resultado, ao contrário de alternar). */
 export const SET_PANEL_EVENT = "runas-codex:definir-painel"
 export const setPanelCollapsed = (id: string, collapsed: boolean): void => { window.dispatchEvent(new CustomEvent<{ id: string; collapsed: boolean }>(SET_PANEL_EVENT, { detail: { id, collapsed } })) }
+
+const media = (query: string) => (typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia(query) : null)
+
+/**
+ * Botão “Painel” das telas com painel ao lado do texto (artigo da Wiki, sessão de campanha). No computador ele recolhe
+ * e expande o próprio painel; na janela estreita (até `narrowAt` px) o painel vira uma camada sobre o texto, aberta
+ * pelo mesmo botão e fechada também pelo botão de recolher da barra do painel. Passe `onCollapsedChange` ao painel.
+ */
+export function usePanelToggle(id: string, narrowAt = 1100) {
+  const query = `(max-width: ${narrowAt}px)`
+  const narrow = useSyncExternalStore(
+    (listener) => { const list = media(query); list?.addEventListener("change", listener); return () => list?.removeEventListener("change", listener) },
+    () => Boolean(media(query)?.matches),
+    () => false,
+  )
+  const [overlay, setOverlay] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const show = (open: boolean) => {
+    // Aberto da camada: o painel guardado como recolhido no computador apareceria vazio.
+    if (open) setPanelCollapsed(id, false)
+    setOverlay(open)
+    // Na camada o foco entra no painel ao abrir e volta ao botão Painel ao fechar.
+    requestAnimationFrame(() => {
+      const panel = document.querySelector<HTMLElement>(`[data-panel-id="${id}"]`)
+      const target = open ? panel?.querySelector<HTMLElement>(`[data-panel-control="${id}"] button`) : panel?.parentElement?.querySelector<HTMLElement>(".doc-panel")
+      target?.focus()
+    })
+  }
+  return {
+    /** Classe `show-panel` da camada na janela estreita. */
+    overlay,
+    /** Para o `aria-expanded` do botão Painel. */
+    expanded: narrow ? overlay : !collapsed,
+    toggle: () => (narrow ? show(!overlay) : togglePanel(id)),
+    close: () => show(false),
+    onCollapsedChange: (value: boolean) => {
+      setCollapsed(value)
+      if (value && overlay) show(false)
+    },
+  }
+}
 
 /**
  * Painel lateral redimensionável e recolhível: o mesmo controle em todas as telas (ADR 0026). A barra do painel

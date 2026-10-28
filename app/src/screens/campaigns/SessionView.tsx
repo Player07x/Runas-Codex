@@ -1,7 +1,7 @@
 import { openDocumentExport } from "../../components/export/ExportDialog"
 import { Crest } from "../../components/kit/Emblem"
 import { imageTarget } from "../../core/personalization"
-import { ResizablePanel } from "../../components/ResizablePanel"
+import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, Download, FileDown, Globe, PanelRight, Plus, Users } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
@@ -86,7 +86,7 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
   const vault = useVault()
   const toast = useToast()
   const index = vault.index!
-  const [panel, setPanel] = useState(false)
+  const panel = usePanelToggle("campaign-session")
   const session = data.sessions.find((s) => s.path === path)
   const folders = useMemo(() => [...new Set(index.allFiles().map((f) => dirname(f.path)))].filter(Boolean), [index, vault.version])
   if (!session) {
@@ -99,27 +99,29 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
     )
   }
   return (
-    <div className={`campaign-session-layout ${panel ? "show-panel" : ""}`}>
+    <div className={`campaign-session-layout ${panel.overlay ? "show-panel" : ""}`}>
       <section className="campaign-session-main">
         <NoteView
           key={path}
           path={path}
           folders={folders}
-          onShowPanel={() => setPanel(!panel)}
+          onShowPanel={panel.toggle}
+          panelOpen={panel.expanded}
+          panelHint="Detalhes, preparação e resumo da sessão"
           onBack={() => navigate(campaignRoute(data.campaign.name, "sessoes"))}
           onCreate={(target) => toast(`“${target}” ainda não existe.`)}
           onTag={(tag) => toast(`Tag #${tag}`)}
         />
       </section>
-      <ResizablePanel id="campaign-session" label="Detalhes da sessão" side="right" width={360} className="campaign-session-side" aria-label="Sessão">
-        <button className="btn ghost sm campaign-panel-close" onClick={() => setPanel(false)}>
+      <ResizablePanel id="campaign-session" label="Detalhes da sessão" side="right" width={360} className="campaign-session-side" onCollapsedChange={panel.onCollapsedChange}>
+        <button className="btn ghost sm campaign-panel-close" onClick={panel.close}>
           <ChevronLeft size={14} /> Voltar à nota
         </button>
         <SessionDetails data={data} session={session} />
         <PrepCard data={data} session={session} />
         <SummaryCard data={data} session={session} />
       </ResizablePanel>
-      <button className="icon-btn campaign-panel-toggle" onClick={() => setPanel(!panel)} aria-label="Painel da sessão">
+      <button className="icon-btn campaign-panel-toggle" onClick={panel.toggle} aria-label="Painel da sessão" aria-expanded={panel.expanded}>
         <PanelRight size={18} />
       </button>
     </div>

@@ -55,7 +55,9 @@
 .campaign-session-row.realizada .campaign-session-number { background: color-mix(in srgb, var(--green) 16%, var(--panel-2)); color: var(--green); }
 .campaign-session-layout { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 360px; flex: 1; min-height: 0; }
 .campaign-session-main { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
-.campaign-session-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 12px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
+.campaign-session-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 0 12px 12px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
+/* Sem espaço acima da barra fixa do painel: o conteúdo rolado aparecia por cima dela. */
+.campaign-session-side > .panel-controls { flex: none; margin: 0 -12px; }
 .campaign-panel-close, .campaign-panel-toggle { display: none !important; }
 .campaign-form-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .campaign-form-row .field { min-width: 110px; }
