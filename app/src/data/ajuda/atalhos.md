@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 Os atalhos funcionam no desktop e podem ser alterados em **Configurações › Editor e atalhos**. No Android, use os botões da barra e o menu `/` quando uma combinação não estiver disponível.
 
 ### Navegação e comandos

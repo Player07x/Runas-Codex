@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 O Runas-Codex trabalha offline e pode levar o cofre inteiro ou apenas um espaço para outro aparelho. Abra **Importar e exportar** na barra lateral. A tela começa perguntando o objetivo; escolha o cartão que melhor descreve o que você quer fazer.
 
 ### Levar o cofre para outro aparelho

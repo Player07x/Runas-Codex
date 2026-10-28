@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 As Configurações são divididas em páginas. No computador, o índice fica à esquerda; em telas estreitas, abra uma página e use **Configurações** para voltar ao índice.
 
 ### Cofre

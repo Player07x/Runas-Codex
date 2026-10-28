@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 import { describe, expect, it } from "vitest"
 import { FORMATTERS } from "./formatters"
 import { FORMATTER_HELP } from "../data/ajuda/formatadores"

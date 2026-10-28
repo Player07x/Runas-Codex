@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 import { useEffect, useMemo, useState } from "react"
 import { BookOpen, ChevronRight, ListTree, Search } from "lucide-react"
 import { HELP_GROUPS, HELP_TOPICS, helpHeadings, helpTopic, searchHelp, type HelpTopic } from "../core/help"

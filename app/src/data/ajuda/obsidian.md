@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 O Runas-Codex usa o mesmo cofre local que o Obsidian: notas Markdown, anexos, propriedades no frontmatter e wikilinks continuam sendo arquivos comuns. Você pode abrir uma pasta já existente em **Configurações › Cofre**. Um cofre externo começa em somente leitura para evitar sobrescrever mudanças; libere a gravação quando tiver conferido a pasta.
 
 ### Formato que os dois programas compartilham

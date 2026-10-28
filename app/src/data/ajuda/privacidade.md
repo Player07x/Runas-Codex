@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 O Runas-Codex foi projetado para funcionar sem conta e sem telemetria. As notas, anexos e preferências ficam no aparelho escolhido por você.
 
 ### O que permanece local

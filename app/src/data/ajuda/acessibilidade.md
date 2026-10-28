@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 A interface pode ser ajustada sem perder o conteúdo. Abra **Configurações › Acessibilidade**; as opções ficam salvas somente neste aparelho.
 
 ### Aparência e leitura

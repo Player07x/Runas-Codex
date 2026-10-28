@@ -1,6 +1,3 @@
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
-Failed to create stream fd: Operation not permitted
 import { flushOpenNotes } from "../lib/vault-notes"
 import { ImageFolderSettings } from "../components/vault/NoteImages"
 import { AccessibilitySettings, AppearanceSettings } from "../components/Appearance"
