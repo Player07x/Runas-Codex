@@ -183,8 +183,8 @@ function Category({ folder }: { folder: FolderNode }) {
     {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" />}
     <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{notes.length}</span></a>
     {look.description && <p className="small muted wiki-category-description">{look.description}</p>}
-    <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
-    <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>Ver todos os {notes.length}</a>
+    <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))} title={note.name}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
+    <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>{notes.length === 1 ? "Abrir a categoria" : `Ver todos os ${notes.length}`}</a>
   </section>
 }
 

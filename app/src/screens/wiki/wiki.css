@@ -10,7 +10,9 @@
 
 .wiki-cover { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 24px; background: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--violet) 20%, transparent), transparent 60%), var(--panel); }
 .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: var(--space-column); }
-.category-card { display: grid; gap: 8px; align-content: start; border-top: 3px solid var(--cat); }
+/* Uma coluna do tamanho do cartão: um nome de artigo comprido é cortado com reticências em vez de alargar a grade e
+   empurrar o contador para fora (a coluna automática cresceria até caber a linha inteira). */
+.category-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; border-top: 3px solid var(--cat); }
 .cat-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--cat) 16%, transparent); color: var(--cat); }
 .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
 .template { display: grid; justify-items: center; gap: 4px; color: var(--muted); }
@@ -103,7 +105,13 @@
 /* Artigo: editor no centro, ficha e relações ao lado */
 .wiki-article-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; flex: 1; min-height: 0; }
 .wiki-article-main { min-height: 0; overflow: auto; }
-.wiki-article-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 12px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
+/* A barra do painel e as abas ficam paradas; só o conteúdo da aba rola. (Com o painel inteiro rolando, as abas
+   encolhiam até sumir quando a ficha passava da altura da tela, e a barra fixa deixava o conteúdo aparecer por cima.) */
+.wiki-article-side { display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
+.wiki-article-side > .kit-tabpanel { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+/* As quatro abas (Ficha, Relações, Citado em, Links) cabem nos 340 px do painel sem rolar para o lado. */
+.wiki-article-side > .kit-tabs { padding-inline: 4px; }
+.wiki-article-side .kit-tab { padding-inline: 8px; }
 .wiki-article-side .infobox { float: none; width: auto; margin: 0; }
 .infobox-portrait { overflow: hidden; }
 .infobox-portrait .embed-image { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
@@ -221,8 +229,10 @@
 .wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:flex-start; }
 .wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere;word-break:break-word; }
 .wiki-category-heading > .chip { flex:0 0 auto;margin-left:auto; }
-.wiki-category-preview { display:grid;gap:2px; }
+.wiki-category-preview { display:grid;grid-template-columns:minmax(0,1fr);gap:2px; }
 .wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }
+/* Nome comprido quebra em até duas linhas dentro do cartão; passou disso, reticências (o nome inteiro fica no title). */
+.wiki-category-preview .list-item > .truncate { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow-wrap:anywhere;line-height:1.3; }
 .wiki-category-all,.wiki-category-back { display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:calc(13px * var(--font-scale,1)); }
 .wiki-article-art { display:grid;place-items:center;overflow:hidden;flex:0 0 auto;background:var(--bg-deep);color:var(--gold);border-radius:var(--radius-sm);font-weight:700; }
 .wiki-article-art img { display:block;width:100%;height:100%;object-fit:cover; }
@@ -236,7 +246,11 @@
 .wiki-category-filters summary { display:flex;align-items:center;min-height:44px;font-weight:650;cursor:pointer; }
 .wiki-category-filters fieldset { border:0;min-width:0;margin:0;padding:8px 0; }
 .wiki-category-filters legend { color:var(--muted);font-size:calc(12px * var(--font-scale,1));font-weight:650; }
-.wiki-category-filters .chip { min-height:44px;white-space:normal;overflow-wrap:anywhere;cursor:pointer; }
+/* Pílulas de filtro com 32 px de desenho; a área de toque chega a 44 px pelo ::before (as fileiras têm 12 px entre si,
+   então as áreas não se sobrepõem). */
+.wiki-category-filters .row-wrap { gap:12px 8px; }
+.wiki-category-filters .chip { position:relative;min-height:32px;padding:4px 12px;white-space:normal;overflow-wrap:anywhere;cursor:pointer; }
+.wiki-category-filters .chip::before { content:"";position:absolute;inset:-6px 0; }
 .wiki-category-results.grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px; }
 .wiki-category-article { display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--text);text-decoration:none;overflow:hidden; }
 .wiki-category-article:hover { border-color:var(--line-strong); }

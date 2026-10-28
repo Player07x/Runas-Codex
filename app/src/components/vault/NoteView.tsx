@@ -102,6 +102,9 @@ interface Props {
   path: string
   folders: string[]
   onShowPanel(): void
+  /** Estado do painel ao lado, para o `aria-expanded` do botão Painel, e o que ele mostra (dica do botão). */
+  panelOpen?: boolean
+  panelHint?: string
   onBack(): void
   onTrashed?(): void
   onCreate(target: string): void
@@ -128,7 +131,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra }: Props) {
+export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -637,7 +640,7 @@ export function NoteView({ path, folders, onShowPanel, onBack, onTrashed, onCrea
           {modes}
           <div className="doc-end">
             <SaveStatus state={saveState} />
-            <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" title="Links, propriedades e gráfico local"><PanelRight size={17} /><span>Painel</span></button>
+            <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" aria-expanded={panelOpen} title={panelHint}><PanelRight size={17} /><span>Painel</span></button>
             {actionsMenu}
           </div>
         </div>

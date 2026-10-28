@@ -14,7 +14,8 @@
 .kit-menu-sep { height: 1px; margin: 4px 6px; background: var(--line); }
 
 /* ---------- Abas do painel ---------- */
-.kit-tabs { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+/* `flex: none`: numa coluna flex que rola, a fileira de abas (que rola para os lados) encolheria até a altura zero. */
+.kit-tabs { display: flex; flex: none; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; }
 .kit-tab { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: calc(13.5px * var(--font-scale, 1)); font-weight: 600; white-space: nowrap; }
 .kit-tab:hover { color: var(--text); }
 .kit-tab[aria-selected="true"] { border-bottom-color: var(--cyan); color: var(--text); }

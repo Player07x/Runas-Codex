@@ -1,4 +1,4 @@
-import { ResizablePanel, togglePanel } from "../../components/ResizablePanel"
+import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { ShowArticle } from "./ShowArticle"
 import { useCallback, useMemo, useState } from "react"
 import { GitFork, Link2, Network, Plus } from "lucide-react"
@@ -31,7 +31,7 @@ export function WikiArticleView({ path }: { path: string }) {
   const { wiki, players, calendars } = useWiki()
   const index = vault.index!
   const note = index.note(path)
-  const [panel, setPanel] = useState(false)
+  const panel = usePanelToggle("wiki-article")
   // Painel com abas (rework F4b, WIK-6): Ficha aberta por padrão, depois Relações, Citado em e Links.
   const [tab, setTab] = useState<"ficha" | "relacoes" | "citado" | "links">("ficha")
   const relationCount = useMemo(() => relationsOf(index, path, wiki?.root ?? "").length, [index, path, wiki?.root, vault.version])
@@ -45,14 +45,6 @@ export function WikiArticleView({ path }: { path: string }) {
   const onTag = useCallback((tag: string) => {
     askWikiSearch(`tag:${tag}`)
     navigate("/wiki")
-  }, [])
-  const onShowPanel = useCallback(() => {
-    const narrow = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 1100px)").matches
-    if (narrow) {
-      setPanel(value => !value)
-      return
-    }
-    togglePanel("wiki-article")
   }, [])
 
   const category = wiki ? articleCategory(path, wiki.root) : null
@@ -68,11 +60,11 @@ export function WikiArticleView({ path }: { path: string }) {
   }
 
   return (
-    <div className={`wiki-article-layout ${panel ? "show-panel" : ""}${categoryStyle.tone ? " toned" : ""}`} style={toneStyle(categoryStyle.tone)}>
+    <div className={`wiki-article-layout ${panel.overlay ? "show-panel" : ""}${categoryStyle.tone ? " toned" : ""}`} style={toneStyle(categoryStyle.tone)}>
       <section className="wiki-article-main">
-        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={onShowPanel} onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
+        <NoteView key={`${path}:${players}`} path={path} folders={folders} onShowPanel={panel.toggle} panelOpen={panel.expanded} panelHint="Ficha, relações, citações e links" onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
       </section>
-      <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side">
+      <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side" onCollapsedChange={panel.onCollapsedChange}>
         <PanelTabs label="Detalhes do artigo" idPrefix="artigo-painel" value={tab} onChange={setTab} tabs={[
           { value: "ficha", label: "Ficha" },
           { value: "relacoes", label: "Relações", count: relationCount },
@@ -122,8 +114,8 @@ function Relations({ path, root, readOnly }: { path: string; root: string; readO
           <GitFork size={15} /> Relações
         </span>
         {!readOnly && (
-          <button className="icon-btn sm" onClick={() => setAdding(!adding)} aria-label="Adicionar relação" title="Adicionar relação">
-            <Plus size={15} />
+          <button className="btn sm" onClick={() => setAdding(!adding)} aria-expanded={adding} title="Adicionar relação">
+            <Plus size={15} /> Adicionar
           </button>
         )}
       </div>

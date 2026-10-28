@@ -15,8 +15,11 @@
 :where(.page,.card,.pane-head,.modal,.page-head,.wiki-header,.campaign-header) { overflow-wrap:anywhere; }
 .input,.select,.textarea { border-color:var(--line-strong); }
 input[type=checkbox],input[type=radio] { flex-shrink:0; }
-.switch { width:56px;height:44px; }
-.switch::after { width:24px;height:24px;top:9px;left:5px; }
+/* Interruptor: o desenho tem 44×24 px; a área de toque continua com 44 px de altura (::before invisível), sem
+   aumentar o desenho nem a linha. Botões com `.hit-area` fazem o mesmo com o próprio ::before. */
+.switch { width:44px;height:24px; }
+.switch::before { content:"";position:absolute;inset:-11px 0; }
+.switch::after { width:18px;height:18px;top:2px;left:2px; }
 .switch.on::after { transform:translateX(20px); }
 .segmented { flex-wrap:wrap;overflow:visible; }
 .segmented button { white-space:normal; }
@@ -31,7 +34,7 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
  *,*::before,*::after { animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
 }
 @media(max-width:860px),(pointer:coarse) {
- button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
+ button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch):not(.hit-area), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
  button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
  .segmented { width:100%; }
  .segmented button { flex:1 1 auto; }
