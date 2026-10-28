@@ -1037,3 +1037,10 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Livros: o Valknut aparece com a imagem de capa na lista; um livro sem `capa:` continua com a capa desenhada.
 - [ ] Configurações no computador: cada item do índice mostra só a sua seção; Ctrl K › “Acessibilidade” abre a seção
   certa.
+
+## Versão 0.1.0-beta.20 (28/10/2026)
+
+- [ ] Atualizar da beta.19 para a beta.20 pelo botão “Verificar atualizações” no desktop e no Android.
+- [ ] Abrir um artigo da Wiki e confirmar que o botão Painel alterna a lateral no desktop e no celular.
+- [ ] Na lateral de um personagem ou organização, abrir Relações e adicionar um vínculo; conferir o contador e a visualização.
+- [ ] Criar ou abrir uma categoria com título muito longo e conferir que o contador permanece dentro do cartão.
