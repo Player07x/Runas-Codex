@@ -2,16 +2,17 @@ import { flushOpenNotes } from "../../lib/vault-notes"
 import { useToast } from "../../components/ui"
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import {
-  Activity, BookOpen, CalendarDays, Castle, Cog, FileText, Flag, Flame, Gem, Hourglass, Landmark, Languages, Layers, Map, MapPin, PawPrint, ScrollText, Shield, Ship, Sparkles, Sun, Swords, User, Users,
+  Activity, BookOpen, CalendarDays, Castle, Cog, FileText, Flag, Flame, Folder, Gem, Hourglass, Landmark, Languages, Layers, Map, MapPin, PawPrint, ScrollText, Shield, Ship, Sparkles, Sun, Swords, User, Users,
   type LucideIcon,
 } from "lucide-react"
-import { articleKind, listCalendars, listWikis, mainCalendar, type CalendarRef, type WikiInfo } from "../../core/wiki"
+import { articleKind, listCalendars, listWikis, mainCalendar, setCustomKinds, type CalendarRef, type WikiInfo } from "../../core/wiki"
+import { customKindsIn } from "../../core/wiki-category"
 import { publicWikiIndex } from "../../core/wiki-public"
 import { VaultView, useVault } from "../../platform/VaultProvider"
 
 const ICONS: Record<string, LucideIcon> = {
   user: User, "map-pin": MapPin, castle: Castle, landmark: Landmark, shield: Shield, flag: Flag, gem: Gem, layers: Layers, "paw-print": PawPrint, users: Users, sun: Sun, languages: Languages,
-  sparkles: Sparkles, cog: Cog, ship: Ship, "book-open": BookOpen, flame: Flame, swords: Swords, "scroll-text": ScrollText, activity: Activity, hourglass: Hourglass, "calendar-days": CalendarDays, map: Map,
+  sparkles: Sparkles, cog: Cog, ship: Ship, "book-open": BookOpen, flame: Flame, swords: Swords, "scroll-text": ScrollText, activity: Activity, hourglass: Hourglass, "calendar-days": CalendarDays, map: Map, folder: Folder,
 }
 
 /** Ícone do tipo de artigo (pela propriedade `tipo`). */
@@ -77,6 +78,8 @@ export function WikiProvider({ children, articlePath }: { children: ReactNode; a
   const toast = useToast()
   const index = vault.index
   const wikis = useMemo(() => (index ? listWikis(index) : []), [index, vault.version])
+  // Categorias criadas pelo usuário: registradas antes de desenhar a Wiki, para `articleKind` reconhecer o tipo delas.
+  useMemo(() => setCustomKinds(index ? customKindsIn(index) : []), [index, vault.version])
   const [chosen, setChosen] = useState(() => stored(CURRENT_KEY))
   const [players, setPlayersState] = useState(() => stored(PLAYERS_KEY) === "1")
   const fromArticle = articlePath ? wikis.find((w) => (articlePath === w.root.slice(0,-1) || articlePath.startsWith(w.root))) : undefined

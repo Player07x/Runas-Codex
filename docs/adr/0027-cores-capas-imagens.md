@@ -43,3 +43,20 @@ Obsidian).
   a regra 7), textura de fundo, fonte de título por campanha, ícone a partir de imagem e cor por tag.
 - O Início mostra a próxima sessão com a capa da campanha a partir da F5 (INI-1).
 - Novas sessões criadas pela campanha não gravam mais `cor: red` no evento da Agenda: a cor vem da campanha.
+
+## Adendo (28/10/2026): filtros escolhidos e categorias criadas pelo usuário
+
+A nota da categoria passou a guardar também como a categoria se organiza, pelo mesmo motivo das cores: vale em
+todos os aparelhos e o Obsidian mostra como propriedades comuns.
+
+- **`filtros`**: a lista dos campos que viram filtro na página da categoria (`filtros: [especie, status]`). Só servem
+  campos de um valor de texto por artigo; imagem, número, data e campo com mais de um valor na mesma nota ficam de
+  fora, e o diálogo “Escolher filtros” diz por quê. Sem `filtros`, valem os campos com 2 a 8 valores diferentes
+  (o comportamento anterior); `filtros: []` desliga todos. Campos com mais de 8 valores viram uma lista de escolha.
+- **Categoria criada pelo usuário** (“Monstros”, “Plantas”): a pasta da wiki com a nota da categoria dizendo
+  `artigo` (o nome de cada artigo, que vira o `tipo`: `Monstro` → `tipo: monstro`), `campos` (a ficha, um por item:
+  `Habitat (link)`; tipos `texto`, `link`, `links`, `número`, `data`, `imagem`; datas ganham o sufixo `_mundo`),
+  `secoes` e `perguntas`. A Wiki registra esses tipos a cada mudança do índice (`setCustomKinds`), então a ficha, os
+  cartões, os filtros e o Novo artigo tratam o tipo novo como os prontos. Um nome de tipo pronto (“Personagem”) não
+  é redefinido: vale o pronto. Tirar um campo da ficha não apaga o valor dos artigos que já o têm. Limite conhecido:
+  duas wikis com o mesmo nome de artigo (“Monstro”) dividem a ficha da primeira.

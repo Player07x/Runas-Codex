@@ -36,6 +36,8 @@ export interface ArticleKind {
   /** Perguntas-guia: ficam como comentários `%%` no artigo novo (somem na leitura e no Obsidian). */
   questions: string[]
   sections: string[]
+  /** Tipo criado pelo usuário: a raiz da wiki da categoria (`Wikis/Mundo/`); os tipos prontos não têm. */
+  root?: string
 }
 
 const f = (key: string, label: string, kind: FieldKind = "texto"): FieldDef => ({ key, label, kind })
@@ -75,7 +77,93 @@ const KIND_ALIASES: Record<string, string> = { acontecimento: "evento", "país":
 export function articleKind(tipo: unknown): ArticleKind | undefined {
   if (typeof tipo !== "string") return undefined
   const key = tipo.trim().toLocaleLowerCase("pt-BR")
-  return ARTICLE_KINDS.find((k) => k.id === (KIND_ALIASES[key] ?? key))
+  const id = KIND_ALIASES[key] ?? key
+  return ARTICLE_KINDS.find((k) => k.id === id) ?? customKinds.find((k) => k.id === id || k.id === fieldKey(key))
+}
+
+// ---------- Categorias criadas pelo usuário ----------
+// Uma categoria nova (“Monstros”, “Plantas”) é uma pasta da wiki com a nota da categoria (`Monstros/Monstros.md`,
+// `tipo: categoria`) dizendo como é cada artigo dela: `artigo` (o nome de um, “Monstro”, que vira o `tipo`), `campos`
+// (a ficha, um por linha: `Habitat (link)`), `secoes` e `perguntas`. Tudo texto do frontmatter, legível no Obsidian.
+
+/** Tipos dos campos na ficha, como aparecem entre parênteses em `campos` e na tela. */
+export const FIELD_KIND_NAMES: Record<FieldKind, string> = { texto: "texto", link: "link", links: "links", numero: "número", data: "data", imagem: "imagem" }
+export const FIELD_KIND_LABELS: Record<FieldKind, string> = { texto: "Texto", link: "Link para um artigo", links: "Lista de links", numero: "Número", data: "Data do mundo", imagem: "Imagem" }
+
+const fold = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR")
+
+/** Nome de propriedade a partir do rótulo: “Nome verdadeiro” → `nome_verdadeiro`. */
+export function fieldKey(label: string): string {
+  return fold(label).replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+}
+
+/** `Habitat (link)` → campo `habitat`, rótulo “Habitat”, tipo link. Datas ganham o sufixo `_mundo` (calendário). */
+export function parseFieldSpec(spec: unknown): FieldDef | null {
+  if (typeof spec !== "string") return null
+  const match = /^(.*?)\s*(?:\(([^()]*)\))?\s*$/.exec(spec.trim())
+  const label = match?.[1]?.trim() ?? ""
+  const named = fold(match?.[2]?.trim() ?? "")
+  const kind = (Object.keys(FIELD_KIND_NAMES) as FieldKind[]).find((k) => fold(FIELD_KIND_NAMES[k]) === named || k === named) ?? "texto"
+  const base = fieldKey(label)
+  if (!base) return null
+  return { key: kind === "data" && !base.endsWith("_mundo") ? `${base}_mundo` : base, label, kind }
+}
+
+export const fieldSpec = (field: FieldDef): string => (field.kind === "texto" ? field.label : `${field.label} (${FIELD_KIND_NAMES[field.kind]})`)
+
+/** Sugestão do nome de um artigo a partir do plural da categoria: “Monstros” → “Monstro”, “Animais” → “Animal”. */
+export function singularOf(plural: string): string {
+  const word = plural.trim()
+  const rules: [RegExp, string][] = [[/ões$/i, "ão"], [/ães$/i, "ão"], [/ais$/i, "al"], [/éis$/i, "el"], [/eis$/i, "il"], [/óis$/i, "ol"], [/(r|z)es$/i, "$1"], [/ns$/i, "m"], [/s$/i, ""]]
+  for (const [pattern, replacement] of rules) if (pattern.test(word)) return word.replace(pattern, replacement)
+  return word
+}
+
+const textList = (value: unknown): string[] => (Array.isArray(value) ? value : typeof value === "string" && value.trim() ? [value] : []).filter((item): item is string => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+
+/**
+ * O tipo de artigo que a nota de uma categoria define, ou `null` quando ela não define nenhum (sem `artigo` nem
+ * `campos`) ou quando o nome é de um tipo pronto (aí vale o pronto). `folder` é a pasta da categoria no cofre.
+ */
+export function customKindOf(folder: string, data: Record<string, unknown>): ArticleKind | null {
+  const clean = folder.replace(/\/$/, "")
+  const root = wikiRootOf(`${clean}/`)
+  if (!root || data.artigo === undefined && data.campos === undefined) return null
+  const label = typeof data.artigo === "string" && data.artigo.trim() ? data.artigo.trim() : singularOf(clean.split("/").at(-1)!)
+  const id = fieldKey(label)
+  if (!id || ARTICLE_KINDS.some((k) => k.id === id || KIND_ALIASES[fold(label)] === k.id)) return null
+  const fields: FieldDef[] = []
+  for (const field of textList(data.campos).map(parseFieldSpec)) if (field && !fields.some((other) => other.key === field.key)) fields.push(field)
+  const sections = textList(data.secoes)
+  return { id, label, folder: clean.slice(root.length), icon: "folder", fields, questions: textList(data.perguntas), sections: sections.length ? sections : ["Descrição", "História"], root }
+}
+
+let customKinds: ArticleKind[] = []
+/** A Wiki registra os tipos das categorias do cofre (a cada mudança do índice) para `articleKind` reconhecê-los. */
+export function setCustomKinds(kinds: ArticleKind[]): void {
+  customKinds = kinds
+}
+/** Tipos prontos e os criados pelo usuário (de uma wiki só, se `root` for dado). */
+export function articleKinds(root?: string): ArticleKind[] {
+  return [...ARTICLE_KINDS, ...customKinds.filter((k) => !root || k.root === root)]
+}
+
+/** Texto da nota de uma categoria nova com a ficha dos artigos dela. */
+export function newCategoryNote(name: string, kind: Pick<ArticleKind, "label" | "fields" | "sections" | "questions">): string {
+  const list = (key: string, values: string[]) => (values.length ? [`${key}:`, ...values.map((value) => `  - ${yamlString(value)}`)] : [])
+  return [
+    "---",
+    "tipo: categoria",
+    `artigo: ${yamlString(kind.label)}`,
+    ...list("campos", kind.fields.map(fieldSpec)),
+    ...list("secoes", kind.sections),
+    ...list("perguntas", kind.questions),
+    "---",
+    `# ${name}`,
+    "",
+    `Cada ${kind.label.toLocaleLowerCase("pt-BR")} novo nasce com a ficha de \`campos\`. Para mudar a ficha, use Wiki › ${name} › ⋯ › Ficha da categoria.`,
+    "",
+  ].join("\n")
 }
 
 const ARTICLE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp"])
