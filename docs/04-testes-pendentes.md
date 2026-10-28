@@ -1078,3 +1078,12 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   Facção, Divindade, Sala de masmorra, Lenda, Mercador, Aventura). “Gerar de novo” várias vezes dá resultados
   diferentes; NPC e Taverna concordam o gênero (“Ana…, cartógrafa”, “O Javali Dourado”).
 - [ ] Campanhas › Ferramentas › Gerar aventura traz também “Onde”.
+
+
+## Versão 0.1.0-beta.21 (28/10/2026)
+
+- [ ] Atualizar da beta.20 para a beta.21 pelo botão “Verificar atualizações” no desktop e no Android.
+- [ ] Configurações › Ajuda: pesquisar “formatadores”, abrir o catálogo e conferir sintaxe, finalidade e rolagem da tabela em 320 px.
+- [ ] Abrir os 22 tópicos da Ajuda, usar o índice por grupo e avançar pelo botão Próximo; conferir que o tour e as notas de exemplo continuam no fim.
+- [ ] Wiki: repetir a conferência dos PRs #80–#82 (Painel/Relações, filtros e categorias personalizadas, 15 geradores).
+- [ ] A sala Android: repetir a entrada do jogador e conferir que o selo “Jogador 1” aparece após a conexão.
