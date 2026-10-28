@@ -1071,3 +1071,10 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Monstros › ⋯ › “Ficha da categoria”: acrescentar um campo e ver o campo novo ao editar a ficha de um monstro que
   já existia; tirar um campo não apaga o valor gravado nos artigos.
 - [ ] A nota `Monstros/Monstros.md` abre no Obsidian com `artigo`, `campos`, `secoes` como propriedades comuns.
+
+## Wiki: geradores com mais opções
+
+- [ ] Wiki › Ferramentas: 15 geradores (Nome, NPC, Taverna, Tesouro, Clima, Gancho, Rumor, Nome de lugar, Item mágico,
+  Facção, Divindade, Sala de masmorra, Lenda, Mercador, Aventura). “Gerar de novo” várias vezes dá resultados
+  diferentes; NPC e Taverna concordam o gênero (“Ana…, cartógrafa”, “O Javali Dourado”).
+- [ ] Campanhas › Ferramentas › Gerar aventura traz também “Onde”.

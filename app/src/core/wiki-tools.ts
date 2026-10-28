@@ -1,5 +1,6 @@
 import { parse as parseYaml } from "yaml"
 import { dayNumber, parseWorldDate, dateProblem, type Calendar, type WorldDate } from "./calendar"
+import * as T from "./generator-tables"
 export interface RollEntry { text: string; weight: number; table?: string }
 export interface RollTable { name: string; entries: RollEntry[] }
 const object = (v:unknown):Record<string,unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string,unknown> : {}
@@ -34,20 +35,32 @@ export function parseDictionary(code:string):Dictionary {
     return {word:row.palavra,translation:row.traducao,pronunciation:typeof row.pronuncia==="string"?row.pronuncia:""}
   })}
 }
-export const GENERATOR_KINDS = {nome:"Nome lusófono",npc:"NPC",taverna:"Taverna",tesouro:"Tesouro",clima:"Clima",gancho:"Gancho",aventura:"Aventura"} as const
+export const GENERATOR_KINDS = {nome:"Nome lusófono",npc:"NPC",taverna:"Taverna",tesouro:"Tesouro",clima:"Clima",gancho:"Gancho",rumor:"Rumor",lugar:"Nome de lugar",item:"Item mágico",faccao:"Facção",divindade:"Divindade",masmorra:"Sala de masmorra",lenda:"Lenda",mercador:"Mercador",aventura:"Aventura"} as const
 export type GeneratorKind=keyof typeof GENERATOR_KINDS
+/** Sorteio dos geradores; as listas ficam em `generator-tables.ts`. `random` fixo deixa o resultado previsível nos testes. */
 export function generateWorld(kind:GeneratorKind, random=Math.random):string {
   const pick=<T,>(values:readonly T[])=>values[Math.max(0,Math.min(values.length-1,Math.floor(random()*values.length)))]!
-  const name=()=>`${pick(["Ana","João","Beatriz","Caio","Luísa","Miguel","Yara","Dandara","Afonso","Inês","Tiago","Lúcio","Rui","Conceição","Bento","Catarina"])} ${pick(["das Neves","de Almeida","Ferreira","da Mata","Bragança","do Vale","Moura","Pereira","dos Reis","Barbosa"])} ` .trim()
-  const npc=()=>`${name()}, ${pick(["cartógrafo","curandeira","mensageiro","artesã","guarda","barqueira"])}. Quer ${pick(["resgatar um familiar","pagar uma dívida","encontrar um lugar perdido","proteger uma promessa"])}; esconde ${pick(["um mapa incompleto","uma aliança perigosa","uma identidade antiga","uma chave roubada"])}.`
-  const hook=()=>`${pick(["Uma ponte desaparece","Um sino toca sozinho","Um emissário não chega","A água do poço muda de cor"])}. ${pick(["A aldeia pede ajuda","Uma facção oferece recompensa","As pistas levam às ruínas","O fenômeno se repete a cada lua"])}.`
+  const person=()=>{const gender=pick(["f","m"] as const),name=`${pick(gender==="f"?T.FEMALE_NAMES:T.MALE_NAMES)} ${pick(T.SURNAMES)}`;return {gender,name,job:pick(T.PROFESSIONS)[gender==="f"?1:0]}}
+  const name=()=>person().name
+  const npc=()=>{const p=person();return `${p.name}, ${p.job}. Aparência: ${pick(T.LOOKS)}. Jeito: ${pick(T.TRAITS)}. Quer ${pick(T.DESIRES)}; esconde ${pick(T.SECRETS)}.`}
+  const hook=()=>`${pick(T.HOOK_EVENTS)}. ${pick(T.HOOK_TURNS)}.`
+  const treasure=()=>`${pick(T.COIN_AMOUNTS)} ${pick(T.COIN_KINDS)}, ${pick(T.TRINKETS)} e ${pick(T.TREASURE_EXTRAS)}.`
+  const place=()=>`${pick(T.PLACE_HEADS)} ${pick(T.PLACE_TAILS)}`
   if(kind==="nome") return name()
   if(kind==="npc") return npc()
-  if(kind==="taverna") return `A ${pick(["Raposa","Lua","Runa","Chama"])} ${pick(["Dourada","Partida","Silenciosa","Errante"])}. Serve ${pick(["ensopado de raízes","pão de mel e hidromel","peixe defumado","caldo de cogumelos"])}. Rumor: ${hook()}`
-  if(kind==="tesouro") return `${pick([12,25,50,100])} moedas, ${pick(["um broche com brasão","uma bússola sem norte","um anel de cobre","uma carta lacrada"])} e ${pick(["uma dívida anotada","um mapa de contrabandistas","o nome de um herdeiro","uma pista para outro esconderijo"])}.`
-  if(kind==="clima") return pick(["Manhã fria, neblina e vento fraco.","Chuva contínua; estradas enlameadas.","Céu aberto, calor e vento do oeste.","Tempestade se aproximando pelo litoral.","Noite seca e muito fria."])
+  if(kind==="taverna") {const [noun,gender]=pick(T.TAVERN_NOUNS),adjective=pick(T.TAVERN_ADJECTIVES)[gender==="f"?1:0];return `${gender==="f"?"A":"O"} ${noun} ${adjective}. Serve ${pick(T.DISHES)} e ${pick(T.DRINKS)}. Chama atenção: ${pick(T.TAVERN_DETAILS)}. Rumor: ${pick(T.RUMORS)}`}
+  if(kind==="tesouro") return treasure()
+  if(kind==="clima") {const season=pick(Object.keys(T.WEATHER));return `${season}: ${pick(T.WEATHER[season]!)}`}
   if(kind==="gancho") return hook()
-  return `## Gancho\n${hook()}\n\n## NPC\n${npc()}\n\n## Encontro\n${pick(["Negociar uma passagem vigiada","Atravessar ruínas antes da cheia","Resolver uma disputa entre dois aliados","Escoltar alguém que esconde o destino"])}\n\n## Reviravolta\n${pick(["O contratante omitiu uma dívida.","O suposto inimigo quer negociar.","A relíquia é uma cópia; o original já partiu."])}\n\n## Recompensa\n${generateWorld("tesouro",random)}`
+  if(kind==="rumor") return pick(T.RUMORS)
+  if(kind==="lugar") return place()
+  if(kind==="item") return `${pick(T.MAGIC_ITEMS)} ${pick(T.MAGIC_POWERS)}. ${pick(T.MAGIC_QUIRKS)}`
+  if(kind==="faccao") return `${pick(T.FACTION_NOUNS)} ${pick(T.FACTION_EMBLEMS)}. Quer ${pick(T.FACTION_GOALS)}; age por meio de ${pick(T.FACTION_METHODS)}.`
+  if(kind==="divindade") {const syllables=Array.from({length:2+Math.floor(random()*2)},()=>pick(T.DEITY_SYLLABLES)).join(""),deity=syllables.charAt(0).toLocaleUpperCase("pt-BR")+syllables.slice(1);return `${deity}, divindade ${pick(T.DEITY_DOMAINS)}. Símbolo: ${pick(T.DEITY_SYMBOLS)}. Mandamento: ${pick(T.DEITY_TENETS)}`}
+  if(kind==="masmorra") return `${pick(T.DUNGEON_ROOMS)}. ${pick(T.DUNGEON_FEATURES)} Perigo: ${pick(T.DUNGEON_DANGERS)}.`
+  if(kind==="lenda") return `${pick(T.LEGEND_SUBJECTS)}. ${pick(T.LEGEND_TRUTHS)}`
+  if(kind==="mercador") {const p=person();return `${p.name} vende ${pick(T.MERCHANT_WARES)} e ${pick(T.MERCHANT_QUIRKS)}.`}
+  return `## Gancho\n${hook()}\n\n## Onde\n${place()}\n\n## NPC\n${npc()}\n\n## Encontro\n${pick(T.ENCOUNTERS)}\n\n## Reviravolta\n${pick(T.TWISTS)}\n\n## Recompensa\n${treasure()}`
 }
 /** Recorrência no calendário escolhido; não usa meses/dias do calendário real. */
 export function worldEventOn(data:Record<string,unknown>, cal:Calendar, date:WorldDate):boolean {
