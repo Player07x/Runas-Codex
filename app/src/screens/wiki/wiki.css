@@ -1,3 +1,6 @@
+Failed to create stream fd: Operation not permitted
+Failed to create stream fd: Operation not permitted
+Failed to create stream fd: Operation not permitted
 .wiki-fill { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .wiki-header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 88%, transparent); backdrop-filter: blur(12px); }
 .wiki-tabs { border-bottom: 0; }
@@ -218,8 +221,9 @@
 .map-toolbar .map-layers { flex-wrap:wrap; }
 
 /* W1 — categorias resumidas e navegação por arte, sem estilos no leitor compartilhado. */
-.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px; }
-.wiki-category-heading h2 { font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere; }
+.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:flex-start; }
+.wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere;word-break:break-word; }
+.wiki-category-heading > .chip { flex:0 0 auto;margin-left:auto; }
 .wiki-category-preview { display:grid;gap:2px; }
 .wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }
 .wiki-category-all,.wiki-category-back { display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:calc(13px * var(--font-scale,1)); }
