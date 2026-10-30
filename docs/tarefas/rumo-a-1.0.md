@@ -393,7 +393,7 @@ Relato do dono (30/10, com captura do Calendário Rúnico em “Simivisonnios de
 ### U10 — Título das categorias da Wiki fora do centro vertical
 
 Relato do dono (30/10, com captura da página inicial da Wiki): nos cartões das categorias (“Acontecimentos”,
-“Calendários”…), o nome fica mais alto que o ícone e a contagem, sem centro vertical comum. Causa provável: o `h2` dentro
-de `.wiki-category-heading` (`app/src/screens/wiki/WikiHome.tsx`) mantém a margem e a altura de linha de título, e o
-`row` não alinha pelo centro. Corrigir em `wiki.css` (`align-items: center`, `margin: 0` e `line-height` do `h2`), com
-nome longo quebrando em duas linhas sem desalinhar o ícone e a contagem.
+“Calendários”…), o nome fica mais alto que o ícone e a contagem, sem centro vertical comum. Causa: `.wiki-category-heading`
+(`app/src/screens/wiki/wiki.css`, linha 230) usa `align-items: flex-start`, pensado para nomes longos em duas linhas, e o
+`h2` tem altura de linha de título. Corrigir com `align-items: center` e `line-height` do `h2` igual à do ícone; nome
+longo quebra em duas linhas com o ícone e a contagem centralizados no bloco.
