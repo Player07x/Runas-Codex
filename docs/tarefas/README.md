@@ -295,3 +295,10 @@ Code e dono), com as decisões pendentes do dono, está em [`rumo-a-1.0.md`](rum
 Pedido do dono depois da beta.16: prévia ao lado do texto e o rework do PDF, em cinco fases (L1–L5) com o Claude Code.
 Fases, arquivos e situação em [`livro-impresso.md`](livro-impresso.md); decisões na
 [ADR 0033](../adr/0033-livro-impresso.md).
+
+## Panorama das tarefas (30/10/2026)
+
+[`panorama.html`](panorama.html) é um documento visual, sem responsáveis, com as tarefas concluídas por data, o que
+falta, o que falhou, o que mudou no plano e o plano original de 14/10. Abra no navegador. Para atualizar, edite as
+listas no fim do arquivo; os números se recalculam. O que cada frente faz continua em [`rumo-a-1.0.md`](rumo-a-1.0.md).
+

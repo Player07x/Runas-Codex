@@ -4,8 +4,9 @@
 acessibilidade), a [regra de lançamentos](../adr/0025-lancamentos.md) e o [guia de UX/UI](../ux-ui-acessibilidade.md).
 
 Este arquivo substitui [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md) (de 22/10). Criado em 25/10 sobre a
-beta.16; **revisado em 30/10** sobre a `main` depois da beta.21 e dos PRs #85 a #88 (T1 a T4), com o PR #89 aberto
-(geradores, T6, R1 sem Android, T7, Campanhas e T9).
+beta.16; **revisado em 30/10** sobre a `main` depois da beta.21 e dos PRs #85 a #89 (T1 a T4; geradores, T6, R1 sem
+Android, T7, Campanhas e T9), publicados na beta.22. A visão geral, com o que foi feito por data, o que falhou e o
+que mudou, está em [`panorama.html`](panorama.html).
 
 ## Resumo: feito e falta
 
@@ -13,7 +14,7 @@ beta.16; **revisado em 30/10** sobre a `main` depois da beta.21 e dos PRs #85 a 
 |---|---|---|
 | Claude Code | T1, T2, T3, T4 (PRs #85–#88), T5 (#83), T6, T7 em parte, T9 (PR #89) | T7: D11 e D13 e o que a R1 com Android achar; T8 |
 | Codex | R5 (#68, #70) | R1 no Android, R2 (se a R1 no Android achar defeito de núcleo), R3, R4 |
-| Dono | V1 a V5 (testados e funcionando, informado em 30/10); D1 a D4 respondidas | Mesclar o PR #89; conferir as funções novas do fim de `docs/04-testes-pendentes.md` |
+| Dono | V1 a V5 (testados e funcionando, informado em 30/10); D1 a D4 respondidas; PR #89 mesclado e beta.22 publicada | Conferir as funções novas do fim de `docs/04-testes-pendentes.md` |
 | Fora da lista (pedidos do dono) | Revisão e correções das Campanhas, mapa de missões, Nova aventura, Elenco (T9), geradores com 19.412 opções e 43 culturas, Ferramentas da Wiki refeitas | Sobras da revisão das Campanhas (seção abaixo) |
 
 ## Situação
@@ -21,7 +22,7 @@ beta.16; **revisado em 30/10** sobre a `main` depois da beta.21 e dos PRs #85 a 
 - **Na `main`:** as etapas 1 a 10, o Android (cofre real, SAF, sala na rede local, APK assinado), X1 a X8, C0 a C8,
   Tasks e tempo livre, o rework visual F1 a F5, os itens 1 a 8 do Codex, R5, a Ajuda (T5, #83), os geradores ×20 e
   a Wiki nova (#80–#82) e as telas T1 a T4 (#85–#88, mescladas em 30/10).
-- **No PR #89 (aberto):** geradores com 19.412 opções e nomes de 43 culturas, Ferramentas da Wiki refeitas, T6 (10 mil
+- **Na beta.22 (PR #89, mesclado em 30/10):** geradores com 19.412 opções e nomes de 43 culturas, Ferramentas da Wiki refeitas, T6 (10 mil
   notas), a revisão R1 sem Android ([`revisao-1.0.md`](revisao-1.0.md)) e as correções de tela T7, as correções da
   [revisão das Campanhas](../propostas/campanhas-revisao.html), o Elenco para mais de 100 NPCs (T9), o mapa de
   missões e o assistente “Nova aventura”.
@@ -31,7 +32,7 @@ beta.16; **revisado em 30/10** sobre a `main` depois da beta.21 e dos PRs #85 a 
 ## O caminho até a 1.0
 
 1. **Feito:** o dono testou as betas (V1 a V4) e respondeu D1 a D4; T1 a T4 mescladas.
-2. **Agora:** mesclar o PR #89 e publicar a próxima beta; Codex com R1 no Android, R3 e R4.
+2. **Agora:** PR #89 mesclado e beta.22 publicada (30/10); Codex com R1 no Android, R3 e R4.
 3. **Candidata:** o que a R1 no Android achar (R2 no núcleo, T7 na tela) e as sobras da revisão das Campanhas.
 4. **1.0.0:** quando todas as tarefas desta lista estiverem concluídas com êxito (decisão D4): lista de conferências
    fechada com o dono, notas da versão e tag `v1.0.0` (T8). O Android atualiza por cima das betas sem reinstalar
@@ -224,3 +225,13 @@ confere: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %, Android físico
 - Migrar do Notion, Kanka e World Anvil (o plano deixa para depois; a migração do Obsidian e dos plugins de RPG já
   existe, C4).
 - Fora do plano: voz, vídeo e sincronização pela rede local (decisão do dono, 14/10).
+
+## Registrada, aguardando o dono liberar (30/10/2026)
+
+Anotada a pedido do dono, **sem começar** e sem responsável até ele liberar:
+
+- **Elenco: NPCs em Lista ou Blocos.** Em Campanhas › Elenco, os NPCs ganham o seletor de exibição das categorias da
+  Wiki (`app/src/screens/wiki/WikiCategory.tsx`: botões Grade e Lista com `aria-pressed`, escolha lembrada no
+  `localStorage` com chave `runas-codex:<nome>`). Lista é a de hoje (`NpcRoster` em
+  `app/src/screens/campaigns/CastView.tsx`, com filtros e grupos); Blocos mostra os NPCs em cartões, como os artigos de
+  uma categoria.
