@@ -41,3 +41,13 @@ anterior tinha e para que lançar cedo não quebre o que já funciona.
 - Uma versão pode trazer telas em construção, mas nunca menos do que a anterior.
 - O agente que publica é o que recebeu o pedido. Se o outro tiver um PR aberto que deveria entrar, pergunta ao dono
   antes.
+
+## Adendo — workflow “Lançar versão” (30/10/2026)
+
+As sessões do agente na nuvem só enviam commits para o próprio branch; a tag da beta.22 e a da beta.23 tiveram de ser
+enviadas pelo dono. O workflow `.github/workflows/lancar-versao.yml` (execução manual, só na `main`) faz o mesmo passo
+pelo GitHub e confere as regras desta ADR antes: versão igual nos quatro `package.json`, maior que a última tag e nunca
+repetida (regra 3), notas em `docs/releases/v<versão>.md` (regra 6) e CI verde no commit (regra 7). Ele cria a tag
+anotada no commit da `main` e chama o Release na tag; o Release publica como se a tag tivesse sido enviada à mão,
+inclusive com o APK de release conferido. Enviar a tag à mão continua valendo. Quem pode rodar Actions no repositório
+pode lançar, como hoje quem pode enviar tags.
