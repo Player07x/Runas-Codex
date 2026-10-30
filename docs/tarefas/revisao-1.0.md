@@ -116,21 +116,36 @@ Os links da trilha ganham 44 px de altura no celular (`app/src/styles/accessibil
   `wiki.css` sem escopo (`.graph-panel`) valia também nas Notas.
 - **Correção:** a regra ficou só no gráfico antigo da Wiki (`.graph-screen .graph-panel`).
 
-### D11 — Telas de documento sem `h1` (baixa, aberto)
+### D11 — Telas de documento sem `h1` (baixa, corrigido em 30/10)
 
-Nota aberta, artigo da Wiki, livro, sessão de campanha e quadro não têm `h1`; o título fica num campo editável ou na
-barra do documento. O título da página (`document.title`) existe. Sugestão: um `h1` visualmente oculto com o nome do
-documento em `DocumentBar` (`app/src/components/kit/Layout.tsx`), sem mudar o desenho.
+Nota aberta, artigo da Wiki, livro, sessão de campanha e quadro não tinham `h1`; o título ficava num campo editável ou
+na barra do documento. **Correção:** o nome na barra do documento virou o `h1` (`NoteView.tsx`, que serve nota,
+artigo e sessão, e `BookEditor.tsx`), sem mudar o desenho; no celular o nome do livro some da barra mas continua como
+`h1` para o leitor de tela. O quadro, as Notas e o Gráfico sem nota aberta e o Gráfico da Wiki ganharam um `h1` oculto.
+A varredura repetida em 320 px e no computador mostra uma `h1` em todas as 50 telas.
 
 ### D12 — Teste de regex com `(?i:…)` falha no Node 22 (baixa, ambiente)
 
 `app/src/core/search.test.ts` usa modificador de regex que só existe no Node 24 (o do projeto). No Node 24 passa. Não
 muda nada para o app, que roda no Electron/Chromium atual.
 
-### D13 — Links curtos dentro de texto com menos de 24 px de altura (baixa, aberto)
+### D13 — Links curtos dentro de texto com menos de 24 px de altura (baixa, corrigido em 30/10)
 
-Links de nota (`.wikilink`) e o link de origem da tarefa (`.task-backlink`) têm 18 px. Dentro de uma frase isso é
-exceção da WCAG 2.5.8; o link de origem da tarefa fica numa linha própria e poderia ganhar 24 px.
+Links de nota (`.wikilink`) e o link de origem da tarefa (`.task-backlink`) tinham 18 px. **Correção:** o link de
+origem da tarefa, que fica numa linha própria, tem 24 px (44 px no celular; `tasks.css`). Os links de nota dentro do
+texto seguem a exceção da WCAG 2.5.8 para links numa frase e são desenhados pelo leitor compartilhado (regra 7); o axe
+ainda acusa um deles quando o parágrafo da nota tem só o link.
+
+### D14 — Gráfico da Wiki sem `h1` (baixa, corrigido em 30/10)
+
+Achado pela varredura no WebView do Android, que descobre mais rotas. `WikiGraph.tsx` ganhou o `h1` oculto.
+
+### D15 — Legenda das relações da Wiki sem contraste no tema claro (média, corrigido em 30/10)
+
+- **Passos:** Wiki › Relações › Diplomacia no tema claro.
+- **Obtido:** a legenda pintava o texto com a cor do mapa (`#9dcbb4` sobre `#e9edf8`): contraste 1,54:1.
+- **Arquivo:** `app/src/screens/wiki/WikiRelations.tsx`.
+- **Correção:** a cor fica num ponto ao lado e o texto usa a cor do tema, como na tabela e no calendário (D5).
 
 ## Desktop
 
@@ -144,6 +159,6 @@ confirmação agora).
 
 1. O que ainda está aberto na revisão das Campanhas (mover missões pelo teclado, data da sessão levando o evento da
    Agenda, validação da nota da sessão, campos que não atualizam).
-2. D11 e D13.
+2. D11 e D13 (corrigidos em 30/10).
 3. As conferências manuais desta revisão: teclado e diálogos, leitores de tela, texto a 140 %, Android físico, sala
    com dois aparelhos e impressão.
