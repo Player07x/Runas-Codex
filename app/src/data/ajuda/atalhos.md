@@ -7,6 +7,8 @@ Os atalhos funcionam no desktop e podem ser alterados em **Configurações › E
 - **Alt + ← / Alt + →** volta ou avança pela navegação do app. Os botões laterais do mouse fazem o mesmo.
 - Para abrir Configurações, use a barra lateral ou procure “Configurações” na paleta.
 - **Esc** fecha a paleta, galeria, diálogo ou menu aberto.
+- **Ctrl Alt N** (captura rápida) abre uma nota nova mesmo com o app em segundo plano. No Linux com Wayland, crie o
+  atalho do sistema no cartão **Captura rápida** de Configurações › Editor e atalhos.
 
 ### Editor
 

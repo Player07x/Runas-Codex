@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react"
-import { ImagePlus, Map as MapIcon, Plus, RotateCcw, Trash2 } from "lucide-react"
+import { FileUp, ImagePlus, Map as MapIcon, Plus, RotateCcw, Trash2 } from "lucide-react"
 import { DIAGONAL_RULES, GRID_TYPES, type DiagonalRule, type GridConfig, type GridType } from "../shared/grid"
 import { DEFAULT_GRID, type SceneData, type SceneVisionConfig } from "../shared/scene"
 import type { WorldDocument } from "../shared/world"
 import { resolveAssetUrl, vtt } from "../api"
 import { importImage } from "../canvas/SceneCanvas"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
+import { ImportDialog } from "./ImportDialog"
 
 const GRID_LABELS: Record<GridType, string> = { square: "Quadrada", "hex-rows": "Hexagonal (fileiras)", "hex-cols": "Hexagonal (colunas)", none: "Sem grade" }
 const DIAGONAL_LABELS: Record<DiagonalRule, string> = { equidistant: "Diagonal = 1 célula", alternating: "Diagonal alterna 1 e 2", euclidean: "Distância real" }
@@ -27,6 +28,7 @@ export function ScenesPanel({ store, sceneId, onOpen }: { store: DocumentStore; 
   useDocumentsVersion(store)
   const scenes = store.scenes()
   const current = sceneId ? store.get<SceneData>(sceneId) : null
+  const [importing, setImporting] = useState(false)
 
   async function create() {
     const id = newId()
@@ -37,7 +39,10 @@ export function ScenesPanel({ store, sceneId, onOpen }: { store: DocumentStore; 
   return <div className="scenes-panel">
     <header className="panel-header">
       <div><p className="eyebrow">Cenas</p><h2>{scenes.length ? `${scenes.length} ${scenes.length === 1 ? "cena" : "cenas"}` : "Nenhuma cena"}</h2></div>
-      <button className="primary" onClick={() => void create()}><Plus size={15} /> Nova cena</button>
+      <div className="panel-actions">
+        <button className="ghost" onClick={() => setImporting(true)} title="Universal VTT, Foundry ou tokens em lote"><FileUp size={15} /> Importar…</button>
+        <button className="primary" onClick={() => void create()}><Plus size={15} /> Nova cena</button>
+      </div>
     </header>
     <ul className="scene-list">
       {scenes.map((scene) => <li key={scene.id}>
@@ -48,6 +53,7 @@ export function ScenesPanel({ store, sceneId, onOpen }: { store: DocumentStore; 
       </li>)}
     </ul>
     {current && <SceneConfig key={current.id} scene={current} store={store} onDeleted={() => onOpen(scenes.find((scene) => scene.id !== current.id)?.id ?? null)} />}
+    {importing && <ImportDialog store={store} sceneId={sceneId} onClose={() => setImporting(false)} onOpen={onOpen} />}
   </div>
 }
 

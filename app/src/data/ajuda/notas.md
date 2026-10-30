@@ -27,8 +27,10 @@ Livros.
 - **Nota do dia** (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>D</kbd>): cria ou abre a nota de hoje, com o modelo e a pasta
   das notas diárias do Obsidian (`.obsidian/daily-notes.json`).
 - **Captura rápida**: no computador, <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> abre uma nota nova mesmo com o app
-  em segundo plano. No Linux com Wayland o atalho global não funciona: crie um atalho de teclado do sistema que
-  rode o app com `--captura`.
+  em segundo plano. No Linux com Wayland o atalho global não funciona: em Configurações › Editor e atalhos,
+  **Criar atalho** faz um atalho do sistema que chama o app com `--captura`, até com ele fechado (no GNOME, já com
+  <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>; no KDE, escolha a tecla em Configurações do sistema › Atalhos).
+  **Remover** desfaz.
 
 ### Buscar
 
