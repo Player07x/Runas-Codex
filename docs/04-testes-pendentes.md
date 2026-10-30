@@ -1221,3 +1221,12 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   mexendo no mapa; anotar a porcentagem gasta em cada caso (a meta da ADR 0032 é até 5 % por hora com o túnel parado).
 - [ ] O resultado da revisão no Android (job `android-revisao`, artefato `Runas-Codex-android-revisao`): olhar as
   capturas em 320 px, deitado e com texto a 140 %.
+
+
+## Versão 0.1.0-beta.23 (30/10/2026)
+
+- [ ] Atualizar da beta.22 para a beta.23 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre,
+  PIN e preferências.
+- [ ] Android: “Compartilhar com” um texto e uma foto da galeria continua criando a nota em `Compartilhados`.
+- [ ] Android: tocar no widget da Agenda continua abrindo a Agenda.
+- [ ] Conferir as seções “E1, T7, R1 no Android, R3 e R4” acima (link público da sala no celular, bateria, TalkBack).
