@@ -13,7 +13,7 @@ const SPACE_ROUTES: Record<string, string> = { "": "/", notas: "/notas", agenda:
 const WIKI_LABELS: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapas", categoria: "Categoria", relacoes: "Relações", grafico: "Gráfico", ferramentas: "Ferramentas" }
 const CAMPAIGN_LABELS: Record<string, string> = { sessao: "Sessão", missoes: "Missões", canvas: "Quadro", sessoes: "Sessões", elenco: "Elenco", quadro: "Quadro", ferramentas: "Ferramentas", painel: "Painel" }
 const VTT_LABELS: Record<string, string> = { criar: "Criar Sala", entrar: "Entrar Sala", jogador: "Vista do jogador" }
-const CONFIG_LABELS: Record<string, string> = { cofre: "Cofre", backups: "Backups", obsidian: "Obsidian e anexos", aparencia: "Aparência", acessibilidade: "Acessibilidade", editor: "Editor e atalhos", agenda: "Agenda e tarefas", vtt: "Sala do VTT", privacidade: "Privacidade e atualizações", ajuda: "Ajuda e exemplos" }
+const CONFIG_LABELS: Record<string, string> = { cofre: "Cofre", backups: "Backups", obsidian: "Obsidian e anexos", aparencia: "Aparência", acessibilidade: "Acessibilidade", editor: "Editor e atalhos", agenda: "Agenda e tarefas", vtt: "Sala do VTT", privacidade: "Privacidade e atualizações", ajuda: "Ajuda e exemplos", conflitos: "Conflitos de sincronização" }
 
 /** Segmento que ninguém nomeou: primeira letra maiúscula, sem hífens (nunca o caminho cru). */
 function label(segment: string): string {
