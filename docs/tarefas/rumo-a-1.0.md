@@ -1,30 +1,41 @@
-# Tarefas do Runas-Codex: o que falta para a versão 1.0 (25/10/2026)
+# Tarefas do Runas-Codex: o que falta para a versão 1.0 (revisado em 30/10/2026)
 
 **Para:** Codex, Claude Code e o dono. **Leia antes:** [`AGENTS.md`](../../AGENTS.md) (inclusive a regra 10, de UX e
 acessibilidade), a [regra de lançamentos](../adr/0025-lancamentos.md) e o [guia de UX/UI](../ux-ui-acessibilidade.md).
 
-Este arquivo substitui [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md) (de 22/10), que ainda lista como
-abertas fases já mescladas. Ele segue o código da `main` em 25/10 (`1fa53f9`, versão 0.1.0-beta.16).
+Este arquivo substitui [`abertas-e-responsaveis.md`](abertas-e-responsaveis.md) (de 22/10). Criado em 25/10 sobre a
+beta.16; **revisado em 30/10** sobre a `main` depois da beta.21 e dos PRs #85 a #88 (T1 a T4), com o PR #89 aberto
+(geradores, T6, R1 sem Android, T7, Campanhas e T9).
+
+## Resumo: feito e falta
+
+| Frente | Feito | Falta |
+|---|---|---|
+| Claude Code | T1, T2, T3, T4 (PRs #85–#88), T5 (#83), T6, T7 em parte, T9 (PR #89) | T7: D11 e D13 e o que a R1 com Android achar; T8 |
+| Codex | R5 (#68, #70) | R1 no Android, R2 (se a R1 no Android achar defeito de núcleo), R3, R4 |
+| Dono | V1 a V5 (testados e funcionando, informado em 30/10); D1 a D4 respondidas | Mesclar o PR #89; conferir as funções novas do fim de `docs/04-testes-pendentes.md` |
+| Fora da lista (pedidos do dono) | Revisão e correções das Campanhas, mapa de missões, Nova aventura, Elenco (T9), geradores com 19.412 opções e 43 culturas, Ferramentas da Wiki refeitas | Sobras da revisão das Campanhas (seção abaixo) |
 
 ## Situação
 
-- **Na `main` e na beta.16:** as etapas 1 a 10 do plano, o Android (cofre real, SAF, sala na rede local, APK
-  assinado), X1 a X8, C0 a C8, Tasks e tempo livre, o rework visual F1 a F5 (#54 a #65) e os itens 1 a 8 do Codex
-  (#58 e #62). Nenhum PR aberto.
-- **Por dentro, sem tela ainda** (feito no #58): backups agendados, aviso de cópias de conflito do Syncthing e do
-  Obsidian Sync, atalho do sistema para a captura rápida no Wayland, importadores de Universal VTT, Foundry e tokens em
-  lote.
+- **Na `main`:** as etapas 1 a 10, o Android (cofre real, SAF, sala na rede local, APK assinado), X1 a X8, C0 a C8,
+  Tasks e tempo livre, o rework visual F1 a F5, os itens 1 a 8 do Codex, R5, a Ajuda (T5, #83), os geradores ×20 e
+  a Wiki nova (#80–#82) e as telas T1 a T4 (#85–#88, mescladas em 30/10).
+- **No PR #89 (aberto):** geradores com 19.412 opções e nomes de 43 culturas, Ferramentas da Wiki refeitas, T6 (10 mil
+  notas), a revisão R1 sem Android ([`revisao-1.0.md`](revisao-1.0.md)) e as correções de tela T7, as correções da
+  [revisão das Campanhas](../propostas/campanhas-revisao.html), o Elenco para mais de 100 NPCs (T9), o mapa de
+  missões e o assistente “Nova aventura”.
 - **Limitado:** a sala hospedada no celular funciona só na rede local; pela internet, só hospedando no desktop
-  ([ADR 0032](../adr/0032-tunel-publico-android.md)).
+  ([ADR 0032](../adr/0032-tunel-publico-android.md)) até a R4.
 
 ## O caminho até a 1.0
 
-1. **Agora:** o dono testa a beta.16 e responde as conferências.
-2. **Beta.17 e seguintes:** as telas que faltam (Claude Code) e a revisão completa com Android (Codex), em paralelo.
-3. **Candidata:** correções da revisão e uma sessão real da mesa do dono usando o app (marco da etapa 11).
+1. **Feito:** o dono testou as betas (V1 a V4) e respondeu D1 a D4; T1 a T4 mescladas.
+2. **Agora:** mesclar o PR #89 e publicar a próxima beta; Codex com R1 no Android, R3 e R4.
+3. **Candidata:** o que a R1 no Android achar (R2 no núcleo, T7 na tela) e as sobras da revisão das Campanhas.
 4. **1.0.0:** quando todas as tarefas desta lista estiverem concluídas com êxito (decisão D4): lista de conferências
-   fechada com o dono, notas da versão e tag `v1.0.0`. O Android atualiza por cima das
-   betas sem reinstalar (`1.0.0` gera um `versionCode` maior que o de qualquer `0.1.0-beta.N`).
+   fechada com o dono, notas da versão e tag `v1.0.0` (T8). O Android atualiza por cima das betas sem reinstalar
+   (`1.0.0` gera um `versionCode` maior que o de qualquer `0.1.0-beta.N`).
 
 ## Quem mexe em quê
 
@@ -36,13 +47,13 @@ Um branch e um PR por tarefa, a partir da `main` atualizada.
 
 ## Codex
 
-| # | Tarefa | Obrigatória? | Depende de |
+| # | Tarefa | Obrigatória? | Situação em 30/10 |
 |---|---|---|---|
-| R1 | Revisão completa com Android, sobre o visual novo | sim | pode começar |
-| R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | R1 |
-| R3 | Cofre de 10 mil notas no emulador Android do CI | sim | pode começar |
-| R4 | Sala do celular pela internet (túnel no APK) | sim (D1, respondida em 29/10) | pode começar |
-| R5 | Mestre pelo navegador na sala hospedada pelo celular | feita a pedido do dono (PRs #68 e #70, beta.17) | — |
+| R1 | Revisão completa com Android, sobre o visual novo | sim | **Feita em parte** pelo Claude Code (PR #89): 49 telas em 3 larguras e 2 temas, com axe. **Falta** a parte no Android físico, leitores de tela reais, sala com dois aparelhos e impressão |
+| R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | Nada de núcleo na rodada sem Android; **aberta** até a R1 no Android |
+| R3 | Cofre de 10 mil notas no emulador Android do CI | sim | **Aberta**. A T6 já mediu no navegador (ADR 0030) |
+| R4 | Sala do celular pela internet (túnel no APK) | sim (D1, respondida em 29/10) | **Aberta** |
+| R5 | Mestre pelo navegador na sala hospedada pelo celular | feita a pedido do dono | **Feita** (PRs #68 e #70, beta.17) |
 
 ### R1 — revisão completa com Android
 
@@ -79,9 +90,9 @@ números entram na ADR 0030, ao lado dos do desktop.
 **Pronto quando:** o job roda no CI e a ADR 0030 tem os números do Android. Se algo travar, a causa vai para o
 documento da R1 (núcleo ou tela).
 
-### R4 e R5 — opcionais
+### R4 — sala do celular pela internet
 
-Não começar sem a resposta do dono (decisões D1 e D2 abaixo). O estudo do túnel está na
+Obrigatória desde a resposta D1 (29/10). O estudo do túnel está na
 [ADR 0032](../adr/0032-tunel-publico-android.md).
 
 ### R5 — mestre pelo navegador na sala hospedada pelo celular
@@ -129,17 +140,17 @@ criar ou fechar mesas pelo navegador (no desktop isso também é só do computad
 
 ## Claude Code
 
-| # | Tarefa | Obrigatória? | Depende de |
+| # | Tarefa | Obrigatória? | Situação em 30/10 |
 |---|---|---|---|
-| T1 | Tela de backups agendados (horário e quantos guardar) em Configurações › Backups | sim | pode começar |
-| T2 | Aviso de cópias de conflito do Syncthing e do Obsidian Sync, com o original e “Arquivar” | sim | pode começar |
-| T3 | Botão para criar e remover o atalho da captura rápida (GNOME e KDE) | sim | D3 respondida em 29/10 |
-| T4 | Tela para importar Universal VTT, cenas do Foundry e tokens em lote | sim | pode começar |
-| T5 | Ajuda em cada tela e uma seção de ajuda navegável sem internet | sim | pode começar |
-| T6 | Lista de notas, árvore, busca e gráfico sem travar com 10 mil notas | sim | pode começar; usa a R3 |
-| T7 | Defeitos de tela achados na R1 | sim | R1 |
-| T8 | Preparar a 1.0: conferências revisadas com o dono, notas e tag `v1.0.0` | sim | todo o resto e D4 |
-| T9 | Elenco da campanha para mais de 100 NPCs, com “já apareceu” marcado à mão (pedido do dono, 29/10) | sim | pode começar |
+| T1 | Tela de backups agendados (horário e quantos guardar) em Configurações › Backups | sim | **Feita** (PR #85, na `main`) |
+| T2 | Aviso de cópias de conflito do Syncthing e do Obsidian Sync, com o original e “Arquivar” | sim | **Feita** (PR #86, na `main`) |
+| T3 | Botão para criar e remover o atalho da captura rápida (GNOME e KDE) | sim | **Feita** (PR #87, na `main`) |
+| T4 | Tela para importar Universal VTT, cenas do Foundry e tokens em lote | sim | **Feita** (PR #88, na `main`) |
+| T5 | Ajuda em cada tela e uma seção de ajuda navegável sem internet | sim | **Feita** (PR #83, beta.21) |
+| T6 | Lista de notas, árvore, busca e gráfico sem travar com 10 mil notas | sim | **Feita** (PR #89; números na ADR 0030). Conferir com placa de vídeo e no Android |
+| T7 | Defeitos de tela achados na R1 | sim | **Feita em parte** (PR #89): 10 de 12 corrigidos. **Falta** D11 (telas de documento sem `h1`), D13 (link de origem da tarefa com 18 px) e o que a R1 no Android achar |
+| T8 | Preparar a 1.0: conferências revisadas com o dono, notas e tag `v1.0.0` | sim | **Aberta**: depende de todo o resto |
+| T9 | Elenco da campanha para mais de 100 NPCs, com “já apareceu” marcado à mão (pedido do dono, 29/10) | sim | **Feita** (PR #89) |
 
 O núcleo de T1 a T4 já existe: `platform.backupSchedule`/`setBackupSchedule`, `listSyncConflicts`/
 `archiveSyncConflict` e o evento `conflict` do watcher (ADR 0031), `platform.systemShortcut` (ADR 0029) e
@@ -147,13 +158,13 @@ O núcleo de T1 a T4 já existe: `platform.backupSchedule`/`setBackupSchedule`, 
 
 ## Dono
 
-| # | Tarefa | Depende de |
+| # | Tarefa | Situação em 30/10 |
 |---|---|---|
-| V1 | Atualizar para a beta.16 pelo botão “Verificar atualizações” (computador e celular) e testar | agora |
-| V2 | Conferências manuais (fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md)) | beta.16 |
-| V3 | Abrir o cofre no Obsidian com o plugin Tasks 8.6.0 e comparar consultas e comandos | beta.16 |
-| V4 | Uma sessão real da campanha usando o app (Tela do Mestre, sala, Agenda) | T1, T2, T4 |
-| V5 | Responder as decisões D1 a D4 | respondidas em 29/10 |
+| V1 | Atualizar pelo botão “Verificar atualizações” (computador e celular) e testar | **Feita** (o dono testou há tempo e está funcionando) |
+| V2 | Conferências manuais (fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md)) | **Feita** até as funções já publicadas; **faltam** as seções novas do fim do arquivo (PR #89) |
+| V3 | Abrir o cofre no Obsidian com o plugin Tasks 8.6.0 e comparar consultas e comandos | **Feita** |
+| V4 | Uma sessão real da campanha usando o app (Tela do Mestre, sala, Agenda) | **Feita** |
+| V5 | Responder as decisões D1 a D4 | **Feita** (29/10) |
 
 ## Decisões do dono
 
@@ -175,21 +186,41 @@ Cada uma muda o que entra na 1.0. A recomendação é do Claude Code; nada come�
 - **D4:** a 1.0.0 sai **quando todas as tarefas desta lista estiverem concluídas com êxito** (Codex, Claude Code e as
   conferências do dono).
 
+## Feito fora da lista (pedidos do dono, 28 a 30/10)
+
+- **Geradores da Wiki:** 84 → 1.710 (beta.21) → 9.692 → **19.412 opções**; gerador de nomes com **43 culturas** (pelo
+  menos 100 nomes e 100 sobrenomes, quando há sobrenome); tela de Ferramentas refeita (grupos, tabelas da própria wiki,
+  1/5/10 resultados, recentes).
+- **Campanhas:** [revisão](../propostas/campanhas-revisao.html) das seis telas e as correções (data da sessão leva o
+  evento da Agenda, nota da sessão validada, mover missões pelo teclado, cortes “+N” no painel, confirmações, tesouro
+  editável, diários na aba Sessões); **mapa de missões** (`parte_de` e `requer`, vistas Mapa e Árvore, “Gerar no
+  Quadro”); **Nova aventura** com cinco estruturas; criar NPC, lugar ou facção a partir do link na sessão.
+
+## Sobras da revisão das Campanhas
+
+Itens da [revisão](../propostas/campanhas-revisao.html) que ainda não foram feitos (nenhum impede a 1.0, mas valem uma
+rodada antes da candidata):
+
+- “Hoje no mundo” só leitura: avançar a data do mundo pelo painel ou ao marcar a sessão como realizada.
+- Retorno “Gravado” nos campos que gravam ao sair, e gravar ao fechar o painel da sessão no celular.
+- Desfazer em vez de pedir confirmação ao apagar relógio, item do tesouro, NPC ou personagem.
+- Reescrever `CampaignTools.tsx` e `CampaignRoomTools.tsx` no padrão do resto do módulo (hoje em linhas únicas).
+- Quadro: renomear e apagar pela barra e outros modelos além do mapa de missões (relações, linha do tempo).
+- Mapa de missões: ligar missões arrastando de um cartão a outro (hoje é pelo diálogo ou pela nota).
+- Ideias da revisão ainda não feitas: pistas que destravam missões, relógio por missão, NPC improvisado na Tela do
+  Mestre, “o que mudou desde a última sessão”, fios soltos, recompensa direto para o Tesouro, mapa de relações do
+  Elenco e mapa de missões na sala dos jogadores.
+
 ## Conferências manuais que faltam
 
-A lista detalhada está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md) (335 caixas, nenhuma
-marcada; o que foi até a beta.13 e o Android logo depois já foi aprovado pelo dono em conversa). Em grupos:
-
-1. Atualizar para a beta.16 sem perder cofre, PIN e preferências.
-2. Rework F1 a F5: todas as telas no desktop e no celular, temas escuro e claro, Acessibilidade.
-3. Tasks no Obsidian com o plugin 8.6.0.
-4. X4 e X7 restauradas: exportar de cada módulo, site em ZIP, sala do celular na rede local.
-5. Itens do Codex: Homebrewery, Foundry e Universal VTT (quando houver tela), `runas-codex --captura` no Wayland.
-6. Snippet `runas-codex.css` reinstalado no Obsidian, com a cor de uma campanha personalizada.
+As antigas foram feitas pelo dono (V1 a V4). Faltam as seções acrescentadas no fim de
+[`docs/04-testes-pendentes.md`](../04-testes-pendentes.md) para o que está no PR #89: geradores e culturas, T6 (10 mil
+notas), R1/T7 (abas, pastas, gráfico, calendário, alvos no celular), Campanhas (sessões, missões, painel,
+ferramentas, Elenco, mapa de missões, Nova aventura, criar a partir do link) e, da R1, o que só um aparelho real
+confere: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %, Android físico, sala com dois aparelhos e impressão.
 
 ## Depois da 1.0
 
 - Migrar do Notion, Kanka e World Anvil (o plano deixa para depois; a migração do Obsidian e dos plugins de RPG já
   existe, C4).
-- A sala do celular pela internet e o mestre pelo navegador na sala do celular, se o dono deixar para depois (D1 e D2).
 - Fora do plano: voz, vídeo e sincronização pela rede local (decisão do dono, 14/10).
