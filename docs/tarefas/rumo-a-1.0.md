@@ -318,3 +318,134 @@ Relato do dono (30/10, com duas capturas, painel aberto e recolhido):
 - **Dicas:** os ícones (Wi-Fi e link) desalinham quando o texto quebra em duas linhas; o ícone não pode encolher
   (`flex: none`) e a linha alinha pelo topo.
 - Conferir em 320 px, tablet e computador, nos dois temas, com e sem salas recentes.
+
+### U5 — Menu ⋯ da prévia ao lado (Livros) cortado na borda do painel
+
+Relato do dono (30/10, com captura): em Livros › Escrever, na prévia ao lado, o menu ⋯ ao lado de “Seguir o texto”
+(“Ir para a página do cursor”, “Mostrar só este capítulo”, “Diagramar e exportar…”) abre para a esquerda e fica cortado
+na borda do painel. Causa: o `.kit-menu` do `OverflowMenu` (`app/src/components/kit/`) é posicionado em relação ao
+botão, alinhado à direita (`align="end"`), e o `.book-side-panel` (`app/src/screens/books/book-side.css`) tem
+`overflow: hidden`.
+
+**Mesma causa do U2.** A correção certa é no kit, uma vez: o `OverflowMenu` abre o menu fora do fluxo do contêiner
+(`position: fixed` calculado pelo botão, ou num portal no fim da página), vira para o lado e para cima quando não cabe na
+janela, acompanha a rolagem e mantém o foco e o teclado de hoje. Isso resolve o U2, o U5 e qualquer outro menu ⋯ dentro de
+um contêiner que corta (painéis, cartões, listas com rolagem). Conferir os menus do Elenco, da prévia, das abas das notas,
+dos cartões da Wiki e das mesas do VTT, em 320 px e no computador.
+
+**Também nas notas** (relato do dono, 30/10, com captura): o menu ⋯ da nota aberta (“Inserir modelo…”, “Renomear ou
+mover…”, “Favoritar”… “Mandar para a lixeira”), na barra do documento, abre para a esquerda e é cortado pela borda do
+painel central, com barra de rolagem lateral e textos quebrando (“Histórico de versões”, “Copiar link do bloco no
+cursor”). Além de abrir fora do contêiner, o menu precisa de largura para o texto mais longo e o atalho, sem rolagem
+lateral.
+
+### U6 — A ordem e os filtros da categoria da Wiki voltam ao padrão ao trocar de página
+
+Relato do dono (30/10, com captura de Personagens em “Editados por último”): ao sair da categoria e voltar, a **Ordem**
+volta para “Nome (A–Z)” e os filtros escolhidos se perdem. Causa: em `app/src/screens/wiki/WikiCategory.tsx`, a ordem, os
+filtros de campo e a subpasta vivem só no estado da tela (`useState`); só a Grade/Lista é lembrada
+(`runas-codex:wiki-categoria-modo`). O que fazer:
+
+- Lembrar, **por categoria**, a ordem, os filtros de campo e a subpasta no `localStorage`
+  (`runas-codex:wiki-categoria:<pasta>`, regra 5 do AGENTS.md: preferência de tela não vai para o cofre). A busca de texto
+  pode continuar começando vazia.
+- “Limpar filtros” limpa também o que foi lembrado; um filtro cujo campo saiu da categoria é ignorado (como hoje).
+- Conferir o mesmo no Elenco das campanhas (agrupamento e ordem já são lembrados; a situação e a atitude, não) e nas
+  outras listas com ordem (sessões, missões), para o comportamento ser igual em todo o app.
+
+### U7 — Missões: excluir, cartão menor e editar sem sair da campanha
+
+Relato do dono (30/10, com capturas de Campanhas › Missões e da missão aberta nas Notas):
+
+- **Não há como excluir uma missão** pelo quadro. Acrescentar ao cartão um menu ⋯ com “Abrir”, “Mover para…” e
+  “Mandar para a lixeira” (pelo `useVault().trash`, com confirmação ou desfazer), também na Árvore e no Mapa.
+- **Cada cartão ocupa muito espaço:** número da ordem, título e o seletor “Mover para” da largura do cartão
+  (`campaign-kanban-move`, sempre visível desde a revisão das Campanhas). Deixar o cartão compacto: título com a ordem
+  ao lado e o “Mover para” dentro do menu ⋯ (continua acessível pelo teclado, e o arrastar continua).
+- **Editar leva para as Notas e perde a campanha.** O título do cartão é um link para `/notas/<missão>`
+  (`app/src/screens/campaigns/QuestBoard.tsx`), e para voltar são vários cliques (Campanhas › campanha › Missões). Abrir a
+  missão **dentro da campanha**, como as sessões: rota `/campanhas/<nome>/missoes/<caminho>` com o editor da nota
+  (`NoteView`), “Voltar às missões” e um painel com situação, “Parte de”, “Depende de” e recompensa. Criar uma missão
+  (“+ Missão” e o “+” de cada coluna) abre direto esse editor, e voltar leva ao quadro na mesma vista (Colunas, Mapa ou
+  Árvore).
+- Conferir em 320 px, tablet e computador, pelo teclado e no celular.
+
+### U8 — Tirar o aviso “A única parte do app que usa a rede” da tela do VTT
+
+Relato do dono (30/10, com captura): na tela inicial do VTT, o cartão “A única parte do app que usa a rede — Só
+enquanto a sala estiver aberta…” não precisa estar ali. Retirar da tela (`app/src/screens/vtt/VttScreen.tsx`); a
+explicação de privacidade continua em Configurações › Privacidade e na Ajuda do VTT. (O texto também ficou impreciso:
+“Verificar atualizações” e o link público usam a internet, ADR 0017 e ADR 0032.)
+
+### U9 — Vista do ano inteiro no Calendário da Wiki
+
+Relato do dono (30/10, com captura do Calendário Rúnico em “Simivisonnios de 5631 C.R.”): só existe a vista de um mês
+(com ‹ › e “Hoje”/“+1 dia”); não dá para ver o ano inteiro. O que fazer em `app/src/screens/wiki/WikiCalendar.tsx`:
+
+- Seletor “Mês | Ano” ao lado das setas (as setas andam um mês ou um ano conforme a vista); na vista do ano, os meses do
+  calendário fictício em grade de miniaturas (`MonthGrid` compacto), respeitando meses de tamanhos diferentes, dias
+  intercalares (a faixa sem semana), estações, luas (só o ponto) e os eventos marcados; tocar num mês abre a vista do
+  mês e tocar num dia seleciona o dia no painel.
+- O título passa a ser o ano (“5631 C.R.”) na vista do ano; “Hoje no mundo” destacado na miniatura.
+- Em 320 px, uma coluna de meses; teclado: setas entre os dias, Page Up/Down entre os meses, como a Agenda.
+- Teste do núcleo para a grade do ano (meses, intercalares e início de semana) e conferência visual nos dois temas.
+
+### U10 — Título das categorias da Wiki fora do centro vertical
+
+Relato do dono (30/10, com captura da página inicial da Wiki): nos cartões das categorias (“Acontecimentos”,
+“Calendários”…), o nome fica mais alto que o ícone e a contagem, sem centro vertical comum. Causa: `.wiki-category-heading`
+(`app/src/screens/wiki/wiki.css`, linha 230) usa `align-items: flex-start`, pensado para nomes longos em duas linhas, e o
+`h2` tem altura de linha de título. Corrigir com `align-items: center` e `line-height` do `h2` igual à do ícone; nome
+longo quebra em duas linhas com o ícone e a contagem centralizados no bloco.
+
+### U11 — Propriedades do token por cima do painel lateral da mesa
+
+Relato do dono (30/10, com captura da mesa “Teste”): o painel “Propriedades: Token” abre por cima do painel do lado
+direito da mesa (aparece cortado em cima, com o “Trocar” da imagem atrás). O painel de propriedades
+(`ResizablePanel id="vtt-properties"` em `app/src/vtt/canvas/SceneCanvas.tsx`) e os painéis do trilho direito
+(Cenas, Áudio, Sala…) disputam o mesmo lugar. Corrigir o layout da mesa (`app/src/vtt/MesaTable.tsx`): as propriedades
+entram como um painel do mesmo trilho (abrem no lugar do painel aberto, com “voltar”) ou numa coluna própria que empurra
+o mapa, nunca uma camada por cima; o topo do painel (imagem e “Trocar”) sempre visível; conferir no computador, no
+tablet e no celular (no celular, folha de baixo para cima, como os outros painéis da mesa).
+
+### U12 — Barras do token personalizadas, quantas o mestre quiser
+
+Pedido do dono (30/10): em vez das barras fixas PV, PA e PE (`TokenFields` em `SceneCanvas.tsx` só oferece essas três;
+`app/src/vtt/shared/log.ts` dá a cor pelo rótulo), o mestre cria quantas barras quiser, com nome, cor, valor e máximo, e
+reordena ou remove. Detalhes:
+
+- O formato de `TokenBar` (`app/src/vtt/shared/scene.ts`) já tem `label`, `value`, `max` e `color`; tirar o limite das três
+  e o rótulo padrão “PV”, mantendo a leitura das mesas que já têm PV/PA/PE.
+- Modelos de barra na mesa (por exemplo, “Sanidade”, “Mana”), para não redigitar em cada token; aplicar um modelo a
+  vários tokens selecionados.
+- Visibilidade por barra (só o mestre, o dono do token ou todos), respeitando o que a projeção da sala manda aos jogadores
+  (`app/src/vtt/shared/**`, sem vazar barras ocultas).
+- Desenho no mapa com várias barras sem cobrir o token; teste do núcleo e da projeção.
+
+### U13 — Biblioteca de objetos da mesa (mapas e tokens)
+
+Pedido do dono (30/10): guardar objetos do tabletop para usar de novo — mapas (com grade, paredes, luzes e regiões) e
+tokens (com imagem, tamanho, barras, visão e disposição). O que fazer:
+
+- “Guardar na biblioteca” no menu do token e da cena; uma aba “Biblioteca” no trilho da mesa para buscar e arrastar para
+  a cena (um token entra como cópia nova; um mapa vira cena nova).
+- Biblioteca do cofre, não de uma mesa só: em `.runas/biblioteca/` (dados de tela, fora das notas, regra 5), com os
+  arquivos de imagem por hash como os assets da mesa, para servir a todas as mesas e ir junto no pacote do cofre.
+- Importar e exportar itens da biblioteca (o formato das transferências, ADR 0020); testes do núcleo e no smoke.
+
+### U14 — “Registro” vira “Notas” da mesa, com “Salvar Sessão”
+
+Pedido do dono (30/10): trocar o painel “Registro” da mesa (`app/src/vtt/panels/LogPanel.tsx`, aba `log` em
+`MesaTable.tsx`) por **Notas**, onde o mestre anota o que quiser durante o jogo.
+
+- **Nunca perde o texto:** grava sozinho enquanto o mestre escreve (com pausa curta), ao sair da tela, ao trocar de painel
+  e ao fechar a mesa; reabrir a mesa mostra o rascunho. O rascunho fica com a mesa (`.runas/mesas/<id>/`), não vira nota
+  do cofre sozinho.
+- **“Salvar Sessão”:** só esse botão transforma o texto numa sessão da campanha. Abre o diálogo de nova sessão
+  (campanha, título, número; a data já vem como o dia da nota), cria a nota da sessão em `Campanhas/<campanha>/Sessões/`
+  pelo `useVault().createNote`, com o texto no corpo, e depois limpa ou guarda o rascunho conforme a escolha do mestre.
+- **O que ia para o Registro** (mensagens das regiões, rolagens e eventos da sala) precisa de lugar: uma seção
+  “Acontecimentos” dentro das Notas (só leitura, com “Copiar para a nota”) ou uma linha do tempo recolhida, para não sumir
+  o que hoje é registrado. A mensagem de região em `SceneCanvas.tsx` (“vai ao Registro”) muda de texto junto.
+- Testes: rascunho sobrevive a fechar e reabrir; “Salvar Sessão” cria a nota com `data` entre aspas (regra 5) e a sessão
+  aparece em Campanhas › Sessões.
