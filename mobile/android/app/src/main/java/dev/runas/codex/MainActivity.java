@@ -28,14 +28,13 @@ public class MainActivity extends BridgeActivity {
             public void handleOnBackPressed() {
                 android.webkit.WebView webView = getBridge() == null ? null : getBridge().getWebView();
                 if (webView == null) { leave(); return; }
-                // Os diálogos do app fecham com Esc (o mesmo do teclado).
+                // O app decide (app/src/lib/router.ts, systemBack): fecha o diálogo ou volta pelo próprio histórico.
                 webView.evaluateJavascript(
-                    "(()=>{const d=document.querySelector('[role=dialog],[role=alertdialog],dialog[open]');"
-                        + "if(!d)return false;(document.activeElement||d).dispatchEvent(new KeyboardEvent('keydown',"
-                        + "{key:'Escape',code:'Escape',bubbles:true,cancelable:true}));return true})()",
-                    closed -> {
-                        if ("true".equals(closed)) return;
-                        if (webView.canGoBack()) webView.goBack();
+                    "(window.runasCodexVoltar ? window.runasCodexVoltar() : null)",
+                    handled -> {
+                        if ("true".equals(handled)) return;
+                        // Sem resposta do app (ainda carregando), vale o histórico do WebView.
+                        if (!"false".equals(handled) && webView.canGoBack()) webView.goBack();
                         else leave();
                     });
             }

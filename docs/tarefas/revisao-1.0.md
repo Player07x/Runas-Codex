@@ -189,8 +189,10 @@ pelo leitor compartilhado.
 - **Obtido:** o app saía da frente no primeiro toque. O app não usa o plugin `@capacitor/app`, que é quem trata o
   voltar no Capacitor.
 - **Arquivo:** `mobile/android/app/src/main/java/dev/runas/codex/MainActivity.java` (nativo, não é tela).
-- **Correção:** um `OnBackPressedCallback` fecha o diálogo aberto (Esc), senão volta no histórico do WebView; só na
-  primeira tela o app sai.
+- **Correção:** um `OnBackPressedCallback` pergunta ao app (`systemBack` em `app/src/lib/router.ts`): ele fecha o
+  diálogo aberto (como o Esc) ou volta pelo histórico do próprio app; só na primeira tela o app sai. O histórico do
+  WebView não serve sozinho: o Chromium pula no voltar as entradas criadas sem toque (depois de criar uma nota, por
+  exemplo).
 
 ### D17 — Nome do NPC no Elenco com 20 px de altura (média, corrigido)
 
