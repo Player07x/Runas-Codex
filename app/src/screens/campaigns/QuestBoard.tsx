@@ -18,6 +18,7 @@ export function QuestBoard({ data }: { data: CampaignData }) {
   const vault = useVault()
   const toast = useToast()
   const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<QuestStatus | null>(null)
   const [creating, setCreating] = useState<QuestStatus | null>(null)
   const [column, setColumn] = useState<QuestStatus>("ativa")
   const move = (quest: QuestInfo, status: QuestStatus) => {
@@ -29,7 +30,7 @@ export function QuestBoard({ data }: { data: CampaignData }) {
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">{data.campaign.root}Missões/ · arraste os cartões entre as colunas</span>
+          <span className="eyebrow">{data.campaign.root}Missões/ · arraste os cartões ou use “Mover para”</span>
           <h1 className="page-title">Missões</h1>
         </div>
         <button className="btn primary" onClick={() => (data.readOnly ? toast("Libere a gravação em Configurações para criar missões.") : setCreating("ativa"))}>
@@ -53,11 +54,14 @@ export function QuestBoard({ data }: { data: CampaignData }) {
               className="campaign-kanban-col"
               data-current={col.id === column || undefined}
               style={{ ["--col" as string]: `var(--${col.color})` }}
-              onDragOver={(e) => e.preventDefault()}
+              data-drop={(dragging && over === col.id) || undefined}
+              onDragOver={(e) => { e.preventDefault(); if (over !== col.id) setOver(col.id) }}
+              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(null) }}
               onDrop={() => {
                 const quest = data.quests.find((q) => q.path === dragging)
                 if (quest) move(quest, col.id)
                 setDragging(null)
+                setOver(null)
               }}
             >
               <div className="campaign-kanban-head">
@@ -71,7 +75,7 @@ export function QuestBoard({ data }: { data: CampaignData }) {
                 )}
               </div>
               {quests.map((q) => (
-                <div key={q.path} className="card tight campaign-kanban-card" draggable={!data.readOnly} onDragStart={() => setDragging(q.path)} data-quest={q.title}>
+                <div key={q.path} className="card tight campaign-kanban-card" draggable={!data.readOnly} onDragStart={() => setDragging(q.path)} onDragEnd={() => { setDragging(null); setOver(null) }}>
                   {q.order && <span className="mono tiny faint">{q.order}</span>}
                   <a className="campaign-kanban-title" href={href(noteRoute(q.path))}>{q.title}</a>
                   {q.giver && <span className="tiny muted">De: {noteName(q.giver.target)}</span>}
@@ -81,7 +85,8 @@ export function QuestBoard({ data }: { data: CampaignData }) {
                       <span key={t} className="chip">{t}</span>
                     ))}
                   </div>
-                  <select className="select campaign-kanban-move" disabled={data.readOnly} value={q.status} onChange={(e) => move(q, e.target.value as QuestStatus)} aria-label={`Situação de ${q.title}`}>
+                  {/* Mover pelo seletor vale em qualquer largura: teclado e toque não dependem de arrastar (WCAG 2.1.1, 2.5.7). */}
+                  <select className="select campaign-kanban-move" disabled={data.readOnly} value={q.status} onChange={(e) => move(q, e.target.value as QuestStatus)} aria-label={`Mover ${q.title} para`}>
                     {QUEST_STATUS.map((s) => (
                       <option key={s.id} value={s.id}>{s.label}</option>
                     ))}

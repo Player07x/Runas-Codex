@@ -2,7 +2,7 @@ import { CampaignTools } from "./CampaignTools"
 import { useMemo, useRef, useState } from "react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Users } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Users, Wrench } from "lucide-react"
 import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
 import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
 import { campaignHomePath, campaignLook } from "../../core/personalization"
@@ -28,7 +28,7 @@ const TABS = [
   { id: "sessoes", label: "Sessões", icon: <CalendarDays size={15} /> },
   { id: "missoes", label: "Missões", icon: <ListTodo size={15} /> },
   { id: "elenco", label: "Elenco", icon: <Users size={15} /> },
-  { id: "ferramentas", label: "Ferramentas", icon: <Plus size={15} /> },
+  { id: "ferramentas", label: "Ferramentas", icon: <Wrench size={15} /> },
   { id: "quadro", label: "Quadro", icon: <Shapes size={15} /> },
 ]
 

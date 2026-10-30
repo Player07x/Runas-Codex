@@ -89,7 +89,6 @@
 .campaign-kanban-title { color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; text-decoration: none; }
 .campaign-kanban-title:hover { color: var(--cyan); }
 .campaign-kanban-move { min-height: 30px; font-size: calc(12px * var(--font-scale, 1)); }
-@media (min-width: 861px) { .campaign-kanban-move { display: none; } }
 /* No celular, uma coluna por vez, escolhida no seletor de cima. */
 @media (max-width: 860px) {
   .campaign-kanban { grid-auto-flow: row; grid-auto-columns: auto; overflow: visible; background: none; }
@@ -190,3 +189,35 @@
 .campaign-tracked .crest { margin-right: 2px; }
 .campaign-cover-band { margin: calc(-1 * 22px) calc(-1 * 22px) 0; width: calc(100% + 44px); flex: 1 0 100%; border-radius: 0; }
 .campaign-cover .crest { box-shadow: 0 0 0 3px var(--panel); }
+
+/* Revisão das Campanhas: a coluna sob o cartão arrastado fica marcada (borda e fundo, não só cor). */
+.campaign-kanban-col[data-drop] { border-style: dashed; border-color: var(--col); background: color-mix(in srgb, var(--col) 10%, var(--panel)); }
+/* Revisão das Campanhas: no celular a capa do painel fica compacta e a próxima sessão aparece sem rolar. */
+@media (max-width: 860px) {
+  .campaign-cover { padding: 14px; gap: 10px; }
+  .campaign-cover .campaign-cover-band { max-height: 56px; margin: -14px -14px 0; width: calc(100% + 28px); }
+  .campaign-cover .page-title { font-size: calc(20px * var(--font-scale, 1)); }
+}
+
+/* Elenco para mais de 100 NPCs (T9): ferramentas numa linha que quebra, lista compacta com a marca “apareceu”. */
+.campaign-roster-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.campaign-roster-tools .search { flex: 1 1 220px; min-width: 0; }
+.campaign-roster-tools .field .select { min-width: 140px; }
+.campaign-roster-group { margin: 12px 0 4px; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.campaign-roster-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.campaign-roster-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: calc(13px * var(--font-scale, 1)); }
+.campaign-roster-row:first-child { border-top: 0; }
+.campaign-roster-name { display: grid; min-width: 0; flex: 1 1 160px; }
+.campaign-roster-name a { color: inherit; }
+.campaign-appeared { gap: 4px; min-height: 30px; cursor: pointer; }
+.campaign-appeared:disabled { cursor: default; opacity: 1; }
+@media (max-width: 860px) {
+  .campaign-roster-tools > * { flex: 1 1 100%; }
+  .campaign-roster-row .campaign-attitude { flex: 1 1 auto; }
+  .campaign-appeared, .campaign-roster-tools .select { min-height: 44px; }
+}
+/* Cabeçalhos dos cartões: no celular os botões descem inteiros em vez de quebrar o texto (“Personag/em”). */
+.campaign-page .card > .row.between { flex-wrap: wrap; gap: 8px; }
+.campaign-page .card > .row.between .btn { white-space: nowrap; }
+.campaign-roster-more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-weight: 600; }
+.campaign-roster-more .stack { padding-top: 6px; }

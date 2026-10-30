@@ -1,6 +1,6 @@
 import {
-  appendToSection, campaignJournal, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
-  nextCampaignSession, npcSightings, PREP_STEPS, prepItems, previousSession, reputationOf, secretsOf, sectionText, setClocks, setPrepDetail, setSecretRevealed, setSectionText, setTaskLine,
+  appendToSection, campaignJournal, castRows, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
+  nextCampaignSession, npcAppeared, npcAttitude, npcExtra, npcSightings, PREP_STEPS, prepItems, previousSession, reputationOf, secretsOf, sectionText, setClocks, setPrepDetail, setSecretRevealed, setSectionText, setTaskLine,
   withCampaignPlayer, trackedLinks, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink,
 } from "./campaigns"
 import { setProperty } from "./properties"
@@ -203,6 +203,12 @@ describe("campanhas", () => {
     const sessions = listSessions(index, cinzas(), TODAY)
     expect(npcSightings(index, npcs[0]!.dest, sessions)).toMatchObject({ mentions: 1, lastSeen: { name: "Sessão 11" } })
     expect(npcSightings(index, null, sessions)).toEqual({ mentions: 0 })
+    const rows = castRows(index, [...npcs.slice(0, 2), { ...npcs[1]!, extra: "hostil, apareceu" }], sessions)
+    expect(rows.map((r) => [r.name, r.attitude, r.appeared, r.marked, r.seen.length])).toEqual([
+      ["Aldren", "aliado", true, false, 1],
+      ["Conde", "hostil", false, false, 0],
+      ["Conde", "hostil", true, true, 0],
+    ])
     const factions = trackedLinks(index, cinzas(), "faccoes")
     expect(reputationOf(factions[0]!.extra)).toBe(2)
     expect(reputationOf("-7")).toBe(-3)
@@ -329,5 +335,18 @@ describe("personagens da wiki vinculados à campanha", () => {
     expect(listSessions(vault, campaign, TODAY).find(s => s.path === sessionPath)?.present).toEqual([path])
     // O mesmo mecanismo de links usado para presenças e renomeação lê a propriedade da campanha.
     expect(vault.note(HOME)!.meta.links.some(link => link.target === path && link.inFrontmatter)).toBe(true)
+  })
+})
+
+describe("NPC que já apareceu", () => {
+  it("lê e grava a marca junto da atitude, sem perder uma ou outra", () => {
+    expect(npcAppeared("hostil, apareceu")).toBe(true)
+    expect(npcAppeared("Apareceu")).toBe(true)
+    expect(npcAppeared("hostil")).toBe(false)
+    expect(npcAttitude("hostil, apareceu")).toBe("hostil")
+    expect(npcAttitude("apareceu")).toBe("")
+    expect(npcExtra("neutro", true)).toBe("neutro, apareceu")
+    expect(npcExtra("", true)).toBe("apareceu")
+    expect(npcExtra("aliado", false)).toBe("aliado")
   })
 })

@@ -1,13 +1,16 @@
 import { useState } from "react"
 import { NoteCrest } from "../../components/kit/Emblem"
 import { Eye, EyeOff, Minus, Plus, ShieldCheck, Trash, X } from "lucide-react"
-import { appendToSection, SECRETS_HEADING, setClocks, setSecretRevealed, type Clock } from "../../core/campaigns"
+import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setClocks, setSecretRevealed, type Clock } from "../../core/campaigns"
 import { noteName } from "../../core/text"
 import { href } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
 import { ClockDial } from "../../components/ui"
 import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { revealSession, useCampaignEdits } from "./campaign-edits"
+
+const MAX_LINES = 6
+const SHOW_SECRETS = "runas-codex:campanha:mostrar-segredos"
 
 /** Relógios de progresso e ameaças (bloco runas-relogios na nota da campanha). */
 export function ClocksCard({ data }: { data: CampaignData }) {
@@ -16,6 +19,8 @@ export function ClocksCard({ data }: { data: CampaignData }) {
   const [name, setName] = useState("")
   const [segments, setSegments] = useState("6")
   const [kind, setKind] = useState<Clock["kind"]>("ameaca")
+  // Apagar pede um segundo clique no mesmo botão (sem desfazer, o relógio some da nota).
+  const [confirming, setConfirming] = useState<number | null>(null)
   if ("error" in data.clocks) {
     return (
       <section className="card stack">
@@ -54,9 +59,15 @@ export function ClocksCard({ data }: { data: CampaignData }) {
                 <button className="icon-btn sm" onClick={() => set(i, c.filled + 1)} aria-label={`Avançar ${c.name}`}>
                   <Plus size={14} />
                 </button>
-                <button className="icon-btn sm" onClick={() => save(clocks.filter((_, j) => j !== i))} aria-label={`Apagar ${c.name}`}>
-                  <Trash size={13} />
-                </button>
+                {confirming === i ? (
+                  <button className="btn sm danger" onClick={() => { setConfirming(null); save(clocks.filter((_, j) => j !== i)) }} onBlur={() => setConfirming(null)} autoFocus>
+                    Apagar?
+                  </button>
+                ) : (
+                  <button className="icon-btn sm" onClick={() => setConfirming(i)} aria-label={`Apagar ${c.name}`}>
+                    <Trash size={13} />
+                  </button>
+                )}
               </span>
             )}
           </div>
@@ -103,13 +114,14 @@ export function QuestsCard({ data }: { data: CampaignData }) {
         </a>
       </div>
       {active.length === 0 && <span className="muted small">Nenhuma missão ativa.</span>}
-      {active.slice(0, 6).map((q) => (
+      {active.slice(0, MAX_LINES).map((q) => (
         <a key={q.path} className="row card tight campaign-quest-line" href={href(noteRoute(q.path))}>
           {q.order && <span className="mono small faint">{q.order}</span>}
           <span className="grow truncate">{q.title}</span>
           {q.reward && <span className="chip gold">{q.reward}</span>}
         </a>
       ))}
+      {active.length > MAX_LINES && <a className="small" href={href(campaignRoute(data.campaign.name, "missoes"))}>+{active.length - MAX_LINES} {active.length - MAX_LINES === 1 ? "missão ativa" : "missões ativas"}</a>}
     </section>
   )
 }
@@ -117,7 +129,8 @@ export function QuestsCard({ data }: { data: CampaignData }) {
 /** Segredos e pistas: checklist na nota da campanha; revelar registra a sessão. */
 export function SecretsCard({ data }: { data: CampaignData }) {
   const { editHome } = useCampaignEdits(data)
-  const [show, setShow] = useState(false)
+  const [show, setShowState] = useState(() => { try { return localStorage.getItem(SHOW_SECRETS) === "1" } catch { return false } })
+  const setShow = (value: boolean) => { setShowState(value); try { localStorage.setItem(SHOW_SECRETS, value ? "1" : "0") } catch { /* só não é lembrado */ } }
   const [text, setText] = useState("")
   const session = revealSession(data)
   const sessionTarget = session ? session.path.replace(/\.md$/, "") : undefined
@@ -125,7 +138,7 @@ export function SecretsCard({ data }: { data: CampaignData }) {
     <section className="card stack">
       <div className="row between">
         <span className="section-title">Segredos e pistas</span>
-        <button className="icon-btn sm" onClick={() => setShow(!show)} aria-label={show ? "Esconder segredos" : "Mostrar segredos"} title="Mostrar/esconder (para jogar com a tela à vista)">
+        <button className="icon-btn sm" onClick={() => setShow(!show)} aria-pressed={show} aria-label="Mostrar segredos" title="Mostrar/esconder (para jogar com a tela à vista)">
           {show ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>
       </div>
@@ -138,7 +151,9 @@ export function SecretsCard({ data }: { data: CampaignData }) {
             disabled={data.readOnly}
             onChange={(e) => editHome((t) => setSecretRevealed(t, s, e.target.checked, sessionTarget))}
           />
-          <span className="grow" style={{ filter: show ? "none" : "blur(5px)" }}>{s.clean}</span>
+          {/* Escondido, o texto sai também para o leitor de tela; o borrão é só o desenho. */}
+          <span className="grow" style={{ filter: show ? "none" : "blur(5px)" }} aria-hidden={!show}>{s.clean}</span>
+          {!show && <span className="sr-only">Segredo oculto</span>}
           {s.revealedIn && <span className="chip green">{noteName(s.revealedIn)}</span>}
         </label>
       ))}
@@ -162,6 +177,8 @@ export function SecretsCard({ data }: { data: CampaignData }) {
 }
 
 export function CastCard({ data }: { data: CampaignData }) {
+  // Primeiro os NPCs que já apareceram na campanha (os mais à mão na mesa).
+  const npcs = [...data.npcs].sort((a, b) => Number(npcAppeared(b.extra)) - Number(npcAppeared(a.extra)))
   return (
     <section className="card stack">
       <div className="row between">
@@ -180,7 +197,7 @@ export function CastCard({ data }: { data: CampaignData }) {
         </a>
       ))}
       {data.npcs.length > 0 && <span className="eyebrow">NPCs</span>}
-      {data.npcs.slice(0, 6).map((n) => (
+      {npcs.slice(0, MAX_LINES).map((n) => (
         <div key={n.position} className="row small">
           {n.dest ? (
             <a className="wikilink cross grow truncate" href={href(noteRoute(n.dest))}>
@@ -189,9 +206,10 @@ export function CastCard({ data }: { data: CampaignData }) {
           ) : (
             <span className="wikilink broken grow truncate">{noteName(n.target)}</span>
           )}
-          {n.extra && <span className={`chip ${attitudeColor(n.extra)}`}>{n.extra}</span>}
+          {npcAttitude(n.extra) && <span className={`chip ${attitudeColor(npcAttitude(n.extra))}`}>{npcAttitude(n.extra)}</span>}
         </div>
       ))}
+      {data.npcs.length > MAX_LINES && <a className="small" href={href(campaignRoute(data.campaign.name, "elenco"))}>+{data.npcs.length - MAX_LINES} NPCs no Elenco</a>}
       {data.players.length === 0 && data.npcs.length === 0 && <span className="muted small">Ninguém ainda. Acrescente os personagens dos jogadores e os NPCs da wiki no Elenco.</span>}
     </section>
   )
@@ -257,6 +275,7 @@ function SafetyList({ label, hint, items, readOnly, onChange }: { label: string;
           }}
         >
           <input className="input" placeholder={`Acrescentar em ${label}`} value={text} onChange={(e) => setText(e.target.value)} aria-label={`Acrescentar em ${label}`} />
+          <button className="btn sm" disabled={!text.trim()}>Acrescentar</button>
         </form>
       )}
     </div>
@@ -265,7 +284,11 @@ function SafetyList({ label, hint, items, readOnly, onChange }: { label: string;
 
 /** Linha do tempo da campanha: cada sessão com a data real e a data no mundo. */
 export function TimelineCard({ data }: { data: CampaignData }) {
-  const sessions = data.sessions.filter((s) => s.status !== "cancelada")
+  const all = data.sessions.filter((s) => s.status !== "cancelada")
+  // As últimas cinco jogadas e as duas próximas; o resto fica na aba Sessões.
+  const played = all.filter((s) => s.status !== "planejada")
+  const sessions = [...played.slice(-5), ...all.filter((s) => s.status === "planejada").slice(0, 2)]
+  const hidden = all.length - sessions.length
   return (
     <section className="card stack">
       <div className="row between">
@@ -286,6 +309,7 @@ export function TimelineCard({ data }: { data: CampaignData }) {
           </li>
         ))}
       </ol>
+      {hidden > 0 && <a className="small" href={href(campaignRoute(data.campaign.name, "sessoes"))}>Ver todas as {all.length} sessões</a>}
     </section>
   )
 }

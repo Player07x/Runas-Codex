@@ -2,7 +2,7 @@ import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useRef, useState } from "react"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Plus } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Plus, Wrench } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
 import { Empty, useToast } from "../../components/ui"
@@ -27,7 +27,7 @@ const TABS = [
   { id: "linha-do-tempo", label: "Linha do tempo", icon: <History size={15} /> },
   { id: "mapa", label: "Mapas", icon: <Map size={15} /> },
   { id: "relacoes", label: "Relações", icon: <GitFork size={15} /> },
-  { id: "ferramentas", label: "Ferramentas", icon: <Plus size={15} /> },
+  { id: "ferramentas", label: "Ferramentas", icon: <Wrench size={15} /> },
   { id: "grafico", label: "Gráfico", icon: <Network size={15} /> },
 ]
 

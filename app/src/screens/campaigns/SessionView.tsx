@@ -3,7 +3,7 @@ import { Crest } from "../../components/kit/Emblem"
 import { imageTarget } from "../../core/personalization"
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
-import { CalendarDays, ChevronLeft, Download, FileDown, Globe, PanelRight, Plus, Users } from "lucide-react"
+import { CalendarDays, ChevronLeft, Download, FileDown, Globe, PanelRight, Plus, Search, Users } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { campaignJournal, previousSession, SESSION_STATUS, setPrepDetail, setSectionText, setTaskLine, SUMMARY_HEADING, type SessionInfo, type SessionStatus } from "../../core/campaigns"
 import { dirname, noteName } from "../../core/text"
@@ -33,7 +33,13 @@ function SessionList({ data }: { data: CampaignData }) {
     }
   }
   const [creating, setCreating] = useState(false)
-  const sessions = [...data.sessions].reverse()
+  const [query, setQuery] = useState("")
+  const q = query.trim().toLocaleLowerCase("pt-BR")
+  const matches = (s: SessionInfo) => !q || `${s.title} ${s.number ?? ""} ${s.summary}`.toLocaleLowerCase("pt-BR").includes(q)
+  // Próximas (planejadas) em ordem de data; as jogadas e canceladas da mais recente para a mais antiga.
+  const upcoming = data.sessions.filter((s) => s.status === "planejada" && matches(s))
+  const played = [...data.sessions].reverse().filter((s) => s.status !== "planejada" && matches(s))
+  const sessions = [...upcoming, ...played]
   return (
     <div className="page">
       <div className="page-head">
@@ -51,11 +57,21 @@ function SessionList({ data }: { data: CampaignData }) {
           ]} />
         </div>
       </div>
-      {sessions.length === 0 && (
+      {data.sessions.length === 0 && (
         <Empty title="Nenhuma sessão ainda">Cada sessão é uma nota com o roteiro de preparação, as anotações e o que aconteceu. Criar pela campanha já marca o evento na Agenda.</Empty>
       )}
+      {data.sessions.length > 5 && (
+        <label className="search campaign-session-search">
+          <Search size={15} />
+          <input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar sessão pelo título, número ou resumo" aria-label="Buscar sessão" />
+        </label>
+      )}
+      {data.sessions.length > 0 && sessions.length === 0 && <p className="muted small">Nenhuma sessão com “{query}”.</p>}
+      {[{ label: "Próximas", list: upcoming }, { label: "Jogadas", list: played }].filter((g) => g.list.length).map((group) => (
+      <section key={group.label} className="stack" style={{ gap: 8 }} aria-label={`Sessões ${group.label.toLocaleLowerCase("pt-BR")}`}>
+      <h2 className="section-title">{group.label} · {group.list.length}</h2>
       <div className="campaign-session-list">
-        {sessions.map((s) => {
+        {group.list.map((s) => {
           const done = s.prep.filter((p) => p.done).length
           // Capa da sessão (`capa`, ADR 0027), quando houver.
           const cover = imageTarget(vault.index?.note(s.path)?.meta.frontmatter?.data?.capa)
@@ -77,6 +93,8 @@ function SessionList({ data }: { data: CampaignData }) {
           )
         })}
       </div>
+      </section>
+      ))}
       {creating && <NewSessionDialog data={data} onClose={() => setCreating(false)} onCreated={(path) => navigate(campaignRoute(data.campaign.name, "sessoes", path))} />}
     </div>
   )
@@ -137,13 +155,23 @@ function useSessionEdits(data: CampaignData, session: SessionInfo) {
   }
   return {
     set: (key: string, value: string | number | string[] | undefined) => run(() => vault.setProperty(session.path, key, value)),
+    /** Data e hora da sessão também mudam o evento ligado na Agenda, para os dois não discordarem (remarcar). */
+    reschedule: (key: "data" | "hora", value: string | undefined) => run(async () => {
+      await vault.setProperty(session.path, key, value)
+      const event = session.event ? vault.index!.note(session.event.endsWith(".md") ? session.event : `${session.event}.md`) : undefined
+      const data = event?.meta.frontmatter?.data
+      // Só o evento simples (sem repetição) acompanha; um evento repetido continua como está.
+      if (!event || !value || data?.type === "recurring" || data?.type === "rrule") return
+      await vault.setProperty(event.path, key === "data" ? "date" : "startTime", value)
+    }),
     edit: (change: (text: string) => string) => run(() => vault.save(session.path, change(vault.index!.note(session.path)!.text))),
   }
 }
 
 function SessionDetails({ data, session }: { data: CampaignData; session: SessionInfo }) {
-  const { set } = useSessionEdits(data, session)
+  const { set, reschedule } = useSessionEdits(data, session)
   const ro = data.readOnly
+  const [ratingError, setRatingError] = useState("")
   const pcLink = (path: string) => `[[${path.replace(/\.md$/, "")}]]`
   const togglePresent = (path: string) => {
     const next = session.present.includes(path) ? session.present.filter((p) => p !== path) : [...session.present, path]
@@ -163,16 +191,16 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
       <div className="campaign-form-row">
         <label className="field grow">
           <span>Data</span>
-          <input className="input" type="date" disabled={ro} defaultValue={session.date ?? ""} onBlur={(e) => e.target.value !== (session.date ?? "") && set("data", e.target.value || undefined)} aria-label="Data" />
+          <input key={session.date ?? ""} className="input" type="date" disabled={ro} defaultValue={session.date ?? ""} onBlur={(e) => e.target.value !== (session.date ?? "") && reschedule("data", e.target.value || undefined)} aria-label="Data" />
         </label>
         <label className="field">
           <span>Hora</span>
-          <input className="input" type="time" disabled={ro} defaultValue={session.time ?? ""} onBlur={(e) => e.target.value !== (session.time ?? "") && set("hora", e.target.value || undefined)} aria-label="Hora" />
+          <input key={session.time ?? ""} className="input" type="time" disabled={ro} defaultValue={session.time ?? ""} onBlur={(e) => e.target.value !== (session.time ?? "") && reschedule("hora", e.target.value || undefined)} aria-label="Hora" />
         </label>
       </div>
       <label className="field">
         <span>Data no mundo</span>
-        <input className="input mono" disabled={ro} defaultValue={session.worldDate ?? ""} placeholder="4031-07-16" onBlur={(e) => e.target.value.trim() !== (session.worldDate ?? "") && set("data_mundo", e.target.value.trim() || undefined)} aria-label="Data no mundo" />
+        <input key={session.worldDate ?? ""} className="input mono" disabled={ro} defaultValue={session.worldDate ?? ""} placeholder="4031-07-16" onBlur={(e) => e.target.value.trim() !== (session.worldDate ?? "") && set("data_mundo", e.target.value.trim() || undefined)} aria-label="Data no mundo" />
         {session.worldDate && <span className="tiny" style={{ color: "var(--gold)" }}>{worldDateLabel(data.calendar, session.worldDate)}</span>}
       </label>
       {data.players.length > 0 && (
@@ -192,7 +220,15 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
       )}
       <label className="field">
         <span>Nota da sessão (0 a 10)</span>
-        <input className="input" inputMode="decimal" disabled={ro} defaultValue={session.rating ?? ""} onBlur={(e) => { const v = e.target.value.replace(",", "."); if (v !== String(session.rating ?? "")) set("avaliacao", v ? Number(v) : undefined) }} aria-label="Nota da sessão" />
+        <input key={String(session.rating ?? "")} className="input" inputMode="decimal" disabled={ro} defaultValue={session.rating ?? ""} aria-invalid={Boolean(ratingError)} aria-describedby={ratingError ? "nota-sessao-erro" : undefined} onBlur={(e) => {
+          const v = e.target.value.trim().replace(",", ".")
+          const n = Number(v)
+          // Só um número de 0 a 10 é gravado; texto ou valor fora da faixa fica no campo com o aviso.
+          if (v && (!Number.isFinite(n) || n < 0 || n > 10)) return setRatingError("Use um número de 0 a 10, como 8 ou 7,5.")
+          setRatingError("")
+          if (v !== String(session.rating ?? "")) set("avaliacao", v ? n : undefined)
+        }} aria-label="Nota da sessão" />
+        {ratingError && <span id="nota-sessao-erro" className="tiny" role="alert" style={{ color: "var(--red)" }}>{ratingError}</span>}
       </label>
       {session.event ? (
         <a className="btn ghost sm" href={href(noteRoute(session.event))}>
@@ -209,6 +245,7 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
 function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo }) {
   const { edit } = useSessionEdits(data, session)
   const previous = previousSession(data.sessions, session)
+  const recap = session.prep.find((p) => p.label === "Recapitulação")
   const done = session.prep.filter((p) => p.done).length
   return (
     <section className="card stack">
@@ -224,6 +261,7 @@ function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo 
           <label className="grow stack" style={{ gap: 2 }}>
             {item.label && <strong className="small">{item.label}</strong>}
             <input
+              key={item.detail}
               className="input"
               disabled={data.readOnly}
               defaultValue={item.detail}
@@ -235,9 +273,14 @@ function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo 
         </div>
       ))}
       {previous?.summary && (
-        <div className="campaign-previous">
+        <div className="campaign-previous stack" style={{ gap: 6 }}>
           <span className="eyebrow">Anteriormente ({noteName(previous.path)})</span>
           <p className="small">{previous.summary}</p>
+          {recap && !recap.detail && !data.readOnly && (
+            <button type="button" className="btn sm" style={{ justifySelf: "start" }} onClick={() => edit((t) => setPrepDetail(t, recap, previous.summary!.replace(/\s+/g, " ").trim()))}>
+              Usar na Recapitulação
+            </button>
+          )}
         </div>
       )}
     </section>
@@ -251,6 +294,7 @@ function SummaryCard({ data, session }: { data: CampaignData; session: SessionIn
     <section className="card stack">
       <span className="section-title">O que aconteceu</span>
       <textarea
+        key={session.summary}
         className="textarea"
         rows={5}
         disabled={data.readOnly}
