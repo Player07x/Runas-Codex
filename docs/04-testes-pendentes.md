@@ -1193,3 +1193,7 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Na nota de uma sessão, clicar num link para uma nota que não existe: “Novo NPC” abre com o nome; criar como NPC
   (entra no Elenco, marcado como “apareceu”) e como Lugar.
 - [ ] Sessões: o “Diário dos jogadores” aparece no fim quando há entradas guardadas pela sala.
+- [ ] Wiki › Ferramentas com o dobro de opções (19.412) e 43 culturas: conferir as culturas novas (coreana com o
+  sobrenome antes, finlandesa, húngara com o sobrenome antes, holandesa com “van”/“de”, armênia, georgiana, etíope
+  com o nome do pai, havaiana, inuíte, quíchua e mesopotâmica sem sobrenome, e as inventadas halfling, gnoma,
+  dracônica, infernal e feérica) e gerar várias vezes NPC, taverna, rumor e sala de masmorra.

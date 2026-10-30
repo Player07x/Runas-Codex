@@ -2,7 +2,7 @@ import { cultureName, NAME_CULTURES } from "./name-cultures"
 
 describe("Nomes por cultura", () => {
   it("cada cultura tem pelo menos 100 nomes e, se usa sobrenome, 100 sobrenomes, sem repetidos", () => {
-    expect(NAME_CULTURES.length).toBeGreaterThanOrEqual(20)
+    expect(NAME_CULTURES.length).toBeGreaterThanOrEqual(40)
     expect(new Set(NAME_CULTURES.map((c) => c.id)).size).toBe(NAME_CULTURES.length)
     for (const c of NAME_CULTURES) {
       expect(c.female.length + c.male.length, c.id).toBeGreaterThanOrEqual(100)

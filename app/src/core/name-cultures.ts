@@ -5,6 +5,7 @@
  * (“de_la_Vega” → “de la Vega”).
  */
 import { FEMALE_NAMES, MALE_NAMES, SURNAMES } from "./generator-tables"
+import { EXTRA_CULTURES, MORE_CULTURE_NAMES } from "./name-cultures-extra"
 
 export type NameOrder = "nome-sobrenome" | "sobrenome-nome"
 
@@ -28,7 +29,7 @@ function culture(id: string, label: string, hint: string, female: string, male: 
   return { id, label, hint, female: words(female), male: words(male), surnames: words(surnames), order: "nome-sobrenome", ...extra }
 }
 
-export const NAME_CULTURES: NameCulture[] = [
+const BASE_CULTURES: NameCulture[] = [
   { id: "lusofona", label: "Lusófona", hint: "Portugal, Brasil e África lusófona, com nomes medievais, indígenas e afro-brasileiros", female: FEMALE_NAMES, male: MALE_NAMES, surnames: SURNAMES, order: "nome-sobrenome" },
   culture("hispanica", "Hispânica", "Castela, Aragão e a América espanhola",
     `Ximena Urraca Elvira Jimena Leonor Blanca Inés Mencía Sancha Teresa Juana Isabel Catalina Beatriz Lucía Carmen Dolores
@@ -440,6 +441,14 @@ export const NAME_CULTURES: NameCulture[] = [
     Roedor-de-Pedra Bebedor-de-Lama Filho-da-Tempestade Filho-do-Trovão Último-de-Pé Primeiro-a-Correr
     Sem-Medo Sem-Nome Duas-Facas Três-Dedos Meia-Orelha Um-Olho Cem-Cicatrizes Mil-Mortes Rei-da-Lama Senhor-dos-Ossos`),
 ]
+
+/** As culturas da beta.22 e as novas (no fim), com os nomes acrescentados depois. */
+export const NAME_CULTURES: NameCulture[] = [...BASE_CULTURES, ...EXTRA_CULTURES].map((culture) => {
+    const more = MORE_CULTURE_NAMES[culture.id]
+    if (!more) return culture
+    const add = (text?: string) => (text ? words(text) : [])
+    return { ...culture, female: [...culture.female, ...add(more.female)], male: [...culture.male, ...add(more.male)], surnames: [...culture.surnames, ...add(more.surnames)] }
+})
 
 /** Sorteia um nome da cultura; `random` fixo deixa o resultado previsível nos testes. */
 export function cultureName(culture: NameCulture, gender: "f" | "m", random: () => number = Math.random): string {

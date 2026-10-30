@@ -24,12 +24,13 @@ describe("Ferramentas de fechamento da Wiki",()=>{
   expect(generateWorld("aventura",()=>0)).toContain("## Encontro")
   expect(generateWorld("nome",()=>0)).toBe("Ana das Neves")
  })
- it("tem pelo menos cem vezes as opções de antes, sem itens repetidos nas listas",()=>{
+ it("tem o dobro das opções da beta.22, sem itens repetidos nas listas",()=>{
   const lists:[string,unknown[]][]=Object.entries(Tables).flatMap(([name,value]):[string,unknown[]][]=>Array.isArray(value)?[[name,value]]:Object.entries(value as Record<string,unknown[]>).map(([season,list]):[string,unknown[]]=>[`${name}.${season}`,list]))
   for(const [name,list] of lists) expect(new Set(list.map(item=>JSON.stringify(item))).size,name).toBe(list.length)
-  // Antes da beta.21 eram 84 opções em 7 geradores; a beta.22 pede 100 vezes isso, contando os nomes por cultura.
+  // Antes da beta.21 eram 84 opções em 7 geradores; a beta.22 pediu 100 vezes isso (9.692, contando os nomes por
+  // cultura) e depois o dobro: pelo menos 19.384.
   const cultures=NAME_CULTURES.slice(1).reduce((sum,c)=>sum+c.female.length+c.male.length+c.surnames.length,0)
-  expect(lists.reduce((sum,[,list])=>sum+list.length,0)+cultures).toBeGreaterThanOrEqual(8400)
+  expect(lists.reduce((sum,[,list])=>sum+list.length,0)+cultures).toBeGreaterThanOrEqual(19_384)
   expect(Object.keys(GENERATOR_KINDS).length).toBeGreaterThanOrEqual(14)
  })
  it("concorda o gênero do nome com a profissão e o da taverna com o adjetivo",()=>{
