@@ -411,7 +411,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     const content = (
       <>
         {subfolders.map((sub) => (
-          <LazyFolder key={sub.path} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
+          <LazyFolder key={sub.path} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
             <summary className="eyebrow row" style={{ gap: 5 }} {...dragSource(sub.path)}>
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={13} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />} <span className="grow truncate">{sub.name}</span>
@@ -694,10 +694,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
 }
 
 /**
- * Pasta da árvore que só desenha o conteúdo quando aberta (T6): com 10 mil notas, as pastas fechadas desenhavam tudo
- * escondido. Abre sozinha quando a nota aberta está dentro dela.
+ * Pasta da árvore que, em cofre grande (`lazy`), só desenha o conteúdo quando aberta (T6): com 10 mil notas, as pastas
+ * fechadas desenhavam tudo escondido. Em cofre pequeno continua tudo no DOM, como antes (a busca do navegador e o
+ * smoke do Electron contam com isso). Abre sozinha quando a nota aberta está dentro dela.
  */
-function LazyFolder({ initialOpen, forceOpen, className, zone, summary, actions, children }: { initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
+function LazyFolder({ lazy, initialOpen, forceOpen, className, zone, summary, actions, children }: { lazy: boolean; initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
   const [open, setOpen] = useState(initialOpen || forceOpen)
   useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
   // Os botões da pasta ficam fora do <summary> (T7: controle dentro de controle confunde teclado e leitor de tela).
@@ -705,7 +706,7 @@ function LazyFolder({ initialOpen, forceOpen, className, zone, summary, actions,
     <div className="vault-folder-wrap">
       <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className={className} {...zone}>
         {summary}
-        {open && children()}
+        {(open || !lazy) && children()}
       </details>
       {actions}
     </div>

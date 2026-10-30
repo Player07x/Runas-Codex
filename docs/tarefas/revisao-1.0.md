@@ -134,11 +134,11 @@ exceção da WCAG 2.5.8; o link de origem da tarefa fica numa linha própria e p
 
 ## Desktop
 
-O smoke do Electron (`--smoke`, cofre de exemplo, `xvfb-run`) terminou com código 1 **igual na `main` e nesta
-branch**: todas as partes do relatório vieram iguais (ponte, formatadores, gráfico, Wiki, categorias, prévia do livro,
-campanha, migração, rede sem nenhuma chamada), e a única checagem que não bate é `listed` (2) contra `markdown` (38)
-na leitura do cofre. Como acontece também sem as mudanças, é do ambiente deste contêiner (cópia do cofre de teste) e
-fica para o CI do workflow Release, que roda o smoke no Linux e no Windows. O `--smoke --write` não foi rodado aqui.
+Os dois smokes do Electron (`--smoke` e `--smoke --write`, cofre de exemplo, `xvfb-run`) passam. Numa primeira rodada o
+`--smoke` falhou na contagem da árvore (`listed` 2 contra `markdown` 38) e isso foi tomado por um problema do ambiente;
+era da T6: as pastas fechadas deixaram de desenhar as notas. A correção deixa esse modo só para cofres com mais de 2
+mil notas, e o smoke de gravação passou a clicar em “Confirmar” ao desvincular um personagem (o Elenco pede
+confirmação agora).
 
 ## Ordem sugerida
 
