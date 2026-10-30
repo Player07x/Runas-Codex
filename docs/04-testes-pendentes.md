@@ -1231,6 +1231,11 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Android: tocar no widget da Agenda continua abrindo a Agenda.
 - [ ] Conferir as seções “E1, T7, R1 no Android, R3 e R4” acima (link público da sala no celular, bateria, TalkBack).
 
+## Lançamento da beta.23: gravação no Windows e teste da sala (30/10/2026)
+
+- [ ] Windows: com o mesmo cofre aberto no Obsidian (ou com o antivírus analisando a pasta), editar uma nota no
+  Runas-Codex e gravar várias vezes seguidas. Nenhuma gravação pode falhar com “operation not permitted”; se o
+  Obsidian mudar a nota no meio, o app continua avisando que ela “mudou fora do app”.
 
 ## Versão 0.1.0-beta.24 (30/10/2026)
 
@@ -1238,5 +1243,4 @@ A beta.23 não foi publicada; as conferências dela (seção acima) valem para a
 
 - [ ] Atualizar da beta.22 para a beta.24 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre,
   PIN e preferências.
-- [ ] Windows: com a mesma nota aberta no Obsidian, editar e salvar no Runas-Codex várias vezes seguidas, sem aviso de
-  erro de permissão.
+- [ ] Conferir a gravação no Windows da seção “Lançamento da beta.23” acima.

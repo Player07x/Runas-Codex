@@ -3,6 +3,7 @@ import { lstat, mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile 
 import { basename, dirname, extname, isAbsolute, join, resolve, sep } from "node:path"
 import { zipSync } from "fflate"
 import type { BackupInfo, VaultEntry } from "../shared/ipc"
+import { replaceFile } from "./replace-file"
 
 /** Erro com mensagem para o usuário (chega à interface sem o prefixo do Electron). */
 export class VaultError extends Error {}
@@ -144,7 +145,8 @@ async function writeSafe(root: string, path: string, content: string | Uint8Arra
   try {
     if (typeof content === "string") await writeFile(temp, content, "utf8")
     else await writeFile(temp, content)
-    await rename(temp, full)
+    // No Windows a troca falha por um instante se outro programa estiver lendo a nota.
+    await replaceFile(temp, full)
   } catch (error) {
     await rm(temp, { force: true })
     throw error
