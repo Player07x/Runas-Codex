@@ -388,6 +388,8 @@ const PENDING = [
   ]},
   {group:"Para a próxima atualização", note:"Registrado a pedido do dono para corrigir na próxima versão.", items:[
     {id:"U1",s:"aberta",t:"Atualização pelo app no Ubuntu falha no dpkg",d:"Da beta.22 para a beta.24 pelo “Verificar atualizações”: “E: Sub-process /usr/bin/dpkg returned an error code (1)”. A mensagem do app mostra só o fim do stderr e perde a causa, que o dpkg escreve no stdout. Corrigir: mostrar as duas saídas, rodar sem o ruído do debconf, corrigir o pacote quando a causa aparecer e testar a instalação por cima no CI.",meta:"rumo-a-1.0.md › U1 · desktop/src/main/deb-update.ts"},
+    {id:"U2",s:"aberta",t:"Menu ⋯ cortado nos cartões do Elenco em grade",d:"O cartão do NPC tem overflow: hidden para arredondar a imagem e corta o menu que abre dentro dele. Tirar o corte do cartão e arredondar só a imagem.",meta:"rumo-a-1.0.md › U2 · campaigns.css"},
+    {id:"U3",s:"aberta",t:"Editar e excluir uma mesa do VTT",d:"Os cartões de VTT › Criar Sala não têm renomear nem excluir. Falta renameWorld e deleteWorld na VttApi (desktop, Android e memória), com a mesa indo para a lixeira do cofre, e o menu ⋯ com confirmação na tela.",meta:"rumo-a-1.0.md › U3 · VttScreen.tsx"},
   ]},
   {group:"Ajustes da versão publicada", items:[
     {id:"—",s:"aberta",t:"Texto da Release beta.22",d:"A Release saiu com o texto automático do GitHub (“What's Changed”). As notas em três blocos estão em docs/releases/v0.1.0-beta.22.md e podem substituir o texto na página da Release.",meta:"github.com/Player07x/Runas-Codex/releases/tag/v0.1.0-beta.22"},

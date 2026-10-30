@@ -280,3 +280,24 @@ O que fazer:
 Enquanto isso, para atualizar à mão: no terminal da pasta do arquivo, `sudo apt install ./Runas-Codex-0.1.0-beta.24-linux-amd64.deb`.
 Se o `dpkg` tiver ficado pela metade, `sudo dpkg --configure -a` antes. Para ajudar a achar a causa, as últimas linhas
 de `/var/log/apt/term.log` (ou `/var/log/dpkg.log`) logo depois da falha mostram o erro completo.
+
+### U2 — Menu ⋯ cortado nos cartões do Elenco em grade
+
+Relato do dono (30/10, com captura): em Campanhas › Elenco, na **Grade** (E1), o menu ⋯ de um NPC abre dentro do
+cartão e aparece cortado (“…ir na Wiki”). Causa: `.campaign-npc-card` tem `overflow: hidden` (para arredondar a
+imagem), o que corta o menu do `OverflowMenu`, que abre dentro do cartão. Corrigir em
+`app/src/screens/campaigns/campaigns.css`: tirar o `overflow: hidden` do cartão e arredondar só o topo da imagem; conferir
+o menu na última linha da grade e no celular (o menu precisa caber na tela e não ser cortado pelo cartão nem pela seção).
+
+### U3 — Editar e excluir uma mesa (sala) do VTT
+
+Relato do dono (30/10, com captura): em VTT › Criar Sala, os cartões das mesas (“Teste · 1 cena · Aberta ontem”) não têm
+como renomear nem excluir. Hoje a `VttApi` (`app/src/vtt/shared/ipc.ts`) só tem `listWorlds`, `createWorld`,
+`openWorld` e `closeWorld`. O que fazer:
+
+1. `renameWorld(id, título)` e `deleteWorld(id)` na `VttApi`, no desktop (`desktop/src/main/vtt/world-store.ts` e IPC), no
+   Android (`PortableWorldStore`, pela ponte do cofre) e na versão em memória. Excluir manda a pasta da mesa
+   (`.runas/mesas/<id>/`) para a lixeira do cofre, como as notas, em vez de apagar de vez; recusar com a sala ligada.
+2. Na tela (`app/src/screens/vtt/VttScreen.tsx`): menu ⋯ em cada cartão com “Renomear…” e “Excluir…”, confirmação ao
+   excluir e retorno do foco, no padrão do kit (`OverflowMenu`, diálogos).
+3. Testes do núcleo e no smoke do Electron (criar, renomear, excluir e conferir na lixeira).
