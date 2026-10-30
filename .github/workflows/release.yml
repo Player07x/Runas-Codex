@@ -598,3 +598,150 @@ jobs:
             mobile/android/app/build/reports/tests
           if-no-files-found: warn
           retention-days: 14
+
+  android-revisao:
+    # R1 e R3 (docs/tarefas/revisao-1.0.md, ADR 0030): as telas do app no emulador (411 px claro e escuro, 320 px,
+    # deitado, texto a 140 %, botão voltar e teclado, com axe-core) e o cofre de 10 mil notas da T6. É revisão e
+    # medição: não entra na publicação e o resumo sai no log e no artefato.
+    needs: targets
+    if: needs.targets.outputs.android == 'true' && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run sync -w @runas-codex/mobile
+      - name: Habilitar depuração só no APK desta verificação
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs'
+          const path='mobile/android/app/src/main/assets/capacitor.config.json'
+          const config=JSON.parse(readFileSync(path,'utf8'))
+          config.android={...config.android,webContentsDebuggingEnabled:true}
+          writeFileSync(path,JSON.stringify(config))
+          JS
+      - name: APK de teste
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: axe-core só para a revisão (fora do app)
+        run: npm install --no-save --no-package-lock --ignore-scripts --prefix "$RUNNER_TEMP/axe" axe-core@4.10.2
+      - name: Preparar emulador Android 35
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/runas-avd"
+          mkdir -p "$ANDROID_AVD_HOME" /tmp/runas-android-review
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          sudo chmod 666 /dev/kvm
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-revisao -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --path "$ANDROID_AVD_HOME/runas-revisao.avd"
+          cat > "$ANDROID_AVD_HOME/runas-revisao.ini" <<INI
+          avd.ini.encoding=UTF-8
+          path=$ANDROID_AVD_HOME/runas-revisao.avd
+          target=android-35
+          INI
+          "$ANDROID_HOME/emulator/emulator" -avd runas-revisao -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-review/emulator.log 2>&1 &
+          timeout 120 adb wait-for-device
+          for i in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          adb shell input keyevent 82
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell am force-stop com.google.android.apps.nexuslauncher
+      - name: Cofre de exemplo e app instalado
+        run: |
+          for i in $(seq 1 60); do
+            if adb shell 'mkdir -p /sdcard/Documents/cofre-revisao && echo pronto > /sdcard/Documents/cofre-revisao/.probe && rm /sdcard/Documents/cofre-revisao/.probe'; then break; fi
+            sleep 2
+          done
+          copied=false
+          for i in $(seq 1 10); do
+            if adb push desktop/tests/cofre-exemplo/. /sdcard/Documents/cofre-revisao/; then copied=true; break; fi
+            sleep 2
+          done
+          test "$copied" = true
+          adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
+          adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
+      - name: R1 — retrato, 411 px, escuro (axe, capturas, voltar e teclado)
+        run: |
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-revisao --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review retrato-escuro "$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" capturas android tema=escuro
+      - name: R1 — retrato, 411 px, claro (axe)
+        if: always()
+        run: |
+          node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review retrato-claro "$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" tema=claro
+      - name: R1 — 320 px de largura (axe, capturas)
+        if: always()
+        run: |
+          adb shell wm size 720x1280
+          adb shell wm density 360
+          sleep 3
+          node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review 320px "$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" capturas tema=escuro
+          adb shell wm size reset
+          adb shell wm density reset
+      - name: R1 — deitado (capturas)
+        if: always()
+        run: |
+          adb shell settings put system accelerometer_rotation 0
+          adb shell settings put system user_rotation 1
+          sleep 4
+          node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review deitado - capturas
+          adb shell settings put system user_rotation 0
+          sleep 3
+      - name: R1 — texto do sistema a 140 % (capturas)
+        if: always()
+        run: |
+          adb shell settings put system font_scale 1.4
+          adb shell am force-stop dev.runas.codex
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-revisao --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review texto-140 - capturas
+          adb shell settings put system font_scale 1.0
+      - name: R3 — cofre de 10 mil notas
+        if: always()
+        run: |
+          adb shell am force-stop dev.runas.codex
+          node --input-type=module - "$RUNNER_TEMP/cofre-10000" 10000 <<'JS'
+          import { generateLargeVault } from './app/src/core/large-vault.ts'
+          import { mkdirSync, writeFileSync } from 'node:fs'
+          import { dirname, join } from 'node:path'
+          const [out, count] = process.argv.slice(2), { texts } = generateLargeVault(Number(count))
+          for (const [path, text] of Object.entries(texts)) { mkdirSync(join(out, dirname(path)), { recursive: true }); writeFileSync(join(out, path), text) }
+          JS
+          tar -C "$RUNNER_TEMP/cofre-10000" -cf "$RUNNER_TEMP/cofre-10000.tar" .
+          adb push "$RUNNER_TEMP/cofre-10000.tar" /sdcard/Documents/cofre-10000.tar
+          adb shell 'mkdir -p /sdcard/Documents/cofre-10000 && cd /sdcard/Documents/cofre-10000 && tar -xf ../cofre-10000.tar && rm ../cofre-10000.tar'
+          test "$(adb shell 'ls /sdcard/Documents/cofre-10000/Notas/Grande | wc -l' | tr -d '\r ')" = 10000
+          start=$(date +%s%3N)
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-10000
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/vault-large.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review/cofre-10000 10000 "$start"
+          adb shell dumpsys meminfo dev.runas.codex > /tmp/runas-android-review/cofre-10000/meminfo.txt
+          grep -E 'TOTAL PSS|TOTAL:' /tmp/runas-android-review/cofre-10000/meminfo.txt || true
+      - name: Registro do Android
+        if: always()
+        run: adb logcat -d > /tmp/runas-android-review/logcat.txt 2>&1 || true
+      - name: Guardar a revisão do Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Runas-Codex-android-revisao
+          path: /tmp/runas-android-review
+          if-no-files-found: warn
+          retention-days: 14
