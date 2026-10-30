@@ -145,8 +145,8 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     { id: "acessibilidade", title: "Acessibilidade", icon: <Accessibility size={16} />, body: <AccessibilitySettings routeFocus={false} /> },
     { id: "editor", title: "Editor e atalhos", icon: <Keyboard size={16} />, body: (
       <>
-        {vault.platform.kind !== "capacitor" && <ShortcutSettings />}
         <QuickCaptureSettings />
+        {vault.platform.kind !== "capacitor" && <ShortcutSettings />}
         <SnippetSettings />
       </>
     ) },
