@@ -1197,3 +1197,9 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   sobrenome antes, finlandesa, húngara com o sobrenome antes, holandesa com “van”/“de”, armênia, georgiana, etíope
   com o nome do pai, havaiana, inuíte, quíchua e mesopotâmica sem sobrenome, e as inventadas halfling, gnoma,
   dracônica, infernal e feérica) e gerar várias vezes NPC, taverna, rumor e sala de masmorra.
+
+
+## Versão 0.1.0-beta.22 (30/10/2026)
+
+- [ ] Atualizar da beta.21 para a beta.22 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre, PIN e preferências.
+- [ ] Conferir T1 a T4 (Backups, Cópias de conflito, atalho da captura rápida, importar na mesa) e as seções acima desta: geradores e culturas, T6, R1/T7 e Campanhas.
