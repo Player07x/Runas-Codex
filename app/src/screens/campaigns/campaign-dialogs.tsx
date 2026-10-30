@@ -3,7 +3,7 @@ import { FileText, Search } from "lucide-react"
 import { eventFileName, eventNote, type EventInput } from "../../core/agenda"
 import {
   CAMPAIGN_ROOT, isPlayerNote, listPlayers, newCampaignNote, newQuestNote, npcExtra, withTrackedLink, newSessionNote, noteTitle, QUEST_STATUS, sessionFileName, uniqueNoteName, withCampaignPlayer,
-  type CampaignInfo, type PlayerCharacter, type QuestStatus,
+  type CampaignInfo, type PlayerCharacter, type QuestInfo, type QuestStatus, type TrackedLink,
 } from "../../core/campaigns"
 import { emptyCanvasText } from "../../core/canvas"
 import { noteDateText, parseWorldDate } from "../../core/calendar"
@@ -194,9 +194,15 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
   )
 }
 
-export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: { campaign: CampaignInfo; initialStatus?: QuestStatus; onClose(): void }) {
+export function NewQuestDialog({ campaign, quests = [], npcs = [], initialStatus = "ativa", onClose }: { campaign: CampaignInfo; quests?: QuestInfo[]; npcs?: TrackedLink[]; initialStatus?: QuestStatus; onClose(): void }) {
   const vault = useVault()
   const [title, setTitle] = useState("")
+  const [parent, setParent] = useState("")
+  const [requires, setRequires] = useState<string[]>([])
+  const [reqQuery, setReqQuery] = useState("")
+  const toggleReq = (path: string) => setRequires((list) => (list.includes(path) ? list.filter((p) => p !== path) : [...list, path]))
+  const target = (path: string, from: string) => vault.index!.linkTarget(path, from)
+  const reqOptions = quests.filter((q) => q.path !== parent && q.title.toLocaleLowerCase("pt-BR").includes(reqQuery.trim().toLocaleLowerCase("pt-BR"))).slice(0, 40)
   const [status, setStatus] = useState<QuestStatus>(initialStatus)
   const [order, setOrder] = useState("")
   const [giver, setGiver] = useState("")
@@ -210,7 +216,11 @@ export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: {
       onConfirm={async () => {
         const folder = `${campaign.root}Missões`
         const name = uniqueNoteName(vault.index!, folder, title.trim())
-        await vault.createNote(folder, name, newQuestNote(title.trim(), { status, ...(order.trim() ? { order: order.trim() } : {}), ...(giver.trim() ? { giver: giver.trim() } : {}), ...(reward.trim() ? { reward: reward.trim() } : {}) }))
+        const from = `${folder}/${name}.md`
+        await vault.createNote(folder, name, newQuestNote(title.trim(), {
+          status, ...(order.trim() ? { order: order.trim() } : {}), ...(giver.trim() ? { giver: giver.trim() } : {}), ...(reward.trim() ? { reward: reward.trim() } : {}),
+          ...(parent ? { parent: target(parent, from) } : {}), ...(requires.length ? { requires: requires.map((p) => target(p, from)) } : {}),
+        }))
       }}
     >
       <label className="field">
@@ -235,12 +245,33 @@ export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: {
       </div>
       <label className="field">
         <span>Quem pediu (nome de uma nota, vira link)</span>
-        <input className="input" value={giver} onChange={(e) => setGiver(e.target.value)} placeholder="Conde Ormund" aria-label="Quem pediu a missão" />
+        <input className="input" list="npcs-da-campanha" value={giver} onChange={(e) => setGiver(e.target.value)} placeholder="Conde Ormund" aria-label="Quem pediu a missão" />
+        <datalist id="npcs-da-campanha">{npcs.map((n) => <option key={n.position} value={noteName(n.target)} />)}</datalist>
       </label>
       <label className="field">
         <span>Recompensa</span>
         <input className="input" value={reward} onChange={(e) => setReward(e.target.value)} aria-label="Recompensa" />
       </label>
+      {quests.length > 0 && <>
+        <label className="field">
+          <span>Parte de (arco, no mapa de missões)</span>
+          <select className="select" value={parent} onChange={(e) => { setParent(e.target.value); setRequires((list) => list.filter((p) => p !== e.target.value)) }} aria-label="Missão-mãe">
+            <option value="">Nenhuma (missão de topo)</option>
+            {quests.map((q) => <option key={q.path} value={q.path}>{q.order ? `${q.order} · ` : ""}{q.title}</option>)}
+          </select>
+        </label>
+        <fieldset className="field campaign-requires">
+          <legend>Depende de (só abre depois destas){requires.length ? ` · ${requires.length}` : ""}</legend>
+          {quests.length > 8 && <input className="input" value={reqQuery} onChange={(e) => setReqQuery(e.target.value)} placeholder="Filtrar missões" aria-label="Filtrar missões para depender" />}
+          <div className="campaign-requires-list">
+            {reqOptions.map((q) => (
+              <label key={q.path} className="check small">
+                <input type="checkbox" checked={requires.includes(q.path)} onChange={() => toggleReq(q.path)} /> {q.order ? `${q.order} · ` : ""}{q.title}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </>}
     </FormDialog>
   )
 }

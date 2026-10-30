@@ -1170,3 +1170,21 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Tokens em lote: com uma cena aberta, importar uma lista `.json` (exemplo na Ajuda › Mesa): os tokens aparecem
   na cena; sem cena aberta, o diálogo pede para abrir uma.
 - [ ] Celular (320 px) e tema claro: o diálogo cabe na tela, com Cancelar e Importar visíveis acima da barra inferior.
+
+
+## Campanhas: correções da revisão, Elenco (T9) e mapa de missões
+
+- [ ] Sessão com evento na Agenda: mudar a data e a hora no painel da sessão muda também o evento; “Remarcar” do aviso
+  de sessão atrasada leva ao mesmo campo. Nota da sessão com texto (“ótima”) mostra o aviso e não grava.
+- [ ] Sessões: “Próximas” e “Jogadas”; a busca aparece com mais de 5 sessões; “Usar na Recapitulação” com o resumo da
+  anterior.
+- [ ] Missões no computador: “Mover para” em cada cartão, pelo teclado; arrastando, a coluna de destino fica tracejada.
+- [ ] Painel: “+N” quando passa de 6 missões ativas ou NPCs; apagar relógio pede “Apagar?”; Linhas e Véus com o botão
+  Acrescentar; segredos escondidos lembrados ao voltar.
+- [ ] Ferramentas: − e + na quantidade do tesouro; “Remover” pede confirmação; ícone novo da aba (também na Wiki).
+- [ ] Elenco com muitos NPCs: busca, filtros, agrupar, ordem e “Mostrar mais”; marcar e desmarcar “Apareceu” e conferir
+  `(hostil, apareceu)` na nota da campanha no Obsidian; “Novo NPC” cria o artigo e já entra no Elenco; no celular,
+  “Filtros e grupos” recolhido.
+- [ ] Mapa de missões: nova missão com “Parte de” e “Depende de”; ver no Mapa e na Árvore; a corrente grava `parte_de`;
+  “Gerar no Quadro” cria `Mapa de missões.canvas`, abrir no Obsidian, acrescentar um cartão, gerar de novo e conferir
+  que o cartão continua.

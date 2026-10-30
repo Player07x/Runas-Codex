@@ -7,7 +7,12 @@ import { noteRoute } from "../../lib/vault-notes"
 import { useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewQuestDialog } from "./campaign-dialogs"
+import { QuestMapView } from "./QuestMap"
+import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import type { CampaignData } from "./campaign-state"
+
+const VIEW_KEY = "runas-codex:campanha:missoes-vista"
+type View = "colunas" | "mapa" | "lista"
 
 /**
  * Missões em colunas pela propriedade `status`; arrastar (ou escolher no seletor, no celular) grava o status. No
@@ -21,6 +26,8 @@ export function QuestBoard({ data }: { data: CampaignData }) {
   const [over, setOver] = useState<QuestStatus | null>(null)
   const [creating, setCreating] = useState<QuestStatus | null>(null)
   const [column, setColumn] = useState<QuestStatus>("ativa")
+  const [view, setViewState] = useState<View>(() => { try { const saved = localStorage.getItem(VIEW_KEY); return saved === "mapa" || saved === "lista" ? saved : "colunas" } catch { return "colunas" } })
+  const setView = (next: View) => { setViewState(next); try { localStorage.setItem(VIEW_KEY, next) } catch { /* só não é lembrado */ } }
   const move = (quest: QuestInfo, status: QuestStatus) => {
     if (quest.status === status) return
     if (data.readOnly) return toast("Cofre em somente leitura: libere a gravação em Configurações.")
@@ -37,6 +44,8 @@ export function QuestBoard({ data }: { data: CampaignData }) {
           <Plus size={16} /> Missão
         </button>
       </div>
+      <ChoiceGroup label="Ver as missões em" value={view} onChange={setView} options={[{ value: "colunas", label: "Colunas" }, { value: "mapa", label: "Mapa" }, { value: "lista", label: "Árvore" }]} />
+      {view !== "colunas" ? <QuestMapView data={data} mode={view} /> : <>
       <label className="field campaign-kanban-pick">
         <span>Coluna</span>
         <select className="select" value={column} onChange={(e) => setColumn(e.target.value as QuestStatus)}>
@@ -97,7 +106,8 @@ export function QuestBoard({ data }: { data: CampaignData }) {
           )
         })}
       </div>
-      {creating && <NewQuestDialog campaign={data.campaign} initialStatus={creating} onClose={() => setCreating(null)} />}
+      </>}
+      {creating && <NewQuestDialog campaign={data.campaign} quests={data.quests} npcs={data.npcs} initialStatus={creating} onClose={() => setCreating(null)} />}
     </div>
   )
 }

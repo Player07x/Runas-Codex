@@ -377,6 +377,10 @@ export interface QuestInfo {
   giver?: { target: string; dest: string | null }
   reward?: string
   tags: string[]
+  /** Missão-mãe (arco), pela propriedade `parte_de`: caminho resolvido ou `null` se o link está quebrado. */
+  parent?: { target: string; dest: string | null }
+  /** Pré-requisitos (`requer`), na ordem da nota. */
+  requires: { target: string; dest: string | null }[]
 }
 
 function questStatus(value: unknown): QuestStatus {
@@ -412,6 +416,7 @@ export function listQuests(index: VaultIndex, campaign: CampaignInfo): QuestInfo
     .map((note) => {
       const data = dataOf(note)
       const giver = linkItem(String(data.contratante ?? ""))
+      const parent = linkItem(String(data.parte_de ?? ""))
       const giverText = str(data.contratante)
       return {
         path: note.path,
@@ -421,6 +426,11 @@ export function listQuests(index: VaultIndex, campaign: CampaignInfo): QuestInfo
         ...(giver ? { giver: { target: giver.target, dest: resolveTarget(index, giver.target, note.path) } } : giverText ? { giver: { target: giverText, dest: null } } : {}),
         ...(str(data.recompensa) ? { reward: str(data.recompensa) } : {}),
         tags: listValue(data.tags),
+        ...(parent ? { parent: { target: parent.target, dest: resolveTarget(index, parent.target, note.path) } } : {}),
+        requires: listValue(data.requer).flatMap((value) => {
+          const link = linkItem(value)
+          return link ? [{ target: link.target, dest: resolveTarget(index, link.target, note.path) }] : []
+        }),
       }
     })
     .sort((a, b) => compareOrder(a.order || "999", b.order || "999") || a.title.localeCompare(b.title, "pt-BR"))
@@ -793,9 +803,12 @@ ${PREP_STEPS.map((step) => `- [ ] **${step}**`).join("\n")}
 `
 }
 
-export function newQuestNote(title: string, options: { status?: QuestStatus; order?: string; giver?: string; reward?: string } = {}): string {
+export function newQuestNote(title: string, options: { status?: QuestStatus; order?: string; giver?: string; reward?: string; parent?: string; requires?: string[] } = {}): string {
   const lines = ["---", "tipo: missao", `status: ${options.status ?? "ativa"}`]
   if (options.order) lines.push(`ordem: ${q(options.order)}`)
+  // Hierarquia do mapa de missões: links que o Obsidian também mostra.
+  if (options.parent) lines.push(`parte_de: ${q(`[[${options.parent}]]`)}`)
+  if (options.requires?.length) lines.push(`requer: [${options.requires.map((target) => q(`[[${target}]]`)).join(", ")}]`)
   if (options.giver) lines.push(`contratante: ${q(options.giver.startsWith("[[") ? options.giver : `[[${options.giver}]]`)}`)
   if (options.reward) lines.push(`recompensa: ${q(options.reward)}`)
   lines.push("---")

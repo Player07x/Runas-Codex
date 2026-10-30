@@ -53,3 +53,25 @@ e **Notas fixadas** (as notas que você quer à mão, como tabelas e regras). No
 
 **⋯ › Personalizar esta campanha…**: cor, ícone e imagem de capa. A cor aparece nos cartões, nas sessões e nos
 eventos da Agenda.
+
+### Elenco com muitos NPCs
+
+Busque pelo nome, local ou facção; filtre **Todos / Apareceram / Ainda não** e pela atitude; agrupe por local, facção,
+atitude ou situação. **Apareceu** é marcado sozinho quando uma nota de sessão tem link para o NPC; o botão marca à mão
+quem apareceu sem link. A marca fica na nota da campanha, junto da atitude: `npcs: ["[[Conde Ormund]] (hostil,
+apareceu)"]`. **Novo NPC** cria o artigo na wiki e já põe no Elenco.
+
+### Mapa de missões
+
+Em **Missões › Mapa**, cada **arco** (uma missão-mãe) aparece como um grupo com as missões dele em colunas: a missão
+que **depende** de outra fica à direita, ligada por uma seta. Borda tracejada quer dizer **bloqueada** (algum
+pré-requisito ainda não foi concluído). **Árvore** mostra o mesmo como lista. Na nota da missão:
+
+```yaml
+parte_de: "[[O Selo do Conde]]"
+requer: ["[[Falar com Yara]]", "[[Achar o mapa]]"]
+```
+
+Sem `parte_de`, a ordem decide: a `2.1` fica dentro da `2` (o botão de corrente no cartão grava a ligação). **Gerar no
+Quadro** cria ou atualiza `Mapa de missões.canvas`, que abre igual no Obsidian; o que você acrescentar no quadro
+continua quando ele for atualizado.
