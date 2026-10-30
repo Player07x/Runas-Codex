@@ -166,6 +166,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             </button>
           </div>
         </header>
+        <SyncConflictBanner />
         <main id="runas-main" tabIndex={-1} className={`content ${fill ? "fill" : ""}`}>{children}</main>
         <div className="sr-only" role="status">{announce}</div>
       </div>
@@ -378,3 +379,4 @@ import { useDialogFocus } from "./useDialogFocus"
 import { useRef } from "react"
 
 import { useVaultCounts } from "../lib/vault-counts"
+import { SyncConflictBanner } from "./vault/SyncConflicts"

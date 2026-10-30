@@ -3,6 +3,7 @@ import { ALL_NOTES } from "../lib/links"
 import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
 import { generateLargeVault } from "../core/large-vault"
 import { isAndroidApp, onAndroidReminderOpen, scheduleInBrowser, scheduleOnAndroid } from "./reminders"
+import { DEFAULT_BACKUP_SCHEDULE, normalizeBackupSchedule, type BackupSchedule } from "../core/backup-schedule"
 
 /**
  * Plataforma em memória: o cofre de exemplo do navegador (e dos testes). Aceita gravar, mas nada vai para o disco —
@@ -180,6 +181,14 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       return name
     },
+    // Agenda de backups (T1): no exemplo em memória ela vale até recarregar a página.
+    async backupSchedule() {
+      return memoryBackupSchedule
+    },
+    async setBackupSchedule(schedule) {
+      memoryBackupSchedule = normalizeBackupSchedule({ ...memoryBackupSchedule, ...schedule })
+      return memoryBackupSchedule
+    },
   }
 }
 
@@ -189,3 +198,5 @@ function largeVaultFiles(): [string, { content: string; mtime: number }][] {
   const generated = generateLargeVault(Math.min(count, 50_000))
   return generated.entries.map((entry) => [entry.path, { content: generated.texts[entry.path]!, mtime: entry.mtime }])
 }
+
+let memoryBackupSchedule: BackupSchedule = DEFAULT_BACKUP_SCHEDULE
