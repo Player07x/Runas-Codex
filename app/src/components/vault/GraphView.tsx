@@ -65,6 +65,9 @@ function readPalette(): Palette {
   }
 }
 
+/** A partir de quantos nós o gráfico usa o modo leve (T6). */
+const LARGE_GRAPH = 1500
+
 class GraphRuntime {
   private app = new Application()
   private world = new Container()
@@ -83,6 +86,10 @@ class GraphRuntime {
   private dirty = true
   private fitPending = true
   private ticks = 0
+  /** T6: com muitos nós a simulação esfria mais rápido, sem colisão, e o desenho acompanha a cada poucos quadros. */
+  private large = false
+  private frames = 0
+  private fittedEarly = false
   private pointers = new Map<number, { x: number; y: number }>()
   private gesture: { kind: "drag"; node: SimNode; moved: number } | { kind: "pan"; moved: number } | { kind: "pinch"; distance: number } | null = null
   private ready = false
@@ -118,10 +125,13 @@ class GraphRuntime {
   setData(data: GraphData): void {
     const previous = this.byId
     const spread = 40 + Math.sqrt(data.nodes.length) * 12
+    const wasLarge = this.large
+    this.large = data.nodes.length > LARGE_GRAPH
+    // Em gráfico grande os nós novos começam na espiral do d3 (sem x/y), que se acomoda bem mais rápido que o sorteio.
     this.nodes = data.nodes.map((node) => {
       const old = previous.get(node.id)
       if (old) return Object.assign(old, { node })
-      return { id: node.id, node, x: (Math.random() - 0.5) * spread, y: (Math.random() - 0.5) * spread }
+      return this.large ? { id: node.id, node } : { id: node.id, node, x: (Math.random() - 0.5) * spread, y: (Math.random() - 0.5) * spread }
     })
     this.byId = new Map(this.nodes.map((n) => [n.id, n]))
     this.links = data.edges.flatMap((edge) => {
@@ -141,10 +151,12 @@ class GraphRuntime {
       }
     }
     this.sim.nodes(this.nodes)
+    if (wasLarge !== this.large) this.applyForces()
     ;(this.sim.force("link") as ReturnType<typeof forceLink<SimNode, SimLink>>).links(this.links)
     this.sim.alpha(previous.size ? 0.5 : 1)
     if (!previous.size) {
       this.fitPending = true
+      this.fittedEarly = false
       this.ticks = 0
     }
     this.dirty = true
@@ -157,7 +169,8 @@ class GraphRuntime {
       .force("link", forceLink<SimNode, SimLink>(this.links).distance(distance).strength(0.4))
       .force("x", forceX<SimNode>(0).strength(0.035))
       .force("y", forceY<SimNode>(0).strength(0.035))
-      .force("collide", forceCollide<SimNode>((n) => this.radius(n.node) * 1.3).strength(0.6))
+      .force("collide", this.large ? null : forceCollide<SimNode>((n) => this.radius(n.node) * 1.3).strength(0.6))
+    this.sim.alphaDecay(this.large ? 0.06 : 0.0228)
     if (this.sim.alpha() < 0.3) this.sim.alpha(0.3)
     this.dirty = true
   }
@@ -216,15 +229,27 @@ class GraphRuntime {
 
   private frame(): void {
     if (this.sim.alpha() >= this.sim.alphaMin()) {
+      // Um passo por quadro; no gráfico grande, mais passos enquanto couberem em ~8 ms, para acomodar logo.
+      const start = performance.now()
       this.sim.tick()
       this.ticks++
+      while (this.large && performance.now() - start < 8 && this.sim.alpha() >= this.sim.alphaMin()) {
+        this.sim.tick()
+        this.ticks++
+      }
       this.dirty = true
-      if (this.fitPending && (this.ticks === 60 || this.sim.alpha() < 0.05)) {
+      // Vários passos por quadro podem pular o passo 60: vale o primeiro quadro depois dele (no gráfico grande, logo o
+      // primeiro, que já parte da espiral).
+      if (this.fitPending && ((this.ticks >= (this.large ? 1 : 60) && !this.fittedEarly) || this.sim.alpha() < 0.05)) {
+        this.fittedEarly = true
         this.fit()
         if (this.sim.alpha() < 0.05) this.fitPending = false
       }
     }
-    if (this.dirty) this.draw()
+    this.frames++
+    // Enquanto o gráfico grande se mexe, redesenhar 30 mil linhas a cada quadro trava; um quadro em quatro basta.
+    const settling = this.large && this.sim.alpha() >= this.sim.alphaMin() && !this.gesture
+    if (this.dirty && (!settling || this.frames % 4 === 0)) this.draw()
   }
 
   private draw(): void {
@@ -235,6 +260,12 @@ class GraphRuntime {
     const near = active ? this.neighbors.get(active) : undefined
     const lit = (id: string) => !active || id === active || Boolean(near?.has(id))
 
+    // Só o que está na tela (com folga) entra no desenho; no gráfico grande, de perto, isso corta quase tudo.
+    const { width: sw, height: sh } = this.app.screen
+    const [x0, y0] = [-this.world.x / k, -this.world.y / k]
+    const [x1, y1] = [x0 + sw / k, y0 + sh / k]
+    const pad = 40 / k
+    const visible = (n: SimNode) => n.x! >= x0 - pad && n.x! <= x1 + pad && n.y! >= y0 - pad && n.y! <= y1 + pad
     const edges = this.edges.clear()
     const width = forces.linkWidth / Math.sqrt(k)
     const paint = (list: SimLink[], color: string, alpha: number) => {
@@ -246,6 +277,7 @@ class GraphRuntime {
     const normal: SimLink[] = []
     const strong: SimLink[] = []
     for (const link of this.links) {
+      if (this.large && !visible(link.source) && !visible(link.target)) continue
       if (!active) normal.push(link)
       else if (link.source.id === active || link.target.id === active) strong.push(link)
       else dim.push(link)
@@ -253,7 +285,12 @@ class GraphRuntime {
     paint(dim, this.palette.edge, 0.12)
     // Ligações com cor própria (teia diplomática) saem por grupo de cor.
     const byColor = new Map<string, SimLink[]>()
-    for (const link of normal) byColor.set(link.color ?? "", [...(byColor.get(link.color ?? "") ?? []), link])
+    // Sem copiar a lista a cada ligação (T6: com 30 mil ligações isso era quadrático e travava o desenho).
+    for (const link of normal) {
+      const list = byColor.get(link.color ?? "")
+      if (list) list.push(link)
+      else byColor.set(link.color ?? "", [link])
+    }
     for (const [color, list] of byColor) paint(list, color || this.palette.edge, color ? 0.85 : 0.55)
     paint(strong, this.palette.highlight, 0.9)
     if (forces.arrows) {
@@ -266,6 +303,7 @@ class GraphRuntime {
 
     const dots = this.dots.clear()
     for (const n of this.nodes) {
+      if (this.large && !visible(n)) continue
       const r = this.radius(n.node)
       const color = n.id === active ? this.palette.highlight : this.color(n.node)
       const alpha = lit(n.id) ? 1 : 0.18
@@ -273,14 +311,13 @@ class GraphRuntime {
       if (n.node.kind === "portal") dots.poly([x, y - r, x + r, y, x, y + r, x - r, y]).fill({ color, alpha })
       else if (n.node.kind === "missing") dots.circle(x, y, r).stroke({ width: 1.5, color, alpha })
       else if (n.node.kind === "attachment") dots.rect(x - r, y - r, r * 2, r * 2).fill({ color, alpha })
+      // Pontos menores que dois pixels na tela viram quadrados: o círculo custa muito mais e não se nota a diferença.
+      else if (this.large && r * k < 2) dots.rect(x - r, y - r, r * 2, r * 2).fill({ color, alpha })
       else dots.circle(x, y, r).fill({ color, alpha })
       if (n.id === center || n.id === this.focused) dots.circle(x, y, r + 3).stroke({ width: 1.5, color: this.palette.highlight, alpha: 0.9 })
     }
 
     // Nomes: perto (zoom) os da tela; longe, só o realce. Tamanho constante na tela.
-    const { width: sw, height: sh } = this.app.screen
-    const [x0, y0] = [-this.world.x / k, -this.world.y / k]
-    const [x1, y1] = [x0 + sw / k, y0 + sh / k]
     // Gráfico grande: só bem de perto, para os nomes não virarem uma mancha.
     const showAll = labels === "always" || k >= (this.nodes.length > 300 ? 1.6 : 0.85)
     const shown = new Set<string>()

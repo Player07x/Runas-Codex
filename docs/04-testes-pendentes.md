@@ -1101,3 +1101,14 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] No celular (320 px): a lista de ferramentas vira o seletor “Ferramenta”, os botões têm 44 px e não há rolagem
   para os lados; temas escuro e claro.
 - [ ] Gerar várias vezes cada gerador: resultados variados, sem frases repetidas visíveis.
+
+
+## T6 — 10 mil notas sem travar
+
+- [ ] No navegador, abrir `http://localhost:5180/?cofre-grande=10000` (ou um cofre real grande no desktop) e conferir
+  Notas: a pasta Grande mostra 200 notas e “Mostrar mais 200 de … restantes”; abrir uma nota lá do fim pela busca
+  deixa a lista mostrando até ela.
+- [ ] Digitar na busca das notas sem a tela travar; limpar a busca volta à árvore na hora.
+- [ ] Gráfico global com 10 mil notas num computador com placa de vídeo e no celular: aparece em poucos segundos,
+  enquadrado, e o arrastar e o zoom respondem; com o cofre de exemplo o gráfico continua igual a antes.
+- [ ] Pastas fechadas abrem e fecham normalmente, inclusive arrastando notas para dentro delas.
