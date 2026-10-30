@@ -685,10 +685,16 @@ jobs:
       - name: R1 — retrato, 411 px, claro (axe)
         if: ${{ !cancelled() }}
         run: |
+          # O app volta para a frente (um passo anterior pode tê-lo deixado em segundo plano).
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-revisao --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
           node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review retrato-claro "$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" tema=claro
       - name: R1 — 320 px de largura (axe, capturas)
         if: ${{ !cancelled() }}
         run: |
+          # O app volta para a frente (um passo anterior pode tê-lo deixado em segundo plano).
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-revisao --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
           adb shell wm size 720x1280
           adb shell wm density 360
           sleep 3
@@ -698,6 +704,9 @@ jobs:
       - name: R1 — deitado (capturas)
         if: ${{ !cancelled() }}
         run: |
+          # O app volta para a frente (um passo anterior pode tê-lo deixado em segundo plano).
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-revisao --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
           adb shell settings put system accelerometer_rotation 0
           adb shell settings put system user_rotation 1
           sleep 4

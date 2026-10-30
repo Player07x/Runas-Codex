@@ -221,6 +221,8 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-npc-card-controls .campaign-appeared { flex: 1 1 auto; justify-content: center; }
 .campaign-roster-name { display: grid; min-width: 0; flex: 1 1 160px; }
 .campaign-roster-name a { color: inherit; }
+/* O nome é o alvo da linha: 24 px de altura (achado da revisão no Android). */
+.campaign-roster-name > a { display: inline-flex; align-items: center; min-height: 24px; justify-self: start; max-width: 100%; }
 .campaign-appeared { gap: 4px; min-height: 30px; cursor: pointer; }
 .campaign-appeared:disabled { cursor: default; opacity: 1; }
 @media (max-width: 860px) {
