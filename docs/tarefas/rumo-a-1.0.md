@@ -318,3 +318,17 @@ Relato do dono (30/10, com duas capturas, painel aberto e recolhido):
 - **Dicas:** os ícones (Wi-Fi e link) desalinham quando o texto quebra em duas linhas; o ícone não pode encolher
   (`flex: none`) e a linha alinha pelo topo.
 - Conferir em 320 px, tablet e computador, nos dois temas, com e sem salas recentes.
+
+### U5 — Menu ⋯ da prévia ao lado (Livros) cortado na borda do painel
+
+Relato do dono (30/10, com captura): em Livros › Escrever, na prévia ao lado, o menu ⋯ ao lado de “Seguir o texto”
+(“Ir para a página do cursor”, “Mostrar só este capítulo”, “Diagramar e exportar…”) abre para a esquerda e fica cortado
+na borda do painel. Causa: o `.kit-menu` do `OverflowMenu` (`app/src/components/kit/`) é posicionado em relação ao
+botão, alinhado à direita (`align="end"`), e o `.book-side-panel` (`app/src/screens/books/book-side.css`) tem
+`overflow: hidden`.
+
+**Mesma causa do U2.** A correção certa é no kit, uma vez: o `OverflowMenu` abre o menu fora do fluxo do contêiner
+(`position: fixed` calculado pelo botão, ou num portal no fim da página), vira para o lado e para cima quando não cabe na
+janela, acompanha a rolagem e mantém o foco e o teclado de hoje. Isso resolve o U2, o U5 e qualquer outro menu ⋯ dentro de
+um contêiner que corta (painéis, cartões, listas com rolagem). Conferir os menus do Elenco, da prévia, das abas das notas,
+dos cartões da Wiki e das mesas do VTT, em 320 px e no computador.
