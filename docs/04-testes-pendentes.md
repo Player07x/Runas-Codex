@@ -1188,3 +1188,8 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Mapa de missões: nova missão com “Parte de” e “Depende de”; ver no Mapa e na Árvore; a corrente grava `parte_de`;
   “Gerar no Quadro” cria `Mapa de missões.canvas`, abrir no Obsidian, acrescentar um cartão, gerar de novo e conferir
   que o cartão continua.
+- [ ] Ferramentas › Nova aventura: escolher cada estrutura, sortear o gancho e uma cena, criar; conferir no Mapa o arco
+  e as setas (investigação: pistas abertas → esconderijo → confronto) e, no Obsidian, `parte_de` e `requer` nas notas.
+- [ ] Na nota de uma sessão, clicar num link para uma nota que não existe: “Novo NPC” abre com o nome; criar como NPC
+  (entra no Elenco, marcado como “apareceu”) e como Lugar.
+- [ ] Sessões: o “Diário dos jogadores” aparece no fim quando há entradas guardadas pela sala.

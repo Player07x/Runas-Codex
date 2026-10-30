@@ -37,9 +37,13 @@ a facção. **Abrir na Wiki** leva ao artigo; **Tirar da campanha** só deixa de
 - **Iniciativa presencial**: ordem de turnos e rodadas para jogar na mesa física; um bloco `runas-encontro` monta a
   lista.
 - **Linhas** e **Véus**: os limites combinados com o grupo; a carta X manda um sinal anônimo pela sala.
-- **Gerador de aventuras**: gancho, lugar, NPC, encontro, reviravolta e recompensa; guarde como nota da campanha.
+- **Nova aventura**: escolha uma estrutura (masmorra em cinco salas, três atos, investigação com três pistas, roubo
+  ou exploração), dê título, gancho e objetivo (o dado sorteia) e ajuste as cenas. O app cria o arco e uma missão por
+  cena, já ligadas no **mapa de missões**.
 - **Atividades pela sala**: **Avaliação da sessão** (formulário anônimo), **Enquete de data** e o **Diário dos
-  jogadores** (entradas que os jogadores mandam pela sala ficam no cofre).
+  jogadores** (as entradas guardadas aparecem no fim da aba **Sessões**).
+- **Criar a partir do link**: na nota da sessão, clicar num link para algo que ainda não existe (`[[Capitã Brites]]`)
+  abre “Novo NPC”: escolha se é NPC, lugar, facção ou item; o NPC já entra no Elenco.
 - **Estatísticas**: sessões, horas jogadas e presença.
 - **Exportar diário**: Markdown, PDF ou HTML para entregar aos jogadores (com ou sem segredos).
 

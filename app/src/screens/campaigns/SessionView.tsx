@@ -10,9 +10,11 @@ import { dirname, noteName } from "../../core/text"
 import { href, navigate } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
 import { NoteView } from "../../components/vault/NoteView"
+import { Markdown } from "../../components/Markdown"
+import { noteBody } from "../../core/sections"
 import { Empty, Progress, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
-import { NewSessionDialog } from "./campaign-dialogs"
+import { NewNpcDialog, NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 
 export function SessionsView({ data, path }: { data: CampaignData; path?: string }) {
@@ -95,8 +97,30 @@ function SessionList({ data }: { data: CampaignData }) {
       </div>
       </section>
       ))}
+      <PlayerDiaries data={data} />
       {creating && <NewSessionDialog data={data} onClose={() => setCreating(false)} onCreated={(path) => navigate(campaignRoute(data.campaign.name, "sessoes", path))} />}
     </div>
+  )
+}
+
+/** Entradas do diário que os jogadores mandaram pela sala (antes ficavam escondidas no gerador de aventuras). */
+function PlayerDiaries({ data }: { data: CampaignData }) {
+  const vault = useVault()
+  const diaries = vault.index!.notesIn(data.campaign.root).filter((n) => n.meta.frontmatter?.data?.tipo === "diario-jogador").sort((a, b) => b.mtime - a.mtime)
+  if (!diaries.length) return null
+  return (
+    <details className="card campaign-diaries">
+      <summary className="section-title">Diário dos jogadores · {diaries.length}</summary>
+      <div className="stack">
+        {diaries.map((n) => (
+          <article key={n.path} className="card tight stack">
+            <a className="small" href={href(noteRoute(n.path))}><strong>{n.name}</strong></a>
+            {typeof n.meta.frontmatter?.data?.jogador === "string" && <span className="tiny muted">{String(n.meta.frontmatter.data.jogador)}</span>}
+            <Markdown source={noteBody(n.text)} />
+          </article>
+        ))}
+      </div>
+    </details>
   )
 }
 
@@ -105,6 +129,8 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
   const toast = useToast()
   const index = vault.index!
   const panel = usePanelToggle("campaign-session")
+  // Link para algo que ainda não existe, na nota da sessão: criar o NPC, o lugar ou a facção na hora.
+  const [creatingLink, setCreatingLink] = useState<string | null>(null)
   const session = data.sessions.find((s) => s.path === path)
   const folders = useMemo(() => [...new Set(index.allFiles().map((f) => dirname(f.path)))].filter(Boolean), [index, vault.version])
   if (!session) {
@@ -127,7 +153,7 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
           panelOpen={panel.expanded}
           panelHint="Detalhes, preparação e resumo da sessão"
           onBack={() => navigate(campaignRoute(data.campaign.name, "sessoes"))}
-          onCreate={(target) => toast(`“${target}” ainda não existe.`)}
+          onCreate={(target) => (data.readOnly ? toast(`“${target}” ainda não existe.`) : setCreatingLink(target))}
           onTag={(tag) => toast(`Tag #${tag}`)}
         />
       </section>
@@ -142,6 +168,7 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
       <button className="icon-btn campaign-panel-toggle" onClick={panel.toggle} aria-label="Painel da sessão" aria-expanded={panel.expanded}>
         <PanelRight size={18} />
       </button>
+      {creatingLink && <NewNpcDialog data={data} initialName={creatingLink} onClose={() => setCreatingLink(null)} onCreated={(created) => toast(`“${noteName(created)}” criado na wiki.`)} />}
     </div>
   )
 }

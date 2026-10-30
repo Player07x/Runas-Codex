@@ -1,19 +1,16 @@
 import { useState } from "react"
-import { stringify } from "yaml"
 import { findCodeBlocks, replaceCodeBlock } from "../../core/codeblocks"
 import { advanceInitiative, initiativeFromEncounter, initiativeYaml, parseInitiative, parseTreasury, treasuryYaml, type Initiative, type Treasury } from "../../core/campaign-tools"
-import { generateWorld } from "../../core/wiki-tools"
-import { noteBody } from "../../core/sections"
-import { Markdown } from "../../components/Markdown"
 import { useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import type { CampaignData } from "./campaign-state"
 import { CampaignRoomTools } from "./CampaignRoomTools"
+import { AdventureWizard } from "./AdventureWizard"
 
 const TOOLS = [
  { id: "tesouro", label: "Tesouro do grupo" },
  { id: "iniciativa", label: "Iniciativa presencial" },
- { id: "aventura", label: "Gerador de aventuras" },
+ { id: "aventura", label: "Nova aventura" },
  { id: "sala", label: "Atividades pela sala" },
 ] as const
 type ToolId = (typeof TOOLS)[number]["id"]
@@ -28,7 +25,7 @@ export function CampaignTools({data}:{data:CampaignData}) {
    <div className="campaign-tools-current">
     {tool==="tesouro"&&<TreasuryPanel data={data}/>}
     {tool==="iniciativa"&&<InitiativePanel data={data}/>}
-    {tool==="aventura"&&<AdventurePanel data={data}/>}
+    {tool==="aventura"&&<AdventureWizard data={data}/>}
     {tool==="sala"&&<CampaignRoomTools campaign={data.campaign.name} root={data.campaign.root} readOnly={data.readOnly}/>}
    </div>
   </div>
@@ -55,8 +52,4 @@ export function InitiativePanel({data,level=2}:{data:CampaignData;level?:2|3}) {
  const encounters=vault.index!.notesIn(data.campaign.root).flatMap(n=>findCodeBlocks(n.text,"runas-encontro").map((b,i)=>({key:n.path+":"+i,title:n.name,code:b.content})))
  const Title=level===3?"h3":"h2"
  return <section className="card stack"><Title>Iniciativa presencial</Title>{!tool.note?<button className="btn" disabled={data.readOnly||tool.busy} onClick={tool.create}>Criar iniciativa presencial</button>:error||!tool.block?<p role="alert">{error||"O bloco runas-iniciativa não foi encontrado."}</p>:<><p>Rodada {state.round} · Turno: <strong>{state.participants.find(p=>p.id===state.active)?.name??"nenhum"}</strong></p><div className="row-wrap"><button className="btn" disabled={data.readOnly||tool.busy||!state.active} onClick={()=>tool.run(()=>tool.save(initiativeYaml(advanceInitiative(state,-1))))}>Turno anterior</button><button className="btn primary" disabled={data.readOnly||tool.busy||!state.active} onClick={()=>tool.run(()=>tool.save(initiativeYaml(advanceInitiative(state))))}>Próximo turno</button><button className="btn" disabled={data.readOnly||tool.busy} onClick={()=>tool.run(()=>tool.save(initiativeYaml({...state,round:1,active:state.participants[0]?.id??null})))}>Reiniciar rodadas</button></div><ol className="initiative-list">{state.participants.map(p=><li key={p.id} aria-current={p.id===state.active?"step":undefined}><strong>{p.value} · {p.name}</strong>{p.hidden&&" · oculto"}<button className="btn" disabled={data.readOnly||tool.busy} onClick={()=>tool.run(()=>{const participants=state.participants.filter(i=>i.id!==p.id);return tool.save(initiativeYaml({...state,participants,active:state.active===p.id?participants[0]?.id??null:state.active}))})}>Remover {p.name}</button></li>)}</ol><form className="row-wrap" onSubmit={e=>{e.preventDefault();tool.run(async()=>{const participants=[...state.participants,{id:crypto.randomUUID(),name:name.trim(),value,hidden,note:""}].sort((a,b)=>b.value-a.value);await tool.save(initiativeYaml({...state,participants,active:state.active??participants[0]?.id??null}));setName("")})}}><label>Participante<input className="input" required value={name} onChange={e=>setName(e.target.value)}/></label><label>Iniciativa<input className="input" type="number" value={value} onChange={e=>setValue(Number(e.target.value)||0)}/></label><label className="check"><input type="checkbox" checked={hidden} onChange={e=>setHidden(e.target.checked)}/>Oculto</label><button className="btn" disabled={data.readOnly||tool.busy}>Acrescentar participante</button></form>{encounters.length>0&&<div className="row-wrap"><label>Encontro<select className="input" value={encounter} onChange={e=>setEncounter(e.target.value)}><option value="">Escolha um encontro…</option>{encounters.map(e=><option key={e.key} value={e.key}>{e.title}</option>)}</select></label><button className="btn" disabled={data.readOnly||tool.busy||!encounter} onClick={()=>tool.run(()=>tool.save(initiativeYaml(initiativeFromEncounter(encounters.find(e=>e.key===encounter)!.code))))}>Substituir pelos participantes do encontro</button><p className="small">Rola 1d20 mais o modificador informado. Quantidades em dados entram como um participante; acrescente os demais após rolar a quantidade.</p></div>}</>}</section>
-}
-function AdventurePanel({data}:{data:CampaignData}) {
- const vault=useVault(),toast=useToast(),[result,setResult]=useState(""),[name,setName]=useState(""),[busy,setBusy]=useState(false)
- return <section className="card stack"><h2>Gerador de aventuras</h2><button className="btn" onClick={()=>setResult(generateWorld("aventura"))}>Gerar aventura</button><label>Aventura<textarea className="input" rows={10} value={result} onChange={e=>setResult(e.target.value)}/></label><label>Título da aventura<input className="input" value={name} onChange={e=>setName(e.target.value)}/></label><button className="btn" disabled={data.readOnly||busy||!name.trim()||!result.trim()} onClick={()=>{setBusy(true);void vault.createNote(`${data.campaign.root}Aventuras`,name.trim(),`---\n${stringify({tipo:"aventura"})}---\n# ${name.trim()}\n\n${result}`).then(()=>toast("Aventura guardada.")).catch(e=>toast(String(e))).finally(()=>setBusy(false))}}>Guardar aventura</button><details><summary>Diário dos jogadores no cofre</summary>{vault.index!.notesIn(data.campaign.root).filter(n=>n.meta.frontmatter?.data?.tipo==="diario-jogador").map(n=><article className="card" key={n.path}><h3>{n.name}</h3><Markdown source={noteBody(n.text)}/></article>)}</details></section>
 }
