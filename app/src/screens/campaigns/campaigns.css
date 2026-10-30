@@ -89,7 +89,6 @@
 .campaign-kanban-title { color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; text-decoration: none; }
 .campaign-kanban-title:hover { color: var(--cyan); }
 .campaign-kanban-move { min-height: 30px; font-size: calc(12px * var(--font-scale, 1)); }
-@media (min-width: 861px) { .campaign-kanban-move { display: none; } }
 /* No celular, uma coluna por vez, escolhida no seletor de cima. */
 @media (max-width: 860px) {
   .campaign-kanban { grid-auto-flow: row; grid-auto-columns: auto; overflow: visible; background: none; }
@@ -190,3 +189,72 @@
 .campaign-tracked .crest { margin-right: 2px; }
 .campaign-cover-band { margin: calc(-1 * 22px) calc(-1 * 22px) 0; width: calc(100% + 44px); flex: 1 0 100%; border-radius: 0; }
 .campaign-cover .crest { box-shadow: 0 0 0 3px var(--panel); }
+
+/* Revisão das Campanhas: a coluna sob o cartão arrastado fica marcada (borda e fundo, não só cor). */
+.campaign-kanban-col[data-drop] { border-style: dashed; border-color: var(--col); background: color-mix(in srgb, var(--col) 10%, var(--panel)); }
+/* Revisão das Campanhas: no celular a capa do painel fica compacta e a próxima sessão aparece sem rolar. */
+@media (max-width: 860px) {
+  .campaign-cover { padding: 14px; gap: 10px; }
+  .campaign-cover .campaign-cover-band { max-height: 56px; margin: -14px -14px 0; width: calc(100% + 28px); }
+  .campaign-cover .page-title { font-size: calc(20px * var(--font-scale, 1)); }
+}
+
+/* Elenco para mais de 100 NPCs (T9): ferramentas numa linha que quebra, lista compacta com a marca “apareceu”. */
+.campaign-roster-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.campaign-roster-tools .search { flex: 1 1 220px; min-width: 0; }
+.campaign-roster-tools .field .select { min-width: 140px; }
+.campaign-roster-group { margin: 12px 0 4px; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.campaign-roster-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.campaign-roster-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: calc(13px * var(--font-scale, 1)); }
+.campaign-roster-row:first-child { border-top: 0; }
+.campaign-roster-name { display: grid; min-width: 0; flex: 1 1 160px; }
+.campaign-roster-name a { color: inherit; }
+.campaign-appeared { gap: 4px; min-height: 30px; cursor: pointer; }
+.campaign-appeared:disabled { cursor: default; opacity: 1; }
+@media (max-width: 860px) {
+  .campaign-roster-tools > * { flex: 1 1 100%; }
+  .campaign-roster-row .campaign-attitude { flex: 1 1 auto; }
+  .campaign-appeared, .campaign-roster-tools .select { min-height: 44px; }
+}
+/* Cabeçalhos dos cartões: no celular os botões descem inteiros em vez de quebrar o texto (“Personag/em”). */
+.campaign-page .card > .row.between { flex-wrap: wrap; gap: 8px; }
+.campaign-page .card > .row.between .btn { white-space: nowrap; }
+.campaign-roster-more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-weight: 600; }
+.campaign-roster-more .stack { padding-top: 6px; }
+
+/* Mapa de missões: arcos como grupos, cartões com a borda da situação (tracejada = bloqueada) e setas de requer. */
+.campaign-questmap-bar { align-items: center; }
+.campaign-questmap-scroll { overflow: auto; max-height: calc(100vh - 260px); padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg-deep); }
+.campaign-questmap-scroll:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.campaign-questmap-canvas { position: relative; }
+.campaign-questmap-edges { position: absolute; inset: 0; pointer-events: none; }
+.campaign-questmap-arc { position: absolute; display: grid; align-content: start; gap: 2px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--col) 60%, var(--line)); border-radius: 14px; background: color-mix(in srgb, var(--col) 5%, transparent); }
+.campaign-questmap-arc-title { font: 700 calc(14px * var(--font-scale, 1)) / 1.3 var(--font-display); }
+.campaign-questmap-arc-title a, .campaign-questmap-name { color: var(--text); text-decoration: none; }
+.campaign-questmap-arc-title a:hover, .campaign-questmap-name:hover { color: var(--cyan); }
+.campaign-questmap-card { position: absolute; display: grid; align-content: center; gap: 3px; padding: 8px 30px 8px 12px; border: 2px solid var(--col); border-radius: 10px; background: var(--panel); }
+.campaign-questmap-card.blocked { border-style: dashed; border-color: var(--line-strong); }
+.campaign-questmap-name { font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; display: block; }
+.campaign-questmap-meta { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+.campaign-questmap-link { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1px dashed var(--line-strong); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.campaign-questmap-link:hover { color: var(--cyan); border-color: var(--cyan); }
+.campaign-questmap-list { display: grid; gap: 10px; margin: 0; padding-left: 18px; }
+.campaign-questmap-list ul { display: grid; gap: 4px; margin: 4px 0 0; padding-left: 18px; }
+.campaign-questmap-list li.blocked > a { text-decoration: underline dashed; }
+.campaign-requires { border: 0; padding: 0; margin: 0; }
+.campaign-requires legend { padding: 0; margin-bottom: 4px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; }
+.campaign-requires-list { display: grid; gap: 2px; max-height: 180px; overflow: auto; }
+.campaign-page .page > .kit-choice { justify-self: start; width: fit-content; max-width: 100%; }
+
+/* Nova aventura: modelos como cartões escolhíveis (rádio de verdade por baixo) e a lista de cenas editável. */
+.campaign-wizard fieldset { margin: 0; padding: 0; border: 0; }
+.campaign-wizard legend { margin-bottom: 6px; padding: 0; }
+.campaign-wizard-templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 8px; }
+.campaign-wizard-templates legend { grid-column: 1 / -1; }
+.campaign-wizard-template { position: relative; display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); cursor: pointer; }
+.campaign-wizard-template input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.campaign-wizard-template.on { border-color: var(--accent, var(--cyan)); box-shadow: inset 0 0 0 1px var(--accent, var(--cyan)); background: color-mix(in srgb, var(--accent, var(--cyan)) 8%, var(--bg)); }
+.campaign-wizard-template:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.campaign-wizard-scenes { display: grid; gap: 10px; margin: 0; padding-left: 22px; }
+.campaign-wizard-scenes li { display: grid; gap: 4px; }
+.campaign-diaries summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }

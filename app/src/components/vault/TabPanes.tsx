@@ -90,16 +90,15 @@ export function TabPanes({ layout, onChange, renderTab, label, treeDragType, onO
         const current = pane.tabs[pane.active]?.path
         return (
           <div key={p} className={`tab-pane ${focused ? "focused" : ""}`} onPointerDownCapture={() => !focused && onChange(focusPane(layout, p))}>
-            <div className="tab-strip" role="tablist" aria-label={`Abas do painel ${p + 1}`} {...dropProps(p, pane.tabs.length)}>
+            {/* T7: cada aba tem botões dentro (ações, fechar), o que o papel tab do ARIA não permite; a faixa é um grupo
+                de botões e a aba aberta é marcada com aria-current. */}
+            <div className="tab-strip" role="group" aria-label={`Abas do painel ${p + 1}`} {...dropProps(p, pane.tabs.length)}>
               {single && layout.panes.length > 1 && <select className="tab-pane-picker" aria-label="Painel ativo" value={p} onChange={event => onChange(focusPane(layout, Number(event.target.value)))}>{layout.panes.map((_, i) => <option key={i} value={i}>Painel {i + 1}</option>)}</select>}
               {pane.tabs.map((tab, i) => {
                 const name = label(tab.path)
                 return (
                   <div
                     key={tab.path}
-                    role="tab"
-                    tabIndex={0}
-                    aria-selected={i === pane.active}
                     className={`tab ${i === pane.active ? "active" : ""} ${dropAt?.pane === p && dropAt.index === i ? "drop-before" : ""}`}
                     title={tab.path}
                     draggable
@@ -109,7 +108,6 @@ export function TabPanes({ layout, onChange, renderTab, label, treeDragType, onO
                     }}
                     {...dropProps(p, i)}
                     onClick={() => onChange(activate(layout, p, i))}
-                    onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && (event.preventDefault(), onChange(activate(layout, p, i)))}
                     // Botão do meio fecha, como no Obsidian.
                     onAuxClick={(event) => event.button === 1 && !tab.pinned && (event.preventDefault(), onChange(closeTab(layout, p, i), { replace: true }))}
                     onContextMenu={(event) => {
@@ -117,8 +115,10 @@ export function TabPanes({ layout, onChange, renderTab, label, treeDragType, onO
                       setMenu({ pane: p, index: i, x: Math.min(event.clientX, window.innerWidth - 240), y: Math.min(event.clientY, window.innerHeight - 280) })
                     }}
                   >
-                    {tab.pinned && <Pin size={12} className="tab-pin" aria-label="fixada" />}
-                    <span className="truncate">{name}</span>
+                    <button type="button" className="tab-name" aria-current={i === pane.active ? "page" : undefined} aria-label={tab.pinned ? `${name} (fixada)` : undefined}>
+                      {tab.pinned && <Pin size={12} className="tab-pin" aria-hidden="true" />}
+                      <span className="truncate">{name}</span>
+                    </button>
                     <button className="tab-more" aria-label={`Ações da aba ${name}`} onClick={event => { event.stopPropagation(); const rect = event.currentTarget.getBoundingClientRect(); setMenu({ pane: p, index: i, x: Math.max(8, Math.min(rect.left, window.innerWidth - 240)), y: Math.max(8, Math.min(rect.bottom, window.innerHeight - 310)) }) }}><Ellipsis size={14} /></button>
                     {!tab.pinned && (
                       <button

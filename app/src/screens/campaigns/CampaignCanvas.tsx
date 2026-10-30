@@ -29,16 +29,16 @@ export function BoardsView({ data, path }: { data: CampaignData; path?: string }
   )
   return (
     <div className="campaign-boards">
-      <div className="campaign-boards-bar">
-        <Shapes size={15} color="var(--violet)" />
+      <nav className="campaign-boards-bar" aria-label="Quadros da campanha">
+        <Shapes size={15} color="var(--accent, var(--violet))" aria-hidden="true" />
         {data.boards.map((b) => (
-          <a key={b} className={`chip ${b === current ? "violet" : ""}`} href={href(campaignRoute(data.campaign.name, "quadro", b))}>
+          <a key={b} className={`chip ${b === current ? "violet" : ""}`} aria-current={b === current ? "page" : undefined} href={href(campaignRoute(data.campaign.name, "quadro", b))}>
             {boardName(b)}
           </a>
         ))}
         <span className="grow" />
         {newButton}
-      </div>
+      </nav>
       {current ? (
         <CanvasBoard key={current} path={current} />
       ) : (

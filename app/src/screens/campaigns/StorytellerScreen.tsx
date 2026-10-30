@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { OverdueSessions } from "./NextSessionCard"
 import { Dices, MonitorPlay, Pin, PinOff, X } from "lucide-react"
-import { linkItem, listValue, resolveTarget } from "../../core/campaigns"
+import { linkItem, listValue, npcAttitude, resolveTarget } from "../../core/campaigns"
 import { noteBody } from "../../core/sections"
 import { noteName } from "../../core/text"
 import { roll } from "../../lib/dice"
@@ -165,7 +165,7 @@ function CastColumn({ data, onClose }: { data: CampaignData; onClose(): void }) 
         {data.npcs.map((n) => (
           <div key={n.position} className="row small">
             {link(n.dest, noteName(n.target))}
-            {n.extra && <span className={`chip ${attitudeColor(n.extra)}`}>{n.extra}</span>}
+            {npcAttitude(n.extra) && <span className={`chip ${attitudeColor(npcAttitude(n.extra))}`}>{npcAttitude(n.extra)}</span>}
           </div>
         ))}
       </section>

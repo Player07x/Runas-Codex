@@ -1,7 +1,7 @@
 import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
 import { OverflowMenu, type MenuEntry } from "../components/kit/OverflowMenu"
-import { useCallback, useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
 import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
@@ -98,7 +98,17 @@ function buildTree(notes: IndexedNote[], root: string, extraFolders: string[]): 
   return top
 }
 
+// T6: o resumo de cada nota sai de várias regex; com 10 mil notas, refazer a cada render travava a lista.
+const previews = new WeakMap<IndexedNote, string>()
 function preview(note: IndexedNote): string {
+  const cached = previews.get(note)
+  if (cached !== undefined) return cached
+  const text = computePreview(note)
+  previews.set(note, text)
+  return text
+}
+
+function computePreview(note: IndexedNote): string {
   const body = note.meta.frontmatter ? note.text.slice(note.meta.frontmatter.end) : note.text
   return body
     .replace(/^#.*\n+/, "")
@@ -201,7 +211,9 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
   const folders = useMemo(() => [...new Set([...index.allFiles().map((f) => dirname(f.path)), ...createdFolders])].filter(Boolean), [index, createdFolders, vault.version])
   const tree = useMemo(() => buildTree(notes, root, createdFolders), [notes, root, createdFolders])
-  const results = useMemo(() => (query.trim() ? searchNotes(index, query, root, 80) : null), [index, query, root, vault.version])
+  // A busca acompanha a digitação sem segurar cada tecla (T6): o React refaz a lista quando sobra tempo.
+  const deferredQuery = useDeferredValue(useSettled(query, index.size > LARGE_VAULT ? 180 : 0))
+  const results = useMemo(() => (deferredQuery.trim() ? searchNotes(index, deferredQuery, root, 80) : null), [index, deferredQuery, root, vault.version])
   const tags = useMemo(() => index.tags(root), [index, root, vault.version])
   const toWrite = useMemo(() => index.unresolved(root).slice(0, 30), [index, root, vault.version])
   const vaultId = vault.info?.path
@@ -399,10 +411,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     const content = (
       <>
         {subfolders.map((sub) => (
-          <details key={sub.path} open={(depth < 1 && !isArchive(sub)) || Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} {...dropZone(sub.path)}>
+          <LazyFolder key={sub.path} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
             <summary className="eyebrow row" style={{ gap: 5 }} {...dragSource(sub.path)}>
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={13} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />} <span className="grow truncate">{sub.name}</span>
+            </summary>} actions={
               <span className="folder-actions">
                 <button type="button" className="icon-btn sm" aria-label={`Exportar pasta ${sub.name}`} title="Exportar pasta…" onClick={e => { e.preventDefault(); e.stopPropagation(); openDocumentExport({ paths: index.notesIn(sub.path + "/").map(note => note.path), title: sub.name }) }}>↗</button>
                 <FolderAppearance path={sub.path} />
@@ -418,11 +431,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
                   </>
                 )}
               </span>
-            </summary>
-            <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>
-          </details>
+            }>
+            {() => <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>}
+          </LazyFolder>
         ))}
-        <div className="list">{items.map((n) => noteItem(n))}</div>
+        <NoteChunks items={items} active={note?.path} render={noteItem} />
       </>
     )
     return content
@@ -474,11 +487,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
             </div>
           )}
           {hasNotesSpace && (
-            <div className="segmented" role="tablist" aria-label="Onde mostrar">
-              <button className={!wholeVault ? "active" : ""} onClick={() => setWholeVault(false)} aria-label="Mostrar só o espaço Notas">
+            <div className="segmented" role="group" aria-label="Onde mostrar">
+              <button className={!wholeVault ? "active" : ""} aria-pressed={!wholeVault} onClick={() => setWholeVault(false)} aria-label="Mostrar só o espaço Notas">
                 Espaço Notas
               </button>
-              <button className={wholeVault ? "active" : ""} onClick={() => setWholeVault(true)} aria-label="Mostrar o cofre inteiro">
+              <button className={wholeVault ? "active" : ""} aria-pressed={wholeVault} onClick={() => setWholeVault(true)} aria-label="Mostrar o cofre inteiro">
                 Cofre inteiro
               </button>
             </div>
@@ -678,4 +691,57 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       )}
     </div>
   )
+}
+
+/**
+ * Pasta da árvore que, em cofre grande (`lazy`), só desenha o conteúdo quando aberta (T6): com 10 mil notas, as pastas
+ * fechadas desenhavam tudo escondido. Em cofre pequeno continua tudo no DOM, como antes (a busca do navegador e o
+ * smoke do Electron contam com isso). Abre sozinha quando a nota aberta está dentro dela.
+ */
+function LazyFolder({ lazy, initialOpen, forceOpen, className, zone, summary, actions, children }: { lazy: boolean; initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
+  const [open, setOpen] = useState(initialOpen || forceOpen)
+  useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
+  // Os botões da pasta ficam fora do <summary> (T7: controle dentro de controle confunde teclado e leitor de tela).
+  return (
+    <div className="vault-folder-wrap">
+      <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className={className} {...zone}>
+        {summary}
+        {(open || !lazy) && children()}
+      </details>
+      {actions}
+    </div>
+  )
+}
+
+const CHUNK = 200
+
+/** Notas de uma pasta em partes de 200, com “Mostrar mais” (T6); a nota aberta sempre entra na parte mostrada. */
+function NoteChunks({ items, active, render }: { items: IndexedNote[]; active?: string; render(note: IndexedNote): ReactNode }) {
+  const [limit, setLimit] = useState(CHUNK)
+  const activeAt = active ? items.findIndex((n) => n.path === active) : -1
+  const shown = Math.max(limit, activeAt + 1)
+  return (
+    <div className="list">
+      {items.slice(0, shown).map((n) => render(n))}
+      {items.length > shown && (
+        <button type="button" className="btn sm ghost notes-more" onClick={() => setLimit(shown + CHUNK)}>
+          Mostrar mais {Math.min(CHUNK, items.length - shown)} de {items.length - shown} restantes
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** A partir de quantas notas a busca espera uma pausa na digitação (T6). */
+const LARGE_VAULT = 2000
+
+/** O valor depois de `delay` ms sem mudar (0 devolve na hora). */
+function useSettled<T>(value: T, delay: number): T {
+  const [settled, setSettled] = useState(value)
+  useEffect(() => {
+    if (!delay) return setSettled(value)
+    const timer = setTimeout(() => setSettled(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return delay ? settled : value
 }

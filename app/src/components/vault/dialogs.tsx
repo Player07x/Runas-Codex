@@ -205,11 +205,11 @@ export function LinkPicker({ index, from, onPick, onClose }: { index: VaultIndex
           <Search size={15} />
           <input className="input" autoFocus placeholder="Buscar nota (nome, apelido, texto)…" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Buscar nota para ligar" />
         </label>
-        <div className="segmented" role="tablist" aria-label="Onde buscar">
-          <button className={!all ? "active" : ""} onClick={() => setAll(false)}>
+        <div className="segmented" role="group" aria-label="Onde buscar">
+          <button className={!all ? "active" : ""} aria-pressed={!all} onClick={() => setAll(false)}>
             Este espaço
           </button>
-          <button className={all ? "active" : ""} onClick={() => setAll(true)}>
+          <button className={all ? "active" : ""} aria-pressed={all} onClick={() => setAll(true)}>
             Todos
           </button>
         </div>

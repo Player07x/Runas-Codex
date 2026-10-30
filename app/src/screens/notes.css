@@ -90,3 +90,11 @@
 .graph-open:disabled { color: var(--text); cursor: default; text-decoration: none; }
 .graph-node-list { display: grid; gap: 2px; max-height: 260px; margin: 0; padding: 0; overflow: auto; list-style: none; }
 @media (max-width: 860px) { .graph-list { padding: 112px 12px 12px; } }
+/* T7: as ações da pasta ficam ao lado do <summary>, por cima da linha, e aparecem no hover ou com o foco. */
+.vault-folder-wrap { position: relative; }
+.vault-folder-wrap > .folder-actions { position: absolute; top: 0; right: 4px; height: 32px; align-items: center; display: none; gap: 2px; padding-left: 6px; border-radius: 8px; background: var(--panel-2); }
+.vault-folder-wrap:has(> details > summary:hover) > .folder-actions, .vault-folder-wrap > .folder-actions:hover, .vault-folder-wrap > .folder-actions:focus-within, .vault-folder-wrap:has(> details > summary:focus-visible) > .folder-actions { display: inline-flex; }
+/* O nome encolhe (com reticências) para dar lugar aos botões. */
+.vault-folder-wrap > details > summary:is(:hover, :focus-visible), .vault-folder-wrap:has(> .folder-actions:is(:hover, :focus-within)) > details > summary { padding-right: 170px; }
+@media (hover: hover) and (min-width: 861px) { .vault-folder-wrap > .folder-actions .icon-btn { width: 28px; height: 28px; min-width: 28px; min-height: 28px; } }
+@media (hover: none) { .vault-folder-wrap > .folder-actions { display: inline-flex; background: transparent; } .vault-folder-wrap > details > summary { padding-right: 220px; } }

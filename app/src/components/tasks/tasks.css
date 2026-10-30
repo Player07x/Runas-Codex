@@ -56,3 +56,5 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
   .task-main { min-height: 44px; }
   .task-menu .menu-item { min-height: 44px; }
 }
+/* T7: a área de toque da caixa da tarefa tem ao menos 24 px também no computador (WCAG 2.5.8). */
+@media (min-width: 701px) { .task-box-hit { padding: 4px; margin: -4px 0 -4px -4px; } }

@@ -2,14 +2,15 @@ import { useMemo, useState, type ReactNode } from "react"
 import { FileText, Search } from "lucide-react"
 import { eventFileName, eventNote, type EventInput } from "../../core/agenda"
 import {
-  CAMPAIGN_ROOT, isPlayerNote, listPlayers, newCampaignNote, newQuestNote, newSessionNote, noteTitle, QUEST_STATUS, sessionFileName, uniqueNoteName, withCampaignPlayer,
-  type CampaignInfo, type PlayerCharacter, type QuestStatus,
+  CAMPAIGN_ROOT, isPlayerNote, listPlayers, newCampaignNote, newQuestNote, npcExtra, withTrackedLink, newSessionNote, noteTitle, QUEST_STATUS, sessionFileName, uniqueNoteName, withCampaignPlayer,
+  type CampaignInfo, type PlayerCharacter, type QuestInfo, type QuestStatus, type TrackedLink,
 } from "../../core/campaigns"
 import { emptyCanvasText } from "../../core/canvas"
 import { noteDateText, parseWorldDate } from "../../core/calendar"
 import { dirname, noteName } from "../../core/text"
 import { articleKind, listWikis, newArticleNote } from "../../core/wiki"
 import { setProperty } from "../../core/properties"
+import { nameProblem } from "../../core/names"
 import { useVault } from "../../platform/VaultProvider"
 import { Modal } from "../../components/ui"
 import type { CampaignData } from "./campaign-state"
@@ -193,9 +194,15 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
   )
 }
 
-export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: { campaign: CampaignInfo; initialStatus?: QuestStatus; onClose(): void }) {
+export function NewQuestDialog({ campaign, quests = [], npcs = [], initialStatus = "ativa", onClose }: { campaign: CampaignInfo; quests?: QuestInfo[]; npcs?: TrackedLink[]; initialStatus?: QuestStatus; onClose(): void }) {
   const vault = useVault()
   const [title, setTitle] = useState("")
+  const [parent, setParent] = useState("")
+  const [requires, setRequires] = useState<string[]>([])
+  const [reqQuery, setReqQuery] = useState("")
+  const toggleReq = (path: string) => setRequires((list) => (list.includes(path) ? list.filter((p) => p !== path) : [...list, path]))
+  const target = (path: string, from: string) => vault.index!.linkTarget(path, from)
+  const reqOptions = quests.filter((q) => q.path !== parent && q.title.toLocaleLowerCase("pt-BR").includes(reqQuery.trim().toLocaleLowerCase("pt-BR"))).slice(0, 40)
   const [status, setStatus] = useState<QuestStatus>(initialStatus)
   const [order, setOrder] = useState("")
   const [giver, setGiver] = useState("")
@@ -209,7 +216,11 @@ export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: {
       onConfirm={async () => {
         const folder = `${campaign.root}Missões`
         const name = uniqueNoteName(vault.index!, folder, title.trim())
-        await vault.createNote(folder, name, newQuestNote(title.trim(), { status, ...(order.trim() ? { order: order.trim() } : {}), ...(giver.trim() ? { giver: giver.trim() } : {}), ...(reward.trim() ? { reward: reward.trim() } : {}) }))
+        const from = `${folder}/${name}.md`
+        await vault.createNote(folder, name, newQuestNote(title.trim(), {
+          status, ...(order.trim() ? { order: order.trim() } : {}), ...(giver.trim() ? { giver: giver.trim() } : {}), ...(reward.trim() ? { reward: reward.trim() } : {}),
+          ...(parent ? { parent: target(parent, from) } : {}), ...(requires.length ? { requires: requires.map((p) => target(p, from)) } : {}),
+        }))
       }}
     >
       <label className="field">
@@ -234,12 +245,33 @@ export function NewQuestDialog({ campaign, initialStatus = "ativa", onClose }: {
       </div>
       <label className="field">
         <span>Quem pediu (nome de uma nota, vira link)</span>
-        <input className="input" value={giver} onChange={(e) => setGiver(e.target.value)} placeholder="Conde Ormund" aria-label="Quem pediu a missão" />
+        <input className="input" list="npcs-da-campanha" value={giver} onChange={(e) => setGiver(e.target.value)} placeholder="Conde Ormund" aria-label="Quem pediu a missão" />
+        <datalist id="npcs-da-campanha">{npcs.map((n) => <option key={n.position} value={noteName(n.target)} />)}</datalist>
       </label>
       <label className="field">
         <span>Recompensa</span>
         <input className="input" value={reward} onChange={(e) => setReward(e.target.value)} aria-label="Recompensa" />
       </label>
+      {quests.length > 0 && <>
+        <label className="field">
+          <span>Parte de (arco, no mapa de missões)</span>
+          <select className="select" value={parent} onChange={(e) => { setParent(e.target.value); setRequires((list) => list.filter((p) => p !== e.target.value)) }} aria-label="Missão-mãe">
+            <option value="">Nenhuma (missão de topo)</option>
+            {quests.map((q) => <option key={q.path} value={q.path}>{q.order ? `${q.order} · ` : ""}{q.title}</option>)}
+          </select>
+        </label>
+        <fieldset className="field campaign-requires">
+          <legend>Depende de (só abre depois destas){requires.length ? ` · ${requires.length}` : ""}</legend>
+          {quests.length > 8 && <input className="input" value={reqQuery} onChange={(e) => setReqQuery(e.target.value)} placeholder="Filtrar missões" aria-label="Filtrar missões para depender" />}
+          <div className="campaign-requires-list">
+            {reqOptions.map((q) => (
+              <label key={q.path} className="check small">
+                <input type="checkbox" checked={requires.includes(q.path)} onChange={() => toggleReq(q.path)} /> {q.order ? `${q.order} · ` : ""}{q.title}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </>}
     </FormDialog>
   )
 }
@@ -382,5 +414,75 @@ export function WikiNotePicker({ title, root, exclude, onPick, onClose }: { titl
         ))}
       </div>
     </Modal>
+  )
+}
+
+const QUICK_KINDS = [
+  { id: "personagem", label: "NPC (personagem)" },
+  { id: "local", label: "Lugar" },
+  { id: "organizacao", label: "Facção (organização)" },
+  { id: "item", label: "Item" },
+] as const
+
+/**
+ * Cria um artigo na wiki da campanha a partir de um nome (botão “Novo NPC” do Elenco ou um link que ainda não existe
+ * na nota da sessão). NPC já entra no Elenco e facção, nas Facções; marcar “já apareceu” grava junto da atitude.
+ */
+export function NewNpcDialog({ data, initialName = "", initialKind = "personagem", onClose, onCreated }: { data: CampaignData; initialName?: string; initialKind?: (typeof QUICK_KINDS)[number]["id"]; onClose(): void; onCreated?(path: string): void }) {
+  const vault = useVault()
+  const index = vault.index!
+  const wikis = listWikis(index)
+  const [wiki, setWiki] = useState(data.campaign.wiki ?? wikis[0]?.name ?? "")
+  const [kind, setKind] = useState<(typeof QUICK_KINDS)[number]["id"]>(initialKind)
+  const [name, setName] = useState(initialName.replace(/\.md$/i, "").split("/").pop() ?? "")
+  const [appeared, setAppeared] = useState(true)
+  const problem = name.trim() ? nameProblem(name.trim()) : null
+  return (
+    <FormDialog
+      title={kind === "personagem" ? "Novo NPC" : "Novo artigo na wiki"}
+      confirmLabel={kind === "personagem" ? "Criar e pôr no Elenco" : kind === "organizacao" ? "Criar e acompanhar" : "Criar artigo"}
+      disabled={!wiki || !name.trim() || Boolean(problem)}
+      onClose={onClose}
+      onConfirm={async () => {
+        const article = articleKind(kind)!
+        const folder = `Wikis/${wiki}/${article.folder}`
+        const path = await vault.createNote(folder, uniqueNoteName(index, folder, name.trim()), newArticleNote(article, name.trim()))
+        const home = data.campaign.home
+        if (home && (kind === "personagem" || kind === "organizacao")) {
+          const key = kind === "personagem" ? "npcs" : "faccoes"
+          const extra = kind === "personagem" ? npcExtra("neutro", appeared) : "0"
+          await vault.setProperty(home, key, withTrackedLink(data.data[key], -1, vault.index!.linkTarget(path, home), extra))
+        }
+        onCreated?.(path)
+      }}
+    >
+      <label className="field">
+        <span>Nome</span>
+        <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-invalid={Boolean(problem)} aria-label="Nome do artigo" />
+        {problem && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{problem}</span>}
+      </label>
+      <div className="campaign-form-row">
+        <label className="field grow">
+          <span>O que é</span>
+          <select className="select" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} aria-label="Tipo do artigo">
+            {QUICK_KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
+          </select>
+        </label>
+        <label className="field grow">
+          <span>Wiki</span>
+          <select className="select" value={wiki} onChange={(e) => setWiki(e.target.value)} aria-label="Wiki do artigo">
+            {wikis.length === 0 && <option value="">Nenhuma wiki</option>}
+            {wikis.map((w) => <option key={w.name} value={w.name}>{w.name}</option>)}
+          </select>
+        </label>
+      </div>
+      {kind === "personagem" && (
+        <label className="check small">
+          <input type="checkbox" checked={appeared} onChange={(e) => setAppeared(e.target.checked)} /> Já apareceu na campanha
+        </label>
+      )}
+      {wikis.length === 0 && <p className="small muted">Crie uma wiki na seção Wiki para guardar os artigos.</p>}
+      <span className="tiny faint">O artigo vai para Wikis/{wiki || "…"}/{articleKind(kind)?.folder}/ com o modelo do tipo.</span>
+    </FormDialog>
   )
 }

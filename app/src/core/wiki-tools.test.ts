@@ -1,5 +1,6 @@
 import { parseCalendar } from "./calendar"
 import * as Tables from "./generator-tables"
+import { NAME_CULTURES } from "./name-cultures"
 import { generateWorld, GENERATOR_KINDS, parseDictionary, parseRollTable, rollTable, worldEventOn, type GeneratorKind } from "./wiki-tools"
 import { inEra, mapExtrasYaml, parseMapExtras } from "./wiki-map-extras"
 import { parseMap } from "./wiki"
@@ -23,11 +24,13 @@ describe("Ferramentas de fechamento da Wiki",()=>{
   expect(generateWorld("aventura",()=>0)).toContain("## Encontro")
   expect(generateWorld("nome",()=>0)).toBe("Ana das Neves")
  })
- it("tem pelo menos dez vezes as opções de antes, sem itens repetidos nas listas",()=>{
+ it("tem o dobro das opções da beta.22, sem itens repetidos nas listas",()=>{
   const lists:[string,unknown[]][]=Object.entries(Tables).flatMap(([name,value]):[string,unknown[]][]=>Array.isArray(value)?[[name,value]]:Object.entries(value as Record<string,unknown[]>).map(([season,list]):[string,unknown[]]=>[`${name}.${season}`,list]))
   for(const [name,list] of lists) expect(new Set(list.map(item=>JSON.stringify(item))).size,name).toBe(list.length)
-  // Antes da beta.21 eram 84 opções em 7 geradores.
-  expect(lists.reduce((sum,[,list])=>sum+list.length,0)).toBeGreaterThanOrEqual(840)
+  // Antes da beta.21 eram 84 opções em 7 geradores; a beta.22 pediu 100 vezes isso (9.692, contando os nomes por
+  // cultura) e depois o dobro: pelo menos 19.384.
+  const cultures=NAME_CULTURES.slice(1).reduce((sum,c)=>sum+c.female.length+c.male.length+c.surnames.length,0)
+  expect(lists.reduce((sum,[,list])=>sum+list.length,0)+cultures).toBeGreaterThanOrEqual(19_384)
   expect(Object.keys(GENERATOR_KINDS).length).toBeGreaterThanOrEqual(14)
  })
  it("concorda o gênero do nome com a profissão e o da taverna com o adjetivo",()=>{
@@ -35,7 +38,7 @@ describe("Ferramentas de fechamento da Wiki",()=>{
   expect(generateWorld("npc",seq([.99,0,0,0]))).toMatch(/^João das Neves, cartógrafo\./)
   expect(generateWorld("npc",seq([0]))).toMatch(/^Ana das Neves, cartógrafa\./)
   expect(generateWorld("taverna",seq([0]))).toMatch(/^A Raposa Dourada\./)
-  expect(generateWorld("taverna",seq([4/40,0]))).toMatch(/^O Javali Dourado\./)
+  expect(generateWorld("taverna",seq([4/Tables.TAVERN_NOUNS.length,0]))).toMatch(/^O Javali Dourado\./)
  })
  it("repete por dias do calendário fictício e respeita início, intervalo e fim",()=>{
   const data={data_mundo:"0001-01-29",recorrencia_mundo:"dias",intervalo_mundo:3,fim_recorrencia_mundo:"0001-02-05"}

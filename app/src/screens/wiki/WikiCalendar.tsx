@@ -287,7 +287,9 @@ export function WikiCalendar({ path }: { path?: string }) {
                 ))}
                 <div className="stack" style={{ gap: 2 }}>
                   {moons(calendar, pick).map((m) => (
-                    <span key={m.moon.name} className="small" style={m.moon.color ? { color: m.moon.color } : undefined}>
+                    // A cor da lua vem do calendário e pode não ter contraste no tema; ela pinta só a marca (T7).
+                    <span key={m.moon.name} className="small row" style={{ gap: 6 }}>
+                      {m.moon.color && <span className="dot" style={{ background: m.moon.color }} aria-hidden="true" />}
                       {moonGlyph(m)} {m.moon.name}: {m.phase}
                     </span>
                   ))}

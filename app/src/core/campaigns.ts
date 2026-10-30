@@ -377,6 +377,10 @@ export interface QuestInfo {
   giver?: { target: string; dest: string | null }
   reward?: string
   tags: string[]
+  /** Missão-mãe (arco), pela propriedade `parte_de`: caminho resolvido ou `null` se o link está quebrado. */
+  parent?: { target: string; dest: string | null }
+  /** Pré-requisitos (`requer`), na ordem da nota. */
+  requires: { target: string; dest: string | null }[]
 }
 
 function questStatus(value: unknown): QuestStatus {
@@ -412,6 +416,7 @@ export function listQuests(index: VaultIndex, campaign: CampaignInfo): QuestInfo
     .map((note) => {
       const data = dataOf(note)
       const giver = linkItem(String(data.contratante ?? ""))
+      const parent = linkItem(String(data.parte_de ?? ""))
       const giverText = str(data.contratante)
       return {
         path: note.path,
@@ -421,6 +426,11 @@ export function listQuests(index: VaultIndex, campaign: CampaignInfo): QuestInfo
         ...(giver ? { giver: { target: giver.target, dest: resolveTarget(index, giver.target, note.path) } } : giverText ? { giver: { target: giverText, dest: null } } : {}),
         ...(str(data.recompensa) ? { reward: str(data.recompensa) } : {}),
         tags: listValue(data.tags),
+        ...(parent ? { parent: { target: parent.target, dest: resolveTarget(index, parent.target, note.path) } } : {}),
+        requires: listValue(data.requer).flatMap((value) => {
+          const link = linkItem(value)
+          return link ? [{ target: link.target, dest: resolveTarget(index, link.target, note.path) }] : []
+        }),
       }
     })
     .sort((a, b) => compareOrder(a.order || "999", b.order || "999") || a.title.localeCompare(b.title, "pt-BR"))
@@ -531,6 +541,86 @@ export function npcSightings(index: VaultIndex, dest: string | null, sessions: S
   const from = new Set(index.backlinks(dest).map((b) => b.from))
   const seen = sessions.filter((s) => from.has(s.path))
   return { ...(seen.length ? { lastSeen: seen[seen.length - 1] } : {}), mentions: seen.length }
+}
+
+/** Marca de “já apareceu” no texto entre parênteses do NPC: `[[Conde Ormund]] (hostil, apareceu)`. */
+const APPEARED = "apareceu"
+const extraParts = (extra: string) => extra.split(",").map((part) => part.trim()).filter(Boolean)
+
+export function npcAppeared(extra: string): boolean {
+  return extraParts(extra).some((part) => fold(part) === APPEARED)
+}
+
+/** A atitude, sem a marca de “apareceu”. */
+export function npcAttitude(extra: string): string {
+  return extraParts(extra).filter((part) => fold(part) !== APPEARED).join(", ")
+}
+
+/** Monta o texto entre parênteses com a atitude e, se for o caso, a marca. */
+export function npcExtra(attitude: string, appeared: boolean): string {
+  return [attitude.trim(), appeared ? APPEARED : ""].filter(Boolean).join(", ")
+}
+
+/**
+ * Sessões em que cada nota aparece (links das notas de sessão), calculado uma vez para o Elenco inteiro: com 150 NPCs
+ * e 80 sessões, procurar NPC por NPC refazia milhares de comparações a cada render.
+ */
+export function sightingsBySession(index: VaultIndex, sessions: SessionInfo[]): Map<string, SessionInfo[]> {
+  const out = new Map<string, SessionInfo[]>()
+  for (const session of sessions) {
+    if (session.status === "cancelada") continue
+    for (const link of index.outgoing(session.path)) {
+      if (!link.dest) continue
+      const list = out.get(link.dest)
+      if (!list) out.set(link.dest, [session])
+      else if (list[list.length - 1] !== session) list.push(session)
+    }
+  }
+  return out
+}
+
+export interface CastRow {
+  item: TrackedLink
+  name: string
+  attitude: string
+  /** Marcado à mão na nota da campanha. */
+  marked: boolean
+  /** Citado em alguma sessão (realizada ou planejada). */
+  seen: SessionInfo[]
+  appeared: boolean
+  /** Onde mora (`residencia`/`local`) e a que grupo pertence (`faccao`/`organizacao`/`afiliacao`), para agrupar. */
+  place?: string
+  faction?: string
+}
+
+const firstName = (value: unknown): string | undefined => {
+  const raw = Array.isArray(value) ? value[0] : value
+  if (typeof raw !== "string" || !raw.trim()) return undefined
+  const link = linkItem(raw)
+  return link ? (link.target.split("|").pop() ?? link.target).split("/").pop()!.replace(/\.md$/i, "") : raw.trim()
+}
+
+/** Linhas do Elenco: cada NPC acompanhado, com o que a tela filtra, agrupa e ordena. */
+export function castRows(index: VaultIndex, items: TrackedLink[], sessions: SessionInfo[]): CastRow[] {
+  const sightings = sightingsBySession(index, sessions)
+  return items.map((item) => {
+    const note = item.dest ? index.note(item.dest) : undefined
+    const data = dataOf(note)
+    const seen = item.dest ? sightings.get(item.dest) ?? [] : []
+    const marked = npcAppeared(item.extra)
+    const place = firstName(data.residencia ?? data.local ?? data.lugar)
+    const faction = firstName(data.faccao ?? data["facção"] ?? data.organizacao ?? data.afiliacao)
+    return {
+      item,
+      name: (item.target.split("|").pop() ?? item.target).split("/").pop()!.replace(/\.md$/i, ""),
+      attitude: npcAttitude(item.extra),
+      marked,
+      seen,
+      appeared: marked || seen.length > 0,
+      ...(place ? { place } : {}),
+      ...(faction ? { faction } : {}),
+    }
+  })
 }
 
 /** Reputação `+2`, `-1`, `0` no texto entre parênteses. */
@@ -713,9 +803,12 @@ ${PREP_STEPS.map((step) => `- [ ] **${step}**`).join("\n")}
 `
 }
 
-export function newQuestNote(title: string, options: { status?: QuestStatus; order?: string; giver?: string; reward?: string } = {}): string {
+export function newQuestNote(title: string, options: { status?: QuestStatus; order?: string; giver?: string; reward?: string; parent?: string; requires?: string[] } = {}): string {
   const lines = ["---", "tipo: missao", `status: ${options.status ?? "ativa"}`]
   if (options.order) lines.push(`ordem: ${q(options.order)}`)
+  // Hierarquia do mapa de missões: links que o Obsidian também mostra.
+  if (options.parent) lines.push(`parte_de: ${q(`[[${options.parent}]]`)}`)
+  if (options.requires?.length) lines.push(`requer: [${options.requires.map((target) => q(`[[${target}]]`)).join(", ")}]`)
   if (options.giver) lines.push(`contratante: ${q(options.giver.startsWith("[[") ? options.giver : `[[${options.giver}]]`)}`)
   if (options.reward) lines.push(`recompensa: ${q(options.reward)}`)
   lines.push("---")

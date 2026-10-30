@@ -4,6 +4,11 @@
  * opções basta pôr mais itens nas listas; os testes conferem que nenhuma lista tem repetidos.
  */
 
+import { MORE_FEMALE_NAMES, MORE_MALE_NAMES, MORE_SURNAMES, MORE_PROFESSIONS, MORE_DESIRES, MORE_SECRETS, MORE_TRAITS, MORE_LOOKS, MORE_HOOK_EVENTS, MORE_HOOK_TURNS, MORE_RUMORS, MORE_TAVERN_NOUNS, MORE_TAVERN_ADJECTIVES, MORE_DISHES, MORE_DRINKS, MORE_TAVERN_DETAILS } from "./generator-tables-pessoas"
+import { MORE_COIN_AMOUNTS, MORE_COIN_KINDS, MORE_TRINKETS, MORE_TREASURE_EXTRAS, MORE_WEATHER, MORE_ENCOUNTERS, MORE_TWISTS, MORE_PLACE_HEADS, MORE_PLACE_TAILS, MORE_MAGIC_ITEMS, MORE_MAGIC_POWERS, MORE_MAGIC_QUIRKS, MORE_FACTION_NOUNS, MORE_FACTION_EMBLEMS, MORE_FACTION_GOALS, MORE_FACTION_METHODS, MORE_DEITY_SYLLABLES, MORE_DEITY_DOMAINS, MORE_DEITY_SYMBOLS, MORE_DEITY_TENETS, MORE_DUNGEON_ROOMS, MORE_DUNGEON_FEATURES, MORE_DUNGEON_DANGERS, MORE_LEGEND_SUBJECTS, MORE_LEGEND_TRUTHS, MORE_MERCHANT_WARES, MORE_MERCHANT_QUIRKS } from "./generator-tables-mundo"
+import { EXTRA_FEMALE_NAMES, EXTRA_MALE_NAMES, EXTRA_SURNAMES, EXTRA_PROFESSIONS, EXTRA_DESIRES, EXTRA_SECRETS, EXTRA_TRAITS, EXTRA_LOOKS, EXTRA_HOOK_EVENTS, EXTRA_HOOK_TURNS, EXTRA_RUMORS, EXTRA_TAVERN_NOUNS, EXTRA_TAVERN_ADJECTIVES, EXTRA_DISHES, EXTRA_DRINKS, EXTRA_TAVERN_DETAILS } from "./generator-tables-extra-pessoas"
+import { EXTRA2_DEITY_DOMAINS, EXTRA2_FACTION_EMBLEMS, EXTRA2_PLACE_TAILS, EXTRA2_TRINKETS, EXTRA_COIN_AMOUNTS, EXTRA_COIN_KINDS, EXTRA_TRINKETS, EXTRA_TREASURE_EXTRAS, EXTRA_WEATHER, EXTRA_ENCOUNTERS, EXTRA_TWISTS, EXTRA_PLACE_HEADS, EXTRA_PLACE_TAILS, EXTRA_MAGIC_ITEMS, EXTRA_MAGIC_POWERS, EXTRA_MAGIC_QUIRKS, EXTRA_FACTION_NOUNS, EXTRA_FACTION_EMBLEMS, EXTRA_FACTION_GOALS, EXTRA_FACTION_METHODS, EXTRA_DEITY_SYLLABLES, EXTRA_DEITY_DOMAINS, EXTRA_DEITY_SYMBOLS, EXTRA_DEITY_TENETS, EXTRA_DUNGEON_ROOMS, EXTRA_DUNGEON_FEATURES, EXTRA_DUNGEON_DANGERS, EXTRA_LEGEND_SUBJECTS, EXTRA_LEGEND_TRUTHS, EXTRA_MERCHANT_WARES, EXTRA_MERCHANT_QUIRKS } from "./generator-tables-extra-mundo"
+
 export type Gender = "m" | "f"
 
 // ---------- Pessoas ----------
@@ -17,6 +22,7 @@ export const FEMALE_NAMES = [
   "Zuri", "Nala", "Ayo", "Imani", "Kaya", "Ondina", "Iolanda", "Selene", "Maia", "Íris",
   "Rafaela", "Gabriela", "Débora", "Raquel", "Judite", "Ester", "Noémia", "Rute", "Lia", "Sara",
   "Bárbara", "Cecília", "Doroteia", "Eulália", "Florbela", "Gertrudes", "Hermínia", "Isaura", "Laurinda", "Madalena",
+  ...MORE_FEMALE_NAMES, ...EXTRA_FEMALE_NAMES,
 ]
 
 export const MALE_NAMES = [
@@ -28,6 +34,7 @@ export const MALE_NAMES = [
   "Kwame", "Jabari", "Kofi", "Ayodele", "Tendai", "Zaid", "Idris", "Malik", "Omar", "Tariq",
   "Adriano", "Basílio", "Cipriano", "Domingos", "Eusébio", "Fabrício", "Germano", "Horácio", "Isidoro", "Jordão",
   "Leandro", "Máximo", "Norberto", "Otávio", "Prudêncio", "Quintino", "Romualdo", "Salvador", "Teodoro", "Valério",
+  ...MORE_MALE_NAMES, ...EXTRA_MALE_NAMES,
 ]
 
 export const SURNAMES = [
@@ -41,6 +48,7 @@ export const SURNAMES = [
   "Corvo", "Falcão", "Raposo", "Lobato", "Carneiro", "Pombo", "Leitão", "Cordeiro", "Pardal", "Gavião",
   "Andrada", "Arruda", "Bettencourt", "Brandão", "Camões", "Castanheira", "Cerqueira", "Coutinho", "Faria", "Garrido",
   "Jardim", "Lemos", "Loureiro", "Mascarenhas", "Medeiros", "Noronha", "Portela", "Sardinha", "Taveira", "Vilhena",
+  ...MORE_SURNAMES, ...EXTRA_SURNAMES,
 ]
 
 /** Profissão no masculino e no feminino, para concordar com o nome sorteado. */
@@ -57,6 +65,7 @@ export const PROFESSIONS: [string, string][] = [
   ["coletor de impostos", "coletora de impostos"], ["juiz de aldeia", "juíza de aldeia"], ["prefeito", "prefeita"], ["capitão do porto", "capitã do porto"], ["marinheiro", "marinheira"],
   ["mineiro", "mineira"], ["lenhador", "lenhadora"], ["apicultor", "apicultora"], ["domador de feras", "domadora de feras"], ["falcoeiro", "falcoeira"],
   ["mágico de feira", "mágica de feira"], ["adivinho", "adivinha"], ["exorcista", "exorcista"], ["caçador de recompensas", "caçadora de recompensas"], ["peregrino", "peregrina"],
+  ...MORE_PROFESSIONS, ...EXTRA_PROFESSIONS,
 ]
 
 export const DESIRES = [
@@ -68,6 +77,7 @@ export const DESIRES = [
   "derrubar o senhor local", "salvar o rio da seca", "casar com alguém de outra casta", "entregar uma carta a tempo", "reencontrar um amor perdido",
   "achar o tesouro de um avô pirata", "sair de uma seita", "aprender magia proibida", "proteger um segredo de família", "cumprir um voto feito a um deus",
   "superar um rival de infância", "manter o filho longe da guerra", "decifrar um idioma esquecido", "tornar-se cavaleiro", "ver a última estrela cair",
+  ...MORE_DESIRES, ...EXTRA_DESIRES,
 ]
 
 export const SECRETS = [
@@ -79,6 +89,7 @@ export const SECRETS = [
   "a fórmula de um veneno", "um passado de assassino", "uma visão do fim do mundo", "um sangue de linhagem real", "o fato de ter morrido uma vez",
   "um contrato assinado com sangue", "a culpa por uma ponte que caiu", "uma conta em nome falso", "um cofre que não sabe abrir", "uma memória que não é dele",
   "a covardia que custou uma batalha", "um amuleto que sussurra", "uma chave para uma cripta", "um espião na própria casa", "uma promessa feita a um dragão",
+  ...MORE_SECRETS, ...EXTRA_SECRETS,
 ]
 
 export const TRAITS = [
@@ -90,6 +101,7 @@ export const TRAITS = [
   "repete a última palavra de quem fala", "tem um humor seco e cortante", "é supersticioso com números", "chora em canções tristes", "fala de si na terceira pessoa",
   "sempre come algo enquanto conversa", "dá conselhos que ninguém pediu", "não suporta barulho", "trata estranhos como velhos amigos", "esconde a mão esquerda",
   "nunca senta de costas para a porta", "fala com os mortos em voz alta", "mede as pessoas pelos sapatos", "é pontual de um jeito irritante", "detesta nobres e imita o sotaque deles",
+  ...MORE_TRAITS, ...EXTRA_TRAITS,
 ]
 
 export const LOOKS = [
@@ -101,6 +113,7 @@ export const LOOKS = [
   "uma perna de pau entalhada", "cabelo raspado dos lados", "orelhas furadas com argolas de cobre", "cicatrizes de queimadura nas mãos", "o uniforme de um exército que não existe mais",
   "uma barba trançada com contas", "sobrancelhas grossas e unidas", "um gato sempre no ombro", "um pingente que brilha fraco", "dedos manchados de tinta",
   "roupas da cor do luto", "um chapéu grande demais", "uma marca de nascença em forma de lua", "um bordão com sinos pequenos", "os pés descalços em qualquer clima",
+  ...MORE_LOOKS, ...EXTRA_LOOKS,
 ]
 
 // ---------- Ganchos e rumores ----------
@@ -114,6 +127,7 @@ export const HOOK_EVENTS = [
   "Um bebê nasce com uma coroa de cabelos brancos", "A floresta avança um passo por noite", "Moedas antigas aparecem nos bolsos de todos", "O espelho do salão mostra outro lugar", "O farol apaga sem motivo",
   "Uma caravana chega com um ano de atraso", "Um eclipse não termina", "As abelhas abandonam as colmeias", "Uma voz chama do fundo da mina", "O padre some no meio da missa",
   "Neve cai em pleno verão", "Uma carta chega endereçada a um morto", "O lago congela num círculo perfeito", "Um forasteiro compra todas as cordas da cidade", "Um gigante dorme na estrada",
+  ...MORE_HOOK_EVENTS, ...EXTRA_HOOK_EVENTS,
 ]
 
 export const HOOK_TURNS = [
@@ -125,6 +139,7 @@ export const HOOK_TURNS = [
   "Um mercador estrangeiro tem a resposta, mas quer muito dinheiro", "Os jogadores são os únicos que não são afetados", "Um diário de cem anos descreve o mesmo caso", "Alguém tenta comprar o silêncio dos heróis", "A solução exige um sacrifício",
   "As autoridades negam que algo esteja acontecendo", "Uma criatura assustada é a verdadeira vítima", "O fenômeno some quando alguém mente", "Uma fera só aparece quando chove", "O responsável é amado por todos",
   "A causa está no castelo do senhor local", "Um rival dos heróis já está no caso", "Os sinos voltam a tocar a cada resposta errada", "Um espírito pede para ser enterrado de novo", "Tudo começou com um presente recebido",
+  ...MORE_HOOK_TURNS, ...EXTRA_HOOK_TURNS,
 ]
 
 export const RUMORS = [
@@ -153,6 +168,7 @@ export const RUMORS = [
   "O rio trouxe uma coroa enroscada nas redes.", "Os elfos foram vistos comprando ferro, coisa que nunca fazem.",
   "Uma estrela some do céu toda noite.", "O carrasco da cidade se recusou a trabalhar.",
   "Uma estrada nova apareceu no mapa do cartógrafo real.", "Dizem que a rainha mandou buscar o último dos magos.",
+  ...MORE_RUMORS, ...EXTRA_RUMORS,
 ]
 
 // ---------- Tavernas ----------
@@ -163,6 +179,7 @@ export const TAVERN_NOUNS: [string, Gender][] = [
   ["Coroa", "f"], ["Espada", "f"], ["Barril", "m"], ["Cavalo", "m"], ["Estrela", "f"], ["Lanterna", "f"], ["Machado", "m"], ["Urso", "m"], ["Gato", "m"], ["Coruja", "f"],
   ["Ferradura", "f"], ["Bigorna", "f"], ["Galo", "m"], ["Lobo", "m"], ["Pato", "m"], ["Cabra", "f"], ["Bota", "f"], ["Chaleira", "f"], ["Escudo", "m"], ["Sino", "m"],
   ["Rosa", "f"], ["Carvalho", "m"], ["Ponte", "f"], ["Torre", "f"], ["Pena", "f"], ["Cálice", "m"], ["Grifo", "m"], ["Tartaruga", "f"], ["Moinho", "m"], ["Caravela", "f"],
+  ...[...MORE_TAVERN_NOUNS, ...EXTRA_TAVERN_NOUNS].map(([noun, gender]): [string, Gender] => [noun, gender === "m" ? "m" : "f"]),
 ]
 
 /** Adjetivo no masculino e no feminino. */
@@ -172,6 +189,7 @@ export const TAVERN_ADJECTIVES: [string, string][] = [
   ["Esquecido", "Esquecida"], ["Teimoso", "Teimosa"], ["Dançante", "Dançante"], ["Encantado", "Encantada"], ["Valente", "Valente"], ["Preguiçoso", "Preguiçosa"], ["Assustado", "Assustada"], ["Solitário", "Solitária"],
   ["Azul", "Azul"], ["Fumegante", "Fumegante"], ["Rachado", "Rachada"], ["Barbudo", "Barbuda"], ["Generoso", "Generosa"], ["Peludo", "Peluda"], ["Molhado", "Molhada"], ["Amarrado", "Amarrada"],
   ["Coroado", "Coroada"], ["Perdido", "Perdida"], ["Famoso", "Famosa"], ["Gordo", "Gorda"], ["Cego", "Cega"], ["Alegre", "Alegre"], ["Noturno", "Noturna"], ["Ruivo", "Ruiva"],
+  ...MORE_TAVERN_ADJECTIVES, ...EXTRA_TAVERN_ADJECTIVES,
 ]
 
 export const DISHES = [
@@ -183,6 +201,7 @@ export const DISHES = [
   "costela de boi com mostarda", "bolinhos de peixe", "sopa fria de tomate", "trutas do riacho", "pudim de sangue",
   "lebre com cerejas", "pastéis de carne picante", "sopa de cebola gratinada", "batatas com toucinho", "pão de queijo do norte",
   "ostras do porto", "carne de urso salgada", "crepes de trigo-sarraceno", "tâmaras recheadas", "arroz-doce com canela",
+  ...MORE_DISHES, ...EXTRA_DISHES,
 ]
 
 export const DRINKS = [
@@ -194,6 +213,7 @@ export const DRINKS = [
   "caldo quente para os sóbrios", "absinto verde", "vinho tinto aguado", "licor de ervas dos monges", "cerveja de gengibre",
   "sangria com frutas da estação", "chá preto com fumo", "bebida azul que ninguém sabe o nome", "vinho de figo", "cerveja que dizem ser feita por fadas",
   "conhaque de pera", "leite fermentado de égua", "água do poço sagrado (cobram)", "licor de café", "vinagre de vinho (para os caloteiros)",
+  ...MORE_DRINKS, ...EXTRA_DRINKS,
 ]
 
 export const TAVERN_DETAILS = [
@@ -205,12 +225,13 @@ export const TAVERN_DETAILS = [
   "um poço dentro do salão", "uma criança que serve as mesas e sabe de tudo", "uma cabeça de troll empalhada", "a música para quando entra um estranho", "um cliente que paga em pérolas",
   "um caderno de reclamações que ninguém lê", "uma estátua de santo com uma caneca na mão", "uma placa que proíbe magia", "cheiro de pão a noite toda", "um quarto trancado por ordem do conde",
   "uma escada que range em todos os degraus", "goteiras que pingam em ritmo", "dois irmãos donos que não se falam", "um livro de hóspedes com nomes famosos", "um gato que escolhe quem pode ficar",
+  ...MORE_TAVERN_DETAILS, ...EXTRA_TAVERN_DETAILS,
 ]
 
 // ---------- Tesouros ----------
 
-export const COIN_AMOUNTS = [3, 7, 12, 18, 25, 33, 40, 50, 64, 75, 100, 150, 200, 320, 500]
-export const COIN_KINDS = ["moedas de cobre", "moedas de prata", "moedas de ouro", "moedas de um reino extinto", "lingotes pequenos de prata"]
+export const COIN_AMOUNTS = [3, 7, 12, 18, 25, 33, 40, 50, 64, 75, 100, 150, 200, 320, 500, ...MORE_COIN_AMOUNTS, ...EXTRA_COIN_AMOUNTS]
+export const COIN_KINDS = ["moedas de cobre", "moedas de prata", "moedas de ouro", "moedas de um reino extinto", "lingotes pequenos de prata", ...MORE_COIN_KINDS, ...EXTRA_COIN_KINDS]
 
 export const TRINKETS = [
   "um broche com brasão", "uma bússola sem norte", "um anel de cobre", "uma carta lacrada", "um cálice de estanho amassado",
@@ -223,6 +244,7 @@ export const TRINKETS = [
   "uma pulseira de pelos de cavalo trançados", "uma vela que não derrete", "um pergaminho em branco que cheira a mar", "um baralho com uma carta a mais", "uma garra de urso montada em prata",
   "uma pedra-de-afiar de grão fino", "um ídolo de barro de três olhos", "um anel de sinete de família nobre", "um apito de osso", "uma coroa de folhas de ouro amassada",
   "uma corrente com um pingente de âmbar", "um diário com páginas arrancadas", "um frasco de tinta que muda de cor", "um cinto com fivela de prata", "um botão de casaco de um uniforme real",
+  ...MORE_TRINKETS, ...EXTRA_TRINKETS, ...EXTRA2_TRINKETS,
 ]
 
 export const TREASURE_EXTRAS = [
@@ -234,6 +256,7 @@ export const TREASURE_EXTRAS = [
   "um pedido de socorro escrito às pressas", "uma partitura proibida", "o símbolo de uma seita", "uma carta de recomendação falsa", "o código de uma guilda",
   "a chave de um quarto de estalagem", "um bilhete de loteria da capital", "a assinatura de um mago famoso", "um calendário com uma data circulada", "um mapa estelar com uma estrela a mais",
   "o nome de um traidor", "uma promessa de casamento", "um mapa do esgoto da cidade", "a descrição de um ritual incompleto", "um aviso: não abra a próxima porta",
+  ...MORE_TREASURE_EXTRAS, ...EXTRA_TREASURE_EXTRAS,
 ]
 
 // ---------- Clima ----------
@@ -243,21 +266,25 @@ export const WEATHER: Record<string, string[]> = {
     "Manhã fria, neblina e vento fraco.", "Chuva fina o dia todo; flores por toda parte.", "Sol morno e céu limpo.", "Pancadas de chuva no fim da tarde.", "Vento forte que espalha pólen.",
     "Garoa e arco-íris depois do almoço.", "Noite fria e estrelada.", "Céu nublado e ar abafado.", "Granizo rápido e passageiro.", "Dia ameno, bom para viajar.",
     "Neblina densa nos vales até o meio-dia.", "Chuva de primavera que alaga as trilhas.", "Brisa leve vinda do mar.", "Trovoada distante, sem chuva.", "Manhã de geada tardia que queima os brotos.",
+    ...MORE_WEATHER.Primavera!, ...EXTRA_WEATHER.Primavera!,
   ],
   Verão: [
     "Calor seco e vento do oeste.", "Céu aberto e sol forte; água fica escassa.", "Tempestade de verão no fim do dia.", "Noite quente, cheia de mosquitos.", "Mormaço pesado, sem vento.",
     "Calor de rachar pedra; os animais procuram sombra.", "Brisa fresca à beira do rio.", "Nuvens altas e luz dourada.", "Trovões secos e risco de incêndio.", "Dia longo e claro, noite curta.",
     "Chuva quente que evapora logo.", "Poeira levantada por redemoinhos.", "Céu limpo e lua cheia brilhante.", "Ar úmido e pesado depois da chuva.", "Onda de calor: viagem só de madrugada.",
+    ...MORE_WEATHER.Verão!, ...EXTRA_WEATHER.Verão!,
   ],
   Outono: [
     "Chuva contínua; estradas enlameadas.", "Folhas caindo e vento frio.", "Neblina pela manhã, sol fraco à tarde.", "Tempestade se aproximando pelo litoral.", "Dia cinzento e silencioso.",
     "Garoa fria que não para.", "Ventania que derruba galhos.", "Céu limpo e ar seco, noite gelada.", "Nevoeiro que esconde a estrada.", "Primeira geada da estação.",
     "Chuva de pedra rápida.", "Sol baixo e sombras longas.", "Nuvens pesadas, mas nada de chuva.", "Frio úmido que entra nos ossos.", "Manhã clara e tarde chuvosa.",
+    ...MORE_WEATHER.Outono!, ...EXTRA_WEATHER.Outono!,
   ],
   Inverno: [
     "Noite seca e muito fria.", "Neve fina o dia inteiro.", "Nevasca: impossível viajar.", "Céu limpo e frio cortante.", "Chuva gelada que congela nas árvores.",
     "Gelo nas estradas e nos rios.", "Vento uivante das montanhas.", "Manhã de nevoeiro congelado.", "Dia curto e cinzento.", "Neve pesada que bloqueia as passagens.",
     "Sol fraco sobre a neve, que ofusca.", "Granizo e trovoada de inverno.", "Frio extremo: a água do cantil congela.", "Degelo rápido e lama até os joelhos.", "Noite clara com aurora no céu.",
+    ...MORE_WEATHER.Inverno!, ...EXTRA_WEATHER.Inverno!,
   ],
 }
 
@@ -274,6 +301,7 @@ export const ENCOUNTERS = [
   "Desmascarar um impostor na corte", "Atravessar o território de uma tribo desconfiada", "Recuperar o corpo de um herói caído", "Sobreviver a uma tempestade no topo da montanha", "Libertar prisioneiros de um acampamento",
   "Ganhar a confiança de um dragão jovem", "Seguir rastros numa nevasca", "Fazer as pazes entre duas aldeias", "Defender uma torre por uma noite", "Achar a nascente de um rio envenenado",
   "Roubar um livro de uma biblioteca vigiada", "Atravessar um deserto de sal", "Acompanhar uma procissão que atrai criaturas", "Consertar uma ponte sob ataque", "Sair de um sonho compartilhado",
+  ...MORE_ENCOUNTERS, ...EXTRA_ENCOUNTERS,
 ]
 
 export const TWISTS = [
@@ -283,6 +311,7 @@ export const TWISTS = [
   "O tesouro está amaldiçoado.", "O inimigo morreu há anos; alguém usa o nome dele.", "O nobre que ajuda é o culpado.", "A criatura é uma pessoa transformada.", "O resgate não quer ser resgatado.",
   "A ponte de volta foi destruída.", "Há outro grupo de aventureiros no mesmo trabalho.", "O deus local exige uma oferenda que ninguém quer dar.", "O livro de feitiços está incompleto.", "A carta foi escrita pelo próprio destinatário.",
   "O informante mentiu para proteger a família.", "O vilão tem razão em parte.", "O lugar é sagrado para outro povo.", "Um dos heróis já esteve aqui e não lembra.", "A chave abre outra porta.",
+  ...MORE_TWISTS, ...EXTRA_TWISTS,
 ]
 
 // ---------- Lugares ----------
@@ -292,6 +321,7 @@ export const PLACE_HEADS = [
   "Lagoa", "Serra", "Campo", "Forte", "Ermida", "Quinta", "Ribeira", "Outeiro", "Penha", "Passo",
   "Praia", "Ilha", "Cabo", "Baía", "Charneca", "Várzea", "Cova", "Gruta", "Barranco", "Planalto",
   "Abadia", "Cidadela", "Mosteiro", "Aldeia", "Encruzilhada", "Ruínas", "Floresta", "Pântano", "Desfiladeiro", "Atalaia",
+  ...MORE_PLACE_HEADS, ...EXTRA_PLACE_HEADS,
 ]
 
 export const PLACE_TAILS = [
@@ -299,6 +329,7 @@ export const PLACE_TAILS = [
   "do Sol Poente", "das Bruxas", "do Carvalho Partido", "das Viúvas", "do Dragão Adormecido", "da Neve Eterna", "dos Ventos", "do Ferro", "das Almas", "do Silêncio",
   "da Esperança", "do Último Passo", "das Rosas", "do Gigante", "das Lágrimas", "do Pescador", "da Coroa", "dos Anões", "do Espinho", "da Estrela Cadente",
   "dos Mil Degraus", "do Eco", "da Serpente", "das Velas", "do Juramento", "dos Corvos", "da Fome", "do Ouro Perdido", "das Fadas", "do Norte",
+  ...MORE_PLACE_TAILS, ...EXTRA_PLACE_TAILS, ...EXTRA2_PLACE_TAILS,
 ]
 
 // ---------- Itens mágicos ----------
@@ -307,6 +338,7 @@ export const MAGIC_ITEMS = [
   "Espada", "Adaga", "Lança", "Machado", "Arco", "Escudo", "Elmo", "Capa", "Anel", "Amuleto",
   "Bota", "Luva", "Cinto", "Cajado", "Varinha", "Lanterna", "Bússola", "Cálice", "Flauta", "Tambor",
   "Livro", "Espelho", "Coroa", "Máscara", "Corda", "Chave", "Frasco", "Dado", "Pena", "Sino",
+  ...MORE_MAGIC_ITEMS, ...EXTRA_MAGIC_ITEMS,
 ]
 
 export const MAGIC_POWERS = [
@@ -316,6 +348,7 @@ export const MAGIC_POWERS = [
   "que avisa quando há veneno por perto", "que guarda um feitiço para depois", "que deixa os passos em silêncio", "que muda de forma conforme a necessidade", "que chama uma rajada de vento",
   "que faz plantas crescerem ao redor", "que acalma qualquer fera", "que mostra lembranças de quem a tocou antes", "que congela a água que toca", "que esconde o dono de vidência",
   "que ilumina como o sol por um instante", "que devolve flechas a quem atirou", "que dá coragem a quem estiver perto", "que faz o dono entender sonhos", "que guarda o calor de uma fogueira",
+  ...MORE_MAGIC_POWERS, ...EXTRA_MAGIC_POWERS,
 ]
 
 export const MAGIC_QUIRKS = [
@@ -325,6 +358,7 @@ export const MAGIC_QUIRKS = [
   "Muda de cor conforme o humor do dono.", "Chora gotas de orvalho ao amanhecer.", "Só pode ser usada com a mão esquerda.", "Esquece o dono se ficar um dia longe dele.", "Assobia antes de uma tempestade.",
   "Escurece quando alguém morre perto.", "Deixa o dono com fome o tempo todo.", "Fica invisível quando ninguém olha.", "Pede uma moeda de ouro por uso.", "Tem ciúmes de outros itens mágicos.",
   "Range como uma porta velha.", "Faz o dono falar em rimas por uma hora.", "Pesa o dobro nas segundas.", "Mostra o reflexo de outra pessoa.", "Recusa-se a ser vendida.",
+  ...MORE_MAGIC_QUIRKS, ...EXTRA_MAGIC_QUIRKS,
 ]
 
 // ---------- Facções ----------
@@ -333,12 +367,14 @@ export const FACTION_NOUNS = [
   "Ordem", "Círculo", "Irmandade", "Liga", "Companhia", "Guilda", "Conclave", "Confraria", "Juramento", "Mão",
   "Véu", "Coroa", "Escudo", "Lâmina", "Chama", "Concílio", "Casa", "Pacto", "Legião", "Assembleia",
   "Fraternidade", "Sociedade", "Seita", "Aliança", "Vigília", "Guarda", "Corte", "Rede", "Sombra", "Família",
+  ...MORE_FACTION_NOUNS, ...EXTRA_FACTION_NOUNS,
 ]
 
 export const FACTION_EMBLEMS = [
   "da Rosa Negra", "do Olho Aberto", "das Mãos Limpas", "do Sol Cinzento", "da Última Vela", "do Corvo Branco", "dos Sete Selos", "da Âncora", "do Lobo Faminto", "da Chave de Prata",
   "do Punho de Ferro", "das Folhas Secas", "da Lua Partida", "do Cálice", "da Estrada Longa", "dos Sussurros", "da Pena Vermelha", "do Trono Vazio", "da Aurora", "da Serpente Dourada",
   "do Martelo", "das Correntes", "do Fogo Antigo", "da Torre Caída", "dos Esquecidos", "do Grifo", "da Coruja", "do Carvalho", "das Moedas", "da Maré",
+  ...MORE_FACTION_EMBLEMS, ...EXTRA_FACTION_EMBLEMS, ...EXTRA2_FACTION_EMBLEMS,
 ]
 
 export const FACTION_GOALS = [
@@ -348,6 +384,7 @@ export const FACTION_GOALS = [
   "registrar toda a história verdadeira", "abrir um portal para outro mundo", "manter a paz a qualquer custo", "eliminar os dragões restantes", "enriquecer os fundadores",
   "libertar um prisioneiro famoso", "fundar uma cidade nova", "proteger os viajantes da estrada", "recuperar terras tomadas", "despertar um gigante adormecido",
   "acabar com a guilda rival", "esconder uma criança escolhida", "reformar as leis do reino", "controlar as minas de prata", "vigiar os magos",
+  ...MORE_FACTION_GOALS, ...EXTRA_FACTION_GOALS,
 ]
 
 export const FACTION_METHODS = [
@@ -357,22 +394,25 @@ export const FACTION_METHODS = [
   "dívidas que nunca acabam", "duelos de honra", "intimidação aberta", "teatro e canções", "infiltração na guarda",
   "comércio de relíquias", "sabotagem", "votos em conselhos comprados", "redes de mendigos informantes", "monopólio de remédios",
   "rituais coletivos", "jornais clandestinos", "alianças com piratas", "torneios patrocinados", "bibliotecas secretas",
+  ...MORE_FACTION_METHODS, ...EXTRA_FACTION_METHODS,
 ]
 
 // ---------- Divindades ----------
 
-export const DEITY_SYLLABLES = ["ar", "bel", "cor", "dra", "el", "fen", "gal", "hor", "ir", "ka", "lum", "mor", "nai", "or", "pra", "qua", "ra", "sil", "tor", "ul", "val", "xa", "yr", "zar", "the", "mi", "an", "os", "ve", "lys"]
+export const DEITY_SYLLABLES = ["ar", "bel", "cor", "dra", "el", "fen", "gal", "hor", "ir", "ka", "lum", "mor", "nai", "or", "pra", "qua", "ra", "sil", "tor", "ul", "val", "xa", "yr", "zar", "the", "mi", "an", "os", "ve", "lys", ...MORE_DEITY_SYLLABLES, ...EXTRA_DEITY_SYLLABLES]
 
 export const DEITY_DOMAINS = [
   "das colheitas", "da guerra justa", "dos mares", "da morte serena", "dos viajantes", "do fogo da forja", "da lua", "dos segredos", "da cura", "das tempestades",
   "da sorte", "das fronteiras", "do vinho e das festas", "da memória", "dos ladrões", "das bibliotecas", "da caça", "dos juramentos", "do inverno", "das crianças",
   "da vingança", "dos sonhos", "das montanhas", "dos rios", "da música", "dos portões", "da loucura", "do amanhecer", "da justiça cega", "das estrelas",
+  ...MORE_DEITY_DOMAINS, ...EXTRA_DEITY_DOMAINS, ...EXTRA2_DEITY_DOMAINS,
 ]
 
 export const DEITY_SYMBOLS = [
   "uma espiga dourada", "uma espada quebrada", "uma onda com três cristas", "uma vela apagada", "uma sandália alada", "um martelo em brasa", "uma lua crescente", "uma chave fechada num olho", "uma mão aberta", "um raio sobre uma torre",
   "uma moeda girando", "um muro de pedra", "um cálice transbordando", "um nó sem fim", "uma máscara sorridente", "um livro aberto", "uma lança e um cervo", "duas mãos apertadas", "um floco de neve", "um berço",
   "uma adaga gotejando", "um olho fechado", "um pico nevado", "um peixe prateado", "uma lira", "um arco de pedra", "uma espiral", "um galo cantando", "uma balança vendada", "sete estrelas",
+  ...MORE_DEITY_SYMBOLS, ...EXTRA_DEITY_SYMBOLS,
 ]
 
 export const DEITY_TENETS = [
@@ -382,6 +422,7 @@ export const DEITY_TENETS = [
   "A vingança é um dever, não um prazer.", "Respeite as fronteiras dos outros.", "Não acumule mais do que pode carregar.", "Cante para os que partem.", "Perdoe três vezes; na quarta, lute.",
   "Não toque em ouro de túmulo.", "Acenda uma vela por quem morreu sozinho.", "Siga a estrada até o fim.", "A loucura também é uma forma de verdade.", "Não feche portas para sempre.",
   "Honre o trabalho das mãos.", "Proteja as crianças dos outros como as suas.", "Não faça promessas de noite.", "Respeite a água: ela lembra.", "Aceite o destino, mas negocie.",
+  ...MORE_DEITY_TENETS, ...EXTRA_DEITY_TENETS,
 ]
 
 // ---------- Masmorras ----------
@@ -395,6 +436,7 @@ export const DUNGEON_ROOMS = [
   "Um depósito de barris de vinho", "Um mausoléu de anões", "Uma sala com um mapa enorme no chão", "Um corredor estreito que desce sem fim", "Uma câmara circular com sete portas",
   "Uma estufa de plantas carnívoras", "Uma sala de aula com quadros-negros rabiscados", "Um ninho de criatura grande", "Uma sala do tesouro já esvaziada", "Uma câmara de rituais com círculo pintado",
   "Uma oficina de relojoeiro", "Um salão de guardas com a mesa posta", "Uma passagem secreta atrás de uma lareira", "Uma gruta natural com um lago escuro", "Uma sala com o chão de areia movediça",
+  ...MORE_DUNGEON_ROOMS, ...EXTRA_DUNGEON_ROOMS,
 ]
 
 export const DUNGEON_FEATURES = [
@@ -406,6 +448,7 @@ export const DUNGEON_FEATURES = [
   "Uma voz chama um dos heróis pelo nome.", "Pétalas cobrem o chão.", "Há sinais de acampamento recente.", "Uma fonte jorra vinho.", "O teto é baixo demais para ficar em pé.",
   "As sombras se mexem um pouco atrasadas.", "Há um baú com fechadura de enigma.", "Raízes atravessam as paredes.", "Um quadro mostra a própria sala no futuro.", "Há gravetos arrumados para uma fogueira.",
   "Uma porta tem uma maçaneta de cada lado.", "O chão tem placas de pressão visíveis.", "Há inscrições em três idiomas.", "Uma armadura vazia está sentada à mesa.", "A luz vem de cogumelos no teto.",
+  ...MORE_DUNGEON_FEATURES, ...EXTRA_DUNGEON_FEATURES,
 ]
 
 export const DUNGEON_DANGERS = [
@@ -415,6 +458,7 @@ export const DUNGEON_DANGERS = [
   "um ogro dormindo", "fogo que sai do chão", "uma ilusão de saída", "um golem de barro", "um enxame de besouros carniceiros",
   "um fantasma que imita vozes", "uma maldição ao pegar o ouro", "uma escada que leva sempre ao mesmo lugar", "um troll ferido e furioso", "uma criatura que vê pelo som",
   "pedras que rolam pela rampa", "um portal instável", "uma serpente gigante no lago", "fungos que soltam esporos alucinógenos", "nada: o perigo está na próxima sala",
+  ...MORE_DUNGEON_DANGERS, ...EXTRA_DUNGEON_DANGERS,
 ]
 
 // ---------- Lendas ----------
@@ -426,6 +470,7 @@ export const LEGEND_SUBJECTS = [
   "Uma rainha que jogou xadrez com a morte", "Um bardo cuja canção parou uma guerra", "Uma montanha que já foi gigante", "Um espelho que prendeu um deus", "Uma estrada que nunca termina",
   "Um menino que conversava com o vento", "Um tesouro que só aparece em eclipses", "Uma torre que cresce a cada mentira", "Um povo que vive debaixo do rio", "Um juramento feito no fim do mundo",
   "Uma flor que nasce uma vez por século", "Um exército que dorme sob a colina", "Um pássaro de fogo que renasce na cinza", "Uma biblioteca guardada por esfinges", "Um cometa que traz um novo deus",
+  ...MORE_LEGEND_SUBJECTS, ...EXTRA_LEGEND_SUBJECTS,
 ]
 
 export const LEGEND_TRUTHS = [
@@ -435,6 +480,7 @@ export const LEGEND_TRUTHS = [
   "Um objeto da lenda está à venda no mercado.", "Contar a lenda inteira traz azar.", "Ela só é contada a crianças em noites de lua nova.", "Os elfos riem de quem acredita nela.", "A última vez que alguém investigou, não voltou.",
   "A lenda tem um enigma escondido no texto.", "A música da lenda é proibida na capital.", "Um cronista jura ter visto o fim da história.", "O nome do herói foi apagado de propósito.", "A lenda é uma profecia que ainda não aconteceu.",
   "Os dados não batem: alguém mudou a data.", "Ela começou como piada de taverna.", "Há um túmulo com o nome do protagonista.", "Um animal da lenda foi visto este ano.", "Ninguém sabe; e isso é o mais perigoso.",
+  ...MORE_LEGEND_TRUTHS, ...EXTRA_LEGEND_TRUTHS,
 ]
 
 // ---------- Mercadores ----------
@@ -448,6 +494,7 @@ export const MERCHANT_WARES = [
   "lanternas de papel", "selas de couro trabalhado", "fechaduras impossíveis de abrir", "cartas de tarô pintadas à mão", "ossos de criaturas para alquimia",
   "queijos que andam sozinhos", "mel de abelhas gigantes", "facas de cozinha encantadas", "roupas que mudam com a estação", "bússolas para lugares específicos",
   "sabões de cheiro forte", "moedas antigas para colecionadores", "venenos (só para ratos, ele jura)", "estátuas pequenas de deuses", "segredos, vendidos ao pé do ouvido",
+  ...MORE_MERCHANT_WARES, ...EXTRA_MERCHANT_WARES,
 ]
 
 export const MERCHANT_QUIRKS = [
@@ -457,4 +504,5 @@ export const MERCHANT_QUIRKS = [
   "dá conselhos de vida junto com o troco", "vende mais barato em dia de chuva", "tem um cão que morde caloteiros", "está apaixonado por uma cliente", "conhece todas as estradas secretas",
   "é na verdade um nobre disfarçado", "sempre diz que é a última unidade", "carrega a loja nas costas", "não vende para elfos", "garante tudo, mas nunca está no mesmo lugar duas vezes",
   "quer comprar algo que os heróis carregam", "paga bem por notícias", "tem uma filha que faz as contas", "conta histórias de terror para os clientes", "aceita apostas no preço",
+  ...MORE_MERCHANT_QUIRKS, ...EXTRA_MERCHANT_QUIRKS,
 ]

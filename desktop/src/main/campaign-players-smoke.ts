@@ -52,6 +52,8 @@ export const CAMPAIGN_PLAYERS_SMOKE = `
   const edited = await bridge.vault.read([homePath, heroPath])
   result.campaignPlayers.changedPlayer = edited[homePath]?.includes("Bia do smoke") && edited[heroPath] === created[heroPath]
   document.querySelector("[aria-label='Desvincular Herói da wiki do smoke da campanha']")?.click()
+  // Desvincular pede confirmação no próprio cartão.
+  ;(await until(() => [...(cast()?.querySelectorAll("button") ?? [])].find(b => b.textContent.trim() === "Confirmar")))?.click()
   await until(() => cast()?.children.length === originalCount)
   const unlinked = await bridge.vault.read([homePath, heroPath])
   result.campaignPlayers.unlinked = cast()?.children.length === originalCount && !unlinked[homePath]?.includes(heroPath.replace(/\\.md$/, "")) && unlinked[heroPath] === created[heroPath]

@@ -173,3 +173,9 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
 .a11y-group + .a11y-group { margin-top:8px; }
 .settings-card-head:has(.settings-card-title) { flex-wrap:wrap; }
 .settings-card-title { display:inline-flex;align-items:center;gap:8px;margin:0;overflow-wrap:normal; }
+
+/* T7 (revisão 1.0): no celular, caixas e botões de opção com 24 px e a trilha “Você está em” com altura de toque. */
+@media (max-width: 860px) {
+  :is(input[type="checkbox"], input[type="radio"]):not(.kit-choice input) { min-width: 24px; min-height: 24px; }
+  .crumbs a { display: inline-flex; align-items: center; min-height: 44px; }
+}

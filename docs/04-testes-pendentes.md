@@ -1089,6 +1089,45 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] A sala Android: repetir a entrada do jogador e conferir que o selo “Jogador 1” aparece após a conexão.
 
 
+## Wiki: geradores ×100, nomes por cultura e Ferramentas refeitas
+
+- [ ] Wiki › Ferramentas: os geradores aparecem em quatro grupos (Pessoas, Lugares, Enredo, Mundo) e as tabelas
+  `runas-tabela` dos artigos aparecem em “Tabelas da wiki”; rolar uma tabela que aponta outra rola as duas.
+- [ ] Nome, NPC, Mercador e Aventura: trocar a cultura (27 culturas, inclusive Japonesa e Chinesa com o sobrenome
+  antes, Nórdica e Árabe com patronímico, Tupi e Nahuatl sem sobrenome, Élfica, Anã e Órquica) e o gênero; a escolha
+  fica lembrada ao voltar à tela.
+- [ ] “Quantos: 5 / 10” mostra a lista numerada; “Usar” leva o resultado para o editor, “Copiar” copia e “Guardar na
+  wiki” cria a nota em Geradores/ com o nome sugerido. “Recentes” traz de volta um resultado anterior.
+- [ ] No celular (320 px): a lista de ferramentas vira o seletor “Ferramenta”, os botões têm 44 px e não há rolagem
+  para os lados; temas escuro e claro.
+- [ ] Gerar várias vezes cada gerador: resultados variados, sem frases repetidas visíveis.
+
+
+## T6 — 10 mil notas sem travar
+
+- [ ] No navegador, abrir `http://localhost:5180/?cofre-grande=10000` (ou um cofre real grande no desktop) e conferir
+  Notas: a pasta Grande mostra 200 notas e “Mostrar mais 200 de … restantes”; abrir uma nota lá do fim pela busca
+  deixa a lista mostrando até ela.
+- [ ] Digitar na busca das notas sem a tela travar; limpar a busca volta à árvore na hora.
+- [ ] Gráfico global com 10 mil notas num computador com placa de vídeo e no celular: aparece em poucos segundos,
+  enquadrado, e o arrastar e o zoom respondem; com o cofre de exemplo o gráfico continua igual a antes.
+- [ ] Pastas fechadas abrem e fecham normalmente, inclusive arrastando notas para dentro delas.
+
+
+## R1 e T7 — revisão para a 1.0 e defeitos de tela
+
+- [ ] Ler `docs/tarefas/revisao-1.0.md` e decidir a ordem do que ficou aberto (D11, D13 e a revisão das Campanhas).
+- [ ] Notas com várias abas: clicar no nome troca de aba, “Fechar” e “Ações da aba” continuam funcionando, o botão do
+  meio fecha e arrastar reordena; com o teclado, Tab passa por nome, ações e fechar de cada aba.
+- [ ] Árvore das Notas: os botões da pasta (Exportar, Aparência, Favoritar, Nova nota, Renomear) aparecem no hover e
+  com o foco na pasta; no celular ficam sempre à vista sem cobrir o nome.
+- [ ] Notas › Gráfico › Configurar: o painel abre abaixo da barra, sem cobrir o botão que o fecha, mesmo depois de
+  visitar a Wiki.
+- [ ] Wiki › Calendário no tema claro: as luas aparecem com um ponto colorido e o texto legível.
+- [ ] No celular: caixas de seleção de Importar e exportar, Linha do tempo e segredos da campanha com 24 px; a trilha
+  “Você está em” fácil de tocar.
+- [ ] Conferências que a R1 não fez por falta de ambiente: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %,
+  Android físico, sala com dois aparelhos, impressão e o smoke `--write` no CI.
 ## T1 — backups agendados (29/10/2026)
 
 - [ ] Configurações › Backups no computador: mudar o **Horário** para dali a dois minutos e deixar o app aberto (ou
@@ -1131,3 +1170,36 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Tokens em lote: com uma cena aberta, importar uma lista `.json` (exemplo na Ajuda › Mesa): os tokens aparecem
   na cena; sem cena aberta, o diálogo pede para abrir uma.
 - [ ] Celular (320 px) e tema claro: o diálogo cabe na tela, com Cancelar e Importar visíveis acima da barra inferior.
+
+
+## Campanhas: correções da revisão, Elenco (T9) e mapa de missões
+
+- [ ] Sessão com evento na Agenda: mudar a data e a hora no painel da sessão muda também o evento; “Remarcar” do aviso
+  de sessão atrasada leva ao mesmo campo. Nota da sessão com texto (“ótima”) mostra o aviso e não grava.
+- [ ] Sessões: “Próximas” e “Jogadas”; a busca aparece com mais de 5 sessões; “Usar na Recapitulação” com o resumo da
+  anterior.
+- [ ] Missões no computador: “Mover para” em cada cartão, pelo teclado; arrastando, a coluna de destino fica tracejada.
+- [ ] Painel: “+N” quando passa de 6 missões ativas ou NPCs; apagar relógio pede “Apagar?”; Linhas e Véus com o botão
+  Acrescentar; segredos escondidos lembrados ao voltar.
+- [ ] Ferramentas: − e + na quantidade do tesouro; “Remover” pede confirmação; ícone novo da aba (também na Wiki).
+- [ ] Elenco com muitos NPCs: busca, filtros, agrupar, ordem e “Mostrar mais”; marcar e desmarcar “Apareceu” e conferir
+  `(hostil, apareceu)` na nota da campanha no Obsidian; “Novo NPC” cria o artigo e já entra no Elenco; no celular,
+  “Filtros e grupos” recolhido.
+- [ ] Mapa de missões: nova missão com “Parte de” e “Depende de”; ver no Mapa e na Árvore; a corrente grava `parte_de`;
+  “Gerar no Quadro” cria `Mapa de missões.canvas`, abrir no Obsidian, acrescentar um cartão, gerar de novo e conferir
+  que o cartão continua.
+- [ ] Ferramentas › Nova aventura: escolher cada estrutura, sortear o gancho e uma cena, criar; conferir no Mapa o arco
+  e as setas (investigação: pistas abertas → esconderijo → confronto) e, no Obsidian, `parte_de` e `requer` nas notas.
+- [ ] Na nota de uma sessão, clicar num link para uma nota que não existe: “Novo NPC” abre com o nome; criar como NPC
+  (entra no Elenco, marcado como “apareceu”) e como Lugar.
+- [ ] Sessões: o “Diário dos jogadores” aparece no fim quando há entradas guardadas pela sala.
+- [ ] Wiki › Ferramentas com o dobro de opções (19.412) e 43 culturas: conferir as culturas novas (coreana com o
+  sobrenome antes, finlandesa, húngara com o sobrenome antes, holandesa com “van”/“de”, armênia, georgiana, etíope
+  com o nome do pai, havaiana, inuíte, quíchua e mesopotâmica sem sobrenome, e as inventadas halfling, gnoma,
+  dracônica, infernal e feérica) e gerar várias vezes NPC, taverna, rumor e sala de masmorra.
+
+
+## Versão 0.1.0-beta.22 (30/10/2026)
+
+- [ ] Atualizar da beta.21 para a beta.22 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre, PIN e preferências.
+- [ ] Conferir T1 a T4 (Backups, Cópias de conflito, atalho da captura rápida, importar na mesa) e as seções acima desta: geradores e culturas, T6, R1/T7 e Campanhas.

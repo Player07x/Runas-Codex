@@ -37,9 +37,13 @@ a facção. **Abrir na Wiki** leva ao artigo; **Tirar da campanha** só deixa de
 - **Iniciativa presencial**: ordem de turnos e rodadas para jogar na mesa física; um bloco `runas-encontro` monta a
   lista.
 - **Linhas** e **Véus**: os limites combinados com o grupo; a carta X manda um sinal anônimo pela sala.
-- **Gerador de aventuras**: gancho, lugar, NPC, encontro, reviravolta e recompensa; guarde como nota da campanha.
+- **Nova aventura**: escolha uma estrutura (masmorra em cinco salas, três atos, investigação com três pistas, roubo
+  ou exploração), dê título, gancho e objetivo (o dado sorteia) e ajuste as cenas. O app cria o arco e uma missão por
+  cena, já ligadas no **mapa de missões**.
 - **Atividades pela sala**: **Avaliação da sessão** (formulário anônimo), **Enquete de data** e o **Diário dos
-  jogadores** (entradas que os jogadores mandam pela sala ficam no cofre).
+  jogadores** (as entradas guardadas aparecem no fim da aba **Sessões**).
+- **Criar a partir do link**: na nota da sessão, clicar num link para algo que ainda não existe (`[[Capitã Brites]]`)
+  abre “Novo NPC”: escolha se é NPC, lugar, facção ou item; o NPC já entra no Elenco.
 - **Estatísticas**: sessões, horas jogadas e presença.
 - **Exportar diário**: Markdown, PDF ou HTML para entregar aos jogadores (com ou sem segredos).
 
@@ -53,3 +57,25 @@ e **Notas fixadas** (as notas que você quer à mão, como tabelas e regras). No
 
 **⋯ › Personalizar esta campanha…**: cor, ícone e imagem de capa. A cor aparece nos cartões, nas sessões e nos
 eventos da Agenda.
+
+### Elenco com muitos NPCs
+
+Busque pelo nome, local ou facção; filtre **Todos / Apareceram / Ainda não** e pela atitude; agrupe por local, facção,
+atitude ou situação. **Apareceu** é marcado sozinho quando uma nota de sessão tem link para o NPC; o botão marca à mão
+quem apareceu sem link. A marca fica na nota da campanha, junto da atitude: `npcs: ["[[Conde Ormund]] (hostil,
+apareceu)"]`. **Novo NPC** cria o artigo na wiki e já põe no Elenco.
+
+### Mapa de missões
+
+Em **Missões › Mapa**, cada **arco** (uma missão-mãe) aparece como um grupo com as missões dele em colunas: a missão
+que **depende** de outra fica à direita, ligada por uma seta. Borda tracejada quer dizer **bloqueada** (algum
+pré-requisito ainda não foi concluído). **Árvore** mostra o mesmo como lista. Na nota da missão:
+
+```yaml
+parte_de: "[[O Selo do Conde]]"
+requer: ["[[Falar com Yara]]", "[[Achar o mapa]]"]
+```
+
+Sem `parte_de`, a ordem decide: a `2.1` fica dentro da `2` (o botão de corrente no cartão grava a ligação). **Gerar no
+Quadro** cria ou atualiza `Mapa de missões.canvas`, que abre igual no Obsidian; o que você acrescentar no quadro
+continua quando ele for atualizado.
