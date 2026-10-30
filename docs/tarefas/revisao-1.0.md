@@ -48,8 +48,8 @@ critério de [`docs/ux-ui-acessibilidade.md`](../ux-ui-acessibilidade.md).
 | Leitores de tela reais (Orca, NVDA, TalkBack) | não verificado por falta de ambiente | |
 | Texto a 85/100/140 % e redução de movimento | passou a 140 % no Android (emulador) | Texto do sistema a 140 %: nenhuma rolagem lateral nem erro. 85 % e redução de movimento: não verificado. |
 | Android no emulador: 47 telas em 411 px (claro e escuro), 320 px, deitado e texto a 140 % | passou | Seção “Android no emulador”, abaixo. axe sem violações nas passadas com axe. |
-| Android: botão voltar do sistema | defeito reproduzido → **corrigido** | D16 (não é tela: vai para a R2). |
-| Android: teclado sobre o editor | ver a seção “Android no emulador” | |
+| Android: botão voltar do sistema | defeito reproduzido → **corrigido e conferido** | D16 (não é tela: R2). Depois da correção, voltar da nota leva à lista. |
+| Android: teclado sobre o editor | passou | Um toque no texto abre o teclado; a linha do cursor fica acima dele (277 px numa área visível de 376 px). |
 | Android: cofre de 10 mil notas (R3) | passou | Números na ADR 0030. |
 | Android: sala pela internet (R4) | passou | O emulador abre o link público e o runner do CI abre a sala por ele. |
 | Android físico: SAF, permissões, entalhes, tela dividida, anexos, lembretes, widget | não verificado por falta de aparelho | O SAF e as permissões têm smoke próprio no CI (`android-vault`). |
