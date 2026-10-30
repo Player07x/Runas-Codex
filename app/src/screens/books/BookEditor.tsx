@@ -181,14 +181,14 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     {focus ? (
       <header className="book-bar book-focus-bar">
         <button type="button" className="btn sm" onClick={() => setFocus(false)}><Minimize2 size={16} /> Sair do foco</button>
-        <div className="doc-title"><strong>{current?.name}</strong></div>
+        <div className="doc-title"><h1>{current?.name}</h1></div>
         <div className="doc-end"><div className="book-slot" ref={setChapterSlot} /></div>
       </header>
     ) : (
       <header className="book-bar">
         <button type="button" className="btn ghost book-back" onClick={() => navigate("/livros")} aria-label="Voltar aos livros"><ChevronLeft size={16} /><span>Livros</span></button>
         <div className="book-slot" ref={setBinderSlot} />
-        <div className="doc-title"><small>Livro</small><strong>{book.name}</strong></div>
+        <div className="doc-title"><small>Livro</small><h1>{book.name}</h1></div>
         <Segmented<View> label="Modo do livro" value={view} onChange={setView} options={views} />
         <div className="doc-end">
           {view === "escrever" && <div className="book-slot" ref={setChapterSlot} />}

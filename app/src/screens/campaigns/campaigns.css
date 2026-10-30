@@ -207,6 +207,18 @@
 .campaign-roster-list { display: grid; margin: 0; padding: 0; list-style: none; }
 .campaign-roster-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: calc(13px * var(--font-scale, 1)); }
 .campaign-roster-row:first-child { border-top: 0; }
+/* Grade do Elenco (E1): cartões com a imagem do artigo, como nas categorias da Wiki. */
+.campaign-roster-count { flex-wrap: wrap; gap: 8px; }
+.campaign-roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.campaign-npc-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; font-size: calc(13px * var(--font-scale, 1)); }
+.campaign-npc-card:hover { border-color: var(--line-strong); }
+.campaign-npc-card-head { display: grid; gap: 8px; color: var(--text); text-decoration: none; }
+.campaign-npc-card-head strong { padding: 0 12px; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.35; overflow-wrap: anywhere; }
+a.campaign-npc-card-head:hover strong { text-decoration: underline; }
+.campaign-npc-card-body { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: 2px 12px 12px; min-width: 0; }
+.campaign-npc-card-controls { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.campaign-npc-card-controls .campaign-attitude { flex: 1 1 100%; min-width: 0; }
+.campaign-npc-card-controls .campaign-appeared { flex: 1 1 auto; justify-content: center; }
 .campaign-roster-name { display: grid; min-width: 0; flex: 1 1 160px; }
 .campaign-roster-name a { color: inherit; }
 .campaign-appeared { gap: 4px; min-height: 30px; cursor: pointer; }
@@ -215,6 +227,10 @@
   .campaign-roster-tools > * { flex: 1 1 100%; }
   .campaign-roster-row .campaign-attitude { flex: 1 1 auto; }
   .campaign-appeared, .campaign-roster-tools .select { min-height: 44px; }
+  .campaign-roster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .campaign-npc-card-body { padding: 2px 9px 9px; }
+  .campaign-npc-card-head strong { padding: 0 9px; }
+  .campaign-roster-count .btn { min-height: 44px; }
 }
 /* Cabeçalhos dos cartões: no celular os botões descem inteiros em vez de quebrar o texto (“Personag/em”). */
 .campaign-page .card > .row.between { flex-wrap: wrap; gap: 8px; }

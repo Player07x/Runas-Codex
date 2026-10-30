@@ -6,7 +6,8 @@
 .doc-bar { z-index: 46; gap: 10px; }
 .doc-title { display: grid; flex: 1 1 120px; min-width: 0; line-height: 1.25; }
 .doc-title small { overflow: hidden; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
-.doc-title strong { overflow: hidden; font-size: calc(15px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.doc-title strong, .doc-title h1 { overflow: hidden; font-size: calc(15px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.doc-title h1 { margin: 0; font-family: inherit; font-weight: 700; line-height: inherit; letter-spacing: normal; }
 .doc-end { display: flex; flex-shrink: 0; align-items: center; gap: 6px; }
 .doc-notice { padding: 10px 14px 0; }
 @media (max-width: 860px) {

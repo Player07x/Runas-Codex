@@ -573,6 +573,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       </ResizablePanel>
 
       <section className={`pane-center ${graph ? "graph" : "tabs-host"}`}>
+        {/* Com uma nota aberta, o h1 é o nome dela (NoteView); sem nota, o da tela. */}
+        {!path && <h1 className="sr-only">{graph ? "Gráfico das notas" : "Notas"}</h1>}
         {graph ? (
           <GraphPage index={index} root={root} version={vault.version} onBroken={(target) => openBroken(target)} />
         ) : path && !index.hasFile(path) ? (
