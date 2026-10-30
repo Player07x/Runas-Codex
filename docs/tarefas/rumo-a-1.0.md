@@ -332,3 +332,17 @@ botão, alinhado à direita (`align="end"`), e o `.book-side-panel` (`app/src/sc
 janela, acompanha a rolagem e mantém o foco e o teclado de hoje. Isso resolve o U2, o U5 e qualquer outro menu ⋯ dentro de
 um contêiner que corta (painéis, cartões, listas com rolagem). Conferir os menus do Elenco, da prévia, das abas das notas,
 dos cartões da Wiki e das mesas do VTT, em 320 px e no computador.
+
+### U6 — A ordem e os filtros da categoria da Wiki voltam ao padrão ao trocar de página
+
+Relato do dono (30/10, com captura de Personagens em “Editados por último”): ao sair da categoria e voltar, a **Ordem**
+volta para “Nome (A–Z)” e os filtros escolhidos se perdem. Causa: em `app/src/screens/wiki/WikiCategory.tsx`, a ordem, os
+filtros de campo e a subpasta vivem só no estado da tela (`useState`); só a Grade/Lista é lembrada
+(`runas-codex:wiki-categoria-modo`). O que fazer:
+
+- Lembrar, **por categoria**, a ordem, os filtros de campo e a subpasta no `localStorage`
+  (`runas-codex:wiki-categoria:<pasta>`, regra 5 do AGENTS.md: preferência de tela não vai para o cofre). A busca de texto
+  pode continuar começando vazia.
+- “Limpar filtros” limpa também o que foi lembrado; um filtro cujo campo saiu da categoria é ignorado (como hoje).
+- Conferir o mesmo no Elenco das campanhas (agrupamento e ordem já são lembrados; a situação e a atitude, não) e nas
+  outras listas com ordem (sessões, missões), para o comportamento ser igual em todo o app.
