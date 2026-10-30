@@ -312,8 +312,9 @@ Relato do dono (30/10, com duas capturas, painel aberto e recolhido):
   nome cortado em reticências (endereço inteiro no `title`) e a data sem encolher.
 - **Painel “Detalhes da sala”:** o cabeçalho do painel e os cartões não ficam alinhados com o cartão do link, e sobra um
   vão grande à direita; recolhido, o botão de abrir fica solto num quadrado à parte e o cartão do link não ocupa o espaço
-  liberado. Rever o `join-layout` (grade com o cartão em `1fr` e o painel no tamanho dele) e usar o mesmo padrão de
-  painel das outras telas com `ResizablePanel`.
+  liberado. Causa: `.join-layout` (`app/src/screens/vtt/vtt.css`) fixa a coluna do painel em `320px`, mas o painel é
+  redimensionável (na captura estava com ~400 px e transbordava) e, recolhido, deixa a coluna de 320 px vazia. Usar
+  `minmax(0, 1fr) auto` (o painel no tamanho dele) e conferir o `max-width: 960px` da grade.
 - **Dicas:** os ícones (Wi-Fi e link) desalinham quando o texto quebra em duas linhas; o ícone não pode encolher
   (`flex: none`) e a linha alinha pelo topo.
 - Conferir em 320 px, tablet e computador, nos dois temas, com e sem salas recentes.
