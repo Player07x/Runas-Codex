@@ -71,6 +71,8 @@ public final class RoomHttpServer implements AutoCloseable {
   private final Files files;
   private final String key;
   private final ServerSocket listener;
+  /** Domínio do túnel público (`abc.trycloudflare.com`) enquanto ele estiver de pé; R4, ADR 0032. */
+  private volatile String tunnelHost;
   private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
   private final Set<Client> clients = ConcurrentHashMap.newKeySet();
   private volatile Set<String> assets = Collections.emptySet();
@@ -214,16 +216,26 @@ public final class RoomHttpServer implements AutoCloseable {
           throw new IOException("Cabeçalho repetido.");
       }
       String host = headers.getOrDefault("host", "");
-      if (!validHost(host, port())) {
+      // Pelo túnel, o pedido chega do próprio aparelho (o cloudflared) com o domínio público no Host.
+      boolean tunneled = tunneled(socket.getInetAddress(), host, tunnelHost);
+      if (!tunneled && !validHost(host, port())) {
         respond(out, 403, "text/plain", new byte[0], false, headers());
         return;
       }
       URI uri = URI.create(request[1]);
       String path = uri.getPath();
       boolean authorized = key.equals(query(uri, "k"));
-      boolean origin = validOrigin(headers.get("origin"), host);
+      boolean origin =
+          tunneled
+              ? validTunnelOrigin(headers.get("origin"), host)
+              : validOrigin(headers.get("origin"), host);
+      String address = clientAddress(socket.getInetAddress(), headers, tunneled);
       if (path.equals("/master") || path.startsWith("/master/")) {
-        String address = socket.getInetAddress().getHostAddress();
+        // O mestre pelo navegador continua só na rede local (ADR 0024).
+        if (tunneled) {
+          respond(out, 404, "text/plain", new byte[0], false, headers());
+          return;
+        }
         if (blocked(address, false)) {
           respond(out, 429, "application/json", new byte[0], false, headers("Retry-After", "60"));
           return;
@@ -256,7 +268,7 @@ public final class RoomHttpServer implements AutoCloseable {
           respond(out, 403, "text/plain", new byte[0], false, headers());
           return;
         }
-        if (blocked(socket.getInetAddress().getHostAddress(), false)) {
+        if (blocked(address, false)) {
           respond(
               out,
               429,
@@ -275,7 +287,7 @@ public final class RoomHttpServer implements AutoCloseable {
         Joined joined =
             authority.join(new String(readExactly(in, (int) length), StandardCharsets.UTF_8));
         if (joined == null) {
-          blocked(socket.getInetAddress().getHostAddress(), true);
+          blocked(address, true);
           respond(
               out,
               401,
@@ -414,6 +426,30 @@ public final class RoomHttpServer implements AutoCloseable {
 
   private static boolean validOrigin(String origin, String host) {
     return origin == null || origin.equals("http://" + host);
+  }
+
+  void tunnelHost(String host) {
+    tunnelHost = host == null ? null : host.toLowerCase(Locale.ROOT);
+  }
+
+  static boolean tunneled(InetAddress peer, String host, String tunnelHost) {
+    return tunnelHost != null
+        && peer.isLoopbackAddress()
+        && host.toLowerCase(Locale.ROOT).equals(tunnelHost);
+  }
+
+  static boolean validTunnelOrigin(String origin, String host) {
+    return origin == null || origin.equalsIgnoreCase("https://" + host);
+  }
+
+  /**
+   * Quem está do outro lado, para o limite de tentativas. `cf-connecting-ip` só vale pelo túnel: na rede local
+   * qualquer um poderia inventar o cabeçalho.
+   */
+  static String clientAddress(InetAddress peer, Map<String, String> headers, boolean tunneled) {
+    String forwarded = headers.get("cf-connecting-ip");
+    if (tunneled) return forwarded == null || forwarded.isEmpty() ? "tunel" : forwarded;
+    return peer.getHostAddress();
   }
 
   static Map<String, String> headers(String... pairs) {

@@ -81,3 +81,5 @@ try {
 gradle.taskGraph.whenReady { graph ->
     if (updateTest && graph.allTasks.any { it.name.toLowerCase().contains('release') }) throw new GradleException('Não gere release com o modo de teste do atualizador.')
 }
+
+apply from: 'cloudflared.gradle'

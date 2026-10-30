@@ -11,6 +11,10 @@ const native = vi.hoisted(() => ({
   masterDisconnect: vi.fn(async () => ({ key: "a".repeat(32), connected: false })),
   masterEmit: vi.fn(async (_value: { channel: string; payload: unknown }) => undefined),
   openUrl: vi.fn(async () => undefined),
+  tunnelStart: vi.fn(async () => ({ url: "https://mesa-de-teste.trycloudflare.com", location: "gru01", protocol: "http2" })),
+  tunnelStop: vi.fn(async () => undefined),
+  tunnelTest: vi.fn(async (): Promise<unknown> => { throw new Error("Gere o link público primeiro.") }),
+  tunnelAvailable: vi.fn(async () => ({ available: false })),
   addListener: vi.fn(async (name: string, callback: (event: unknown) => void) => {
     native.callbacks.set(name, callback)
     return { remove: async () => undefined }
@@ -153,8 +157,20 @@ describe("ponte da sala Android", () => {
     await api.player.start()
     native.callbacks.get("stopped")!({ enabled: false })
     await vi.waitFor(async () => expect((await api.player.state()).enabled).toBe(false))
-    await expect(api.player.publicLink()).rejects.toThrow("rede local")
-    await expect(api.player.testPublicLink()).rejects.toThrow("ainda não está disponível")
-    await expect(api.player.downloadCloudflared()).rejects.toThrow("ainda não está disponível")
+    await expect(api.player.publicLink()).rejects.toThrow("Abra a sala primeiro")
+    await expect(api.player.testPublicLink()).rejects.toThrow("Gere o link público primeiro")
+    await expect(api.player.downloadCloudflared()).rejects.toThrow("não está disponível neste aparelho")
+  })
+  it("abre o link público pelo túnel do APK com a chave da sala e avisa quando ele cai", async () => {
+    const { api } = fixture(),
+      world = await api.createWorld({ title: "Mesa" })
+    await api.openWorld(world.id)
+    const started = await api.player.start()
+    const link = await api.player.publicLink()
+    expect(link).toBe(`https://mesa-de-teste.trycloudflare.com/?k=${started.key}`)
+    expect(await api.player.state()).toMatchObject({ publicUrl: link, tunnel: { location: "gru01", protocol: "http2" }, tunnelLost: false })
+    native.callbacks.get("tunnel-lost")!({})
+    expect(await api.player.state()).toMatchObject({ publicUrl: null, tunnelLost: true })
+    await api.player.stop()
   })
 })

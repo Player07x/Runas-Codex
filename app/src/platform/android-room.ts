@@ -3,7 +3,7 @@ import { sha256 } from "@noble/hashes/sha256"
 import { bytesToHex } from "@noble/hashes/utils"
 import type { Platform } from "./platform"
 import type { AudioState } from "../vtt/shared/audio"
-import { IPC, type DocumentChange, type PlayerState, type VttApi } from "../vtt/shared/ipc"
+import { IPC, type DocumentChange, type LinkTestResult, type PlayerState, type VttApi } from "../vtt/shared/ipc"
 import type { PlayerWireMessage } from "../vtt/shared/player"
 import { PortableWorldStore } from "../vtt/shared/portable-world-store"
 import { RoomAuthority } from "../vtt/shared/room-authority"
@@ -37,6 +37,12 @@ interface RoomPlugin {
   addListener(event: "request", listener: (request: NativeRequest) => void): Promise<PluginListenerHandle>
   addListener(event: "counts", listener: (counts: { players: number; spectators: number }) => void): Promise<PluginListenerHandle>
   addListener(event: "stopped", listener: () => void): Promise<PluginListenerHandle>
+  /** Link público pela Cloudflare (R4, ADR 0032): o `cloudflared` vem no APK. */
+  tunnelStart(): Promise<{ url: string; location: string | null; protocol: string | null }>
+  tunnelStop(): Promise<void>
+  tunnelTest(): Promise<LinkTestResult>
+  tunnelAvailable(): Promise<{ available: boolean }>
+  addListener(event: "tunnel-lost", listener: () => void): Promise<PluginListenerHandle>
 }
 const native = registerPlugin<RoomPlugin>("RunasRoom")
 
@@ -217,8 +223,22 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     await authority.closeWorld()
     await store.close()
   }
-  const unsupported = async (): Promise<never> => {
-    throw new Error("O link público pela internet ainda não está disponível no Android; compartilhe a sala pela rede local (Wi-Fi ou ponto de acesso).")
+  // O processo do túnel morreu sozinho: o painel avisa que o link público caiu.
+  void native.addListener("tunnel-lost", () => { if (authority.isEnabled) authority.markTunnelLost() })
+  /** Pedido do mestre: abre o túnel e monta o link dos jogadores com a chave da sala, como no desktop. */
+  const publicLink = async (): Promise<string> => {
+    const key = authority.currentKey
+    if (!authority.isEnabled || !key) throw new Error("Abra a sala primeiro.")
+    const tunnel = await native.tunnelStart()
+    if (!authority.isEnabled || authority.currentKey !== key) {
+      await native.tunnelStop().catch(() => undefined)
+      throw new Error("A sala foi fechada enquanto o túnel abria.")
+    }
+    const url = new URL(tunnel.url)
+    url.pathname = "/"
+    url.search = `?k=${encodeURIComponent(key)}`
+    authority.setPublicUrl(url.toString(), { location: tunnel.location, protocol: tunnel.protocol })
+    return url.toString()
   }
   // O React pode abrir a mesma mesa duas vezes na montagem; mudanças de sala são sequenciais.
   let lifecycle: Promise<unknown> = Promise.resolve()
@@ -321,9 +341,12 @@ export function createAndroidVttApi(platform: Platform): VttApi {
       setBars: async (bars) => authority.setBars(bars),
       setAudio: async (enabled) => authority.setAudioEnabled(enabled),
       setMoves: async (enabled) => authority.setMovesEnabled(enabled),
-      publicLink: unsupported,
-      testPublicLink: unsupported,
-      downloadCloudflared: unsupported,
+      publicLink,
+      testPublicLink: () => native.tunnelTest(),
+      // O binário já vem no APK; só confere se este aparelho tem a versão para o seu processador.
+      downloadCloudflared: async () => {
+        if (!(await native.tunnelAvailable()).available) throw new Error("O link público não está disponível neste aparelho (o processador não é ARM de 64 bits).")
+      },
     },
     audio: {
       state: async () => audio.get(),

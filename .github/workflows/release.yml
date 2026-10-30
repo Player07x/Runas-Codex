@@ -631,9 +631,9 @@ jobs:
           config.android={...config.android,webContentsDebuggingEnabled:true}
           writeFileSync(path,JSON.stringify(config))
           JS
-      - name: APK de teste
+      - name: APK de teste (com o cloudflared x86_64 do emulador)
         working-directory: mobile/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug -PrunasTunnelAbis=x86_64 --no-daemon
       - name: axe-core só para a revisão (fora do app)
         run: npm install --no-save --no-package-lock --ignore-scripts --prefix "$RUNNER_TEMP/axe" axe-core@4.10.2
       - name: Preparar emulador Android 35
@@ -734,6 +734,16 @@ jobs:
           node mobile/tests/vault-large.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review/cofre-10000 10000 "$start"
           adb shell dumpsys meminfo dev.runas.codex > /tmp/runas-android-review/cofre-10000/meminfo.txt
           grep -E 'TOTAL PSS|TOTAL:' /tmp/runas-android-review/cofre-10000/meminfo.txt || true
+      - name: R4 — link público da sala pela Cloudflare
+        if: always()
+        run: |
+          adb shell am force-stop dev.runas.codex
+          node mobile/tests/room-fixture.mjs /tmp/runas-android-review/tunel
+          adb shell 'mkdir -p /sdcard/Documents/cofre-tunel/Notas'
+          adb push /tmp/runas-android-review/tunel/fixture/Notas/. /sdcard/Documents/cofre-tunel/Notas/
+          adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-tunel --ez runasWritable true
+          bash mobile/tests/android-devtools.sh
+          node mobile/tests/room-tunnel.cdp.mjs /tmp/runas-android-review/tunel
       - name: Registro do Android
         if: always()
         run: adb logcat -d > /tmp/runas-android-review/logcat.txt 2>&1 || true

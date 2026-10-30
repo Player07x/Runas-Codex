@@ -1,0 +1,95 @@
+// R4 (docs/adr/0032-tunel-publico-android.md): o cloudflared oficial entra no APK como biblioteca nativa
+// (lib/<abi>/libcloudflared.so), a única pasta de onde o Android deixa um app executar um binário. A versão e o
+// SHA-256 ficam fixos aqui; o build baixa do release oficial, confere a soma (e a publicada no release, quando a API
+// do GitHub responde) e nunca usa um arquivo diferente. O APK publicado leva só ARM de 64 bits (~18 MB); as outras
+// arquiteturas recebem um marcador pequeno para o APK continuar instalando nelas, e o app explica que o link público
+// não existe nesses aparelhos. O emulador do CI pede o x86_64 com -PrunasTunnelAbis=x86_64.
+import java.security.MessageDigest
+
+def cloudflaredVersion = '2026.9.3'
+def cloudflaredAssets = [
+    'arm64-v8a': ['cloudflared-linux-arm64', 'aaeb2d7d0da3614634c7e03ab13487a1522c2e79165ed2929cfe23d5e95b326d'],
+    'x86_64'   : ['cloudflared-linux-amd64', '77e26d8d900e0b8469f416239d14b5f296525fdf79fee6f511ef55609e3fbac2'],
+]
+def allAbis = ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']
+def realAbis = (project.findProperty('runasTunnelAbis') ?: 'arm64-v8a').toString().split(',')*.trim().findAll { it }
+def releaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+def jniOut = layout.buildDirectory.dir('cloudflared/jniLibs')
+def cacheDir = layout.buildDirectory.dir("cloudflared/cache/$cloudflaredVersion")
+
+def sha256 = { File file ->
+    def digest = MessageDigest.getInstance('SHA-256')
+    file.withInputStream { stream -> byte[] buffer = new byte[65536]; int count; while ((count = stream.read(buffer)) > 0) digest.update(buffer, 0, count) }
+    digest.digest().encodeHex().toString()
+}
+
+tasks.register('fetchCloudflared') {
+    inputs.property('version', cloudflaredVersion)
+    inputs.property('abis', realAbis.join(','))
+    outputs.dir(jniOut)
+    doLast {
+        realAbis.each { abi -> if (!cloudflaredAssets.containsKey(abi)) throw new GradleException("Sem cloudflared fixado para $abi.") }
+        def cache = cacheDir.get().asFile
+        cache.mkdirs()
+        // A soma publicada no release oficial também precisa bater com a fixada (se a API não responder, vale a fixada).
+        def published = null
+        try {
+            def api = new URL("https://api.github.com/repos/cloudflare/cloudflared/releases/tags/$cloudflaredVersion").openConnection()
+            api.setRequestProperty('Accept', 'application/vnd.github+json')
+            api.setRequestProperty('User-Agent', 'Runas-Codex-build')
+            api.connectTimeout = 15000
+            api.readTimeout = 15000
+            published = new groovy.json.JsonSlurper().parse(api.inputStream).body ?: ''
+        } catch (Exception error) {
+            logger.warn("Release do cloudflared não consultado (${error.message}); vale o SHA-256 fixado no cloudflared.gradle.")
+        }
+        allAbis.each { abi ->
+            def target = new File(jniOut.get().asFile, "$abi/libcloudflared.so")
+            target.parentFile.mkdirs()
+            if (!realAbis.contains(abi)) {
+                target.text = "Runas-Codex: o link público não está disponível nesta arquitetura.\n"
+                return
+            }
+            def (asset, expected) = cloudflaredAssets[abi]
+            if (published != null) {
+                def match = (published =~ /(?m)^\s*${java.util.regex.Pattern.quote(asset)}\s*:\s*([a-f0-9]{64})\b/)
+                if (match.find() && match.group(1).toLowerCase() != expected)
+                    throw new GradleException("O release oficial publica outra soma para $asset; o build não usa o binário.")
+            }
+            def file = new File(cache, asset)
+            if (!file.isFile() || sha256(file) != expected) {
+                try {
+                    def connection = new URL("https://github.com/cloudflare/cloudflared/releases/download/$cloudflaredVersion/$asset").openConnection()
+                    connection.connectTimeout = 30000
+                    connection.readTimeout = 120000
+                    connection.inputStream.withStream { input -> file.withOutputStream { output -> output << input } }
+                } catch (Exception error) {
+                    file.delete()
+                    if (releaseBuild) throw new GradleException("Não foi possível baixar o cloudflared para o APK publicado: ${error.message}")
+                    logger.warn("cloudflared não baixado (${error.message}); este APK de depuração fica sem link público.")
+                    target.text = "Runas-Codex: cloudflared não baixado neste build.\n"
+                    return
+                }
+            }
+            def actual = sha256(file)
+            if (actual != expected) {
+                file.delete()
+                throw new GradleException("SHA-256 do $asset não confere (esperado $expected, obtido $actual); o build não usa o binário.")
+            }
+            java.nio.file.Files.copy(file.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+}
+
+android {
+    sourceSets { main { jniLibs.srcDirs += [jniOut.get().asFile] } }
+    // Extraído na instalação (é o que permite executar o binário) e sem passar pelo strip do NDK.
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+            keepDebugSymbols += ['**/libcloudflared.so']
+        }
+    }
+}
+
+tasks.named('preBuild') { dependsOn 'fetchCloudflared' }
