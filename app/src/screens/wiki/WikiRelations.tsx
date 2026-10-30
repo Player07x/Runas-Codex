@@ -123,7 +123,9 @@ function Diplomacy({ root }: { root: string }) {
         {Object.entries(DIPLOMACY_COLORS)
           .filter(([kind]) => web.edges.some((e) => e.kind === kind))
           .map(([kind, { color, label }]) => (
-            <span key={kind} className="chip" style={{ borderColor: color, color }}>
+            // A cor fica só no ponto: em texto, as cores do mapa não têm contraste no tema claro.
+            <span key={kind} className="chip relation-kind">
+              <span className="relation-dot" style={{ background: color }} aria-hidden="true" />
               {label}
             </span>
           ))}

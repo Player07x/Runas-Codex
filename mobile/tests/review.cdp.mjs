@@ -18,8 +18,14 @@ const adb = (...args) => execFileSync('adb', args, { timeout: 60000 }).toString(
 const { run, send, errors, close } = await connectDevtools(endpoint, t => /^https?:\/\/localhost/.test(t.url ?? ''))
 const go = async (route, wait = 1300) => { await run(`location.hash = ${JSON.stringify('#' + route)}; true`); await sleep(wait) }
 
-// O tema fica no aparelho; recarregar mantém a mesma conexão com o WebView.
-if (theme) { await run(`(()=>{try{localStorage.setItem('runas-codex:tema',${JSON.stringify(theme === 'claro' ? 'light' : 'dark')})}catch{}setTimeout(()=>location.reload(),50);return true})()`); await sleep(5000) }
+// O tema troca pelo botão do topo, sem recarregar (recarregar perderia o cofre aberto pela intent do teste).
+if (theme) {
+  await go('/')
+  const want = theme === 'claro' ? 'light' : 'dark'
+  if (await run(`document.documentElement.dataset.theme`) !== want) await run(`document.querySelector('[aria-label="Usar o tema ${theme === 'claro' ? 'claro' : 'escuro'}"]')?.click(); true`)
+  await sleep(800)
+  console.log('tema:', await run(`document.documentElement.dataset.theme`))
+}
 const page = { run, send, errors }
 
 // Rotas: as dos espaços e as que os links das telas principais mostram (como na revisão do desktop).
@@ -52,8 +58,10 @@ const measure = `(() => {
 })()`
 const results = []
 let index = 0
+console.log(`${routes.size} telas`)
 for (const route of routes) {
-  const before = page.errors.length
+  const before = page.errors.length, began = Date.now()
+  try {
   await go(route)
   const info = await page.run(measure)
   let violations = []
@@ -67,11 +75,16 @@ for (const route of routes) {
     await writeFile(join(output, 'capturas', `${String(++index).padStart(2, '0')}-${route.replace(/[^a-z0-9]+/gi, '-').slice(0, 60)}.png`), Buffer.from(data, 'base64'))
   }
   results.push({ route, ...info, axe: violations, errors: page.errors.slice(before) })
+  } catch (error) {
+    // Uma tela que falha não derruba a passada: fica registrada como erro.
+    results.push({ route, title: '', h1: -1, current: 0, width: 0, sw: 0, cw: 0, over: [], small: [], smallCount: 0, axe: [], errors: ['falha da revisão: ' + (error instanceof Error ? error.message : String(error))] })
+  }
+  console.log(`  ${route} (${Date.now() - began} ms)`)
 }
 
 // Android: o botão voltar do sistema volta uma tela; o teclado aparece sobre o editor sem cobrir a linha do cursor.
 const checks = {}
-if (android) {
+if (android) try {
   await go('/notas')
   const note = await page.run(`document.querySelector('[data-vault-tree] [data-note-path]')?.getAttribute('data-note-path') ?? null`)
   if (note) {
@@ -95,6 +108,8 @@ if (android) {
       adb('shell', 'input', 'keyevent', '111')
     } else checks.teclado = { ok: false, detalhe: 'editor não encontrado' }
   } else checks.voltar = { ok: false, detalhe: 'nenhuma nota na lista' }
+} catch (error) {
+  checks.erro = error instanceof Error ? error.message : String(error)
 }
 
 close()

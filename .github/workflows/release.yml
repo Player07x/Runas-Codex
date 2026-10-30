@@ -683,11 +683,11 @@ jobs:
           bash mobile/tests/android-devtools.sh
           node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review retrato-escuro "$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" capturas android tema=escuro
       - name: R1 — retrato, 411 px, claro (axe)
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review retrato-claro "$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" tema=claro
       - name: R1 — 320 px de largura (axe, capturas)
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           adb shell wm size 720x1280
           adb shell wm density 360
@@ -696,7 +696,7 @@ jobs:
           adb shell wm size reset
           adb shell wm density reset
       - name: R1 — deitado (capturas)
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           adb shell settings put system accelerometer_rotation 0
           adb shell settings put system user_rotation 1
@@ -705,7 +705,7 @@ jobs:
           adb shell settings put system user_rotation 0
           sleep 3
       - name: R1 — texto do sistema a 140 % (capturas)
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           adb shell settings put system font_scale 1.4
           adb shell am force-stop dev.runas.codex
@@ -714,7 +714,7 @@ jobs:
           node mobile/tests/review.cdp.mjs http://127.0.0.1:9224 /tmp/runas-android-review texto-140 - capturas
           adb shell settings put system font_scale 1.0
       - name: R3 — cofre de 10 mil notas
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           adb shell am force-stop dev.runas.codex
           node --input-type=module - "$RUNNER_TEMP/cofre-10000" 10000 <<'JS'
@@ -735,7 +735,7 @@ jobs:
           adb shell dumpsys meminfo dev.runas.codex > /tmp/runas-android-review/cofre-10000/meminfo.txt
           grep -E 'TOTAL PSS|TOTAL:' /tmp/runas-android-review/cofre-10000/meminfo.txt || true
       - name: R4 — link público da sala pela Cloudflare
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           adb shell am force-stop dev.runas.codex
           node mobile/tests/room-fixture.mjs /tmp/runas-android-review/tunel
