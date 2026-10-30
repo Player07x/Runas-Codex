@@ -1,0 +1,61 @@
+name: Lançar versão
+
+# ADR 0025: cria a tag v<versão do package.json> no commit atual da main e roda o workflow Release nela. Existe porque
+# as sessões do agente na nuvem não conseguem enviar tags; continua valendo enviar a tag à mão. Recusa se a versão não
+# subir, se os quatro package.json não concordarem, se faltar a nota da versão ou se o CI desse commit não estiver verde.
+# A tag criada aqui não dispara o Release sozinha (eventos do GITHUB_TOKEN não disparam workflows), por isso o passo
+# final o chama com workflow_dispatch na própria tag; o Release publica igual a uma tag enviada à mão.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: lancar-versao
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Conferir a versão
+        id: versao
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          tag="v$version"
+          for workspace in app desktop mobile; do
+            other="$(node -p "require('./$workspace/package.json').version")"
+            if [ "$other" != "$version" ]; then echo "::error::$workspace/package.json diz $other; a raiz diz $version."; exit 1; fi
+          done
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "::error::A tag $tag já existe: suba a versão num PR de versão (ADR 0025, o número nunca se repete)."; exit 1
+          fi
+          last="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+          if [ -n "$last" ] && [ "$(printf '%s\n%s\n' "${last#v}" "$version" | sort -V | tail -1)" != "$version" ]; then
+            echo "::error::A versão $version não é maior que a última tag ($last)."; exit 1
+          fi
+          if [ ! -f "docs/releases/$tag.md" ]; then echo "::error::Faltam as notas em docs/releases/$tag.md."; exit 1; fi
+          ci="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --json conclusion --jq '.[0].conclusion')"
+          if [ "$ci" != "success" ]; then echo "::error::O CI deste commit não está verde (${ci:-sem execução}); espere ele terminar."; exit 1; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Criar a tag e rodar o Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.versao.outputs.tag }}
+          VERSION: ${{ steps.versao.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Runas-Codex $VERSION" "$GITHUB_SHA"
+          git push origin "$TAG"
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
+          echo "Tag $TAG criada em $GITHUB_SHA; o Release foi chamado na tag." >> "$GITHUB_STEP_SUMMARY"

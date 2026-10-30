@@ -1230,3 +1230,13 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Android: “Compartilhar com” um texto e uma foto da galeria continua criando a nota em `Compartilhados`.
 - [ ] Android: tocar no widget da Agenda continua abrindo a Agenda.
 - [ ] Conferir as seções “E1, T7, R1 no Android, R3 e R4” acima (link público da sala no celular, bateria, TalkBack).
+
+
+## Versão 0.1.0-beta.24 (30/10/2026)
+
+A beta.23 não foi publicada; as conferências dela (seção acima) valem para a beta.24.
+
+- [ ] Atualizar da beta.22 para a beta.24 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre,
+  PIN e preferências.
+- [ ] Windows: com a mesma nota aberta no Obsidian, editar e salvar no Runas-Codex várias vezes seguidas, sem aviso de
+  erro de permissão.
