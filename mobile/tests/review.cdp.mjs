@@ -89,9 +89,19 @@ if (android) try {
   const note = await page.run(`document.querySelector('[data-vault-tree] [data-note-path]')?.getAttribute('data-note-path') ?? null`)
   if (note) {
     await go('/notas/' + encodeURIComponent(note), 2000)
+    const historyBefore = await page.run(`history.length`)
+    adb('logcat', '-c')
     adb('shell', 'input', 'keyevent', '4'); await sleep(1500)
-    checks.voltar = { esperado: '#/notas', obtido: await page.run(`location.hash`) }
-    checks.voltar.ok = checks.voltar.obtido === '#/notas'
+    // Com prazo curto: se o app saiu da frente, o WebView para de responder.
+    const hash = await Promise.race([page.run(`location.hash`), sleep(5000).then(() => null)]).catch(() => null)
+    checks.voltar = { esperado: '#/notas', obtido: hash, historico: historyBefore }
+    checks.voltar.ok = hash === '#/notas'
+    if (!checks.voltar.ok) {
+      const resumed = (adb('shell', 'dumpsys', 'activity', 'activities').match(/(top)?ResumedActivity[^\n]*/g) ?? []).slice(0, 2)
+      const log = adb('logcat', '-d').split('\n').filter(l => /runas|chromium|AndroidRuntime|FATAL|OnBack|BackInvoked|ActivityTaskManager|Capacitor/i.test(l)).slice(-30)
+      Object.assign(checks.voltar, { resumed, log })
+      adb('shell', 'am', 'start', '-n', 'dev.runas.codex/.MainActivity'); await sleep(3000)
+    }
     await go('/notas/' + encodeURIComponent(note), 2500)
     // Um toque de verdade no texto, para o Android abrir o teclado (foco por script não abre).
     const box = await page.run(`(()=>{const el=document.querySelector('.cm-content')||document.querySelector('.editor-body');if(!el)return null;const r=el.getBoundingClientRect();return {x:Math.round(r.left+20),y:Math.round(r.top+20)}})()`)
@@ -129,4 +139,4 @@ list('Alvos de toque < 44 px', [...small.values()].slice(0, 40))
 const axeAll = new Map()
 for (const r of results) for (const v of r.axe) { const k = v.id; const e = axeAll.get(k) ?? { impact: v.impact, pages: 0, ex: [] }; e.pages++; if (e.ex.length < 3) e.ex.push(`${r.route}: ${v.ex[0]}`); axeAll.set(k, e) }
 list('axe', [...axeAll].map(([id, e]) => `${id} (${e.impact}, ${e.pages} telas) — ${e.ex.join(' | ')}`))
-if (android) console.log('Android:', JSON.stringify(checks))
+if (android) console.log('Android:', JSON.stringify(checks, null, 1))

@@ -229,6 +229,7 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
   .campaign-roster-tools > * { flex: 1 1 100%; }
   .campaign-roster-row .campaign-attitude { flex: 1 1 auto; }
   .campaign-appeared, .campaign-roster-tools .select { min-height: 44px; }
+  .campaign-roster-name > a { min-height: 44px; }
   .campaign-roster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .campaign-npc-card-body { padding: 2px 9px 9px; }
   .campaign-npc-card-head strong { padding: 0 9px; }
