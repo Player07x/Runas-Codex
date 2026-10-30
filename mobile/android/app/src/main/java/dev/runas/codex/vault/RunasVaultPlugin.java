@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -683,6 +684,20 @@ public class RunasVaultPlugin extends Plugin {
         }
     }
 
+    /** Os provedores do próprio app (o FileProvider e os das bibliotecas), para recusar no "Compartilhar com". */
+    private Set<String> ownAuthorities() {
+        Set<String> result = new HashSet<>();
+        try {
+            PackageInfo info = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), PackageManager.GET_PROVIDERS);
+            if (info.providers != null)
+                for (android.content.pm.ProviderInfo provider : info.providers)
+                    if (provider.authority != null) result.addAll(java.util.Arrays.asList(provider.authority.split(";")));
+        } catch (PackageManager.NameNotFoundException ignored) {
+            // O próprio pacote sempre existe; sem a lista, vale a regra do nome do pacote.
+        }
+        return result;
+    }
+
     private static String displayName(ContentResolver resolver, Uri uri, String fallback) {
         try (Cursor cursor = resolver.query(uri, new String[] { OpenableColumns.DISPLAY_NAME }, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) return cursor.getString(0);
@@ -723,7 +738,8 @@ public class RunasVaultPlugin extends Plugin {
     private void handleShare(Intent intent) {
         if (intent == null) return;
         String route = intent.getStringExtra("runasRoute");
-        if (route != null) {
+        if (route != null && !SharedUris.route(route)) intent.removeExtra("runasRoute");
+        else if (route != null) {
             JSObject data = new JSObject();
             data.put("route", route);
             notifyListeners("open", data, true);
@@ -744,7 +760,9 @@ public class RunasVaultPlugin extends Plugin {
             if (list != null) uris.addAll(list);
         }
         ContentResolver resolver = getContext().getContentResolver();
+        Set<String> own = ownAuthorities();
         for (Uri uri : uris) {
+            if (uri == null || !SharedUris.accepted(uri.getScheme(), uri.getAuthority(), own, getContext().getPackageName())) continue;
             try (InputStream in = resolver.openInputStream(uri)) {
                 if (in == null) continue;
                 ByteArrayOutputStream out = new ByteArrayOutputStream();

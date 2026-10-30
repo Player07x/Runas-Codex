@@ -181,3 +181,24 @@ inclusive para pastas sincronizadas com o notebook. O nome do gerenciador não f
 ## X7 — sala hospedada pelo celular (20/10/2026)
 
 A autoridade é compartilhada com o desktop e o transporte HTTP/WebSocket vive num serviço Android em primeiro plano. Decisões, limites e testes estão na [ADR 0024](0024-sala-android.md). A sala funciona na rede local, inclusive ao minimizar o app; encerramento e revogação são explícitos. O job `android-room` valida um jogador no navegador do CI e passa a ser requisito da publicação Android.
+
+## Segurança do APK (30/10/2026, beta.23)
+
+Revisão antes da beta.23, a pedido do dono (“garanta que o APK seja seguro”):
+
+- **“Compartilhar com”:** o que chega por `ACTION_SEND` vira nota sem confirmação, então só entram `content://` de
+  provedores de **outros** apps. `file://` e os provedores do próprio Runas-Codex (o `FileProvider` alcança a pasta
+  privada) são recusados: senão outro app faria o Runas-Codex copiar para o cofre, que fica no armazenamento
+  compartilhado, arquivos que só ele lê (`SharedUris.java`, com teste).
+- **Rotas por intent:** a `MainActivity` é exportada (lançador e “Compartilhar com”), então qualquer app pode mandar o
+  extra `runasRoute`. Só as rotas da Agenda (as do widget) são aceitas.
+- **Já estavam certos:** os extras de teste (`runasVault`, `runasWritable`) só valem no APK depurável; o release sai
+  sem depuração do WebView e com `allowBackup="false"`; o atualizador só instala APK com o SHA-256 da Release e a
+  mesma assinatura (ADR 0021); o túnel só executa o `cloudflared` conferido pelo SHA-256 no build e o repasse aceita
+  só loopback com caminho secreto (ADR 0032).
+- **Auditoria no CI:** `mobile/tests/apk-security.mjs`, no fim do job `android`, confere no APK gerado (o de release na
+  tag) que só a `MainActivity` é exportada sem permissão, que não há permissão fora da lista conhecida, que o release
+  não é depurável, que o WebView não tem depuração remota nem conteúdo misto, que não há biblioteca nativa além do
+  `cloudflared` e que ele é o binário oficial fixado. Se algo falhar, a Release não sai.
+- **Limite conhecido:** o servidor de métricas do `cloudflared` fica no loopback, numa porta sorteada; outro app do
+  aparelho conseguiria ler o domínio do túnel, mas não a chave da sala, que a página exige.

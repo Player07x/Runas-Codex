@@ -184,6 +184,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # Auditoria do APK (componentes exportados, permissões, depuração, cloudflared fixado): na tag confere o de
+      # release, nos PRs o de depuração. Falhar aqui segura a publicação.
+      - name: Conferir a segurança do APK
+        run: |
+          apkanalyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          if [ -f mobile/android/app/build/outputs/apk/release/app-release.apk ]; then
+            node mobile/tests/apk-security.mjs mobile/android/app/build/outputs/apk/release/app-release.apk release "$apkanalyzer"
+          else
+            node mobile/tests/apk-security.mjs mobile/android/app/build/outputs/apk/debug/app-debug.apk debug "$apkanalyzer"
+          fi
+
   publish:
     # Publica só depois de todos os builds habilitados nesta versão passarem.
     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') && needs.linux.result == 'success' && needs.windows.result == 'success' && (needs.android-room.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android-room.result == 'skipped')) && (needs.android.result == 'success' || (needs.targets.outputs.android == 'false' && needs.android.result == 'skipped')) }}
@@ -218,6 +229,22 @@ jobs:
             --generate-notes \
             --verify-tag \
             $prerelease
+
+      # ADR 0025: o texto da Release são as notas em três blocos de docs/releases/<tag>.md, não o texto automático.
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: docs/releases
+          path: notas
+      - name: Notas da versão
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="notas/docs/releases/$GITHUB_REF_NAME.md"
+          if [ -f "$notes" ]; then
+            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --notes-file "$notes"
+          else
+            echo "::warning::Sem $notes; a Release ficou com o texto automático."
+          fi
 
   android-touch:
     # APK de teste em emulador: a cópia com depuração do WebView nunca é publicada como instalador.
