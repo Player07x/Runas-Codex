@@ -301,3 +301,19 @@ como renomear nem excluir. Hoje a `VttApi` (`app/src/vtt/shared/ipc.ts`) só tem
 2. Na tela (`app/src/screens/vtt/VttScreen.tsx`): menu ⋯ em cada cartão com “Renomear…” e “Excluir…”, confirmação ao
    excluir e retorno do foco, no padrão do kit (`OverflowMenu`, diálogos).
 3. Testes do núcleo e no smoke do Electron (criar, renomear, excluir e conferir na lixeira).
+
+### U4 — Visual da página VTT › Entrar Sala
+
+Relato do dono (30/10, com duas capturas, painel aberto e recolhido):
+
+- **Salas recentes:** o endereço longo do túnel (`strengthen-enzyme-explaining-acm.trycloudflare.com`) e o “há 16 dias”
+  saem para fora do cartão. O botão da sala (`.list-item` em `app/src/screens/vtt/VttScreen.tsx`) cresce com o texto,
+  então o `truncate` do nome não age; o botão precisa ocupar a largura do cartão (`width: 100%`, `min-width: 0`), com o
+  nome cortado em reticências (endereço inteiro no `title`) e a data sem encolher.
+- **Painel “Detalhes da sala”:** o cabeçalho do painel e os cartões não ficam alinhados com o cartão do link, e sobra um
+  vão grande à direita; recolhido, o botão de abrir fica solto num quadrado à parte e o cartão do link não ocupa o espaço
+  liberado. Rever o `join-layout` (grade com o cartão em `1fr` e o painel no tamanho dele) e usar o mesmo padrão de
+  painel das outras telas com `ResizablePanel`.
+- **Dicas:** os ícones (Wi-Fi e link) desalinham quando o texto quebra em duas linhas; o ícone não pode encolher
+  (`flex: none`) e a linha alinha pelo topo.
+- Conferir em 320 px, tablet e computador, nos dois temas, com e sem salas recentes.
