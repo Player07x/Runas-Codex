@@ -1087,3 +1087,17 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Abrir os 22 tópicos da Ajuda, usar o índice por grupo e avançar pelo botão Próximo; conferir que o tour e as notas de exemplo continuam no fim.
 - [ ] Wiki: repetir a conferência dos PRs #80–#82 (Painel/Relações, filtros e categorias personalizadas, 15 geradores).
 - [ ] A sala Android: repetir a entrada do jogador e conferir que o selo “Jogador 1” aparece após a conexão.
+
+
+## Wiki: geradores ×100, nomes por cultura e Ferramentas refeitas
+
+- [ ] Wiki › Ferramentas: os geradores aparecem em quatro grupos (Pessoas, Lugares, Enredo, Mundo) e as tabelas
+  `runas-tabela` dos artigos aparecem em “Tabelas da wiki”; rolar uma tabela que aponta outra rola as duas.
+- [ ] Nome, NPC, Mercador e Aventura: trocar a cultura (27 culturas, inclusive Japonesa e Chinesa com o sobrenome
+  antes, Nórdica e Árabe com patronímico, Tupi e Nahuatl sem sobrenome, Élfica, Anã e Órquica) e o gênero; a escolha
+  fica lembrada ao voltar à tela.
+- [ ] “Quantos: 5 / 10” mostra a lista numerada; “Usar” leva o resultado para o editor, “Copiar” copia e “Guardar na
+  wiki” cria a nota em Geradores/ com o nome sugerido. “Recentes” traz de volta um resultado anterior.
+- [ ] No celular (320 px): a lista de ferramentas vira o seletor “Ferramenta”, os botões têm 44 px e não há rolagem
+  para os lados; temas escuro e claro.
+- [ ] Gerar várias vezes cada gerador: resultados variados, sem frases repetidas visíveis.

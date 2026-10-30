@@ -1,6 +1,7 @@
 import { parse as parseYaml } from "yaml"
 import { dayNumber, parseWorldDate, dateProblem, type Calendar, type WorldDate } from "./calendar"
 import * as T from "./generator-tables"
+import { cultureName, type NameCulture } from "./name-cultures"
 export interface RollEntry { text: string; weight: number; table?: string }
 export interface RollTable { name: string; entries: RollEntry[] }
 const object = (v:unknown):Record<string,unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string,unknown> : {}
@@ -35,12 +36,22 @@ export function parseDictionary(code:string):Dictionary {
     return {word:row.palavra,translation:row.traducao,pronunciation:typeof row.pronuncia==="string"?row.pronuncia:""}
   })}
 }
-export const GENERATOR_KINDS = {nome:"Nome lusófono",npc:"NPC",taverna:"Taverna",tesouro:"Tesouro",clima:"Clima",gancho:"Gancho",rumor:"Rumor",lugar:"Nome de lugar",item:"Item mágico",faccao:"Facção",divindade:"Divindade",masmorra:"Sala de masmorra",lenda:"Lenda",mercador:"Mercador",aventura:"Aventura"} as const
+export const GENERATOR_KINDS = {nome:"Nome",npc:"NPC",taverna:"Taverna",tesouro:"Tesouro",clima:"Clima",gancho:"Gancho",rumor:"Rumor",lugar:"Nome de lugar",item:"Item mágico",faccao:"Facção",divindade:"Divindade",masmorra:"Sala de masmorra",lenda:"Lenda",mercador:"Mercador",aventura:"Aventura"} as const
 export type GeneratorKind=keyof typeof GENERATOR_KINDS
+/** Grupos da tela de Ferramentas: cada gerador aparece em um só. */
+export const GENERATOR_GROUPS:{label:string;kinds:GeneratorKind[]}[]=[
+  {label:"Pessoas",kinds:["nome","npc","mercador"]},
+  {label:"Lugares",kinds:["lugar","taverna","masmorra","clima"]},
+  {label:"Enredo",kinds:["gancho","rumor","lenda","aventura"]},
+  {label:"Mundo",kinds:["faccao","divindade","item","tesouro"]},
+]
+/** Geradores que sorteiam nomes de pessoas e por isso aceitam cultura e gênero. */
+export const NAMED_KINDS:readonly GeneratorKind[]=["nome","npc","mercador","aventura"]
+export interface GeneratorOptions { culture?: NameCulture; gender?: "f" | "m" }
 /** Sorteio dos geradores; as listas ficam em `generator-tables.ts`. `random` fixo deixa o resultado previsível nos testes. */
-export function generateWorld(kind:GeneratorKind, random=Math.random):string {
+export function generateWorld(kind:GeneratorKind, random=Math.random, options:GeneratorOptions={}):string {
   const pick=<T,>(values:readonly T[])=>values[Math.max(0,Math.min(values.length-1,Math.floor(random()*values.length)))]!
-  const person=()=>{const gender=pick(["f","m"] as const),name=`${pick(gender==="f"?T.FEMALE_NAMES:T.MALE_NAMES)} ${pick(T.SURNAMES)}`;return {gender,name,job:pick(T.PROFESSIONS)[gender==="f"?1:0]}}
+  const person=()=>{const gender=options.gender??pick(["f","m"] as const),name=options.culture?cultureName(options.culture,gender,random):`${pick(gender==="f"?T.FEMALE_NAMES:T.MALE_NAMES)} ${pick(T.SURNAMES)}`;return {gender,name,job:pick(T.PROFESSIONS)[gender==="f"?1:0]}}
   const name=()=>person().name
   const npc=()=>{const p=person();return `${p.name}, ${p.job}. Aparência: ${pick(T.LOOKS)}. Jeito: ${pick(T.TRAITS)}. Quer ${pick(T.DESIRES)}; esconde ${pick(T.SECRETS)}.`}
   const hook=()=>`${pick(T.HOOK_EVENTS)}. ${pick(T.HOOK_TURNS)}.`

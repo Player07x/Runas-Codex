@@ -345,3 +345,39 @@
 .category-kind-row .select { min-width:150px; }
 .category-kind-key { flex-basis:100%;padding-left:2px; }
 .new-article-custom { display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:8px 0 0; }
+
+/* Ferramentas do mundo (beta.22): geradores em grupos, opções numa linha e vários resultados com “Usar”. */
+.wiki-tools-list { gap: 14px; }
+.wiki-tools-group { display: grid; gap: 2px; align-content: start; }
+.wiki-tools-group .eyebrow { padding: 0 10px 4px; }
+.wiki-tools-empty { padding: 4px 10px; }
+.wiki-tools-title { margin: 0; font-size: calc(18px * var(--font-scale, 1)); }
+.wiki-tools-options { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.wiki-tools-options .field { min-width: 0; }
+.wiki-tools-options .select { min-width: 180px; max-width: 100%; }
+.wiki-tools-roll { margin-left: auto; }
+.wiki-tools-results { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: resultado; }
+.wiki-tools-results li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); overflow-wrap: anywhere; counter-increment: resultado; }
+.wiki-tools-results li::before { content: counter(resultado); min-width: 1.5em; color: var(--muted); font: calc(12px * var(--font-scale, 1)) var(--font-mono); padding-top: 2px; }
+.wiki-tools-results .grow { min-width: 0; }
+.wiki-tools-save { padding-top: 10px; border-top: 1px solid var(--line); }
+.wiki-tools-recent summary { cursor: pointer; min-height: 32px; }
+.wiki-tools-recent ul { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.wiki-tools-recent-item { width: 100%; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: left; font: inherit; font-size: calc(13px * var(--font-scale, 1)); overflow-wrap: anywhere; cursor: pointer; }
+.wiki-tools-recent-item:hover { background: var(--panel-hover); }
+.wiki-tools-recent-item:focus-visible { outline: 3px solid var(--cyan); outline-offset: 1px; }
+@media (max-width: 860px) {
+  .wiki-tools-list { grid-template-columns: minmax(0, 1fr); }
+  .wiki-tools-group { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .wiki-tools-group .eyebrow, .wiki-tools-empty { grid-column: 1 / -1; }
+  .wiki-tools-roll { margin-left: 0; flex: 1 1 100%; }
+  .wiki-tools-roll, .wiki-tools-results .btn, .wiki-tools-results .icon-btn, .wiki-tools-recent-item, .wiki-tools-list .list-item { min-height: 44px; }
+  .wiki-tools-options .select { min-height: 44px; }
+}
+/* No celular a lista de ferramentas vira um seletor, para o resultado aparecer sem rolar a lista inteira. */
+.wiki-tools-pick { display: none; }
+@media (max-width: 860px) {
+  .wiki-tools-pick { display: grid; }
+  .wiki-tools-pick .select { min-height: 44px; }
+  .wiki-tools-layout > .wiki-tools-list { display: none; }
+}
