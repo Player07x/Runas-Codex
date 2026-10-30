@@ -236,3 +236,85 @@ Registrada a pedido do dono e liberada por ele no mesmo dia; **feita**: botões 
   `localStorage` com chave `runas-codex:<nome>`). Lista é a de hoje (`NpcRoster` em
   `app/src/screens/campaigns/CastView.tsx`, com filtros e grupos); Blocos mostra os NPCs em cartões, como os artigos de
   uma categoria.
+
+## Para a próxima atualização (registrado em 30/10/2026)
+
+### U1 — Atualização pelo app no Ubuntu falha no `dpkg`
+
+Relato do dono ao atualizar da beta.22 para a beta.24 pelo botão “Verificar atualizações” (Linux, `.deb`):
+
+```text
+O sistema não concluiu a instalação. O aplicativo continua aberto.
+debconf: incapaz de inicializar interface: Dialog
+debconf: (A variável TERM não está definida, então a interface dialog não é utilizável.)
+debconf: tentando com interface: Readline
+debconf: incapaz de inicializar interface: Readline
+debconf: (Essa interface requer um tty controlador.)
+debconf: tentando com interface: Teletype
+debconf: incapaz de inicializar interface: Teletype
+debconf: (Essa interface requer um tty controlador.)
+debconf: tentando com interface: Noninteractive
+E: Sub-process /usr/bin/dpkg returned an error code (1)
+```
+
+O que já se sabe (`desktop/src/main/deb-update.ts`, ADR 0017):
+
+- As linhas do `debconf` são só aviso: o `pkexec` roda o `apt-get` sem terminal. Não são a causa.
+- **A causa ficou de fora da mensagem.** O app mostra só o fim do `stderr` do `apt-get`; o motivo do `dpkg` (por
+  exemplo, `dpkg: erro ao processar o pacote runas-codex (--configure)` ou o script de pós-instalação que falhou) sai no
+  `stdout`, que é descartado.
+- Hipóteses, por ordem: (1) o script de pós-instalação do electron-builder falhou (no Ubuntu 24.04 ele instala um
+  perfil do AppArmor e chama `apparmor_parser`; se o último comando do script falha, o `dpkg` recebe 1); (2) um pacote
+  qualquer do sistema já estava meio configurado e o `apt-get` parou nele; (3) arquivo em conflito com outro pacote.
+
+O que fazer:
+
+1. Mostrar o fim do `stdout` **e** do `stderr` na mensagem de erro, para a próxima falha dizer a causa.
+2. Rodar o `apt-get` com `DEBIAN_FRONTEND=noninteractive` (pelo `/usr/bin/env` dentro do `pkexec`) para tirar o ruído
+   do `debconf`.
+3. Com a causa real, corrigir o pacote: se for a pós-instalação, um `afterInstall` próprio no `electron-builder` em que
+   os passos que não impedem o app de abrir (AppArmor, banco de ícones e de tipos) nunca derrubam a instalação.
+4. Teste: o smoke do Linux no CI instala o `.deb` gerado por cima do da versão anterior com `apt-get install` sem
+   terminal, como o app faz, e confere que o `dpkg` termina com 0.
+
+Enquanto isso, para atualizar à mão: no terminal da pasta do arquivo, `sudo apt install ./Runas-Codex-0.1.0-beta.24-linux-amd64.deb`.
+Se o `dpkg` tiver ficado pela metade, `sudo dpkg --configure -a` antes. Para ajudar a achar a causa, as últimas linhas
+de `/var/log/apt/term.log` (ou `/var/log/dpkg.log`) logo depois da falha mostram o erro completo.
+
+### U2 — Menu ⋯ cortado nos cartões do Elenco em grade
+
+Relato do dono (30/10, com captura): em Campanhas › Elenco, na **Grade** (E1), o menu ⋯ de um NPC abre dentro do
+cartão e aparece cortado (“…ir na Wiki”). Causa: `.campaign-npc-card` tem `overflow: hidden` (para arredondar a
+imagem), o que corta o menu do `OverflowMenu`, que abre dentro do cartão. Corrigir em
+`app/src/screens/campaigns/campaigns.css`: tirar o `overflow: hidden` do cartão e arredondar só o topo da imagem; conferir
+o menu na última linha da grade e no celular (o menu precisa caber na tela e não ser cortado pelo cartão nem pela seção).
+
+### U3 — Editar e excluir uma mesa (sala) do VTT
+
+Relato do dono (30/10, com captura): em VTT › Criar Sala, os cartões das mesas (“Teste · 1 cena · Aberta ontem”) não têm
+como renomear nem excluir. Hoje a `VttApi` (`app/src/vtt/shared/ipc.ts`) só tem `listWorlds`, `createWorld`,
+`openWorld` e `closeWorld`. O que fazer:
+
+1. `renameWorld(id, título)` e `deleteWorld(id)` na `VttApi`, no desktop (`desktop/src/main/vtt/world-store.ts` e IPC), no
+   Android (`PortableWorldStore`, pela ponte do cofre) e na versão em memória. Excluir manda a pasta da mesa
+   (`.runas/mesas/<id>/`) para a lixeira do cofre, como as notas, em vez de apagar de vez; recusar com a sala ligada.
+2. Na tela (`app/src/screens/vtt/VttScreen.tsx`): menu ⋯ em cada cartão com “Renomear…” e “Excluir…”, confirmação ao
+   excluir e retorno do foco, no padrão do kit (`OverflowMenu`, diálogos).
+3. Testes do núcleo e no smoke do Electron (criar, renomear, excluir e conferir na lixeira).
+
+### U4 — Visual da página VTT › Entrar Sala
+
+Relato do dono (30/10, com duas capturas, painel aberto e recolhido):
+
+- **Salas recentes:** o endereço longo do túnel (`strengthen-enzyme-explaining-acm.trycloudflare.com`) e o “há 16 dias”
+  saem para fora do cartão. O botão da sala (`.list-item` em `app/src/screens/vtt/VttScreen.tsx`) cresce com o texto,
+  então o `truncate` do nome não age; o botão precisa ocupar a largura do cartão (`width: 100%`, `min-width: 0`), com o
+  nome cortado em reticências (endereço inteiro no `title`) e a data sem encolher.
+- **Painel “Detalhes da sala”:** o cabeçalho do painel e os cartões não ficam alinhados com o cartão do link, e sobra um
+  vão grande à direita; recolhido, o botão de abrir fica solto num quadrado à parte e o cartão do link não ocupa o espaço
+  liberado. Causa: `.join-layout` (`app/src/screens/vtt/vtt.css`) fixa a coluna do painel em `320px`, mas o painel é
+  redimensionável (na captura estava com ~400 px e transbordava) e, recolhido, deixa a coluna de 320 px vazia. Usar
+  `minmax(0, 1fr) auto` (o painel no tamanho dele) e conferir o `max-width: 960px` da grade.
+- **Dicas:** os ícones (Wi-Fi e link) desalinham quando o texto quebra em duas linhas; o ícone não pode encolher
+  (`flex: none`) e a linha alinha pelo topo.
+- Conferir em 320 px, tablet e computador, nos dois temas, com e sem salas recentes.

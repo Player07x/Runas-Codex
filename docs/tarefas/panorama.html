@@ -386,6 +386,12 @@ const PENDING = [
     {id:"R4",s:"parte",t:"Link público da sala num celular de verdade",d:"Conferido no emulador do CI. Falta abrir pelo celular físico (ARM de 64 bits) e medir a bateria com o túnel aberto (meta: até 5 % por hora parado).",meta:"ADR 0032 · docs/04-testes-pendentes.md"},
     {id:"T8",s:"aberta",t:"Preparar a 1.0",d:"Lista de conferências fechada, notas da versão e tag v1.0.0. O Android atualiza por cima das betas sem reinstalar.",meta:"Depende de todas as outras"},
   ]},
+  {group:"Para a próxima atualização", note:"Registrado a pedido do dono para corrigir na próxima versão.", items:[
+    {id:"U1",s:"aberta",t:"Atualização pelo app no Ubuntu falha no dpkg",d:"Da beta.22 para a beta.24 pelo “Verificar atualizações”: “E: Sub-process /usr/bin/dpkg returned an error code (1)”. A mensagem do app mostra só o fim do stderr e perde a causa, que o dpkg escreve no stdout. Corrigir: mostrar as duas saídas, rodar sem o ruído do debconf, corrigir o pacote quando a causa aparecer e testar a instalação por cima no CI.",meta:"rumo-a-1.0.md › U1 · desktop/src/main/deb-update.ts"},
+    {id:"U2",s:"aberta",t:"Menu ⋯ cortado nos cartões do Elenco em grade",d:"O cartão do NPC tem overflow: hidden para arredondar a imagem e corta o menu que abre dentro dele. Tirar o corte do cartão e arredondar só a imagem.",meta:"rumo-a-1.0.md › U2 · campaigns.css"},
+    {id:"U3",s:"aberta",t:"Editar e excluir uma mesa do VTT",d:"Os cartões de VTT › Criar Sala não têm renomear nem excluir. Falta renameWorld e deleteWorld na VttApi (desktop, Android e memória), com a mesa indo para a lixeira do cofre, e o menu ⋯ com confirmação na tela.",meta:"rumo-a-1.0.md › U3 · VttScreen.tsx"},
+    {id:"U4",s:"aberta",t:"Visual da página VTT › Entrar Sala",d:"Endereço longo e data das salas recentes saem do cartão; o painel “Detalhes da sala” deixa um vão à direita e, recolhido, fica solto; os ícones das dicas desalinham. Conferir em 320 px, tablet e computador.",meta:"rumo-a-1.0.md › U4 · VttScreen.tsx"},
+  ]},
   {group:"Ajustes da versão publicada", items:[
     {id:"—",s:"aberta",t:"Texto da Release beta.22",d:"A Release saiu com o texto automático do GitHub (“What's Changed”). As notas em três blocos estão em docs/releases/v0.1.0-beta.22.md e podem substituir o texto na página da Release.",meta:"github.com/Player07x/Runas-Codex/releases/tag/v0.1.0-beta.22"},
   ]},
@@ -408,6 +414,7 @@ const PENDING = [
 // Situação: falha (ainda falha), intermitente, contornada, corrigida.
 const FAILURES = [
   {group:"Ainda falham ou foram só contornadas", items:[
+    {d:"2026-10-30",s:"falha",t:"Atualização pelo app no Ubuntu (beta.22 → beta.24)",p:"O apt-get terminou com “dpkg returned an error code (1)”; a mensagem não mostra a causa. Registrado como U1 para a próxima versão; dá para atualizar à mão com sudo apt install ./arquivo.deb."},
     {d:"2026-10-26",s:"intermitente",t:"Smoke da sala do Android no CI",p:"Falha de vez em quando e passa ao rodar de novo (desde a beta.17). Em 30/10 falhou no PR #89 ao tirar a captura do emulador e passou na segunda vez."},
     {d:"2026-10-15",s:"contornada",t:"Atalho global Ctrl+Alt+N no GNOME com Wayland",p:"O Wayland não deixa o app escutar o teclado, e o Electron não abre a sessão do portal de atalhos. Contornado com runas-codex --captura e o botão que cria o atalho do sistema (T3)."},
     {d:"2026-10-26",s:"contornada",t:"Prévia de livros grandes demora a refazer",p:"Cada mudança refaz a prévia inteira. “Só este capítulo” ajuda."},
