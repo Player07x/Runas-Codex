@@ -4,7 +4,7 @@ import { AccessibilitySettings, AppearanceSettings } from "../components/Appeara
 import { HelpScreen } from "./HelpScreen"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
-import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
+import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FileWarning, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { useNarrow } from "../components/editor/use-narrow"
 import { Modal, Switch, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
@@ -13,6 +13,7 @@ import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
 import { BackupSettings } from "../components/vault/BackupSettings"
+import { SyncConflictSettings } from "../components/vault/SyncConflicts"
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import { TasksSettingsCard } from "../components/tasks/TasksSettings"
 import { useRoute } from "../lib/router"
@@ -104,6 +105,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
       </SettingsCard>
     ) },
     { id: "backups", title: "Backups", icon: <Archive size={16} />, body: <BackupSettings /> },
+    { id: "conflitos", title: "Conflitos de sincronização", icon: <FileWarning size={16} />, body: <SyncConflictSettings /> },
     { id: "obsidian", title: "Obsidian e anexos", icon: <Network size={16} />, body: (
       <>
         <SettingsCard icon={<Network size={16} />} title="Compatibilidade com o Obsidian">

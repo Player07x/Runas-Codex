@@ -1097,3 +1097,15 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Desligar **Backup automático todo dia**: o horário fica desabilitado e o texto avisa que ainda sai um backup
   antes do primeiro salvamento do dia. Fechar e abrir o app: a escolha continua.
 - [ ] No celular, Configurações › Backups explica o backup do primeiro salvamento do dia, sem campos de horário.
+
+## T2 — cópias de conflito da sincronização (29/10/2026)
+
+- [ ] Com o Syncthing (ou copiando à mão uma nota para `Nota.sync-conflict-20261029-101500-CELULAR.md` e mudando
+  uma linha), o aviso “Cópia de conflito em …” aparece no topo do app, no computador e no celular.
+- [ ] **Revisar** abre Configurações › Conflitos de sincronização com a data e o aparelho da cópia; **Comparar** mostra
+  as linhas diferentes (− no original, + na cópia), legíveis nos temas escuro e claro.
+- [ ] **Manter o original e arquivar a cópia**: a cópia vai para `.trash` e o aviso some; o original fica igual.
+- [ ] **Ficar com a cópia**: o original passa a ter o texto da cópia; o texto antigo aparece no Histórico de versões
+  da nota; a cópia vai para `.trash`.
+- [ ] **Depois** esconde o aviso; uma cópia nova faz ele voltar.
+- [ ] Uma cópia `Nota (conflicted copy).md` do Obsidian Sync também aparece, sem data.
