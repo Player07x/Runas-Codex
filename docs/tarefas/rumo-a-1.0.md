@@ -376,3 +376,24 @@ Relato do dono (30/10, com captura): na tela inicial do VTT, o cartão “A úni
 enquanto a sala estiver aberta…” não precisa estar ali. Retirar da tela (`app/src/screens/vtt/VttScreen.tsx`); a
 explicação de privacidade continua em Configurações › Privacidade e na Ajuda do VTT. (O texto também ficou impreciso:
 “Verificar atualizações” e o link público usam a internet, ADR 0017 e ADR 0032.)
+
+### U9 — Vista do ano inteiro no Calendário da Wiki
+
+Relato do dono (30/10, com captura do Calendário Rúnico em “Simivisonnios de 5631 C.R.”): só existe a vista de um mês
+(com ‹ › e “Hoje”/“+1 dia”); não dá para ver o ano inteiro. O que fazer em `app/src/screens/wiki/WikiCalendar.tsx`:
+
+- Seletor “Mês | Ano” ao lado das setas (as setas andam um mês ou um ano conforme a vista); na vista do ano, os meses do
+  calendário fictício em grade de miniaturas (`MonthGrid` compacto), respeitando meses de tamanhos diferentes, dias
+  intercalares (a faixa sem semana), estações, luas (só o ponto) e os eventos marcados; tocar num mês abre a vista do
+  mês e tocar num dia seleciona o dia no painel.
+- O título passa a ser o ano (“5631 C.R.”) na vista do ano; “Hoje no mundo” destacado na miniatura.
+- Em 320 px, uma coluna de meses; teclado: setas entre os dias, Page Up/Down entre os meses, como a Agenda.
+- Teste do núcleo para a grade do ano (meses, intercalares e início de semana) e conferência visual nos dois temas.
+
+### U10 — Título das categorias da Wiki fora do centro vertical
+
+Relato do dono (30/10, com captura da página inicial da Wiki): nos cartões das categorias (“Acontecimentos”,
+“Calendários”…), o nome fica mais alto que o ícone e a contagem, sem centro vertical comum. Causa provável: o `h2` dentro
+de `.wiki-category-heading` (`app/src/screens/wiki/WikiHome.tsx`) mantém a margem e a altura de linha de título, e o
+`row` não alinha pelo centro. Corrigir em `wiki.css` (`align-items: center`, `margin: 0` e `line-height` do `h2`), com
+nome longo quebrando em duas linhas sem desalinhar o ícone e a contagem.
