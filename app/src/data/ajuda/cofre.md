@@ -25,8 +25,9 @@ dizem por quê.
 
 ### Backups
 
-- Antes da **primeira gravação de cada dia**, o app guarda sozinho um backup do texto das notas, fora do cofre
-  (até 15). Em Configurações › Backups você vê o último, faz um com **Fazer agora** e, no computador, abre a pasta.
+- Antes da **primeira gravação de cada dia**, o app guarda sozinho um backup do texto das notas, fora do cofre.
+- No computador, Configurações › Backups agenda mais um por dia, no horário escolhido, e define quantos guardar (15
+  no começo). Lá você também vê os últimos, faz um com **Fazer agora** e abre a pasta.
 - Para guardar o **cofre inteiro**, com anexos e mesas, gere um pacote em Importar e exportar.
 
 ### Sincronização

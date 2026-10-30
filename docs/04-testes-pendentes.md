@@ -1087,3 +1087,13 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Abrir os 22 tópicos da Ajuda, usar o índice por grupo e avançar pelo botão Próximo; conferir que o tour e as notas de exemplo continuam no fim.
 - [ ] Wiki: repetir a conferência dos PRs #80–#82 (Painel/Relações, filtros e categorias personalizadas, 15 geradores).
 - [ ] A sala Android: repetir a entrada do jogador e conferir que o selo “Jogador 1” aparece após a conexão.
+
+
+## T1 — backups agendados (29/10/2026)
+
+- [ ] Configurações › Backups no computador: mudar o **Horário** para dali a dois minutos e deixar o app aberto (ou
+  na bandeja); um backup novo aparece na lista e em **Abrir pasta** no horário.
+- [ ] Mudar **Quantos guardar** para 3 e fazer quatro com **Fazer agora**: só os três mais recentes ficam.
+- [ ] Desligar **Backup automático todo dia**: o horário fica desabilitado e o texto avisa que ainda sai um backup
+  antes do primeiro salvamento do dia. Fechar e abrir o app: a escolha continua.
+- [ ] No celular, Configurações › Backups explica o backup do primeiro salvamento do dia, sem campos de horário.

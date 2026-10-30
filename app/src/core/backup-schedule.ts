@@ -29,3 +29,10 @@ export function nextBackupAt(now: Date, schedule: BackupSchedule): Date | null {
   if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1)
   return next
 }
+
+/** Quando sai o próximo backup agendado (“hoje às 03:00”, “amanhã às 03:00”), ou `null` com a agenda desligada. */
+export function describeNextBackup(now: Date, schedule: BackupSchedule): string | null {
+  const next = nextBackupAt(now, schedule)
+  if (!next) return null
+  return `${next.getDate() === now.getDate() ? "hoje" : "amanhã"} às ${schedule.time}`
+}
