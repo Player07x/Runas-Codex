@@ -428,3 +428,31 @@
  .table:not(.panel-open)>.side-panel>:not(.side-tabs) { display:none; }
  .scene-canvas>.resizable-panel.properties { width:var(--panel-vtt-properties,290px); }
 }
+
+/* Importar para a mesa (T4): as três origens, o arquivo e o resumo antes de gravar. */
+.vtt-root {
+  .scenes-panel .panel-header { flex-wrap: wrap; }
+  .panel-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .panel-actions .ghost { min-height: 34px; font-size: calc(13px * var(--font-scale, 1)); }
+  .import-sources { display: grid; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .import-sources legend { margin-bottom: 6px; padding: 0; color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); font-weight: 600; }
+  .import-source { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+  .import-source:hover { background: var(--panel-hover); }
+  .import-source.active { border-color: var(--cyan-dim); background: color-mix(in srgb, var(--cyan) 8%, transparent); }
+  .import-source:focus-within { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .import-source input { flex: 0 0 auto; margin: 3px 0 0; accent-color: var(--cyan); }
+  .import-source span { display: grid; gap: 2px; min-width: 0; }
+  .import-source small { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
+  .import-file { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+  .import-file-name { min-width: 0; max-width: 100%; overflow: hidden; color: var(--muted); font-family: var(--font-mono); font-size: calc(12px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+  .import-preview { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+  .import-preview p { margin: 0; }
+  .import-preview dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px 12px; margin: 0; }
+  .import-preview dt { color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); font-weight: 600; }
+  .import-preview dd { margin: 0; overflow-wrap: anywhere; }
+  .import-warnings, .import-names { display: grid; gap: 4px; margin: 0; padding-left: 18px; }
+  .import-warnings li::marker { color: var(--gold); }
+}
+@media (max-width: 860px) {
+  .vtt-root .import-dialog footer button, .vtt-root .import-file button, .vtt-root .panel-actions button { min-height: 44px; }
+}

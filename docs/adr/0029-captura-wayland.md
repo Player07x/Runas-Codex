@@ -1,6 +1,6 @@
 # ADR 0029 — captura rápida no Wayland
 
-- Estado: implementada no processo principal; botão visual fica para a fase do rework.
+- Estado: implementada; botão entregue na tarefa T3 (29/10/2026).
 - Data: 2026-10-22.
 
 O app continua tentando `GlobalShortcutsPortal` antes de qualquer fallback. Quando o portal não registra o atalho,
@@ -17,3 +17,7 @@ pessoa já tinha, acrescenta a ação e a marca `X-Runas-Codex-Captura=true`, e 
 `.desktop` instalado (AppImage), monta um completo com o caminho do AppImage. Remover só mexe no arquivo com a marca e
 devolve o da pessoa, guardado em `runas-codex.desktop.antes-da-captura`. No GNOME, o comando também usa o caminho do
 AppImage quando é ele que está rodando, porque o AppImage não fica no PATH.
+
+**Botão (29/10/2026, Claude Code, T3).** Configurações › Editor e atalhos › Captura rápida mostra o estado de
+`systemShortcut` e oferece **Criar atalho** ou **Remover**. Fora do GNOME e do KDE, o cartão só explica que Ctrl+Alt+N
+vale com o app aberto ou na bandeja. O dono não usa a captura (decisão D3, 29/10): vale esta recomendação.
