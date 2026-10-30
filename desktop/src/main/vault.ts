@@ -125,6 +125,23 @@ export const MAX_BINARY_SIZE = 100 * 1024 * 1024
  * - conteúdo igual ao do disco não é regravado;
  * - grava num temporário e troca de uma vez (sem arquivo pela metade se faltar energia).
  */
+/**
+ * No Windows, um antivírus, o indexador ou outra janela lendo o arquivo o seguram por um instante, e a troca pelo
+ * temporário falha com EPERM, EACCES ou EBUSY. Tenta de novo por até ~1 s, como o graceful-fs; os outros erros e os
+ * outros sistemas passam direto.
+ */
+export async function renameRetrying(from: string, to: string, platform: NodeJS.Platform = process.platform, move: (from: string, to: string) => Promise<void> = rename): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await move(from, to)
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? ""
+      if (platform !== "win32" || attempt >= 9 || !["EPERM", "EACCES", "EBUSY"].includes(code)) throw error
+      await new Promise((resolve) => setTimeout(resolve, 20 * (attempt + 1)))
+    }
+  }
+}
+
 async function writeSafe(root: string, path: string, content: string | Uint8Array, expected?: { mtime: number; size: number } | null): Promise<VaultEntry> {
   const full = await resolveForWrite(root, path)
   let current: VaultEntry | null = null
@@ -144,7 +161,7 @@ async function writeSafe(root: string, path: string, content: string | Uint8Arra
   try {
     if (typeof content === "string") await writeFile(temp, content, "utf8")
     else await writeFile(temp, content)
-    await rename(temp, full)
+    await renameRetrying(temp, full)
   } catch (error) {
     await rm(temp, { force: true })
     throw error

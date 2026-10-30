@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, utimes, writeFile
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { unzipSync } from "fflate"
-import { backupVault, createVault, listBackups, listVault, MAX_BINARY_SIZE, readBinary, readTexts, renamePath, resolveInside, trashPath, VaultError, writeBinarySafe, writeTextSafe } from "../src/main/vault"
+import { backupVault, createVault, listBackups, listVault, MAX_BINARY_SIZE, readBinary, readTexts, renamePath, renameRetrying, resolveInside, trashPath, VaultError, writeBinarySafe, writeTextSafe } from "../src/main/vault"
 
 let base: string
 let root: string
@@ -168,3 +168,24 @@ describe("createVault e backups", () => {
     expect(await listBackups(folder)).toHaveLength(2)
   })
 })
+
+describe("renameRetrying", () => {
+  const busy = (code: string) => Object.assign(new Error(code), { code })
+  it("no Windows, tenta de novo quando o arquivo está preso por um instante", async () => {
+    let calls = 0
+    await renameRetrying("a", "b", "win32", async () => { if (++calls < 3) throw busy("EPERM") })
+    expect(calls).toBe(3)
+  })
+  it("desiste depois de dez tentativas e não repete outros erros nem em outros sistemas", async () => {
+    let calls = 0
+    await expect(renameRetrying("a", "b", "win32", async () => { calls++; throw busy("EBUSY") })).rejects.toThrow("EBUSY")
+    expect(calls).toBe(10)
+    calls = 0
+    await expect(renameRetrying("a", "b", "win32", async () => { calls++; throw busy("ENOENT") })).rejects.toThrow("ENOENT")
+    expect(calls).toBe(1)
+    calls = 0
+    await expect(renameRetrying("a", "b", "linux", async () => { calls++; throw busy("EPERM") })).rejects.toThrow("EPERM")
+    expect(calls).toBe(1)
+  })
+})
+

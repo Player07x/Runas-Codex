@@ -106,7 +106,8 @@ try {
   await writeFile(output+'/android-jogador.png',execFileSync('adb',['exec-out','screencap','-p'],{timeout:15000,maxBuffer:16*1024*1024}))
   adb('shell','am','start','-n','dev.runas.codex/.MainActivity');await app.until('document.hasFocus()')
   await appButton('Desligar')
-  const closed=async()=>{for(let i=0;i<30;i++){try{const response=await fetch(base+'/healthz',{cache:'no-store'});if(!response.ok)return true}catch{return true}await sleep(250)}return false}
+  // Com a sala fechada, o adb forward ainda aceita a conexão e o fetch esperaria 5 min: o prazo curto conta como fechada.
+  const closed=async()=>{for(let i=0;i<30;i++){try{const response=await fetch(base+'/healthz',{cache:'no-store',signal:AbortSignal.timeout(3000)});if(!response.ok)return true}catch{return true}await sleep(250)}return false}
   let closedRoom=await closed()
   if(!closedRoom){await app.run(`window.Capacitor.Plugins.RunasRoom.stop();true`);closedRoom=await closed()}
   check('encerrar fecha porta',closedRoom)
@@ -128,3 +129,5 @@ try {
   throw error
 }
 finally {master?.close();guest?.close();browser?.close();androidPlayer?.close();app.close();await mkdir(output,{recursive:true});await writeFile(output+'/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2))}
+// Uma conexão presa no adb forward segurava o processo depois do resultado até o limite do job.
+process.exit(0)
