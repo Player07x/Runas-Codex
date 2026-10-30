@@ -9,7 +9,8 @@ export async function connectDevtools(endpoint,match=()=>true) {
   if(!target)throw new Error('Página de teste não abriu: '+endpoint)
   const socket=new WebSocket(target.webSocketDebuggerUrl),pending=new Map();let sequence=0
   const errors=[],network=[],frames=[]
-  await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject})
+  // Um WebView em segundo plano pode aceitar a conexão e nunca abrir: melhor falhar que travar o job.
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('O DevTools não respondeu: '+endpoint)),20000);socket.onopen=()=>{clearTimeout(timer);resolve()};socket.onerror=error=>{clearTimeout(timer);reject(error)}})
   socket.onmessage=event=>{
     const message=JSON.parse(event.data)
     if(message.method==='Network.webSocketFrameReceived'){try{frames.push(JSON.parse(message.params.response.payloadData))}catch{}}

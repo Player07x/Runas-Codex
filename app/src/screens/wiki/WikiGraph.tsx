@@ -11,6 +11,7 @@ export function WikiGraph() {
   const [create, setCreate] = useState<string | null>(null)
   return (
     <div className="wiki-graph">
+      <h1 className="sr-only">Gráfico de {wiki!.name}</h1>
       <GraphPage index={vault.index!} root={wiki!.root} version={vault.version} onBroken={(target) => setCreate(target)} />
       {create !== null && <NewArticleDialog initialName={create} onClose={() => setCreate(null)} />}
     </div>

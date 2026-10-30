@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { useSinglePane } from "../../lib/tabs"
-import { BookOpen, Check, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
+import { BookOpen, Check, Grid2X2, List, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { NoteCrest } from "../../components/kit/Emblem"
@@ -9,6 +9,7 @@ import { noteName } from "../../core/text"
 import { href, navigate } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
+import { ArticleArt } from "../wiki/ArticleArt"
 import { EditPlayerDialog, NewNpcDialog, NewPlayerDialog, WikiNotePicker } from "./campaign-dialogs"
 import { useCampaignEdits } from "./campaign-edits"
 import { sessionRoute, type CampaignData } from "./campaign-state"
@@ -72,10 +73,16 @@ export function CastView({ data }: { data: CampaignData }) {
 type Seen = "todos" | "apareceu" | "ainda"
 type Group = "nenhum" | "local" | "faccao" | "atitude" | "situacao"
 type Order = "nome" | "recente" | "adicao"
+/** Lista (linhas) ou grade (cartões com a imagem do artigo), como nas categorias da Wiki. */
+type Mode = "list" | "grid"
 const PAGE = 60
 const PREFS = "runas-codex:campanha:elenco"
-const readPrefs = (): { group: Group; order: Order } => {
-  try { const saved = JSON.parse(localStorage.getItem(PREFS) ?? "{}") as { group?: Group; order?: Order }; return { group: saved.group ?? "nenhum", order: saved.order ?? "nome" } } catch { return { group: "nenhum", order: "nome" } }
+type Prefs = { group: Group; order: Order; mode: Mode }
+const readPrefs = (): Prefs => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PREFS) ?? "{}") as Partial<Prefs>
+    return { group: saved.group ?? "nenhum", order: saved.order ?? "nome", mode: saved.mode === "grid" ? "grid" : "list" }
+  } catch { return { group: "nenhum", order: "nome", mode: "list" } }
 }
 
 /**
@@ -159,12 +166,23 @@ function NpcRoster({ data }: { data: CampaignData }) {
             </label>
             </Collapsible>
           </div>
-          <p className="tiny muted" aria-live="polite">{filtered.length === rows.length ? `${rows.length} NPCs` : `${filtered.length} de ${rows.length} NPCs`}</p>
+          <div className="row between campaign-roster-count">
+            <p className="tiny muted" aria-live="polite">{filtered.length === rows.length ? `${rows.length} NPCs` : `${filtered.length} de ${rows.length} NPCs`}</p>
+            <div className="row" role="group" aria-label="Exibição dos NPCs">
+              <button className={`btn sm ${prefs.mode === "grid" ? "primary" : ""}`} aria-pressed={prefs.mode === "grid"} onClick={() => setPrefs({ mode: "grid" })}><Grid2X2 size={14} /> Grade</button>
+              <button className={`btn sm ${prefs.mode === "list" ? "primary" : ""}`} aria-pressed={prefs.mode === "list"} onClick={() => setPrefs({ mode: "list" })}><List size={14} /> Lista</button>
+            </div>
+          </div>
           {[...groups].map(([group, list]) => (
-            <div key={group || "todos"} className="stack" style={{ gap: 0 }}>
+            <div key={group || "todos"} className="stack" style={{ gap: prefs.mode === "grid" ? 8 : 0 }}>
               {group && <h3 className="campaign-roster-group">{group} · {list.length}</h3>}
-              <ul className="campaign-roster-list">
-                {list.map((r) => <NpcRow key={r.item.position} row={r} data={data} onSave={save} onRemove={() => setHome("npcs", withoutPosition(data.data.npcs, r.item.position))} />)}
+              <ul className={prefs.mode === "grid" ? "campaign-roster-grid" : "campaign-roster-list"}>
+                {list.map((r) => {
+                  const remove = () => setHome("npcs", withoutPosition(data.data.npcs, r.item.position))
+                  return prefs.mode === "grid"
+                    ? <NpcCard key={r.item.position} row={r} data={data} onSave={save} onRemove={remove} />
+                    : <NpcRow key={r.item.position} row={r} data={data} onSave={save} onRemove={remove} />
+                })}
               </ul>
             </div>
           ))}
@@ -191,20 +209,60 @@ function Collapsible({ narrow, active, children }: { narrow: boolean; active: bo
   )
 }
 
-function NpcRow({ row, data, onSave, onRemove }: { row: CastRow; data: CampaignData; onSave(item: TrackedLink, extra: string): void; onRemove(): void }) {
-  const { item } = row
+type NpcProps = { row: CastRow; data: CampaignData; onSave(item: TrackedLink, extra: string): void; onRemove(): void }
+
+/** Local, facção e a última sessão em que o NPC foi visto. */
+function NpcWhere({ row }: { row: CastRow }) {
   const last = row.seen[row.seen.length - 1]
-  const known = ATTITUDES.includes(row.attitude as (typeof ATTITUDES)[number])
+  return (
+    <span className="tiny faint truncate">
+      {[row.place, row.faction].filter(Boolean).join(" · ")}
+      {last && <>{row.place || row.faction ? " · " : ""}<a href={href(sessionRoute(last))}>visto em {noteName(last.path)}</a>{row.seen.length > 1 ? ` (${row.seen.length} sessões)` : ""}</>}
+    </span>
+  )
+}
+
+function NpcRow({ row, data, onSave, onRemove }: NpcProps) {
+  const { item } = row
   return (
     <li className="campaign-roster-row">
       <NoteCrest path={item.dest} name={row.name} size={28} />
       <span className="grow campaign-roster-name">
         {item.dest ? <a className="wikilink cross truncate" href={href(noteRoute(item.dest))}>{row.name}</a> : <span className="wikilink broken truncate" title="A nota não existe">{row.name}</span>}
-        <span className="tiny faint truncate">
-          {[row.place, row.faction].filter(Boolean).join(" · ")}
-          {last && <>{row.place || row.faction ? " · " : ""}<a href={href(sessionRoute(last))}>visto em {noteName(last.path)}</a>{row.seen.length > 1 ? ` (${row.seen.length} sessões)` : ""}</>}
-        </span>
+        <NpcWhere row={row} />
       </span>
+      <NpcControls row={row} data={data} onSave={onSave} onRemove={onRemove} />
+    </li>
+  )
+}
+
+/** Cartão da grade: a imagem do artigo da wiki (ou o ícone da categoria), o nome e os mesmos controles da lista. */
+function NpcCard({ row, data, onSave, onRemove }: NpcProps) {
+  const vault = useVault()
+  const { item } = row
+  const note = item.dest ? vault.index?.note(item.dest) : undefined
+  const art = note ? <ArticleArt note={note} size="cover" /> : <span className="wiki-article-art cover" aria-hidden="true"><span className="wiki-art-initial">{Array.from(row.name.trim())[0]?.toLocaleUpperCase("pt-BR") ?? "?"}</span></span>
+  return (
+    <li className="campaign-npc-card">
+      {item.dest ? (
+        <a className="campaign-npc-card-head" href={href(noteRoute(item.dest))}>{art}<strong>{row.name}</strong></a>
+      ) : (
+        <span className="campaign-npc-card-head" title="A nota não existe">{art}<strong className="wikilink broken">{row.name}</strong></span>
+      )}
+      <div className="campaign-npc-card-body">
+        <NpcWhere row={row} />
+        <div className="campaign-npc-card-controls"><NpcControls row={row} data={data} onSave={onSave} onRemove={onRemove} /></div>
+      </div>
+    </li>
+  )
+}
+
+/** Atitude, “apareceu” e as ações; iguais na lista e na grade. */
+function NpcControls({ row, data, onSave, onRemove }: NpcProps) {
+  const { item } = row
+  const known = ATTITUDES.includes(row.attitude as (typeof ATTITUDES)[number])
+  return (
+    <>
       <select className={`select campaign-attitude ${attitudeColor(row.attitude)}`} disabled={data.readOnly} value={known ? row.attitude : ""} onChange={(e) => onSave(item, npcExtra(e.target.value, row.marked))} aria-label={`Atitude de ${row.name}`}>
         <option value="">{row.attitude && !known ? row.attitude : "sem atitude"}</option>
         {ATTITUDES.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -220,7 +278,7 @@ function NpcRow({ row, data, onSave, onRemove }: { row: CastRow; data: CampaignD
         ...(item.dest ? [{ label: "Abrir na Wiki", icon: <BookOpen size={15} />, onSelect: () => navigate(noteRoute(item.dest!)) }] : []),
         { label: "Tirar da campanha", icon: <Trash size={15} />, danger: true, disabled: data.readOnly, onSelect: onRemove },
       ]} />
-    </li>
+    </>
   )
 }
 

@@ -29,6 +29,7 @@ export function BoardsView({ data, path }: { data: CampaignData; path?: string }
   )
   return (
     <div className="campaign-boards">
+      <h1 className="sr-only">{current ? boardName(current) : "Quadros"}</h1>
       <nav className="campaign-boards-bar" aria-label="Quadros da campanha">
         <Shapes size={15} color="var(--accent, var(--violet))" aria-hidden="true" />
         {data.boards.map((b) => (

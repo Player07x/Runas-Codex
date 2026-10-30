@@ -58,6 +58,7 @@ if (typeof window !== "undefined") {
     if (event.key === "ArrowLeft") (event.preventDefault(), goBack())
     else if (event.key === "ArrowRight") (event.preventDefault(), goForward())
   })
+  ;(window as unknown as { runasCodexVoltar?: () => boolean }).runasCodexVoltar = () => systemBack()
   window.addEventListener("mouseup", (event) => {
     if (event.button === 3) (event.preventDefault(), goBack())
     else if (event.button === 4) (event.preventDefault(), goForward())
@@ -66,6 +67,22 @@ if (typeof window !== "undefined") {
 
 export function goBack() {
   if (nav?.canBack) window.history.back()
+}
+
+/**
+ * Voltar do sistema no Android (MainActivity): fecha o diálogo aberto (como o Esc) ou volta pelo histórico do app.
+ * Devolve `false` na primeira tela, para o Android sair do app. Vale o histórico do app, não o do WebView, que pula as
+ * entradas criadas sem toque (depois de criar uma nota, por exemplo).
+ */
+export function systemBack(): boolean {
+  const dialog = document.querySelector("[role=dialog],[role=alertdialog],dialog[open]")
+  if (dialog) {
+    ;(document.activeElement ?? dialog).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true }))
+    return true
+  }
+  if (!nav?.canBack) return false
+  window.history.back()
+  return true
 }
 
 export function goForward() {

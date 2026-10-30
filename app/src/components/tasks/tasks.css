@@ -22,7 +22,9 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
 .task-field { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); white-space: nowrap; }
 .task-field.late { color: var(--red); font-weight: 650; }
 .task-actions { display: flex; align-items: center; gap: 2px; flex: none; }
-.task-backlink { display: inline-block; max-width: min(100%, 260px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; color: var(--muted); text-decoration: none; }
+/* Linha própria: 24 px de alvo (WCAG 2.5.8, D13 da revisão) e 44 px no celular. */
+.task-backlink { display: inline-block; max-width: min(100%, 260px); min-height: 24px; line-height: 24px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; color: var(--muted); text-decoration: none; }
+@media (max-width: 860px) { .task-backlink { padding-block: 10px; } }
 .task-backlink:hover { color: var(--text); text-decoration: underline; }
 .task-backlink svg { vertical-align: -2px; margin-right: 3px; }
 /* Lista estreita (o painel da Agenda): o texto da tarefa ocupa a linha toda; prazo e nota de origem vão embaixo. */

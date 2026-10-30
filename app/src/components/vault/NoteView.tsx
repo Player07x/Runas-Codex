@@ -636,7 +636,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               <ArrowRight size={17} />
             </button>
           </span>
-          <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<strong>{note.name}</strong></div>
+          {/* O nome é o h1 da tela (nota aberta, artigo da Wiki): leitores de tela navegam pelos títulos. */}
+          <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<h1>{note.name}</h1></div>
           {modes}
           <div className="doc-end">
             <SaveStatus state={saveState} />

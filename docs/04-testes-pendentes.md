@@ -1203,3 +1203,21 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 
 - [ ] Atualizar da beta.21 para a beta.22 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre, PIN e preferências.
 - [ ] Conferir T1 a T4 (Backups, Cópias de conflito, atalho da captura rápida, importar na mesa) e as seções acima desta: geradores e culturas, T6, R1/T7 e Campanhas.
+
+
+## E1, T7, R1 no Android, R3 e R4 (30/10/2026)
+
+- [ ] Campanhas › Elenco: “Grade” e “Lista” acima dos NPCs, como nas categorias da Wiki. Na grade, cada NPC é um
+  cartão com a imagem do artigo (ou a inicial), atitude, “Apareceu” e o menu ⋯; a escolha continua ao reabrir o app.
+  No celular, a grade tem duas colunas.
+- [ ] Com Orca, NVDA ou TalkBack: ao abrir uma nota, um artigo, uma sessão, um livro ou um quadro, o leitor anuncia o
+  nome como título (h1). No celular, o nome do livro some da barra mas continua sendo lido.
+- [ ] Agenda: o link da nota de origem de uma tarefa fica mais fácil de tocar no celular.
+- [ ] Sala hospedada no celular (Android): ligar a transmissão, tocar em **Gerar link público**, confirmar e abrir o
+  link num aparelho fora da rede (dados móveis de outro celular). O jogador entra com o código; **Testar link**
+  responde; com a tela do celular apagada por alguns minutos, o jogador continua conectado; **Desligar** derruba o
+  link. O APK novo fica perto de 18 MB maior.
+- [ ] Bateria da sala com link público: 30 minutos com a sala aberta sem túnel, com túnel parado e com um jogador
+  mexendo no mapa; anotar a porcentagem gasta em cada caso (a meta da ADR 0032 é até 5 % por hora com o túnel parado).
+- [ ] O resultado da revisão no Android (job `android-revisao`, artefato `Runas-Codex-android-revisao`): olhar as
+  capturas em 320 px, deitado e com texto a 140 %.

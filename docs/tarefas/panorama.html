@@ -1,0 +1,590 @@
+<title>Tarefas do Runas-Codex</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: painel de uma coluna (~900px) com índice fixo; resumo em números, trilha do plano em blocos proporcionais ao tamanho das etapas, linha do tempo por data. Cores do visual Órbita do app. */
+:root{
+  --bg:#f0f2fa;--bg-deep:#e5e8f4;--panel:#fff;--panel-2:#e9edf8;--text:#222a42;--muted:#53617c;--line:#cbd3e6;--line-strong:#68799a;
+  --cyan:#454e9c;--gold:#795b1f;--violet:#6e5588;--green:#396549;--red:#a54433;
+  --cyan-soft:#dfe3fb;--gold-soft:#f4ead6;--green-soft:#dcebe2;--red-soft:#f7e0da;--violet-soft:#ebe4f4;
+  --f-display:"Cinzel",Georgia,"Times New Roman",serif;--f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11131a;--bg-deep:#0c0f15;--panel:#191d27;--panel-2:#242936;--text:#f0f2fa;--muted:#b0b8cd;--line:#303747;--line-strong:#69799c;
+  --cyan:#bec6ff;--gold:#ecc484;--violet:#bfadf1;--green:#9dcbb4;--red:#ffa48e;
+  --cyan-soft:#262c4a;--gold-soft:#3a3020;--green-soft:#1f3329;--red-soft:#3d2420;--violet-soft:#2e2840;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131a;--bg-deep:#0c0f15;--panel:#191d27;--panel-2:#242936;--text:#f0f2fa;--muted:#b0b8cd;--line:#303747;--line-strong:#69799c;
+  --cyan:#bec6ff;--gold:#ecc484;--violet:#bfadf1;--green:#9dcbb4;--red:#ffa48e;
+  --cyan-soft:#262c4a;--gold-soft:#3a3020;--green-soft:#1f3329;--red-soft:#3d2420;--violet-soft:#2e2840;color-scheme:dark}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Geist:wght@400;600;700&family=Geist+Mono:wght@400;600&display=swap">
+<style>
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15.5px/1.6 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 72px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+header.hero,main{max-width:900px;margin:0 auto}
+header.hero{padding-block:40px 24px;display:grid;gap:10px}
+main{display:grid;gap:56px}
+.eyebrow{font:600 12px/1.3 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+h1{font:700 clamp(28px,5vw,40px)/1.15 var(--f-display);letter-spacing:.02em}
+h2{font:700 24px/1.25 var(--f-display);letter-spacing:.02em}
+h3{font-size:16px}
+p{margin:0;max-width:72ch}
+.lede{color:var(--muted)}
+a{color:var(--cyan)}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+section{display:grid;gap:18px;min-width:0;scroll-margin-top:64px}
+.sec-head{display:grid;gap:6px}
+code{font:13px var(--f-mono);background:var(--panel-2);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-block:1px solid var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px))) 32px;padding:8px max(16px,env(safe-area-inset-left,0px))}
+nav.toc ul{max-width:900px;margin:0 auto;padding:0;list-style:none;display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin}
+nav.toc a{display:inline-flex;align-items:center;gap:6px;min-height:36px;white-space:nowrap;padding:6px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:600}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--panel-2);color:var(--text)}
+nav.toc .n{font:600 12px var(--f-mono);color:var(--text);background:var(--panel-2);border-radius:999px;padding:0 7px}
+
+/* Resumo */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);display:grid;gap:2px;text-decoration:none;color:inherit}
+.tile:hover{border-color:var(--line-strong)}
+.tile strong{font:600 30px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:13px}
+.tile.ok strong{color:var(--green)}.tile.todo strong{color:var(--cyan)}.tile.bad strong{color:var(--red)}.tile.mod strong{color:var(--gold)}.tile.rel strong{color:var(--violet)}
+
+/* Trilha do plano: largura = tamanho da etapa (P=1, M=2, G=3, GG=4) */
+.track{display:flex;flex-wrap:wrap;gap:4px}
+.track .seg{flex-grow:var(--w);flex-basis:calc(var(--w)*34px);min-width:44px;min-height:54px;border-radius:6px;padding:6px 8px;display:grid;align-content:space-between;font-size:12px;line-height:1.25;border:1px solid transparent}
+.seg b{font:700 14px var(--f-mono)}
+.seg.feita{background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 40%,transparent)}
+.seg.mudou{background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.seg.andamento{background:var(--cyan-soft);border-color:color-mix(in srgb,var(--cyan) 45%,transparent)}
+.seg.marco{background:var(--panel);border:1px dashed var(--line-strong)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+
+/* Pílulas de situação */
+.pill{display:inline-flex;align-items:center;white-space:nowrap;font:600 11.5px/1 var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:5px 8px;border-radius:999px}
+.p-feita,.p-corrigida{background:var(--green-soft);color:var(--green)}
+.p-parte,.p-contornada,.p-mudou{background:var(--gold-soft);color:var(--gold)}
+.p-aberta{background:var(--cyan-soft);color:var(--cyan)}
+.p-falha,.p-intermitente{background:var(--red-soft);color:var(--red)}
+.p-registrada{background:var(--violet-soft);color:var(--violet)}
+.p-opcional,.p-depois,.p-marco{background:var(--panel-2);color:var(--muted)}
+
+/* Faltam */
+.group{display:grid;gap:10px}
+.group > h3{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.group > h3 .count{font:600 13px var(--f-mono);color:var(--muted)}
+.group > p{color:var(--muted);font-size:14px}
+.cards{display:grid;gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:6px;min-width:0}
+.card .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card .id{font:600 13px var(--f-mono);color:var(--muted);margin-right:6px}
+.card h4{margin:0;font-size:15.5px;line-height:1.35;min-width:0;flex:1 1 260px}
+.card p{font-size:14.5px;color:var(--muted)}
+.card .meta{font-size:13px;color:var(--muted)}
+.card.registrada{border-style:dashed;border-color:var(--violet)}
+.simple{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14.5px}
+.simple li::marker{color:var(--line-strong)}
+
+/* Ritmo */
+.rhythm{overflow-x:auto}
+.rhythm ol{list-style:none;margin:0;padding:0 0 4px;display:flex;align-items:flex-end;gap:6px;min-width:min-content;height:170px}
+.rhythm li{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;gap:4px;width:44px;height:100%}
+.rhythm .v{font:600 12px var(--f-mono);color:var(--text);align-self:end}
+.rhythm .bar{width:24px;align-self:end;background:var(--cyan);border-radius:4px 4px 0 0;min-height:3px}
+.rhythm .d{font:12px var(--f-mono);color:var(--muted)}
+.rhythm .rel{width:6px;height:6px;border-radius:50%;background:var(--violet);display:inline-block;margin-left:2px;vertical-align:1px}
+
+/* Linha do tempo */
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.filters button{font:600 13px var(--f-body);color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+.filters button:hover{border-color:var(--line-strong)}
+.timeline{display:grid;gap:22px}
+.day{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 18px}
+.day .when{display:grid;align-content:start;gap:2px;padding-top:2px}
+.day .when b{font:700 20px/1 var(--f-display)}
+.day .when span{font:12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.day ul{list-style:none;margin:0;padding:0 0 0 18px;border-left:2px solid var(--line);display:grid;gap:7px;min-width:0}
+.day li{display:flex;gap:8px 10px;align-items:baseline;flex-wrap:wrap;position:relative}
+.day li::before{content:"";position:absolute;left:-24px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--green)}
+.day li.release::before{border-color:var(--violet);background:var(--violet)}
+.day li .t{flex:1 1 280px;min-width:0}
+.day li .ref{font:12.5px var(--f-mono);color:var(--muted)}
+.tag{font:600 11px/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:4px 6px;white-space:nowrap}
+.day li.release .t{font-weight:600;color:var(--violet)}
+.empty{color:var(--muted);font-size:14px}
+
+/* Falharam e modificadas */
+.rows{display:grid;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.row{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:6px 16px;padding:14px 16px;border-top:1px solid var(--line);align-items:start}
+.row:first-child{border-top:0}
+.row .date{font:600 13px var(--f-mono);color:var(--muted);padding-top:2px}
+.row h4{margin:0;font-size:15px;line-height:1.35}
+.row p{font-size:14px;color:var(--muted);margin-top:4px}
+.row .arrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px 10px;margin-top:6px;font-size:14px}
+.row .arrow .before{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.row .arrow .sym{color:var(--gold);font-weight:700}
+.row .why{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* Plano original */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-top:1px solid var(--line)}
+thead th{border-top:0;font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel-2)}
+td:first-child{font:700 14px var(--f-mono);white-space:nowrap}
+td.size{font-family:var(--f-mono);white-space:nowrap}
+td.now{min-width:190px}
+td.now .pill{margin-bottom:4px}
+td.now small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4}
+.queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.queue ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.queue li{display:flex;gap:8px;align-items:baseline;font-size:14px}
+.queue li .mono{font-weight:600;min-width:28px}
+.queue li .t{flex:1;min-width:0}
+.note{font-size:13.5px;color:var(--muted);border-left:3px solid var(--line-strong);padding:2px 0 2px 12px}
+footer{max-width:900px;margin:56px auto 0;color:var(--muted);font-size:13px;display:grid;gap:4px}
+
+@media (max-width:560px){
+  .day{grid-template-columns:1fr}
+  .day .when{display:flex;gap:10px;align-items:baseline}
+  .row{grid-template-columns:1fr}
+  .row .pill{justify-self:start}
+  .row .arrow{grid-template-columns:1fr}
+  .row .arrow .sym{display:none}
+  .row .arrow .after::before{content:"→ ";color:var(--gold);font-weight:700}
+  .filters button,nav.toc a{min-height:44px}
+}
+@media (prefers-reduced-motion:no-preference){.tile,.filters button{transition:border-color .15s,background .15s}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+
+<header class="hero">
+  <div class="eyebrow">Runas-Codex · situação em 30/10/2026, fim do dia · versão 0.1.0-beta.22</div>
+  <h1>Tarefas do Runas-Codex</h1>
+  <p class="lede">O que já foi feito, dia a dia, o que falta para a 1.0, o que falhou, o que mudou no caminho e o plano
+    de 14/10/2026. Este documento não atribui trabalho a ninguém: ele mostra o estado das tarefas.</p>
+</header>
+
+<nav class="toc" aria-label="Seções">
+  <ul>
+    <li><a href="#resumo">Resumo</a></li>
+    <li><a href="#faltam">Faltam <span class="n" id="n-faltam"></span></a></li>
+    <li><a href="#concluidas">Concluídas <span class="n" id="n-feitas"></span></a></li>
+    <li><a href="#falharam">Falharam <span class="n" id="n-falhas"></span></a></li>
+    <li><a href="#modificadas">Modificadas <span class="n" id="n-mudancas"></span></a></li>
+    <li><a href="#plano">Plano original</a></li>
+  </ul>
+</nav>
+
+<main>
+  <section id="resumo" aria-labelledby="h-resumo">
+    <div class="sec-head">
+      <h2 id="h-resumo">Resumo</h2>
+      <p class="lede">Em 16 dias saíram 22 versões de teste. Todas as etapas do plano original estão na <code>main</code>;
+        falta o fechamento para a 1.0.</p>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="group">
+      <h3>Trilha do plano original</h3>
+      <p class="lede" style="font-size:14px">Cada bloco é uma etapa, na ordem do plano. A largura é o tamanho estimado em
+        14/10 (P, M, G, GG).</p>
+      <div class="track" id="track"></div>
+      <div class="legend">
+        <span><i style="background:var(--green-soft);border:1px solid var(--green)"></i>Feita como planejada</span>
+        <span><i style="background:var(--gold-soft);border:1px solid var(--gold)"></i>Feita com mudanças</span>
+        <span><i style="background:var(--cyan-soft);border:1px solid var(--cyan)"></i>Em andamento</span>
+        <span><i style="background:var(--panel);border:1px dashed var(--line-strong)"></i>Marco que falta</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="faltam" aria-labelledby="h-faltam">
+    <div class="sec-head">
+      <h2 id="h-faltam">O que falta</h2>
+      <p class="lede">A 1.0.0 sai quando todas as tarefas obrigatórias estiverem concluídas com êxito (decisão D4, 29/10).</p>
+    </div>
+    <div id="pending" style="display:grid;gap:28px"></div>
+  </section>
+
+  <section id="concluidas" aria-labelledby="h-concluidas">
+    <div class="sec-head">
+      <h2 id="h-concluidas">Concluídas, por data</h2>
+      <p class="lede">Data em que cada tarefa entrou na <code>main</code>. Os pontos roxos são as versões publicadas.</p>
+    </div>
+    <div class="group">
+      <h3>Ritmo</h3>
+      <div class="rhythm" id="rhythm"></div>
+    </div>
+    <div class="filters" role="group" aria-label="Filtrar por módulo" id="filters"></div>
+    <div class="timeline" id="timeline" aria-live="polite"></div>
+  </section>
+
+  <section id="falharam" aria-labelledby="h-falharam">
+    <div class="sec-head">
+      <h2 id="h-falharam">O que falhou</h2>
+      <p class="lede">Tarefas, abordagens e conferências que não deram certo, com o que aconteceu depois.</p>
+    </div>
+    <div id="failures" style="display:grid;gap:28px"></div>
+  </section>
+
+  <section id="modificadas" aria-labelledby="h-modificadas">
+    <div class="sec-head">
+      <h2 id="h-modificadas">O que mudou no plano</h2>
+      <p class="lede">Escopo, ordem, critério ou forma de fazer que mudou depois de combinado, em ordem de data.</p>
+    </div>
+    <div class="rows" id="changes"></div>
+  </section>
+
+  <section id="plano" aria-labelledby="h-plano">
+    <div class="sec-head">
+      <h2 id="h-plano">Plano original</h2>
+      <p class="lede">As etapas de <code>docs/02-viabilidade-e-etapas.md</code> (seção 8), como foram combinadas em 14/10/2026,
+        e onde cada uma está hoje.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">#</th><th scope="col">Etapa</th><th scope="col">Entregável</th><th scope="col">Pronto quando</th><th scope="col">Tam.</th><th scope="col">Hoje</th></tr></thead>
+        <tbody id="plan"></tbody>
+      </table>
+    </div>
+    <p class="note">Ordem original: 0 → 1 → 2 → 3a → 4 → 3b → 5 → 6 → 7 → 8 → 9 → 10 → A → 11. Em 14/10, depois da 8b, a ordem
+      do que faltava passou a ser 7 → 8c → 8d → 9 → 10 → A → 11, em duas frentes ao mesmo tempo.</p>
+    <div class="group">
+      <h3>Fila do que faltava em 14/10</h3>
+      <p>Cada linha era um PR. Todas estão feitas; a medição da C9 no celular (R3) está no branch desta rodada.</p>
+      <div class="queue" id="queue"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>Fontes: <code>docs/tarefas/rumo-a-1.0.md</code>, <code>docs/tarefas/README.md</code>, <code>docs/releases/</code>, as ADRs e o histórico da <code>main</code>.</span>
+  <span>Para atualizar: edite as listas no fim deste arquivo (<code>docs/tarefas/panorama.html</code>); os números se recalculam.</span>
+</footer>
+
+<script>
+// Dados. Datas no formato AAAA-MM-DD; "m" é o módulo (filtro da linha do tempo).
+const DONE = [
+  ["2026-10-14","Etapa 0: checklist validada e dialeto Markdown aprovado","Plano","ADR 0004"],
+  ["2026-10-14","Etapa 1: protótipo visual navegável; visual Órbita escolhido","Interface","ADR 0001"],
+  ["2026-10-14","Etapa 2: monorepo, Electron, Capacitor, Platform, CI e instaladores","Plataforma","#1, #2"],
+  ["2026-10-14","Etapa 3a: núcleo de notas (cofre do Obsidian, índice, links, busca, backups)","Notas","#3"],
+  ["2026-10-14","Etapa 4: VTT no desktop, com Criar Sala e Entrar Sala","VTT","#4"],
+  ["2026-10-14","Etapa 3b: editor completo (live preview, formatadores, gráfico)","Notas","#5"],
+  ["2026-10-14","Etapa 5: Agenda (visões, recorrência, lembretes, .ics)","Agenda","#6"],
+  ["2026-10-14","8a: Livros, estrutura em notas e editor","Livros","#8"],
+  ["2026-10-14","Etapa 6: Wiki (modelos, calendários fictícios, linhas do tempo, mapas)","Wiki","#9"],
+  ["2026-10-14","8b: Livros, prévia paginada e temas","Livros","#10"],
+  ["2026-10-14","Etapa 7: Canvas e Campanhas","Campanhas","#11"],
+  ["2026-10-14","Divisão do que faltava em duas frentes paralelas","Plano","#12"],
+  ["2026-10-14","X1 (8c): Livros, exportar PDF, EPUB e DOCX","Livros","#15 pelo #19"],
+  ["2026-10-14","C0: arquivos binários no cofre","Notas","#13 pelo #19"],
+  ["2026-10-14","C1: imagens nas notas (importar, colar e arrastar)","Notas","#14 pelo #19"],
+  ["2026-10-14","C2: imagens com tamanho e posição","Notas","#16 pelo #19"],
+  ["2026-10-14","C3: mestre pelo celular com a sala aberta no desktop","VTT","#17 pelo #19"],
+  ["2026-10-14","Verificar atualizações (só quando o usuário clica)","Plataforma","#18, ADR 0017"],
+  ["2026-10-15","X2 (8d): Livros, importar Homebrewery, GM Binder e DOCX","Livros","#20"],
+  ["2026-10-15","C4 (etapa 10): migrações do Obsidian e dos plugins de RPG","Notas","#21"],
+  ["2026-10-15","Corretor ortográfico sem rede","Plataforma","#22, ADR 0018"],
+  ["2026-10-15","C5a: links, gráfico e notas pessoais","Notas","#24"],
+  ["2026-10-15","C5b: organização e busca das notas","Notas","#25"],
+  ["2026-10-15","Leitor: embeds por ponto de extensão","Notas","#26"],
+  ["2026-10-15","C5c: o resto da organização das notas","Notas","#27"],
+  ["2026-10-15","X3 (etapa 9): VTT no toque, gestos e layout","VTT","#23"],
+  ["2026-10-15","Atualização pelo app no Ubuntu","Plataforma","#29"],
+  ["2026-10-17","X5: fechamento dos Livros","Livros","#31"],
+  ["2026-10-17","C6a: fechamento da Wiki (conteúdo, ferramentas e crônicas)","Wiki","#31"],
+  ["2026-10-17","C6b: fechamento das Campanhas, Agenda e colaboração pela sala","Campanhas","#31"],
+  ["2026-10-17","X8: polimento visual, acessibilidade e primeiros passos","Interface","#31"],
+  ["2026-10-17","W1: página de categoria da Wiki com a arte dos artigos","Wiki","#30, #31"],
+  ["2026-10-17","Correção do instalador do Ubuntu","Plataforma","beta.6"],
+  ["2026-10-17","Metas de palavras retiradas; Configurações reorganizadas","Interface","beta.7"],
+  ["2026-10-17","Quadro: dois cliques num cartão voltam a editar","Campanhas","#34"],
+  ["2026-10-17","Datas do mundo com a sigla do calendário","Wiki","#35"],
+  ["2026-10-17","Sai a lista de calendário ao lado das datas","Wiki","#36"],
+  ["2026-10-17","Linha do tempo com vários calendários e calendários sincronizados","Wiki","#37"],
+  ["2026-10-17","Personagens dos jogadores vinculados à Wiki","Campanhas","#38"],
+  ["2026-10-18","C8 (etapa A): cofre real no Android, emulador no CI e APK assinado","Android","#41, ADR 0015"],
+  ["2026-10-18","SAF como reserva do cofre no Android","Android","#42, #43"],
+  ["2026-10-18","Pastas fornecidas por outros aplicativos no Android","Android","#45"],
+  ["2026-10-19","Transferências de pacotes e documentos (desktop e celular)","Plataforma","#46, ADR 0020"],
+  ["2026-10-19","Atualização do APK pelo próprio app","Android","#47, ADR 0021"],
+  ["2026-10-20","Caixas de tarefa no leitor","Notas","#39"],
+  ["2026-10-20","Tasks nas notas e tempo livre diário na Agenda","Agenda","#40, ADR 0020"],
+  ["2026-10-20","X4: exportações em cada módulo e nova interface de Livros","Livros","ADR 0013"],
+  ["2026-10-20","X7: sala do VTT hospedada no Android (rede local)","Android","ADR 0024"],
+  ["2026-10-21","X4 e X7 devolvidas à main","Plataforma","#52"],
+  ["2026-10-21","Regra de lançamentos de versão","Plano","#53, ADR 0025"],
+  ["2026-10-23","F1: fundações do rework (tokens, kit de componentes, título por rota, foco)","Interface","#55 pelo #54"],
+  ["2026-10-23","F2: seção Acessibilidade, fonte legível e barra inferior configurável","Interface","#56 pelo #54"],
+  ["2026-10-23","F3: editor compartilhado (barra única, menu /, galeria Formatar) e Livros refeito","Livros","#57, #59 pelo #54"],
+  ["2026-10-23","F4: Notas, Wiki, Campanhas e Agenda no visual novo; cores, capas e ícones","Interface","#60–#65 pelo #54, ADR 0027"],
+  ["2026-10-23","F5: Início, Configurações, Transferir e VTT no visual novo","Interface","#54, ADR 0026"],
+  ["2026-10-23","Aviso claro de que a sala do celular só funciona na rede local","VTT","#54, ADR 0032"],
+  ["2026-10-23","Código cercado do Homebrewery dentro da caixa ao importar","Livros","#54"],
+  ["2026-10-23","Teste do PIN determinístico","Plataforma","#54"],
+  ["2026-10-23","Captura rápida no Wayland pelo atalho do sistema (núcleo)","Plataforma","#54, ADR 0029"],
+  ["2026-10-23","X6: fechamento da mesa (Universal VTT, Foundry, tokens em lote, pinos)","VTT","#54, ADR 0028"],
+  ["2026-10-23","C9 sem tela: guarda de rede no smoke, teste dos instaladores, cofre grande","Plataforma","#54, ADR 0030"],
+  ["2026-10-23","C7: backups agendados e conflitos de sincronização (núcleo)","Plataforma","#54, ADR 0031"],
+  ["2026-10-23","Tasks: comandos por estado, outlinks e busca rápida","Agenda","#62 pelo #54"],
+  ["2026-10-25","Lista do que falta para a 1.0","Plano","#66"],
+  ["2026-10-26","R5: mestre pelo navegador com a sala hospedada no Android","VTT","#68, #70"],
+  ["2026-10-26","L1: prévia ao lado do texto em Livros","Livros","#69"],
+  ["2026-10-26","L2: limpeza do PDF (caixas, títulos, colunas, fonte, imagens)","Livros","#71"],
+  ["2026-10-26","L3: Estilo do livro, modelos em nota e fontes do cofre","Livros","#72"],
+  ["2026-10-26","L4: capa, sumário com páginas, aberturas e cabeçalhos","Livros","#73"],
+  ["2026-10-26","L5: fichas de RPG, versão dos jogadores e hifenização","Livros","#74, ADR 0033"],
+  ["2026-10-26","Imagens dentro das fichas e tarefas no painel da Agenda","Livros","#75"],
+  ["2026-10-27","Espaço entre os campos e o texto da ficha","Livros","#76"],
+  ["2026-10-27","Capa em Livros e Configurações em páginas","Interface","#77"],
+  ["2026-10-28","Painel da Wiki e títulos longos de categorias","Wiki","#78"],
+  ["2026-10-28","Wiki: painel, cartões e botões","Wiki","#80"],
+  ["2026-10-28","Wiki: filtros e categorias","Wiki","#81"],
+  ["2026-10-28","Geradores da Wiki: de 84 para 1.710 opções","Wiki","#82"],
+  ["2026-10-28","T5: Ajuda completa e navegável sem internet","Interface","#83"],
+  ["2026-10-29","Decisões D1 a D4 respondidas","Plano","rumo-a-1.0"],
+  ["2026-10-30","T1: Configurações › Backups (horário e quantos guardar)","Plataforma","#85"],
+  ["2026-10-30","T2: aviso das cópias de conflito do Syncthing e do Obsidian Sync","Plataforma","#86"],
+  ["2026-10-30","T3: botão do atalho da captura rápida (GNOME e KDE)","Plataforma","#87"],
+  ["2026-10-30","T4: importar Universal VTT, cenas do Foundry e tokens em lote","VTT","#88"],
+  ["2026-10-30","V1 a V5: conferências do dono confirmadas","Plano","rumo-a-1.0"],
+  ["2026-10-30","Geradores: 19.412 opções e nomes de 43 culturas","Wiki","#89"],
+  ["2026-10-30","Ferramentas da Wiki refeitas (grupos, tabelas da wiki, recentes)","Wiki","#89"],
+  ["2026-10-30","T6: lista, árvore, busca e gráfico com 10 mil notas","Notas","#89, ADR 0030"],
+  ["2026-10-30","R1 sem Android: 49 telas em 3 larguras e 2 temas, com axe","Interface","#89"],
+  ["2026-10-30","T7: 10 dos 12 defeitos de tela da R1 corrigidos","Interface","#89"],
+  ["2026-10-30","Revisão das seis telas das Campanhas e correções","Campanhas","#89"],
+  ["2026-10-30","T9: Elenco para mais de 100 NPCs, com “já apareceu”","Campanhas","#89"],
+  ["2026-10-30","Mapa de missões (Mapa, Árvore e “Gerar no Quadro”)","Campanhas","#89"],
+  ["2026-10-30","Nova aventura, com cinco estruturas","Campanhas","#89"],
+  ["2026-10-30","E1: Elenco com os NPCs em Grade ou Lista, como nas categorias da Wiki","Campanhas","main-yjcku0"],
+  ["2026-10-30","T7: telas de documento com h1 (D11) e link da tarefa com 24 px (D13)","Interface","main-yjcku0"],
+  ["2026-10-30","R1 no Android: 47 telas no emulador em 5 passadas, com axe","Android","main-yjcku0, job android-revisao"],
+  ["2026-10-30","R2: o voltar do sistema volta uma tela em vez de fechar o app","Android","main-yjcku0"],
+  ["2026-10-30","T7: defeitos achados no Android (D14, D15 e D17)","Interface","main-yjcku0"],
+  ["2026-10-30","R3: cofre de 10 mil notas medido no emulador","Android","ADR 0030"],
+  ["2026-10-30","R4: sala do celular pela internet (cloudflared no APK)","Android","ADR 0032"],
+];
+
+const RELEASES = [
+  ["2026-10-14",["beta.1","beta.2"]],["2026-10-15",["beta.3","beta.4"]],
+  ["2026-10-17",["beta.5","beta.6","beta.7","beta.8","beta.9","beta.10","beta.11","beta.12"]],
+  ["2026-10-18",["beta.13"]],["2026-10-19",["beta.14"]],["2026-10-20",["beta.15"]],["2026-10-23",["beta.16"]],
+  ["2026-10-26",["beta.17","beta.18"]],["2026-10-27",["beta.19"]],["2026-10-28",["beta.20","beta.21"]],["2026-10-30",["beta.22"]],
+];
+
+// Situação: feita, parte, aberta, registrada, opcional, depois.
+const PENDING = [
+  {group:"Obrigatórias para a 1.0", note:"Sem estas, a 1.0.0 não sai.", items:[
+    {id:"V2",s:"parte",t:"Conferências manuais das funções da beta.22 e desta rodada",d:"As seções novas do fim de docs/04-testes-pendentes.md: geradores e culturas, 10 mil notas com placa de vídeo, Campanhas, mapa de missões, Nova aventura, o Elenco em Grade e Lista e o link público da sala no celular.",meta:"docs/04-testes-pendentes.md"},
+    {id:"R1",s:"parte",t:"O que só um aparelho ou uma pessoa confere",d:"A revisão automática terminou (navegador e emulador). Fica a conferência com TalkBack, Orca e NVDA de verdade, num celular físico, com a sala em dois aparelhos, multitoque e impressão.",meta:"revisao-1.0.md"},
+    {id:"R4",s:"parte",t:"Link público da sala num celular de verdade",d:"Conferido no emulador do CI. Falta abrir pelo celular físico (ARM de 64 bits) e medir a bateria com o túnel aberto (meta: até 5 % por hora parado).",meta:"ADR 0032 · docs/04-testes-pendentes.md"},
+    {id:"T8",s:"aberta",t:"Preparar a 1.0",d:"Lista de conferências fechada, notas da versão e tag v1.0.0. O Android atualiza por cima das betas sem reinstalar.",meta:"Depende de todas as outras"},
+  ]},
+  {group:"Ajustes da versão publicada", items:[
+    {id:"—",s:"aberta",t:"Texto da Release beta.22",d:"A Release saiu com o texto automático do GitHub (“What's Changed”). As notas em três blocos estão em docs/releases/v0.1.0-beta.22.md e podem substituir o texto na página da Release.",meta:"github.com/Player07x/Runas-Codex/releases/tag/v0.1.0-beta.22"},
+  ]},
+  {group:"Opcionais: sobras da revisão das Campanhas", note:"Nenhuma impede a 1.0; valem uma rodada antes da candidata.", list:[
+    "“Hoje no mundo”: avançar a data do mundo pelo painel ou ao marcar a sessão como realizada.",
+    "Aviso “Gravado” nos campos que gravam ao sair; gravar ao fechar o painel da sessão no celular.",
+    "Desfazer em vez de pedir confirmação ao apagar relógio, item do tesouro, NPC ou personagem.",
+    "Reescrever CampaignTools.tsx e CampaignRoomTools.tsx no padrão do resto do módulo.",
+    "Quadro: renomear e apagar pela barra; modelos de relações e de linha do tempo.",
+    "Mapa de missões: ligar missões arrastando de um cartão a outro.",
+    "Ideias: pistas que destravam missões, relógio por missão, NPC improvisado na Tela do Mestre, “o que mudou desde a última sessão”, fios soltos, recompensa direto para o Tesouro, mapa de relações do Elenco e mapa de missões na sala dos jogadores.",
+  ]},
+  {group:"Depois da 1.0", list:[
+    "Migrar do Notion, Kanka, World Anvil e LegendKeeper.",
+    "Interface em inglês.",
+    "API de extensões.",
+  ]},
+];
+
+// Situação: falha (ainda falha), intermitente, contornada, corrigida.
+const FAILURES = [
+  {group:"Ainda falham ou foram só contornadas", items:[
+    {d:"2026-10-26",s:"intermitente",t:"Smoke da sala do Android no CI",p:"Falha de vez em quando e passa ao rodar de novo (desde a beta.17). Em 30/10 falhou no PR #89 ao tirar a captura do emulador e passou na segunda vez."},
+    {d:"2026-10-15",s:"contornada",t:"Atalho global Ctrl+Alt+N no GNOME com Wayland",p:"O Wayland não deixa o app escutar o teclado, e o Electron não abre a sessão do portal de atalhos. Contornado com runas-codex --captura e o botão que cria o atalho do sistema (T3)."},
+    {d:"2026-10-26",s:"contornada",t:"Prévia de livros grandes demora a refazer",p:"Cada mudança refaz a prévia inteira. “Só este capítulo” ajuda."},
+    {d:"2026-10-30",s:"contornada",t:"Gráfico global com 10 mil notas sem placa de vídeo",p:"A lista, a árvore e a busca ficaram rápidas (T6); o gráfico ainda desenha devagar no navegador sem placa de vídeo."},
+  ]},
+  {group:"Falharam e foram corrigidas", items:[
+    {d:"2026-10-15",s:"corrigida",t:"Botão de atualizar nas betas 4 e 5 do Ubuntu",p:"O APT recusava com “Pathname to install is not absolute”. A beta.6 corrigiu e trouxe as instruções para sair da 4 ou da 5."},
+    {d:"2026-10-15",s:"corrigida",t:"Código cercado do Homebrewery saindo da caixa",p:"Achado na revisão do #20 e esquecido. Corrigido em 23/10, com teste."},
+    {d:"2026-10-18",s:"corrigida",t:"Primeiro smoke do Android no CI",p:"Falhava porque o /sdcard do emulador ainda não estava montado."},
+    {d:"2026-10-20",s:"corrigida",t:"Cliente remoto da mesa com documents.list(tipo)",p:"O teste pela interface da sala no Android mostrou que o argumento era enviado errado (ADR 0024)."},
+    {d:"2026-10-21",s:"corrigida",t:"X4 e X7 sumiram da main",p:"A mesclagem do #40 trouxe de volta a versão anterior das duas, embora a beta.15 tivesse saído com elas. O #52 reaplicou os dois commits."},
+    {d:"2026-10-22",s:"corrigida",t:"Itens do Codex sem commit",p:"Foram feitos na pasta principal, sem branch nem commit. Foram reunidos e conferidos num branch próprio antes da beta.16."},
+    {d:"2026-10-22",s:"corrigida",t:"Teste do PIN instável",p:"Falhava quando o hash aleatório tinha “2468”. Ficou determinístico."},
+    {d:"2026-10-26",s:"corrigida",t:"Hifenização do CSS no Electron 44",p:"hyphens: auto não funciona no Linux. A hifenização em português passou a vir de uma dependência (ADR 0033)."},
+    {d:"2026-10-30",s:"corrigida",t:"Pastas recolhidas escondiam notas no smoke do Electron",p:"A T6 carregava as pastas só ao abrir, e o smoke via 2 de 38 notas. Agora isso só vale para cofres grandes."},
+    {d:"2026-10-30",s:"corrigida",t:"Confirmação de “Desvincular” quebrou o smoke de gravação",p:"O Elenco passou a pedir confirmação; o smoke agora confirma."},
+    {d:"2026-10-30",s:"contornada",t:"Tag da beta.22 recusada na sessão na nuvem",p:"O envio da tag foi bloqueado (403). O dono criou a tag e a Release saiu, mas com o texto automático do GitHub."},
+    {d:"2026-10-22",s:"corrigida",t:"Túnel da sala hospedada no celular",p:"Em 22/10 o Android não rodava o túnel e a sala ganhou só um aviso (ADR 0032). Em 30/10 o cloudflared entrou no APK (R4) e o link público funciona."},
+    {d:"2026-10-30",s:"corrigida",t:"O cloudflared de Linux não acha o DNS do Android",p:"Ele procura o /etc/resolv.conf, que o Android não tem. O app passou a resolver a borda da Cloudflare e a fazer o pedido do túnel pela rede do Android."},
+    {d:"2026-10-30",s:"corrigida",t:"Voltar do sistema fechava o app",p:"Achado pela revisão no emulador: o app não tratava o botão voltar. Agora ele fecha o diálogo ou volta uma tela (D16)."},
+    {d:"2026-10-30",s:"corrigida",t:"Revisão no emulador travada até o tempo limite",p:"Depois do voltar fechar o app, a conexão com o WebView ficava presa e o cancelamento não parava os passos. A revisão traz o app para a frente e desiste em 20 s."},
+    {d:"2026-10-30",s:"corrigida",t:"Legenda das relações sem contraste no tema claro",p:"O texto usava a cor do mapa (1,54:1). A cor foi para um ponto ao lado (D15)."},
+  ]},
+];
+
+// Mudanças: d, antes, depois, porquê.
+const CHANGES = [
+  ["2026-10-14","Visual do app","Três propostas no protótipo: Original, Atlas e Órbita","Órbita","ADR 0001"],
+  ["2026-10-14","Relação com a Runas Suite","O app juntaria Runas DM, Tools, Book e RunasVTT, com migrações e ponte com os sites","Projeto independente, que só reaproveita código","ADR 0004. A etapa 3a passou a abrir um cofre do Obsidian, a 4 virou só a mesa e a 7 perdeu a migração do Runas DM."],
+  ["2026-10-14","Etapa 4, VTT no desktop","Mesa com navegador integrado, ponte com os sites e fichas","Só a mesa e a sala","ADR 0006"],
+  ["2026-10-14","Etapa 9, VTT no toque","Incluía a sala hospedada pelo celular","A sala no celular foi para a etapa A","Separar o toque, de menor risco, do servidor no Android"],
+  ["2026-10-14","Etapa 10, migrações","Obsidian, Notion, Kanka e World Anvil","Só o Obsidian e os plugins de RPG; os outros depois da 1.0","Plano da 1.0"],
+  ["2026-10-14","Ordem das etapas","Uma fila só: … 7 → 8 → 9 → 10 → A → 11","7 → 8c → 8d → 9 → 10 → A → 11, em duas frentes ao mesmo tempo","Terminar mais rápido"],
+  ["2026-10-14","Voz, vídeo e sincronização","Voz e vídeo na sala; sincronizar aparelhos pela rede local","Fora do plano","Decisão do dono"],
+  ["2026-10-17","C6, fechamento de Wiki, Campanhas e Agenda","Uma tarefa só","C6a (Wiki) e C6b (Campanhas, Agenda e sala)","Tamanho do PR"],
+  ["2026-10-17","Página de categoria da Wiki","Não estava no plano","W1: página com a arte dos artigos","Pedido do dono"],
+  ["2026-10-17","Metas de palavras","Meta em Livros e cartão de progresso na Wiki","Retiradas; fica só a contagem de palavras","Não ajudavam (beta.7)"],
+  ["2026-10-21","Rework visual","As telas seguiriam o visual da etapa 1","Rework F1 a F5; o que não dependia da interface virou a lista “itens 1 a 9”","Proposta aprovada pelo dono"],
+  ["2026-10-22","Item 1, sala do celular pela internet","Implementar o túnel no APK","Aviso na sala e estudo (ADR 0032); o túnel ficou para depois","Tamanho do APK e bateria"],
+  ["2026-10-22","Número da ADR do túnel","0027","0032","0027 já era a ADR de cores e capas"],
+  ["2026-10-25","Inventário das tarefas","abertas-e-responsaveis.md","rumo-a-1.0.md","Depois da beta.16"],
+  ["2026-10-25","PDF dos Livros","Prévia e exportação da etapa 8","Livro impresso, fases L1 a L5","Pedido do dono depois da beta.16 (ADR 0033)"],
+  ["2026-10-26","R5, mestre pelo navegador com a sala no celular","Recomendado para depois da 1.0 (D2)","Feito na beta.17","Pedido do dono"],
+  ["2026-10-26","Hifenização","hyphens: auto do CSS","Dependência de hifenização em português","Não funciona no Electron 44 no Linux"],
+  ["2026-10-28","Geradores da Wiki","84 opções","1.710 (28/10), depois 9.692 e 19.412 opções, com 43 culturas de nomes (30/10)","Pedidos do dono"],
+  ["2026-10-29","D1, sala do celular pela internet","Recomendação: depois da 1.0","Entra na 1.0 (R4 obrigatória)","“Deveria funcionar, mas ainda não funciona”"],
+  ["2026-10-29","D3, captura rápida no GNOME","Esperar o portal de atalhos globais","Botão que cria o atalho do sistema (T3)","O dono não usa a captura rápida"],
+  ["2026-10-29","D4, qual versão vira 1.0.0","A que sair depois da sessão real e da revisão com Android","Quando todas as tarefas estiverem concluídas com êxito","Decisão do dono"],
+  ["2026-10-29","Elenco das campanhas","Grade de cartões por tipo","T9: lista para mais de 100 NPCs, com “já apareceu” marcado à mão","Pedido do dono"],
+  ["2026-10-30","R1, revisão completa","Uma rodada só, com um celular Android","No navegador (49 telas) e no emulador do CI (47 telas em 5 passadas); a parte com aparelho físico e leitores de tela fica como conferência","Sem aparelho no ambiente da revisão"],
+  ["2026-10-30","E1, Elenco em Lista ou Blocos","Registrada para fazer depois, sem começar","Liberada e feita no mesmo dia","Pedido do dono"],
+  ["2026-10-30","R4, como o túnel roda no celular","Binário do cloudflared rodando sozinho no APK (ADR 0032)","Binário no APK, com os endereços da Cloudflare e o pedido do túnel feitos pela rede do Android","O binário de Linux não acha o DNS do Android"],
+  ["2026-10-30","Desempenho com 10 mil notas (C9)","Uma tarefa: 10 mil notas sem travar no celular","T6 no navegador e R3 no emulador do CI (as duas feitas)","Medir cada ambiente no seu lugar"],
+];
+
+// Plano original (docs/02, seção 8). w = tamanho em blocos; s = feita, mudou, andamento, marco.
+const PLAN = [
+  ["0","Validação de requisitos","Checklist desmarcada; dialeto Markdown fechado","Você aprova a checklist e a tabela do dialeto","P",1,"feita","14/10"],
+  ["1","Protótipo visual navegável","App React com dados fictícios, todas as telas, desktop e celular","Você navega por todas as telas no PC e no celular e aprova o visual","M",2,"mudou","14/10 · três visuais, ficou o Órbita"],
+  ["2","Fundação técnica + spikes","Monorepo, cascas Electron e Capacitor, Platform, CI com instaladores e APK; spikes","Instaladores abrem nos três sistemas; spikes com decisão em ADR","G",3,"feita","14/10 · spikes do Android fechados na C8 (18/10)"],
+  ["3a","Núcleo de notas","Cofre, índice, espaços isolados, links, backlinks, busca, tags, propriedades, renomear, backups","Um cofre do Obsidian abre sem alterar um byte","G",3,"mudou","14/10 · critério trocou do cofre do Runas DM para o do Obsidian"],
+  ["4","VTT no desktop","Mesa portada do RunasVTT, mesas em .runas/, Criar Sala / Entrar Sala com túnel","Uma sessão real roda no Runas-Codex","M",2,"mudou","14/10 · só a mesa, sem navegador nem ponte com os sites"],
+  ["3b","Editor completo","Live preview, transclusão, todos os formatadores, gráfico em WebGL, templates","Nota de teste renderiza igual no app e no Obsidian","GG",4,"feita","14/10 · refeito no rework (F3, 23/10)"],
+  ["5","Agenda","Visões, eventos, recorrência, lembretes, .ics, ligação com sessões","Lembrete dispara no Android e no desktop","M",2,"feita","14/10 · Tasks e tempo livre em 20/10"],
+  ["6","Wiki","Modelos, calendários fictícios e datas automáticas, linhas do tempo, mapas, relações","Calendário com luas e intercalares calcula idade e dia da semana certos","G",3,"feita","14/10 · fechamento C6a e W1 em 17/10"],
+  ["7","Canvas + Campanhas","JSON Canvas 1.0; painel, sessões, missões, NPCs","O quadro salvo em .canvas abre igual no Obsidian","M + M",4,"mudou","14/10 · sem a migração do Runas DM"],
+  ["8","Livros","Estrutura em notas, prévia paginada, temas, exportações, importar Homebrewery","Livro de exemplo sai em PDF/EPUB/DOCX fiel à prévia","GG",4,"mudou","8a a 8d entre 14 e 15/10 · livro impresso L1–L5 em 26/10"],
+  ["9","VTT no toque","Interface do mestre por toque","Sessão de teste com o mestre no celular, sala no desktop","G",3,"mudou","15/10 · a sala no celular foi para a etapa A"],
+  ["10","Migrações","Obsidian primeiro; Notion, Kanka e World Anvil depois da 1.0","Dados reais migrados sem perda","G",3,"feita","15/10 · Obsidian e plugins de RPG"],
+  ["A","Android completo","Cofre real, sala hospedada pelo celular na rede local, testes no emulador do CI","Cofre do Obsidian aberto e editado no celular; sessão com a sala no celular","G + G",6,"feita","18 a 20/10 · pela internet desde 30/10 (R4)"],
+  ["11","Polimento e lançamento","Desempenho, acessibilidade, instaladores, beta","Beta com sua mesa","M",2,"andamento","Beta com a mesa do dono (V4), revisão no Android e R3 feitas; faltam as conferências físicas e a T8"],
+  ["1.0","Versão 1.0.0","Conferências fechadas, notas e tag v1.0.0","Todas as tarefas concluídas com êxito (D4)","—",2,"marco","Aberta (T8)"],
+];
+
+const QUEUES = [
+  ["X1","8c Livros: exportar PDF, EPUB e DOCX","feita"],["X2","8d Livros: importar Homebrewery, GM Binder e DOCX","feita"],
+  ["X3","9 VTT no toque","feita"],["X4","Exportações para documento e site estático","feita"],
+  ["X5","Fechamento dos Livros","feita"],["X6","Fechamento da mesa","feita"],
+  ["X7","Sala hospedada pelo celular","feita"],["X8","Polimento visual e acessibilidade","feita"],
+  ["C0","Arquivos binários no cofre","feita"],["C1","Imagens: importar, colar e arrastar","feita"],
+  ["C2","Imagens: tamanho e posição","feita"],["C3","Mestre pelo celular com a sala no desktop","feita"],
+  ["C4","Migrações do Obsidian","feita"],["C5","Fechamento das notas e do editor","feita"],
+  ["C6","Fechamento de Wiki, Campanhas e Agenda","feita"],["C7","Pacotes e backups agendados","feita"],
+  ["C8","Android completo","feita"],["C9","Desempenho, ajuda offline, instaladores, beta","feita"],
+];
+
+// Desenho.
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LABEL = {feita:"Feita",parte:"Em parte",aberta:"Aberta",registrada:"Registrada",opcional:"Opcional",depois:"Depois da 1.0",
+  falha:"Ainda falha",intermitente:"Intermitente",contornada:"Contornada",corrigida:"Corrigida",mudou:"Com mudanças",andamento:"Em andamento",marco:"Falta"};
+const pill = s => `<span class="pill p-${s === "mudou" ? "mudou" : s === "andamento" ? "aberta" : s}">${LABEL[s]}</span>`;
+const parts = d => d.split("-").map(Number);
+const shortDate = d => { const [, m, day] = parts(d); return `${String(day).padStart(2,"0")}/${String(m).padStart(2,"0")}` };
+const weekday = d => { const [y, m, day] = parts(d); return new Date(Date.UTC(y, m-1, day)).toLocaleDateString("pt-BR",{weekday:"short",timeZone:"UTC"}).replace(".","") };
+
+const releases = Object.fromEntries(RELEASES);
+const releaseCount = RELEASES.reduce((n, [, r]) => n + r.length, 0);
+const required = PENDING[0].items.filter(i => i.s !== "feita").length;
+const failCount = FAILURES.reduce((n, g) => n + g.items.length, 0);
+const fixed = FAILURES.reduce((n, g) => n + g.items.filter(i => i.s === "corrigida").length, 0);
+
+$("n-faltam").textContent = required;
+$("n-feitas").textContent = DONE.length;
+$("n-falhas").textContent = failCount;
+$("n-mudancas").textContent = CHANGES.length;
+
+$("tiles").innerHTML = [
+  ["ok","#concluidas",DONE.length,"tarefas concluídas"],
+  ["todo","#faltam",required,"obrigatórias para a 1.0"],
+  ["bad","#falharam",failCount,`falharam (${fixed} corrigidas)`],
+  ["mod","#modificadas",CHANGES.length,"mudanças no plano"],
+  ["rel","#concluidas",releaseCount,"versões de teste publicadas"],
+].map(([c, href, n, l]) => `<a class="tile ${c}" href="${href}"><strong>${n}</strong><span>${l}</span></a>`).join("");
+
+$("track").innerHTML = PLAN.map(([id, name,,,, w, s]) =>
+  `<div class="seg ${s}" style="--w:${w}" title="${esc(name)}: ${LABEL[s]}"><b>${esc(id)}</b><span>${esc(name)}</span><span class="sr">: ${LABEL[s]}</span></div>`).join("");
+
+$("pending").innerHTML = PENDING.map(g => {
+  const n = g.items ? g.items.length : g.list.length;
+  const body = g.items
+    ? `<div class="cards">${g.items.map(i => `<article class="card ${i.s}"><div class="top"><h4><span class="id">${esc(i.id)}</span>${esc(i.t)}</h4>${pill(i.s)}</div><p>${esc(i.d)}</p>${i.meta ? `<div class="meta">${esc(i.meta)}</div>` : ""}</article>`).join("")}</div>`
+    : `<ul class="simple">${g.list.map(t => `<li>${esc(t)}</li>`).join("")}</ul>`;
+  return `<div class="group"><h3>${esc(g.group)} <span class="count">${n}</span></h3>${g.note ? `<p>${esc(g.note)}</p>` : ""}${body}</div>`;
+}).join("");
+
+// Ritmo: tarefas por dia, na mesma escala.
+const byDay = {};
+DONE.forEach(([d]) => { byDay[d] = (byDay[d] || 0) + 1 });
+const days = [...new Set([...Object.keys(byDay), ...Object.keys(releases)])].sort();
+const max = Math.max(...Object.values(byDay));
+$("rhythm").innerHTML = `<ol aria-label="Tarefas concluídas por dia">${days.map(d => {
+  const n = byDay[d] || 0, r = releases[d];
+  return `<li aria-label="${shortDate(d)}: ${n} tarefas${r ? `, ${r.length} versões` : ""}"><span class="v">${n}</span><span class="bar" style="height:${Math.round(n / max * 100)}%"></span><span class="d">${shortDate(d)}${r ? '<span class="rel" aria-hidden="true"></span>' : ""}</span></li>`;
+}).join("")}</ol>`;
+
+// Linha do tempo com filtro por módulo.
+const modules = ["Todos", ...[...new Set(DONE.map(r => r[2]))].sort((a, b) => a.localeCompare(b, "pt-BR"))];
+let current = "Todos";
+try { const saved = localStorage.getItem("runas-codex:panorama-modulo"); if (saved && modules.includes(saved)) current = saved } catch { /* sem memória: começa em Todos */ }
+const renderFilters = () => {
+  $("filters").innerHTML = modules.map(m => {
+    const n = m === "Todos" ? DONE.length : DONE.filter(r => r[2] === m).length;
+    return `<button type="button" aria-pressed="${m === current}" data-m="${esc(m)}">${esc(m)} <span class="mono">${n}</span></button>`;
+  }).join("");
+};
+const renderTimeline = () => {
+  const rows = DONE.filter(r => current === "Todos" || r[2] === current);
+  const dates = [...new Set([...rows.map(r => r[0]), ...(current === "Todos" ? Object.keys(releases) : [])])].sort().reverse();
+  $("timeline").innerHTML = dates.length ? dates.map(d => {
+    const items = rows.filter(r => r[0] === d).map(([, t, m, ref]) =>
+      `<li><span class="t">${esc(t)}</span><span class="tag">${esc(m)}</span><span class="ref">${esc(ref)}</span></li>`).join("");
+    const rel = current === "Todos" && releases[d] ? `<li class="release"><span class="t">Publicada${releases[d].length > 1 ? "s" : ""}: ${releases[d].join(", ")}</span></li>` : "";
+    return `<div class="day"><div class="when"><b>${shortDate(d)}</b><span>${weekday(d)}</span></div><ul>${rel}${items}</ul></div>`;
+  }).join("") : `<p class="empty">Nenhuma tarefa deste módulo.</p>`;
+};
+$("filters").addEventListener("click", e => {
+  const b = e.target.closest("button[data-m]");
+  if (!b) return;
+  current = b.dataset.m;
+  try { localStorage.setItem("runas-codex:panorama-modulo", current) } catch { /* só não é lembrado */ }
+  renderFilters(); renderTimeline();
+  $("filters").querySelector(`button[data-m="${CSS.escape(current)}"]`)?.focus();
+});
+renderFilters(); renderTimeline();
+
+$("failures").innerHTML = FAILURES.map(g => `<div class="group"><h3>${esc(g.group)} <span class="count">${g.items.length}</span></h3><div class="rows">${
+  [...g.items].sort((a, b) => a.d.localeCompare(b.d)).map(i => `<div class="row"><span class="date">${shortDate(i.d)}</span><div><h4>${esc(i.t)}</h4><p>${esc(i.p)}</p></div>${pill(i.s)}</div>`).join("")
+}</div></div>`).join("");
+
+$("changes").innerHTML = CHANGES.map(([d, what, before, after, why]) =>
+  `<div class="row"><span class="date">${shortDate(d)}</span><div><h4>${esc(what)}</h4><div class="arrow"><span class="before"><span class="sr">Antes: </span>${esc(before)}</span><span class="sym" aria-hidden="true">→</span><span class="after"><span class="sr">Depois: </span>${esc(after)}</span></div><div class="why">${esc(why)}</div></div>${pill("mudou")}</div>`).join("");
+
+$("plan").innerHTML = PLAN.map(([id, name, deliv, done, size,, s, now]) =>
+  `<tr><td>${esc(id)}</td><td><strong>${esc(name)}</strong></td><td>${esc(deliv)}</td><td>${esc(done)}</td><td class="size">${esc(size)}</td><td class="now">${pill(s)}<small>${esc(now)}</small></td></tr>`).join("");
+
+const half = QUEUES.length / 2;
+$("queue").innerHTML = [QUEUES.slice(0, half), QUEUES.slice(half)].map(list =>
+  `<ul>${list.map(([id, t, s]) => `<li><span class="mono">${id}</span><span class="t">${esc(t)}</span>${pill(s)}</li>`).join("")}</ul>`).join("");
+</script>

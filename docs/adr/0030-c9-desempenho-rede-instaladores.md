@@ -44,6 +44,27 @@ ligações deixaram de ser agrupadas por cor com cópia da lista a cada ligaçã
 quadro do gráfico global ainda leva perto de 1 s, quase todo no desenho por software; a conferência com placa de
 vídeo e no Android (R3) fica para o dono.
 
+## Android com 10 mil notas (R3, 30/10/2026)
+
+Medido no emulador do CI (Android 35, x86_64, Pixel 2, GPU por software), job `android-revisao` do workflow Release,
+com o mesmo cofre da T6 (`generateLargeVault(10_000)`) e `mobile/tests/vault-large.cdp.mjs`:
+
+| Operação | 10 mil notas no emulador |
+| --- | ---: |
+| Abrir o app até o índice ter as 10 mil notas (do `am start`) | 12,6 s |
+| Lista de notas aparecer / itens desenhados | 0,33 s / 200 |
+| Digitar “cidade valdris” (14 teclas) | 1,36 s |
+| Resultados assentarem depois da última tecla | 0,46 s |
+| Maior travada durante a busca | 246 ms |
+| Voltar para a árvore ao limpar a busca | 0,35 s, sem travada |
+| Gráfico global: aparecer / acalmar | 0,58 s / 0,83 s |
+| Memória do JavaScript | 40 MB |
+| Memória do processo (`dumpsys meminfo`, PSS / RSS) | 157 MB / 293 MB |
+
+O índice leva mais que no desktop porque lê 10 mil arquivos pelo armazenamento compartilhado do emulador; depois de
+aberto, lista, busca e gráfico ficam no mesmo patamar do navegador. Num aparelho físico os números mudam com o
+armazenamento e o processador; a conferência no celular do dono está em `docs/04-testes-pendentes.md`.
+
 ## Instaladores
 
 O teste estrutural confere identidade `dev.runas.codex`, nomes `Runas-Codex`, ícone, atalhos e preservação de dados do

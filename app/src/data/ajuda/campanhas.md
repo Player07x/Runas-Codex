@@ -65,6 +65,9 @@ atitude ou situação. **Apareceu** é marcado sozinho quando uma nota de sessã
 quem apareceu sem link. A marca fica na nota da campanha, junto da atitude: `npcs: ["[[Conde Ormund]] (hostil,
 apareceu)"]`. **Novo NPC** cria o artigo na wiki e já põe no Elenco.
 
+**Grade** e **Lista**, como nas categorias da Wiki: a lista mostra uma linha por NPC; a grade, um cartão com a imagem
+do artigo (ou a inicial). Os dois têm a atitude, o “Apareceu” e o menu ⋯. A escolha fica lembrada neste aparelho.
+
 ### Mapa de missões
 
 Em **Missões › Mapa**, cada **arco** (uma missão-mãe) aparece como um grupo com as missões dele em colunas: a missão

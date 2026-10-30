@@ -5,7 +5,7 @@
 
 /* ---------- Barra do livro ---------- */
 .book-bar { position: sticky; top: 0; z-index: 46; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--bg); }
-.book-bar .doc-title strong { font-family: var(--font-display); }
+.book-bar .doc-title strong, .book-bar .doc-title h1 { font-family: var(--font-display); }
 .book-bar .segmented { flex-shrink: 0; }
 .book-slot { display: flex; align-items: center; gap: 6px; }
 .book-slot:empty { display: none; }
@@ -99,7 +99,9 @@ body.book-focus-active .main { padding-bottom: env(safe-area-inset-bottom); }
 @media (max-width: 860px) {
   .book-bar { gap: 6px; padding: 6px 10px; }
   /* Uma linha só: o nome do livro já está na migalha do topo; Sumário e Apoio ficam com o ícone (o nome segue no leitor de tela). */
-  .book-bar:not(.book-focus-bar) .doc-title, .book-bar .segmented, .book-back span, .book-focus-toggle span, .book-slot .panel-collapse span { display: none; }
+  .book-bar .segmented, .book-back span, .book-focus-toggle span, .book-slot .panel-collapse span { display: none; }
+  /* O nome do livro some da barra, mas continua como h1 para o leitor de tela. */
+  .book-bar:not(.book-focus-bar) .doc-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .book-bar .doc-end { margin-left: auto; }
   .book-typewriter-toggle { display: none; }
   .book-toc-modes { display: flex; }

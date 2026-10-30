@@ -39,7 +39,8 @@ try {
   const code=await app.run(`document.querySelector('.player-seats code').textContent`)
   check('sala usa endereço da rede local',/^http:\/\/(10\.|192\.168\.|172\.)/.test(link))
   check('código individual disponível ao mestre',/^[A-Z0-9]{8}$/.test(code))
-  check('sem controle de túnel público no Android',!await app.run(`document.body.innerText.includes('Gerar link público')`))
+  // R4: o link público também existe no Android (o teste de ponta a ponta fica no job android-revisao).
+  check('controle de túnel público no Android',await app.run(`document.body.innerText.includes('Gerar link público')`))
   await screenshot(app,'android-sala')
   const base='http://127.0.0.1:30000',playerUrl=`${base}/?k=${key}`
   check('página exige chave',(await fetch(base)).status===404)

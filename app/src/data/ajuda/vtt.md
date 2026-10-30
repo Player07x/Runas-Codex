@@ -45,7 +45,9 @@ No painel **Sala**:
 
 1. Abra a sala. Ela funciona na **rede local** (Wi-Fi da mesa) e mostra o **link** e o **QR** para os jogadores.
 2. Para jogadores fora da sua rede, **Gerar link público** cria um endereço pela internet (só quando você pede).
-   **Testar link** confere se ele responde.
+   **Testar link** confere se ele responde. Funciona também com a sala aberta no celular (Android com processador ARM
+   de 64 bits, quase todos): o túnel já vem no app e usa o Wi-Fi ou os dados móveis do celular enquanto a sala
+   estiver aberta.
 3. Cada jogador entra pelo navegador e vê a cena transmitida, com a névoa, a régua e os tokens que pode mover.
 4. A lista mostra os aparelhos conectados; **Desconectar** tira um.
 

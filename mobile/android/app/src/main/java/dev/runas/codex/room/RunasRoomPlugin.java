@@ -29,6 +29,7 @@ public class RunasRoomPlugin extends Plugin {
   private final ExecutorService io = Executors.newSingleThreadExecutor();
   private String vaultIdentity;
   private volatile String activeRoomId = "";
+  private volatile RoomTunnel tunnel;
 
   private RunasVaultPlugin vault() throws IOException {
     PluginHandle handle = getBridge().getPlugin("RunasVault");
@@ -290,6 +291,7 @@ public class RunasRoomPlugin extends Plugin {
   }
 
   private synchronized void stopServer() {
+    stopTunnel();
     RoomHttpServer current = server;
     server = null;
     if (current != null) current.close();
@@ -397,6 +399,117 @@ public class RunasRoomPlugin extends Plugin {
           .emit(call.getString("channel", ""), value == null ? "null" : value.toString());
     }
     call.resolve();
+  }
+
+  /** Link público pela Cloudflare (R4, ADR 0032), só quando o mestre pede; cai junto com a sala. */
+  @PluginMethod
+  public void tunnelStart(PluginCall call) {
+    RoomHttpServer current = server;
+    if (current == null) {
+      call.reject("Abra a sala primeiro.");
+      return;
+    }
+    // Leva até 60 s: fora da fila da sala, para ela continuar atendendo os jogadores da rede local.
+    Thread thread =
+        new Thread(
+            () -> {
+              try {
+                stopTunnel();
+                RoomTunnel[] holder = new RoomTunnel[1];
+                RoomTunnel created =
+                    RoomTunnel.start(
+                        getContext(),
+                        current.port(),
+                        () -> {
+                          if (tunnel != holder[0] || holder[0] == null) return;
+                          tunnel = null;
+                          current.tunnelHost(null);
+                          notifyListeners("tunnel-lost", new JSObject());
+                        });
+                holder[0] = created;
+                if (server != current) {
+                  created.stop();
+                  throw new IOException("A sala foi fechada.");
+                }
+                current.tunnelHost(TunnelOutput.host(created.url));
+                tunnel = created;
+                JSObject result = new JSObject();
+                result.put("url", created.url);
+                result.put("location", created.location);
+                result.put("protocol", created.protocol);
+                call.resolve(result);
+              } catch (Exception e) {
+                call.reject(e.getMessage() == null ? "Não foi possível abrir o túnel." : e.getMessage());
+              }
+            },
+            "runas-tunnel-start");
+    thread.setDaemon(true);
+    thread.start();
+  }
+
+  @PluginMethod
+  public void tunnelStop(PluginCall call) {
+    stopTunnel();
+    call.resolve();
+  }
+
+  /** Do celular até a sala passando pela Cloudflare, como o “Testar link” do desktop. */
+  @PluginMethod
+  public void tunnelTest(PluginCall call) {
+    RoomTunnel current = tunnel;
+    if (current == null) {
+      call.reject("Gere o link público primeiro.");
+      return;
+    }
+    io.execute(
+        () -> {
+          long started = System.currentTimeMillis();
+          JSObject result = new JSObject();
+          try {
+            HttpURLConnection connection =
+                (HttpURLConnection) new URL(current.url + "/healthz").openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            connection.setUseCaches(false);
+            int status = connection.getResponseCode();
+            String body;
+            try (InputStream in = status >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
+              body = in == null ? "" : new String(readAll(in, 64), java.nio.charset.StandardCharsets.UTF_8);
+            }
+            connection.disconnect();
+            result.put("ok", status == 200 && body.equals("ok"));
+            result.put("status", status);
+            if (status != 200 || !body.equals("ok")) result.put("error", "O túnel respondeu " + status + ".");
+          } catch (Exception e) {
+            result.put("ok", false);
+            result.put("error", e.getMessage() == null ? "sem resposta" : e.getMessage());
+          }
+          result.put("ms", System.currentTimeMillis() - started);
+          call.resolve(result);
+        });
+  }
+
+  @PluginMethod
+  public void tunnelAvailable(PluginCall call) {
+    JSObject result = new JSObject();
+    result.put("available", RoomTunnel.available(getContext()));
+    call.resolve(result);
+  }
+
+  private void stopTunnel() {
+    RoomTunnel current = tunnel;
+    tunnel = null;
+    RoomHttpServer room = server;
+    if (room != null) room.tunnelHost(null);
+    if (current != null) current.stop();
+  }
+
+  private static byte[] readAll(InputStream in, int limit) throws IOException {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    byte[] buffer = new byte[64];
+    int count;
+    while ((count = in.read(buffer)) != -1 && bytes.size() <= limit) bytes.write(buffer, 0, count);
+    return bytes.toByteArray();
   }
 
   @PluginMethod
