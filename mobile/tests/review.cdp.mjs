@@ -88,7 +88,13 @@ if (android) try {
   await go('/notas')
   const note = await page.run(`document.querySelector('[data-vault-tree] [data-note-path]')?.getAttribute('data-note-path') ?? null`)
   if (note) {
-    await go('/notas/' + encodeURIComponent(note), 2000)
+    // Abre a nota com um toque de verdade: o Chromium pula no voltar as entradas do histórico criadas por script sem
+    // gesto da pessoa, e é com toques que se usa o app.
+    const item = await page.run(`(()=>{const el=document.querySelector('[data-vault-tree] [data-note-path]');el.scrollIntoView({block:'center'});const r=el.getBoundingClientRect();return {x:Math.round(r.left+Math.min(40,r.width/2)),y:Math.round(r.top+r.height/2)}})()`)
+    await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [item] })
+    await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await sleep(2000)
+    checks.abriuNota = await page.run(`location.hash`)
     const historyBefore = await page.run(`history.length`)
     adb('logcat', '-c')
     adb('shell', 'input', 'keyevent', '4'); await sleep(1500)
@@ -100,7 +106,8 @@ if (android) try {
       const resumed = (adb('shell', 'dumpsys', 'activity', 'activities').match(/(top)?ResumedActivity[^\n]*/g) ?? []).slice(0, 2)
       const log = adb('logcat', '-d').split('\n').filter(l => /runas|chromium|AndroidRuntime|FATAL|OnBack|BackInvoked|ActivityTaskManager|Capacitor/i.test(l)).slice(-30)
       Object.assign(checks.voltar, { resumed, log })
-      adb('shell', 'am', 'start', '-n', 'dev.runas.codex/.MainActivity'); await sleep(3000)
+      // Reabre com o mesmo cofre, para as próximas passadas não perderem telas.
+      adb('shell', 'am', 'start', '-n', 'dev.runas.codex/.MainActivity', '--es', 'runasVault', '/sdcard/Documents/cofre-revisao', '--ez', 'runasWritable', 'true'); await sleep(3000)
     }
     await go('/notas/' + encodeURIComponent(note), 2500)
     // Um toque de verdade no texto, para o Android abrir o teclado (foco por script não abre).
