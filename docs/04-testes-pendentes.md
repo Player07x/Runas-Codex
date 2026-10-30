@@ -1119,3 +1119,15 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   Configurações do sistema › Atalhos e conferir a nota nova. **Remover** devolve o `.desktop` de antes (ícone e
   links `runas://` continuam).
 - [ ] Windows: o cartão explica que o atalho do sistema é só do Linux, sem botão.
+
+## T4 — importar cenas e tokens na mesa (29/10/2026)
+
+- [ ] Mesa › Cenas › **Importar…** › Cena do Universal VTT com um `.dd2vtt` exportado do Dungeondraft: o resumo mostra
+  tamanho, paredes, portas e luzes; a cena nova abre com o mapa, as paredes coincidem com as do desenho e as portas
+  abrem e fecham. A vista dos jogadores respeita as paredes.
+- [ ] Importar o mesmo arquivo duas vezes: as duas cenas ficam inteiras (uma não apaga as paredes da outra).
+- [ ] Cena do Foundry: exportar uma cena no Foundry (“Exportar dados”) e importar; paredes, portas secretas, tokens e
+  luzes no lugar certo; os avisos pedem o mapa e as imagens dos tokens. Escolher o mapa em **Trocar mapa** encaixa.
+- [ ] Tokens em lote: com uma cena aberta, importar uma lista `.json` (exemplo na Ajuda › Mesa): os tokens aparecem
+  na cena; sem cena aberta, o diálogo pede para abrir uma.
+- [ ] Celular (320 px) e tema claro: o diálogo cabe na tela, com Cancelar e Importar visíveis acima da barra inferior.
