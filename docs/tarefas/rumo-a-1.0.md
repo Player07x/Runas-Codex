@@ -352,3 +352,27 @@ filtros de campo e a subpasta vivem só no estado da tela (`useState`); só a Gr
 - “Limpar filtros” limpa também o que foi lembrado; um filtro cujo campo saiu da categoria é ignorado (como hoje).
 - Conferir o mesmo no Elenco das campanhas (agrupamento e ordem já são lembrados; a situação e a atitude, não) e nas
   outras listas com ordem (sessões, missões), para o comportamento ser igual em todo o app.
+
+### U7 — Missões: excluir, cartão menor e editar sem sair da campanha
+
+Relato do dono (30/10, com capturas de Campanhas › Missões e da missão aberta nas Notas):
+
+- **Não há como excluir uma missão** pelo quadro. Acrescentar ao cartão um menu ⋯ com “Abrir”, “Mover para…” e
+  “Mandar para a lixeira” (pelo `useVault().trash`, com confirmação ou desfazer), também na Árvore e no Mapa.
+- **Cada cartão ocupa muito espaço:** número da ordem, título e o seletor “Mover para” da largura do cartão
+  (`campaign-kanban-move`, sempre visível desde a revisão das Campanhas). Deixar o cartão compacto: título com a ordem
+  ao lado e o “Mover para” dentro do menu ⋯ (continua acessível pelo teclado, e o arrastar continua).
+- **Editar leva para as Notas e perde a campanha.** O título do cartão é um link para `/notas/<missão>`
+  (`app/src/screens/campaigns/QuestBoard.tsx`), e para voltar são vários cliques (Campanhas › campanha › Missões). Abrir a
+  missão **dentro da campanha**, como as sessões: rota `/campanhas/<nome>/missoes/<caminho>` com o editor da nota
+  (`NoteView`), “Voltar às missões” e um painel com situação, “Parte de”, “Depende de” e recompensa. Criar uma missão
+  (“+ Missão” e o “+” de cada coluna) abre direto esse editor, e voltar leva ao quadro na mesma vista (Colunas, Mapa ou
+  Árvore).
+- Conferir em 320 px, tablet e computador, pelo teclado e no celular.
+
+### U8 — Tirar o aviso “A única parte do app que usa a rede” da tela do VTT
+
+Relato do dono (30/10, com captura): na tela inicial do VTT, o cartão “A única parte do app que usa a rede — Só
+enquanto a sala estiver aberta…” não precisa estar ali. Retirar da tela (`app/src/screens/vtt/VttScreen.tsx`); a
+explicação de privacidade continua em Configurações › Privacidade e na Ajuda do VTT. (O texto também ficou impreciso:
+“Verificar atualizações” e o link público usam a internet, ADR 0017 e ADR 0032.)
