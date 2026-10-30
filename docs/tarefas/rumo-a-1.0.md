@@ -333,6 +333,12 @@ janela, acompanha a rolagem e mantém o foco e o teclado de hoje. Isso resolve o
 um contêiner que corta (painéis, cartões, listas com rolagem). Conferir os menus do Elenco, da prévia, das abas das notas,
 dos cartões da Wiki e das mesas do VTT, em 320 px e no computador.
 
+**Também nas notas** (relato do dono, 30/10, com captura): o menu ⋯ da nota aberta (“Inserir modelo…”, “Renomear ou
+mover…”, “Favoritar”… “Mandar para a lixeira”), na barra do documento, abre para a esquerda e é cortado pela borda do
+painel central, com barra de rolagem lateral e textos quebrando (“Histórico de versões”, “Copiar link do bloco no
+cursor”). Além de abrir fora do contêiner, o menu precisa de largura para o texto mais longo e o atalho, sem rolagem
+lateral.
+
 ### U6 — A ordem e os filtros da categoria da Wiki voltam ao padrão ao trocar de página
 
 Relato do dono (30/10, com captura de Personagens em “Editados por último”): ao sair da categoria e voltar, a **Ordem**
