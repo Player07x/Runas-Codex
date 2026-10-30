@@ -14,6 +14,7 @@ import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
 import { BackupSettings } from "../components/vault/BackupSettings"
 import { SyncConflictSettings } from "../components/vault/SyncConflicts"
+import { QuickCaptureSettings } from "../components/vault/QuickCaptureSettings"
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import { TasksSettingsCard } from "../components/tasks/TasksSettings"
 import { useRoute } from "../lib/router"
@@ -145,6 +146,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     { id: "editor", title: "Editor e atalhos", icon: <Keyboard size={16} />, body: (
       <>
         {vault.platform.kind !== "capacitor" && <ShortcutSettings />}
+        <QuickCaptureSettings />
         <SnippetSettings />
       </>
     ) },

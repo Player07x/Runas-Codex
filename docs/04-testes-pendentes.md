@@ -1109,3 +1109,13 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   da nota; a cópia vai para `.trash`.
 - [ ] **Depois** esconde o aviso; uma cópia nova faz ele voltar.
 - [ ] Uma cópia `Nota (conflicted copy).md` do Obsidian Sync também aparece, sem data.
+
+## T3 — atalho do sistema para a captura rápida (29/10/2026)
+
+- [ ] GNOME com Wayland (.deb e AppImage): Configurações › Editor e atalhos › Captura rápida › **Criar atalho**.
+  Com o app fechado e com ele em segundo plano, <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> abre uma nota nova; o
+  atalho aparece em Configurações do GNOME › Teclado › Atalhos personalizados. **Remover** tira o atalho.
+- [ ] KDE: **Criar atalho** acrescenta a ação “Captura rápida” ao Runas-Codex do menu; escolher a tecla em
+  Configurações do sistema › Atalhos e conferir a nota nova. **Remover** devolve o `.desktop` de antes (ícone e
+  links `runas://` continuam).
+- [ ] Windows: o cartão explica que o atalho do sistema é só do Linux, sem botão.
