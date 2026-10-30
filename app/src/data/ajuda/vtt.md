@@ -68,3 +68,21 @@ cena, mover tokens, tocar áudio. **Trocar chave** invalida o link anterior (út
 
 Em Importar e exportar, **Mesas e dados do VTT** levam uma mesa inteira (com mapas, tokens e áudios) para outro
 aparelho ou cofre.
+
+### Importar cenas e tokens
+
+No painel **Cenas**, **Importar…** traz para a mesa aberta, sem internet:
+
+- **Cena do Universal VTT** (`.dd2vtt`, `.uvtt`, `.df2vtt`, do Dungeondraft, DungeonFog e outros): o mapa embutido, a
+  grade, as paredes, as portas e as luzes. A cena leva o nome do arquivo.
+- **Cena do Foundry VTT**: o `.json` de “Exportar dados” de uma cena (v9 a v12), com grade, paredes, portas (inclusive
+  secretas), tokens e luzes. O Foundry não põe o mapa nem as imagens dos tokens no arquivo: escolha o mapa depois em
+  **Trocar mapa** e as imagens no token.
+- **Tokens em lote**: uma lista `.json`, até 500, que entra na cena aberta. Cada token tem `name` e, se quiser, `x` e
+  `y` (o centro, em pixels), `size` (em células), `hidden` e `disposition` (-1 hostil, 0 neutro, 1 aliado, 2 jogador):
+
+```json
+[{ "name": "Lobo 1", "x": 150, "y": 150, "disposition": -1 }, { "name": "Lobo 2", "x": 250, "y": 150 }]
+```
+
+Antes de gravar, o diálogo mostra o tamanho, quantas paredes, portas, tokens e luzes vão entrar e os avisos.

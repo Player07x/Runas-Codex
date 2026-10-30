@@ -4,15 +4,17 @@ import { AccessibilitySettings, AppearanceSettings } from "../components/Appeara
 import { HelpScreen } from "./HelpScreen"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
-import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
+import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FileWarning, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
 import { useNarrow } from "../components/editor/use-narrow"
 import { Modal, Switch, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
-import type { BackupInfo } from "../platform/platform"
 import type { UpdateInfo } from "../core/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
+import { BackupSettings } from "../components/vault/BackupSettings"
+import { SyncConflictSettings } from "../components/vault/SyncConflicts"
+import { QuickCaptureSettings } from "../components/vault/QuickCaptureSettings"
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import { TasksSettingsCard } from "../components/tasks/TasksSettings"
 import { useRoute } from "../lib/router"
@@ -47,7 +49,6 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   // /config/<seção> (Ctrl K › “Acessibilidade” leva a /config/acessibilidade) abre e foca a seção.
   const section = useRoute()[1]
   const desktop = vault.platform.kind !== "memory"
-  const [backups, setBackups] = useState<BackupInfo[]>([])
   const [busy, setBusy] = useState(false)
   const run = (action: () => Promise<unknown>) => () => {
     setBusy(true)
@@ -55,16 +56,12 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
       .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
       .finally(() => setBusy(false))
   }
-  useEffect(() => {
-    if (vault.info) vault.platform.listBackups().then(setBackups, () => setBackups([]))
-  }, [vault.info, vault.platform])
   const vaultHint = vault.info
     ? vault.platform.kind === "capacitor" && vault.info.path.startsWith("content://")
       ? "Pasta escolhida no aplicativo de arquivos. Mudanças externas são relidas ao voltar para o app."
       : vault.info.path
     : "Nenhum cofre aberto"
   const notesHint = vault.loading ? "Lendo o cofre…" : vault.error ? `Erro: ${vault.error}` : vault.index ? `${vault.index.size} notas Markdown no índice` : "—"
-  const lastBackup = backups[0]
   const [unused, setUnused] = useState<string[] | null>(null)
   const [chosen, setChosen] = useState<Set<string>>(new Set())
   async function findUnused() {
@@ -82,25 +79,6 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     setUnused((list) => list?.filter((path) => !chosen.has(path)) ?? null)
     setChosen(new Set())
   }
-  const backupsCard = (
-    <SettingsCard icon={<Archive size={16} />} title="Backups">
-      <Row title="Backup do texto das notas" hint={lastBackup ? `Último: ${new Date(lastBackup.createdAt).toLocaleString("pt-BR")} · ${backups.length} guardado(s), até 15. Automático antes da 1ª gravação do dia.` : "Nenhum ainda. Feitos antes da 1ª gravação de cada dia (só o texto das notas, fora do cofre)."}>
-        <div className="row" style={{ gap: 6 }}>
-          <button className="btn sm" onClick={run(() => vault.platform.backup().then(() => vault.platform.listBackups().then(setBackups)).then(() => toast("Backup feito")))} disabled={!vault.info || busy}>
-            <Archive size={14} /> Fazer agora
-          </button>
-          {desktop && (
-            <button className="btn sm ghost" onClick={run(vault.platform.revealBackups)} disabled={!vault.info}>
-              Abrir pasta
-            </button>
-          )}
-        </div>
-      </Row>
-      <Row title="Cofre inteiro, com anexos e mesas" hint="Para levar a outro aparelho ou guardar fora, gere um pacote do cofre em Importar e exportar.">
-        <a className="btn sm" href="#/transferir">Importar e exportar</a>
-      </Row>
-    </SettingsCard>
-  )
   const sections: { id: string; title: string; icon: ReactNode; body: ReactNode }[] = [
     { id: "cofre", title: "Cofre", icon: <Vault size={16} />, body: (
       <SettingsCard icon={<Vault size={16} />} title="Cofre">
@@ -120,14 +98,15 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           </button>
         </Row>
         <Row title="Permitir gravação" hint={vault.info?.readOnly ? "Desligado: o app só lê este cofre. Ao ligar, ele faz um backup antes." : "Ligado: o app cria, edita, renomeia e manda notas para a lixeira (.trash)."}>
-          <Switch on={Boolean(vault.info && !vault.info.readOnly)} label="Permitir gravação" onChange={(on) => run(() => vault.setWritable(on).then(() => vault.platform.listBackups().then(setBackups)))()} />
+          <Switch on={Boolean(vault.info && !vault.info.readOnly)} label="Permitir gravação" onChange={(on) => run(() => vault.setWritable(on))()} />
         </Row>
         <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
           <span className="small muted">Pastas padrão do cofre</span>
         </Row>
       </SettingsCard>
     ) },
-    { id: "backups", title: "Backups", icon: <Archive size={16} />, body: backupsCard },
+    { id: "backups", title: "Backups", icon: <Archive size={16} />, body: <BackupSettings /> },
+    { id: "conflitos", title: "Conflitos de sincronização", icon: <FileWarning size={16} />, body: <SyncConflictSettings /> },
     { id: "obsidian", title: "Obsidian e anexos", icon: <Network size={16} />, body: (
       <>
         <SettingsCard icon={<Network size={16} />} title="Compatibilidade com o Obsidian">
@@ -166,6 +145,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     { id: "acessibilidade", title: "Acessibilidade", icon: <Accessibility size={16} />, body: <AccessibilitySettings routeFocus={false} /> },
     { id: "editor", title: "Editor e atalhos", icon: <Keyboard size={16} />, body: (
       <>
+        <QuickCaptureSettings />
         {vault.platform.kind !== "capacitor" && <ShortcutSettings />}
         <SnippetSettings />
       </>

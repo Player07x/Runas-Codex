@@ -1087,3 +1087,47 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Abrir os 22 tópicos da Ajuda, usar o índice por grupo e avançar pelo botão Próximo; conferir que o tour e as notas de exemplo continuam no fim.
 - [ ] Wiki: repetir a conferência dos PRs #80–#82 (Painel/Relações, filtros e categorias personalizadas, 15 geradores).
 - [ ] A sala Android: repetir a entrada do jogador e conferir que o selo “Jogador 1” aparece após a conexão.
+
+
+## T1 — backups agendados (29/10/2026)
+
+- [ ] Configurações › Backups no computador: mudar o **Horário** para dali a dois minutos e deixar o app aberto (ou
+  na bandeja); um backup novo aparece na lista e em **Abrir pasta** no horário.
+- [ ] Mudar **Quantos guardar** para 3 e fazer quatro com **Fazer agora**: só os três mais recentes ficam.
+- [ ] Desligar **Backup automático todo dia**: o horário fica desabilitado e o texto avisa que ainda sai um backup
+  antes do primeiro salvamento do dia. Fechar e abrir o app: a escolha continua.
+- [ ] No celular, Configurações › Backups explica o backup do primeiro salvamento do dia, sem campos de horário.
+
+## T2 — cópias de conflito da sincronização (29/10/2026)
+
+- [ ] Com o Syncthing (ou copiando à mão uma nota para `Nota.sync-conflict-20261029-101500-CELULAR.md` e mudando
+  uma linha), o aviso “Cópia de conflito em …” aparece no topo do app, no computador e no celular.
+- [ ] **Revisar** abre Configurações › Conflitos de sincronização com a data e o aparelho da cópia; **Comparar** mostra
+  as linhas diferentes (− no original, + na cópia), legíveis nos temas escuro e claro.
+- [ ] **Manter o original e arquivar a cópia**: a cópia vai para `.trash` e o aviso some; o original fica igual.
+- [ ] **Ficar com a cópia**: o original passa a ter o texto da cópia; o texto antigo aparece no Histórico de versões
+  da nota; a cópia vai para `.trash`.
+- [ ] **Depois** esconde o aviso; uma cópia nova faz ele voltar.
+- [ ] Uma cópia `Nota (conflicted copy).md` do Obsidian Sync também aparece, sem data.
+
+## T3 — atalho do sistema para a captura rápida (29/10/2026)
+
+- [ ] GNOME com Wayland (.deb e AppImage): Configurações › Editor e atalhos › Captura rápida › **Criar atalho**.
+  Com o app fechado e com ele em segundo plano, <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> abre uma nota nova; o
+  atalho aparece em Configurações do GNOME › Teclado › Atalhos personalizados. **Remover** tira o atalho.
+- [ ] KDE: **Criar atalho** acrescenta a ação “Captura rápida” ao Runas-Codex do menu; escolher a tecla em
+  Configurações do sistema › Atalhos e conferir a nota nova. **Remover** devolve o `.desktop` de antes (ícone e
+  links `runas://` continuam).
+- [ ] Windows: o cartão explica que o atalho do sistema é só do Linux, sem botão.
+
+## T4 — importar cenas e tokens na mesa (29/10/2026)
+
+- [ ] Mesa › Cenas › **Importar…** › Cena do Universal VTT com um `.dd2vtt` exportado do Dungeondraft: o resumo mostra
+  tamanho, paredes, portas e luzes; a cena nova abre com o mapa, as paredes coincidem com as do desenho e as portas
+  abrem e fecham. A vista dos jogadores respeita as paredes.
+- [ ] Importar o mesmo arquivo duas vezes: as duas cenas ficam inteiras (uma não apaga as paredes da outra).
+- [ ] Cena do Foundry: exportar uma cena no Foundry (“Exportar dados”) e importar; paredes, portas secretas, tokens e
+  luzes no lugar certo; os avisos pedem o mapa e as imagens dos tokens. Escolher o mapa em **Trocar mapa** encaixa.
+- [ ] Tokens em lote: com uma cena aberta, importar uma lista `.json` (exemplo na Ajuda › Mesa): os tokens aparecem
+  na cena; sem cena aberta, o diálogo pede para abrir uma.
+- [ ] Celular (320 px) e tema claro: o diálogo cabe na tela, com Cancelar e Importar visíveis acima da barra inferior.

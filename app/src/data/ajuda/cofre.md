@@ -25,15 +25,22 @@ dizem por quê.
 
 ### Backups
 
-- Antes da **primeira gravação de cada dia**, o app guarda sozinho um backup do texto das notas, fora do cofre
-  (até 15). Em Configurações › Backups você vê o último, faz um com **Fazer agora** e, no computador, abre a pasta.
+- Antes da **primeira gravação de cada dia**, o app guarda sozinho um backup do texto das notas, fora do cofre.
+- No computador, Configurações › Backups agenda mais um por dia, no horário escolhido, e define quantos guardar (15
+  no começo). Lá você também vê os últimos, faz um com **Fazer agora** e abre a pasta.
 - Para guardar o **cofre inteiro**, com anexos e mesas, gere um pacote em Importar e exportar.
 
 ### Sincronização
 
 O cofre pode ser sincronizado com Syncthing, Obsidian Sync ou qualquer outro serviço de pastas. Se a sincronização
-criar uma cópia de conflito (`nota.sync-conflict-….md`, `nota (Conflicted copy).md`), ela aparece como uma nota
-comum: abra as duas, junte o texto e mande a cópia para a lixeira.
+criar uma cópia de conflito (`nota.sync-conflict-….md`, `nota (Conflicted copy).md`), um aviso aparece no topo do
+app. **Revisar** abre Configurações › Conflitos de sincronização, com cada cópia ao lado do original:
+
+- **Comparar** mostra as linhas que só existem no original (−) e só na cópia (+).
+- **Manter o original e arquivar a cópia** manda a cópia para a lixeira do cofre (`.trash`), depois de um backup.
+- **Ficar com a cópia** põe o texto da cópia no original (o texto de antes fica no histórico de versões) e arquiva a
+  cópia.
+- **Depois** esconde o aviso neste aparelho até surgir outra cópia. O original nunca é apagado.
 
 ### Anexos
 

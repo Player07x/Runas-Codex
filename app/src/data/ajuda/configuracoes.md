@@ -6,7 +6,7 @@ Mostra a pasta aberta e a quantidade de notas indexadas. **Abrir pasta** escolhe
 
 ### Backups
 
-O app guarda até 15 cópias locais do texto das notas, automaticamente antes da primeira gravação de cada dia. **Fazer agora** cria uma cópia imediata e **Abrir pasta** mostra onde ela está no desktop. Para levar anexos, mesas e quadros, use **Importar e exportar**: o backup diário contém apenas texto.
+No computador, **Backup automático todo dia** faz uma cópia local do texto das notas no **Horário** escolhido (03:00 no começo), com o app aberto ou na bandeja, e **Quantos guardar** define quantas ficam (de 1 a 100; o mais antigo sai). Além disso, sai uma cópia antes da primeira gravação de cada dia, também no celular. **Fazer agora** cria uma cópia imediata, **Abrir pasta** mostra onde elas estão no desktop e a lista mostra as cinco mais recentes. Para levar anexos, mesas e quadros, use **Importar e exportar**: o backup contém apenas texto.
 
 ### Obsidian e anexos
 

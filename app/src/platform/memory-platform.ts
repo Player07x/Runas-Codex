@@ -2,6 +2,7 @@ import type { BackupInfo, Platform, RoomHostInfo, VaultChange, VaultEntry, Vault
 import { ALL_NOTES } from "../lib/links"
 import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
 import { isAndroidApp, onAndroidReminderOpen, scheduleInBrowser, scheduleOnAndroid } from "./reminders"
+import { DEFAULT_BACKUP_SCHEDULE, normalizeBackupSchedule, type BackupSchedule } from "../core/backup-schedule"
 
 /**
  * Plataforma em memória: o cofre de exemplo do navegador (e dos testes). Aceita gravar, mas nada vai para o disco —
@@ -177,5 +178,15 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       return name
     },
+    // Agenda de backups (T1): no exemplo em memória ela vale até recarregar a página.
+    async backupSchedule() {
+      return memoryBackupSchedule
+    },
+    async setBackupSchedule(schedule) {
+      memoryBackupSchedule = normalizeBackupSchedule({ ...memoryBackupSchedule, ...schedule })
+      return memoryBackupSchedule
+    },
   }
 }
+
+let memoryBackupSchedule: BackupSchedule = DEFAULT_BACKUP_SCHEDULE

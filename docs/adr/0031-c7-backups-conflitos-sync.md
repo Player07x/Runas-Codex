@@ -1,6 +1,6 @@
 # ADR 0031 — C7: backups agendados e conflitos de sincronização
 
-- Estado: implementada no núcleo e no processo principal; a tela de Configurações e o aviso visual ficam para o rework (F5).
+- Estado: implementada; telas entregues nas tarefas T1 e T2 (29/10/2026).
 - Data: 2026-10-22.
 
 ## Decisão
@@ -20,3 +20,12 @@ listagem e arquivamento individual na lixeira `.trash`; arquivar faz um backup a
 
 A interface de Configurações ainda precisa editar `BackupSchedule` e mostrar o aviso com ações. A resolução de conteúdo
 (mesclar duas versões) continua sendo uma decisão do usuário; o núcleo só detecta, preserva e permite arquivar a cópia.
+
+**Telas (29/10/2026, Claude Code, T1 e T2).** Configurações › Backups edita a agenda (ligar, horário, quantos guardar)
+e mostra o próximo backup e os cinco últimos; no celular, sem agenda, explica o backup do primeiro salvamento do dia.
+As cópias de conflito são achadas no índice (vale em todas as plataformas): um aviso no topo do app leva a
+Configurações › Conflitos de sincronização, com cada cópia ao lado do original, a data e o aparelho do nome do
+Syncthing, a comparação linha a linha (`core/line-diff.ts`) e duas saídas: manter o original e arquivar a cópia
+(`archiveSyncConflict`, ou a lixeira do cofre fora do desktop) ou ficar com a cópia (backup, `useVault().save` no
+original, que guarda o texto anterior no histórico de versões, e arquivar). “Depois” guarda as cópias já vistas no
+`localStorage` (`runas-codex:conflitos-dispensados`).
