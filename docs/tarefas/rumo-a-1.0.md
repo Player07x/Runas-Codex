@@ -22,7 +22,8 @@ abertas fases já mescladas. Ele segue o código da `main` em 25/10 (`1fa53f9`, 
 1. **Agora:** o dono testa a beta.16 e responde as conferências.
 2. **Beta.17 e seguintes:** as telas que faltam (Claude Code) e a revisão completa com Android (Codex), em paralelo.
 3. **Candidata:** correções da revisão e uma sessão real da mesa do dono usando o app (marco da etapa 11).
-4. **1.0.0:** lista de conferências fechada com o dono, notas da versão e tag `v1.0.0`. O Android atualiza por cima das
+4. **1.0.0:** quando todas as tarefas desta lista estiverem concluídas com êxito (decisão D4): lista de conferências
+   fechada com o dono, notas da versão e tag `v1.0.0`. O Android atualiza por cima das
    betas sem reinstalar (`1.0.0` gera um `versionCode` maior que o de qualquer `0.1.0-beta.N`).
 
 ## Quem mexe em quê
@@ -40,7 +41,7 @@ Um branch e um PR por tarefa, a partir da `main` atualizada.
 | R1 | Revisão completa com Android, sobre o visual novo | sim | pode começar |
 | R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | R1 |
 | R3 | Cofre de 10 mil notas no emulador Android do CI | sim | pode começar |
-| R4 | Sala do celular pela internet (túnel no APK) | só se o dono decidir (D1) | decisão D1 |
+| R4 | Sala do celular pela internet (túnel no APK) | sim (D1, respondida em 29/10) | pode começar |
 | R5 | Mestre pelo navegador na sala hospedada pelo celular | feita a pedido do dono (PRs #68 e #70, beta.17) | — |
 
 ### R1 — revisão completa com Android
@@ -132,12 +133,13 @@ criar ou fechar mesas pelo navegador (no desktop isso também é só do computad
 |---|---|---|---|
 | T1 | Tela de backups agendados (horário e quantos guardar) em Configurações › Backups | sim | pode começar |
 | T2 | Aviso de cópias de conflito do Syncthing e do Obsidian Sync, com o original e “Arquivar” | sim | pode começar |
-| T3 | Botão para criar e remover o atalho da captura rápida (GNOME e KDE) | sim | decisão D3 |
+| T3 | Botão para criar e remover o atalho da captura rápida (GNOME e KDE) | sim | D3 respondida em 29/10 |
 | T4 | Tela para importar Universal VTT, cenas do Foundry e tokens em lote | sim | pode começar |
 | T5 | Ajuda em cada tela e uma seção de ajuda navegável sem internet | sim | pode começar |
 | T6 | Lista de notas, árvore, busca e gráfico sem travar com 10 mil notas | sim | pode começar; usa a R3 |
 | T7 | Defeitos de tela achados na R1 | sim | R1 |
 | T8 | Preparar a 1.0: conferências revisadas com o dono, notas e tag `v1.0.0` | sim | todo o resto e D4 |
+| T9 | Elenco da campanha para mais de 100 NPCs, com “já apareceu” marcado à mão (pedido do dono, 29/10) | sim | pode começar |
 
 O núcleo de T1 a T4 já existe: `platform.backupSchedule`/`setBackupSchedule`, `listSyncConflicts`/
 `archiveSyncConflict` e o evento `conflict` do watcher (ADR 0031), `platform.systemShortcut` (ADR 0029) e
@@ -151,7 +153,7 @@ O núcleo de T1 a T4 já existe: `platform.backupSchedule`/`setBackupSchedule`, 
 | V2 | Conferências manuais (fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md)) | beta.16 |
 | V3 | Abrir o cofre no Obsidian com o plugin Tasks 8.6.0 e comparar consultas e comandos | beta.16 |
 | V4 | Uma sessão real da campanha usando o app (Tela do Mestre, sala, Agenda) | T1, T2, T4 |
-| V5 | Responder as decisões D1 a D4 | quando puder |
+| V5 | Responder as decisões D1 a D4 | respondidas em 29/10 |
 
 ## Decisões do dono
 
@@ -163,6 +165,15 @@ Cada uma muda o que entra na 1.0. A recomendação é do Claude Code; nada come�
 | D2 | Comandar pelo navegador a sala hospedada no celular? (com a sala no computador isso já existe) | Depois da 1.0: hospedando no computador, o mestre já comanda pelo navegador de qualquer aparelho | Antes da 1.0 (R5) |
 | D3 | Captura rápida no GNOME com Wayland | Aceitar o atalho do sistema criado por um botão do app (T3) | Esperar o portal de atalhos globais do GNOME, sem data |
 | D4 | Qual versão vira 1.0.0 | A que sair depois da sessão real (V4) e da revisão com Android (R1, R2) | A que sair quando T1 a T6 ficarem prontas |
+
+**Respostas do dono (29/10/2026):**
+
+- **D1:** a sala do celular pela internet “deveria funcionar, mas ainda não funciona”: **entra na 1.0**. A R4 passa a
+  ser obrigatória para o Codex, a partir do estudo da [ADR 0032](../adr/0032-tunel-publico-android.md).
+- **D2:** respondida na prática com a R5 (beta.17).
+- **D3:** o dono não usa a captura rápida. Fica a recomendação: o botão que cria o atalho do sistema (T3).
+- **D4:** a 1.0.0 sai **quando todas as tarefas desta lista estiverem concluídas com êxito** (Codex, Claude Code e as
+  conferências do dono).
 
 ## Conferências manuais que faltam
 
