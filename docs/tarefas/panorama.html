@@ -163,7 +163,7 @@ footer{max-width:900px;margin:56px auto 0;color:var(--muted);font-size:13px;disp
 </style>
 
 <header class="hero">
-  <div class="eyebrow">Runas-Codex · situação em 30/10/2026 · versão 0.1.0-beta.22</div>
+  <div class="eyebrow">Runas-Codex · situação em 30/10/2026, fim do dia · versão 0.1.0-beta.22</div>
   <h1>Tarefas do Runas-Codex</h1>
   <p class="lede">O que já foi feito, dia a dia, o que falta para a 1.0, o que falhou, o que mudou no caminho e o plano
     de 14/10/2026. Este documento não atribui trabalho a ninguém: ele mostra o estado das tarefas.</p>
@@ -255,7 +255,7 @@ footer{max-width:900px;margin:56px auto 0;color:var(--muted);font-size:13px;disp
       do que faltava passou a ser 7 → 8c → 8d → 9 → 10 → A → 11, em duas frentes ao mesmo tempo.</p>
     <div class="group">
       <h3>Fila do que faltava em 14/10</h3>
-      <p>Cada linha era um PR. Hoje todas estão na <code>main</code>, menos a parte da C9 que mede o celular.</p>
+      <p>Cada linha era um PR. Todas estão feitas; a medição da C9 no celular (R3) está no branch desta rodada.</p>
       <div class="queue" id="queue"></div>
     </div>
   </section>
@@ -362,6 +362,13 @@ const DONE = [
   ["2026-10-30","T9: Elenco para mais de 100 NPCs, com “já apareceu”","Campanhas","#89"],
   ["2026-10-30","Mapa de missões (Mapa, Árvore e “Gerar no Quadro”)","Campanhas","#89"],
   ["2026-10-30","Nova aventura, com cinco estruturas","Campanhas","#89"],
+  ["2026-10-30","E1: Elenco com os NPCs em Grade ou Lista, como nas categorias da Wiki","Campanhas","main-yjcku0"],
+  ["2026-10-30","T7: telas de documento com h1 (D11) e link da tarefa com 24 px (D13)","Interface","main-yjcku0"],
+  ["2026-10-30","R1 no Android: 47 telas no emulador em 5 passadas, com axe","Android","main-yjcku0, job android-revisao"],
+  ["2026-10-30","R2: o voltar do sistema volta uma tela em vez de fechar o app","Android","main-yjcku0"],
+  ["2026-10-30","T7: defeitos achados no Android (D14, D15 e D17)","Interface","main-yjcku0"],
+  ["2026-10-30","R3: cofre de 10 mil notas medido no emulador","Android","ADR 0030"],
+  ["2026-10-30","R4: sala do celular pela internet (cloudflared no APK)","Android","ADR 0032"],
 ];
 
 const RELEASES = [
@@ -374,16 +381,10 @@ const RELEASES = [
 // Situação: feita, parte, aberta, registrada, opcional, depois.
 const PENDING = [
   {group:"Obrigatórias para a 1.0", note:"Sem estas, a 1.0.0 não sai.", items:[
-    {id:"R1",s:"parte",t:"Revisão completa no Android",d:"A parte automática (49 telas, 3 larguras, 2 temas) foi feita em 30/10. Falta o Android físico, leitores de tela reais (Orca, NVDA, TalkBack), a sala com dois aparelhos, texto a 140 % e impressão.",meta:"Roteiro: revisao-completa-complementar.md · resultado: revisao-1.0.md"},
-    {id:"R2",s:"aberta",t:"Corrigir os defeitos de núcleo da revisão",d:"A rodada sem Android não achou defeito de núcleo. Fica aberta até a revisão no Android.",meta:"Depende da R1"},
-    {id:"R3",s:"aberta",t:"Cofre de 10 mil notas no emulador Android do CI",d:"Medir índice, busca, gráfico, memória e tempo de abertura no job android-vault e registrar os números na ADR 0030. No navegador, a T6 já mediu.",meta:"ADR 0030"},
-    {id:"R4",s:"aberta",t:"Sala do celular pela internet",d:"Túnel dentro do APK, para a sala hospedada no celular funcionar fora da rede local. Hoje só funciona pela internet hospedando no desktop.",meta:"Decisão D1 (29/10) · estudo na ADR 0032"},
-    {id:"T7",s:"parte",t:"Defeitos de tela que sobraram",d:"D11: telas de documento (nota aberta, artigo, livro, sessão) sem título h1 para leitor de tela. D13: link de origem da tarefa com 18 px. E o que a revisão no Android achar.",meta:"revisao-1.0.md"},
-    {id:"V2",s:"parte",t:"Conferências manuais das funções da beta.22",d:"As seções novas do fim de docs/04-testes-pendentes.md: geradores e culturas, 10 mil notas com placa de vídeo e no Android, abas e pastas, Campanhas, mapa de missões e Nova aventura.",meta:"docs/04-testes-pendentes.md"},
+    {id:"V2",s:"parte",t:"Conferências manuais das funções da beta.22 e desta rodada",d:"As seções novas do fim de docs/04-testes-pendentes.md: geradores e culturas, 10 mil notas com placa de vídeo, Campanhas, mapa de missões, Nova aventura, o Elenco em Grade e Lista e o link público da sala no celular.",meta:"docs/04-testes-pendentes.md"},
+    {id:"R1",s:"parte",t:"O que só um aparelho ou uma pessoa confere",d:"A revisão automática terminou (navegador e emulador). Fica a conferência com TalkBack, Orca e NVDA de verdade, num celular físico, com a sala em dois aparelhos, multitoque e impressão.",meta:"revisao-1.0.md"},
+    {id:"R4",s:"parte",t:"Link público da sala num celular de verdade",d:"Conferido no emulador do CI. Falta abrir pelo celular físico (ARM de 64 bits) e medir a bateria com o túnel aberto (meta: até 5 % por hora parado).",meta:"ADR 0032 · docs/04-testes-pendentes.md"},
     {id:"T8",s:"aberta",t:"Preparar a 1.0",d:"Lista de conferências fechada, notas da versão e tag v1.0.0. O Android atualiza por cima das betas sem reinstalar.",meta:"Depende de todas as outras"},
-  ]},
-  {group:"Registrada, aguardando liberação", note:"Anotada a pedido do dono. Não começa até ele liberar.", items:[
-    {id:"E1",s:"registrada",t:"Elenco: NPCs em Lista ou Blocos",d:"Em Campanhas › Elenco, os NPCs ganham o seletor de exibição das categorias da Wiki (Grade e Lista, com a escolha lembrada no aparelho). Lista é a de hoje, com filtros e grupos; Blocos mostra os NPCs em cartões, como os artigos de uma categoria.",meta:"Registrada em 30/10/2026"},
   ]},
   {group:"Ajustes da versão publicada", items:[
     {id:"—",s:"aberta",t:"Texto da Release beta.22",d:"A Release saiu com o texto automático do GitHub (“What's Changed”). As notas em três blocos estão em docs/releases/v0.1.0-beta.22.md e podem substituir o texto na página da Release.",meta:"github.com/Player07x/Runas-Codex/releases/tag/v0.1.0-beta.22"},
@@ -407,7 +408,6 @@ const PENDING = [
 // Situação: falha (ainda falha), intermitente, contornada, corrigida.
 const FAILURES = [
   {group:"Ainda falham ou foram só contornadas", items:[
-    {d:"2026-10-22",s:"falha",t:"Túnel da sala hospedada no celular",p:"O Android não roda o túnel (“downloadCloudflared: unsupported”). Em vez dele, a sala ganhou um aviso e um estudo (ADR 0032). Continua aberto como R4."},
     {d:"2026-10-26",s:"intermitente",t:"Smoke da sala do Android no CI",p:"Falha de vez em quando e passa ao rodar de novo (desde a beta.17). Em 30/10 falhou no PR #89 ao tirar a captura do emulador e passou na segunda vez."},
     {d:"2026-10-15",s:"contornada",t:"Atalho global Ctrl+Alt+N no GNOME com Wayland",p:"O Wayland não deixa o app escutar o teclado, e o Electron não abre a sessão do portal de atalhos. Contornado com runas-codex --captura e o botão que cria o atalho do sistema (T3)."},
     {d:"2026-10-26",s:"contornada",t:"Prévia de livros grandes demora a refazer",p:"Cada mudança refaz a prévia inteira. “Só este capítulo” ajuda."},
@@ -425,6 +425,11 @@ const FAILURES = [
     {d:"2026-10-30",s:"corrigida",t:"Pastas recolhidas escondiam notas no smoke do Electron",p:"A T6 carregava as pastas só ao abrir, e o smoke via 2 de 38 notas. Agora isso só vale para cofres grandes."},
     {d:"2026-10-30",s:"corrigida",t:"Confirmação de “Desvincular” quebrou o smoke de gravação",p:"O Elenco passou a pedir confirmação; o smoke agora confirma."},
     {d:"2026-10-30",s:"contornada",t:"Tag da beta.22 recusada na sessão na nuvem",p:"O envio da tag foi bloqueado (403). O dono criou a tag e a Release saiu, mas com o texto automático do GitHub."},
+    {d:"2026-10-22",s:"corrigida",t:"Túnel da sala hospedada no celular",p:"Em 22/10 o Android não rodava o túnel e a sala ganhou só um aviso (ADR 0032). Em 30/10 o cloudflared entrou no APK (R4) e o link público funciona."},
+    {d:"2026-10-30",s:"corrigida",t:"O cloudflared de Linux não acha o DNS do Android",p:"Ele procura o /etc/resolv.conf, que o Android não tem. O app passou a resolver a borda da Cloudflare e a fazer o pedido do túnel pela rede do Android."},
+    {d:"2026-10-30",s:"corrigida",t:"Voltar do sistema fechava o app",p:"Achado pela revisão no emulador: o app não tratava o botão voltar. Agora ele fecha o diálogo ou volta uma tela (D16)."},
+    {d:"2026-10-30",s:"corrigida",t:"Revisão no emulador travada até o tempo limite",p:"Depois do voltar fechar o app, a conexão com o WebView ficava presa e o cancelamento não parava os passos. A revisão traz o app para a frente e desiste em 20 s."},
+    {d:"2026-10-30",s:"corrigida",t:"Legenda das relações sem contraste no tema claro",p:"O texto usava a cor do mapa (1,54:1). A cor foi para um ponto ao lado (D15)."},
   ]},
 ];
 
@@ -452,8 +457,10 @@ const CHANGES = [
   ["2026-10-29","D3, captura rápida no GNOME","Esperar o portal de atalhos globais","Botão que cria o atalho do sistema (T3)","O dono não usa a captura rápida"],
   ["2026-10-29","D4, qual versão vira 1.0.0","A que sair depois da sessão real e da revisão com Android","Quando todas as tarefas estiverem concluídas com êxito","Decisão do dono"],
   ["2026-10-29","Elenco das campanhas","Grade de cartões por tipo","T9: lista para mais de 100 NPCs, com “já apareceu” marcado à mão","Pedido do dono"],
-  ["2026-10-30","R1, revisão completa","Uma rodada só, com Android","Parte automática feita sem Android; a parte com aparelho continua aberta","Sem aparelho no ambiente da revisão"],
-  ["2026-10-30","Desempenho com 10 mil notas (C9)","Uma tarefa: 10 mil notas sem travar no celular","T6 no navegador (feita) e R3 no emulador do CI (aberta)","Medir cada ambiente no seu lugar"],
+  ["2026-10-30","R1, revisão completa","Uma rodada só, com um celular Android","No navegador (49 telas) e no emulador do CI (47 telas em 5 passadas); a parte com aparelho físico e leitores de tela fica como conferência","Sem aparelho no ambiente da revisão"],
+  ["2026-10-30","E1, Elenco em Lista ou Blocos","Registrada para fazer depois, sem começar","Liberada e feita no mesmo dia","Pedido do dono"],
+  ["2026-10-30","R4, como o túnel roda no celular","Binário do cloudflared rodando sozinho no APK (ADR 0032)","Binário no APK, com os endereços da Cloudflare e o pedido do túnel feitos pela rede do Android","O binário de Linux não acha o DNS do Android"],
+  ["2026-10-30","Desempenho com 10 mil notas (C9)","Uma tarefa: 10 mil notas sem travar no celular","T6 no navegador e R3 no emulador do CI (as duas feitas)","Medir cada ambiente no seu lugar"],
 ];
 
 // Plano original (docs/02, seção 8). w = tamanho em blocos; s = feita, mudou, andamento, marco.
@@ -470,8 +477,8 @@ const PLAN = [
   ["8","Livros","Estrutura em notas, prévia paginada, temas, exportações, importar Homebrewery","Livro de exemplo sai em PDF/EPUB/DOCX fiel à prévia","GG",4,"mudou","8a a 8d entre 14 e 15/10 · livro impresso L1–L5 em 26/10"],
   ["9","VTT no toque","Interface do mestre por toque","Sessão de teste com o mestre no celular, sala no desktop","G",3,"mudou","15/10 · a sala no celular foi para a etapa A"],
   ["10","Migrações","Obsidian primeiro; Notion, Kanka e World Anvil depois da 1.0","Dados reais migrados sem perda","G",3,"feita","15/10 · Obsidian e plugins de RPG"],
-  ["A","Android completo","Cofre real, sala hospedada pelo celular na rede local, testes no emulador do CI","Cofre do Obsidian aberto e editado no celular; sessão com a sala no celular","G + G",6,"feita","18 a 20/10 · pela internet ainda não (R4)"],
-  ["11","Polimento e lançamento","Desempenho, acessibilidade, instaladores, beta","Beta com sua mesa","M",2,"andamento","Beta com a mesa do dono feita (V4); falta a revisão no Android e a R3"],
+  ["A","Android completo","Cofre real, sala hospedada pelo celular na rede local, testes no emulador do CI","Cofre do Obsidian aberto e editado no celular; sessão com a sala no celular","G + G",6,"feita","18 a 20/10 · pela internet desde 30/10 (R4)"],
+  ["11","Polimento e lançamento","Desempenho, acessibilidade, instaladores, beta","Beta com sua mesa","M",2,"andamento","Beta com a mesa do dono (V4), revisão no Android e R3 feitas; faltam as conferências físicas e a T8"],
   ["1.0","Versão 1.0.0","Conferências fechadas, notas e tag v1.0.0","Todas as tarefas concluídas com êxito (D4)","—",2,"marco","Aberta (T8)"],
 ];
 
@@ -484,7 +491,7 @@ const QUEUES = [
   ["C2","Imagens: tamanho e posição","feita"],["C3","Mestre pelo celular com a sala no desktop","feita"],
   ["C4","Migrações do Obsidian","feita"],["C5","Fechamento das notas e do editor","feita"],
   ["C6","Fechamento de Wiki, Campanhas e Agenda","feita"],["C7","Pacotes e backups agendados","feita"],
-  ["C8","Android completo","feita"],["C9","Desempenho, ajuda offline, instaladores, beta","parte"],
+  ["C8","Android completo","feita"],["C9","Desempenho, ajuda offline, instaladores, beta","feita"],
 ];
 
 // Desenho.

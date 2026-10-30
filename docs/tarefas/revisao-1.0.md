@@ -5,6 +5,10 @@ sessão na nuvem (Linux, Chromium sem placa de vídeo, Node 22 e 24), a pedido d
 [`rumo-a-1.0.md`](rumo-a-1.0.md) (R1) e [`revisao-completa-complementar.md`](revisao-completa-complementar.md), com o
 critério de [`docs/ux-ui-acessibilidade.md`](../ux-ui-acessibilidade.md).
 
+> **Atualização de 30/10:** a parte do Android foi feita depois no emulador do CI (seção “Android no emulador”). O que
+> continua sem verificação é o que só um aparelho físico ou uma pessoa confere: TalkBack, Orca e NVDA de verdade,
+> multitoque, sala com dois aparelhos reais e impressão.
+>
 > A R1 era do Codex e pede um aparelho Android. Este ambiente não tem aparelho nem emulador, então tudo o que depende
 > do Android, de leitor de tela real, de impressão ou de dois aparelhos na sala está marcado como **não verificado**. A
 > parte que dá para medir automaticamente foi medida em todas as telas.
@@ -42,8 +46,13 @@ critério de [`docs/ux-ui-acessibilidade.md`](../ux-ui-acessibilidade.md).
 | Campanhas (painel, sessões, missões, elenco, ferramentas, quadro) | revisado à parte | [`../propostas/campanhas-revisao.html`](../propostas/campanhas-revisao.html): 7 bugs, 5 de acessibilidade, 20 de UX. Ainda abertos. |
 | Foco, Tab, Esc e retorno de foco nos diálogos | não verificado | Precisa de passeio manual por teclado; o axe não cobre. |
 | Leitores de tela reais (Orca, NVDA, TalkBack) | não verificado por falta de ambiente | |
-| Texto a 85/100/140 % e redução de movimento | não verificado | Só a configuração padrão foi varrida. |
-| Android: SAF, permissões, teclado, voltar, rotação, entalhes, tela dividida, anexos, lembretes, widget | não verificado por falta de aparelho | |
+| Texto a 85/100/140 % e redução de movimento | passou a 140 % no Android (emulador) | Texto do sistema a 140 %: nenhuma rolagem lateral nem erro. 85 % e redução de movimento: não verificado. |
+| Android no emulador: 47 telas em 411 px (claro e escuro), 320 px, deitado e texto a 140 % | passou | Seção “Android no emulador”, abaixo. axe sem violações nas passadas com axe. |
+| Android: botão voltar do sistema | defeito reproduzido → **corrigido** | D16 (não é tela: vai para a R2). |
+| Android: teclado sobre o editor | ver a seção “Android no emulador” | |
+| Android: cofre de 10 mil notas (R3) | passou | Números na ADR 0030. |
+| Android: sala pela internet (R4) | passou | O emulador abre o link público e o runner do CI abre a sala por ele. |
+| Android físico: SAF, permissões, entalhes, tela dividida, anexos, lembretes, widget | não verificado por falta de aparelho | O SAF e as permissões têm smoke próprio no CI (`android-vault`). |
 | Sala real (dois jogadores, espectador, LAN, Carta X, diários, enquete) | não verificado por falta de aparelhos | |
 | Livros: exportações abertas em leitores independentes e impressão física | não verificado | O smoke do Electron exporta; abrir as saídas fica para o dono. |
 | Multitoque físico no quadro e no VTT | não verificado por falta de aparelho | |
@@ -146,6 +155,46 @@ Achado pela varredura no WebView do Android, que descobre mais rotas. `WikiGraph
 - **Obtido:** a legenda pintava o texto com a cor do mapa (`#9dcbb4` sobre `#e9edf8`): contraste 1,54:1.
 - **Arquivo:** `app/src/screens/wiki/WikiRelations.tsx`.
 - **Correção:** a cor fica num ponto ao lado e o texto usa a cor do tema, como na tabela e no calendário (D5).
+
+## Android no emulador (30/10/2026)
+
+A parte que pedia aparelho foi feita no emulador do CI (Android 35, Pixel 2), no job `android-revisao` do workflow
+Release, com o APK de teste e o cofre de exemplo. `mobile/tests/review.cdp.mjs` descobre as rotas pelos links do app
+(47 telas) e mede, no WebView de verdade, o mesmo que a varredura do navegador: rolagem para os lados, `h1`,
+`aria-current`, título, erros de JavaScript, alvos menores que 44 px e o axe-core 4.10 (WCAG 2.0 a 2.2 A/AA). As
+capturas de cada tela ficam no artefato `Runas-Codex-android-revisao`.
+
+| Passada | Largura | Resultado |
+| --- | ---: | --- |
+| Retrato, tema escuro, com axe | 412 px | Sem rolagem lateral, sem erro, uma `h1` por tela, axe sem violações |
+| Retrato, tema claro, com axe | 412 px | Idem (depois da correção do D15) |
+| 320 px (`wm size 720x1280`, densidade 360), com axe | 320 px | Idem |
+| Deitado | 732 px | Sem rolagem lateral nem erro |
+| Texto do sistema a 140 % | 412 px | Sem rolagem lateral nem erro |
+
+Alvos menores que 44 px que sobraram, com o motivo:
+
+- Caixas de seleção de 24 px em Importar e exportar: o rótulo da linha inteira é clicável (D8).
+- Links dentro dos cartões do Quadro (7 a 14 px de altura): o tamanho acompanha o zoom do quadro, que a pessoa
+  aproxima com dois dedos; não muda sem mudar o desenho do Canvas.
+- O nome do NPC na lista do Elenco tinha 20 px (D17) e passou a ter 24 px, 44 px no celular.
+
+O Quadro tem mais de um `h1` quando um cartão mostra uma nota que começa com `# título`: é o conteúdo da nota, desenhado
+pelo leitor compartilhado.
+
+### D16 — Voltar do sistema fechava o app (alta, corrigido; R2)
+
+- **Passos:** Android, abrir uma nota a partir da lista; tocar em voltar do sistema.
+- **Esperado:** voltar para a lista (ou fechar o diálogo aberto).
+- **Obtido:** o app saía da frente no primeiro toque. O app não usa o plugin `@capacitor/app`, que é quem trata o
+  voltar no Capacitor.
+- **Arquivo:** `mobile/android/app/src/main/java/dev/runas/codex/MainActivity.java` (nativo, não é tela).
+- **Correção:** um `OnBackPressedCallback` fecha o diálogo aberto (Esc), senão volta no histórico do WebView; só na
+  primeira tela o app sai.
+
+### D17 — Nome do NPC no Elenco com 20 px de altura (média, corrigido)
+
+Achado pelo axe no WebView do Android (`target-size`). `campaigns.css`: 24 px, 44 px no celular.
 
 ## Desktop
 

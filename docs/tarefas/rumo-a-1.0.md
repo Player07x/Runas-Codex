@@ -12,8 +12,8 @@ que mudou, está em [`panorama.html`](panorama.html).
 
 | Frente | Feito | Falta |
 |---|---|---|
-| Claude Code | T1, T2, T3, T4 (PRs #85–#88), T5 (#83), T6, T7 em parte, T9 (PR #89) | T7: D11 e D13 e o que a R1 com Android achar; T8 |
-| Codex | R5 (#68, #70) | R1 no Android, R2 (se a R1 no Android achar defeito de núcleo), R3, R4 |
+| Claude Code | T1, T2, T3, T4 (PRs #85–#88), T5 (#83), T6, T7, T9 (PR #89); E1; R1 no emulador, R2, R3 e R4 (pedido do dono em 30/10, branch `main-yjcku0`) | T8 |
+| Codex | R5 (#68, #70) | — (R1 a R4 feitas pelo Claude Code a pedido do dono) |
 | Dono | V1 a V5 (testados e funcionando, informado em 30/10); D1 a D4 respondidas; PR #89 mesclado e beta.22 publicada | Conferir as funções novas do fim de `docs/04-testes-pendentes.md` |
 | Fora da lista (pedidos do dono) | Revisão e correções das Campanhas, mapa de missões, Nova aventura, Elenco (T9), geradores com 19.412 opções e 43 culturas, Ferramentas da Wiki refeitas | Sobras da revisão das Campanhas (seção abaixo) |
 
@@ -26,14 +26,15 @@ que mudou, está em [`panorama.html`](panorama.html).
   notas), a revisão R1 sem Android ([`revisao-1.0.md`](revisao-1.0.md)) e as correções de tela T7, as correções da
   [revisão das Campanhas](../propostas/campanhas-revisao.html), o Elenco para mais de 100 NPCs (T9), o mapa de
   missões e o assistente “Nova aventura”.
-- **Limitado:** a sala hospedada no celular funciona só na rede local; pela internet, só hospedando no desktop
-  ([ADR 0032](../adr/0032-tunel-publico-android.md)) até a R4.
+- **R4 (30/10):** a sala hospedada no celular também vai para a internet: o `cloudflared` vem no APK
+  ([ADR 0032](../adr/0032-tunel-publico-android.md)). Conferido no emulador do CI; falta o aparelho físico e a bateria.
 
 ## O caminho até a 1.0
 
 1. **Feito:** o dono testou as betas (V1 a V4) e respondeu D1 a D4; T1 a T4 mescladas.
-2. **Agora:** PR #89 mesclado e beta.22 publicada (30/10); Codex com R1 no Android, R3 e R4.
-3. **Candidata:** o que a R1 no Android achar (R2 no núcleo, T7 na tela) e as sobras da revisão das Campanhas.
+2. **Feito em 30/10:** PR #89 mesclado e beta.22 publicada; E1, R1 no emulador, R2, R3, R4 e o resto da T7.
+3. **Candidata:** as conferências do dono no aparelho físico (TalkBack, sala pela internet, bateria) e, se ele
+   quiser, as sobras da revisão das Campanhas.
 4. **1.0.0:** quando todas as tarefas desta lista estiverem concluídas com êxito (decisão D4): lista de conferências
    fechada com o dono, notas da versão e tag `v1.0.0` (T8). O Android atualiza por cima das betas sem reinstalar
    (`1.0.0` gera um `versionCode` maior que o de qualquer `0.1.0-beta.N`).
@@ -50,10 +51,10 @@ Um branch e um PR por tarefa, a partir da `main` atualizada.
 
 | # | Tarefa | Obrigatória? | Situação em 30/10 |
 |---|---|---|---|
-| R1 | Revisão completa com Android, sobre o visual novo | sim | **Feita em parte** pelo Claude Code (PR #89): 49 telas em 3 larguras e 2 temas, com axe. **Falta** a parte no Android físico, leitores de tela reais, sala com dois aparelhos e impressão |
-| R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | Nada de núcleo na rodada sem Android; **aberta** até a R1 no Android |
-| R3 | Cofre de 10 mil notas no emulador Android do CI | sim | **Aberta**. A T6 já mediu no navegador (ADR 0030) |
-| R4 | Sala do celular pela internet (túnel no APK) | sim (D1, respondida em 29/10) | **Aberta** |
+| R1 | Revisão completa com Android, sobre o visual novo | sim | **Feita** pelo Claude Code: 49 telas no navegador (PR #89) e 47 telas no WebView do emulador em 5 passadas (30/10, job `android-revisao`). **Fica para o dono:** TalkBack/Orca/NVDA de verdade, aparelho físico, sala com dois aparelhos e impressão |
+| R2 | Corrigir o que a R1 achar (a parte que não é tela) | sim | **Feita**: D16, o voltar do sistema fechava o app (`MainActivity.java`) |
+| R3 | Cofre de 10 mil notas no emulador Android do CI | sim | **Feita**: números na ADR 0030 (abrir 12,6 s, busca assenta em 0,46 s, 157 MB) |
+| R4 | Sala do celular pela internet (túnel no APK) | sim (D1, respondida em 29/10) | **Feita**: `cloudflared` 2026.9.3 no APK, conferido de ponta a ponta no emulador (ADR 0032). **Fica para o dono:** aparelho físico e bateria |
 | R5 | Mestre pelo navegador na sala hospedada pelo celular | feita a pedido do dono | **Feita** (PRs #68 e #70, beta.17) |
 
 ### R1 — revisão completa com Android
@@ -149,7 +150,7 @@ criar ou fechar mesas pelo navegador (no desktop isso também é só do computad
 | T4 | Tela para importar Universal VTT, cenas do Foundry e tokens em lote | sim | **Feita** (PR #88, na `main`) |
 | T5 | Ajuda em cada tela e uma seção de ajuda navegável sem internet | sim | **Feita** (PR #83, beta.21) |
 | T6 | Lista de notas, árvore, busca e gráfico sem travar com 10 mil notas | sim | **Feita** (PR #89; números na ADR 0030). Conferir com placa de vídeo e no Android |
-| T7 | Defeitos de tela achados na R1 | sim | **Feita em parte** (PR #89): 10 de 12 corrigidos. **Falta** D11 (telas de documento sem `h1`), D13 (link de origem da tarefa com 18 px) e o que a R1 no Android achar |
+| T7 | Defeitos de tela achados na R1 | sim | **Feita**: D1–D10 (PR #89), D11, D13, D14, D15 e D17 (30/10) |
 | T8 | Preparar a 1.0: conferências revisadas com o dono, notas e tag `v1.0.0` | sim | **Aberta**: depende de todo o resto |
 | T9 | Elenco da campanha para mais de 100 NPCs, com “já apareceu” marcado à mão (pedido do dono, 29/10) | sim | **Feita** (PR #89) |
 
@@ -226,9 +227,9 @@ confere: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %, Android físico
   existe, C4).
 - Fora do plano: voz, vídeo e sincronização pela rede local (decisão do dono, 14/10).
 
-## Registrada, aguardando o dono liberar (30/10/2026)
+## E1 — Elenco em Lista ou Blocos (registrada e feita em 30/10/2026)
 
-Anotada a pedido do dono, **sem começar** e sem responsável até ele liberar:
+Registrada a pedido do dono e liberada por ele no mesmo dia; **feita**: botões Grade e Lista acima dos NPCs.
 
 - **Elenco: NPCs em Lista ou Blocos.** Em Campanhas › Elenco, os NPCs ganham o seletor de exibição das categorias da
   Wiki (`app/src/screens/wiki/WikiCategory.tsx`: botões Grade e Lista com `aria-pressed`, escolha lembrada no
