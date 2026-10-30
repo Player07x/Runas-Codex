@@ -1112,3 +1112,19 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 - [ ] Gráfico global com 10 mil notas num computador com placa de vídeo e no celular: aparece em poucos segundos,
   enquadrado, e o arrastar e o zoom respondem; com o cofre de exemplo o gráfico continua igual a antes.
 - [ ] Pastas fechadas abrem e fecham normalmente, inclusive arrastando notas para dentro delas.
+
+
+## R1 e T7 — revisão para a 1.0 e defeitos de tela
+
+- [ ] Ler `docs/tarefas/revisao-1.0.md` e decidir a ordem do que ficou aberto (D11, D13 e a revisão das Campanhas).
+- [ ] Notas com várias abas: clicar no nome troca de aba, “Fechar” e “Ações da aba” continuam funcionando, o botão do
+  meio fecha e arrastar reordena; com o teclado, Tab passa por nome, ações e fechar de cada aba.
+- [ ] Árvore das Notas: os botões da pasta (Exportar, Aparência, Favoritar, Nova nota, Renomear) aparecem no hover e
+  com o foco na pasta; no celular ficam sempre à vista sem cobrir o nome.
+- [ ] Notas › Gráfico › Configurar: o painel abre abaixo da barra, sem cobrir o botão que o fecha, mesmo depois de
+  visitar a Wiki.
+- [ ] Wiki › Calendário no tema claro: as luas aparecem com um ponto colorido e o texto legível.
+- [ ] No celular: caixas de seleção de Importar e exportar, Linha do tempo e segredos da campanha com 24 px; a trilha
+  “Você está em” fácil de tocar.
+- [ ] Conferências que a R1 não fez por falta de ambiente: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %,
+  Android físico, sala com dois aparelhos, impressão e o smoke `--write` no CI.

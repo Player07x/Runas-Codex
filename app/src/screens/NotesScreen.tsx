@@ -415,6 +415,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
             <summary className="eyebrow row" style={{ gap: 5 }} {...dragSource(sub.path)}>
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={13} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />} <span className="grow truncate">{sub.name}</span>
+            </summary>} actions={
               <span className="folder-actions">
                 <button type="button" className="icon-btn sm" aria-label={`Exportar pasta ${sub.name}`} title="Exportar pasta…" onClick={e => { e.preventDefault(); e.stopPropagation(); openDocumentExport({ paths: index.notesIn(sub.path + "/").map(note => note.path), title: sub.name }) }}>↗</button>
                 <FolderAppearance path={sub.path} />
@@ -430,7 +431,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
                   </>
                 )}
               </span>
-            </summary>}>
+            }>
             {() => <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>}
           </LazyFolder>
         ))}
@@ -486,11 +487,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
             </div>
           )}
           {hasNotesSpace && (
-            <div className="segmented" role="tablist" aria-label="Onde mostrar">
-              <button className={!wholeVault ? "active" : ""} onClick={() => setWholeVault(false)} aria-label="Mostrar só o espaço Notas">
+            <div className="segmented" role="group" aria-label="Onde mostrar">
+              <button className={!wholeVault ? "active" : ""} aria-pressed={!wholeVault} onClick={() => setWholeVault(false)} aria-label="Mostrar só o espaço Notas">
                 Espaço Notas
               </button>
-              <button className={wholeVault ? "active" : ""} onClick={() => setWholeVault(true)} aria-label="Mostrar o cofre inteiro">
+              <button className={wholeVault ? "active" : ""} aria-pressed={wholeVault} onClick={() => setWholeVault(true)} aria-label="Mostrar o cofre inteiro">
                 Cofre inteiro
               </button>
             </div>
@@ -696,14 +697,18 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
  * Pasta da árvore que só desenha o conteúdo quando aberta (T6): com 10 mil notas, as pastas fechadas desenhavam tudo
  * escondido. Abre sozinha quando a nota aberta está dentro dela.
  */
-function LazyFolder({ initialOpen, forceOpen, className, zone, summary, children }: { initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; children: () => ReactNode }) {
+function LazyFolder({ initialOpen, forceOpen, className, zone, summary, actions, children }: { initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
   const [open, setOpen] = useState(initialOpen || forceOpen)
   useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
+  // Os botões da pasta ficam fora do <summary> (T7: controle dentro de controle confunde teclado e leitor de tela).
   return (
-    <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className={className} {...zone}>
-      {summary}
-      {open && children()}
-    </details>
+    <div className="vault-folder-wrap">
+      <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className={className} {...zone}>
+        {summary}
+        {open && children()}
+      </details>
+      {actions}
+    </div>
   )
 }
 

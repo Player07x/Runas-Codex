@@ -306,9 +306,9 @@ export function VaultGraph({ index, path, onCreate }: { index: VaultIndex; path:
     <div className="stack">
       <div className="row between">
         <span className="eyebrow">Gráfico local</span>
-        <div className="segmented" role="tablist" aria-label="Profundidade do gráfico local">
+        <div className="segmented" role="group" aria-label="Profundidade do gráfico local">
           {[1, 2, 3].map((d) => (
-            <button key={d} className={depth === d ? "active" : ""} onClick={() => (setDepth(d), setFit((n) => n + 1))} aria-label={`Profundidade ${d}`}>
+            <button key={d} className={depth === d ? "active" : ""} aria-pressed={depth === d} onClick={() => (setDepth(d), setFit((n) => n + 1))} aria-label={`Profundidade ${d}`}>
               {d}
             </button>
           ))}
