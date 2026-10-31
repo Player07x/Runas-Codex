@@ -1244,3 +1244,39 @@ A beta.23 não foi publicada; as conferências dela (seção acima) valem para a
 - [ ] Atualizar da beta.22 para a beta.24 pelo botão “Verificar atualizações” no desktop e no Android, sem perder cofre,
   PIN e preferências.
 - [ ] Conferir a gravação no Windows da seção “Lançamento da beta.23” acima.
+
+## Próxima atualização: U1 a U14 (31/10/2026)
+
+- [ ] **U1** Ubuntu: atualizar pelo botão “Verificar atualizações” com o `freedownloadmanager` ainda quebrado no
+  sistema. O app deve reiniciar na versão nova (o erro do outro pacote fica só no log). Se o Runas-Codex não instalar,
+  a mensagem diz qual pacote quebrou o APT e sugere `sudo dpkg --configure -a`, sem as linhas do `debconf`.
+- [ ] **U2/U5** Menus ⋯ abrem inteiros, fora do cartão ou do painel: Elenco em Grade (inclusive na última linha), prévia
+  ao lado dos Livros, nota aberta (com “Histórico de versões” e o atalho numa linha só), cartões da Wiki e das mesas.
+  Perto da borda de baixo o menu abre para cima. Pelo teclado: seta para baixo abre, Esc e Tab fecham e voltam ao ⋯.
+- [ ] **U3** VTT › Criar Sala: ⋯ de uma mesa › Renomear… e Excluir…; a mesa excluída aparece na lixeira do cofre
+  (Notas › ⋯ › Lixeira do cofre). Com a sala dessa mesa ligada, excluir é recusado. No Android, o mesmo.
+- [ ] **U4** VTT › Entrar Sala: endereço longo de uma sala recente cortado com reticências e a data à direita; arrastar e
+  recolher o painel “Detalhes da sala” (o cartão do link ocupa o espaço); ícones das dicas alinhados. Em 320 px.
+- [ ] **U6** Wiki: escolher “Editados por último” e um filtro numa categoria, sair e voltar: continuam. “Limpar
+  filtros” limpa. No Elenco, situação e atitude também continuam por campanha.
+- [ ] **U7** Campanhas › Missões: cartão compacto (ordem ao lado do título); ⋯ com Abrir, Mover para… e Mandar para a
+  lixeira (com aviso de quem aponta para a missão). Abrir edita dentro da campanha, com “Voltar às missões” e o painel
+  de situação, ligações e recompensa; “+ Missão” abre direto o editor. O mesmo ⋯ no Mapa e na Árvore.
+- [ ] **U8** A tela inicial do VTT não mostra mais o aviso “A única parte do app que usa a rede”.
+- [ ] **U9** Calendário da Wiki › Ano: meses em miniatura com intercalares numa faixa, estações, lua cheia e
+  acontecimentos; tocar no nome abre o mês; tocar num dia mostra o dia no painel; setas, Page Up/Down e Home/End.
+  Em 320 px, uma coluna. A escolha Mês | Ano é lembrada.
+- [ ] **U10** Wiki: nome, ícone e contagem das categorias no mesmo centro vertical (também com nome em duas linhas).
+- [ ] **U11** Mesa: selecionar um token abre as propriedades no trilho direito (no lugar do painel), com “Voltar a …”;
+  a imagem e “Trocar” ficam à vista. No celular, abrem na folha de baixo.
+- [ ] **U12** Token com 5 barras (por exemplo PV, PA, Sanidade, Mana, Moral): renomear, trocar a cor, subir e descer;
+  “Sanidade” aparece como modelo em outro token; com dois tokens selecionados, “Acrescentar barra aos 2 tokens”. Na
+  sala, com dois jogadores: “Só o mestre” não aparece para ninguém; “Mestre e dono” aparece só para o jogador dono do
+  token; “Todos” aparece num inimigo. Uma mesa antiga com PV/PA/PE abre igual.
+- [ ] **U13** Mesa: guardar um token (propriedades ou menu do objeto) e um mapa (Cenas › Guardar mapa na biblioteca);
+  em outra mesa, aba Biblioteca: arrastar o token para o mapa e criar uma cena com o mapa (grade, paredes, luzes e
+  regiões vêm junto). Exportar a biblioteca e importar o pacote em outro cofre (Importar e exportar). A biblioteca não
+  aparece como mesa em Criar Sala.
+- [ ] **U14** Mesa › Notas: escrever, trocar de painel, sair da mesa, fechar e reabrir o app: o texto continua.
+  “Salvar Sessão” cria a sessão realizada na campanha escolhida, com a data de hoje e o texto em Anotações, e limpa as
+  notas se marcado. Os Acontecimentos (rolagens, avisos das regiões) seguem embaixo, com “Copiar para a nota”.

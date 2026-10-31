@@ -239,6 +239,11 @@ Registrada a pedido do dono e liberada por ele no mesmo dia; **feita**: botões 
 
 ## Para a próxima atualização (registrado em 30/10/2026)
 
+**Situação (31/10/2026):** U1 a U14 feitos pelo Claude Code no branch `atualizacao/u1-u14` (um commit por item;
+ADR 0034 para a mesa). O que conferir à mão está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
+A causa do U1 era outro pacote do sistema (`freedownloadmanager`) com a pós-instalação quebrada; o Runas-Codex
+instalava, mas o APT devolvia erro.
+
 ### U1 — Atualização pelo app no Ubuntu falha no `dpkg`
 
 Relato do dono ao atualizar da beta.22 para a beta.24 pelo botão “Verificar atualizações” (Linux, `.deb`):
