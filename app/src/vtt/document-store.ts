@@ -60,6 +60,11 @@ export class DocumentStore {
     return [...this.documents.values()].filter((document) => document.type === "scene").sort(bySort) as WorldDocument<SceneData>[]
   }
 
+  /** Tokens de todas as cenas da mesa (os modelos de barra vêm deles). */
+  tokens(): WorldDocument<TokenData>[] {
+    return [...this.documents.values()].filter((document) => document.type === "token") as WorldDocument<TokenData>[]
+  }
+
   playlists(): WorldDocument<PlaylistData>[] {
     return ([...this.documents.values()].filter((document) => document.type === "playlist") as WorldDocument<PlaylistData>[]).sort(bySort)
   }

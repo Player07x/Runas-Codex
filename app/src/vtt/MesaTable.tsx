@@ -139,6 +139,19 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
   const [panelOpen, setPanelOpen] = useState(false)
   const audio = useMasterAudio()
   const root = useRef<HTMLElement>(null)
+  // U11: as propriedades do objeto abrem no trilho, no lugar do painel; ao fechar, o trilho volta como estava.
+  const [propertiesOpen, setPropertiesOpen] = useState(false)
+  const [propertiesHost, setPropertiesHost] = useState<HTMLDivElement | null>(null)
+  const panelBefore = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (propertiesOpen) {
+      if (panelBefore.current === null) panelBefore.current = panelOpen
+      setPanelOpen(true)
+    } else if (panelBefore.current !== null) {
+      if (!panelBefore.current) setPanelOpen(false)
+      panelBefore.current = null
+    }
+  }, [propertiesOpen])
 
   useEffect(() => {
     void store.load().then(() => {
@@ -222,13 +235,17 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
         </header>
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         <section className="canvas-area" aria-label="Cena">
-          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} />}
+          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} properties={{ host: propertiesHost, open: propertiesOpen, setOpen: setPropertiesOpen }} />}
         </section>
         <aside className="side-panel" aria-label="Painel da mesa">
           <div className="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionar painel" onPointerDown={startResize} onPointerMove={resize} onPointerUp={endResize} onPointerCancel={endResize} />
           <nav className="side-tabs" aria-label="Painéis">
             {SIDE_TABS.map(({ id, label, icon: Icon }) => (
-              <button key={id} className={id === tab ? "active" : ""} onClick={() => { setTab(id); setPanelOpen(tab !== id || !panelOpen) }} aria-expanded={tab === id && panelOpen} title={label} aria-label={label}>
+              <button key={id} className={id === tab && !propertiesOpen ? "active" : ""} onClick={() => {
+                // Com as propriedades abertas, a aba volta para o painel dela (a seleção continua no mapa).
+                if (propertiesOpen) { panelBefore.current = null; setPropertiesOpen(false); setTab(id); setPanelOpen(true); return }
+                setTab(id); setPanelOpen(tab !== id || !panelOpen)
+              }} aria-expanded={tab === id && panelOpen && !propertiesOpen} title={label} aria-label={label}>
                 <Icon size={17} />
               </button>
             ))}
@@ -237,7 +254,14 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
               {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </button>
           </nav>
-          {tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "log" ? <LogPanel store={store} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
+          {propertiesOpen ? (
+            <section className="side-properties" aria-label="Propriedades do objeto">
+              <button className="ghost side-properties-back" onClick={() => { panelBefore.current = null; setPropertiesOpen(false) }}>
+                <ArrowLeft size={14} /> Voltar a {SIDE_TABS.find((entry) => entry.id === tab)?.label ?? "Cenas"}
+              </button>
+              <div ref={setPropertiesHost} className="side-properties-body" />
+            </section>
+          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "log" ? <LogPanel store={store} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
         </aside>
       </div>
     </main>

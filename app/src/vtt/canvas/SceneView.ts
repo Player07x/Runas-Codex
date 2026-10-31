@@ -844,7 +844,8 @@ export class SceneView {
     display.addChild(body)
 
     const barWidth = size * 0.9
-    const barHeight = Math.max(4, size * 0.06)
+    // Muitas barras (U12) ficam mais finas e empilhadas acima do token, sem cobri-lo.
+    const barHeight = data.bars.length > 3 ? Math.max(3, size * 0.04) : Math.max(4, size * 0.06)
     data.bars.forEach((bar, index) => {
       const ratio = bar.max > 0 ? Math.max(0, Math.min(1, bar.value / bar.max)) : 0
       const y = -radius - (index + 1) * (barHeight + 2)
