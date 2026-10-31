@@ -1,4 +1,4 @@
-import { WORLD_FORMAT_VERSION, createWorldManifest, parseWorldManifest, worldFolderName } from "./world"
+import { WORLD_FORMAT_VERSION, createWorldManifest, parseWorldManifest, renameWorldManifest, worldFolderName } from "./world"
 
 describe("formato da mesa", () => {
   it("cria um manifesto normalizado", () => {
@@ -23,5 +23,13 @@ describe("formato da mesa", () => {
     const manifest = parseWorldManifest({ formatVersion: 1, id: "x", title: "", createdAt: 5 })
     expect(manifest.title).toBe("Mesa sem nome")
     expect(manifest.updatedAt).toBe(5)
+  })
+})
+
+describe("renameWorldManifest", () => {
+  it("troca o nome e a data, sem mexer no id", () => {
+    const manifest = createWorldManifest({ title: "Teste" }, "id-1", 1)
+    expect(renameWorldManifest(manifest, "  Nova  ", 5)).toMatchObject({ id: "id-1", title: "Nova", createdAt: 1, updatedAt: 5 })
+    expect(() => renameWorldManifest(manifest, " ", 5)).toThrow("precisa de um nome")
   })
 })

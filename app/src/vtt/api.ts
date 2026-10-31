@@ -2,7 +2,7 @@ import { platform } from "../platform"
 import { CollaborationRoom } from "./shared/collaboration"
 import { assetUrl, type DocumentChange, type PlayerDisplay, type PlayerState, type VttApi } from "./shared/ipc"
 import { normalizeDocumentData, type AssetPath } from "./shared/scene"
-import { createWorldManifest, type WorldDocument, type WorldSummary } from "./shared/world"
+import { createWorldManifest, renameWorldManifest, type WorldDocument, type WorldSummary } from "./shared/world"
 import { createRemoteVttApi, masterConnection, remoteAssetUrl, type RemoteVttApi } from "./remote-api"
 
 /** Na visualização em navegador comum, imagens importadas viram URLs `blob:`. */
@@ -42,6 +42,19 @@ function createBrowserPreviewApi(): VttApi {
       return world
     },
     closeWorld: async () => collaboration.reset(),
+    renameWorld: async (id, title) => {
+      const index = worlds.findIndex((candidate) => candidate.id === id)
+      if (index < 0) throw new Error("Mesa não encontrada.")
+      const { path, scenes, ...manifest } = worlds[index]!
+      worlds[index] = { ...renameWorldManifest(manifest, title, Date.now()), path, scenes }
+      return worlds[index]!
+    },
+    deleteWorld: async (id) => {
+      if (player.enabled) throw new Error("Desligue a sala desta mesa antes de excluí-la.")
+      const index = worlds.findIndex((candidate) => candidate.id === id)
+      if (index < 0) throw new Error("Mesa não encontrada.")
+      worlds.splice(index, 1)
+    },
     documents: {
       list: async (type, parentId) => [...documents.values()].filter((document) => document.type === type && (parentId === undefined || document.parentId === parentId)),
       put: async (input) => {

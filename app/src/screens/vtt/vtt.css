@@ -19,6 +19,9 @@
 .mesa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: var(--space-column); }
 .mesa-card { display: grid; align-content: start; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--panel); color: var(--text); text-align: left; }
 .mesa-card:hover { border-color: var(--line-strong); }
+article.mesa-card { position: relative; }
+.mesa-card-open { display: grid; align-content: start; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.mesa-card-menu { position: absolute; right: 8px; bottom: 8px; }
 .mesa-card.new { place-content: center; justify-items: center; gap: 8px; min-height: 240px; border-style: dashed; border-color: color-mix(in srgb, var(--red) 45%, var(--line)); background: color-mix(in srgb, var(--red) 6%, var(--panel)); text-align: center; }
 .mesa-card.new svg { color: var(--red); }
 .mesa-thumb { position: relative; height: 120px; }

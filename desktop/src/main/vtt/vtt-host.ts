@@ -196,6 +196,18 @@ export class VttHost {
       return (await this.store.open(String(id))).summary
     })
     handle(IPC.closeWorld, () => this.closeWorld())
+    handle(IPC.renameWorld, (_event, id, title) => {
+      this.requireWritable()
+      return this.store.rename(String(id), String(title))
+    })
+    handle(IPC.deleteWorld, async (_event, id) => {
+      this.requireWritable()
+      if (this.store.openWorld?.summary.id === String(id)) {
+        if (this.transmission.state().enabled) throw new Error("Desligue a sala desta mesa antes de excluí-la.")
+        await this.closeServices()
+      }
+      await this.store.remove(String(id))
+    })
 
     handle(IPC.documentsList, (_event, type, parentId) => listDocuments(this.openWorld().database, type as DocumentType, parentId as string | null | undefined))
     handle(IPC.documentsPut, (_event, input) => {

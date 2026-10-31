@@ -5,6 +5,7 @@ import { BOOK_IMPORT_SMOKE } from "./books-import-smoke"
 import { VTT_TOUCH_SMOKE } from "./vtt-touch-smoke"
 import { NOTES_C5C_SMOKE } from "./notes-c5c-smoke"
 import { WIKI_CATEGORY_SMOKE } from "./wiki-category-smoke"
+import { VTT_WORLDS_SMOKE } from "./vtt-worlds-smoke"
 import { CAMPAIGN_PLAYERS_SMOKE } from "./campaign-players-smoke"
 
 /**
@@ -422,6 +423,7 @@ export const SMOKE_SCRIPT = `(async () => {
 
   // A sala do VTT fecha ao sair da mesa: o bloco da Mesa fica por último.
   ${NOTES_C5C_SMOKE}
+  ${VTT_WORLDS_SMOKE}
   // Mesa (VTT): criar uma mesa e uma cena pela interface; os arquivos vão para .runas/mesas.
   location.hash = "/vtt/criar"
   ;(await until(() => document.querySelector(".empty .btn.primary, .mesa-card.new")))?.click()
@@ -601,6 +603,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!campaignPlayers || Object.keys(campaignPlayers).length !== 7 || !Object.values(campaignPlayers).every(value => value === true)) return false
   const noteWindows = result.noteWindows as Record<string, unknown> | undefined
   if (!noteWindows || !Object.values(noteWindows).every(value => value === true)) return false
+  const vttWorlds = result.vttWorlds as Record<string, unknown> | undefined
+  if (!vttWorlds || Object.keys(vttWorlds).length !== 3 || !Object.values(vttWorlds).every(value => value === true)) return false
   return (
     result.create === "OK" &&
     String(result.createAgain).startsWith("Já existe") &&
