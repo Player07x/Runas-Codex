@@ -1280,3 +1280,12 @@ A beta.23 não foi publicada; as conferências dela (seção acima) valem para a
 - [ ] **U14** Mesa › Notas: escrever, trocar de painel, sair da mesa, fechar e reabrir o app: o texto continua.
   “Salvar Sessão” cria a sessão realizada na campanha escolhida, com a data de hoje e o texto em Anotações, e limpa as
   notas se marcado. Os Acontecimentos (rolagens, avisos das regiões) seguem embaixo, com “Copiar para a nota”.
+
+## Versão 1.0.0 (T8, preparada em 31/10/2026)
+
+A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferencias-1.0.md`](tarefas/conferencias-1.0.md)
+(seção A: só num aparelho real; seção B: funções novas desde a beta.21; seção C: o que saiu da lista e por quê).
+
+- [ ] Atualizar de uma beta para a 1.0.0 pelo botão “Verificar atualizações” no Ubuntu (`.deb`), AppImage, Windows e
+  Android, sem perder cofre, PIN e preferências.
+- [ ] Conferir as seções A e B de `conferencias-1.0.md`; a tag `v1.0.0` sai depois disso (decisão D4).
