@@ -14,6 +14,12 @@ import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, useWiki } from "./wiki-state"
+import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
+import { useRemembered } from "../../lib/remembered"
+import { YearGrid } from "./CalendarYear"
+
+type CalendarMode = "mes" | "ano"
+const parseMode = (raw: unknown): CalendarMode => (raw === "ano" ? "ano" : "mes")
 
 const MOON_GLYPHS = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
 
@@ -137,6 +143,8 @@ export function WikiCalendar({ path }: { path?: string }) {
   const [shown, setShown] = useState<{ year: number; month: number } | null>(null)
   const [selected, setSelected] = useState<WorldDate | null>(null)
   const [sideTab, setSideTab] = useState<"dia" | "hoje" | "sincronizar" | "ajuda">("dia")
+  // Mês ou ano inteiro (U9), lembrado por aparelho.
+  const [mode, setMode] = useRemembered("runas-codex:wiki-calendario-vista", parseMode)
   const readOnly = vault.info?.readOnly ?? true
 
   const today = calendar?.today ?? { year: 1, month: 1, day: 1 }
@@ -219,7 +227,7 @@ export function WikiCalendar({ path }: { path?: string }) {
         <div>
           <span className="eyebrow">{calendar.name} · sigla {calendar.abbr}</span>
           <h1 className="page-title">
-            {calendar.months[view.month - 1]?.name} de {formatYear(calendar, view.year)}
+            {mode === "ano" ? formatYear(calendar, view.year) : `${calendar.months[view.month - 1]?.name} de ${formatYear(calendar, view.year)}`}
           </h1>
           {calendar.today && (
             <span className="small muted">
@@ -238,8 +246,9 @@ export function WikiCalendar({ path }: { path?: string }) {
               ))}
             </select>
           )}
+          <ChoiceGroup label="Ver o calendário por" value={mode} onChange={setMode} options={[{ value: "mes", label: "Mês" }, { value: "ano", label: "Ano" }]} />
           <div className="row" style={{ gap: 2 }}>
-            <button className="icon-btn" onClick={() => setShown(view.month === 1 ? { year: view.year - 1, month: calendar.months.length } : { year: view.year, month: view.month - 1 })} aria-label="Mês anterior">
+            <button className="icon-btn" onClick={() => setShown(mode === "ano" ? { year: view.year - 1, month: view.month } : view.month === 1 ? { year: view.year - 1, month: calendar.months.length } : { year: view.year, month: view.month - 1 })} aria-label={mode === "ano" ? "Ano anterior" : "Mês anterior"}>
               <ChevronLeft size={18} />
             </button>
             <button className="btn sm" onClick={() => (setShown(null), setSelected(null))}>
@@ -247,7 +256,7 @@ export function WikiCalendar({ path }: { path?: string }) {
             </button>
             {/* O passo mais usado do mestre fica ao lado de Hoje (rework F4b, WIK-2). */}
             {!readOnly && <button className="btn sm" onClick={() => advance(1)} title="Avança o dia de hoje no mundo">+1 dia</button>}
-            <button className="icon-btn" onClick={() => setShown(view.month === calendar.months.length ? { year: view.year + 1, month: 1 } : { year: view.year, month: view.month + 1 })} aria-label="Próximo mês">
+            <button className="icon-btn" onClick={() => setShown(mode === "ano" ? { year: view.year + 1, month: view.month } : view.month === calendar.months.length ? { year: view.year + 1, month: 1 } : { year: view.year, month: view.month + 1 })} aria-label={mode === "ano" ? "Próximo ano" : "Próximo mês"}>
               <ChevronRight size={18} />
             </button>
           </div>
@@ -259,7 +268,12 @@ export function WikiCalendar({ path }: { path?: string }) {
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />
+          {mode === "ano"
+            ? <YearGrid calendar={calendar} year={view.year} selected={selected} marks={marks}
+                onPick={(date) => { setSelected(date); setSideTab("dia") }}
+                onYear={(year) => setShown({ year, month: view.month })}
+                onOpenMonth={(month) => { setShown({ year: view.year, month }); setMode("mes") }} />
+            : <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />}
         </div>
         <ResizablePanel id="agenda" label="Detalhes do calendário" side="right" width={320} className="stack-lg agenda-side">
           {/* Abas no lugar de cartões empilhados (rework F4b, WIK-2): Dia · Hoje no mundo · Sincronizar · Ajuda. */}
