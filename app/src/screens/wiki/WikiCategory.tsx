@@ -6,7 +6,8 @@ import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
 import { categoryLook, categoryNotePath, isCategoryNote } from "../../core/personalization"
 import { toneStyle } from "../../core/tones"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
-import { activeFilters, articleCardFields, categoryFields, categoryKind, categoryNotes, categorySubfolders, chosenFilters, filterCategory } from "../../core/wiki-category"
+import { activeFilters, articleCardFields, categoryFields, categoryKind, categoryNotes, categorySubfolders, categoryViewKey, chosenFilters, filterCategory, parseCategoryView } from "../../core/wiki-category"
+import { useRemembered } from "../../lib/remembered"
 import { ARTICLE_KINDS } from "../../core/wiki"
 import { CategoryKindDialog, FilterChooser } from "./CategoryDialogs"
 import { href } from "../../lib/router"
@@ -32,20 +33,25 @@ export function WikiCategory({ path }: { path: string }) {
   const fieldInfo = useMemo(() => categoryFields(notes), [notes]), subfolders = useMemo(() => categorySubfolders(notes,folder), [notes,folder])
   const facets = useMemo(() => activeFilters(fieldInfo, chosen), [fieldInfo, chosen])
   const [choosing, setChoosing] = useState(false), [editingKind, setEditingKind] = useState(false)
-  const [query,setQuery] = useState(""), [order,setOrder] = useState<"name"|"recent">("name"), [fields,setFields] = useState<Record<string,string>>({}), [subfolder,setSubfolder] = useState("")
+  // Ordem, filtros e subpasta voltam como estavam ao reabrir a categoria (U6); a busca começa vazia.
+  const [query,setQuery] = useState(""), [view,setView] = useRemembered(categoryViewKey(folder), parseCategoryView)
+  const { order, fields } = view
+  const subfolder = view.subfolder === "" || view.subfolder === "." || subfolders.includes(view.subfolder) ? view.subfolder : ""
+  const setOrder = (value: typeof order) => setView(current => ({ ...current, order: value }))
+  const setSubfolder = (value: string) => setView(current => ({ ...current, subfolder: value }))
   const [mode,setMode] = useState<Mode>(storedMode), [limit,setLimit] = useState(24), [creating,setCreating] = useState(false)
   // Um filtro que saiu da escolha deixa de valer, mesmo com um valor marcado antes.
   const applied = useMemo(() => Object.fromEntries(Object.entries(fields).filter(([key]) => facets.some(facet => facet.key === key))), [fields, facets])
   const filtered = useMemo(() => filterCategory(notes,folder,{text:query,order,fields:applied,subfolder}), [notes,folder,query,order,applied,subfolder])
   const name = folder === root.slice(0,-1) ? "Sem pasta" : folder.split("/").at(-1)!
   const chooseMode = (mode: Mode) => { setMode(mode); try { localStorage.setItem(MODE_KEY,mode) } catch { /* Só não é lembrado no próximo início. */ } }
-  const clear = () => {setQuery("");setFields({});setSubfolder("");setLimit(24)}
+  const clear = () => {setQuery("");setView(current => ({ ...current, fields: {}, subfolder: "" }));setLimit(24)}
   if (!valid) return <div className="page"><Empty title="Categoria fora desta Wiki" action={<a className="btn" href={href("/wiki")}>Voltar para a Wiki</a>}>Escolha uma categoria na página inicial.</Empty></div>
   const isRoot = folder === root.slice(0,-1)
   const readOnly = vault.info?.readOnly ?? true
   // A ficha só é editável aqui nas categorias que não usam um tipo pronto (as criadas pelo usuário ou sem tipo).
   const customizable = !players && !isRoot && !ARTICLE_KINDS.some(builtIn => builtIn.id === kind?.id)
-  const pick = (key: string, value: string) => { setFields(current => ({ ...current, [key]: value })); setLimit(24) }
+  const pick = (key: string, value: string) => { setView(current => ({ ...current, fields: { ...current.fields, [key]: value } })); setLimit(24) }
   return <div className={`page wiki-category-page${look.tone ? " toned" : ""}`} style={toneStyle(look.tone)}>
     <a className="wiki-category-back" href={href("/wiki")}><ArrowLeft size={16}/> Voltar para a Wiki</a>
     {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder + "/"} height={140} className="wiki-category-cover" />}

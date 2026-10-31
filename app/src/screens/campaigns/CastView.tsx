@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { useSinglePane } from "../../lib/tabs"
+import { useRemembered } from "../../lib/remembered"
 import { BookOpen, Check, Grid2X2, List, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
@@ -71,6 +72,10 @@ export function CastView({ data }: { data: CampaignData }) {
 }
 
 type Seen = "todos" | "apareceu" | "ainda"
+const parseCastFilters = (raw: unknown): { seen: Seen; attitude: string } => {
+  const value = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}
+  return { seen: value.seen === "apareceu" || value.seen === "ainda" ? value.seen : "todos", attitude: typeof value.attitude === "string" ? value.attitude : "" }
+}
 type Group = "nenhum" | "local" | "faccao" | "atitude" | "situacao"
 type Order = "nome" | "recente" | "adicao"
 /** Lista (linhas) ou grade (cartões com a imagem do artigo), como nas categorias da Wiki. */
@@ -96,8 +101,11 @@ function NpcRoster({ data }: { data: CampaignData }) {
   const [picking, setPicking] = useState(false)
   const [creating, setCreating] = useState(false)
   const [query, setQuery] = useState("")
-  const [seen, setSeen] = useState<Seen>("todos")
-  const [attitude, setAttitude] = useState("")
+  // Situação e atitude lembradas por campanha (U6), como o agrupamento e a ordem.
+  const [filters, setFilters] = useRemembered(`runas-codex:campanha:elenco-filtros:${data.campaign.root}`, parseCastFilters)
+  const { seen, attitude } = filters
+  const setSeen = (value: Seen) => setFilters((current) => ({ ...current, seen: value }))
+  const setAttitude = (value: string) => setFilters((current) => ({ ...current, attitude: value }))
   const [prefs, setPrefsState] = useState(readPrefs)
   const [limit, setLimit] = useState(PAGE)
   const narrow = useSinglePane()

@@ -1,5 +1,5 @@
 import { VaultIndex } from "./vault-index"
-import { activeFilters, articleCardFields, categoryFields, categoryKind, categoryNotes, categoryRoute, categorySubfolders, chosenFilters, customKindsIn, filterCategory } from "./wiki-category"
+import { activeFilters, articleCardFields, categoryFields, categoryKind, categoryNotes, categoryRoute, categorySubfolders, chosenFilters, customKindsIn, filterCategory, categoryViewKey, parseCategoryView } from "./wiki-category"
 import { articleKind, setCustomKinds } from "./wiki"
 import { publicWikiIndex } from "./wiki-public"
 const root="Wikis/Mundo/",folder=root+"Personagens"
@@ -110,4 +110,16 @@ describe("categoria criada pelo usuário",()=>{
   expect(categoryKind(monsters.filter(n=>n.name!=="Monstros"),"Wikis/Mundo/Monstros")?.id).toBe("monstro")
   expect(categoryKind([],"Wikis/Mundo/Monstros")?.id).toBe("monstro")
  })
+})
+
+describe("ordem e filtros lembrados da categoria (U6)", () => {
+  it("lê o que foi guardado e descarta o que não tem a forma certa", () => {
+    expect(parseCategoryView({ order: "recent", fields: { raca: "Elfo", vazio: "", numero: 3 }, subfolder: "Norte" })).toEqual({ order: "recent", fields: { raca: "Elfo" }, subfolder: "Norte" })
+    expect(parseCategoryView(null)).toEqual({ order: "name", fields: {}, subfolder: "" })
+    expect(parseCategoryView({ order: "z", fields: ["x"], subfolder: 1 })).toEqual({ order: "name", fields: {}, subfolder: "" })
+  })
+
+  it("guarda cada categoria numa chave própria", () => {
+    expect(categoryViewKey("Wikis/Ordem/Personagens")).toBe("runas-codex:wiki-categoria:Wikis/Ordem/Personagens")
+  })
 })
