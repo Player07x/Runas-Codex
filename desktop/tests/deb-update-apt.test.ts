@@ -26,7 +26,7 @@ it.runIf(aptAvailable)("o APT real prepara o caminho local sem repositórios e r
     }
     const run = async (_command: string, args: string[]) => {
       try {
-        const result = await execute("/usr/bin/apt-get", [...options,...args.slice(2)], { env:{...process.env, APT_CONFIG:config, LC_ALL:"C"} })
+        const result = await execute("/usr/bin/apt-get", [...options,...args.slice(args.indexOf("/usr/bin/apt-get")+1)], { env:{...process.env, APT_CONFIG:config, LC_ALL:"C"} })
         output = result.stdout + result.stderr
       } catch (error) {
         const failure = error as { code?: number | string; stdout?: string; stderr?: string }
