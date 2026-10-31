@@ -4,11 +4,11 @@ import { QUEST_STATUS, type QuestStatus } from "../../core/campaigns"
 import { canvasToSave, emptyCanvasText, parseCanvas } from "../../core/canvas"
 import { buildQuestMap, QUEST_CARD, questMapCanvas, type QuestMapArc, type QuestMapNode } from "../../core/quest-map"
 import { href, navigate } from "../../lib/router"
-import { noteRoute } from "../../lib/vault-notes"
 import { useToast } from "../../components/ui"
 import { Notice } from "../../components/kit/Layout"
 import { useVault } from "../../platform/VaultProvider"
-import { campaignRoute, type CampaignData } from "./campaign-state"
+import { campaignRoute, questRoute, type CampaignData } from "./campaign-state"
+import { QuestMenu } from "./QuestPage"
 
 const label = (status: QuestStatus) => QUEST_STATUS.find((s) => s.id === status)?.label ?? status
 const color = (status: QuestStatus) => `var(--${QUEST_STATUS.find((s) => s.id === status)?.color ?? "line"})`
@@ -47,6 +47,8 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
       navigate(campaignRoute(data.campaign.name, "quadro", file))
     } catch (err) { fail(err) }
   }
+  const campaign = data.campaign.name
+  const questOf = (path: string) => data.quests.find((q) => q.path === path)
   if (!data.quests.length) return <p className="muted small">Crie missões para ver o mapa. Use “Parte de” para pôr uma missão dentro de um arco e “Depende de” para as setas.</p>
   return (
     <div className="stack campaign-questmap">
@@ -67,8 +69,8 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
                 return <path key={`${e.from}>${e.to}`} d={`M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`} fill="none" stroke="var(--line-strong)" strokeWidth="1.5" markerEnd="url(#seta-missao)" />
               })}
             </svg>
-            {map.arcs.map((arc) => <ArcBox key={arc.path ?? "soltas"} arc={arc} />)}
-            {map.nodes.map((node) => <QuestCard key={node.path} node={node} title={title} readOnly={data.readOnly} onSaveParent={saveParent} />)}
+            {map.arcs.map((arc) => <ArcBox key={arc.path ?? "soltas"} arc={arc} campaign={campaign} />)}
+            {map.nodes.map((node) => <QuestCard key={node.path} node={node} data={data} title={title} readOnly={data.readOnly} onSaveParent={saveParent} />)}
           </div>
         </div>
       ) : (
@@ -76,14 +78,19 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
           {map.arcs.map((arc) => (
             <li key={arc.path ?? "soltas"}>
               <span className="campaign-questmap-arc-title">
-                {arc.path ? <a href={href(noteRoute(arc.path))}>{arc.order && `${arc.order} · `}{arc.title}</a> : arc.title}
+                {arc.path ? <a href={href(questRoute(campaign, arc.path))}>{arc.order && `${arc.order} · `}{arc.title}</a> : arc.title}
                 <span className="tiny muted"> · {arc.done} de {arc.nodes.length} concluídas</span>
               </span>
               {arc.nodes.length > 0 && <ul>
                 {arc.nodes.map((n) => (
                   <li key={n.path} className={n.blocked ? "blocked" : ""}>
-                    <a href={href(noteRoute(n.path))}>{n.order && `${n.order} `}{n.title}</a>
-                    <span className="tiny muted"> — {label(n.status)}{n.blocked ? ", bloqueada" : ""}{n.requires.length ? `; requer ${n.requires.map(title).join(", ")}` : ""}</span>
+                    <span className="campaign-questmap-item">
+                      <span className="grow">
+                        <a href={href(questRoute(data.campaign.name, n.path))}>{n.order && `${n.order} `}{n.title}</a>
+                        <span className="tiny muted"> — {label(n.status)}{n.blocked ? ", bloqueada" : ""}{n.requires.length ? `; requer ${n.requires.map(title).join(", ")}` : ""}</span>
+                      </span>
+                      {questOf(n.path) && <QuestMenu data={data} quest={questOf(n.path)!} />}
+                    </span>
                   </li>
                 ))}
               </ul>}
@@ -95,21 +102,22 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
   )
 }
 
-function ArcBox({ arc }: { arc: QuestMapArc }) {
+function ArcBox({ arc, campaign }: { arc: QuestMapArc; campaign: string }) {
   return (
     <div className="campaign-questmap-arc" style={{ left: arc.x, top: arc.y, width: arc.width, height: arc.height, ["--col" as string]: arc.status ? color(arc.status) : "var(--line-strong)" }}>
       <span className="campaign-questmap-arc-title">
-        {arc.path ? <a href={href(noteRoute(arc.path))}>{arc.order && `${arc.order} · `}{arc.title}</a> : arc.title}
+        {arc.path ? <a href={href(questRoute(campaign, arc.path))}>{arc.order && `${arc.order} · `}{arc.title}</a> : arc.title}
       </span>
       <span className="tiny muted">{arc.path ? "arco" : "sem arco"} · {arc.done} de {arc.nodes.length} concluídas</span>
     </div>
   )
 }
 
-function QuestCard({ node, title, readOnly, onSaveParent }: { node: QuestMapNode; title(path: string): string; readOnly: boolean; onSaveParent(node: QuestMapNode): void }) {
+function QuestCard({ node, data, title, readOnly, onSaveParent }: { node: QuestMapNode; data: CampaignData; title(path: string): string; readOnly: boolean; onSaveParent(node: QuestMapNode): void }) {
+  const quest = data.quests.find((q) => q.path === node.path)
   return (
     <div className={`campaign-questmap-card ${node.blocked ? "blocked" : ""}`} style={{ left: node.x, top: node.y, width: QUEST_CARD.width, height: QUEST_CARD.height, ["--col" as string]: color(node.status) }}>
-      <a className="campaign-questmap-name truncate" href={href(noteRoute(node.path))}>{node.order && <span className="mono faint">{node.order} </span>}{node.title}</a>
+      <a className="campaign-questmap-name truncate" href={href(questRoute(data.campaign.name, node.path))}>{node.order && <span className="mono faint">{node.order} </span>}{node.title}</a>
       <span className="tiny campaign-questmap-meta truncate">
         {node.blocked ? <><Lock size={11} aria-hidden="true" /> espera {node.requires.filter(Boolean).map(title).join(" e ")}</> : <>{label(node.status)}{node.requires.length ? <> · <ArrowRight size={11} aria-hidden="true" /> depois de {node.requires.length}</> : ""}</>}
       </span>
@@ -118,6 +126,7 @@ function QuestCard({ node, title, readOnly, onSaveParent }: { node: QuestMapNode
           <Link2 size={12} />
         </button>
       )}
+      {quest && <span className="campaign-questmap-menu"><QuestMenu data={data} quest={quest} /></span>}
     </div>
   )
 }

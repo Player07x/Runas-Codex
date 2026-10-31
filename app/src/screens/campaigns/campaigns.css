@@ -88,14 +88,22 @@
 .campaign-kanban-card { display: grid; gap: 6px; cursor: grab; background: var(--panel); }
 .campaign-kanban-title { color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; text-decoration: none; }
 .campaign-kanban-title:hover { color: var(--cyan); }
-.campaign-kanban-move { min-height: 30px; font-size: calc(12px * var(--font-scale, 1)); }
+/* U7: cartão compacto, título com a ordem e o ⋯ na mesma linha. */
+.campaign-kanban-card { gap: 4px; padding-block: 8px; }
+.campaign-kanban-line { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.campaign-kanban-line .campaign-kanban-title { min-width: 0; padding-top: 4px; overflow-wrap: anywhere; }
+.campaign-kanban-meta { gap: 4px 6px; }
+.campaign-quest-back { align-self: flex-start; margin: 8px 12px 0; }
+.campaign-quest-details { gap: 10px; }
+.campaign-questmap-menu { position: absolute; right: 4px; bottom: 4px; }
+.campaign-questmap-item { display: flex; align-items: center; gap: 6px; }
 /* No celular, uma coluna por vez, escolhida no seletor de cima. */
 @media (max-width: 860px) {
   .campaign-kanban { grid-auto-flow: row; grid-auto-columns: auto; overflow: visible; background: none; }
   .campaign-kanban-pick { display: grid; }
   .campaign-kanban-col { min-height: 0; }
   .campaign-kanban-col:not([data-current]) { display: none; }
-  .campaign-kanban-move, .campaign-kanban-pick .select { min-height: 44px; }
+  .campaign-kanban-pick .select { min-height: 44px; }
 }
 
 .campaign-cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 8px; }

@@ -14,6 +14,9 @@ export function campaignRoute(name: string, section = "", id?: string): string {
   return `/campanhas/${encodeURIComponent(name)}${section ? `/${section}` : ""}${id ? `/${encodeURIComponent(id)}` : ""}`
 }
 
+/** Missão aberta dentro da campanha (U7), como as sessões. */
+export const questRoute = (name: string, path: string) => campaignRoute(name, "missoes", path)
+
 export const sessionRoute = (session: SessionInfo) => {
   const name = /^Campanhas\/([^/]+)\//.exec(session.path)?.[1] ?? ""
   return campaignRoute(name, "sessoes", session.path)

@@ -32,7 +32,7 @@ const TABS = [
   { id: "quadro", label: "Quadro", icon: <Shapes size={15} /> },
 ]
 
-/** Rotas: /campanhas, /campanhas/<nome>[/sessoes[/<caminho>] | /missoes | /elenco | /quadro[/<caminho>]] */
+/** Rotas: /campanhas, /campanhas/<nome>[/sessoes[/<caminho>] | /missoes[/<caminho>] | /elenco | /quadro[/<caminho>]] */
 export function CampaignsScreen({ route }: { route: string[] }) {
   const vault = useVault()
   const [name, section = "", id] = route
@@ -63,7 +63,7 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
   const vault = useVault()
   const [screen, setScreen] = useState(false)
   const [personalizing, setPersonalizing] = useState(false)
-  const fill = section === "quadro" || (section === "sessoes" && Boolean(id))
+  const fill = section === "quadro" || ((section === "sessoes" || section === "missoes") && Boolean(id))
   // ADR 0027: tudo dentro da campanha herda a cor dela (botões, abas, sessões, missões, quadro, elenco).
   const look = useMemo(() => campaignLook(vault.index!, name), [vault.index, vault.version, name])
   return (
@@ -72,7 +72,7 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
       {personalizing && <PersonalizeDialog title={`Personalizar ${name}`} name={name} path={campaignHomePath(name)} onClose={() => setPersonalizing(false)} />}
       {section === "" && <CampaignDashboard data={data} onScreen={() => setScreen(true)} />}
       {section === "sessoes" && <SessionsView data={data} path={id} />}
-      {section === "missoes" && <QuestBoard data={data} />}
+      {section === "missoes" && <QuestBoard data={data} path={id} />}
       {section === "elenco" && <CastView data={data} />}
       {section === "ferramentas" && <CampaignTools data={data} />}
       {section === "quadro" && <BoardsView data={data} path={id} />}

@@ -2,14 +2,14 @@ import { useState } from "react"
 import { Plus } from "lucide-react"
 import { QUEST_STATUS, type QuestInfo, type QuestStatus } from "../../core/campaigns"
 import { noteName } from "../../core/text"
-import { href } from "../../lib/router"
-import { noteRoute } from "../../lib/vault-notes"
+import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewQuestDialog } from "./campaign-dialogs"
 import { QuestMapView } from "./QuestMap"
+import { QuestMenu, QuestPage } from "./QuestPage"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
-import type { CampaignData } from "./campaign-state"
+import { questRoute, type CampaignData } from "./campaign-state"
 
 const VIEW_KEY = "runas-codex:campanha:missoes-vista"
 type View = "colunas" | "mapa" | "lista"
@@ -17,9 +17,14 @@ type View = "colunas" | "mapa" | "lista"
 /**
  * Missões em colunas pela propriedade `status`; arrastar (ou escolher no seletor, no celular) grava o status. No
  * computador as colunas têm largura mínima e a rolagem para o lado fica à vista; no celular aparece uma coluna por vez,
- * escolhida no seletor (rework F4c, CAM-4).
+ * escolhida no seletor (rework F4c, CAM-4). Com `path`, a missão abre dentro da campanha (U7).
  */
-export function QuestBoard({ data }: { data: CampaignData }) {
+export function QuestBoard({ data, path }: { data: CampaignData; path?: string }) {
+  if (path) return <QuestPage key={path} data={data} path={path} />
+  return <QuestColumns data={data} />
+}
+
+function QuestColumns({ data }: { data: CampaignData }) {
   const vault = useVault()
   const toast = useToast()
   const [dragging, setDragging] = useState<string | null>(null)
@@ -37,7 +42,7 @@ export function QuestBoard({ data }: { data: CampaignData }) {
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">{data.campaign.root}Missões/ · arraste os cartões ou use “Mover para”</span>
+          <span className="eyebrow">{data.campaign.root}Missões/ · arraste os cartões ou use o ⋯ de cada um</span>
           <h1 className="page-title">Missões</h1>
         </div>
         <button className="btn primary" onClick={() => (data.readOnly ? toast("Libere a gravação em Configurações para criar missões.") : setCreating("ativa"))}>
@@ -85,21 +90,20 @@ export function QuestBoard({ data }: { data: CampaignData }) {
               </div>
               {quests.map((q) => (
                 <div key={q.path} className="card tight campaign-kanban-card" draggable={!data.readOnly} onDragStart={() => setDragging(q.path)} onDragEnd={() => { setDragging(null); setOver(null) }}>
-                  {q.order && <span className="mono tiny faint">{q.order}</span>}
-                  <a className="campaign-kanban-title" href={href(noteRoute(q.path))}>{q.title}</a>
-                  {q.giver && <span className="tiny muted">De: {noteName(q.giver.target)}</span>}
-                  <div className="row-wrap">
-                    {q.reward && <span className="chip gold">{q.reward}</span>}
-                    {q.tags.map((t) => (
-                      <span key={t} className="chip">{t}</span>
-                    ))}
+                  {/* Compacto (U7): ordem ao lado do título; mover e excluir ficam no ⋯, a alternativa ao arrastar pelo teclado (WCAG 2.1.1, 2.5.7). */}
+                  <div className="campaign-kanban-line">
+                    <a className="campaign-kanban-title grow" href={href(questRoute(data.campaign.name, q.path))}>{q.order && <span className="mono faint">{q.order} </span>}{q.title}</a>
+                    <QuestMenu data={data} quest={q} />
                   </div>
-                  {/* Mover pelo seletor vale em qualquer largura: teclado e toque não dependem de arrastar (WCAG 2.1.1, 2.5.7). */}
-                  <select className="select campaign-kanban-move" disabled={data.readOnly} value={q.status} onChange={(e) => move(q, e.target.value as QuestStatus)} aria-label={`Mover ${q.title} para`}>
-                    {QUEST_STATUS.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
+                  {(q.giver || q.reward || q.tags.length > 0) && (
+                    <div className="row-wrap campaign-kanban-meta">
+                      {q.giver && <span className="tiny muted">De: {noteName(q.giver.target)}</span>}
+                      {q.reward && <span className="chip gold">{q.reward}</span>}
+                      {q.tags.map((t) => (
+                        <span key={t} className="chip">{t}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -107,7 +111,7 @@ export function QuestBoard({ data }: { data: CampaignData }) {
         })}
       </div>
       </>}
-      {creating && <NewQuestDialog campaign={data.campaign} quests={data.quests} npcs={data.npcs} initialStatus={creating} onClose={() => setCreating(null)} />}
+      {creating && <NewQuestDialog campaign={data.campaign} quests={data.quests} npcs={data.npcs} initialStatus={creating} onClose={() => setCreating(null)} onCreated={(created) => navigate(questRoute(data.campaign.name, created))} />}
     </div>
   )
 }
