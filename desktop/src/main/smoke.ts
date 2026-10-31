@@ -604,7 +604,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const noteWindows = result.noteWindows as Record<string, unknown> | undefined
   if (!noteWindows || !Object.values(noteWindows).every(value => value === true)) return false
   const vttWorlds = result.vttWorlds as Record<string, unknown> | undefined
-  if (!vttWorlds || Object.keys(vttWorlds).length !== 3 || !Object.values(vttWorlds).every(value => value === true)) return false
+  if (!vttWorlds || Object.keys(vttWorlds).length !== 4 || !Object.values(vttWorlds).every(value => value === true)) return false
   return (
     result.create === "OK" &&
     String(result.createAgain).startsWith("Já existe") &&

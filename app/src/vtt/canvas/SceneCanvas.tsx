@@ -4,12 +4,14 @@ import { createPortal } from "react-dom"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
 import { useSettings } from "../settings"
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
+import { BookmarkPlus, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
 import type { DocumentInput } from "../shared/ipc"
 import { snapTokenCenter } from "../shared/grid"
 import { BAR_VISIBILITIES, BAR_VISIBILITY_LABELS, isAlly, MAX_TOKEN_BARS, TOKEN_DISPOSITIONS, WALL_KINDS, type BarVisibility, type DrawingData, type DrawingShape, type LightData, type NoteData, type SceneData, type TileData, type TokenBar, type TokenData, type TokenDisposition, type WallData, type WallKind } from "../shared/scene"
 import { computeVision, renderVision } from "../shared/vision"
 import { addBar, barTemplates, moveBar, newBarLabel } from "../shared/bars"
+import { library } from "../library"
+import { LIBRARY_DRAG_TYPE, placeScene, placeToken, saveTokenToLibrary } from "../library-actions"
 import { barColor } from "../shared/log"
 import type { SoundData } from "../shared/audio"
 import { REGION_SHAPES, REGION_TRIGGERS, type RegionData, type RegionShape, type RegionTrigger } from "../shared/region"
@@ -70,7 +72,7 @@ export async function importImage(kind: AssetKind, file: File): Promise<{ path: 
  * `properties` (U11): a mesa abre as propriedades do objeto no trilho do lado direito (no lugar do painel aberto), nunca
  * por cima dele. Sem isso (mestre remoto antigo, testes), o painel fica sobre o mapa como antes.
  */
-export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properties }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean; properties?: { host: HTMLElement | null; open: boolean; setOpen(open: boolean): void } }) {
+export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properties, onLibraryScene }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean; properties?: { host: HTMLElement | null; open: boolean; setOpen(open: boolean): void }; onLibraryScene?: (sceneId: string) => void }) {
   const version = useDocumentsVersion(store)
   const settings = useSettings()
   const host = useRef<HTMLDivElement>(null)
@@ -250,8 +252,20 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
     const rect = host.current?.getBoundingClientRect()
     if (!view || !rect) return
     const at = view.toScene({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+    // Da Biblioteca (U13): um token entra como cópia nova onde foi solto; um mapa vira cena nova.
+    const itemId = event.dataTransfer.getData(LIBRARY_DRAG_TYPE)
+    if (itemId && library && scene) {
+      void library.list().then(async (items) => {
+        const item = items.find((candidate) => candidate.id === itemId)
+        if (!item) return
+        if (item.kind === "token") await placeToken(store, item, scene.id, at)
+        else onLibraryScene?.(await placeScene(store, item))
+      }).catch(reportError)
+      return
+    }
     for (const file of Array.from(event.dataTransfer.files).filter((candidate) => candidate.type.startsWith("image/"))) void addTile(file, at)
   }
+  const keep = (tokenId: string) => void saveTokenToLibrary(store, tokenId).then((name) => setStatus(`“${name}” guardado na biblioteca.`), reportError)
 
   const selected = selection.length === 1 ? store.get(selection[0]!) : null
 
@@ -308,12 +322,13 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
       {context && <div className="scene-context-menu" role="menu" aria-label="Ações do objeto" style={{ left: Math.max(8, Math.min(context.x, (host.current?.clientWidth ?? 320) - 224)), top: Math.max(8, Math.min(context.y, (host.current?.clientHeight ?? 500) - 220)) }}>
         <button role="menuitem" onClick={() => { setPropertiesOpen(true); setContext(null) }}>Editar objeto</button>
         <button role="menuitem" onClick={() => { viewRef.current?.toggleHiddenSelection(); setContext(null) }}>Ocultar / mostrar</button>
+        {store.get(context.id)?.type === "token" && library && <button role="menuitem" onClick={() => { keep(context.id); setContext(null) }}>Guardar na biblioteca</button>}
         <button role="menuitem" onClick={() => { viewRef.current?.deleteSelection(); setContext(null) }}>Apagar</button>
         <button role="menuitem" onClick={() => setContext(null)}>Fechar menu</button>
       </div>}
       {(() => {
         const panel = selected && propertiesOpen
-          ? <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} inRail={Boolean(properties)} onRemove={() => viewRef.current?.deleteSelection()} onClose={() => setPropertiesOpen(false)} />
+          ? <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} inRail={Boolean(properties)} onKeep={selected.type === "token" && library ? () => keep(selected.id) : undefined} onRemove={() => viewRef.current?.deleteSelection()} onClose={() => setPropertiesOpen(false)} />
           : selection.length > 1 && propertiesOpen
             ? <div className="properties multi"><strong>{selection.length} objetos selecionados</strong><div className="row-actions"><button className="ghost" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={14} /> Ocultar/mostrar</button><button className="ghost danger" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={14} /> Excluir</button></div>{(() => {
               // U12: um modelo de barra aplicado de uma vez aos tokens selecionados (quem já tem a barra fica como está).
@@ -353,7 +368,7 @@ function TextInput({ value, onCommit, placeholder }: { value: string; onCommit: 
   return <input value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
 }
 
-function PropertiesPanel({ document, scene, store, put, inRail, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; inRail: boolean; onRemove: () => void; onClose: () => void }) {
+function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; inRail: boolean; onKeep?: () => void; onRemove: () => void; onClose: () => void }) {
   const update = (patch: Record<string, unknown>) => put({ id: document.id, type: document.type, parentId: document.parentId, data: { ...(document.data as object), ...patch } })
   const data = document.data as { hidden?: boolean; locked?: boolean }
   const title = { token: "Token", tile: "Imagem", drawing: "Desenho", note: "Nota", wall: "Parede", light: "Luz", sound: "Som", region: "Região" }[document.type as "token"] ?? "Objeto"
@@ -363,6 +378,7 @@ function PropertiesPanel({ document, scene, store, put, inRail, onRemove, onClos
       <div className="row-actions">
         {"hidden" in data && <button className={`icon-toggle ${data.hidden ? "active" : ""}`} title={document.type === "light" ? (data.hidden ? "Apagada (H)" : "Acesa (H)") : document.type === "sound" ? (data.hidden ? "Desligado (H)" : "Ligado (H)") : data.hidden ? "Oculto para os jogadores (H)" : "Visível para os jogadores (H)"} aria-label="Ocultar" onClick={() => update({ hidden: !data.hidden })}>{data.hidden ? <EyeOff size={15} /> : <Eye size={15} />}</button>}
         {"locked" in data && <button className={`icon-toggle ${data.locked ? "active" : ""}`} title={data.locked ? "Travado" : "Travar posição"} aria-label="Travar" onClick={() => update({ locked: !data.locked })}><Lock size={15} /></button>}
+        {onKeep && <button className="icon-toggle" title="Guardar na biblioteca (para usar em qualquer mesa)" aria-label="Guardar na biblioteca" onClick={onKeep}><BookmarkPlus size={15} /></button>}
         <button className="icon-toggle danger" title="Excluir (Delete)" aria-label="Excluir" onClick={onRemove}><Trash2 size={15} /></button>
         <button className="icon-toggle" aria-label="Fechar propriedades" onClick={onClose}><X size={15} /></button>
       </div>

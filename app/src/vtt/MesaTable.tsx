@@ -1,6 +1,6 @@
 import { useVault } from "../platform/VaultProvider"
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
-import { ArrowLeft, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, ScrollText, Settings } from "lucide-react"
+import { ArrowLeft, Library, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, ScrollText, Settings } from "lucide-react"
 import { href, navigate } from "../lib/router"
 import { remoteMaster, resolveAssetUrl, vtt } from "./api"
 import { AudioEngine } from "./audio-engine"
@@ -10,16 +10,18 @@ import { AudioPanel, audioMixListeners } from "./panels/AudioPanel"
 import { LogPanel } from "./panels/LogPanel"
 import { PlayerPanel } from "./panels/PlayerPanel"
 import { ScenesPanel } from "./panels/ScenesPanel"
+import { LibraryPanel } from "./panels/LibraryPanel"
 import { SettingsDialog } from "./panels/SettingsDialog"
 import { useSettings } from "./settings"
 import type { AudioState } from "./shared/audio"
 import type { WorldSummary } from "./shared/world"
 import "./vtt.css"
 
-type SideTab = "scenes" | "audio" | "log" | "players"
+type SideTab = "scenes" | "audio" | "log" | "players" | "library"
 
 const SIDE_TABS: { id: SideTab; label: string; icon: typeof MapIcon }[] = [
   { id: "scenes", label: "Cenas", icon: MapIcon },
+  { id: "library", label: "Biblioteca", icon: Library },
   { id: "audio", label: "Áudio", icon: Music },
   { id: "log", label: "Registro", icon: ScrollText },
   { id: "players", label: "Sala", icon: MonitorPlay },
@@ -235,7 +237,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
         </header>
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         <section className="canvas-area" aria-label="Cena">
-          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} properties={{ host: propertiesHost, open: propertiesOpen, setOpen: setPropertiesOpen }} />}
+          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} properties={{ host: propertiesHost, open: propertiesOpen, setOpen: setPropertiesOpen }} onLibraryScene={openScene} />}
         </section>
         <aside className="side-panel" aria-label="Painel da mesa">
           <div className="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionar painel" onPointerDown={startResize} onPointerMove={resize} onPointerUp={endResize} onPointerCancel={endResize} />
@@ -261,7 +263,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
               </button>
               <div ref={setPropertiesHost} className="side-properties-body" />
             </section>
-          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "log" ? <LogPanel store={store} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
+          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <LogPanel store={store} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
         </aside>
       </div>
     </main>
