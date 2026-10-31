@@ -227,8 +227,10 @@
 .map-toolbar .map-layers { flex-wrap:wrap; }
 
 /* W1 — categorias resumidas e navegação por arte, sem estilos no leitor compartilhado. */
-.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:flex-start; }
-.wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere;word-break:break-word; }
+/* Ícone, nome e contagem no mesmo centro vertical; um nome longo quebra em duas linhas e continua centrado. */
+.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:center; }
+.wiki-category-heading > .cat-icon { flex:none; }
+.wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));line-height:1.25;overflow-wrap:anywhere;word-break:break-word; }
 .wiki-category-heading > .chip { flex:0 0 auto;margin-left:auto; }
 .wiki-category-preview { display:grid;grid-template-columns:minmax(0,1fr);gap:2px; }
 .wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }

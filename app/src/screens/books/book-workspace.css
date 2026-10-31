@@ -92,7 +92,7 @@ body.book-focus-active .main { padding-bottom: env(safe-area-inset-bottom); }
 .books-focus .books-layout { grid-template-columns: minmax(0, 1fr); }
 .books-focus .books-main { grid-column: 1; }
 .book-focus-bar { opacity: .35; transition: opacity .2s; }
-.book-focus-bar:hover, .book-focus-bar:focus-within { opacity: 1; }
+.book-focus-bar:hover, .book-focus-bar:focus-within, .book-focus-bar:has([aria-expanded="true"]) { opacity: 1; }
 @media (hover: none) { .book-focus-bar { opacity: 1; } }
 
 /* ---------- Celular: barra de uma linha e texto na largura toda ---------- */
