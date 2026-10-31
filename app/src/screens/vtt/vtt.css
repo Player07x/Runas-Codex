@@ -27,7 +27,12 @@
 .origin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
 
 /* ---------- Entrar Sala ---------- */
-.join-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-column); align-items: start; max-width: 960px; }
+/* A coluna do painel segue a largura dele (arrastada ou recolhida, `--panel-vtt-join`); o cartão do link fica com o resto. */
+.join-layout { display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-vtt-join, 320px); gap: var(--space-column); align-items: start; max-width: 960px; }
+.join-layout .list-item { min-width: 0; }
+.join-layout .list-item .meta { flex: none; }
+.join-tip { align-items: flex-start; }
+.join-tip svg { flex: none; margin-top: 2px; }
 .seat-code { font-size: calc(20px * var(--font-scale, 1)); letter-spacing: 0.15em; text-transform: uppercase; }
 .qr-camera { display: grid; place-items: center; gap: 8px; aspect-ratio: 4 / 3; border: 2px dashed var(--line-strong); border-radius: var(--radius-lg); background: var(--bg-deep); color: var(--muted); text-align: center; padding: 16px; }
 @media (max-width: 860px) { .join-layout { grid-template-columns: minmax(0, 1fr); } }

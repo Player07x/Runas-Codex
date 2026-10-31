@@ -1,7 +1,7 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
 import { Camera, Clock, DoorOpen, Dices, Download, Link2, LogIn, Map, Plus, Upload, Wifi, Hash } from "lucide-react"
-import { ListRow, Notice, PageHeader } from "../../components/kit/Layout"
+import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { href, navigate } from "../../lib/router"
 import { relativeDays } from "../../lib/navigation"
@@ -64,9 +64,6 @@ function VttHome() {
           ))}
         </section>
       )}
-      <Notice tone="info" title="A única parte do app que usa a rede">
-        Só enquanto a sala estiver aberta, e só entre você e os jogadores. Fechada a sala, nada sai do aparelho.
-      </Notice>
     </div>
   )
 }
@@ -276,7 +273,7 @@ function JoinRoom() {
             <span className="section-title">Salas recentes</span>
             {recent.length === 0 && <span className="muted small">As salas em que você entrar aparecem aqui.</span>}
             {recent.map((room) => (
-              <button key={room.url} className="list-item" onClick={() => void join(room.url)}>
+              <button key={room.url} className="list-item" title={room.url} onClick={() => void join(room.url)}>
                 <Dices size={16} />
                 <span className="grow" style={{ minWidth: 0 }}>
                   <strong className="small truncate" style={{ display: "block" }}>{new URL(room.url).host}</strong>
@@ -287,10 +284,10 @@ function JoinRoom() {
             ))}
           </section>
           <section className="card stack small">
-            <span className="row">
+            <span className="row join-tip">
               <Wifi size={15} color="var(--green)" /> Mesma rede (Wi-Fi): conexão direta, sem internet.
             </span>
-            <span className="row muted">
+            <span className="row muted join-tip">
               <Link2 size={15} /> Fora de casa: o mestre liga o link público e manda um endereço https.
             </span>
           </section>
