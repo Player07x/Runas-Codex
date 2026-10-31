@@ -363,6 +363,16 @@ function normalizeTokenLight(value: unknown): TokenLight {
   return { bright: Math.min(radius(raw.bright, 0), dim), dim, color: color(raw.color, "#ffb45a") }
 }
 
+/** Rascunho das Notas da mesa (U14). */
+export interface TableNotesData { text: string }
+export const TABLE_NOTES_ID = "notas-da-mesa"
+const TABLE_NOTES_LIMIT = 200_000
+
+function normalizeTableNotes(value: unknown): TableNotesData {
+  const raw = record(value)
+  return { text: typeof raw.text === "string" ? raw.text.slice(0, TABLE_NOTES_LIMIT) : "" }
+}
+
 export function normalizeLog(value: unknown): LogData {
   const raw = record(value)
   const id = (candidate: unknown) => typeof candidate === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(candidate) ? candidate : null
@@ -451,6 +461,7 @@ const NORMALIZERS: Partial<Record<DocumentType, (value: unknown) => unknown>> = 
   playlist: normalizePlaylist,
   track: normalizeTrack,
   "log-entry": normalizeLog,
+  "table-notes": normalizeTableNotes,
 }
 
 /** Normaliza o `data` de qualquer tipo conhecido; tipos das próximas fases passam intactos. */

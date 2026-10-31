@@ -57,6 +57,8 @@ export const DOCUMENT_TYPES = [
   "playlist",
   "track",
   "log-entry",
+  /** Notas do mestre durante o jogo (U14): um rascunho por mesa, que só vira nota do cofre em “Salvar Sessão”. */
+  "table-notes",
 ] as const
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number]

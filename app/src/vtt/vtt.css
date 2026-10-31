@@ -484,3 +484,10 @@
 .vtt-root .library-item strong, .vtt-root .library-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vtt-root .library-item small { color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); }
 .vtt-root .hint.danger { color: var(--red); }
+
+/* U14: Notas da mesa (no lugar do Registro), com os Acontecimentos embaixo. */
+.vtt-root .table-notes-field textarea { width: 100%; min-height: 220px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; line-height: 1.5; resize: vertical; }
+.vtt-root .table-notes-field textarea:focus { border-color: var(--cyan-dim); outline: 0; }
+.vtt-root .table-events { display: grid; gap: 8px; }
+.vtt-root .table-events > summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: calc(13px * var(--font-scale, 1)); }
+.vtt-root .table-events .log-list .link { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: calc(12px * var(--font-scale, 1)); }

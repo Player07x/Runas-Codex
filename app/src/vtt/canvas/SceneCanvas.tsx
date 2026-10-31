@@ -605,7 +605,7 @@ function RegionFields({ id, data, store, update }: { id: string; data: RegionDat
     <div className="bars">
       <label className="check"><input type="checkbox" checked={data.text.enabled} onChange={(event) => update({ text: { ...data.text, enabled: event.target.checked } })} /> <strong>Texto ao entrar</strong></label>
       {data.text.enabled && <>
-        <Field label="Mensagem (vai ao Registro e sobe sobre o token)"><TextInput value={data.text.message} placeholder="O chão range sob seus pés…" onCommit={(message) => update({ text: { ...data.text, message } })} /></Field>
+        <Field label="Mensagem (vai aos Acontecimentos das Notas e sobe sobre o token)"><TextInput value={data.text.message} placeholder="O chão range sob seus pés…" onCommit={(message) => update({ text: { ...data.text, message } })} /></Field>
         <label className="check"><input type="checkbox" checked={data.text.once} onChange={(event) => update({ text: { ...data.text, once: event.target.checked } })} /> Só uma vez (desliga depois de mostrar)</label>
       </>}
     </div>

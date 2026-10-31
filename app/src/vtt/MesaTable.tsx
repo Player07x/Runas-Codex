@@ -1,13 +1,13 @@
 import { useVault } from "../platform/VaultProvider"
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
-import { ArrowLeft, Library, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, ScrollText, Settings } from "lucide-react"
+import { ArrowLeft, Library, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, NotebookPen, Settings } from "lucide-react"
 import { href, navigate } from "../lib/router"
 import { remoteMaster, resolveAssetUrl, vtt } from "./api"
 import { AudioEngine } from "./audio-engine"
 import { SceneCanvas } from "./canvas/SceneCanvas"
 import { DocumentStore } from "./document-store"
 import { AudioPanel, audioMixListeners } from "./panels/AudioPanel"
-import { LogPanel } from "./panels/LogPanel"
+import { TableNotesPanel } from "./panels/TableNotesPanel"
 import { PlayerPanel } from "./panels/PlayerPanel"
 import { ScenesPanel } from "./panels/ScenesPanel"
 import { LibraryPanel } from "./panels/LibraryPanel"
@@ -23,7 +23,7 @@ const SIDE_TABS: { id: SideTab; label: string; icon: typeof MapIcon }[] = [
   { id: "scenes", label: "Cenas", icon: MapIcon },
   { id: "library", label: "Biblioteca", icon: Library },
   { id: "audio", label: "Áudio", icon: Music },
-  { id: "log", label: "Registro", icon: ScrollText },
+  { id: "log", label: "Notas", icon: NotebookPen },
   { id: "players", label: "Sala", icon: MonitorPlay },
 ]
 
@@ -263,7 +263,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
               </button>
               <div ref={setPropertiesHost} className="side-properties-body" />
             </section>
-          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <LogPanel store={store} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
+          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession={!remote} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
         </aside>
       </div>
     </main>
