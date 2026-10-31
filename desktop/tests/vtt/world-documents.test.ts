@@ -64,11 +64,12 @@ describe("putDocument", () => {
 })
 
 describe("normalização", () => {
-  it("token: limita barras a 3, recusa imagem fora dos assets e disposição desconhecida", () => {
-    const token: TokenData = normalizeToken({ image: "../../segredo.png", disposition: "aliado", bars: [{}, {}, {}, {}], size: 0 })
+  it("token: limita barras a 12 (U12), recusa imagem fora dos assets e disposição desconhecida", () => {
+    const token: TokenData = normalizeToken({ image: "../../segredo.png", disposition: "aliado", bars: Array.from({ length: 15 }, () => ({})), size: 0 })
     expect(token.image).toBeNull()
     expect(token.disposition).toBe("neutral")
-    expect(token.bars).toHaveLength(3)
+    expect(token.bars).toHaveLength(12)
+    expect(token.bars[0]!.label).toBe("Barra")
     expect(token.size).toBe(0.25)
   })
 
