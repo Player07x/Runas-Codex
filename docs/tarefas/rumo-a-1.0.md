@@ -455,3 +455,36 @@ Pedido do dono (30/10): trocar o painel “Registro” da mesa (`app/src/vtt/pan
   o que hoje é registrado. A mensagem de região em `SceneCanvas.tsx` (“vai ao Registro”) muda de texto junto.
 - Testes: rascunho sobrevive a fechar e reabrir; “Salvar Sessão” cria a nota com `data` entre aspas (regra 5) e a sessão
   aparece em Campanhas › Sessões.
+
+## Para a versão depois da 1.0.0 (registrado em 01/11/2026)
+
+### U15 — Recuo na primeira linha dos parágrafos dos Livros
+
+Pergunta do dono (01/11): “Em livros, como eu faço um recuo no texto?” Hoje não há um jeito bom:
+
+- A Tab do editor (`indentWithTab` em `app/src/components/vault/SourceEditor.tsx`) põe 2 espaços no começo da linha,
+  que o Markdown descarta (até 3 espaços); com 4 espaços o parágrafo vira **bloco de código**.
+- Espaços comuns seguidos viram um só no papel. O único jeito é começar cada parágrafo com `&emsp;` (espaço largo que
+  não estica no texto justificado), à mão, um por um.
+
+O que fazer: o recuo vira opção do **estilo do livro** (L3, [ADR 0033](../adr/0033-livro-impresso.md)), não do texto.
+
+- **Propriedade `recuo`** (`true`/`false`) no livro e na nota de modelo (`tipo: modelo-livro`), em `STYLE_KEYS`
+  (`app/src/core/book-style.ts`) ao lado de `hifenizar`: entra em `BookStyle`, `resolveStyle` (livro por cima do
+  modelo), `styleProperties` (o “Salvar como modelo” leva junto) e `styleCss` (uma variável do `.book-paper`).
+- **Nenhum livro muda sozinho:** sem a propriedade, o recuo fica desligado em todos os modelos prontos.
+- **Painel de estilo** (`BookStylePanel.tsx`): caixa “Recuo na primeira linha” junto de “Hifenizar em português”,
+  voltando ao valor do modelo como as outras opções.
+- **No papel** (`book-pages.css`, só em `.book-print`): com o recuo ligado, o parágrafo que vem logo depois de outro
+  parágrafo recua a primeira linha (cerca de 1,5 em) e os parágrafos do corpo ficam sem espaço entre si, como nos
+  livros impressos. O primeiro parágrafo depois de título, imagem, quebra, lista, citação, callout ou ficha não recua.
+  Fichas, callouts, tabelas, notas de rodapé, sumário, capa e créditos não mudam.
+- **Exportações:** o PDF e o EPUB usam o mesmo CSS do papel e herdam a regra (conferir); o DOCX
+  (`app/src/core/export/docx.ts`) ganha `indent.firstLine` e espaço zero entre os parágrafos do corpo quando o livro
+  tem `recuo: true`.
+- **O que não muda:** o editor do capítulo (é a nota do Obsidian; o leitor compartilhado fica igual, regra 7) e os
+  capítulos no Obsidian. O `&emsp;` digitado à mão continua funcionando e soma com o recuo; dizer isso na Ajuda
+  (`app/src/data/ajuda/livros.md`, onde estão as outras opções de estilo).
+- **Testes:** `book-style.test.ts` (livro por cima do modelo, padrão desligado, `styleProperties` e `modelNoteText` com
+  `recuo`, a variável no `styleCss`) e o DOCX com e sem recuo; conferência da prévia em uma e em duas colunas,
+  justificado e à esquerda. O que conferir à mão vai no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
