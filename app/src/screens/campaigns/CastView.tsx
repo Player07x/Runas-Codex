@@ -12,16 +12,16 @@ import { noteRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { ArticleArt } from "../wiki/ArticleArt"
 import { EditPlayerDialog, NewNpcDialog, NewPlayerDialog, WikiNotePicker } from "./campaign-dialogs"
-import { useCampaignEdits } from "./campaign-edits"
+import { useCampaignEdits, useUndoable } from "./campaign-edits"
 import { sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
 
 export function CastView({ data }: { data: CampaignData }) {
   const [newPlayer, setNewPlayer] = useState(false)
   const [editing, setEditing] = useState<PlayerCharacter>()
-  const [unlinking, setUnlinking] = useState<string | null>(null)
   const vault = useVault()
   const { setHome } = useCampaignEdits(data)
+  const undoable = useUndoable()
   return (
     <div className="page">
       <div className="page-head">
@@ -52,12 +52,8 @@ export function CastView({ data }: { data: CampaignData }) {
               </a>
               {!data.readOnly && data.campaign.home && <div className="row-wrap">
                 <button className="btn sm" onClick={() => setEditing(p)} aria-label={`Trocar jogador de ${p.name}`}><Pencil size={14} /> Jogador</button>
-                {/* Desvincular pede confirmação: o personagem sai da lista da campanha. */}
-                {unlinking === p.path ? (
-                  <button className="btn sm danger" autoFocus onBlur={() => setUnlinking(null)} onClick={() => { setUnlinking(null); setHome("personagens", withCampaignPlayer(vault.index!, data.campaign, p.path, null)) }}>Confirmar</button>
-                ) : (
-                  <button className="btn sm ghost" onClick={() => setUnlinking(p.path)} aria-label={`Desvincular ${p.name} da campanha`}><Unlink size={14} /> Desvincular</button>
-                )}
+                {/* Sem confirmação: o aviso traz “Desfazer” (a nota do personagem continua na wiki). */}
+                <button className="btn sm ghost" onClick={() => void undoable(data.campaign.home!, `${p.name} desvinculado da campanha.`, () => setHome("personagens", withCampaignPlayer(vault.index!, data.campaign, p.path, null)))} aria-label={`Desvincular ${p.name} da campanha`}><Unlink size={14} /> Desvincular</button>
               </div>}
             </div>
           ))}
@@ -98,6 +94,7 @@ const readPrefs = (): Prefs => {
 function NpcRoster({ data }: { data: CampaignData }) {
   const vault = useVault()
   const { setHome } = useCampaignEdits(data)
+  const undoable = useUndoable()
   const [picking, setPicking] = useState(false)
   const [creating, setCreating] = useState(false)
   const [query, setQuery] = useState("")
@@ -186,7 +183,7 @@ function NpcRoster({ data }: { data: CampaignData }) {
               {group && <h3 className="campaign-roster-group">{group} · {list.length}</h3>}
               <ul className={prefs.mode === "grid" ? "campaign-roster-grid" : "campaign-roster-list"}>
                 {list.map((r) => {
-                  const remove = () => setHome("npcs", withoutPosition(data.data.npcs, r.item.position))
+                  const remove = () => void undoable(data.campaign.home ?? "", `${r.name} saiu do Elenco.`, () => setHome("npcs", withoutPosition(data.data.npcs, r.item.position)))
                   return prefs.mode === "grid"
                     ? <NpcCard key={r.item.position} row={r} data={data} onSave={save} onRemove={remove} />
                     : <NpcRow key={r.item.position} row={r} data={data} onSave={save} onRemove={remove} />
@@ -294,6 +291,7 @@ function NpcControls({ row, data, onSave, onRemove }: NpcProps) {
 function FactionSection({ data }: { data: CampaignData }) {
   const vault = useVault()
   const { setHome } = useCampaignEdits(data)
+  const undoable = useUndoable()
   const [picking, setPicking] = useState(false)
   const items = data.factions
   const exclude = useMemo(() => new Set(items.map((i) => i.dest).filter((d): d is string => Boolean(d))), [items])
@@ -331,7 +329,7 @@ function FactionSection({ data }: { data: CampaignData }) {
             </span>
             <OverflowMenu label={`Ações de ${noteName(item.target)}`} items={[
               ...(item.dest ? [{ label: "Abrir na Wiki", icon: <BookOpen size={15} />, onSelect: () => navigate(noteRoute(item.dest!)) }] : []),
-              { label: "Tirar da campanha", icon: <Trash size={15} />, danger: true, disabled: data.readOnly, onSelect: () => setHome("faccoes", withoutPosition(data.data.faccoes, item.position)) },
+              { label: "Tirar da campanha", icon: <Trash size={15} />, danger: true, disabled: data.readOnly, onSelect: () => void undoable(data.campaign.home ?? "", `${noteName(item.target)} saiu da campanha.`, () => setHome("faccoes", withoutPosition(data.data.faccoes, item.position))) },
             ]} />
           </div>
         )

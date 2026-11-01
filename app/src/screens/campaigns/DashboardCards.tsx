@@ -1,11 +1,11 @@
 import { useState } from "react"
 import { NoteCrest } from "../../components/kit/Emblem"
-import { Eye, EyeOff, Minus, Plus, ShieldCheck, Trash, X } from "lucide-react"
-import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setClocks, setSecretRevealed, type Clock } from "../../core/campaigns"
+import { Eye, EyeOff, ShieldCheck, X } from "lucide-react"
+import { ClocksEditor } from "./ClocksEditor"
+import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setSecretRevealed } from "../../core/campaigns"
 import { noteName } from "../../core/text"
 import { href } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
-import { ClockDial } from "../../components/ui"
 import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { revealSession, useCampaignEdits } from "./campaign-edits"
 
@@ -14,13 +14,6 @@ const SHOW_SECRETS = "runas-codex:campanha:mostrar-segredos"
 
 /** Relógios de progresso e ameaças (bloco runas-relogios na nota da campanha). */
 export function ClocksCard({ data }: { data: CampaignData }) {
-  const { editHome } = useCampaignEdits(data)
-  const [adding, setAdding] = useState(false)
-  const [name, setName] = useState("")
-  const [segments, setSegments] = useState("6")
-  const [kind, setKind] = useState<Clock["kind"]>("ameaca")
-  // Apagar pede um segundo clique no mesmo botão (sem desfazer, o relógio some da nota).
-  const [confirming, setConfirming] = useState<number | null>(null)
   if ("error" in data.clocks) {
     return (
       <section className="card stack">
@@ -29,76 +22,11 @@ export function ClocksCard({ data }: { data: CampaignData }) {
       </section>
     )
   }
-  const clocks = data.clocks
-  const save = (next: Clock[]) => editHome((text) => setClocks(text, next))
-  const set = (i: number, filled: number) => save(clocks.map((c, j) => (j === i ? { ...c, filled: Math.max(0, Math.min(c.segments, filled)) } : c)))
   return (
     <section className="card stack">
-      <div className="row between">
-        <span className="section-title">Relógios</span>
-        {!data.readOnly && (
-          <button className="icon-btn sm" onClick={() => setAdding(!adding)} aria-label="Novo relógio" title="Novo relógio">
-            <Plus size={15} />
-          </button>
-        )}
-      </div>
-      {clocks.length === 0 && !adding && <span className="muted small">Nenhum relógio. Use para ameaças que avançam e metas do grupo.</span>}
-      <div className="campaign-clocks">
-        {clocks.map((c, i) => (
-          <div key={`${c.name}-${i}`} className="campaign-clock">
-            <ClockDial segments={c.segments} filled={c.filled} color={c.kind === "ameaca" ? "var(--red)" : "var(--green)"} />
-            <span className="small">{c.name}</span>
-            <span className="tiny faint">
-              {c.filled}/{c.segments} · {c.kind === "ameaca" ? "ameaça" : "progresso"}
-            </span>
-            {!data.readOnly && (
-              <span className="row" style={{ gap: 2 }}>
-                <button className="icon-btn sm" onClick={() => set(i, c.filled - 1)} aria-label={`Voltar ${c.name}`}>
-                  <Minus size={14} />
-                </button>
-                <button className="icon-btn sm" onClick={() => set(i, c.filled + 1)} aria-label={`Avançar ${c.name}`}>
-                  <Plus size={14} />
-                </button>
-                {confirming === i ? (
-                  <button className="btn sm danger" onClick={() => { setConfirming(null); save(clocks.filter((_, j) => j !== i)) }} onBlur={() => setConfirming(null)} autoFocus>
-                    Apagar?
-                  </button>
-                ) : (
-                  <button className="icon-btn sm" onClick={() => setConfirming(i)} aria-label={`Apagar ${c.name}`}>
-                    <Trash size={13} />
-                  </button>
-                )}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-      {adding && (
-        <form
-          className="campaign-inline-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!name.trim()) return
-            save([...clocks, { name: name.trim(), segments: Number(segments), filled: 0, kind }])
-            setName("")
-            setAdding(false)
-          }}
-        >
-          <input className="input" autoFocus placeholder="Nome do relógio" value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do relógio" />
-          <select className="select" value={segments} onChange={(e) => setSegments(e.target.value)} aria-label="Segmentos">
-            {[4, 6, 8, 10, 12].map((n) => (
-              <option key={n} value={n}>
-                {n} partes
-              </option>
-            ))}
-          </select>
-          <select className="select" value={kind} onChange={(e) => setKind(e.target.value as Clock["kind"])} aria-label="Tipo">
-            <option value="ameaca">Ameaça</option>
-            <option value="progresso">Progresso</option>
-          </select>
-          <button className="btn sm primary">Criar</button>
-        </form>
-      )}
+      <span className="section-title">Relógios</span>
+      {data.clocks.length === 0 && <span className="muted small">Nenhum relógio. Use para ameaças que avançam e metas do grupo.</span>}
+      <ClocksEditor path={data.campaign.home} clocks={data.clocks} readOnly={data.readOnly || !data.campaign.home} />
     </section>
   )
 }
