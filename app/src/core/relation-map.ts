@@ -1,5 +1,5 @@
 import type { CanvasDoc, CanvasEdge, CanvasNode } from "./canvas"
-import { relationsOf } from "./wiki"
+import { RELATION_TYPES, relationsOf } from "./wiki"
 import type { VaultIndex } from "./vault-index"
 
 /**
@@ -32,11 +32,14 @@ export function buildRelationMap(index: VaultIndex, members: RelationMember[], s
   for (const member of members) {
     for (const relation of relationsOf(index, member.path, scope)) {
       if (relation.inverse || !relation.other || !byPath.has(relation.other) || relation.other === member.path) continue
-      // As simétricas (aliados, inimigos…) aparecem uma vez só, escritas de um lado ou dos dois.
+      // As simétricas (aliados, inimigos…) aparecem uma vez só, escritas de um lado ou dos dois; as com inverso também
+      // (`filhos` no pai e `pais` no filho são a mesma ligação).
       const pair = relation.type.symmetric ? [member.path, relation.other].sort().join("|") : `${member.path}|${relation.other}`
       const key = `${relation.type.key}|${pair}`
       if (seen.has(key)) continue
       seen.add(key)
+      const inverse = relation.type.symmetric ? undefined : RELATION_TYPES.find((t) => t.label === relation.type.inverse)?.key
+      if (inverse) seen.add(`${inverse}|${relation.other}|${member.path}`)
       edges.push({ from: member.path, to: relation.other, label: relation.note ? `${relation.type.label} (${relation.note})` : relation.type.label })
     }
   }

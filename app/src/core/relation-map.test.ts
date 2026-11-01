@@ -3,16 +3,18 @@ import { buildRelationMap, PARTY, relationMapCanvas, type RelationMember } from 
 import { VaultIndex } from "./vault-index"
 
 const files: Record<string, string> = {
-  "Wikis/M/Personagens/Conde.md": '---\ntipo: personagem\ninimigos: ["[[Yara]]"]\nmembro_de: ["[[Coroa]]"]\n---\n# Conde\n',
+  "Wikis/M/Personagens/Conde.md": '---\ntipo: personagem\ninimigos: ["[[Yara]]"]\nmembro_de: ["[[Coroa]]"]\nfilhos: ["[[Filho]]"]\n---\n# Conde\n',
   "Wikis/M/Personagens/Yara.md": '---\ntipo: personagem\ninimigos: ["[[Conde]]"]\naliados: ["[[Fora do elenco]]"]\n---\n# Yara\n',
   "Wikis/M/Organizações/Coroa.md": "---\ntipo: organizacao\n---\n# Coroa\n",
   "Wikis/M/Personagens/Fora do elenco.md": "# Fora\n",
+  "Wikis/M/Personagens/Filho.md": '---\ntipo: personagem\npais: ["[[Conde]]"]\n---\n# Filho\n',
 }
 const index = new VaultIndex(Object.entries(files).map(([path, text]) => ({ path, mtime: 1, size: text.length })), files)
 const members: RelationMember[] = [
   { path: "Wikis/M/Personagens/Conde.md", title: "Conde", kind: "npc", toParty: "hostil" },
   { path: "Wikis/M/Personagens/Yara.md", title: "Yara", kind: "npc", toParty: "aliado" },
   { path: "Wikis/M/Organizações/Coroa.md", title: "Coroa", kind: "faccao", toParty: "-1" },
+  { path: "Wikis/M/Personagens/Filho.md", title: "Filho", kind: "npc" },
 ]
 
 describe("mapa de relações do Elenco", () => {
@@ -23,6 +25,8 @@ describe("mapa de relações do Elenco", () => {
     expect(edges).toContain("Conde.md>Coroa.md:Membro de")
     expect(edges.filter((e) => e.includes("Inimigos"))).toHaveLength(1)
     expect(edges.some((e) => e.includes("Fora"))).toBe(false)
+    // `filhos` escrito no pai e `pais` escrito no filho são a mesma ligação.
+    expect(edges.filter((e) => e.includes("Filho.md"))).toEqual(["Conde.md>Filho.md:Filhos"])
     expect(map.edges.filter((e) => e.from === PARTY).map((e) => e.label)).toEqual(["hostil", "aliado", "-1"])
   })
 

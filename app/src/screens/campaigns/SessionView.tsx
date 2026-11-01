@@ -18,6 +18,7 @@ import { NewNpcDialog, NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { DraftsContext, useBlurSave, useDrafts } from "./campaign-edits"
 import { SavedMark, useSavedMark } from "./SavedMark"
+import { ChangesSinceCard } from "./CampaignInsights"
 import { worldDateText, type WorldDate } from "../../core/calendar"
 import { worldDateAhead } from "../../core/world-today"
 import { useSetWorldToday } from "../wiki/world-today"
@@ -340,6 +341,7 @@ function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo 
         <span className="section-title">Preparação</span>
         {session.prep.length > 0 && <span className="chip gold">{done}/{session.prep.length}</span>}
       </div>
+      {session.status === "planejada" && previous && <ChangesSinceCard data={data} last={previous} />}
       {session.prep.length > 0 && <Progress value={done} max={session.prep.length} color="var(--gold)" />}
       {session.prep.length === 0 && <span className="muted small">A nota não tem a lista “## Preparação”. Sessões criadas pela campanha já vêm com o roteiro.</span>}
       {session.prep.map((item) => (

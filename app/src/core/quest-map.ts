@@ -199,3 +199,27 @@ export function requireProblem(quests: QuestInfo[], from: string, to: string): s
   }
   return null
 }
+
+const NOTICE_STATUS: Partial<Record<QuestStatus, string>> = { ativa: "em andamento", pausada: "em pausa", concluida: "concluída", falhou: "falhou" }
+
+/**
+ * O quadro de avisos que os jogadores veem pela sala (ideia da revisão das Campanhas): só as missões que eles
+ * conhecem — sem as ideias e sem as bloqueadas —, agrupadas pelo arco quando o arco também é conhecido. Texto puro,
+ * no formato do “Mostrar artigo pela sala”.
+ */
+export function questNoticeBoard(map: QuestMap, campaign: string): string {
+  const known = (node: { status: QuestStatus; blocked?: boolean }) => node.status in NOTICE_STATUS && !node.blocked
+  const line = (n: QuestMapNode) => `• ${n.order ? `${n.order} ` : ""}${n.title} — ${NOTICE_STATUS[n.status]}`
+  const parts = [`Quadro de missões — ${campaign}`]
+  const loose: string[] = []
+  for (const arc of map.arcs) {
+    const nodes = arc.nodes.filter(known).map(line)
+    const arcNode = arc.path ? map.nodes.find((n) => n.path === arc.path) : undefined
+    const arcKnown = arc.path && arc.status && arc.status in NOTICE_STATUS && !arcNode?.blocked
+    if (arcKnown) parts.push([`${arc.order ? `${arc.order} · ` : ""}${arc.title} (${NOTICE_STATUS[arc.status!]})`, ...nodes].join("\n"))
+    else loose.push(...nodes)
+  }
+  if (loose.length) parts.push(["Outras missões", ...loose].join("\n"))
+  if (parts.length === 1) parts.push("Nenhuma missão conhecida ainda.")
+  return parts.join("\n\n")
+}

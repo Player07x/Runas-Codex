@@ -16,6 +16,7 @@ import { NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { CastCard, ClocksCard, QuestsCard, SafetyCard, SecretsCard, TimelineCard } from "./DashboardCards"
 import { NextSessionCard, OverdueSessions } from "./NextSessionCard"
+import { LooseThreadsCard } from "./CampaignInsights"
 
 function Stats({ data: { stats } }: { data: CampaignData }) {
   return (
@@ -94,6 +95,7 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
       <CastCard data={data} />
       <SafetyCard data={data} />
       <TimelineCard data={data} />
+      <LooseThreadsCard data={data} />
     </>
   )
   return (

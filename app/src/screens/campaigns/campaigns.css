@@ -29,9 +29,9 @@
 
 .campaign-clocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .campaign-clock { display: grid; justify-items: center; gap: 4px; text-align: center; }
-.campaign-inline-form { display: flex; flex-wrap: wrap; gap: 6px; }
+.campaign-inline-form { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .campaign-inline-form .input { flex: 1 1 160px; }
-.campaign-inline-form .select { flex: 0 1 auto; width: auto; }
+.campaign-inline-form .select { flex: 0 1 auto; width: auto; min-width: 0; max-width: 100%; }
 .campaign-quest-line { color: inherit; text-decoration: none; }
 .campaign-secret { display: flex; align-items: flex-start; gap: 8px; font-size: calc(13px * var(--font-scale, 1)); }
 .campaign-secret input { margin-top: 3px; accent-color: var(--green); }
@@ -306,3 +306,9 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-questmap-here { position: absolute; right: 18px; bottom: 6px; z-index: 2; }
 .campaign-questmap-linking { align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--cyan); border-radius: 10px; background: color-mix(in srgb, var(--cyan) 8%, var(--panel)); }
 .campaign-questmap-linking-slot:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.campaign-quest-clock { display: inline-flex; align-items: center; gap: 4px; min-width: 0; color: var(--muted); }
+.campaign-changes { gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--cyan) 5%, var(--bg)); }
+.campaign-changes h3 { margin: 0; }
+.campaign-changes p { margin: 0; }
+.campaign-secret-quest { text-decoration: none; }
+.campaign-relations { display: grid; gap: 4px; margin: 0; padding-left: 18px; }

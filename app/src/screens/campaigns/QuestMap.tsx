@@ -9,6 +9,7 @@ import { useVault } from "../../platform/VaultProvider"
 import { campaignRoute, questRoute, type CampaignData } from "./campaign-state"
 import { QuestMenu } from "./QuestPage"
 import { writeGeneratedCanvas } from "./board-actions"
+import { QuestClockChip } from "./quest-actions"
 
 const label = (status: QuestStatus) => QUEST_STATUS.find((s) => s.id === status)?.label ?? status
 const color = (status: QuestStatus) => `var(--${QUEST_STATUS.find((s) => s.id === status)?.color ?? "line"})`
@@ -150,6 +151,7 @@ function QuestCard({ node, data, title, readOnly, onSaveParent, linking, onStart
       <a className="campaign-questmap-name truncate" href={href(questRoute(data.campaign.name, node.path))}>{node.order && <span className="mono faint">{node.order} </span>}{node.title}</a>
       <span className="tiny campaign-questmap-meta truncate">
         {node.blocked ? <><Lock size={11} aria-hidden="true" /> espera {node.requires.filter(Boolean).map(title).join(" e ")}</> : <>{label(node.status)}{node.requires.length ? <> · <ArrowRight size={11} aria-hidden="true" /> depois de {node.requires.length}</> : ""}</>}
+        {quest?.clocks?.length ? <> · <QuestClockChip quest={quest} /></> : null}
       </span>
       {node.inferred && !readOnly && (
         <button type="button" className="campaign-questmap-link" onClick={() => onSaveParent(node)} title={`Está no arco pela ordem; gravar “parte de ${title(node.arc!)}” na nota`} aria-label={`Gravar que ${node.title} é parte de ${title(node.arc!)}`}>

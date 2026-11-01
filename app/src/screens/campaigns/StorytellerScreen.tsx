@@ -19,6 +19,7 @@ import { useCampaignEdits } from "./campaign-edits"
 import { InitiativePanel } from "./CampaignTools"
 import { sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
+import { ImprovisedNpcCard } from "./ImprovisedNpc"
 
 type Column = "agora" | "elenco" | "fixadas"
 const COLUMNS: { value: Column; label: string }[] = [
@@ -112,6 +113,7 @@ function NowColumn({ data, onClose }: { data: CampaignData; onClose(): void }) {
         ))}
       </section>
       <InitiativePanel data={data} level={3} />
+      <ImprovisedNpcCard data={data} />
       {!("error" in data.clocks) && data.clocks.length > 0 && (
         <section className="card tight stack">
           <span className="eyebrow">Relógios</span>

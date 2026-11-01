@@ -15,6 +15,7 @@ import { EditPlayerDialog, NewNpcDialog, NewPlayerDialog, WikiNotePicker } from 
 import { useCampaignEdits, useUndoable } from "./campaign-edits"
 import { sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
+import { CastRelations } from "./CastRelations"
 
 export function CastView({ data }: { data: CampaignData }) {
   const [newPlayer, setNewPlayer] = useState(false)
@@ -61,6 +62,7 @@ export function CastView({ data }: { data: CampaignData }) {
       </section>
       <NpcRoster data={data} />
       <FactionSection data={data} />
+      <CastRelations data={data} />
       {editing && <EditPlayerDialog campaign={data.campaign} character={editing} onClose={() => setEditing(undefined)} />}
       {newPlayer && <NewPlayerDialog campaign={data.campaign} onClose={() => setNewPlayer(false)} />}
     </div>

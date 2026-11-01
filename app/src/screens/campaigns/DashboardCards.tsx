@@ -2,11 +2,14 @@ import { useState } from "react"
 import { NoteCrest } from "../../components/kit/Emblem"
 import { Eye, EyeOff, ShieldCheck, X } from "lucide-react"
 import { ClocksEditor } from "./ClocksEditor"
-import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setSecretRevealed } from "../../core/campaigns"
+import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setSecretRevealed, type QuestInfo, type SecretItem } from "../../core/campaigns"
+import { questOfSecret, secretQuest, withQuestLink } from "../../core/campaign-insights"
+import { useVault } from "../../platform/VaultProvider"
+import { useQuestStatus } from "./quest-actions"
 import { noteName } from "../../core/text"
 import { href } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
-import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
+import { campaignRoute, dayLabel, questRoute, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { revealSession, useCampaignEdits } from "./campaign-edits"
 
 const MAX_LINES = 6
@@ -54,14 +57,30 @@ export function QuestsCard({ data }: { data: CampaignData }) {
   )
 }
 
-/** Segredos e pistas: checklist na nota da campanha; revelar registra a sessão. */
+/**
+ * Segredos e pistas: checklist na nota da campanha; revelar registra a sessão. Uma pista pode apontar para a missão
+ * que destrava (`- [ ] O selo é falso → [[O Selo do Conde]]`): revelá-la sugere ativar a missão.
+ */
 export function SecretsCard({ data }: { data: CampaignData }) {
+  const vault = useVault()
   const { editHome } = useCampaignEdits(data)
+  const setStatus = useQuestStatus(data)
   const [show, setShowState] = useState(() => { try { return localStorage.getItem(SHOW_SECRETS) === "1" } catch { return false } })
   const setShow = (value: boolean) => { setShowState(value); try { localStorage.setItem(SHOW_SECRETS, value ? "1" : "0") } catch { /* só não é lembrado */ } }
   const [text, setText] = useState("")
+  const [unlocks, setUnlocks] = useState("")
+  // Missão que a pista recém-revelada destrava e ainda não está ativa.
+  const [suggest, setSuggest] = useState<QuestInfo | null>(null)
   const session = revealSession(data)
   const sessionTarget = session ? session.path.replace(/\.md$/, "") : undefined
+  const from = data.campaign.home ?? data.campaign.root
+  const open = data.quests.filter((q) => q.status !== "concluida" && q.status !== "falhou")
+  const reveal = (secret: SecretItem, revealed: boolean) => {
+    const quest = questOfSecret(vault.index!, secret, data.quests, from)
+    void editHome((t) => setSecretRevealed(t, secret, revealed, sessionTarget)).then((ok) => {
+      setSuggest(ok && revealed && quest && (quest.status === "ideia" || quest.status === "pausada") ? quest : null)
+    })
+  }
   return (
     <section className="card stack">
       <div className="row between">
@@ -71,31 +90,57 @@ export function SecretsCard({ data }: { data: CampaignData }) {
         </button>
       </div>
       {data.secrets.length === 0 && <span className="muted small">Nenhum segredo anotado.</span>}
-      {data.secrets.map((s) => (
-        <label key={s.line} className={`campaign-secret ${s.done ? "done" : ""}`}>
-          <input
-            type="checkbox"
-            checked={s.done}
-            disabled={data.readOnly}
-            onChange={(e) => editHome((t) => setSecretRevealed(t, s, e.target.checked, sessionTarget))}
-          />
-          {/* Escondido, o texto sai também para o leitor de tela; o borrão é só o desenho. */}
-          <span className="grow" style={{ filter: show ? "none" : "blur(5px)" }} aria-hidden={!show}>{s.clean}</span>
-          {!show && <span className="sr-only">Segredo oculto</span>}
-          {s.revealedIn && <span className="chip green">{noteName(s.revealedIn)}</span>}
-        </label>
-      ))}
+      {data.secrets.map((s) => {
+        const link = secretQuest(s.clean)
+        const quest = link ? questOfSecret(vault.index!, s, data.quests, from) : undefined
+        return (
+          <label key={s.line} className={`campaign-secret ${s.done ? "done" : ""}`}>
+            <input type="checkbox" checked={s.done} disabled={data.readOnly} onChange={(e) => reveal(s, e.target.checked)} />
+            {/* Escondido, o texto sai também para o leitor de tela; o borrão é só o desenho. */}
+            <span className="grow" style={{ filter: show ? "none" : "blur(5px)" }} aria-hidden={!show}>
+              {link ? link.text : s.clean}
+              {link && show && (quest
+                ? <> <a className="chip violet campaign-secret-quest" href={href(questRoute(data.campaign.name, quest.path))}>→ {quest.title}</a></>
+                : <> <span className="chip">→ {noteName(link.target)}</span></>)}
+            </span>
+            {!show && <span className="sr-only">Segredo oculto</span>}
+            {s.revealedIn && <span className="chip green">{noteName(s.revealedIn)}</span>}
+          </label>
+        )
+      })}
+      <div role="status" className="campaign-advance-slot">
+        {suggest && (
+          <div className="campaign-advance stack">
+            <span className="small">A pista leva a “{suggest.title}”, que está em {suggest.status === "ideia" ? "Ideias" : "Em pausa"}. Ativar a missão?</span>
+            <div className="row-wrap">
+              <button type="button" className="btn sm primary" onClick={() => void setStatus(suggest, "ativa").then((ok) => ok && setSuggest(null))}>Ativar a missão</button>
+              <button type="button" className="btn sm ghost" onClick={() => setSuggest(null)}>Agora não</button>
+            </div>
+          </div>
+        )}
+      </div>
       {!data.readOnly && (
         <form
           className="campaign-inline-form"
           onSubmit={(e) => {
             e.preventDefault()
             if (!text.trim()) return
-            editHome((t) => appendToSection(t, SECRETS_HEADING, `- [ ] ${text.trim()}`))
-            setText("")
+            const quest = open.find((q) => q.path === unlocks)
+            const line = quest ? withQuestLink(text, vault.index!.linkTarget(quest.path, from)) : text.trim()
+            void editHome((t) => appendToSection(t, SECRETS_HEADING, `- [ ] ${line}`)).then((ok) => {
+              if (!ok) return
+              setText("")
+              setUnlocks("")
+            })
           }}
         >
           <input className="input" placeholder="Nova pista…" value={text} onChange={(e) => setText(e.target.value)} aria-label="Nova pista" />
+          {open.length > 0 && (
+            <select className="select" value={unlocks} onChange={(e) => setUnlocks(e.target.value)} aria-label="Missão que a pista destrava">
+              <option value="">Não destrava missão</option>
+              {open.map((q) => <option key={q.path} value={q.path}>Destrava: {q.order ? `${q.order} ` : ""}{q.title}</option>)}
+            </select>
+          )}
           <button className="btn sm">Anotar</button>
         </form>
       )}
