@@ -1,5 +1,5 @@
 import { publicWikiIndex } from "./wiki-public"
-import { advanceInitiative, initiativeFromEncounter, initiativeYaml, parseInitiative, parseTreasury, treasuryYaml } from "./campaign-tools"
+import { advanceInitiative, initiativeFromEncounter, initiativeYaml, parseInitiative, parseTreasury, treasuryYaml, withTreasureItem } from "./campaign-tools"
 import { cropPixels, pinchCanvas, selectCanvasBox } from "./canvas-tools"
 import { publicArticleText } from "./public-article"
 import { VaultIndex } from "./vault-index"
@@ -28,4 +28,14 @@ it("a prévia pública da Wiki não indexa artigos privados nem links de callout
  expect(projection.note("Wikis/X/A.md")!.text).not.toContain("traidor")
  expect(projection.outgoing("Wikis/X/A.md")).toHaveLength(0)
  expect(index.note("Wikis/X/A.md")!.text).toContain("traidor")
+})
+
+it("acrescenta a recompensa no fim do tesouro sem perder as moedas nem os itens", () => {
+  const code = treasuryYaml({ coins: "12 po", items: [{ id: "a", name: "Mapa", quantity: 1, holder: "", notes: "" }] })
+  const next = parseTreasury(withTreasureItem(code, { name: "500 po", quantity: 1, holder: "", notes: "Recompensa de [[O Selo]]" }, "b"))
+  expect(next.coins).toBe("12 po")
+  expect(next.items).toEqual([
+    { id: "a", name: "Mapa", quantity: 1, holder: "", notes: "" },
+    { id: "b", name: "500 po", quantity: 1, holder: "", notes: "Recompensa de [[O Selo]]" },
+  ])
 })

@@ -2,8 +2,13 @@ import { useMemo, useState } from "react"
 import { useVault } from "../../platform/VaultProvider"
 import { CoverBand, Crest } from "../../components/kit/Emblem"
 import { campaignLook } from "../../core/personalization"
-import { BarChart3, Globe } from "lucide-react"
-import { worldDateText } from "../../core/calendar"
+import { BarChart3, CalendarClock, Globe } from "lucide-react"
+import { addDays, addMonths, worldDateText, type WorldDate } from "../../core/calendar"
+import { worldDateAhead } from "../../core/world-today"
+import { noteName } from "../../core/text"
+import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
+import { useToast } from "../../components/ui"
+import { useSetWorldToday } from "../wiki/world-today"
 import { href, navigate } from "../../lib/router"
 import { useSinglePane } from "../../lib/tabs"
 import { noteRoute } from "../../lib/vault-notes"
@@ -11,6 +16,7 @@ import { NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { CastCard, ClocksCard, QuestsCard, SafetyCard, SecretsCard, TimelineCard } from "./DashboardCards"
 import { NextSessionCard, OverdueSessions } from "./NextSessionCard"
+import { LooseThreadsCard } from "./CampaignInsights"
 
 function Stats({ data: { stats } }: { data: CampaignData }) {
   return (
@@ -38,6 +44,43 @@ function Stats({ data: { stats } }: { data: CampaignData }) {
   )
 }
 
+/**
+ * “Hoje no mundo” com o menu Avançar (sobras da revisão das Campanhas): depois de uma sessão o mestre avança o
+ * calendário da wiki sem sair do Painel. Grava a linha `hoje:` do calendário, como a Wiki.
+ */
+function WorldToday({ data }: { data: CampaignData }) {
+  const toast = useToast()
+  const setWorldToday = useSetWorldToday()
+  const calendar = data.calendar!
+  const today = calendar.today!
+  const ref = data.calendarRef
+  const lastPlayed = [...data.sessions].reverse().find((s) => s.status === "realizada" && s.worldDate)
+  const sessionDate = lastPlayed ? worldDateAhead(calendar, lastPlayed.worldDate) : null
+  const label = (date: WorldDate) => worldDateLabel(calendar, worldDateText(date))
+  const go = (next: WorldDate) => {
+    if (!ref) return
+    setWorldToday(ref, next).then(
+      () => toast(`Hoje no mundo: ${label(next)}`),
+      (err: unknown) => toast(err instanceof Error ? err.message : String(err)),
+    )
+  }
+  const week = calendar.weekdays.length || 7
+  const items: MenuEntry[] = [
+    { label: "Avançar 1 dia", onSelect: () => go(addDays(calendar, today, 1)), disabled: data.readOnly },
+    { label: `Avançar 1 semana (${week} dias)`, onSelect: () => go(addDays(calendar, today, week)), disabled: data.readOnly },
+    { label: "Avançar 1 mês", onSelect: () => go(addMonths(calendar, today, 1)), disabled: data.readOnly },
+    ...(lastPlayed && sessionDate ? [{ label: `Ir para a data da ${noteName(lastPlayed.path)}`, hint: label(sessionDate), onSelect: () => go(sessionDate), disabled: data.readOnly }] : []),
+    "separator",
+    { label: "Abrir o calendário", onSelect: () => ref && navigate(`/wiki/calendario/${encodeURIComponent(ref.path)}`) },
+  ]
+  return (
+    <span className="campaign-world-today">
+      <span className="chip gold">Hoje no mundo: {label(today)}</span>
+      {ref && <OverflowMenu label="Avançar o dia do mundo" triggerClassName="btn sm ghost" align="start" trigger={<><CalendarClock size={14} aria-hidden="true" /> Avançar</>} items={items} />}
+    </span>
+  )
+}
+
 export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onScreen(): void }) {
   const { campaign, upcoming } = data
   const [creating, setCreating] = useState(false)
@@ -52,6 +95,7 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
       <CastCard data={data} />
       <SafetyCard data={data} />
       <TimelineCard data={data} />
+      <LooseThreadsCard data={data} />
     </>
   )
   return (
@@ -68,7 +112,7 @@ export function CampaignDashboard({ data, onScreen }: { data: CampaignData; onSc
                 <Globe size={12} /> {campaign.wiki}
               </a>
             )}
-            {data.calendar?.today && <span className="chip gold">Hoje no mundo: {worldDateLabel(data.calendar, worldDateText(data.calendar.today))}</span>}
+            {data.calendar?.today && <WorldToday data={data} />}
             {!campaign.home && <span className="chip red">Sem a nota {campaign.name}.md</span>}
           </div>
         </div>

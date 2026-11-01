@@ -1,6 +1,6 @@
 import type { QuestInfo } from "./campaigns"
 import { parseCanvas, serializeCanvas } from "./canvas"
-import { buildQuestMap, questMapCanvas } from "./quest-map"
+import { buildQuestMap, questMapCanvas, requireProblem } from "./quest-map"
 
 const quest = (path: string, title: string, extra: Partial<QuestInfo> = {}): QuestInfo => ({ path, title, status: "ativa", order: "", tags: [], requires: [], ...extra })
 const link = (dest: string | null, target = dest ?? "x") => ({ target, dest })
@@ -59,5 +59,19 @@ describe("mapa de missões", () => {
     expect(again.nodes.some((n) => n.id === "nota")).toBe(true)
     expect(again.nodes.filter((n) => n.type === "file")).toHaveLength(3)
     expect(again.nodes.filter((n) => n.type === "group")).toHaveLength(1)
+  })
+})
+
+describe("ligar missões arrastando", () => {
+  const quests = [
+    quest("A.md", "A"),
+    quest("B.md", "B", { requires: [link("A.md")] }),
+    quest("C.md", "C", { requires: [link("B.md")] }),
+  ]
+  it("aceita uma ligação nova e recusa repetida, a própria missão e ciclos", () => {
+    expect(requireProblem(quests, "A.md", "C.md")).toBeNull()
+    expect(requireProblem(quests, "A.md", "B.md")).toMatch(/já existe/)
+    expect(requireProblem(quests, "A.md", "A.md")).toMatch(/dela mesma/)
+    expect(requireProblem(quests, "C.md", "A.md")).toMatch(/ciclo/)
   })
 })

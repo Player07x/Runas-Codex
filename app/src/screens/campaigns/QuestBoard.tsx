@@ -1,10 +1,11 @@
 import { useState } from "react"
-import { Plus } from "lucide-react"
+import { MonitorPlay, Plus } from "lucide-react"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
+import { QuestClockChip, ShowQuestsInRoom, useQuestStatus } from "./quest-actions"
 import { QUEST_STATUS, type QuestInfo, type QuestStatus } from "../../core/campaigns"
 import { noteName } from "../../core/text"
 import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
-import { useVault } from "../../platform/VaultProvider"
 import { NewQuestDialog } from "./campaign-dialogs"
 import { QuestMapView } from "./QuestMap"
 import { QuestMenu, QuestPage } from "./QuestPage"
@@ -25,19 +26,16 @@ export function QuestBoard({ data, path }: { data: CampaignData; path?: string }
 }
 
 function QuestColumns({ data }: { data: CampaignData }) {
-  const vault = useVault()
   const toast = useToast()
+  const setStatus = useQuestStatus(data)
+  const [showing, setShowing] = useState(false)
   const [dragging, setDragging] = useState<string | null>(null)
   const [over, setOver] = useState<QuestStatus | null>(null)
   const [creating, setCreating] = useState<QuestStatus | null>(null)
   const [column, setColumn] = useState<QuestStatus>("ativa")
   const [view, setViewState] = useState<View>(() => { try { const saved = localStorage.getItem(VIEW_KEY); return saved === "mapa" || saved === "lista" ? saved : "colunas" } catch { return "colunas" } })
   const setView = (next: View) => { setViewState(next); try { localStorage.setItem(VIEW_KEY, next) } catch { /* só não é lembrado */ } }
-  const move = (quest: QuestInfo, status: QuestStatus) => {
-    if (quest.status === status) return
-    if (data.readOnly) return toast("Cofre em somente leitura: libere a gravação em Configurações.")
-    vault.setProperty(quest.path, "status", status).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
-  }
+  const move = (quest: QuestInfo, status: QuestStatus) => void setStatus(quest, status)
   return (
     <div className="page">
       <div className="page-head">
@@ -45,9 +43,14 @@ function QuestColumns({ data }: { data: CampaignData }) {
           <span className="eyebrow">{data.campaign.root}Missões/ · arraste os cartões ou use o ⋯ de cada um</span>
           <h1 className="page-title">Missões</h1>
         </div>
-        <button className="btn primary" onClick={() => (data.readOnly ? toast("Libere a gravação em Configurações para criar missões.") : setCreating("ativa"))}>
-          <Plus size={16} /> Missão
-        </button>
+        <div className="kit-actions">
+          <button className="btn primary" onClick={() => (data.readOnly ? toast("Libere a gravação em Configurações para criar missões.") : setCreating("ativa"))}>
+            <Plus size={16} /> Missão
+          </button>
+          <OverflowMenu label="Ações das missões" items={[
+            { label: "Mostrar aos jogadores pela sala…", icon: <MonitorPlay size={15} />, onSelect: () => setShowing(true) },
+          ]} />
+        </div>
       </div>
       <ChoiceGroup label="Ver as missões em" value={view} onChange={setView} options={[{ value: "colunas", label: "Colunas" }, { value: "mapa", label: "Mapa" }, { value: "lista", label: "Árvore" }]} />
       {view !== "colunas" ? <QuestMapView data={data} mode={view} /> : <>
@@ -95,8 +98,9 @@ function QuestColumns({ data }: { data: CampaignData }) {
                     <a className="campaign-kanban-title grow" href={href(questRoute(data.campaign.name, q.path))}>{q.order && <span className="mono faint">{q.order} </span>}{q.title}</a>
                     <QuestMenu data={data} quest={q} />
                   </div>
-                  {(q.giver || q.reward || q.tags.length > 0) && (
+                  {(q.giver || q.reward || q.tags.length > 0 || q.clocks?.length) && (
                     <div className="row-wrap campaign-kanban-meta">
+                      <QuestClockChip quest={q} />
                       {q.giver && <span className="tiny muted">De: {noteName(q.giver.target)}</span>}
                       {q.reward && <span className="chip gold">{q.reward}</span>}
                       {q.tags.map((t) => (
@@ -111,6 +115,7 @@ function QuestColumns({ data }: { data: CampaignData }) {
         })}
       </div>
       </>}
+      {showing && <ShowQuestsInRoom data={data} onClose={() => setShowing(false)} />}
       {creating && <NewQuestDialog campaign={data.campaign} quests={data.quests} npcs={data.npcs} initialStatus={creating} onClose={() => setCreating(null)} onCreated={(created) => navigate(questRoute(data.campaign.name, created))} />}
     </div>
   )

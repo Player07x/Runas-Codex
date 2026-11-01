@@ -1,12 +1,15 @@
 import { useState } from "react"
 import { NoteCrest } from "../../components/kit/Emblem"
-import { Eye, EyeOff, Minus, Plus, ShieldCheck, Trash, X } from "lucide-react"
-import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setClocks, setSecretRevealed, type Clock } from "../../core/campaigns"
+import { Eye, EyeOff, ShieldCheck, X } from "lucide-react"
+import { ClocksEditor } from "./ClocksEditor"
+import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setSecretRevealed, type QuestInfo, type SecretItem } from "../../core/campaigns"
+import { questOfSecret, secretQuest, withQuestLink } from "../../core/campaign-insights"
+import { useVault } from "../../platform/VaultProvider"
+import { useQuestStatus } from "./quest-actions"
 import { noteName } from "../../core/text"
 import { href } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
-import { ClockDial } from "../../components/ui"
-import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
+import { campaignRoute, dayLabel, questRoute, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { revealSession, useCampaignEdits } from "./campaign-edits"
 
 const MAX_LINES = 6
@@ -14,13 +17,6 @@ const SHOW_SECRETS = "runas-codex:campanha:mostrar-segredos"
 
 /** Relógios de progresso e ameaças (bloco runas-relogios na nota da campanha). */
 export function ClocksCard({ data }: { data: CampaignData }) {
-  const { editHome } = useCampaignEdits(data)
-  const [adding, setAdding] = useState(false)
-  const [name, setName] = useState("")
-  const [segments, setSegments] = useState("6")
-  const [kind, setKind] = useState<Clock["kind"]>("ameaca")
-  // Apagar pede um segundo clique no mesmo botão (sem desfazer, o relógio some da nota).
-  const [confirming, setConfirming] = useState<number | null>(null)
   if ("error" in data.clocks) {
     return (
       <section className="card stack">
@@ -29,76 +25,11 @@ export function ClocksCard({ data }: { data: CampaignData }) {
       </section>
     )
   }
-  const clocks = data.clocks
-  const save = (next: Clock[]) => editHome((text) => setClocks(text, next))
-  const set = (i: number, filled: number) => save(clocks.map((c, j) => (j === i ? { ...c, filled: Math.max(0, Math.min(c.segments, filled)) } : c)))
   return (
     <section className="card stack">
-      <div className="row between">
-        <span className="section-title">Relógios</span>
-        {!data.readOnly && (
-          <button className="icon-btn sm" onClick={() => setAdding(!adding)} aria-label="Novo relógio" title="Novo relógio">
-            <Plus size={15} />
-          </button>
-        )}
-      </div>
-      {clocks.length === 0 && !adding && <span className="muted small">Nenhum relógio. Use para ameaças que avançam e metas do grupo.</span>}
-      <div className="campaign-clocks">
-        {clocks.map((c, i) => (
-          <div key={`${c.name}-${i}`} className="campaign-clock">
-            <ClockDial segments={c.segments} filled={c.filled} color={c.kind === "ameaca" ? "var(--red)" : "var(--green)"} />
-            <span className="small">{c.name}</span>
-            <span className="tiny faint">
-              {c.filled}/{c.segments} · {c.kind === "ameaca" ? "ameaça" : "progresso"}
-            </span>
-            {!data.readOnly && (
-              <span className="row" style={{ gap: 2 }}>
-                <button className="icon-btn sm" onClick={() => set(i, c.filled - 1)} aria-label={`Voltar ${c.name}`}>
-                  <Minus size={14} />
-                </button>
-                <button className="icon-btn sm" onClick={() => set(i, c.filled + 1)} aria-label={`Avançar ${c.name}`}>
-                  <Plus size={14} />
-                </button>
-                {confirming === i ? (
-                  <button className="btn sm danger" onClick={() => { setConfirming(null); save(clocks.filter((_, j) => j !== i)) }} onBlur={() => setConfirming(null)} autoFocus>
-                    Apagar?
-                  </button>
-                ) : (
-                  <button className="icon-btn sm" onClick={() => setConfirming(i)} aria-label={`Apagar ${c.name}`}>
-                    <Trash size={13} />
-                  </button>
-                )}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-      {adding && (
-        <form
-          className="campaign-inline-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!name.trim()) return
-            save([...clocks, { name: name.trim(), segments: Number(segments), filled: 0, kind }])
-            setName("")
-            setAdding(false)
-          }}
-        >
-          <input className="input" autoFocus placeholder="Nome do relógio" value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do relógio" />
-          <select className="select" value={segments} onChange={(e) => setSegments(e.target.value)} aria-label="Segmentos">
-            {[4, 6, 8, 10, 12].map((n) => (
-              <option key={n} value={n}>
-                {n} partes
-              </option>
-            ))}
-          </select>
-          <select className="select" value={kind} onChange={(e) => setKind(e.target.value as Clock["kind"])} aria-label="Tipo">
-            <option value="ameaca">Ameaça</option>
-            <option value="progresso">Progresso</option>
-          </select>
-          <button className="btn sm primary">Criar</button>
-        </form>
-      )}
+      <span className="section-title">Relógios</span>
+      {data.clocks.length === 0 && <span className="muted small">Nenhum relógio. Use para ameaças que avançam e metas do grupo.</span>}
+      <ClocksEditor path={data.campaign.home} clocks={data.clocks} readOnly={data.readOnly || !data.campaign.home} />
     </section>
   )
 }
@@ -126,14 +57,30 @@ export function QuestsCard({ data }: { data: CampaignData }) {
   )
 }
 
-/** Segredos e pistas: checklist na nota da campanha; revelar registra a sessão. */
+/**
+ * Segredos e pistas: checklist na nota da campanha; revelar registra a sessão. Uma pista pode apontar para a missão
+ * que destrava (`- [ ] O selo é falso → [[O Selo do Conde]]`): revelá-la sugere ativar a missão.
+ */
 export function SecretsCard({ data }: { data: CampaignData }) {
+  const vault = useVault()
   const { editHome } = useCampaignEdits(data)
+  const setStatus = useQuestStatus(data)
   const [show, setShowState] = useState(() => { try { return localStorage.getItem(SHOW_SECRETS) === "1" } catch { return false } })
   const setShow = (value: boolean) => { setShowState(value); try { localStorage.setItem(SHOW_SECRETS, value ? "1" : "0") } catch { /* só não é lembrado */ } }
   const [text, setText] = useState("")
+  const [unlocks, setUnlocks] = useState("")
+  // Missão que a pista recém-revelada destrava e ainda não está ativa.
+  const [suggest, setSuggest] = useState<QuestInfo | null>(null)
   const session = revealSession(data)
   const sessionTarget = session ? session.path.replace(/\.md$/, "") : undefined
+  const from = data.campaign.home ?? data.campaign.root
+  const open = data.quests.filter((q) => q.status !== "concluida" && q.status !== "falhou")
+  const reveal = (secret: SecretItem, revealed: boolean) => {
+    const quest = questOfSecret(vault.index!, secret, data.quests, from)
+    void editHome((t) => setSecretRevealed(t, secret, revealed, sessionTarget)).then((ok) => {
+      setSuggest(ok && revealed && quest && (quest.status === "ideia" || quest.status === "pausada") ? quest : null)
+    })
+  }
   return (
     <section className="card stack">
       <div className="row between">
@@ -143,31 +90,57 @@ export function SecretsCard({ data }: { data: CampaignData }) {
         </button>
       </div>
       {data.secrets.length === 0 && <span className="muted small">Nenhum segredo anotado.</span>}
-      {data.secrets.map((s) => (
-        <label key={s.line} className={`campaign-secret ${s.done ? "done" : ""}`}>
-          <input
-            type="checkbox"
-            checked={s.done}
-            disabled={data.readOnly}
-            onChange={(e) => editHome((t) => setSecretRevealed(t, s, e.target.checked, sessionTarget))}
-          />
-          {/* Escondido, o texto sai também para o leitor de tela; o borrão é só o desenho. */}
-          <span className="grow" style={{ filter: show ? "none" : "blur(5px)" }} aria-hidden={!show}>{s.clean}</span>
-          {!show && <span className="sr-only">Segredo oculto</span>}
-          {s.revealedIn && <span className="chip green">{noteName(s.revealedIn)}</span>}
-        </label>
-      ))}
+      {data.secrets.map((s) => {
+        const link = secretQuest(s.clean)
+        const quest = link ? questOfSecret(vault.index!, s, data.quests, from) : undefined
+        return (
+          <label key={s.line} className={`campaign-secret ${s.done ? "done" : ""}`}>
+            <input type="checkbox" checked={s.done} disabled={data.readOnly} onChange={(e) => reveal(s, e.target.checked)} />
+            {/* Escondido, o texto sai também para o leitor de tela; o borrão é só o desenho. */}
+            <span className="grow" style={{ filter: show ? "none" : "blur(5px)" }} aria-hidden={!show}>
+              {link ? link.text : s.clean}
+              {link && show && (quest
+                ? <> <a className="chip violet campaign-secret-quest" href={href(questRoute(data.campaign.name, quest.path))}>→ {quest.title}</a></>
+                : <> <span className="chip">→ {noteName(link.target)}</span></>)}
+            </span>
+            {!show && <span className="sr-only">Segredo oculto</span>}
+            {s.revealedIn && <span className="chip green">{noteName(s.revealedIn)}</span>}
+          </label>
+        )
+      })}
+      <div role="status" className="campaign-advance-slot">
+        {suggest && (
+          <div className="campaign-advance stack">
+            <span className="small">A pista leva a “{suggest.title}”, que está em {suggest.status === "ideia" ? "Ideias" : "Em pausa"}. Ativar a missão?</span>
+            <div className="row-wrap">
+              <button type="button" className="btn sm primary" onClick={() => void setStatus(suggest, "ativa").then((ok) => ok && setSuggest(null))}>Ativar a missão</button>
+              <button type="button" className="btn sm ghost" onClick={() => setSuggest(null)}>Agora não</button>
+            </div>
+          </div>
+        )}
+      </div>
       {!data.readOnly && (
         <form
           className="campaign-inline-form"
           onSubmit={(e) => {
             e.preventDefault()
             if (!text.trim()) return
-            editHome((t) => appendToSection(t, SECRETS_HEADING, `- [ ] ${text.trim()}`))
-            setText("")
+            const quest = open.find((q) => q.path === unlocks)
+            const line = quest ? withQuestLink(text, vault.index!.linkTarget(quest.path, from)) : text.trim()
+            void editHome((t) => appendToSection(t, SECRETS_HEADING, `- [ ] ${line}`)).then((ok) => {
+              if (!ok) return
+              setText("")
+              setUnlocks("")
+            })
           }}
         >
           <input className="input" placeholder="Nova pista…" value={text} onChange={(e) => setText(e.target.value)} aria-label="Nova pista" />
+          {open.length > 0 && (
+            <select className="select" value={unlocks} onChange={(e) => setUnlocks(e.target.value)} aria-label="Missão que a pista destrava">
+              <option value="">Não destrava missão</option>
+              {open.map((q) => <option key={q.path} value={q.path}>Destrava: {q.order ? `${q.order} ` : ""}{q.title}</option>)}
+            </select>
+          )}
           <button className="btn sm">Anotar</button>
         </form>
       )}

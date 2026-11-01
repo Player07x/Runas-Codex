@@ -4,7 +4,7 @@ import {
   campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks,
   type CampaignInfo, type CampaignStats, type Clock, type PlayerCharacter, type QuestInfo, type SecretItem, type SessionInfo, type TrackedLink,
 } from "../../core/campaigns"
-import { listWikis, mainCalendar } from "../../core/wiki"
+import { listWikis, mainCalendar, type CalendarRef } from "../../core/wiki"
 import { nextSession, overdueSessions, type NextSession } from "../../core/next-session"
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
@@ -42,6 +42,8 @@ export interface CampaignData {
   stats: CampaignStats
   /** Calendário do mundo (o primeiro bloco runas-calendario da wiki da campanha). */
   calendar: Calendar | null
+  /** A nota do calendário, para avançar “hoje no mundo” pelo Painel. */
+  calendarRef: CalendarRef | null
   readOnly: boolean
 }
 
@@ -59,7 +61,8 @@ export function useCampaignData(name: string): CampaignData {
     const next = nextSession(index, today, name)
     // O calendário principal da wiki da campanha (o da nota inicial ou o que as datas mais usam).
     const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
-    const calendar = mainCalendar(index, root, listWikis(index).find((w) => w.root === root)?.home)?.calendar ?? null
+    const calendarRef = mainCalendar(index, root, listWikis(index).find((w) => w.root === root)?.home)
+    const calendar = calendarRef?.calendar ?? null
     return {
       campaign,
       ...(home ? { home } : {}),
@@ -81,6 +84,7 @@ export function useCampaignData(name: string): CampaignData {
         .sort((a, b) => a.localeCompare(b, "pt-BR")),
       stats: campaignStats(sessions, players),
       calendar,
+      calendarRef,
       readOnly,
     }
     // `version` muda a cada alteração do índice.

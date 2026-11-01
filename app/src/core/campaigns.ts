@@ -381,6 +381,8 @@ export interface QuestInfo {
   parent?: { target: string; dest: string | null }
   /** Pré-requisitos (`requer`), na ordem da nota. */
   requires: { target: string; dest: string | null }[]
+  /** Relógios da própria missão (bloco `runas-relogios` na nota), como o “ritual se completa”. */
+  clocks?: Clock[]
 }
 
 function questStatus(value: unknown): QuestStatus {
@@ -431,9 +433,17 @@ export function listQuests(index: VaultIndex, campaign: CampaignInfo): QuestInfo
           const link = linkItem(value)
           return link ? [{ target: link.target, dest: resolveTarget(index, link.target, note.path) }] : []
         }),
+        ...questClocks(note.text),
       }
     })
     .sort((a, b) => compareOrder(a.order || "999", b.order || "999") || a.title.localeCompare(b.title, "pt-BR"))
+}
+
+/** Relógios da nota da missão; um bloco com erro fica de fora (a nota mostra o erro). */
+function questClocks(text: string): { clocks?: Clock[] } {
+  if (!text.includes(CLOCK_BLOCK)) return {}
+  const clocks = clocksOf(text)
+  return Array.isArray(clocks) && clocks.length ? { clocks } : {}
 }
 
 // ---------- Personagens dos jogadores ----------
