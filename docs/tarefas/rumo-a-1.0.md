@@ -12,7 +12,7 @@ que mudou, está em [`panorama.html`](panorama.html).
 
 | Frente | Feito | Falta |
 |---|---|---|
-| Claude Code | T1, T2, T3, T4 (PRs #85–#88), T5 (#83), T6, T7, T9 (PR #89); E1; R1 no emulador, R2, R3 e R4 (pedido do dono em 30/10, branch `main-yjcku0`); U1 a U14 (PR #97); T8 (31/10); sobras da revisão das Campanhas (01/11) | A tag `v1.0.0`, liberada pelo dono em 01/11 |
+| Claude Code | T1, T2, T3, T4 (PRs #85–#88), T5 (#83), T6, T7, T9 (PR #89); E1; R1 no emulador, R2, R3 e R4 (pedido do dono em 30/10, branch `main-yjcku0`); U1 a U14 (PR #97); T8 (31/10); sobras da revisão das Campanhas (01/11) | — (a 1.0.0 saiu em 01/11) |
 | Codex | R5 (#68, #70) | — (R1 a R4 feitas pelo Claude Code a pedido do dono) |
 | Dono | V1 a V5 (testados e funcionando, informado em 30/10); D1 a D4 respondidas; PR #89 mesclado e beta.22 publicada; conferências da 1.0 feitas com êxito (informado em 01/11) | — |
 | Fora da lista (pedidos do dono) | Revisão e correções das Campanhas, mapa de missões, Nova aventura, Elenco (T9), geradores com 19.412 opções e 43 culturas, Ferramentas da Wiki refeitas; sobras da revisão (01/11) | — |
@@ -151,7 +151,7 @@ criar ou fechar mesas pelo navegador (no desktop isso também é só do computad
 | T5 | Ajuda em cada tela e uma seção de ajuda navegável sem internet | sim | **Feita** (PR #83, beta.21) |
 | T6 | Lista de notas, árvore, busca e gráfico sem travar com 10 mil notas | sim | **Feita** (PR #89; números na ADR 0030). Conferir com placa de vídeo e no Android |
 | T7 | Defeitos de tela achados na R1 | sim | **Feita**: D1–D10 (PR #89), D11, D13, D14, D15 e D17 (30/10) |
-| T8 | Preparar a 1.0: conferências revisadas com o dono, notas e tag `v1.0.0` | sim | **Feita**: versão 1.0.0, notas em `docs/releases/v1.0.0.md` e a lista em [`conferencias-1.0.md`](conferencias-1.0.md), conferida pelo dono com êxito (01/11). O dono pediu, em 01/11, que o Claude Code mesclasse os PRs e lançasse a tag |
+| T8 | Preparar a 1.0: conferências revisadas com o dono, notas e tag `v1.0.0` | sim | **Lançada em 01/11/2026**: conferências feitas pelo dono com êxito ([`conferencias-1.0.md`](conferencias-1.0.md)); PRs #97, #98 e #99 mesclados a pedido dele; tag `v1.0.0` no `6b3e96a` pelo workflow “Lançar versão”, com o Release inteiro verde e as notas de `docs/releases/v1.0.0.md` |
 | T9 | Elenco da campanha para mais de 100 NPCs, com “já apareceu” marcado à mão (pedido do dono, 29/10) | sim | **Feita** (PR #89) |
 
 O núcleo de T1 a T4 já existe: `platform.backupSchedule`/`setBackupSchedule`, `listSyncConflicts`/

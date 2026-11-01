@@ -1323,3 +1323,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] **Missões › ⋯ › Mostrar aos jogadores pela sala:** com a sala ligada, o jogador vê só as missões conhecidas.
 - [ ] Tudo em 320 px e no tema claro.
 
+## Versão 1.0.0 lançada (01/11/2026)
+
+- **Aprovado pelo dono em 01/11**: as conferências da 1.0 (seções A e B de
+  [`conferencias-1.0.md`](tarefas/conferencias-1.0.md)) tiveram êxito.
+- Lançada no mesmo dia pelo workflow “Lançar versão” (tag `v1.0.0` no `6b3e96a`), com Linux, Windows e os jobs Android
+  verdes: [página da versão](https://github.com/Player07x/Runas-Codex/releases/tag/v1.0.0), com APK, `.deb`, AppImage,
+  instalador do Windows e `SHA256SUMS.txt`.
+- [ ] Atualizar da beta.24 para a 1.0.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
+- [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
+
