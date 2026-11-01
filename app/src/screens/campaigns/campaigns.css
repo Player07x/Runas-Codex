@@ -293,3 +293,16 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-advance { gap: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--gold) 8%, var(--panel)); }
 .campaign-world-today { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .campaign-clock-add { justify-self: start; }
+
+/* Mapa de missões: ligar arrastando da bolinha de um cartão até outro, ou pelo modo “Ligar aqui” (toque e teclado). */
+.campaign-board-templates { margin: 0; padding: 0; border: 0; }
+.campaign-board-templates legend { margin-bottom: 6px; padding: 0; color: var(--muted); font-weight: 650; }
+.campaign-questmap-drag { position: absolute; top: 0; left: 0; z-index: 3; pointer-events: none; }
+.campaign-questmap-handle { position: absolute; top: 50%; right: -12px; z-index: 2; width: 24px; height: 24px; margin-top: -12px; padding: 0; border: 2px solid var(--col); border-radius: 50%; background: var(--panel); cursor: crosshair; touch-action: none; }
+.campaign-questmap-handle::before { content: ""; position: absolute; inset: -10px; }
+.campaign-questmap-handle:hover, .campaign-questmap-handle[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan); }
+.campaign-questmap-handle:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.campaign-questmap-card.linking { box-shadow: 0 0 0 2px var(--cyan); }
+.campaign-questmap-here { position: absolute; right: 18px; bottom: 6px; z-index: 2; }
+.campaign-questmap-linking { align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--cyan); border-radius: 10px; background: color-mix(in srgb, var(--cyan) 8%, var(--panel)); }
+.campaign-questmap-linking-slot:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

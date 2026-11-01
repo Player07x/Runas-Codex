@@ -179,3 +179,23 @@ export function questMapCanvas(map: QuestMap, existing?: CanvasDoc): CanvasDoc {
   const ids = new Set([...keptIds, ...nodes.map((n) => n.id)])
   return { ...(existing ?? {}), nodes: [...nodes, ...kept.nodes], edges: [...edges, ...kept.edges.filter((e) => ids.has(e.fromNode) && ids.has(e.toNode))] }
 }
+
+/**
+ * Por que `to` não pode passar a depender de `from` (ligar arrastando no mapa), ou `null` se pode: a mesma missão, a
+ * ligação que já existe ou um ciclo (`from` já depende de `to`, direta ou indiretamente).
+ */
+export function requireProblem(quests: QuestInfo[], from: string, to: string): string | null {
+  if (from === to) return "Uma missão não depende dela mesma."
+  const byPath = new Map(quests.map((q) => [q.path, q]))
+  if (byPath.get(to)?.requires.some((r) => r.dest === from)) return "Essa ligação já existe."
+  const stack = [from]
+  const seen = new Set<string>()
+  while (stack.length) {
+    const path = stack.pop()!
+    if (path === to) return "Isso criaria um ciclo: a outra missão já depende desta."
+    if (seen.has(path)) continue
+    seen.add(path)
+    for (const r of byPath.get(path)?.requires ?? []) if (r.dest) stack.push(r.dest)
+  }
+  return null
+}
