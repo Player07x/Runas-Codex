@@ -4,7 +4,7 @@ import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { addDays, addMonths, CalendarError, dateProblem, parseWorldDate, dayNumber, equivalentYears, eraOf, formatDate, formatYear, holidaysOn, monthLength, moons, parseCalendar, relative, season, weekday, weekdayIndex, worldDateText, type Calendar, type MoonState, type WorldDate } from "../../core/calendar"
-import { findCodeBlocks, replaceCodeBlock, setBlockLine } from "../../core/codeblocks"
+import { findCodeBlocks, replaceCodeBlock } from "../../core/codeblocks"
 import { addCorrespondence, calendarOffsets, convertBetween, syncedTodays } from "../../core/calendar-sync"
 import { noteName } from "../../core/text"
 import { calendarFor, calendarInNote, datesMissingAbbr, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
@@ -17,6 +17,7 @@ import { articleRoute, useWiki } from "./wiki-state"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { useRemembered } from "../../lib/remembered"
 import { YearGrid } from "./CalendarYear"
+import { useSetWorldToday } from "./world-today"
 
 type CalendarMode = "mes" | "ano"
 const parseMode = (raw: unknown): CalendarMode => (raw === "ano" ? "ano" : "mes")
@@ -174,20 +175,11 @@ export function WikiCalendar({ path }: { path?: string }) {
   const refs = all.filter((c): c is CalendarRef => "calendar" in c)
   const [syncToday, setSyncToday] = useState(true)
   const linked = ref ? refs.filter((c) => c.path !== ref.path && calendarOffsets(refs, ref.path).has(c.path)) : []
-  // Troca só a linha `hoje:` do bloco de um calendário.
-  const writeToday = async (path: string, next: WorldDate) => {
-    const note = index.note(path)
-    const block = note ? findCodeBlocks(note.text, "runas-calendario")[0] : undefined
-    if (!note || !block) return
-    await vault.save(note.path, replaceCodeBlock(note.text, block, setBlockLine(block.content, "hoje", `"${worldDateText(next)}"`)))
-  }
+  // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
+  const setWorldToday = useSetWorldToday()
   const setToday = async (next: WorldDate, sync = syncToday) => {
     if (!ref) return
-    const problem = dateProblem(ref.calendar, next)
-    if (problem) throw new Error(problem)
-    await writeToday(ref.path, next)
-    // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
-    if (sync) for (const other of syncedTodays(refs, ref, next)) await writeToday(other.ref.path, other.today)
+    await setWorldToday(ref, next, sync)
     setShown({ year: next.year, month: next.month })
   }
   const advance = (days: number | "mes") => {

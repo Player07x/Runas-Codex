@@ -22,6 +22,10 @@ jogadores. O botão **Painel** da sessão mostra os **Detalhes da sessão**, a *
 - **Recapitulação**: “Anteriormente…” usa o resumo da sessão anterior.
 - **Resumo da sessão**: o que aconteceu, para a próxima recapitulação.
 - Uma sessão planejada com data no passado ganha um aviso para você marcar como realizada ou cancelada.
+- Os campos gravam ao sair e mostram **Gravado**; fechar o painel no celular também grava o que estava digitado.
+- **Desde a Sessão N**, no topo da preparação: missões mexidas, pistas reveladas, NPCs novos e relógios quase cheios.
+- Marcar a sessão como **realizada** pergunta se o **hoje no mundo** avança para a data no mundo dela. No Painel,
+  **Avançar** (ao lado de “Hoje no mundo”) passa 1 dia, 1 semana ou 1 mês.
 
 ### Elenco
 
@@ -31,9 +35,15 @@ a facção. **Abrir na Wiki** leva ao artigo; **Tirar da campanha** só deixa de
 
 ### Ferramentas
 
-- **Relógios de progresso**: contadores em segmentos para ameaças e projetos (**Novo relógio**).
-- **Ganchos, pistas e segredos** rastreados, com a sessão em que foram revelados e para quem.
-- **Tesouro do grupo**: itens, moedas e quem carrega.
+- **Relógios de progresso**: contadores em segmentos para ameaças e projetos (**Novo relógio**; o ⋯ edita nome, partes
+  e tipo).
+- **Ganchos, pistas e segredos** rastreados, com a sessão em que foram revelados e para quem. Uma pista pode
+  **destravar uma missão** (`- [ ] O selo é falso → [[O Selo do Conde]]`): revelar a pista oferece ativar a missão.
+- **Tesouro do grupo**: itens, moedas e quem carrega (o ⋯ do item edita e remove).
+- **Desfazer**: apagar relógio, item do tesouro, NPC ou facção e desvincular personagem não pedem confirmação; o aviso
+  traz **Desfazer** por alguns segundos.
+- **Fios soltos** (Painel): missões ativas que as últimas sessões não citam, NPCs que apareceram uma vez e pistas de
+  missões já encerradas.
 - **Iniciativa presencial**: ordem de turnos e rodadas para jogar na mesa física; um bloco `runas-encontro` monta a
   lista.
 - **Linhas** e **Véus**: os limites combinados com o grupo; a carta X manda um sinal anônimo pela sala.
@@ -51,7 +61,8 @@ a facção. **Abrir na Wiki** leva ao artigo; **Tirar da campanha** só deixa de
 
 Para usar durante o jogo, em tela cheia, com três colunas: **Agora** (a sessão, a iniciativa, os relógios), **Elenco**
 e **Notas fixadas** (as notas que você quer à mão, como tabelas e regras). No celular, as colunas viram abas.
-**Mostrar/esconder** esconde os segredos para jogar com a tela à vista.
+**Mostrar/esconder** esconde os segredos para jogar com a tela à vista. **NPC improvisado** sorteia nome (pela cultura
+que você escolher), profissão, jeito, desejo e segredo; **Guardar na wiki** cria o artigo e põe o NPC no Elenco.
 
 ### Personalizar
 
@@ -64,6 +75,9 @@ Busque pelo nome, local ou facção; filtre **Todos / Apareceram / Ainda não** 
 atitude ou situação. **Apareceu** é marcado sozinho quando uma nota de sessão tem link para o NPC; o botão marca à mão
 quem apareceu sem link. A marca fica na nota da campanha, junto da atitude: `npcs: ["[[Conde Ormund]] (hostil,
 apareceu)"]`. **Novo NPC** cria o artigo na wiki e já põe no Elenco.
+
+**Relações** lista quem é aliado, inimigo ou membro de quem, pelas relações dos artigos da Wiki; **Gerar no Quadro**
+desenha o mesmo em `Mapa de relações.canvas`, com o grupo no centro.
 
 **Grade** e **Lista**, como nas categorias da Wiki: a lista mostra uma linha por NPC; a grade, um cartão com a imagem
 do artigo (ou a inicial). Os dois têm a atitude, o “Apareceu” e o menu ⋯. A escolha fica lembrada neste aparelho.
@@ -82,3 +96,15 @@ requer: ["[[Falar com Yara]]", "[[Achar o mapa]]"]
 Sem `parte_de`, a ordem decide: a `2.1` fica dentro da `2` (o botão de corrente no cartão grava a ligação). **Gerar no
 Quadro** cria ou atualiza `Mapa de missões.canvas`, que abre igual no Obsidian; o que você acrescentar no quadro
 continua quando ele for atualizado.
+
+Para ligar duas missões, arraste da bolinha à direita de um cartão até a missão que **depende** dela (ou toque na
+bolinha e depois em **Ligar aqui**; Esc cancela). Uma missão pode ter **relógios** próprios (painel da missão ›
+Novo relógio), que aparecem no cartão; quando uma ameaça enche, o app pergunta se a missão falhou. Concluir uma
+missão com **recompensa** oferece mandá-la para o Tesouro do grupo. **⋯ › Mostrar aos jogadores pela sala** apresenta
+só as missões que eles conhecem.
+
+### Quadro
+
+**Novo quadro** começa em branco ou de um modelo: **Mapa de missões**, **Mapa de relações**, **Linha do tempo** (as
+sessões em ordem) ou **Investigação** (três pistas para cada conclusão). O ⋯ da barra renomeia o quadro ou o manda
+para a lixeira do cofre.

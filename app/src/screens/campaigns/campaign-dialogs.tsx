@@ -16,7 +16,7 @@ import { Modal } from "../../components/ui"
 import type { CampaignData } from "./campaign-state"
 
 /** Diálogo de formulário: o botão trava enquanto grava e o erro aparece embaixo. */
-function FormDialog({ title, confirmLabel, disabled, onConfirm, onClose, children, wide }: { title: string; confirmLabel: string; disabled?: boolean; onConfirm(): Promise<void>; onClose(): void; children: ReactNode; wide?: boolean }) {
+export function FormDialog({ title, confirmLabel, disabled, onConfirm, onClose, children, wide }: { title: string; confirmLabel: string; disabled?: boolean; onConfirm(): Promise<void>; onClose(): void; children: ReactNode; wide?: boolean }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
   const run = async () => {

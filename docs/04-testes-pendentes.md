@@ -1280,3 +1280,46 @@ A beta.23 não foi publicada; as conferências dela (seção acima) valem para a
 - [ ] **U14** Mesa › Notas: escrever, trocar de painel, sair da mesa, fechar e reabrir o app: o texto continua.
   “Salvar Sessão” cria a sessão realizada na campanha escolhida, com a data de hoje e o texto em Anotações, e limpa as
   notas se marcado. Os Acontecimentos (rolagens, avisos das regiões) seguem embaixo, com “Copiar para a nota”.
+
+## Versão 1.0.0 (T8, preparada em 31/10/2026)
+
+A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferencias-1.0.md`](tarefas/conferencias-1.0.md)
+(seção A: só num aparelho real; seção B: funções novas desde a beta.21; seção C: o que saiu da lista e por quê).
+
+- [ ] Atualizar de uma beta para a 1.0.0 pelo botão “Verificar atualizações” no Ubuntu (`.deb`), AppImage, Windows e
+  Android, sem perder cofre, PIN e preferências.
+- [ ] Conferir as seções A e B de `conferencias-1.0.md`; a tag `v1.0.0` sai depois disso (decisão D4).
+
+## Campanhas: sobras da revisão (01/11/2026, ADR 0035)
+
+- [ ] **Hoje no mundo:** Painel › Avançar › 1 dia, 1 semana e 1 mês mudam a data também na Wiki › Calendário (e nos
+  calendários sincronizados). Uma sessão com data no mundo depois de hoje, marcada como Realizada, pergunta se o mundo
+  avança; “Agora não” não muda nada.
+- [ ] **Gravado:** na sessão, data, hora, data no mundo, nota, passos da preparação e resumo mostram “Gravado” ao sair
+  do campo. No celular, digitar no resumo e tocar em “Voltar à nota” (sem tocar fora) grava; apagar a tela do celular
+  com o campo aberto também.
+- [ ] **Desfazer:** apagar um relógio (⋯ › Apagar), tirar um NPC ou uma facção do Elenco, desvincular um personagem e
+  remover um item do tesouro: o aviso traz “Desfazer” por 10 s e devolve o item no mesmo lugar. Pelo teclado, o foco
+  vai para o “Desfazer” quando o item apagado tinha o foco. Desfazer depois de mexer na nota recusa com aviso.
+- [ ] **Relógios:** ⋯ › Editar muda nome, partes e tipo.
+- [ ] **Ferramentas:** Tesouro (moedas, acrescentar, ⋯ › Editar e Remover), Iniciativa (turnos, rodadas, encontro) e
+  Atividades pela sala funcionam como antes.
+- [ ] **Quadro:** ⋯ do quadro › Renomear (os links acompanham) e Mandar para a lixeira; Novo quadro com cada modelo
+  (Em branco, Mapa de missões, Mapa de relações, Linha do tempo, Investigação). Abra os `.canvas` no Obsidian.
+- [ ] **Ligar missões:** Missões › Mapa: arrastar da bolinha de um cartão até outro grava “Depende de”; tocar na bolinha
+  e depois em “Ligar aqui” também (Esc cancela). Ligação repetida ou em ciclo é recusada com aviso.
+- [ ] **Pistas e missões:** Painel › Nova pista com “Destrava: …”; revelar a pista de uma missão em Ideias oferece
+  ativá-la. A pista aparece no Obsidian como `- [ ] texto → [[Missão]]`.
+- [ ] **Relógio da missão:** no painel da missão, Novo relógio; o relógio aparece no cartão (Colunas e Mapa); encher
+  uma ameaça oferece “Marcar como Falhou”.
+- [ ] **Recompensa:** concluir uma missão com recompensa (⋯, arrastar ou painel) oferece mandar para o Tesouro; o item
+  chega com “Recompensa de [[missão]]” nas notas (o tesouro é criado se não existir).
+- [ ] **Tela do Mestre › NPC improvisado:** escolher a cultura (lembrada), sortear, “Guardar na wiki”: o artigo nasce
+  na wiki da campanha com o segredo num callout e o NPC entra no Elenco como “apareceu”.
+- [ ] **O que mudou / Fios soltos:** na preparação de uma sessão planejada, o bloco “Desde a Sessão N”; no Painel, o
+  cartão “Fios soltos” (só aparece com 3 sessões jogadas ou pistas de missões encerradas).
+- [ ] **Elenco › Relações:** a lista bate com as relações dos artigos; “Gerar no Quadro” cria o Mapa de relações e,
+  gerado de novo, mantém os cartões onde você os arrastou.
+- [ ] **Missões › ⋯ › Mostrar aos jogadores pela sala:** com a sala ligada, o jogador vê só as missões conhecidas.
+- [ ] Tudo em 320 px e no tema claro.
+
