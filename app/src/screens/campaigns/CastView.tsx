@@ -199,7 +199,7 @@ function NpcRoster({ data }: { data: CampaignData }) {
       )}
       {picking && (
         <WikiNotePicker title="Acompanhar NPC" root={root} exclude={exclude} onClose={() => setPicking(false)}
-          onPick={async (path) => setHome("npcs", withTrackedLink(data.data.npcs, -1, vault.index!.linkTarget(path, data.campaign.home!), "neutro"))} />
+          onPick={async (path) => { await setHome("npcs", withTrackedLink(data.data.npcs, -1, vault.index!.linkTarget(path, data.campaign.home!), "neutro")) }} />
       )}
       {creating && <NewNpcDialog data={data} onClose={() => setCreating(false)} />}
     </section>
@@ -338,7 +338,7 @@ function FactionSection({ data }: { data: CampaignData }) {
       })}
       {picking && (
         <WikiNotePicker title="Acompanhar facção" root={root} exclude={exclude} onClose={() => setPicking(false)}
-          onPick={async (path) => setHome("faccoes", withTrackedLink(data.data.faccoes, -1, vault.index!.linkTarget(path, data.campaign.home!), "0"))} />
+          onPick={async (path) => { await setHome("faccoes", withTrackedLink(data.data.faccoes, -1, vault.index!.linkTarget(path, data.campaign.home!), "0")) }} />
       )}
     </section>
   )

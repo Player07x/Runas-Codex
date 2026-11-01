@@ -16,6 +16,11 @@ import { Empty, Progress, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewNpcDialog, NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
+import { DraftsContext, useBlurSave, useDrafts } from "./campaign-edits"
+import { SavedMark, useSavedMark } from "./SavedMark"
+import { worldDateText, type WorldDate } from "../../core/calendar"
+import { worldDateAhead } from "../../core/world-today"
+import { useSetWorldToday } from "../wiki/world-today"
 
 export function SessionsView({ data, path }: { data: CampaignData; path?: string }) {
   if (path) return <SessionPage key={path} data={data} path={path} />
@@ -129,6 +134,9 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
   const toast = useToast()
   const index = vault.index!
   const panel = usePanelToggle("campaign-session")
+  // No celular, fechar o painel sem tocar fora do campo também grava o que estava sendo digitado.
+  const drafts = useDrafts()
+  const togglePanel = () => { drafts.flush(); panel.toggle() }
   // Link para algo que ainda não existe, na nota da sessão: criar o NPC, o lugar ou a facção na hora.
   const [creatingLink, setCreatingLink] = useState<string | null>(null)
   const session = data.sessions.find((s) => s.path === path)
@@ -149,7 +157,7 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
           key={path}
           path={path}
           folders={folders}
-          onShowPanel={panel.toggle}
+          onShowPanel={togglePanel}
           panelOpen={panel.expanded}
           panelHint="Detalhes, preparação e resumo da sessão"
           onBack={() => navigate(campaignRoute(data.campaign.name, "sessoes"))}
@@ -158,14 +166,16 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
         />
       </section>
       <ResizablePanel id="campaign-session" label="Detalhes da sessão" side="right" width={360} className="campaign-session-side" onCollapsedChange={panel.onCollapsedChange}>
-        <button className="btn ghost sm campaign-panel-close" onClick={panel.close}>
+        <button className="btn ghost sm campaign-panel-close" onClick={() => { drafts.flush(); panel.close() }}>
           <ChevronLeft size={14} /> Voltar à nota
         </button>
-        <SessionDetails data={data} session={session} />
-        <PrepCard data={data} session={session} />
-        <SummaryCard data={data} session={session} />
+        <DraftsContext.Provider value={drafts}>
+          <SessionDetails data={data} session={session} />
+          <PrepCard data={data} session={session} />
+          <SummaryCard data={data} session={session} />
+        </DraftsContext.Provider>
       </ResizablePanel>
-      <button className="icon-btn campaign-panel-toggle" onClick={panel.toggle} aria-label="Painel da sessão" aria-expanded={panel.expanded}>
+      <button className="icon-btn campaign-panel-toggle" onClick={togglePanel} aria-label="Painel da sessão" aria-expanded={panel.expanded}>
         <PanelRight size={18} />
       </button>
       {creatingLink && <NewNpcDialog data={data} initialName={creatingLink} onClose={() => setCreatingLink(null)} onCreated={(created) => toast(`“${noteName(created)}” criado na wiki.`)} />}
@@ -176,9 +186,19 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
 function useSessionEdits(data: CampaignData, session: SessionInfo) {
   const vault = useVault()
   const toast = useToast()
-  const run = (action: () => Promise<void>) => {
-    if (data.readOnly) return toast("Cofre em somente leitura: libere a gravação em Configurações.")
-    action().catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+  // Devolve se gravou, para o campo mostrar “Gravado”.
+  const run = async (action: () => Promise<void>) => {
+    if (data.readOnly) {
+      toast("Cofre em somente leitura: libere a gravação em Configurações.")
+      return false
+    }
+    try {
+      await action()
+      return true
+    } catch (err) {
+      toast(err instanceof Error ? err.message : String(err))
+      return false
+    }
   }
   return {
     set: (key: string, value: string | number | string[] | undefined) => run(() => vault.setProperty(session.path, key, value)),
@@ -198,7 +218,34 @@ function useSessionEdits(data: CampaignData, session: SessionInfo) {
 function SessionDetails({ data, session }: { data: CampaignData; session: SessionInfo }) {
   const { set, reschedule } = useSessionEdits(data, session)
   const ro = data.readOnly
+  const toast = useToast()
+  const { mark, shown } = useSavedMark()
+  const saved = (key: string) => (ok: boolean) => { if (ok) mark(key) }
+  const field = useBlurSave()
   const [ratingError, setRatingError] = useState("")
+  const commitRating = (value: string) => {
+    const v = value.trim().replace(",", ".")
+    const n = Number(v)
+    // Só um número de 0 a 10 é gravado; texto ou valor fora da faixa fica no campo com o aviso.
+    if (v && (!Number.isFinite(n) || n < 0 || n > 10)) return setRatingError("Use um número de 0 a 10, como 8 ou 7,5.")
+    setRatingError("")
+    if (v !== String(session.rating ?? "")) void set("avaliacao", v ? n : undefined).then(saved("avaliacao"))
+  }
+  // Marcar como realizada uma sessão que termina depois de “hoje no mundo” oferece avançar o calendário.
+  const [advance, setAdvance] = useState<WorldDate | null>(null)
+  const setWorldToday = useSetWorldToday()
+  const changeStatus = (status: SessionStatus) => void set("status", status).then((ok) => {
+    if (!ok) return
+    mark("status")
+    setAdvance(status === "realizada" && data.calendarRef ? worldDateAhead(data.calendar, session.worldDate) : null)
+  })
+  const advanceWorld = (date: WorldDate) => {
+    if (!data.calendarRef) return
+    setWorldToday(data.calendarRef, date).then(() => {
+      setAdvance(null)
+      toast(`Hoje no mundo: ${worldDateLabel(data.calendar, worldDateText(date))}`)
+    }, (err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+  }
   const pcLink = (path: string) => `[[${path.replace(/\.md$/, "")}]]`
   const togglePresent = (path: string) => {
     const next = session.present.includes(path) ? session.present.filter((p) => p !== path) : [...session.present, path]
@@ -209,26 +256,43 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
       <span className="section-title">Sessão {session.number ?? ""}</span>
       <label className="field">
         <span>Situação</span>
-        <select className="select" disabled={ro} value={session.status} onChange={(e) => set("status", e.target.value as SessionStatus)} aria-label="Situação da sessão">
+        <select className="select" disabled={ro} value={session.status} onChange={(e) => changeStatus(e.target.value as SessionStatus)} aria-label="Situação da sessão">
           {SESSION_STATUS.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
           ))}
         </select>
+        <SavedMark shown={shown("status")} />
       </label>
+      <div role="status" className="campaign-advance-slot">
+        {advance && (
+          <div className="campaign-advance stack">
+            <span className="small">
+              A sessão acontece em <strong>{worldDateLabel(data.calendar, worldDateText(advance))}</strong> no mundo. Avançar “hoje no mundo”{data.calendar?.today ? ` (${worldDateLabel(data.calendar, worldDateText(data.calendar.today))})` : ""} para essa data?
+            </span>
+            <div className="row-wrap">
+              <button type="button" className="btn sm primary" onClick={() => advanceWorld(advance)}>Avançar o mundo</button>
+              <button type="button" className="btn sm ghost" onClick={() => setAdvance(null)}>Agora não</button>
+            </div>
+          </div>
+        )}
+      </div>
       <div className="campaign-form-row">
         <label className="field grow">
           <span>Data</span>
-          <input key={session.date ?? ""} className="input" type="date" disabled={ro} defaultValue={session.date ?? ""} onBlur={(e) => e.target.value !== (session.date ?? "") && reschedule("data", e.target.value || undefined)} aria-label="Data" />
+          <input key={session.date ?? ""} className="input" type="date" disabled={ro} defaultValue={session.date ?? ""} {...field("data", (v) => v !== (session.date ?? "") && void reschedule("data", v || undefined).then(saved("data")))} aria-label="Data" />
+          <SavedMark shown={shown("data")} />
         </label>
         <label className="field">
           <span>Hora</span>
-          <input key={session.time ?? ""} className="input" type="time" disabled={ro} defaultValue={session.time ?? ""} onBlur={(e) => e.target.value !== (session.time ?? "") && reschedule("hora", e.target.value || undefined)} aria-label="Hora" />
+          <input key={session.time ?? ""} className="input" type="time" disabled={ro} defaultValue={session.time ?? ""} {...field("hora", (v) => v !== (session.time ?? "") && void reschedule("hora", v || undefined).then(saved("hora")))} aria-label="Hora" />
+          <SavedMark shown={shown("hora")} />
         </label>
       </div>
       <label className="field">
         <span>Data no mundo</span>
-        <input key={session.worldDate ?? ""} className="input mono" disabled={ro} defaultValue={session.worldDate ?? ""} placeholder="4031-07-16" onBlur={(e) => e.target.value.trim() !== (session.worldDate ?? "") && set("data_mundo", e.target.value.trim() || undefined)} aria-label="Data no mundo" />
+        <input key={session.worldDate ?? ""} className="input mono" disabled={ro} defaultValue={session.worldDate ?? ""} placeholder="4031-07-16" {...field("data_mundo", (v) => v.trim() !== (session.worldDate ?? "") && void set("data_mundo", v.trim() || undefined).then(saved("data_mundo")))} aria-label="Data no mundo" />
         {session.worldDate && <span className="tiny" style={{ color: "var(--gold)" }}>{worldDateLabel(data.calendar, session.worldDate)}</span>}
+        <SavedMark shown={shown("data_mundo")} />
       </label>
       {data.players.length > 0 && (
         <div className="stack" style={{ gap: 4 }}>
@@ -247,14 +311,8 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
       )}
       <label className="field">
         <span>Nota da sessão (0 a 10)</span>
-        <input key={String(session.rating ?? "")} className="input" inputMode="decimal" disabled={ro} defaultValue={session.rating ?? ""} aria-invalid={Boolean(ratingError)} aria-describedby={ratingError ? "nota-sessao-erro" : undefined} onBlur={(e) => {
-          const v = e.target.value.trim().replace(",", ".")
-          const n = Number(v)
-          // Só um número de 0 a 10 é gravado; texto ou valor fora da faixa fica no campo com o aviso.
-          if (v && (!Number.isFinite(n) || n < 0 || n > 10)) return setRatingError("Use um número de 0 a 10, como 8 ou 7,5.")
-          setRatingError("")
-          if (v !== String(session.rating ?? "")) set("avaliacao", v ? n : undefined)
-        }} aria-label="Nota da sessão" />
+        <input key={String(session.rating ?? "")} className="input" inputMode="decimal" disabled={ro} defaultValue={session.rating ?? ""} aria-invalid={Boolean(ratingError)} aria-describedby={ratingError ? "nota-sessao-erro" : undefined} {...field("avaliacao", commitRating)} aria-label="Nota da sessão" />
+        <SavedMark shown={shown("avaliacao")} />
         {ratingError && <span id="nota-sessao-erro" className="tiny" role="alert" style={{ color: "var(--red)" }}>{ratingError}</span>}
       </label>
       {session.event ? (
@@ -271,6 +329,8 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
 /** Roteiro de preparação (checklist `## Preparação`): cada passo com a marca e uma linha de texto. */
 function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo }) {
   const { edit } = useSessionEdits(data, session)
+  const { mark, shown } = useSavedMark()
+  const field = useBlurSave()
   const previous = previousSession(data.sessions, session)
   const recap = session.prep.find((p) => p.label === "Recapitulação")
   const done = session.prep.filter((p) => p.done).length
@@ -293,9 +353,10 @@ function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo 
               disabled={data.readOnly}
               defaultValue={item.detail}
               placeholder={item.label === "Recapitulação" && previous?.summary ? "Use o resumo da sessão anterior" : "…"}
-              onBlur={(e) => e.target.value.trim() !== item.detail && edit((t) => setPrepDetail(t, item, e.target.value))}
+              {...field(`passo-${item.line}`, (v) => v.trim() !== item.detail && void edit((t) => setPrepDetail(t, item, v)).then((ok) => ok && mark(`passo-${item.line}`)))}
               aria-label={`Texto de ${item.label ?? "passo"}`}
             />
+            <SavedMark shown={shown(`passo-${item.line}`)} />
           </label>
         </div>
       ))}
@@ -317,6 +378,8 @@ function PrepCard({ data, session }: { data: CampaignData; session: SessionInfo 
 /** Resumo (`## O que aconteceu`): vira o "Anteriormente…" da próxima sessão. */
 function SummaryCard({ data, session }: { data: CampaignData; session: SessionInfo }) {
   const { edit } = useSessionEdits(data, session)
+  const { mark, shown } = useSavedMark()
+  const field = useBlurSave()
   return (
     <section className="card stack">
       <span className="section-title">O que aconteceu</span>
@@ -327,10 +390,13 @@ function SummaryCard({ data, session }: { data: CampaignData; session: SessionIn
         disabled={data.readOnly}
         defaultValue={session.summary}
         placeholder="Resumo para o “Anteriormente…” da próxima sessão."
-        onBlur={(e) => e.target.value.trim() !== session.summary && edit((t) => setSectionText(t, SUMMARY_HEADING, e.target.value))}
+        {...field("resumo", (v) => v.trim() !== session.summary && void edit((t) => setSectionText(t, SUMMARY_HEADING, v)).then((ok) => ok && mark("resumo")))}
         aria-label="Resumo da sessão"
       />
-      <span className="tiny faint">Grava ao sair do campo, na seção “{SUMMARY_HEADING}” da nota.</span>
+      <span className="row between">
+        <span className="tiny faint">Grava ao sair do campo, na seção “{SUMMARY_HEADING}” da nota.</span>
+        <SavedMark shown={shown("resumo")} />
+      </span>
     </section>
   )
 }

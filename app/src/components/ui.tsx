@@ -1,5 +1,5 @@
 import { useDialogFocus } from "./useDialogFocus"
-import { createContext, useCallback, useContext, useId, useRef, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react"
 import { CheckCircle2, X } from "lucide-react"
 import runa from "../assets/runa.png"
 
@@ -83,20 +83,55 @@ export function ClockDial({ segments, filled, color, size = 54 }: { segments: nu
 }
 
 /* ---------- Aviso rápido ---------- */
-const ToastContext = createContext<(message: string) => void>(() => {})
+/** Ação no aviso (“Desfazer”): o aviso fica 10 s e não some enquanto o ponteiro ou o foco estão nele. */
+export interface ToastAction { label: string; run(): void | Promise<void> }
+const ToastContext = createContext<(message: string, action?: ToastAction) => void>(() => {})
+
+const editable = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [message, setMessage] = useState<string | null>(null)
-  const show = useCallback((text: string) => {
-    setMessage(text)
-    window.setTimeout(() => setMessage((current) => (current === text ? null : current)), 2600)
+  const [toast, setToast] = useState<{ id: number; message: string; action?: ToastAction } | null>(null)
+  const [held, setHeld] = useState(false)
+  const sequence = useRef(0)
+  const show = useCallback((message: string, action?: ToastAction) => {
+    sequence.current += 1
+    setToast({ id: sequence.current, message, ...(action ? { action } : {}) })
   }, [])
+  const act = useCallback(() => {
+    const action = toast?.action
+    if (!action) return
+    setToast(null)
+    setHeld(false)
+    void action.run()
+  }, [toast])
+  useEffect(() => {
+    if (!toast || held) return
+    const timer = window.setTimeout(() => setToast((current) => (current?.id === toast.id ? null : current)), toast.action ? 10_000 : 2600)
+    return () => window.clearTimeout(timer)
+  }, [toast, held])
+  // O botão fica no fim da página; pelo teclado, Ctrl+Z (fora de um campo de texto) aciona o Desfazer do aviso.
+  useEffect(() => {
+    if (!toast?.action) return
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "z" && !editable(event.target)) {
+        event.preventDefault()
+        act()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [toast, act])
   return (
     <ToastContext.Provider value={show}>
       {children}
-      {message && (
-        <div className="toast" role="status">
-          <CheckCircle2 size={16} color="var(--green)" /> {message}
+      {toast && (
+        <div className="toast" role="status" onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
+          <CheckCircle2 size={16} color="var(--green)" /> {toast.message}
+          {toast.action && (
+            <button type="button" className="btn sm ghost toast-action" onClick={act} aria-keyshortcuts="Control+Z">
+              {toast.action.label}
+            </button>
+          )}
         </div>
       )}
     </ToastContext.Provider>

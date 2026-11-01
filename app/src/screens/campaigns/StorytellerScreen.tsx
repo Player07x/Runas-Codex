@@ -235,7 +235,7 @@ function PinnedColumn({ data, onClose }: { data: CampaignData; onClose(): void }
           root=""
           exclude={new Set(pinned.map((p) => p.dest).filter((d): d is string => Boolean(d)))}
           onClose={() => setPicking(false)}
-          onPick={async (path) => setHome("fixadas", [...pinnedRaw, `[[${index.linkTarget(path, data.campaign.home!)}]]`])}
+          onPick={async (path) => { await setHome("fixadas", [...pinnedRaw, `[[${index.linkTarget(path, data.campaign.home!)}]]`]) }}
         />
       )}
     </>

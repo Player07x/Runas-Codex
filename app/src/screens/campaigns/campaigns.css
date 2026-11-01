@@ -285,3 +285,10 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-wizard-scenes { display: grid; gap: 10px; margin: 0; padding-left: 22px; }
 .campaign-wizard-scenes li { display: grid; gap: 4px; }
 .campaign-diaries summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+
+/* Sobras da revisão: retorno “Gravado” dos campos que gravam ao sair e a pergunta de avançar o mundo. Vazias, as
+   regiões ficam fora do desenho mas continuam no documento, para o leitor de tela anunciar quando aparecem. */
+.campaign-saved, .field > .campaign-saved { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-weight: 650; }
+.campaign-saved:empty, .campaign-advance-slot:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.campaign-advance { gap: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--gold) 8%, var(--panel)); }
+.campaign-world-today { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
