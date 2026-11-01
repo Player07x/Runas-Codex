@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto"
 import { existsSync } from "node:fs"
 import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises"
-import { join } from "node:path"
+import { join, relative, sep } from "node:path"
+import { trashPath } from "../vault"
 import {
   ASSET_KINDS,
   WORLD_ASSETS_DIR,
@@ -9,6 +10,7 @@ import {
   WORLD_SCENES_DIR,
   createWorldManifest,
   parseWorldManifest,
+  renameWorldManifest,
   worldFolderName,
   type NewWorldInput,
   type WorldManifest,
@@ -95,6 +97,29 @@ export class WorldStore {
   close(): void {
     this.current?.database.close()
     this.current = null
+  }
+
+  async rename(id: string, title: string): Promise<WorldSummary> {
+    const summary = await this.find(id)
+    const manifest = renameWorldManifest(stripPath(summary), title, Date.now())
+    await writeJsonAtomically(join(summary.path, WORLD_MANIFEST_FILE), manifest)
+    const renamed = { ...manifest, path: summary.path, scenes: summary.scenes }
+    if (this.current?.summary.id === id) this.current = { ...this.current, summary: { ...manifest, path: summary.path } }
+    return renamed
+  }
+
+  /** A pasta inteira vai para a lixeira do cofre (`.trash/<pasta>`), como as notas; nada é apagado de vez. */
+  async remove(id: string): Promise<string> {
+    const summary = await this.find(id)
+    if (this.current?.summary.id === id) this.close()
+    const vault = this.rootOf()!
+    return trashPath(vault, relative(vault, summary.path).split(sep).join("/"))
+  }
+
+  private async find(id: string): Promise<WorldSummary> {
+    const summary = (await this.list()).find((world) => world.id === id)
+    if (!summary) throw new Error("Mesa não encontrada.")
+    return summary
   }
 }
 

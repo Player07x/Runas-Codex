@@ -34,8 +34,8 @@ input[type=checkbox],input[type=radio] { flex-shrink:0; }
  *,*::before,*::after { animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
 }
 @media(max-width:860px),(pointer:coarse) {
- button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch):not(.hit-area), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
- button:not(.month-cell):not(.fcell):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
+ button:not(.month-cell):not(.fcell):not(.fyear-day):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch):not(.hit-area), [role=tab], summary, .select, .input, .check, .list-item { min-height:44px; }
+ button:not(.month-cell):not(.fcell):not(.fyear-day):not(.week-event):not(.week-more):not(.event-pill):not(.cell-more):not(.map-pin):not(.switch),[role=tab] { min-width:44px; }
  .segmented { width:100%; }
  .segmented button { flex:1 1 auto; }
  .tabs { flex-wrap:wrap;overflow:visible; }

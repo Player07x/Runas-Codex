@@ -95,4 +95,12 @@ describe("planejamento das transferências", () => {
     expect(sameTransferVersion(entry("Notas/a.md"), null)).toBe(false)
     expect(sameTransferVersion(undefined, entry("Notas/a.md"))).toBe(false)
   })
+  it("importa a biblioteca das mesas sem pedir mesa.json e renomeia só o item repetido ao duplicar", () => {
+    const item = file(".runas/mesas/biblioteca/cenas/lobo.json", '{"formatVersion":1,"id":"lobo","kind":"token","data":{"image":"tokens/abc.png"}}')
+    const image = file(".runas/mesas/biblioteca/assets/tokens/abc.png", "x")
+    expect(buildImportPlan(archive(item, image), [], "merge").writes.map(w => w.path)).toEqual([item.path, image.path])
+    const plan = buildImportPlan(archive(item, image), [entry(item.path), entry(image.path)], "duplicate")
+    expect(plan.writes.map(w => w.path)).toEqual([".runas/mesas/biblioteca/cenas/lobo 2.json", image.path])
+    expect(decodeTransferText(plan.writes[0]!.bytes)).toContain("tokens/abc.png")
+  })
 })

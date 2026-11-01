@@ -4,6 +4,7 @@ import type { LogData, SceneData, TokenData, TileData, DrawingData, NoteData } f
 import type { RegionData } from "./region"
 import type { WorldDocument } from "./world"
 import { normalizeRuler, projectScene, type PlayerProjection, type PlayerProjectionPatch, type PlayerRuler } from "./player"
+import { childrenForSeat, childrenHaveOwnerBars, projectionForSeat } from "./bars"
 import type { PlayerTransport, PlayerTransportOptions, JoinedPlayerSeat, PlayerSeatConnection } from "./transport"
 import type { PlayerWireMessage } from "./player"
 import type { DocumentDatabase } from "./database"
@@ -419,14 +420,16 @@ export class RoomAuthority {
     if (visionChanged) patch.vision = after.vision
     if (regionsChanged) patch.regions = after.regions
     if (!sceneChanged && !assetsChanged && !visionChanged && !regionsChanged && !patch.upsert.length && !patch.removed.length) return
-    this.server.publish(patch)
+    // Barras “só do dono” (U12) vão só ao assento dono do token; sem elas, um envio só para todos.
+    if (childrenHaveOwnerBars(patch.upsert)) this.server.publishTo((seat) => ({ ...patch, upsert: childrenForSeat(patch.upsert, seat?.slotId) }))
+    else this.server.publish(patch)
   }
 
   private snapshotMessage(seat?: PlayerSeatConnection | null): PlayerWireMessage {
     return {
       type: "snapshot",
       collaboration: this.collaboration.publicSnapshot(seat?.slotId),
-      projection: this.lastProjection,
+      projection: projectionForSeat(this.lastProjection, seat?.slotId),
       ruler: this.ruler,
       audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null,
       moves: this.movesEnabled,

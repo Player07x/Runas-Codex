@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { FileUp, ImagePlus, Map as MapIcon, Plus, RotateCcw, Trash2 } from "lucide-react"
+import { BookmarkPlus, FileUp, ImagePlus, Map as MapIcon, Plus, RotateCcw, Trash2 } from "lucide-react"
 import { DIAGONAL_RULES, GRID_TYPES, type DiagonalRule, type GridConfig, type GridType } from "../shared/grid"
 import { DEFAULT_GRID, type SceneData, type SceneVisionConfig } from "../shared/scene"
 import type { WorldDocument } from "../shared/world"
@@ -7,6 +7,8 @@ import { resolveAssetUrl, vtt } from "../api"
 import { importImage } from "../canvas/SceneCanvas"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { ImportDialog } from "./ImportDialog"
+import { library } from "../library"
+import { saveSceneToLibrary } from "../library-actions"
 
 const GRID_LABELS: Record<GridType, string> = { square: "Quadrada", "hex-rows": "Hexagonal (fileiras)", "hex-cols": "Hexagonal (colunas)", none: "Sem grade" }
 const DIAGONAL_LABELS: Record<DiagonalRule, string> = { equidistant: "Diagonal = 1 célula", alternating: "Diagonal alterna 1 e 2", euclidean: "Distância real" }
@@ -60,6 +62,7 @@ export function ScenesPanel({ store, sceneId, onOpen }: { store: DocumentStore; 
 function SceneConfig({ scene, store, onDeleted }: { scene: WorldDocument<SceneData>; store: DocumentStore; onDeleted: () => void }) {
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [kept, setKept] = useState("")
   const data = scene.data
   const update = (patch: Partial<SceneData>) => void store.put({ id: scene.id, type: "scene", parentId: null, data: { ...data, ...patch } })
   const updateGrid = (patch: Partial<GridConfig>) => update({ grid: { ...data.grid, ...patch } })
@@ -123,6 +126,10 @@ function SceneConfig({ scene, store, onDeleted }: { scene: WorldDocument<SceneDa
     </>}
     <small className="hint">Sem luz do dia, só as luzes (ferramenta Luzes ou a luz do token) e o alcance no escuro dos aliados revelam o mapa. Paredes e portas fechadas bloqueiam visão e luz.</small>
 
+    {library && <div className="row-actions">
+      <button className="ghost" onClick={() => { setKept(""); void saveSceneToLibrary(store, scene.id).then((name) => setKept(`Mapa “${name}” guardado na biblioteca, com grade, paredes, luzes e regiões.`), (reason: unknown) => setKept(reason instanceof Error ? reason.message : String(reason))) }}><BookmarkPlus size={14} /> Guardar mapa na biblioteca</button>
+    </div>}
+    {kept && <small className="hint" role="status">{kept}</small>}
     <button className="ghost danger delete-scene" onClick={() => { if (window.confirm(`Excluir a cena "${data.name}" com todos os tokens, imagens, desenhos e notas?`)) { void store.remove(scene.id); onDeleted() } }}><Trash2 size={14} /> Excluir cena</button>
   </section>
 }

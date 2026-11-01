@@ -19,6 +19,9 @@
 .mesa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: var(--space-column); }
 .mesa-card { display: grid; align-content: start; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--panel); color: var(--text); text-align: left; }
 .mesa-card:hover { border-color: var(--line-strong); }
+article.mesa-card { position: relative; }
+.mesa-card-open { display: grid; align-content: start; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.mesa-card-menu { position: absolute; right: 8px; bottom: 8px; }
 .mesa-card.new { place-content: center; justify-items: center; gap: 8px; min-height: 240px; border-style: dashed; border-color: color-mix(in srgb, var(--red) 45%, var(--line)); background: color-mix(in srgb, var(--red) 6%, var(--panel)); text-align: center; }
 .mesa-card.new svg { color: var(--red); }
 .mesa-thumb { position: relative; height: 120px; }
@@ -27,7 +30,12 @@
 .origin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
 
 /* ---------- Entrar Sala ---------- */
-.join-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-column); align-items: start; max-width: 960px; }
+/* A coluna do painel segue a largura dele (arrastada ou recolhida, `--panel-vtt-join`); o cartão do link fica com o resto. */
+.join-layout { display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-vtt-join, 320px); gap: var(--space-column); align-items: start; max-width: 960px; }
+.join-layout .list-item { min-width: 0; }
+.join-layout .list-item .meta { flex: none; }
+.join-tip { align-items: flex-start; }
+.join-tip svg { flex: none; margin-top: 2px; }
 .seat-code { font-size: calc(20px * var(--font-scale, 1)); letter-spacing: 0.15em; text-transform: uppercase; }
 .qr-camera { display: grid; place-items: center; gap: 8px; aspect-ratio: 4 / 3; border: 2px dashed var(--line-strong); border-radius: var(--radius-lg); background: var(--bg-deep); color: var(--muted); text-align: center; padding: 16px; }
 @media (max-width: 860px) { .join-layout { grid-template-columns: minmax(0, 1fr); } }

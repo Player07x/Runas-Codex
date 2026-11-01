@@ -142,3 +142,16 @@ describe("mesas portáteis com gravação versionada", () => {
     expect(() => new PortableDatabase(".runas/mesas/teste", io, new Map(), [{}])).toThrow("inválido")
   })
 })
+
+describe("mesas no celular (U3)", () => {
+  it("renomeia o manifesto com a versão lida e devolve a pasta para a lixeira", async () => {
+    const { io } = files(), store = new PortableWorldStore(io)
+    const mesa = await store.create({ title: "Teste" })
+    await store.open(mesa.id)
+    expect(await store.rename(mesa.id, "Cripta")).toMatchObject({ id: mesa.id, title: "Cripta", path: mesa.path })
+    expect(store.openWorld?.summary.title).toBe("Cripta")
+    expect((await store.list())[0]!.title).toBe("Cripta")
+    expect(await store.detach(mesa.id)).toBe(mesa.path)
+    expect(store.openWorld).toBeNull()
+  })
+})

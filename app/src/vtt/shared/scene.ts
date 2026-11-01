@@ -1,4 +1,4 @@
-import { LOG_KINDS, type LogKind } from "./log"
+import { barColor, LOG_KINDS, type LogKind } from "./log"
 import { DIAGONAL_RULES, GRID_TYPES, type GridConfig } from "./grid"
 import type { DocumentType } from "./world"
 import { normalizePlaylist, normalizeSound, normalizeTrack } from "./audio"
@@ -100,11 +100,20 @@ export function isAlly(disposition: TokenDisposition): boolean {
   return disposition === "player" || disposition === "friendly"
 }
 
+/** Quem vê a barra na sala (U12): como a sala escolhe, só o mestre, o mestre e o dono do token, ou todos. */
+export const BAR_VISIBILITIES = ["padrao", "mestre", "dono", "todos"] as const
+export type BarVisibility = (typeof BAR_VISIBILITIES)[number]
+export const BAR_VISIBILITY_LABELS: Record<BarVisibility, string> = { padrao: "Como a sala", mestre: "Só o mestre", dono: "Mestre e dono", todos: "Todos" }
+/** Quantas barras um token pode ter: o bastante para qualquer sistema, sem deixar o desenho ilegível. */
+export const MAX_TOKEN_BARS = 12
+
 export interface TokenBar {
   label: string
   value: number
   max: number
   color: string
+  /** Sem o campo, a barra segue a escolha da sala (como as mesas antigas). */
+  visibility?: BarVisibility
 }
 
 export interface TokenData {
@@ -316,7 +325,9 @@ export function normalizeFog(value: unknown): FogData {
 function normalizeBar(value: unknown): TokenBar {
   const raw = record(value)
   const max = num(raw.max, 10, 0, 1_000_000)
-  return { label: str(raw.label, "PV", 12), value: num(raw.value, max, -1_000_000, 1_000_000), max, color: color(raw.color, BAR_COLORS.pv) }
+  const label = str(raw.label, "Barra", 24)
+  const visibility = oneOf(raw.visibility, BAR_VISIBILITIES, "padrao")
+  return { label, value: num(raw.value, max, -1_000_000, 1_000_000), max, color: color(raw.color, barColor(label)), ...(visibility !== "padrao" ? { visibility } : {}) }
 }
 
 export function normalizeToken(value: unknown): TokenData {
@@ -333,7 +344,7 @@ export function normalizeToken(value: unknown): TokenData {
     locked: bool(raw.locked, false),
     disposition: oneOf(raw.disposition, TOKEN_DISPOSITIONS, "neutral"),
     elevation: num(raw.elevation, 0, -100000, 100000),
-    bars: Array.isArray(raw.bars) ? raw.bars.slice(0, 3).map(normalizeBar) : [],
+    bars: Array.isArray(raw.bars) ? raw.bars.slice(0, MAX_TOKEN_BARS).map(normalizeBar) : [],
     showName: bool(raw.showName, true),
     ...(identifier(raw.playerSlotId) ? { playerSlotId: identifier(raw.playerSlotId) } : {}),
     vision: normalizeTokenVision(raw.vision),
@@ -350,6 +361,16 @@ function normalizeTokenLight(value: unknown): TokenLight {
   const raw = record(value)
   const dim = radius(raw.dim, 0)
   return { bright: Math.min(radius(raw.bright, 0), dim), dim, color: color(raw.color, "#ffb45a") }
+}
+
+/** Rascunho das Notas da mesa (U14). */
+export interface TableNotesData { text: string }
+export const TABLE_NOTES_ID = "notas-da-mesa"
+const TABLE_NOTES_LIMIT = 200_000
+
+function normalizeTableNotes(value: unknown): TableNotesData {
+  const raw = record(value)
+  return { text: typeof raw.text === "string" ? raw.text.slice(0, TABLE_NOTES_LIMIT) : "" }
 }
 
 export function normalizeLog(value: unknown): LogData {
@@ -440,6 +461,7 @@ const NORMALIZERS: Partial<Record<DocumentType, (value: unknown) => unknown>> = 
   playlist: normalizePlaylist,
   track: normalizeTrack,
   "log-entry": normalizeLog,
+  "table-notes": normalizeTableNotes,
 }
 
 /** Normaliza o `data` de qualquer tipo conhecido; tipos das próximas fases passam intactos. */

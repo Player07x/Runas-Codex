@@ -78,7 +78,7 @@ export async function downloadUpdate(info: UpdateInfo, folder: string, onProgres
  * - AppImage: troca o próprio arquivo do app (cópia ao lado e troca de uma vez) e reinicia;
  * - `.deb`: instala pelo APT, com autorização gráfica do polkit, e só reinicia se a instalação terminar.
  */
-export async function installUpdate(file: string, target: UpdateTarget, actions: { openPath(path: string): Promise<string>; quit(): void; relaunch(execPath: string): void; beforeRestart?(): Promise<void> }, env = process.env, debInstaller = installDeb): Promise<UpdateInstallResult> {
+export async function installUpdate(file: string, target: UpdateTarget, actions: { openPath(path: string): Promise<string>; quit(): void; relaunch(execPath: string): void; beforeRestart?(): Promise<void> }, env = process.env, debInstaller: (file: string) => Promise<{ warning?: string } | void> = installDeb): Promise<UpdateInstallResult> {
   if (target === "windows") {
     spawn(file, [], { detached: true, stdio: "ignore" }).unref()
     setTimeout(() => actions.quit(), 800)
@@ -95,7 +95,9 @@ export async function installUpdate(file: string, target: UpdateTarget, actions:
     actions.relaunch(current)
     return "reiniciar"
   }
-  await debInstaller(file)
+  // O aviso (erro de outro pacote do sistema) não impede reiniciar na versão nova.
+  const installed = await debInstaller(file)
+  if (installed?.warning) console.warn(installed.warning)
   await actions.beforeRestart?.()
   actions.relaunch(process.execPath)
   return "reiniciar"

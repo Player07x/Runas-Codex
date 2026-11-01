@@ -125,6 +125,8 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
     },
     // A mesa continua aberta no computador.
     closeWorld: async () => undefined,
+    renameWorld: refuse,
+    deleteWorld: refuse,
     documents: {
       // JSON transforma `undefined` dentro de uma lista em `null`, que significa filtrar só a raiz.
       list: (type, parentId) => parentId === undefined ? invoke(IPC.documentsList, type) : invoke(IPC.documentsList, type, parentId),

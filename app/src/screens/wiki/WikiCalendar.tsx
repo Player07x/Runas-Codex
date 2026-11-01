@@ -4,7 +4,7 @@ import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { addDays, addMonths, CalendarError, dateProblem, parseWorldDate, dayNumber, equivalentYears, eraOf, formatDate, formatYear, holidaysOn, monthLength, moons, parseCalendar, relative, season, weekday, weekdayIndex, worldDateText, type Calendar, type MoonState, type WorldDate } from "../../core/calendar"
-import { findCodeBlocks, replaceCodeBlock, setBlockLine } from "../../core/codeblocks"
+import { findCodeBlocks, replaceCodeBlock } from "../../core/codeblocks"
 import { addCorrespondence, calendarOffsets, convertBetween, syncedTodays } from "../../core/calendar-sync"
 import { noteName } from "../../core/text"
 import { calendarFor, calendarInNote, datesMissingAbbr, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
@@ -14,6 +14,13 @@ import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, useWiki } from "./wiki-state"
+import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
+import { useRemembered } from "../../lib/remembered"
+import { YearGrid } from "./CalendarYear"
+import { useSetWorldToday } from "./world-today"
+
+type CalendarMode = "mes" | "ano"
+const parseMode = (raw: unknown): CalendarMode => (raw === "ano" ? "ano" : "mes")
 
 const MOON_GLYPHS = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
 
@@ -137,6 +144,8 @@ export function WikiCalendar({ path }: { path?: string }) {
   const [shown, setShown] = useState<{ year: number; month: number } | null>(null)
   const [selected, setSelected] = useState<WorldDate | null>(null)
   const [sideTab, setSideTab] = useState<"dia" | "hoje" | "sincronizar" | "ajuda">("dia")
+  // Mês ou ano inteiro (U9), lembrado por aparelho.
+  const [mode, setMode] = useRemembered("runas-codex:wiki-calendario-vista", parseMode)
   const readOnly = vault.info?.readOnly ?? true
 
   const today = calendar?.today ?? { year: 1, month: 1, day: 1 }
@@ -166,20 +175,11 @@ export function WikiCalendar({ path }: { path?: string }) {
   const refs = all.filter((c): c is CalendarRef => "calendar" in c)
   const [syncToday, setSyncToday] = useState(true)
   const linked = ref ? refs.filter((c) => c.path !== ref.path && calendarOffsets(refs, ref.path).has(c.path)) : []
-  // Troca só a linha `hoje:` do bloco de um calendário.
-  const writeToday = async (path: string, next: WorldDate) => {
-    const note = index.note(path)
-    const block = note ? findCodeBlocks(note.text, "runas-calendario")[0] : undefined
-    if (!note || !block) return
-    await vault.save(note.path, replaceCodeBlock(note.text, block, setBlockLine(block.content, "hoje", `"${worldDateText(next)}"`)))
-  }
+  // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
+  const setWorldToday = useSetWorldToday()
   const setToday = async (next: WorldDate, sync = syncToday) => {
     if (!ref) return
-    const problem = dateProblem(ref.calendar, next)
-    if (problem) throw new Error(problem)
-    await writeToday(ref.path, next)
-    // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
-    if (sync) for (const other of syncedTodays(refs, ref, next)) await writeToday(other.ref.path, other.today)
+    await setWorldToday(ref, next, sync)
     setShown({ year: next.year, month: next.month })
   }
   const advance = (days: number | "mes") => {
@@ -219,7 +219,7 @@ export function WikiCalendar({ path }: { path?: string }) {
         <div>
           <span className="eyebrow">{calendar.name} · sigla {calendar.abbr}</span>
           <h1 className="page-title">
-            {calendar.months[view.month - 1]?.name} de {formatYear(calendar, view.year)}
+            {mode === "ano" ? formatYear(calendar, view.year) : `${calendar.months[view.month - 1]?.name} de ${formatYear(calendar, view.year)}`}
           </h1>
           {calendar.today && (
             <span className="small muted">
@@ -238,8 +238,9 @@ export function WikiCalendar({ path }: { path?: string }) {
               ))}
             </select>
           )}
+          <ChoiceGroup label="Ver o calendário por" value={mode} onChange={setMode} options={[{ value: "mes", label: "Mês" }, { value: "ano", label: "Ano" }]} />
           <div className="row" style={{ gap: 2 }}>
-            <button className="icon-btn" onClick={() => setShown(view.month === 1 ? { year: view.year - 1, month: calendar.months.length } : { year: view.year, month: view.month - 1 })} aria-label="Mês anterior">
+            <button className="icon-btn" onClick={() => setShown(mode === "ano" ? { year: view.year - 1, month: view.month } : view.month === 1 ? { year: view.year - 1, month: calendar.months.length } : { year: view.year, month: view.month - 1 })} aria-label={mode === "ano" ? "Ano anterior" : "Mês anterior"}>
               <ChevronLeft size={18} />
             </button>
             <button className="btn sm" onClick={() => (setShown(null), setSelected(null))}>
@@ -247,7 +248,7 @@ export function WikiCalendar({ path }: { path?: string }) {
             </button>
             {/* O passo mais usado do mestre fica ao lado de Hoje (rework F4b, WIK-2). */}
             {!readOnly && <button className="btn sm" onClick={() => advance(1)} title="Avança o dia de hoje no mundo">+1 dia</button>}
-            <button className="icon-btn" onClick={() => setShown(view.month === calendar.months.length ? { year: view.year + 1, month: 1 } : { year: view.year, month: view.month + 1 })} aria-label="Próximo mês">
+            <button className="icon-btn" onClick={() => setShown(mode === "ano" ? { year: view.year + 1, month: view.month } : view.month === calendar.months.length ? { year: view.year + 1, month: 1 } : { year: view.year, month: view.month + 1 })} aria-label={mode === "ano" ? "Próximo ano" : "Próximo mês"}>
               <ChevronRight size={18} />
             </button>
           </div>
@@ -259,7 +260,12 @@ export function WikiCalendar({ path }: { path?: string }) {
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />
+          {mode === "ano"
+            ? <YearGrid calendar={calendar} year={view.year} selected={selected} marks={marks}
+                onPick={(date) => { setSelected(date); setSideTab("dia") }}
+                onYear={(year) => setShown({ year, month: view.month })}
+                onOpenMonth={(month) => { setShown({ year: view.year, month }); setMode("mes") }} />
+            : <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />}
         </div>
         <ResizablePanel id="agenda" label="Detalhes do calendário" side="right" width={320} className="stack-lg agenda-side">
           {/* Abas no lugar de cartões empilhados (rework F4b, WIK-2): Dia · Hoje no mundo · Sincronizar · Ajuda. */}

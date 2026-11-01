@@ -47,6 +47,8 @@ export const IPC = {
   audioStopTrack: "vtt:audio-stop-track",
   audioStopAll: "vtt:audio-stop-all",
   audioEnded: "vtt:audio-ended",
+  renameWorld: "vtt:worlds-rename",
+  deleteWorld: "vtt:worlds-delete",
 } as const
 
 /** O que a mesa informa ao processo principal (cena aberta, seleção e câmera, para a vista dos jogadores). */
@@ -151,6 +153,10 @@ export interface VttApi {
   createWorld(input: NewWorldInput): Promise<WorldSummary>
   openWorld(id: string): Promise<WorldSummary>
   closeWorld(): Promise<void>
+  /** Troca o nome da mesa (o manifesto; a pasta fica). */
+  renameWorld(id: string, title: string): Promise<WorldSummary>
+  /** Manda a pasta da mesa para a lixeira do cofre; recusa com a sala dessa mesa ligada. */
+  deleteWorld(id: string): Promise<void>
   documents: {
     list(type: DocumentType, parentId?: string | null): Promise<WorldDocument[]>
     put(input: DocumentInput): Promise<WorldDocument>

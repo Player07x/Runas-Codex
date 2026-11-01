@@ -227,8 +227,10 @@
 .map-toolbar .map-layers { flex-wrap:wrap; }
 
 /* W1 — categorias resumidas e navegação por arte, sem estilos no leitor compartilhado. */
-.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:flex-start; }
-.wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));overflow-wrap:anywhere;word-break:break-word; }
+/* Ícone, nome e contagem no mesmo centro vertical; um nome longo quebra em duas linhas e continua centrado. */
+.wiki-category-heading { color:var(--text);text-decoration:none;min-height:44px;min-width:0;align-items:center; }
+.wiki-category-heading > .cat-icon { flex:none; }
+.wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));line-height:1.25;overflow-wrap:anywhere;word-break:break-word; }
 .wiki-category-heading > .chip { flex:0 0 auto;margin-left:auto; }
 .wiki-category-preview { display:grid;grid-template-columns:minmax(0,1fr);gap:2px; }
 .wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }
@@ -382,3 +384,26 @@
   .wiki-tools-pick .select { min-height: 44px; }
   .wiki-tools-layout > .wiki-tools-list { display: none; }
 }
+
+/* ---------- Calendário: vista do ano (U9) ---------- */
+.fyear { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 14px; }
+.fyear-month { display: grid; align-content: start; gap: 6px; min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.fyear-month.intercalary { grid-column: 1 / -1; }
+.fyear-month-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: left; font-size: calc(14px * var(--font-scale, 1)); }
+.fyear-month-head:hover { background: var(--panel-2); }
+.fyear-month-head strong { min-width: 0; overflow-wrap: anywhere; }
+.fyear-days { display: grid; gap: 2px; }
+.fyear-strip { display: flex; flex-wrap: wrap; gap: 2px; }
+.fyear-strip .fyear-day { width: 34px; }
+.fyear-weekday { color: var(--faint); font-size: calc(11px * var(--font-scale, 1)); text-align: center; }
+.fyear-day { position: relative; display: grid; place-items: center; min-width: 0; min-height: 30px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text); font-size: calc(12px * var(--font-scale, 1)); font-variant-numeric: tabular-nums; }
+.fyear-day:hover { background: var(--panel-2); }
+.fyear-day.today { background: var(--cyan); color: var(--on-accent); font-weight: 700; }
+.fyear-day.picked { border-color: var(--gold); }
+.fyear-dots { position: absolute; bottom: 2px; left: 50%; display: flex; gap: 2px; transform: translateX(-50%); }
+.fyear-dot { width: 4px; height: 4px; border-radius: 50%; }
+.fyear-dot.moon { background: var(--text); }
+.fyear-dot.event { background: var(--violet); }
+.fyear-day.today .fyear-dot { background: var(--on-accent); }
+/* No celular, uma coluna de meses e dias com alvo maior. */
+@media (max-width: 640px) { .fyear-day { min-height: 40px; } .fyear-strip .fyear-day { width: 40px; } }

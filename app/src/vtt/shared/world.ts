@@ -57,6 +57,8 @@ export const DOCUMENT_TYPES = [
   "playlist",
   "track",
   "log-entry",
+  /** Notas do mestre durante o jogo (U14): um rascunho por mesa, que só vira nota do cofre em “Salvar Sessão”. */
+  "table-notes",
 ] as const
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number]
@@ -108,6 +110,13 @@ export function createWorldManifest(input: NewWorldInput, id: string, now: numbe
     createdAt: now,
     updatedAt: now,
   }
+}
+
+/** Novo nome da mesa (a pasta continua a mesma: o id é que liga a mesa às cenas e aos assets). */
+export function renameWorldManifest(manifest: WorldManifest, title: string, now: number): WorldManifest {
+  const name = normalizeWorldTitle(title)
+  if (!name) throw new Error("A mesa precisa de um nome.")
+  return { ...manifest, title: name, updatedAt: now }
 }
 
 /**

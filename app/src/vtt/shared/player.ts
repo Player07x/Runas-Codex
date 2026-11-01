@@ -1,7 +1,8 @@
 import type { PublicCollaboration, CollaborationReply } from "./collaboration"
 import type { PlayerBarVisibility } from "./ipc"
 import type { NoteData, SceneData, TileData, TokenData, DrawingData, AssetPath } from "./scene"
-import { isAlly, isAssetPath } from "./scene"
+import { isAssetPath } from "./scene"
+import { playerBars } from "./bars"
 import type { LogKind } from "./log"
 import type { WorldDocument } from "./world"
 import { cellPixels, isTokenVisible, renderVision, type RenderVision, type SceneVision } from "./vision"
@@ -124,7 +125,7 @@ export function projectScene(input: ProjectionInput): PlayerProjection {
     // Com névoa, tokens fora da visão dos aliados nem saem do VTT.
     if (sight && !isTokenVisible(sight, document.id, document.data, cell)) continue
     const { bars, vision: _vision, light: _light, ...visibleData } = structuredClone(document.data)
-    const visibleBars = input.bars === "all" || (input.bars === "friendly" && isAlly(document.data.disposition)) ? bars : []
+    const visibleBars = playerBars(bars, input.bars, document.data.disposition, document.data.playerSlotId)
     if (visibleData.image) assets.add(visibleData.image)
     children.push({ id: document.id, type: "token", parentId: input.scene.id, sort: document.sort, data: { ...visibleData, bars: visibleBars } })
   }

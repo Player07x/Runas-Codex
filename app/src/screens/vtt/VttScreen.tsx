@@ -1,11 +1,12 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Download, Link2, LogIn, Map, Plus, Upload, Wifi, Hash } from "lucide-react"
-import { ListRow, Notice, PageHeader } from "../../components/kit/Layout"
+import { Camera, Clock, DoorOpen, Dices, Download, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash } from "lucide-react"
+import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { href, navigate } from "../../lib/router"
 import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal } from "../../components/ui"
+import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
 import { MesaTable } from "../../vtt/MesaTable"
 import { isBrowserPreview, vtt } from "../../vtt/api"
 import type { WorldSummary } from "../../vtt/shared/world"
@@ -64,9 +65,6 @@ function VttHome() {
           ))}
         </section>
       )}
-      <Notice tone="info" title="A única parte do app que usa a rede">
-        Só enquanto a sala estiver aberta, e só entre você e os jogadores. Fechada a sala, nada sai do aparelho.
-      </Notice>
     </div>
   )
 }
@@ -76,9 +74,9 @@ function CreateRoom() {
   const [mesas, setMesas] = useState<WorldSummary[] | null>(null)
   const [error, setError] = useState<string>()
   const [creating, setCreating] = useState(false)
-  useEffect(() => {
-    vtt.listWorlds().then(setMesas, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
-  }, [])
+  const [editing, setEditing] = useState<{ kind: "rename" | "delete"; mesa: WorldSummary } | null>(null)
+  const reload = () => vtt.listWorlds().then(setMesas, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
+  useEffect(() => { void reload() }, [])
   return (
     <div className="page">
       <div className="page-head">
@@ -115,26 +113,47 @@ function CreateRoom() {
             <span className="muted small">Mesa em branco</span>
           </button>
           {mesas.map((mesa) => (
-            <button key={mesa.id} className="mesa-card" onClick={() => navigate(`/vtt/mesa/${mesa.id}`)} data-mesa={mesa.title}>
-              <div className="mesa-thumb" style={{ background: "radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--cyan) 30%, var(--panel-2)), var(--bg-deep))" }}>
-                <Map size={34} style={{ color: "var(--cyan)", opacity: 0.6 }} />
-                <span className="chip">
-                  {mesa.scenes ?? 0} {mesa.scenes === 1 ? "cena" : "cenas"}
-                </span>
-              </div>
-              <div className="stack" style={{ gap: 4, padding: 12 }}>
-                <strong className="display" style={{ fontSize: 16 }}>{mesa.title}</strong>
-                {mesa.description && <span className="muted small">{mesa.description}</span>}
-                <span className="muted small row">
-                  <Clock size={13} /> Aberta {relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}
-                </span>
-              </div>
-            </button>
+            // O cartão abre a mesa; o ⋯ fica fora do botão (botão dentro de botão não vale no HTML).
+            <article key={mesa.id} className="mesa-card" data-mesa={mesa.title}>
+              <button type="button" className="mesa-card-open" onClick={() => navigate(`/vtt/mesa/${mesa.id}`)}>
+                <div className="mesa-thumb" style={{ background: "radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--cyan) 30%, var(--panel-2)), var(--bg-deep))" }}>
+                  <Map size={34} style={{ color: "var(--cyan)", opacity: 0.6 }} />
+                  <span className="chip">
+                    {mesa.scenes ?? 0} {mesa.scenes === 1 ? "cena" : "cenas"}
+                  </span>
+                </div>
+                <div className="stack" style={{ gap: 4, padding: "12px 52px 12px 12px" }}>
+                  <strong className="display" style={{ fontSize: 16 }}>{mesa.title}</strong>
+                  {mesa.description && <span className="muted small">{mesa.description}</span>}
+                  <span className="muted small row">
+                    <Clock size={13} /> Aberta {relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}
+                  </span>
+                </div>
+              </button>
+              <span className="mesa-card-menu">
+                <OverflowMenu label={`Ações da mesa ${mesa.title}`} items={[
+                  { label: "Renomear…", icon: <PenLine size={16} />, onSelect: () => setEditing({ kind: "rename", mesa }) },
+                  "separator",
+                  { label: "Excluir…", icon: <Trash2 size={16} />, danger: true, onSelect: () => setEditing({ kind: "delete", mesa }) },
+                ]} />
+              </span>
+            </article>
           ))}
         </div>
       )}
 
       {creating && <NewMesaModal onClose={() => setCreating(false)} />}
+      {editing?.kind === "rename" && (
+        <NameDialog title="Renomear mesa" label="Nome da mesa" initial={editing.mesa.title} confirmLabel="Renomear" onClose={() => setEditing(null)}
+          onConfirm={async (title) => { await vtt.renameWorld(editing.mesa.id, title); await reload() }} />
+      )}
+      {editing?.kind === "delete" && (
+        <ConfirmDialog title={`Excluir a mesa “${editing.mesa.title}”?`} confirmLabel="Mandar para a lixeira" danger onClose={() => setEditing(null)}
+          onConfirm={async () => { await vtt.deleteWorld(editing.mesa.id); await reload() }}>
+          A pasta da mesa, com as cenas, os tokens e os arquivos importados, vai para a lixeira do cofre (<code>.trash</code>).
+          Nada é apagado de vez.
+        </ConfirmDialog>
+      )}
     </div>
   )
 }
@@ -276,7 +295,7 @@ function JoinRoom() {
             <span className="section-title">Salas recentes</span>
             {recent.length === 0 && <span className="muted small">As salas em que você entrar aparecem aqui.</span>}
             {recent.map((room) => (
-              <button key={room.url} className="list-item" onClick={() => void join(room.url)}>
+              <button key={room.url} className="list-item" title={room.url} onClick={() => void join(room.url)}>
                 <Dices size={16} />
                 <span className="grow" style={{ minWidth: 0 }}>
                   <strong className="small truncate" style={{ display: "block" }}>{new URL(room.url).host}</strong>
@@ -287,10 +306,10 @@ function JoinRoom() {
             ))}
           </section>
           <section className="card stack small">
-            <span className="row">
+            <span className="row join-tip">
               <Wifi size={15} color="var(--green)" /> Mesma rede (Wi-Fi): conexão direta, sem internet.
             </span>
-            <span className="row muted">
+            <span className="row muted join-tip">
               <Link2 size={15} /> Fora de casa: o mestre liga o link público e manda um endereço https.
             </span>
           </section>

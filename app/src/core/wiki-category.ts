@@ -131,3 +131,19 @@ export function categoryNotes(notes: readonly IndexedNote[], folder: string, wik
   if (root !== base && !root.startsWith(base + "/")) return []
   return notes.filter(note => note.path !== home && (root === base ? dirname(note.path) === root : note.path.startsWith(root + "/")))
 }
+
+/** Ordem, filtros de campo e subpasta de uma categoria, lembrados por aparelho (U6). A busca de texto não entra. */
+export interface CategoryView { order: "name" | "recent"; fields: Record<string, string>; subfolder: string }
+
+export function categoryViewKey(folder: string): string {
+  return `runas-codex:wiki-categoria:${folder}`
+}
+
+/** Lê o que foi guardado, descartando o que não tem a forma certa (versão antiga, edição à mão). */
+export function parseCategoryView(raw: unknown): CategoryView {
+  const value = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}
+  const fields = value.fields && typeof value.fields === "object" && !Array.isArray(value.fields)
+    ? Object.fromEntries(Object.entries(value.fields as Record<string, unknown>).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== ""))
+    : {}
+  return { order: value.order === "recent" ? "recent" : "name", fields, subfolder: typeof value.subfolder === "string" ? value.subfolder : "" }
+}

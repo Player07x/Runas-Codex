@@ -69,3 +69,24 @@ baixado pelo APT sem `--no-download` é o caminho de recuperação. Não há alt
 Conferência adicional com o `.deb` oficial beta.5 (SHA-256 igual ao publicado) e uma cópia do status dpkg da máquina
 com beta.4: o APT com fontes vazias e dpkg em diagnóstico planejou um upgrade, zero remoções e `Need to get 0 B/106 MB`.
 O status copiado e o status do host permaneceram iguais; nenhuma instalação real foi feita nessa conferência.
+
+## Outro pacote quebrado faz o APT falhar — U1 (31/10/2026)
+
+O dono atualizou da beta.22 para a beta.24 pelo botão e viu “O sistema não concluiu a instalação”, com linhas do
+`debconf`. O `/var/log/apt/term.log` mostrou a causa: o Runas-Codex **foi** instalado (`status installed
+runas-codex 0.1.0~beta.24` no `dpkg.log`), mas o `apt-get` também configura os pacotes que ficaram pela metade no
+sistema; ali, o `freedownloadmanager`, cuja pós-instalação falha porque o `apparmor.service` não sobe. O `dpkg` devolve
+1 a cada `apt-get`, e a mensagem do app mostrava só o fim do `stderr` (o motivo saía no `stdout`).
+
+- Depois de uma falha, o app lê o nome e a versão do pacote baixado (`dpkg-deb --field`) e o que ficou instalado
+  (`dpkg-query`, sem privilégio). Se a versão nova está instalada (`ii`), a atualização vale: o app salva as notas e
+  reinicia, e o erro do outro pacote vai só para o log.
+- Se a versão nova não ficou, a mensagem diz qual pacote do sistema quebrou o APT (`dpkg: erro processando pacote …`,
+  em português ou inglês), sugere `sudo dpkg --configure -a` e mostra o fim do `stdout` e do `stderr`, sem as linhas
+  do `debconf`.
+- O `pkexec` roda `/usr/bin/env DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get …`: o debconf não procura terminal.
+- O workflow Release instala o `.deb` novo por cima do da última versão publicada, sem terminal e com fontes vazias,
+  como o app faz, e confere que o `dpkg` termina com 0 e a versão nova fica `ii`.
+
+A pós-instalação do electron-builder não foi a causa: ela termina com 0 (só o AppArmor pode falhar, e o modelo dele já
+pula o perfil quando o `apparmor_parser` recusa). Por isso não há `afterInstall` próprio.

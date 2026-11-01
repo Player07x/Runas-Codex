@@ -1,7 +1,7 @@
 import { newDocumentId } from "./shared/document-id"
 import { useSyncExternalStore } from "react"
 import type { DocumentChange, DocumentInput } from "./shared/ipc"
-import { SCENE_CHILD_TYPES, type DrawingData, type LightData, type LogData, type NoteData, type SceneData, type TileData, type TokenData, type WallData } from "./shared/scene"
+import { SCENE_CHILD_TYPES, TABLE_NOTES_ID, type TableNotesData, type DrawingData, type LightData, type LogData, type NoteData, type SceneData, type TileData, type TokenData, type WallData } from "./shared/scene"
 import type { WorldDocument } from "./shared/world"
 import type { PlaylistData, SoundData, TrackData } from "./shared/audio"
 import type { RegionData } from "./shared/region"
@@ -34,7 +34,7 @@ export class DocumentStore {
   async load(): Promise<void> {
     this.unsubscribe = vtt.documents.onChange((change) => this.apply(change))
     // A névoa explorada é do processo principal (Vista dos Jogadores); a mesa não precisa dela.
-    const types = ["scene", "log-entry", "playlist", "track", ...SCENE_CHILD_TYPES.filter((type) => type !== "fog")]
+    const types = ["scene", "log-entry", "table-notes", "playlist", "track", ...SCENE_CHILD_TYPES.filter((type) => type !== "fog")]
     const lists = await Promise.all(types.map((type) => vtt.documents.list(type as WorldDocument["type"])))
     for (const document of lists.flat()) this.documents.set(document.id, document)
     this.emit()
@@ -58,6 +58,16 @@ export class DocumentStore {
 
   scenes(): WorldDocument<SceneData>[] {
     return [...this.documents.values()].filter((document) => document.type === "scene").sort(bySort) as WorldDocument<SceneData>[]
+  }
+
+  /** Rascunho das Notas da mesa (U14), se já foi escrito. */
+  tableNotes(): WorldDocument<TableNotesData> | null {
+    return this.get<TableNotesData>(TABLE_NOTES_ID)
+  }
+
+  /** Tokens de todas as cenas da mesa (os modelos de barra vêm deles). */
+  tokens(): WorldDocument<TokenData>[] {
+    return [...this.documents.values()].filter((document) => document.type === "token") as WorldDocument<TokenData>[]
   }
 
   playlists(): WorldDocument<PlaylistData>[] {

@@ -1,5 +1,5 @@
 import { useDialogFocus } from "./useDialogFocus"
-import { createContext, useCallback, useContext, useId, useRef, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react"
 import { CheckCircle2, X } from "lucide-react"
 import runa from "../assets/runa.png"
 
@@ -83,20 +83,47 @@ export function ClockDial({ segments, filled, color, size = 54 }: { segments: nu
 }
 
 /* ---------- Aviso rápido ---------- */
-const ToastContext = createContext<(message: string) => void>(() => {})
+/**
+ * Ação no aviso (“Desfazer”): o aviso fica 10 s e não some enquanto o ponteiro ou o foco estão nele. Se a ação que
+ * gerou o aviso tirou do documento o elemento com o foco (o item apagado), o foco vai para o botão do aviso, para o
+ * teclado alcançar o Desfazer.
+ */
+export interface ToastAction { label: string; run(): void | Promise<void> }
+const ToastContext = createContext<(message: string, action?: ToastAction) => void>(() => {})
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [message, setMessage] = useState<string | null>(null)
-  const show = useCallback((text: string) => {
-    setMessage(text)
-    window.setTimeout(() => setMessage((current) => (current === text ? null : current)), 2600)
+  const [toast, setToast] = useState<{ id: number; message: string; action?: ToastAction } | null>(null)
+  const [held, setHeld] = useState(false)
+  const sequence = useRef(0)
+  const actionButton = useRef<HTMLButtonElement>(null)
+  const show = useCallback((message: string, action?: ToastAction) => {
+    sequence.current += 1
+    setToast({ id: sequence.current, message, ...(action ? { action } : {}) })
   }, [])
+  useEffect(() => {
+    if (!toast || held) return
+    const timer = window.setTimeout(() => setToast((current) => (current?.id === toast.id ? null : current)), toast.action ? 10_000 : 2600)
+    return () => window.clearTimeout(timer)
+  }, [toast, held])
+  useEffect(() => {
+    if (toast?.action && (!document.activeElement || document.activeElement === document.body)) actionButton.current?.focus()
+  }, [toast])
   return (
     <ToastContext.Provider value={show}>
       {children}
-      {message && (
-        <div className="toast" role="status">
-          <CheckCircle2 size={16} color="var(--green)" /> {message}
+      {toast && (
+        <div className="toast" role="status" onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
+          <CheckCircle2 size={16} color="var(--green)" /> {toast.message}
+          {toast.action && (
+            <button ref={actionButton} type="button" className="btn sm ghost toast-action" onClick={() => {
+              const action = toast.action!
+              setToast(null)
+              setHeld(false)
+              void action.run()
+            }}>
+              {toast.action.label}
+            </button>
+          )}
         </div>
       )}
     </ToastContext.Provider>

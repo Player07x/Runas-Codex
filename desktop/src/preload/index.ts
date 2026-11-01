@@ -141,6 +141,8 @@ const bridge: RunasCodexBridge = {
       rotate: () => invoke(MASTER_IPC.rotate),
       disconnect: () => invoke(MASTER_IPC.disconnect),
     },
+    renameWorld: (id, title) => invoke(VTT.renameWorld, id, title),
+    deleteWorld: (id) => invoke(VTT.deleteWorld, id),
   },
   saveBytes: (name, bytes) => invoke(IPC.saveBytes, name, bytes),
   updates: {

@@ -19,6 +19,7 @@ import { useCampaignEdits } from "./campaign-edits"
 import { InitiativePanel } from "./CampaignTools"
 import { sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
+import { ImprovisedNpcCard } from "./ImprovisedNpc"
 
 type Column = "agora" | "elenco" | "fixadas"
 const COLUMNS: { value: Column; label: string }[] = [
@@ -112,6 +113,7 @@ function NowColumn({ data, onClose }: { data: CampaignData; onClose(): void }) {
         ))}
       </section>
       <InitiativePanel data={data} level={3} />
+      <ImprovisedNpcCard data={data} />
       {!("error" in data.clocks) && data.clocks.length > 0 && (
         <section className="card tight stack">
           <span className="eyebrow">Relógios</span>
@@ -235,7 +237,7 @@ function PinnedColumn({ data, onClose }: { data: CampaignData; onClose(): void }
           root=""
           exclude={new Set(pinned.map((p) => p.dest).filter((d): d is string => Boolean(d)))}
           onClose={() => setPicking(false)}
-          onPick={async (path) => setHome("fixadas", [...pinnedRaw, `[[${index.linkTarget(path, data.campaign.home!)}]]`])}
+          onPick={async (path) => { await setHome("fixadas", [...pinnedRaw, `[[${index.linkTarget(path, data.campaign.home!)}]]`]) }}
         />
       )}
     </>

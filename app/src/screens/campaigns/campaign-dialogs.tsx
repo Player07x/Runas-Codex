@@ -16,7 +16,7 @@ import { Modal } from "../../components/ui"
 import type { CampaignData } from "./campaign-state"
 
 /** Diálogo de formulário: o botão trava enquanto grava e o erro aparece embaixo. */
-function FormDialog({ title, confirmLabel, disabled, onConfirm, onClose, children, wide }: { title: string; confirmLabel: string; disabled?: boolean; onConfirm(): Promise<void>; onClose(): void; children: ReactNode; wide?: boolean }) {
+export function FormDialog({ title, confirmLabel, disabled, onConfirm, onClose, children, wide }: { title: string; confirmLabel: string; disabled?: boolean; onConfirm(): Promise<void>; onClose(): void; children: ReactNode; wide?: boolean }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
   const run = async () => {
@@ -194,7 +194,7 @@ export function NewSessionDialog({ data, onClose, onCreated }: { data: CampaignD
   )
 }
 
-export function NewQuestDialog({ campaign, quests = [], npcs = [], initialStatus = "ativa", onClose }: { campaign: CampaignInfo; quests?: QuestInfo[]; npcs?: TrackedLink[]; initialStatus?: QuestStatus; onClose(): void }) {
+export function NewQuestDialog({ campaign, quests = [], npcs = [], initialStatus = "ativa", onClose, onCreated }: { campaign: CampaignInfo; quests?: QuestInfo[]; npcs?: TrackedLink[]; initialStatus?: QuestStatus; onClose(): void; onCreated?(path: string): void }) {
   const vault = useVault()
   const [title, setTitle] = useState("")
   const [parent, setParent] = useState("")
@@ -217,10 +217,11 @@ export function NewQuestDialog({ campaign, quests = [], npcs = [], initialStatus
         const folder = `${campaign.root}Missões`
         const name = uniqueNoteName(vault.index!, folder, title.trim())
         const from = `${folder}/${name}.md`
-        await vault.createNote(folder, name, newQuestNote(title.trim(), {
+        const created = await vault.createNote(folder, name, newQuestNote(title.trim(), {
           status, ...(order.trim() ? { order: order.trim() } : {}), ...(giver.trim() ? { giver: giver.trim() } : {}), ...(reward.trim() ? { reward: reward.trim() } : {}),
           ...(parent ? { parent: target(parent, from) } : {}), ...(requires.length ? { requires: requires.map((p) => target(p, from)) } : {}),
         }))
+        onCreated?.(created)
       }}
     >
       <label className="field">

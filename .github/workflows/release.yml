@@ -83,6 +83,26 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # U1: instala o .deb novo por cima do da versão publicada antes, sem terminal, como o "Verificar atualizações"
+      # faz (fontes vazias, DEBIAN_FRONTEND=noninteractive), e confere que o dpkg termina com 0 e a versão ficou.
+      - name: Atualizar o .deb por cima da versão anterior
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 5 --json tagName -q '.[].tagName' | grep -vx "${GITHUB_REF_NAME}" | head -1)"
+          mkdir -p anterior && gh release download "$previous" --repo "$GITHUB_REPOSITORY" --pattern '*-linux-amd64.deb' --dir anterior
+          sudo apt-get install -y ./anterior/*.deb
+          novo="$(ls "$PWD"/release/Runas-Codex-*-linux-amd64.deb)"
+          vazio="$(mktemp -d)" && touch "$vazio/sources.list" && mkdir "$vazio/sources.list.d"
+          sudo setsid env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get --assume-yes --no-remove \
+            -o "Dir::Etc::sourcelist=$vazio/sources.list" -o "Dir::Etc::sourceparts=$vazio/sources.list.d" -o Dpkg::Lock::Timeout=60 \
+            install -- "$novo" < /dev/null
+          esperado="$(dpkg-deb --field "$novo" Version)"
+          instalado="$(dpkg-query --show --showformat='${db:Status-Abbrev}|${Version}' runas-codex)"
+          echo "Antes: $previous; depois: $instalado"
+          test "$instalado" = "ii |$esperado"
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 30

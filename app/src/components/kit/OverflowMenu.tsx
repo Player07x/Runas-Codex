@@ -1,6 +1,7 @@
 import "./kit.css"
 import { Ellipsis } from "lucide-react"
-import { useEffect, useId, useRef, useState, type ReactNode } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { nextIndex } from "../../core/roving"
 
 export type MenuEntry = { label: string; icon?: ReactNode; hint?: string; onSelect: () => void; disabled?: boolean; danger?: boolean } | "separator"
@@ -8,6 +9,9 @@ export type MenuEntry = { label: string; icon?: ReactNode; hint?: string; onSele
 /**
  * Menu de ações (o “⋯” de cada tela e o “+ Novo”): padrão de menu da WAI-ARIA. Abre com o foco no primeiro item,
  * setas e Home/End movem, Enter escolhe, Esc e Tab fecham e devolvem o foco ao botão.
+ *
+ * O menu abre no fim da página (portal, `position: fixed` calculado pelo botão), para nenhum cartão ou painel com
+ * `overflow` cortá-lo; vira para o outro lado e para cima quando não cabe na janela e acompanha a rolagem.
  */
 export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-btn", align = "end", heading }: {
   label: string; items: MenuEntry[]; trigger?: ReactNode; triggerClassName?: string; align?: "start" | "end"; heading?: string
@@ -29,6 +33,29 @@ export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-b
     window.addEventListener("pointerdown", outside)
     return () => window.removeEventListener("pointerdown", outside)
   }, [open])
+  // Posição antes de pintar (direto no estilo, sem outro render): o foco do efeito abaixo já acha o menu no lugar.
+  useLayoutEffect(() => {
+    if (!open) return
+    const place = () => {
+      const anchor = button.current?.getBoundingClientRect(), box = menu.current
+      if (!anchor || !box) return
+      const gap = 6, margin = 8, width = box.offsetWidth
+      const room = { below: window.innerHeight - anchor.bottom - gap - margin, above: anchor.top - gap - margin }
+      const up = box.scrollHeight > room.below && room.above > room.below
+      const maxHeight = Math.max(120, up ? room.above : room.below)
+      let left = align === "end" ? anchor.right - width : anchor.left
+      if (left < margin) left = anchor.left
+      if (left + width > window.innerWidth - margin) left = anchor.right - width
+      left = Math.max(margin, Math.min(left, window.innerWidth - margin - width))
+      box.style.left = `${left}px`
+      box.style.maxHeight = `${maxHeight}px`
+      box.style.top = up ? `${Math.max(margin, anchor.top - gap - Math.min(box.scrollHeight, maxHeight))}px` : `${anchor.bottom + gap}px`
+    }
+    place()
+    window.addEventListener("resize", place)
+    window.addEventListener("scroll", place, true)
+    return () => { window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true) }
+  }, [open, align])
   useEffect(() => { if (open) menu.current?.querySelectorAll<HTMLElement>("[role=menuitem]")[active]?.focus() }, [open, active])
 
   const close = (refocus = true) => { setOpen(false); if (refocus) button.current?.focus() }
@@ -40,9 +67,10 @@ export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-b
       onClick={() => setOpen((v) => !v)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true) } else if (event.key === "Escape" && open) { event.preventDefault(); setOpen(false) } }}>
       {trigger ?? <Ellipsis size={18} />}
     </button>
-    {open && <div ref={menu} id={menuId} className={`kit-menu ${align}`} role="menu" aria-label={label} onKeyDown={(event) => {
+    {open && createPortal(<div ref={menu} id={menuId} className={`kit-menu ${align}`} role="menu" aria-label={label} onKeyDown={(event) => {
       if (event.key === "Escape") { event.preventDefault(); close() }
-      else if (event.key === "Tab") close(false)
+      // No fim da página, o Tab sairia para longe do botão: fecha e volta a ele.
+      else if (event.key === "Tab") { event.preventDefault(); close() }
       else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); choose(active) }
       else { const next = nextIndex(event.key, active, disabled); if (next !== null) { event.preventDefault(); setActive(next) } }
     }}>
@@ -55,6 +83,6 @@ export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-b
           {item.icon}<span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}
         </button>
       })}
-    </div>}
+    </div>, document.body)}
   </span>
 }

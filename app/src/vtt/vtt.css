@@ -456,3 +456,38 @@
 @media (max-width: 860px) {
   .vtt-root .import-dialog footer button, .vtt-root .import-file button, .vtt-root .panel-actions button { min-height: 44px; }
 }
+
+/* U11: propriedades do objeto no trilho da mesa (no lugar do painel aberto), nunca por cima dele. O topo (imagem e
+   “Trocar”) fica à vista: o trilho rola por baixo do botão Voltar. No celular, é a mesma folha de baixo para cima. */
+.vtt-root .side-properties { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
+.vtt-root .side-properties-back { justify-self: start; margin: 8px 10px 0; }
+.vtt-root .side-properties-body { min-height: 0; overflow-y: auto; }
+.vtt-root .side-properties .properties.rail { position: static; inset: auto; width: auto; max-height: none; padding: 12px 14px 16px; border: 0; border-radius: 0; background: transparent; box-shadow: none; z-index: auto; }
+.vtt-root .side-properties .properties.rail header { position: static; padding-block: 0; }
+
+/* U12: cada barra num cartão de duas linhas (cor, nome, ordem e remover; valor, máximo e quem vê). */
+.vtt-root .properties .bar-card { display: grid; gap: 4px; padding: 6px; border: 1px solid var(--line); border-radius: 9px; }
+.vtt-root .properties .bar-card .bar-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.vtt-root .properties .bar-card .bar-row input:not([type="color"]) { min-width: 0; flex: 1 1 60px; }
+.vtt-root .properties .bar-card .bar-row select { min-width: 0; flex: 1 1 110px; }
+.vtt-root .properties .bar-card input[type="color"] { flex: none; }
+.vtt-root .properties .bars > select, .vtt-root .properties.multi select, .vtt-root .properties .bar-card select { height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font-size: calc(12px * var(--font-scale, 1)); }
+
+/* U13: Biblioteca da mesa. */
+.vtt-root .library-search { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--text); }
+.vtt-root .library-kinds { display: flex; gap: 4px; }
+.vtt-root .library-kinds button { flex: 1; min-height: 32px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
+.vtt-root .library-kinds button.active { border-color: var(--cyan); color: var(--text); background: color-mix(in srgb, var(--cyan) 12%, transparent); }
+.vtt-root .library-list li { cursor: grab; }
+.vtt-root .library-item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.vtt-root .library-item img, .vtt-root .library-item .thumb { width: 52px; height: 40px; border-radius: 6px; object-fit: cover; display: grid; place-items: center; background: var(--bg-deep); color: var(--muted); }
+.vtt-root .library-item strong, .vtt-root .library-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vtt-root .library-item small { color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); }
+.vtt-root .hint.danger { color: var(--red); }
+
+/* U14: Notas da mesa (no lugar do Registro), com os Acontecimentos embaixo. */
+.vtt-root .table-notes-field textarea { width: 100%; min-height: 220px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; line-height: 1.5; resize: vertical; }
+.vtt-root .table-notes-field textarea:focus { border-color: var(--cyan-dim); outline: 0; }
+.vtt-root .table-events { display: grid; gap: 8px; }
+.vtt-root .table-events > summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: calc(13px * var(--font-scale, 1)); }
+.vtt-root .table-events .log-list .link { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: calc(12px * var(--font-scale, 1)); }

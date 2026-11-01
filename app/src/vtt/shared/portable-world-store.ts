@@ -4,6 +4,7 @@ import {
   createWorldManifest,
   isDocumentType,
   parseWorldManifest,
+  renameWorldManifest,
   worldFolderName,
   type DocumentType,
   type NewWorldInput,
@@ -162,6 +163,26 @@ export class PortableWorldStore {
   async close(): Promise<void> {
     await this.openWorld?.database.flush()
     this.openWorld = null
+  }
+  async rename(id: string, title: string): Promise<WorldSummary> {
+    const summary = await this.find(id)
+    const file = (await this.files.list()).find((entry) => entry.path === `${summary.path}/mesa.json`) ?? null
+    const { path, scenes, ...manifest } = summary
+    const renamed = renameWorldManifest(manifest, title, Date.now())
+    await this.files.write(`${path}/mesa.json`, encode(renamed), file)
+    if (this.openWorld?.summary.id === id) this.openWorld = { ...this.openWorld, summary: { ...renamed, path, scenes } }
+    return { ...renamed, path, scenes }
+  }
+  /** Fecha a mesa, se aberta, e devolve a pasta para quem a manda à lixeira do cofre. */
+  async detach(id: string): Promise<string> {
+    const summary = await this.find(id)
+    if (this.openWorld?.summary.id === id) await this.close()
+    return summary.path
+  }
+  private async find(id: string): Promise<WorldSummary> {
+    const summary = (await this.list()).find((world) => world.id === id)
+    if (!summary) throw new Error("Mesa não encontrada no cofre aberto.")
+    return summary
   }
   database(): PortableDatabase {
     if (!this.openWorld) throw new Error("Abra uma mesa primeiro.")

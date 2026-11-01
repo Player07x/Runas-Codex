@@ -260,6 +260,15 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         return store.open(id)
       }),
     closeWorld: () => ordered(close),
+    renameWorld: (id, title) => store.rename(id, title),
+    deleteWorld: (id) =>
+      ordered(async () => {
+        if (store.openWorld?.summary.id === id) {
+          if (authority?.isEnabled) throw new Error("Desligue a sala desta mesa antes de excluí-la.")
+          await close()
+        }
+        await platform.trash(await store.detach(id))
+      }),
     documents: {
       list: async (type, parentId) => store.database().list(type, parentId),
       put: async (input) => {

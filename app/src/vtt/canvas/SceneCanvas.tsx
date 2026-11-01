@@ -1,13 +1,18 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useRef, useState, type DragEvent } from "react"
+import { createPortal } from "react-dom"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
 import { useSettings } from "../settings"
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
+import { BookmarkPlus, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
 import type { DocumentInput } from "../shared/ipc"
 import { snapTokenCenter } from "../shared/grid"
-import { BAR_COLORS, isAlly, TOKEN_DISPOSITIONS, WALL_KINDS, type DrawingData, type DrawingShape, type LightData, type NoteData, type SceneData, type TileData, type TokenBar, type TokenData, type TokenDisposition, type WallData, type WallKind } from "../shared/scene"
+import { BAR_VISIBILITIES, BAR_VISIBILITY_LABELS, isAlly, MAX_TOKEN_BARS, TOKEN_DISPOSITIONS, WALL_KINDS, type BarVisibility, type DrawingData, type DrawingShape, type LightData, type NoteData, type SceneData, type TileData, type TokenBar, type TokenData, type TokenDisposition, type WallData, type WallKind } from "../shared/scene"
 import { computeVision, renderVision } from "../shared/vision"
+import { addBar, barTemplates, moveBar, newBarLabel } from "../shared/bars"
+import { library } from "../library"
+import { LIBRARY_DRAG_TYPE, placeScene, placeToken, saveTokenToLibrary } from "../library-actions"
+import { barColor } from "../shared/log"
 import type { SoundData } from "../shared/audio"
 import { REGION_SHAPES, REGION_TRIGGERS, type RegionData, type RegionShape, type RegionTrigger } from "../shared/region"
 import type { AssetKind, WorldDocument } from "../shared/world"
@@ -63,7 +68,11 @@ export async function importImage(kind: AssetKind, file: File): Promise<{ path: 
   return { path, ...size }
 }
 
-export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean }) {
+/**
+ * `properties` (U11): a mesa abre as propriedades do objeto no trilho do lado direito (no lugar do painel aberto), nunca
+ * por cima dele. Sem isso (mestre remoto antigo, testes), o painel fica sobre o mapa como antes.
+ */
+export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properties, onLibraryScene }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean; properties?: { host: HTMLElement | null; open: boolean; setOpen(open: boolean): void }; onLibraryScene?: (sceneId: string) => void }) {
   const version = useDocumentsVersion(store)
   const settings = useSettings()
   const host = useRef<HTMLDivElement>(null)
@@ -71,7 +80,14 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints }: { stor
   const viewRef = useRef<SceneView | null>(null)
   const [ready, setReady] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
-  const [propertiesOpen, setPropertiesOpen] = useState(false)
+  const [ownPropertiesOpen, setOwnPropertiesOpen] = useState(false)
+  const propertiesOpen = properties ? properties.open : ownPropertiesOpen
+  // Os callbacks da vista guardam este setter do primeiro render: `properties.setOpen` precisa ser estável (um setState).
+  const setPropertiesOpen = (next: boolean | ((open: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(propertiesOpen) : next
+    if (properties) properties.setOpen(value)
+    else setOwnPropertiesOpen(value)
+  }
   const [freePlacement, setFreePlacement] = useState(false)
   const [context, setContext] = useState<{ id: string; x: number; y: number } | null>(null)
   const [tool, setTool] = useState<SceneTool>("select")
@@ -236,8 +252,20 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints }: { stor
     const rect = host.current?.getBoundingClientRect()
     if (!view || !rect) return
     const at = view.toScene({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+    // Da Biblioteca (U13): um token entra como cópia nova onde foi solto; um mapa vira cena nova.
+    const itemId = event.dataTransfer.getData(LIBRARY_DRAG_TYPE)
+    if (itemId && library && scene) {
+      void library.list().then(async (items) => {
+        const item = items.find((candidate) => candidate.id === itemId)
+        if (!item) return
+        if (item.kind === "token") await placeToken(store, item, scene.id, at)
+        else onLibraryScene?.(await placeScene(store, item))
+      }).catch(reportError)
+      return
+    }
     for (const file of Array.from(event.dataTransfer.files).filter((candidate) => candidate.type.startsWith("image/"))) void addTile(file, at)
   }
+  const keep = (tokenId: string) => void saveTokenToLibrary(store, tokenId).then((name) => setStatus(`“${name}” guardado na biblioteca.`), reportError)
 
   const selected = selection.length === 1 ? store.get(selection[0]!) : null
 
@@ -294,11 +322,24 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints }: { stor
       {context && <div className="scene-context-menu" role="menu" aria-label="Ações do objeto" style={{ left: Math.max(8, Math.min(context.x, (host.current?.clientWidth ?? 320) - 224)), top: Math.max(8, Math.min(context.y, (host.current?.clientHeight ?? 500) - 220)) }}>
         <button role="menuitem" onClick={() => { setPropertiesOpen(true); setContext(null) }}>Editar objeto</button>
         <button role="menuitem" onClick={() => { viewRef.current?.toggleHiddenSelection(); setContext(null) }}>Ocultar / mostrar</button>
+        {store.get(context.id)?.type === "token" && library && <button role="menuitem" onClick={() => { keep(context.id); setContext(null) }}>Guardar na biblioteca</button>}
         <button role="menuitem" onClick={() => { viewRef.current?.deleteSelection(); setContext(null) }}>Apagar</button>
         <button role="menuitem" onClick={() => setContext(null)}>Fechar menu</button>
       </div>}
-      {selected && propertiesOpen && <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} onRemove={() => viewRef.current?.deleteSelection()} onClose={() => setPropertiesOpen(false)} />}
-      {selection.length > 1 && propertiesOpen && <div className="properties multi"><strong>{selection.length} objetos selecionados</strong><div className="row-actions"><button className="ghost" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={14} /> Ocultar/mostrar</button><button className="ghost danger" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={14} /> Excluir</button></div></div>}
+      {(() => {
+        const panel = selected && propertiesOpen
+          ? <PropertiesPanel key={selected.id} document={selected} scene={scene} store={store} put={put} inRail={Boolean(properties)} onKeep={selected.type === "token" && library ? () => keep(selected.id) : undefined} onRemove={() => viewRef.current?.deleteSelection()} onClose={() => setPropertiesOpen(false)} />
+          : selection.length > 1 && propertiesOpen
+            ? <div className="properties multi"><strong>{selection.length} objetos selecionados</strong><div className="row-actions"><button className="ghost" onClick={() => viewRef.current?.toggleHiddenSelection()}><EyeOff size={14} /> Ocultar/mostrar</button><button className="ghost danger" onClick={() => viewRef.current?.deleteSelection()}><Trash2 size={14} /> Excluir</button></div>{(() => {
+              // U12: um modelo de barra aplicado de uma vez aos tokens selecionados (quem já tem a barra fica como está).
+              const tokens = selection.map((id) => store.get<TokenData>(id)).filter((document): document is WorldDocument<TokenData> => document?.type === "token")
+              return tokens.length > 1 && <AddBar label={`Acrescentar barra aos ${tokens.length} tokens`} bars={[]} templates={barTemplates(store.tokens().map((token) => token.data))}
+                onAdd={(bar) => tokens.forEach((token) => put({ id: token.id, type: "token", parentId: token.parentId, data: { ...token.data, bars: addBar(token.data.bars, bar) } }))} />
+            })()}</div>
+            : null
+        if (!panel || !properties) return panel
+        return properties.host ? createPortal(panel, properties.host) : null
+      })()}
       <footer className="scene-status">
         <span>{status || (!keyboardHints ? "Arraste para mover o mapa · use dois dedos para aproximar · escolha ferramentas e ações nos botões" : TOOL_HINTS[tool] || "Botão direito ou WASD/setas movem o mapa · roda do mouse aproxima · Shift + direção move a seleção · Alt ao soltar um token ignora a grade")}</span>
         <button className="link" onClick={() => viewRef.current?.fitScene()}>Enquadrar cena</button>
@@ -327,21 +368,22 @@ function TextInput({ value, onCommit, placeholder }: { value: string; onCommit: 
   return <input value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
 }
 
-function PropertiesPanel({ document, scene, store, put, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; onRemove: () => void; onClose: () => void }) {
+function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; inRail: boolean; onKeep?: () => void; onRemove: () => void; onClose: () => void }) {
   const update = (patch: Record<string, unknown>) => put({ id: document.id, type: document.type, parentId: document.parentId, data: { ...(document.data as object), ...patch } })
   const data = document.data as { hidden?: boolean; locked?: boolean }
   const title = { token: "Token", tile: "Imagem", drawing: "Desenho", note: "Nota", wall: "Parede", light: "Luz", sound: "Som", region: "Região" }[document.type as "token"] ?? "Objeto"
-  return <ResizablePanel id="vtt-properties" label={`Propriedades: ${title}`} width={290} className="properties">
+  const body = <>
     <header>
       <strong>{title}</strong>
       <div className="row-actions">
         {"hidden" in data && <button className={`icon-toggle ${data.hidden ? "active" : ""}`} title={document.type === "light" ? (data.hidden ? "Apagada (H)" : "Acesa (H)") : document.type === "sound" ? (data.hidden ? "Desligado (H)" : "Ligado (H)") : data.hidden ? "Oculto para os jogadores (H)" : "Visível para os jogadores (H)"} aria-label="Ocultar" onClick={() => update({ hidden: !data.hidden })}>{data.hidden ? <EyeOff size={15} /> : <Eye size={15} />}</button>}
         {"locked" in data && <button className={`icon-toggle ${data.locked ? "active" : ""}`} title={data.locked ? "Travado" : "Travar posição"} aria-label="Travar" onClick={() => update({ locked: !data.locked })}><Lock size={15} /></button>}
+        {onKeep && <button className="icon-toggle" title="Guardar na biblioteca (para usar em qualquer mesa)" aria-label="Guardar na biblioteca" onClick={onKeep}><BookmarkPlus size={15} /></button>}
         <button className="icon-toggle danger" title="Excluir (Delete)" aria-label="Excluir" onClick={onRemove}><Trash2 size={15} /></button>
         <button className="icon-toggle" aria-label="Fechar propriedades" onClick={onClose}><X size={15} /></button>
       </div>
     </header>
-    {document.type === "token" && <TokenFields data={document.data as TokenData} scene={scene} update={update} />}
+    {document.type === "token" && <TokenFields data={document.data as TokenData} scene={scene} store={store} update={update} />}
     {document.type === "tile" && <TileFields data={document.data as TileData} update={update} />}
     {document.type === "drawing" && <DrawingFields data={document.data as DrawingData} update={update} />}
     {document.type === "note" && <NoteFields data={document.data as NoteData} update={update} />}
@@ -349,7 +391,11 @@ function PropertiesPanel({ document, scene, store, put, onRemove, onClose }: { d
     {document.type === "light" && <LightFields data={document.data as LightData} update={update} />}
     {document.type === "sound" && <SoundFields data={document.data as SoundData} update={update} />}
     {document.type === "region" && <RegionFields id={document.id} data={document.data as RegionData} store={store} update={update} />}
-  </ResizablePanel>
+  </>
+  // No trilho da mesa a largura é a do trilho; sozinho sobre o mapa, o painel tem a própria alça.
+  return inRail
+    ? <section className="properties rail" aria-label={`Propriedades: ${title}`}>{body}</section>
+    : <ResizablePanel id="vtt-properties" label={`Propriedades: ${title}`} width={290} className="properties">{body}</ResizablePanel>
 }
 
 function ImagePicker({ kind, path, onChange }: { kind: AssetKind; path: string | null; onChange: (path: string | null, size?: { width: number; height: number }) => void }) {
@@ -374,9 +420,7 @@ function ImagePicker({ kind, path, onChange }: { kind: AssetKind; path: string |
 /** Assentos da sala (`player-1`…): o jogador daquele assento pode mover este token. */
 const PLAYER_SLOTS = Array.from({ length: 12 }, (_, index) => `player-${index + 1}`)
 
-function TokenFields({ data, scene, update }: { data: TokenData; scene: WorldDocument<SceneData>; update: (patch: Partial<TokenData>) => void }) {
-  const setBar = (index: number, patch: Partial<TokenBar>) => update({ bars: data.bars.map((bar, current) => current === index ? { ...bar, ...patch } : bar) })
-  const freeLabels = (["PV", "PA", "PE"] as const).filter((label) => !data.bars.some((bar) => bar.label === label))
+function TokenFields({ data, scene, store, update }: { data: TokenData; scene: WorldDocument<SceneData>; store: DocumentStore; update: (patch: Partial<TokenData>) => void }) {
   return <>
     <ImagePicker kind="tokens" path={data.image} onChange={(image) => update({ image })} />
     <Field label="Nome"><TextInput value={data.name} onCommit={(name) => update({ name })} /></Field>
@@ -407,19 +451,53 @@ function TokenFields({ data, scene, update }: { data: TokenData; scene: WorldDoc
       {!isAlly(data.disposition) && <small className="hint">Só tokens Jogador e Aliado revelam o mapa. A luz vale para qualquer token visível.</small>}
       {data.disposition === "player" && <small className="hint">Jogador: quem está na sala pode mover este token (se permitido no painel Sala).</small>}
     </div>
-    <div className="bars">
-      <span className="field-label">Barras</span>
-      {data.bars.map((bar, index) => <div key={index} className="bar-row">
-        <span className="swatch" style={{ background: bar.color }} />
-        <strong>{bar.label}</strong>
+    <TokenBars bars={data.bars} templates={barTemplates(store.tokens().map((token) => token.data))} onChange={(bars) => update({ bars })} />
+  </>
+}
+
+/**
+ * Barras do token (U12): quantas o mestre quiser, com nome, cor, valor, máximo e quem vê na sala; sobe, desce e remove.
+ * “Acrescentar barra” oferece os nomes já usados nesta mesa (modelos), para não redigitar em cada token.
+ */
+function TokenBars({ bars, templates, onChange }: { bars: TokenBar[]; templates: TokenBar[]; onChange: (bars: TokenBar[]) => void }) {
+  const setBar = (index: number, patch: Partial<TokenBar>) => onChange(bars.map((bar, current) => current === index ? { ...bar, ...patch } : bar))
+  const free = templates.filter((template) => !bars.some((bar) => bar.label.trim().toLocaleLowerCase("pt-BR") === template.label.trim().toLocaleLowerCase("pt-BR")))
+  return <div className="bars">
+    <span className="field-label">Barras{bars.length ? ` · ${bars.length}` : ""}</span>
+    {bars.map((bar, index) => <div key={index} className="bar-card" role="group" aria-label={`Barra ${bar.label}`}>
+      <div className="bar-row">
+        <input type="color" aria-label={`Cor de ${bar.label}`} value={bar.color} onChange={(event) => setBar(index, { color: event.target.value })} />
+        <TextInput value={bar.label} onCommit={(label) => label.trim() && setBar(index, { label: label.trim().slice(0, 24) })} />
+        <button className="icon-toggle" aria-label={`Subir ${bar.label}`} disabled={index === 0} onClick={() => onChange(moveBar(bars, index, -1))}><ArrowUp size={14} /></button>
+        <button className="icon-toggle" aria-label={`Descer ${bar.label}`} disabled={index === bars.length - 1} onClick={() => onChange(moveBar(bars, index, 1))}><ArrowDown size={14} /></button>
+        <button className="icon-toggle danger" aria-label={`Remover ${bar.label}`} onClick={() => onChange(bars.filter((_, current) => current !== index))}><X size={14} /></button>
+      </div>
+      <div className="bar-row">
         <NumberInput value={bar.value} onCommit={(value) => setBar(index, { value })} />
         <span>/</span>
         <NumberInput value={bar.max} min={0} onCommit={(max) => setBar(index, { max })} />
-        <button className="link" aria-label={`Remover ${bar.label}`} onClick={() => update({ bars: data.bars.filter((_, current) => current !== index) })}>✕</button>
-      </div>)}
-      {data.bars.length < 3 && <div className="row-actions">{freeLabels.map((label) => <button key={label} className="ghost small" onClick={() => update({ bars: [...data.bars, { label, value: 10, max: 10, color: BAR_COLORS[label.toLowerCase() as "pv"] }] })}>+ {label}</button>)}</div>}
-    </div>
-  </>
+        <select aria-label={`Quem vê ${bar.label}`} value={bar.visibility ?? "padrao"} onChange={(event) => { const visibility = event.target.value as BarVisibility; setBar(index, { visibility: visibility === "padrao" ? undefined : visibility }) }}>
+          {BAR_VISIBILITIES.map((visibility) => <option key={visibility} value={visibility}>{BAR_VISIBILITY_LABELS[visibility]}</option>)}
+        </select>
+      </div>
+    </div>)}
+    {bars.length < MAX_TOKEN_BARS && <AddBar templates={free} bars={bars} onAdd={(bar) => onChange(addBar(bars, bar))} />}
+  </div>
+}
+
+/** Seletor “Acrescentar barra…”: um modelo da mesa ou uma barra nova em branco. */
+function AddBar({ templates, bars, onAdd, label = "Acrescentar barra" }: { templates: TokenBar[]; bars: TokenBar[]; onAdd: (bar: TokenBar) => void; label?: string }) {
+  return <select aria-label={label} value="" onChange={(event) => {
+    const value = event.target.value
+    if (!value) return
+    const template = templates.find((bar) => bar.label === value)
+    const name = newBarLabel(bars)
+    onAdd(template ?? { label: name, value: 10, max: 10, color: barColor(name) })
+  }}>
+    <option value="">+ {label}…</option>
+    {templates.map((bar) => <option key={bar.label} value={bar.label}>{bar.label} (máx. {bar.max})</option>)}
+    <option value="__nova__">Nova barra</option>
+  </select>
 }
 
 function TileFields({ data, update }: { data: TileData; update: (patch: Partial<TileData>) => void }) {
@@ -527,7 +605,7 @@ function RegionFields({ id, data, store, update }: { id: string; data: RegionDat
     <div className="bars">
       <label className="check"><input type="checkbox" checked={data.text.enabled} onChange={(event) => update({ text: { ...data.text, enabled: event.target.checked } })} /> <strong>Texto ao entrar</strong></label>
       {data.text.enabled && <>
-        <Field label="Mensagem (vai ao Registro e sobe sobre o token)"><TextInput value={data.text.message} placeholder="O chão range sob seus pés…" onCommit={(message) => update({ text: { ...data.text, message } })} /></Field>
+        <Field label="Mensagem (vai aos Acontecimentos das Notas e sobe sobre o token)"><TextInput value={data.text.message} placeholder="O chão range sob seus pés…" onCommit={(message) => update({ text: { ...data.text, message } })} /></Field>
         <label className="check"><input type="checkbox" checked={data.text.once} onChange={(event) => update({ text: { ...data.text, once: event.target.checked } })} /> Só uma vez (desliga depois de mostrar)</label>
       </>}
     </div>

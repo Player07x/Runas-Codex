@@ -21,7 +21,18 @@ function mentionsPath(text: string, path: string): boolean {
   // Valores completos em propriedades/JSON e destinos de links; um sufixo não é outro anexo.
   return new RegExp(String.raw`(?:^|["'\[(:=]\s*)${escaped}(?=\s*(?:["'\])},|#\r\n]|$))`, "m").test(text)
 }
-const worldRoot = (path: string) => managedWorldPath(path) ? path.split("/").slice(0, 3).join("/") : null
+/** Biblioteca das mesas (U13): pasta reservada da área das mesas, sem manifesto; viaja com o cofre sem virar mesa. */
+const LIBRARY = ".runas/mesas/biblioteca/"
+const isLibrary = (path: string) => path.startsWith(LIBRARY)
+const worldRoot = (path: string) => managedWorldPath(path) && !isLibrary(path) ? path.split("/").slice(0, 3).join("/") : null
+/** Um item repetido da biblioteca ganha outro nome; as imagens (por hash) são as mesmas e ficam onde estão. */
+function freeLibraryFile(path: string, taken: readonly string[]): string {
+  if (!path.endsWith(".json") || !taken.some(name => foldName(name) === foldName(path))) return path
+  for (let i = 2; ; i++) {
+    const next = path.replace(/\.json$/, ` ${i}.json`)
+    if (!taken.some(name => foldName(name) === foldName(next))) return next
+  }
+}
 function cleanTitle(title: string): string {
   return title.replace(/[[\]#^|\\/:*?"<>\u0000-\u001f]/g, "-").replace(/^[.\s]+|[.\s]+$/g, "").slice(0, 60).replace(/[.\s]+$/, "") || "Cofre"
 }
@@ -93,6 +104,11 @@ function validateWorlds(files: TransferFile[]): void {
 function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], newId: () => string): TransferFile[] {
   const taken = existing.map(entry => entry.path), groups = new Map<string, string>(), paths = new Map<string, string>(), ids = new Map<string, string>()
   for (const file of archive.files) {
+    if (isLibrary(file.path)) {
+      const path = freeLibraryFile(file.path, taken)
+      paths.set(file.path, path); taken.push(path)
+      continue
+    }
     const parts = file.path.split("/"), root = worldRoot(file.path)
     let group: string, target: string
     if (root) {
