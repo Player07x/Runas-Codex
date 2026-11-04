@@ -894,3 +894,15 @@ export function campaignJournal(campaign: CampaignInfo, sessions: SessionInfo[],
   }
   return `${parts.join("\n\n")}\n`
 }
+
+/** O que vai para a lixeira ao excluir a campanha: a pasta `Campanhas/<nome>/` inteira (os artigos da wiki ficam). */
+export function campaignContents(index: VaultIndex, campaign: CampaignInfo): { folder: string; files: number; sessions: number; quests: number } {
+  const inside = index.allFiles().filter((file) => file.path.startsWith(campaign.root))
+  const notes = index.allNotes().filter((note) => note.path.startsWith(campaign.root))
+  return {
+    folder: campaign.root.replace(/\/+$/, ""),
+    files: inside.length,
+    sessions: notes.filter((note) => isSessionNote(note, campaign.root)).length,
+    quests: notes.filter((note) => isQuestNote(note, campaign.root)).length,
+  }
+}

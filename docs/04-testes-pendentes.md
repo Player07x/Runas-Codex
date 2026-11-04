@@ -1349,3 +1349,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] No início da Wiki, “Só categorias”: as listas de recentes e “a escrever” somem e as categorias viram blocos
   (ícone, nome, quantidade); clicar no bloco abre a categoria. A escolha fica lembrada ao voltar.
 - [ ] Em 320 px os blocos ficam em uma coluna, sem quebrar o nome no meio; no tema claro também.
+
+## Campanhas: cartões alinhados e excluir campanha
+
+- [ ] Em Campanhas, cartões com e sem resumo na mesma linha terminam alinhados (rodapé “sessões jogadas” no fim);
+  resumo longo corta em 4 linhas.
+- [ ] O “⋯” do cartão: Abrir, Personalizar…, Marcar como ativa/pausada/concluída e Excluir campanha…; o resto do
+  cartão continua abrindo a campanha.
+- [ ] Excluir (pelo cartão ou pelo menu do nome da campanha, dentro dela): o aviso diz quantos arquivos, sessões e
+  missões vão; a pasta `Campanhas/<nome>/` vai para `.trash` do cofre (confira no Obsidian) e os artigos da wiki ficam.
+- [ ] Em 320 px e no tema claro.
