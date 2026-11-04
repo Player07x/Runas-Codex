@@ -1334,3 +1334,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Campanhas: cartões alinhados e excluir campanha
+
+- [ ] Em Campanhas, cartões com e sem resumo na mesma linha terminam alinhados (rodapé “sessões jogadas” no fim);
+  resumo longo corta em 4 linhas.
+- [ ] O “⋯” do cartão: Abrir, Personalizar…, Marcar como ativa/pausada/concluída e Excluir campanha…; o resto do
+  cartão continua abrindo a campanha.
+- [ ] Excluir (pelo cartão ou pelo menu do nome da campanha, dentro dela): o aviso diz quantos arquivos, sessões e
+  missões vão; a pasta `Campanhas/<nome>/` vai para `.trash` do cofre (confira no Obsidian) e os artigos da wiki ficam.
+- [ ] Em 320 px e no tema claro.

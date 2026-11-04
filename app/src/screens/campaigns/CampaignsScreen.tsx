@@ -2,12 +2,13 @@ import { CampaignTools } from "./CampaignTools"
 import { useMemo, useRef, useState } from "react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Users, Wrench } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, CircleDot, ExternalLink, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Trash2, Users, Wrench } from "lucide-react"
 import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
 import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
 import { campaignHomePath, campaignLook } from "../../core/personalization"
 import { toneStyle } from "../../core/tones"
-import { CAMPAIGN_STATUS, listCampaigns, listPlayers, listSessions, upcomingSession } from "../../core/campaigns"
+import { CAMPAIGN_STATUS, campaignContents, listCampaigns, listPlayers, listSessions, upcomingSession, type CampaignInfo } from "../../core/campaigns"
+import { ConfirmDialog } from "../../components/vault/dialogs"
 import { href, navigate } from "../../lib/router"
 import { Empty, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
@@ -63,12 +64,14 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
   const vault = useVault()
   const [screen, setScreen] = useState(false)
   const [personalizing, setPersonalizing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const fill = section === "quadro" || ((section === "sessoes" || section === "missoes") && Boolean(id))
   // ADR 0027: tudo dentro da campanha herda a cor dela (botões, abas, sessões, missões, quadro, elenco).
   const look = useMemo(() => campaignLook(vault.index!, name), [vault.index, vault.version, name])
   return (
     <div className={`campaign-page${fill ? " campaign-fill" : ""}${look.tone ? " toned" : ""}`} style={toneStyle(look.tone)}>
-      <CampaignHeader name={name} current={section} onScreen={() => setScreen(true)} onPersonalize={() => setPersonalizing(true)} emblem={look.emblem} />
+      <CampaignHeader name={name} current={section} onScreen={() => setScreen(true)} onPersonalize={() => setPersonalizing(true)} onDelete={() => setDeleting(true)} emblem={look.emblem} />
+      {deleting && <DeleteCampaignDialog campaign={data.campaign} onClose={() => setDeleting(false)} onDeleted={() => navigate("/campanhas")} />}
       {personalizing && <PersonalizeDialog title={`Personalizar ${name}`} name={name} path={campaignHomePath(name)} onClose={() => setPersonalizing(false)} />}
       {section === "" && <CampaignDashboard data={data} onScreen={() => setScreen(true)} />}
       {section === "sessoes" && <SessionsView data={data} path={id} />}
@@ -81,7 +84,7 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
   )
 }
 
-function CampaignHeader({ name, current, onScreen, onPersonalize, emblem }: { name: string; current: string; onScreen(): void; onPersonalize(): void; emblem: string | null }) {
+function CampaignHeader({ name, current, onScreen, onPersonalize, onDelete, emblem }: { name: string; current: string; onScreen(): void; onPersonalize(): void; onDelete(): void; emblem: string | null }) {
   const Emblem = emblemIcon(emblem) ?? ScrollText
   const vault = useVault()
   const campaigns = useMemo(() => listCampaigns(vault.index!), [vault.index, vault.version])
@@ -99,6 +102,8 @@ function CampaignHeader({ name, current, onScreen, onPersonalize, emblem }: { na
           "separator" as const,
           { label: "Personalizar esta campanha…", icon: <Palette size={15} />, onSelect: onPersonalize, disabled: vault.info?.readOnly ?? true },
           { label: "Todas as campanhas", icon: <LayoutDashboard size={15} />, onSelect: () => navigate("/campanhas") },
+          "separator" as const,
+          { label: "Excluir esta campanha…", icon: <Trash2 size={15} />, danger: true, onSelect: onDelete, disabled: vault.info?.readOnly ?? true },
         ]} />
       <select className="select mobile-space-nav" aria-label="Tela da campanha" value={current} onChange={event => navigate(campaignRoute(name, event.target.value))}>{TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select>
       <nav ref={nav} className="tabs campaign-tabs" aria-label="Telas da campanha">
@@ -124,6 +129,8 @@ function CampaignList() {
   const toast = useToast()
   const index = vault.index!
   const [creating, setCreating] = useState(false)
+  const [personalizing, setPersonalizing] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<CampaignInfo | null>(null)
   const readOnly = vault.info?.readOnly ?? true
   const campaigns = useMemo(() => {
     const today = new Date()
@@ -152,33 +159,82 @@ function CampaignList() {
       ) : (
         <div className="grid-cards">
           {campaigns.map((c) => (
-            <a key={c.name} className={`card link campaign-card${c.look.tone ? " toned" : ""}`} href={href(campaignRoute(c.name))} style={toneStyle(c.look.tone)}>
-              <div className="campaign-card-cover">
-                <CoverBand tone={c.look.tone} cover={c.look.cover} from={campaignHomePath(c.name)} height={88} className="campaign-banner" />
-                <Crest tone={c.look.tone} emblem={c.look.emblem} name={c.name} size={44} />
-              </div>
-              <div className="row between">
-                <span className={`chip ${c.status === "ativa" ? "green" : c.status === "pausada" ? "gold" : ""}`}>{CAMPAIGN_STATUS.find((s) => s.id === c.status)?.label}</span>
-                <span className="muted small row">
-                  <Users size={14} /> {c.players}
-                </span>
-              </div>
-              <strong className="campaign-card-title">{c.name}</strong>
-              {c.summary && <p className="muted small">{c.summary}</p>}
-              <span className="small">
-                {c.next ? (
-                  <span style={{ color: "var(--gold)" }}>
-                    Próxima: sessão {c.next.number ?? ""} {daysFrom(c.next.date) ? `· ${daysFrom(c.next.date)}` : ""}
-                  </span>
-                ) : (
-                  <span className="muted">{c.done} {c.done === 1 ? "sessão jogada" : "sessões jogadas"}</span>
-                )}
-              </span>
-            </a>
+            <CampaignCard key={c.name} campaign={c} readOnly={readOnly} onPersonalize={() => setPersonalizing(c.name)} onDelete={() => setDeleting(c)} />
           ))}
         </div>
       )}
       {creating && <NewCampaignDialog onClose={() => setCreating(false)} onCreated={(name) => navigate(campaignRoute(name))} />}
+      {personalizing && <PersonalizeDialog title={`Personalizar ${personalizing}`} name={personalizing} path={campaignHomePath(personalizing)} onClose={() => setPersonalizing(null)} />}
+      {deleting && <DeleteCampaignDialog campaign={deleting} onClose={() => setDeleting(null)} onDeleted={() => setDeleting(null)} />}
     </div>
+  )
+}
+
+type CardData = CampaignInfo & { look: ReturnType<typeof campaignLook>; sessions: number; done: number; next: ReturnType<typeof upcomingSession>; players: number }
+
+/**
+ * Cartão da lista: o título é o link (a área do cartão inteiro clica nele) e o “⋯” fica fora do link, por cima da
+ * capa. Em coluna, com o rodapé no fim: com ou sem resumo, os cartões de uma linha terminam alinhados.
+ */
+function CampaignCard({ campaign: c, readOnly, onPersonalize, onDelete }: { campaign: CardData; readOnly: boolean; onPersonalize(): void; onDelete(): void }) {
+  const vault = useVault()
+  const toast = useToast()
+  const status = CAMPAIGN_STATUS.find((s) => s.id === c.status)
+  const setStatus = (id: string, label: string) => {
+    if (!c.home) return
+    void vault.setProperty(c.home, "status", id).then(() => toast(`${c.name}: ${label.toLowerCase()}`), (e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+  }
+  return (
+    <article className={`card campaign-card${c.look.tone ? " toned" : ""}`} style={toneStyle(c.look.tone)}>
+      <div className="campaign-card-cover">
+        <CoverBand tone={c.look.tone} cover={c.look.cover} from={campaignHomePath(c.name)} height={88} className="campaign-banner" />
+        <Crest tone={c.look.tone} emblem={c.look.emblem} name={c.name} size={44} />
+      </div>
+      <div className="campaign-card-actions">
+        <OverflowMenu label={`Ações da campanha ${c.name}`} triggerClassName="icon-btn campaign-card-menu" items={[
+          { label: "Abrir", icon: <ExternalLink size={15} />, onSelect: () => navigate(campaignRoute(c.name)) },
+          { label: "Personalizar…", icon: <Palette size={15} />, onSelect: onPersonalize, disabled: readOnly },
+          "separator" as const,
+          ...CAMPAIGN_STATUS.filter((s) => s.id !== c.status).map((s) => ({ label: `Marcar como ${s.label.toLowerCase()}`, icon: <CircleDot size={15} />, onSelect: () => setStatus(s.id, s.label), disabled: readOnly || !c.home })),
+          "separator" as const,
+          { label: "Excluir campanha…", icon: <Trash2 size={15} />, danger: true, onSelect: onDelete, disabled: readOnly },
+        ]} />
+      </div>
+      <div className="row between">
+        <span className={`chip ${c.status === "ativa" ? "green" : c.status === "pausada" ? "gold" : ""}`}>{status?.label}</span>
+        <span className="muted small row">
+          <Users size={14} /> {c.players}
+        </span>
+      </div>
+      <a className="campaign-card-title campaign-card-link" href={href(campaignRoute(c.name))}>{c.name}</a>
+      {c.summary && <p className="muted small campaign-card-summary">{c.summary}</p>}
+      <span className="small campaign-card-foot">
+        {c.next ? (
+          <span style={{ color: "var(--gold)" }}>
+            Próxima: sessão {c.next.number ?? ""} {daysFrom(c.next.date) ? `· ${daysFrom(c.next.date)}` : ""}
+          </span>
+        ) : (
+          <span className="muted">{c.done} {c.done === 1 ? "sessão jogada" : "sessões jogadas"}</span>
+        )}
+      </span>
+    </article>
+  )
+}
+
+/** Manda a pasta da campanha para a lixeira do cofre (.trash), dizendo antes o que vai junto. */
+function DeleteCampaignDialog({ campaign, onClose, onDeleted }: { campaign: CampaignInfo; onClose(): void; onDeleted(): void }) {
+  const vault = useVault()
+  const toast = useToast()
+  const contents = useMemo(() => campaignContents(vault.index!, campaign), [vault.index, vault.version, campaign])
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+  return (
+    <ConfirmDialog title={`Mandar “${campaign.name}” para a lixeira?`} confirmLabel="Mandar para a lixeira" danger onClose={onClose}
+      onConfirm={async () => { await vault.trash(contents.folder); toast(`“${campaign.name}” foi para a lixeira do cofre (.trash)`); onDeleted() }}>
+      <p>
+        A pasta <code>{contents.folder}/</code> vai inteira para a lixeira do cofre: {plural(contents.files, "arquivo", "arquivos")}, com{" "}
+        {plural(contents.sessions, "sessão", "sessões")} e {plural(contents.quests, "missão", "missões")}.
+      </p>
+      <p className="muted campaign-delete-note">Os artigos da wiki (personagens, lugares, facções) ficam onde estão. A lixeira é a mesma do Obsidian: dá para recuperar a pasta por lá.</p>
+    </ConfirmDialog>
   )
 }

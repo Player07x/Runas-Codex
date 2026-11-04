@@ -1,7 +1,7 @@
 import {
   appendToSection, campaignJournal, castRows, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
   nextCampaignSession, npcAppeared, npcAttitude, npcExtra, npcSightings, PREP_STEPS, prepItems, previousSession, reputationOf, secretsOf, sectionText, setClocks, setPrepDetail, setSecretRevealed, setSectionText, setTaskLine,
-  withCampaignPlayer, trackedLinks, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink,
+  withCampaignPlayer, trackedLinks, campaignContents, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink,
 } from "./campaigns"
 import { setProperty } from "./properties"
 import { parseFrontmatter } from "./parse"
@@ -348,5 +348,22 @@ describe("NPC que já apareceu", () => {
     expect(npcExtra("neutro", true)).toBe("neutro, apareceu")
     expect(npcExtra("", true)).toBe("apareceu")
     expect(npcExtra("aliado", false)).toBe("aliado")
+  })
+})
+
+describe("excluir campanha", () => {
+  it("conta o que está na pasta da campanha e não toca na wiki", () => {
+    const texts: Record<string, string> = {
+      "Campanhas/Brasa/Brasa.md": "---\ntipo: campanha\n---\n",
+      "Campanhas/Brasa/Sessões/Sessão 1.md": "# 1",
+      "Campanhas/Brasa/Sessões/Sessão 2.md": "# 2",
+      "Campanhas/Brasa/Missões/Lobos.md": "# Lobos",
+      "Campanhas/Brasa/mapa.png": "",
+      "Campanhas/Brasado/Brasado.md": "# outra",
+      "Wikis/Mundo/Aldren.md": "# Aldren",
+    }
+    const vault = new VaultIndex(Object.keys(texts).map(path => ({ path, size: 1, mtime: 1 })), texts)
+    const brasa = listCampaigns(vault).find((c) => c.name === "Brasa")!
+    expect(campaignContents(vault, brasa)).toEqual({ folder: "Campanhas/Brasa", files: 5, sessions: 2, quests: 1 })
   })
 })
