@@ -6,13 +6,20 @@ comum (que o Obsidian abre). Livros › **Novo livro** cria a pasta, a nota do l
 Cada livro aparece com a capa (a imagem da propriedade `capa`, ou uma capa desenhada), o número de capítulos e de
 palavras. **Importar livro** traz do Homebrewery, do GM Binder ou de um DOCX.
 
-### Os três modos do livro
+### Os dois modos do livro
 
 | Modo | Para que serve |
 | :-- | :-- |
 | **Escrever** | O capítulo no editor, com o sumário à esquerda e, se quiser, a **prévia das páginas ao lado**, que acompanha o cursor |
-| **Organizar** | Os capítulos como cartões: arraste para mudar a ordem, mude a situação (rascunho, revisão, pronto) |
 | **Diagramar** | As páginas como vão sair impressas, com o painel **Estilo do livro** |
+
+O **sumário** à esquerda é onde se organiza o livro: as seções aparecem recuadas embaixo do capítulo (que fecha e abre
+pela setinha), e a Parte é um título dourado. Arraste pelo ⠿ para mudar a ordem (para a direita vira seção, para a
+esquerda vira capítulo); o ⋯ de cada linha cria seção ou capítulo, renomeia, duplica (com as seções), sobe, desce,
+muda o nível, muda a situação e remove (tirar do livro ou mandar para a lixeira). Pelo teclado: ↑ ↓ andam, → ← abrem e
+fecham, Alt+↑ ↓ movem, Alt+→ ← mudam o nível, F2 renomeia, Ctrl+D duplica e Del remove. “Mostrar resumos” põe o resumo
+de cada capítulo embaixo do nome. O nível vem do `tipo` de cada nota; a lista `estrutura` do livro continua igual no
+Obsidian.
 
 No sumário, o ponto colorido de cada capítulo mostra a situação. **Foco** esconde tudo menos o texto; a **máquina de
 escrever** mantém a linha do cursor no meio da tela a cada tecla. No celular, “Ver a página” abre a prévia em tela
@@ -32,6 +39,10 @@ Leitura fácil — e deixa ajustar:
 
 - Fontes do título e do texto (cerca de dez fontes livres embutidas, mais as fontes `.ttf`/`.otf`/`.woff2` do cofre),
   tamanho e entrelinha, texto justificado e **hifenização** em português.
+- **Recuo na primeira linha** (desligado por padrão): o parágrafo que vem logo depois de outro recua a primeira
+  linha e os parágrafos ficam sem espaço entre si, como nos livros impressos; o primeiro depois de um título, imagem,
+  lista, citação ou ficha não recua. Vale no papel, no PDF, no EPUB e no DOCX, e não muda o capítulo no Obsidian.
+  Um `&emsp;` digitado no começo do parágrafo continua funcionando e soma com o recuo.
 - Colunas (1 a 4), papel (A4, Carta, A5, 6×9), margens, cor do papel, do texto e do destaque.
 - O desenho das **fichas** (tipográfico, fundo suave ou faixa no nome; veja Fichas e caixas).
 - **Capa**, **sumário**, aberturas de capítulo, cabeçalhos e numeração das páginas.

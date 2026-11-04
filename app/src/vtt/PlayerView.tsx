@@ -1,7 +1,7 @@
 import { PlayerActivity } from "./PlayerActivity"
 import type { PublicCollaboration } from "./shared/collaboration"
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { Hand, KeyRound, LoaderCircle, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
+import { FlipHorizontal2, Hand, KeyRound, LoaderCircle, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
 import type { SceneChildren } from "./document-store"
 import { configurePlayerAssets, resolveAssetUrl } from "./api"
 import { AudioEngine } from "./audio-engine"
@@ -79,6 +79,7 @@ export function PlayerView() {
   const [joining, setJoining] = useState(false)
   const [joinError, setJoinError] = useState("")
   const pendingRejects = useRef<{ tokenId: string; reason: string }[]>([])
+  const selected = useRef<string[]>([])
 
   useEffect(() => {
     const key = transmissionKey
@@ -209,7 +210,7 @@ export function PlayerView() {
     if (!element) return
     let disposed = false
     void SceneView.create(element, {
-      onSelectionChange: () => undefined,
+      onSelectionChange: (ids) => { selected.current = ids },
       onPut: () => undefined,
       onRemove: () => undefined,
       onOpenNote: () => undefined,
@@ -271,8 +272,21 @@ export function PlayerView() {
     return () => window.clearTimeout(timer)
   }, [notice])
 
+  // Tokens deste jogador na cena: o “virar” (F ou o botão) vale para o selecionado, ou para todos os dele.
+  const ownTokens = seat ? projection.current.children.filter((child) => {
+    const data = child.data as { disposition?: string; playerSlotId?: string; locked?: boolean }
+    return child.type === "token" && data.disposition === "player" && data.playerSlotId === seat.slotId && !data.locked
+  }).map((child) => child.id) : []
+  const canFlip = moves && ownTokens.length > 0
+  const flipOwn = () => {
+    const open = socket.current
+    if (!canFlip || open?.readyState !== WebSocket.OPEN) return
+    const chosen = selected.current.filter((id) => ownTokens.includes(id))
+    for (const tokenId of chosen.length ? chosen : ownTokens) open.send(JSON.stringify({ type: "flip", tokenId }))
+  }
   const keyboard = useSceneKeyboard(view, BINDINGS, (action) => {
-    if (action === "toolRuler") setTool("ruler")
+    if (action === "flipToken") flipOwn()
+    else if (action === "toolRuler") setTool("ruler")
     else if (action === "toolSelect" || action === "cancel") setTool("select")
   }, false)
   useEffect(() => {
@@ -294,6 +308,7 @@ export function PlayerView() {
       <span className="player-tools-divider" aria-hidden="true" />
       <button title="Aproximar (ou afaste dois dedos na tela)" aria-label="Aproximar" onClick={() => view.current?.zoomBy(1.25)}><ZoomIn size={17} /></button>
       <button title="Afastar (ou aproxime dois dedos na tela)" aria-label="Afastar" onClick={() => view.current?.zoomBy(0.8)}><ZoomOut size={17} /></button>
+      {canFlip && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Virar meu token (${BINDINGS.flipToken.map(keyLabel).join(" / ")})`} aria-label="Virar meu token" onClick={flipOwn}><FlipHorizontal2 size={17} /></button></>}
     </nav>}
     {connected && <div className="player-audio">
       {soundOn

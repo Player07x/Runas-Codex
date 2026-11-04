@@ -15,7 +15,7 @@ import type { VisionService } from "./vision-service"
 import type { AudioState } from "./audio"
 import type { DocumentChange as Change } from "./ipc"
 import { putDocument } from "./world-documents"
-import { normalizeMoveRequest, validatePlayerMove } from "./player-moves"
+import { normalizeFlipRequest, normalizeMoveRequest, validatePlayerFlip, validatePlayerMove, type FlipRequest } from "./player-moves"
 import { PlayerSession, normalizeSeatCount, randomSecret } from "./player-session"
 
 const DEFAULT_PORT = 30000
@@ -367,6 +367,8 @@ export class RoomAuthority {
         return { type: "collaboration-result", requestType, ok: false, reason: e instanceof Error ? e.message : String(e) }
       }
     }
+    const flip = normalizeFlipRequest(value)
+    if (flip) return this.handleFlip(flip, seat)
     const request = normalizeMoveRequest(value)
     if (!request) return null
     const reject = (reason: string): PlayerWireMessage => ({ type: "move-result", tokenId: request.tokenId, ok: false, reason })
@@ -384,6 +386,19 @@ export class RoomAuthority {
     this.commit(
       putDocument(database, { id: result.token.id, type: "token", parentId: result.token.parentId, data: result.token.data }).change,
     )
+    return { type: "move-result", tokenId: request.tokenId, ok: true }
+  }
+
+  /** Virar o próprio token: mesmas permissões do mover (sala aberta, mover liberado, token do próprio assento). */
+  private handleFlip(request: FlipRequest, seat?: PlayerSeatConnection | null): PlayerWireMessage {
+    const reject = (reason: string): PlayerWireMessage => ({ type: "move-result", tokenId: request.tokenId, ok: false, reason })
+    if (!this.enabled || !this.movesEnabled) return reject("O mestre não está permitindo mexer nos tokens agora.")
+    const database = this.store.openWorld?.database
+    if (!database || !this.commit) return reject("Nenhuma mesa aberta.")
+    const result = validatePlayerFlip(database, this.lastProjection.scene?.id ?? null, request)
+    if (!result.ok) return reject(result.reason)
+    if (seat !== undefined && (!seat || result.token.data.playerSlotId !== seat.slotId)) return reject("Esse token pertence a outro jogador.")
+    this.commit(putDocument(database, { id: result.token.id, type: "token", parentId: result.token.parentId, data: result.token.data }).change)
     return { type: "move-result", tokenId: request.tokenId, ok: true }
   }
 

@@ -6,6 +6,7 @@ import { navigate, useRoute } from "../../lib/router"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { buildImportPlan, sameTransferVersion, selectTransferPaths, type ImportPlan, type ImportStrategy, type TransferEntry } from "../../core/transfer/plan"
 import { createTransferArchive, managedWorldPath, readTransferArchive, transferPath, TRANSFER_LIMITS, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
+import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core/transfer/notion"
 import "./transfer-workspace.css"
 import { parseWorldManifest } from "../../vtt/shared/world"
 import { DocumentExport } from "./DocumentExport"
@@ -120,11 +121,19 @@ export function TransferWorkspace() {
       await flushOpenNotes()
       if (chosen.length > 1 && chosen.some(file => /\.(zip|runas)$/i.test(file.name))) throw new Error("Escolha um pacote por vez, ou selecione apenas notas e anexos avulsos.")
       let archive: TransferArchive
+      let notionNote = ""
       if (chosen.length === 1 && /\.(zip|runas)$/i.test(chosen[0]!.name)) {
         if (chosen[0]!.size > limits.archive) throw new Error(`O arquivo excede ${sizeLabel(limits.archive)} compactados.`)
         setStatus("Lendo e conferindo o pacote…")
         archive = await readTransferArchive(new Uint8Array(await chosen[0]!.arrayBuffer()), chosen[0]!.name.replace(/\.[^.]+$/, ""), limits)
         if (/\.runas$/i.test(chosen[0]!.name) && archive.kind !== "runas") throw new Error("O arquivo .runas está sem seu manifesto. Use um pacote exportado pelo programa.")
+        // Exportação do Notion (Markdown & CSV): nomes sem o id, links do Obsidian e bancos de dados como propriedades.
+        archive = await unwrapNestedZips(archive, limits)
+        const notion = archive.kind === "markdown" ? convertNotionExport(archive.files) : null
+        if (notion) {
+          archive = { ...archive, title: "Notion", files: notion.files, ignored: [...archive.ignored, ...notion.ignored] }
+          notionNote = `Exportação do Notion reconhecida: ${notion.pages} página(s) e ${notion.databases} banco(s) de dados vão para a pasta ${NOTION_FOLDER}/. `
+        }
       } else {
         const prefix = destination.trim().replace(/\/$/, "")
         if (prefix) transferPath(prefix)
@@ -140,7 +149,7 @@ export function TransferWorkspace() {
       const existing = await (vault.platform.listTransferFiles?.(true) ?? vault.platform.listVault())
       buildImportPlan(archive, existing, "merge")
       setPreview({ archive, existing }); setIncoming(new Set(archive.files.map(file => file.path))); setStrategy("merge")
-      setStatus("Prévia pronta. Confira a seleção e os conflitos antes de importar.")
+      setStatus(`${notionNote}Prévia pronta. Confira a seleção e os conflitos antes de importar.`)
     })
   }
   async function importFiles() {
@@ -200,6 +209,7 @@ export function TransferWorkspace() {
         <label className="field"><span>Pacote .runas, ZIP Markdown ou arquivos de notas e anexos</span><input type="file" aria-label="Arquivo para importar" multiple disabled={busy || !canImport} accept=".runas,.zip,.md,.canvas,.base,image/*,audio/*,video/*,.pdf" onChange={event => { const files = event.target.files; void prepareImport(files); event.target.value = "" }} /></label>
         <label className="field"><span>Pasta de destino para arquivos avulsos</span><input className="input" value={destination} disabled={busy} onChange={event => setDestination(event.target.value)} /></label>
         <p className="small muted">Pacotes e ZIPs conservam seus caminhos internos, inclusive as mesas do VTT. Arquivos avulsos entram na pasta acima.</p>
+        <p className="small muted">Do Notion: use Exportar (no menu ⋯ da página ou nas configurações do espaço de trabalho), escolha “Markdown &amp; CSV” com as subpáginas e importe o .zip aqui. As páginas entram na pasta {NOTION_FOLDER}/, sem os códigos nos nomes, e as colunas dos bancos de dados viram propriedades.</p>
         {preview && <div className="stack" data-transfer-preview>
           <h3>{preview.archive.title}</h3><p className="small">{preview.archive.files.length} arquivo(s) disponíveis; {calculated.plan?.conflicts.length ?? 0} conflito(s) na seleção.{preview.archive.ignored.length > 0 && ` ${preview.archive.ignored.length} arquivo(s) de configuração ou controle foram ignorados.`}</p>
           <label className="field"><span>Quando já existe</span><select className="select" aria-label="Quando já existe" value={strategy} disabled={busy} onChange={event => setStrategy(event.target.value as ImportStrategy)}><option value="merge">Mesclar: adicionar novos e manter os existentes</option><option value="replace">Substituir os conflitos, salvando um pacote de segurança antes</option><option value="duplicate">Duplicar com novos caminhos e links ajustados</option></select></label>

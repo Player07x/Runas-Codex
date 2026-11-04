@@ -12,7 +12,19 @@
   .campaign-screen-btn { margin-left: auto; }
 }
 
-.campaign-card { display: grid; gap: 8px; overflow: hidden; padding-top: 0; color: inherit; text-decoration: none; }
+/* Em coluna: o rodapé vai para o fim, então cartões com e sem resumo terminam alinhados na mesma linha da grade. */
+.campaign-card { position: relative; display: flex; flex-direction: column; gap: 8px; overflow: hidden; padding-top: 0; color: inherit; text-decoration: none; }
+.campaign-card:hover { border-color: var(--line-strong); }
+.campaign-card-link { color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+/* O título é o link; o ::after estende a área de clique ao cartão todo (o “⋯” fica por cima, fora do link). */
+.campaign-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.campaign-card-link:focus-visible { outline: none; }
+.campaign-card:has(.campaign-card-link:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.campaign-card-summary { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+.campaign-card-foot { margin-top: auto; padding-top: 4px; }
+.campaign-card-actions { position: absolute; z-index: 2; top: 8px; right: 8px; }
+.campaign-card-menu { border-radius: 10px; background: color-mix(in srgb, var(--bg-deep) 70%, transparent); color: var(--text); backdrop-filter: blur(6px); }
+.campaign-card-menu:hover { background: var(--panel); }
 .campaign-banner { height: 64px; margin: 0 calc(-1 * var(--space-section)) 4px; background: radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--accent, var(--violet)) 50%, transparent), transparent 70%), linear-gradient(135deg, color-mix(in srgb, var(--accent, var(--violet)) 25%, var(--bg-deep)), var(--bg-deep)); }
 .campaign-card-title { font-size: calc(18px * var(--font-scale, 1)); }
 .campaign-cover { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 22px; background: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent, var(--red)) 18%, transparent), transparent 60%), var(--panel); }
@@ -169,6 +181,16 @@
 
 .active-room { position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:45;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:calc(100vw - 24px);padding:10px;background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--radius);box-shadow:var(--shadow); }
 @media(max-width:860px){.active-room{bottom:calc(var(--bottomnav-height) + 8px);width:calc(100vw - 24px)}}
+/* Sala do VTT aberta: selo na barra de cima (portal no .top-actions do Shell), antes do “Novo”. */
+.top-actions > .kit-menu-wrap:has(> .room-chip) { order: -1; }
+.room-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--green) 45%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--green) 12%, var(--panel)); color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 600; white-space: nowrap; }
+.room-chip:hover { background: color-mix(in srgb, var(--green) 20%, var(--panel)); }
+.room-chip svg { color: var(--muted); }
+.room-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+@media (prefers-reduced-motion: no-preference) { .room-dot { animation: room-pulse 2.4s ease-in-out infinite; } }
+@keyframes room-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--green) 10%, transparent); } }
+@media (max-width: 860px) { .room-chip { min-height: 44px; } }
+@media (max-width: 480px) { .room-chip-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .room-chip { padding: 0 12px; } }
 
 .campaign-person .grow { min-width: 0; overflow-wrap: anywhere; }
 
@@ -312,3 +334,4 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-changes p { margin: 0; }
 .campaign-secret-quest { text-decoration: none; }
 .campaign-relations { display: grid; gap: 4px; margin: 0; padding-left: 18px; }
+.campaign-delete-note { margin-top: 8px; }

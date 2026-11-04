@@ -65,20 +65,45 @@
 .book-ref-name small, .book-review-list small { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
 .book-review-list p { margin: 0; border-left: 3px solid var(--gold); padding-left: 8px; }
 
-/* ---------- Organizar ---------- */
-.book-organize { display: grid; align-content: start; gap: 12px; padding: 16px 20px 32px; }
-.book-organize-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
-.book-organize-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.book-organize.cartoes .book-organize-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); align-items: start; }
-.book-organize-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-.book-organize.lista .book-organize-item { align-items: center; padding: 6px 10px; }
-.book-organize.lista .book-organize-text p { display: none; }
-.book-organize-item:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
-.book-organize-text { display: grid; gap: 4px; min-width: 0; }
-.book-organize-meta { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
-.book-organize-name { padding: 0; border: 0; background: transparent; color: var(--text); font: 600 calc(15px * var(--font-scale, 1))/1.3 var(--font-sans); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
-.book-organize-text p { margin: 0; color: var(--muted); font-size: calc(13px * var(--font-scale, 1)); }
-.book-drag { touch-action: none; cursor: grab; }
+/* ---------- Sumário em árvore (BookBinder) ---------- */
+.book-tree-summaries { margin: 0 4px 2px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
+.book-tree { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.book-tree-row { position: relative; border-radius: 8px; outline: none; }
+.book-tree-row:focus-visible { box-shadow: inset 0 0 0 2px var(--cyan); }
+.book-tree-line { display: grid; grid-template-columns: 14px 16px minmax(0, 1fr) auto auto; align-items: center; gap: 2px; min-height: 36px; padding-right: 2px; border-radius: 8px; }
+.book-tree-row.level-2 .book-tree-line { padding-left: 18px; }
+.book-tree-row:hover > .book-tree-line { background: var(--panel-2); }
+.book-tree-row.current > .book-tree-line { background: color-mix(in srgb, var(--cyan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cyan); }
+.book-tree-grip { display: grid; place-items: center; height: 28px; color: var(--faint); cursor: grab; opacity: 0; touch-action: none; user-select: none; }
+.book-tree-row:is(:hover, :focus-within) .book-tree-grip { opacity: 1; }
+.book-tree-toggle { display: grid; place-items: center; width: 16px; height: 28px; color: var(--muted); cursor: pointer; }
+.book-tree-toggle.no-children { cursor: default; }
+.book-tree-row[aria-expanded=false] .book-tree-toggle svg { transform: rotate(-90deg); }
+.book-tree-name { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 32px; padding: 4px 4px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.book-tree-name:disabled { color: var(--muted); cursor: default; }
+/* A Parte é um título de grupo (dourado), sem ponto de status. */
+.book-tree-row.kind-parte .book-tree-name { color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.book-tree-row.kind-parte:not(:first-child) { margin-top: 8px; }
+.book-tree-row.level-1.kind-capitulo .book-tree-name { font-weight: 600; }
+.book-tree-words { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-variant-numeric: tabular-nums; }
+.book-tree-menu { display: inline-flex; opacity: 0; }
+.book-tree-row:is(:hover, :focus-within) .book-tree-menu, .book-tree-menu:has([aria-expanded=true]) { opacity: 1; }
+@media (hover: hover) { .book-tree-menu .icon-btn { width: 28px; height: 28px; min-width: 28px; min-height: 28px; } }
+.book-tree-summary { margin: 0 6px 4px 36px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.book-tree-row.level-2 .book-tree-summary { margin-left: 54px; }
+/* A linha azul mostra onde e em que nível o arraste vai cair. */
+.book-tree-row[class*=" drop-"]::after { content: ""; position: absolute; right: 4px; left: 8px; height: 3px; border-radius: 2px; background: var(--cyan); pointer-events: none; }
+.book-tree-row.drop-before::after { top: -2px; }
+.book-tree-row.drop-after::after { bottom: -2px; }
+.book-tree-row.drop-level-2::after { left: 30px; }
+.book-tree.dragging { cursor: grabbing; user-select: none; }
+.book-remove-choice { gap: 10px; margin: 8px 0 0; padding: 0; border: 0; }
+.book-remove-choice .check { align-items: flex-start; }
+@media (hover: none) {
+  .book-tree-grip, .book-tree-menu { opacity: 1; }
+  .book-tree-line { grid-template-columns: 28px 20px minmax(0, 1fr) auto auto; min-height: 44px; }
+  .book-tree-name { min-height: 44px; }
+}
 
 /* ---------- Prévia ---------- */
 .books-view-previa .books-main { overflow: hidden; }
@@ -114,6 +139,8 @@ body.book-focus-active .main { padding-bottom: env(safe-area-inset-bottom); }
   .books-editor .editor-body { width: 100%; min-height: 60vh; margin: 0; padding: 20px 16px 60px; border: 0; border-radius: 0; box-shadow: none; }
   .book-chapter-meta { width: 100%; margin: 8px 0 0; padding: 6px 16px; }
   .book-toc-item, .book-ref-name { min-height: 44px; }
+  .book-tree-line { grid-template-columns: 28px 20px minmax(0, 1fr) auto auto; min-height: 44px; }
+  .book-tree-grip, .book-tree-menu { opacity: 1; }
 }
 /* Até 400 px a barra precisa caber em 320 px com alvos de 44 px: menos espaço entre os botões e “Salvo” só com o
    ponto (o texto continua para o leitor de tela; o erro continua escrito). */

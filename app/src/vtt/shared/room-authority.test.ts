@@ -101,6 +101,22 @@ describe("autoridade compartilhada da sala", () => {
     authority.setMovesEnabled(false)
     expect(options.onClientMessage!(move, seat)).toMatchObject({ ok: false })
   })
+  it("deixa o jogador virar só o próprio token, e não o travado", async () => {
+    const { authority, options, db } = await room(),
+      flip = { type: "flip", tokenId: "hero" },
+      seat = { slotId: "player-1", label: "Jogador 1" }
+    expect(options.onClientMessage!(flip, null)).toMatchObject({ ok: false })
+    expect(options.onClientMessage!(flip, { slotId: "player-2", label: "Outro" })).toMatchObject({ ok: false })
+    expect(options.onClientMessage!({ type: "flip", tokenId: "secret" }, seat)).toMatchObject({ ok: false })
+    expect(options.onClientMessage!(flip, seat)).toMatchObject({ ok: true })
+    expect(db.get("hero")?.data).toMatchObject({ mirror: true, x: 150, y: 150 })
+    expect(options.onClientMessage!(flip, seat)).toMatchObject({ ok: true })
+    expect(db.get("hero")?.data).toMatchObject({ mirror: false })
+    putDocument(db, { id: "hero", type: "token", parentId: "scene", data: { ...(db.get("hero")!.data as object), locked: true } })
+    expect(options.onClientMessage!(flip, seat)).toMatchObject({ ok: false, reason: "O mestre travou este token." })
+    authority.setMovesEnabled(false)
+    expect(options.onClientMessage!(flip, seat)).toMatchObject({ ok: false })
+  })
   it("usa SHA-256 e mantém códigos e cookies apenas na sessão", () => {
     expect(hashPlayerSecret("abcd-efgh")).toBe("9ac2197d9258257b1ae8463e4214e4cd0a578bc1517f2415928b91be4283fc48")
     const { session, codes } = PlayerSession.create(2)

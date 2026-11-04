@@ -73,6 +73,10 @@
 /* L3: o estilo resolvido (core/book-style.ts) chega como variáveis no .book-paper; os temas antigos viraram modelos. */
 .book-print { font-size: var(--book-size, 11pt); line-height: var(--book-leading, 1.4); }
 .book-print p, .book-print li { text-align: var(--book-align, left); }
+/* Recuo na primeira linha (U15, estilo do livro): o parágrafo do corpo logo depois de outro recua e cola nele, como nos
+   livros impressos. O primeiro depois de título, imagem, lista, citação, callout ou ficha não recua (não é p + p). */
+.book-print :is(.book-chapter, .book-section) > .md > p + p { margin-top: var(--book-indent-gap, 0.8em); text-indent: var(--book-indent, 0); }
+.book-print :is(.book-chapter, .book-section) > .md > p + p:has(> img:only-child, > .embed-image:only-child) { text-indent: 0; }
 .book-print :is(.book-chapter, .book-section) > .md { column-count: var(--book-columns, 1); column-gap: 6mm; }
 /* Grimório: moldura dupla na página, herdada do tema Pergaminho. */
 .book-paper.modelo-grimorio .pagedjs_pagebox { outline: 3px double var(--rule); outline-offset: -5mm; }

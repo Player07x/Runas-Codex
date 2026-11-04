@@ -1334,3 +1334,97 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Configurações: trocar de seção sem rolar (atualização depois da 1.0)
+
+- [ ] Em Configurações, role a Ajuda para baixo e clique em Acessibilidade: a página volta ao topo, com o título
+  “Configurações” e o índice à vista. Repita indo de outra tela direto para `#/config/acessibilidade` (Ctrl K).
+- [ ] Com o leitor de tela (Orca/NVDA), a troca de seção continua anunciando a seção aberta.
+- [ ] No celular (320 px): abrir uma seção pela lista começa do topo, com “‹ Configurações” visível.
+
+## Wiki: filtros fechados e “Só categorias”
+
+- [ ] Abrir uma categoria com campos: o painel “Filtros” começa fechado; escolher um filtro mostra “1 ligado” no
+  título e o botão “Limpar”, que desliga tudo de uma vez.
+- [ ] No início da Wiki, “Só categorias”: as listas de recentes e “a escrever” somem e as categorias viram blocos
+  (ícone, nome, quantidade); clicar no bloco abre a categoria. A escolha fica lembrada ao voltar.
+- [ ] Em 320 px os blocos ficam em uma coluna, sem quebrar o nome no meio; no tema claro também.
+
+## Campanhas: cartões alinhados e excluir campanha
+
+- [ ] Em Campanhas, cartões com e sem resumo na mesma linha terminam alinhados (rodapé “sessões jogadas” no fim);
+  resumo longo corta em 4 linhas.
+- [ ] O “⋯” do cartão: Abrir, Personalizar…, Marcar como ativa/pausada/concluída e Excluir campanha…; o resto do
+  cartão continua abrindo a campanha.
+- [ ] Excluir (pelo cartão ou pelo menu do nome da campanha, dentro dela): o aviso diz quantos arquivos, sessões e
+  missões vão; a pasta `Campanhas/<nome>/` vai para `.trash` do cofre (confira no Obsidian) e os artigos da wiki ficam.
+- [ ] Em 320 px e no tema claro.
+
+## Notas: pastas do tamanho das notas e menu de contexto
+
+- [ ] Na lista de Notas, as pastas têm a altura e a fonte das notas, com uma segunda linha (“3 notas · 1 pasta”).
+- [ ] Botão direito numa pasta: Nova nota aqui, Nova pasta aqui…, Favoritar, Ícone e cor…, Exportar pasta…,
+  Renomear ou mover… e Mandar para a lixeira… (o aviso conta as notas). Os 5 botões que apareciam no hover viraram um ⋯.
+- [ ] Botão direito numa nota: Abrir numa aba nova, Favoritar, Copiar link da nota, Exportar…, Renomear ou mover…,
+  Fixar, cor e ícone… e Mandar para a lixeira…. O ⋯ aparece no hover e com o foco.
+- [ ] Teclado: com o foco numa nota ou pasta, Shift+F10 (ou a tecla Menu) abre o menu; Esc fecha e devolve o foco.
+- [ ] **Android:** segurar o dedo numa nota ou pasta abre o menu (sem o menu do sistema do link e sem começar a
+  arrastar); a dica “Segure uma nota ou pasta…” aparece uma vez e some com “Entendi”.
+- [ ] O ⋯ da nota aberta (Fixar, cor e ícone…) continua igual.
+
+## VTT: selo “Sala aberta” e jogador vira o próprio token
+
+- [ ] Com a sala ligada, fora da mesa: em vez do aviso grande embaixo, um selo “● Sala aberta” na barra de cima
+  (no celular, só a bolinha). O menu dele tem “Voltar à mesa” e “Encerrar sala…”, que pede confirmação.
+- [ ] Carta X acionada: o aviso flutuante continua aparecendo em qualquer tela até “Confirmar pausa”.
+- [ ] **Jogador (página da sala, com código de assento):** com “mover” liberado, o botão “Virar meu token” aparece
+  nas ferramentas e a tecla F vira o próprio token; o mestre vê o token virado. Token travado pelo mestre ou de outro
+  jogador não vira; com “mover” desligado o botão some.
+- [ ] Testar no PC e no Android (o Android também hospeda a sala).
+
+## Livros: sumário em árvore (sem o modo Organizar)
+
+- [ ] Abrir um livro com Partes, Capítulos e Seções: as seções aparecem recuadas embaixo do capítulo (setinha fecha e
+  abre, lembrado no aparelho); a Parte é um título dourado; o capítulo fechado soma as palavras das seções.
+- [ ] Arrastar pelo ⠿: para cima/baixo muda a ordem (a linha azul mostra onde cai); para a direita, sob um capítulo,
+  vira seção; para a esquerda vira capítulo; o capítulo leva as seções junto.
+- [ ] O ⋯ de cada linha: Nova seção dentro, Novo capítulo depois, Renomear (links atualizados), Duplicar (com as
+  seções, “(cópia)”), Subir, Descer, Virar seção / Virar capítulo, Status, Remover… (Tirar do livro → vai para
+  “Fora do livro”; Mandar para a lixeira → `.trash`).
+- [ ] Teclado na árvore: ↑ ↓, → ←, Enter, Alt+↑ ↓, Alt+→ ← (sem voltar a página), F2, Ctrl+D e Del; o leitor de
+  tela anuncia cada movimento.
+- [ ] “Mostrar resumos” põe o resumo embaixo de cada capítulo.
+- [ ] Os modos Escrever e Diagramar ficam logo depois de “Sumário” e não mudam de lugar ao trocar de modo nem de livro;
+  o modo Organizar não existe mais.
+- [ ] No Obsidian, a nota do livro continua com a lista `estrutura` reta; só o `tipo` das notas muda ao recuar.
+- [ ] No celular: ⠿ e ⋯ sempre visíveis, linhas de 44 px, arrastar pelo ⠿ funciona com o dedo.
+
+## Livros: recuo na primeira linha (U15)
+
+- [ ] Diagramar › Estilo do livro: “Recuo na primeira linha” começa desligado em todos os modelos; ligado, os
+  parágrafos seguidos recuam a primeira linha e ficam sem espaço entre si; o primeiro depois de título, imagem, lista,
+  citação, callout ou ficha não recua. Conferir em uma e em duas colunas, justificado e à esquerda.
+- [ ] “Salvar como modelo” leva o `recuo`; um livro com `recuo: false` desliga o do modelo.
+- [ ] Exportar PDF, EPUB e DOCX com o recuo ligado: o recuo aparece nos três (no DOCX, “Primeira linha” no parágrafo).
+- [ ] O capítulo no editor e no Obsidian não muda.
+
+## Personalização da wiki e capa do computador (PR `wiki/personalizacao`)
+
+- [ ] Wiki › página inicial › **Personalizar**: escolher cor, ícone e uma capa “Do computador…”; conferir que a imagem
+  vira anexo no cofre, que a faixa aparece no topo do cartão (no desktop e no Android) e que a nota
+  `Wikis/<Mundo>/<Mundo>.md` ganhou `cor`, `icone` e `capa` (e abre igual no Obsidian).
+- [ ] Personalizar uma campanha e uma categoria com imagem “Do computador…”: a capa aparece no cartão e na página.
+
+## Importar do Notion (PR `importar/notion`)
+
+- [ ] Exportar um espaço do Notion em “Markdown & CSV” (com subpáginas) e importar o `.zip` em Importar e exportar:
+  a prévia diz “Exportação do Notion reconhecida”, os arquivos entram em `Notion/` sem os códigos nos nomes, os links
+  entre páginas e as imagens abrem, e as páginas de um banco de dados mostram as colunas como propriedades.
+- [ ] Uma exportação grande (ZIP com `…-Part-1.zip` dentro) e uma com nomes acentuados.
+- [ ] Abrir a pasta `Notion/` no Obsidian: links, imagens e propriedades iguais.
+
+## Versão 1.1.0
+
+- [ ] Atualizar da 1.0.0 para a 1.1.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.1.0.
+- [ ] As seções acima, de “Configurações: trocar de seção sem rolar” até “Importar do Notion”, entraram nesta versão.

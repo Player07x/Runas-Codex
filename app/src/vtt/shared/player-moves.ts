@@ -42,3 +42,29 @@ export function validatePlayerMove(database: DocumentDatabase, sceneId: string |
   if (lineBlocked(token.data, destination, walls)) return { ok: false, reason: "Uma parede ou porta fechada bloqueia o caminho." }
   return { ok: true, token: { ...token, data: { ...token.data, x: destination.x, y: destination.y } } }
 }
+
+/** Pedido do jogador para espelhar (virar) o próprio token. */
+export interface FlipRequest {
+  tokenId: string
+}
+
+/** Aceita só `{ type: "flip", tokenId }`; o resto é ignorado. */
+export function normalizeFlipRequest(value: unknown): FlipRequest | null {
+  const raw = value && typeof value === "object" ? value as Record<string, unknown> : null
+  if (!raw || raw.type !== "flip") return null
+  if (typeof raw.tokenId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(raw.tokenId)) return null
+  return { tokenId: raw.tokenId }
+}
+
+/**
+ * Valida o “virar token” pedido pela Vista dos Jogadores: as mesmas regras do mover (token Jogador visível, na cena
+ * transmitida e não travado); o VTT inverte `mirror` e grava.
+ */
+export function validatePlayerFlip(database: DocumentDatabase, sceneId: string | null, request: FlipRequest): MoveResult {
+  const document = database.get(request.tokenId)
+  if (!sceneId || !document || document.type !== "token" || document.parentId !== sceneId) return { ok: false, reason: "Este token não está na cena transmitida." }
+  const token = document as WorldDocument<TokenData>
+  if (token.data.disposition !== "player" || token.data.hidden) return { ok: false, reason: "Só tokens de Jogador podem ser virados." }
+  if (token.data.locked) return { ok: false, reason: "O mestre travou este token." }
+  return { ok: true, token: { ...token, data: { ...token.data, mirror: !token.data.mirror } } }
+}

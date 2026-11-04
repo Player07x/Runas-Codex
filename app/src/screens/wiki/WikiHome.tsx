@@ -1,10 +1,11 @@
 import { ArticleArt } from "./ArticleArt"
-import { CoverBand, emblemIcon } from "../../components/kit/Emblem"
-import { categoryLook, isCategoryNote } from "../../core/personalization"
+import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
+import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
+import { categoryLook, isCategoryNote, wikiHomePath, wikiLook } from "../../core/personalization"
 import { toneStyle } from "../../core/tones"
 import { categoryRoute } from "../../core/wiki-category"
 import { useMemo, useState } from "react"
-import { Folder, FolderPlus, PenLine, Plus, Search, Unlink } from "lucide-react"
+import { Folder, FolderPlus, Palette, PenLine, Plus, Search, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
 import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
@@ -17,6 +18,8 @@ import { href, navigate } from "../../lib/router"
 import { vaultNoteSet } from "../../lib/vault-notes"
 import { Markdown } from "../../components/Markdown"
 import { Modal, useToast } from "../../components/ui"
+import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
+import { useRemembered } from "../../lib/remembered"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, iconByName, KindIcon, takeWikiSearch, useWiki } from "./wiki-state"
 import { useCreateRequest } from "../../lib/create-request"
@@ -53,6 +56,10 @@ function folderTree(notes: IndexedNote[], root: string, skip: string | undefined
   return top.notes.length ? [...top.folders, { name: "Sem pasta", path: top.path, notes: top.notes, folders: [] }] : top.folders
 }
 
+/** Como o início mostra as categorias: com os artigos de cada uma ou só os blocos (escolha por aparelho). */
+type HomeView = "artigos" | "categorias"
+const parseHomeView = (raw: unknown): HomeView => (raw === "categorias" ? "categorias" : "artigos")
+
 const countNotes = (node: FolderNode): number => node.notes.length + node.folders.reduce((n, f) => n + countNotes(f), 0)
 
 export function WikiHome() {
@@ -63,7 +70,13 @@ export function WikiHome() {
   const [query, setQuery] = useState(takeWikiSearch)
   const [creating, setCreating] = useState(false)
   const [newCategory, setNewCategory] = useState(false)
+  const [homeView, setHomeView] = useRemembered("runas-codex:wiki-inicio-vista", parseHomeView)
+
+  const [personalizing, setPersonalizing] = useState(false)
   const root = wiki!.root
+  // Cor, ícone e capa da wiki ficam na nota da página inicial (`Wikis/<Mundo>/<Mundo>.md`), como na campanha.
+  const look = useMemo(() => wikiLook(index, root, wiki!.name), [index, root, wiki, vault.version])
+  const homePath = wikiHomePath(root, wiki!.name)
   const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
   const tree = useMemo(() => folderTree(notes, root, wiki!.home), [notes, root, wiki])
   const recent = useMemo(() => [...notes].filter((n) => n.path !== wiki!.home).sort((a, b) => b.mtime - a.mtime).slice(0, 6), [notes, wiki])
@@ -75,11 +88,12 @@ export function WikiHome() {
   useCreateRequest("artigo", () => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true)))
 
   return (
-    <div className="page wiki-home">
-      <section className="wiki-cover card">
+    <div className={`page wiki-home${look.tone ? " toned" : ""}`} style={toneStyle(look.tone)}>
+      <section className={`wiki-cover card${look.cover ? " with-cover" : ""}`}>
+        {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={homePath} height={140} className="wiki-cover-band" />}
         <div className="stack" style={{ gap: 6, minWidth: 0 }}>
-          <span className="eyebrow" style={{ color: "var(--violet)" }}>Wiki · {root}</span>
-          <h1 className="page-title">{wiki!.name}</h1>
+          <span className="eyebrow" style={{ color: look.tone ? "var(--tone)" : "var(--violet)" }}>Wiki · {root}</span>
+          <h1 className="page-title wiki-title">{(look.tone || look.emblem) && <Crest tone={look.tone} emblem={look.emblem} name={wiki!.name} size={36} />}{wiki!.name}</h1>
           {home && noteBody(home.text).replace(/^#[^\n]*\n/, "").trim() && (
             <NoteSetContext.Provider value={noteSet}>
               <Markdown source={noteBody(home.text).replace(/^#[^\n]*\n/, "")} className="wiki-intro" />
@@ -101,6 +115,9 @@ export function WikiHome() {
               <PenLine size={15} /> Página inicial
             </a>
           )}
+          <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para personalizar.") : setPersonalizing(true))}>
+            <Palette size={16} /> Personalizar
+          </button>
           <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar categorias.") : setNewCategory(true))}>
             <FolderPlus size={16} /> Nova categoria
           </button>
@@ -110,10 +127,13 @@ export function WikiHome() {
         </div>
       </section>
 
-      <label className="search wiki-search">
-        <Search size={15} />
-        <input className="input" placeholder={`Buscar em ${wiki!.name} (tag:, path:, file:, “frase”)`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar na wiki" />
-      </label>
+      <div className="wiki-home-toolbar">
+        <label className="search wiki-search">
+          <Search size={15} />
+          <input className="input" placeholder={`Buscar em ${wiki!.name} (tag:, path:, file:, “frase”)`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar na wiki" />
+        </label>
+        {!results && <ChoiceGroup label="Mostrar no início" value={homeView} onChange={setHomeView} options={[{ value: "artigos", label: "Categorias e artigos" }, { value: "categorias", label: "Só categorias" }]} />}
+      </div>
 
       {results ? (
         <section className="card">
@@ -132,13 +152,14 @@ export function WikiHome() {
         </section>
       ) : (
         <>
-          <div className="category-grid">
+          <div className={`category-grid${homeView === "categorias" ? " only-categories" : ""}`}>
             {tree.map((folder) => (
-              <Category key={folder.path + folder.name} folder={folder} />
+              <Category key={folder.path + folder.name} folder={folder} compact={homeView === "categorias"} />
             ))}
             {tree.length === 0 && <p className="muted">A wiki está vazia. Comece pelo primeiro artigo.</p>}
           </div>
-          <div className="wiki-columns">
+          {/* Em “Só categorias” nenhum artigo aparece no início; o que falta escrever continua no selo da capa. */}
+          {homeView === "artigos" && <div className="wiki-columns">
             <section className="card">
               <span className="section-title">Editados por último</span>
               <div className="list" style={{ marginTop: 6 }}>
@@ -167,16 +188,17 @@ export function WikiHome() {
                 </div>
               </section>
             )}
-          </div>
+          </div>}
         </>
       )}
       {creating && <NewArticleDialog onClose={() => setCreating(false)} />}
       {newCategory && <CategoryKindDialog root={root} wikiName={wiki!.name} onClose={() => setNewCategory(false)} />}
+      {personalizing && <PersonalizeDialog title={`Personalizar ${wiki!.name}`} name={wiki!.name} path={homePath} onClose={() => setPersonalizing(false)} />}
     </div>
   )
 }
 
-function Category({ folder }: { folder: FolderNode }) {
+function Category({ folder, compact = false }: { folder: FolderNode; compact?: boolean }) {
   const vault = useVault()
   const look = useMemo(() => categoryLook(vault.index!, folder.path), [vault.index, vault.version, folder.path])
   const Emblem = emblemIcon(look.emblem)
@@ -185,12 +207,14 @@ function Category({ folder }: { folder: FolderNode }) {
   const notes = collect(folder).filter(note => !isCategoryNote(note)).sort((a,b)=>b.mtime-a.mtime || a.name.localeCompare(b.name,"pt-BR"))
   const kinds = notes.map(note => articleKind(note.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
   const main = articleKinds().find(kind=>kind.folder.split("/").at(-1) === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
-  return <section className={`card category-card${look.tone ? " toned" : ""}`} style={{["--cat" as string]: look.tone ? "var(--tone, var(--violet))" : "var(--violet)", ...toneStyle(look.tone)}}>
+  return <section className={`card category-card${compact ? " compact" : ""}${look.tone ? " toned" : ""}`} style={{["--cat" as string]: look.tone ? "var(--tone, var(--violet))" : "var(--violet)", ...toneStyle(look.tone)}}>
     {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" />}
     <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{notes.length}</span></a>
     {look.description && <p className="small muted wiki-category-description">{look.description}</p>}
-    <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))} title={note.name}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
-    <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>{notes.length === 1 ? "Abrir a categoria" : `Ver todos os ${notes.length}`}</a>
+    {!compact && <>
+      <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))} title={note.name}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
+      <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>{notes.length === 1 ? "Abrir a categoria" : `Ver todos os ${notes.length}`}</a>
+    </>}
   </section>
 }
 

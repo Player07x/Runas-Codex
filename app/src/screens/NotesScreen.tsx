@@ -1,14 +1,14 @@
 import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
-import { OverflowMenu, type MenuEntry } from "../components/kit/OverflowMenu"
+import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
-import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PenLine, Pin, Plus, Replace, Search, Shuffle, Star, StarOff, Unlink, Vault } from "lucide-react"
+import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
 import { BaseScreen } from "../components/vault/QueryView"
 import { TrashDialog } from "../components/vault/TrashDialog"
-import { FolderAppearance, NoteIcon } from "../components/vault/Customization"
+import { FolderAppearanceDialog, NoteDecorateDialog, NoteIcon } from "../components/vault/Customization"
 import { folderKey, usePreferences } from "../lib/customization"
 import { ARCHIVE_FOLDER, isArchived, moveDestination, NOTE_COLORS, NOTE_ORDERS, noteFlags, sortNotes, type NoteOrder } from "../core/note-flags"
 import { searchNotes } from "../core/search"
@@ -22,7 +22,7 @@ import { scopeOf } from "../core/spaces"
 import { basename, dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
-import { flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
+import { copyLinkTarget, flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
 import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
 import { fillTemplate, formatDate } from "../core/templates"
 import { GraphPage } from "../components/vault/GraphPage"
@@ -72,6 +72,10 @@ function NoVault() {
 }
 
 type Dialog = { kind: "note"; folder: string } | { kind: "folder"; folder: string } | { kind: "rename-folder"; path: string } | { kind: "broken"; target: string; from?: string } | { kind: "unlock" }
+  | { kind: "rename-note"; path: string } | { kind: "decorate"; path: string } | { kind: "appearance"; path: string } | { kind: "trash"; path: string; folder: boolean }
+
+/** Dica de segurar o dedo, mostrada uma vez por aparelho (só em tela de toque). */
+const HINT_KEY = "runas-codex:notas-dica-segurar"
 
 interface TreeFolder {
   name: string
@@ -146,6 +150,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [query, setQuery] = useState("")
   const [showRight, setShowRight] = useState(false)
   const [dialog, setDialog] = useState<Dialog | null>(null)
+  const [menu, setMenu] = useState<{ at: ContextPoint; kind: "note" | "folder"; path: string } | null>(null)
+  const [hint, setHint] = useState(() => {
+    try { return window.matchMedia("(hover: none)").matches && !localStorage.getItem(HINT_KEY) } catch { return false }
+  })
+  const closeHint = () => { setHint(false); try { localStorage.setItem(HINT_KEY, "1") } catch { /* sem armazenamento: só esconde */ } }
   const [heading, setHeading] = useState<{ line: number; at: number }>()
   const [createdFolders, setCreatedFolders] = useState<string[]>([])
   const [replacing, setReplacing] = useState(false)
@@ -380,9 +389,10 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const noteItem = (n: IndexedNote, extra?: ReactNode) => {
     const flags = noteFlags(n)
     return (
+    <div key={n.path} className="note-row">
     <a
-      key={n.path}
       href={href(vaultRoute(n.path))}
+      {...contextMenuProps((at) => setMenu({ at, kind: "note", path: n.path }))}
       data-note-path={n.path}
       {...dragSource(n.path)}
       // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian).
@@ -398,9 +408,59 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         <span className="truncate tiny faint" style={{ display: "block" }}>{extra ?? (preview(n) || "Vazia")}</span>
       </span>
     </a>
+    <span className="row-menu"><OverflowMenu label={`Ações da nota ${n.name}`} triggerClassName="icon-btn sm" items={noteMenu(n.path)} /></span>
+    </div>
     )
   }
 
+  const sep = "separator" as const
+  // Menus de contexto da lista (botão direito, segurar o dedo, tecla Menu/Shift+F10 ou o ⋯ que aparece no item).
+  const run = (action: () => Promise<unknown>) => void action().catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+  const favoriteEntry = (b: Bookmark): MenuEntry => {
+    const on = hasBookmark(favorites, b)
+    return { label: on ? "Tirar dos favoritos" : "Favoritar", icon: on ? <StarOff size={16} /> : <Star size={16} />, onSelect: () => toggleFavorite(vaultId, b) }
+  }
+  const noteMenu = (target: string): MenuEntry[] => {
+    const name = noteName(target)
+    return [
+      { label: "Abrir numa aba nova", icon: <PanelTop size={16} />, onSelect: () => openNote(target, "aba") },
+      favoriteEntry({ type: "file", path: target }),
+      { label: "Copiar link da nota", icon: <Copy size={16} />, onSelect: () => run(async () => { await navigator.clipboard.writeText(`[[${copyLinkTarget(index, target)}]]`); toast("Link copiado") }) },
+      { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: [target], title: name }) },
+      ...(!readOnly ? [
+        sep,
+        { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => run(async () => { await flushOpenNotes(); setDialog({ kind: "rename-note", path: target }) }) },
+        { label: "Fixar, cor e ícone…", icon: <SwatchBook size={16} />, onSelect: () => setDialog({ kind: "decorate", path: target }) },
+        sep,
+        { label: "Mandar para a lixeira…", icon: <Trash2 size={16} />, danger: true, onSelect: () => setDialog({ kind: "trash", path: target, folder: false }) },
+      ] : []),
+    ]
+  }
+  const folderMenu = (folder: string): MenuEntry[] => {
+    const name = basename(folder)
+    return [
+      ...(!readOnly ? [
+        { label: "Nova nota aqui", icon: <FilePlus2 size={16} />, onSelect: () => setDialog({ kind: "note", folder }) },
+        { label: "Nova pasta aqui…", icon: <FolderPlus size={16} />, onSelect: () => setDialog({ kind: "folder", folder }) },
+        sep,
+      ] : []),
+      favoriteEntry({ type: "folder", path: folder }),
+      { label: "Ícone e cor…", icon: <Sparkles size={16} />, onSelect: () => setDialog({ kind: "appearance", path: folder }) },
+      { label: "Exportar pasta…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(folder + "/").map((note) => note.path), title: name }) },
+      ...(!readOnly ? [
+        sep,
+        { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => setDialog({ kind: "rename-folder", path: folder }) },
+        { label: "Mandar para a lixeira…", icon: <Trash2 size={16} />, danger: true, onSelect: () => setDialog({ kind: "trash", path: folder, folder: true }) },
+      ] : []),
+    ]
+  }
+
+  // Segunda linha da pasta, como a prévia da nota: as duas ficam da mesma altura.
+  const folderCount = (folder: TreeFolder) => {
+    const parts = [folder.notes.length === 1 ? "1 nota" : `${folder.notes.length} notas`]
+    if (folder.folders.size) parts.push(folder.folders.size === 1 ? "1 pasta" : `${folder.folders.size} pastas`)
+    return parts.join(" · ")
+  }
   const renderFolder = (folder: TreeFolder, depth: number): ReactNode => {
     // A pasta Arquivo do espaço fica por último e fechada; as notas fixadas vêm antes das outras.
     const isArchive = (sub: TreeFolder) => sub.path === `${NOTES_ROOT}${ARCHIVE_FOLDER}`
@@ -412,25 +472,15 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       <>
         {subfolders.map((sub) => (
           <LazyFolder key={sub.path} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
-            <summary className="eyebrow row" style={{ gap: 5 }} {...dragSource(sub.path)}>
+            <summary className="row folder-summary" {...dragSource(sub.path)} {...contextMenuProps((at) => setMenu({ at, kind: "folder", path: sub.path }))}>
               <ChevronDown size={13} className="folder-chevron" />
-              {isArchive(sub) ? <Archive size={13} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />} <span className="grow truncate">{sub.name}</span>
-            </summary>} actions={
-              <span className="folder-actions">
-                <button type="button" className="icon-btn sm" aria-label={`Exportar pasta ${sub.name}`} title="Exportar pasta…" onClick={e => { e.preventDefault(); e.stopPropagation(); openDocumentExport({ paths: index.notesIn(sub.path + "/").map(note => note.path), title: sub.name }) }}>↗</button>
-                <FolderAppearance path={sub.path} />
-                {starButton({ type: "folder", path: sub.path }, `a pasta ${sub.name}`)}
-                {!readOnly && (
-                  <>
-                    <button className="icon-btn sm" title="Nova nota aqui" aria-label={`Nova nota em ${sub.name}`} onClick={(e) => (e.preventDefault(), setDialog({ kind: "note", folder: sub.path }))}>
-                      <FilePlus2 size={13} />
-                    </button>
-                    <button className="icon-btn sm" title="Renomear ou mover pasta" aria-label="Renomear pasta" onClick={(e) => (e.preventDefault(), setDialog({ kind: "rename-folder", path: sub.path }))}>
-                      <PenLine size={13} />
-                    </button>
-                  </>
-                )}
+              {isArchive(sub) ? <Archive size={14} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />}
+              <span className="grow" style={{ minWidth: 0 }}>
+                <span className="truncate" style={{ display: "block" }}>{sub.name}</span>
+                <span className="truncate tiny faint folder-count">{folderCount(sub)}</span>
               </span>
+            </summary>} actions={
+              <span className="row-menu folder-menu"><OverflowMenu label={`Ações da pasta ${sub.name}`} triggerClassName="icon-btn sm" items={folderMenu(sub.path)} /></span>
             }>
             {() => <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>}
           </LazyFolder>
@@ -441,7 +491,6 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     return content
   }
 
-  const sep = "separator" as const
   const listMenu: MenuEntry[] = [
     ...(!readOnly ? [
       { label: "Nova pasta…", icon: <FolderPlus size={16} />, onSelect: () => setDialog({ kind: "folder", folder: currentFolder }) },
@@ -503,6 +552,12 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           )}
         </div>
         <div className={`pane-body ${dropTarget === root.replace(/\/$/, "") ? "drop-root" : ""}`} data-vault-tree style={{ gap: 12 }} {...dropZone(root.replace(/\/$/, ""))}>
+          {hint && (
+            <p className="proto-note notes-hint" role="note">
+              <span className="grow">Segure uma nota ou pasta para ver as ações (renomear, favoritar, lixeira…).</span>
+              <button type="button" className="btn sm ghost" onClick={closeHint}>Entendi</button>
+            </p>
+          )}
           {results ? (
             <div className="stack" style={{ gap: 4 }}>
               <span className="eyebrow row between">
@@ -679,6 +734,35 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
             if (note && note.path.startsWith(dialog.path + "/")) navigate(vaultRoute(to + note.path.slice(dialog.path.length)))
           }}
         />
+      )}
+      {menu && <ContextMenu at={menu.at} label={`Ações de ${basename(menu.path)}`} heading={menu.kind === "note" ? noteName(menu.path) : basename(menu.path)}
+        items={menu.kind === "note" ? noteMenu(menu.path) : folderMenu(menu.path)} onClose={() => setMenu(null)} />}
+      {dialog?.kind === "rename-note" && (
+        <RenameDialog
+          index={index}
+          path={dialog.path}
+          folders={folders}
+          onClose={() => setDialog(null)}
+          onRename={async (to) => {
+            const plan = await vault.rename(dialog.path, to)
+            if (plan.edits.length) toast(`Links atualizados em ${plan.edits.length} ${plan.edits.length === 1 ? "arquivo" : "arquivos"}`)
+            if (note?.path === dialog.path) navigate(vaultRoute(to))
+          }}
+        />
+      )}
+      {dialog?.kind === "decorate" && <NoteDecorateDialog path={dialog.path} before={flushOpenNotes} onClose={() => setDialog(null)} />}
+      {dialog?.kind === "appearance" && <FolderAppearanceDialog path={dialog.path} onClose={() => setDialog(null)} />}
+      {dialog?.kind === "trash" && (
+        <ConfirmDialog title={`Mandar “${dialog.folder ? basename(dialog.path) : noteName(dialog.path)}” para a lixeira?`} confirmLabel="Mandar para a lixeira" danger onClose={() => setDialog(null)}
+          onConfirm={async () => {
+            await flushOpenNotes()
+            await vault.trash(dialog.path)
+            if (note && (note.path === dialog.path || note.path.startsWith(dialog.path + "/"))) navigate("/notas")
+          }}>
+          {dialog.folder
+            ? <>A pasta e {index.notesIn(dialog.path + "/").length === 1 ? "a nota dentro dela vão" : `as ${index.notesIn(dialog.path + "/").length} notas dentro dela vão`} para a lixeira do cofre (<code>.trash</code>), a mesma do Obsidian. Dá para recuperar de lá.</>
+            : <>“{noteName(dialog.path)}” vai para a lixeira do cofre (<code>.trash</code>), a mesma do Obsidian. Dá para recuperar de lá.</>}
+        </ConfirmDialog>
       )}
       {dialog?.kind === "broken" && (
         <ConfirmDialog title="Criar nota" confirmLabel="Criar" onClose={() => setDialog(null)} onConfirm={() => createFromBroken(dialog.target, dialog.from)}>

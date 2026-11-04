@@ -30,7 +30,7 @@ export const HELP_TOPICS: HelpTopic[] = [
   { id: "wiki-tempo", title: "Wiki: calendários e linha do tempo", group: "Espaços", summary: "Calendários do mundo, datas com sigla, hoje no mundo, sincronizar calendários e a linha do tempo." },
   { id: "wiki-mapas", title: "Wiki: mapas, relações e ferramentas", group: "Espaços", summary: "Mapas com pinos e camadas, árvore genealógica, organograma, teia diplomática, geradores, tabelas e idiomas." },
   { id: "campanhas", title: "Campanhas", group: "Espaços", summary: "Painel, sessões, missões, elenco, quadro, ferramentas, Tela do Mestre e personalização." },
-  { id: "livros", title: "Livros", group: "Espaços", summary: "Livro e capítulos, Escrever, Organizar e Diagramar, estilo do livro, capa, fichas no papel e exportações." },
+  { id: "livros", title: "Livros", group: "Espaços", summary: "Livro e capítulos, sumário em árvore, Escrever e Diagramar, estilo do livro, capa, fichas no papel e exportações." },
   { id: "vtt", title: "VTT: mesas e sala", group: "Mesa e jogo", summary: "Mesas, cenas, tokens, ferramentas do mapa, áudio, registro, dados, a sala dos jogadores e o mestre pelo celular." },
   { id: "transferir", title: "Importar e exportar", group: "Arquivos e sistema", summary: "Pacote para outro aparelho, ZIP para o Obsidian, documentos e sites, importadores e mesas." },
   { id: "obsidian", title: "Compatibilidade com o Obsidian", group: "Arquivos e sistema", summary: "O mesmo cofre nos dois apps, o snippet runas-codex.css, propriedades e plugins de RPG." },
