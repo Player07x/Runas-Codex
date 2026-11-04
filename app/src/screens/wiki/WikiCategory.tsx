@@ -46,6 +46,8 @@ export function WikiCategory({ path }: { path: string }) {
   const name = folder === root.slice(0,-1) ? "Sem pasta" : folder.split("/").at(-1)!
   const chooseMode = (mode: Mode) => { setMode(mode); try { localStorage.setItem(MODE_KEY,mode) } catch { /* Só não é lembrado no próximo início. */ } }
   const clear = () => {setQuery("");setView(current => ({ ...current, fields: {}, subfolder: "" }));setLimit(24)}
+  const clearFilters = () => {setView(current => ({ ...current, fields: {}, subfolder: "" }));setLimit(24)}
+  const activeCount = Object.values(applied).filter(Boolean).length + (subfolder ? 1 : 0)
   if (!valid) return <div className="page"><Empty title="Categoria fora desta Wiki" action={<a className="btn" href={href("/wiki")}>Voltar para a Wiki</a>}>Escolha uma categoria na página inicial.</Empty></div>
   const isRoot = folder === root.slice(0,-1)
   const readOnly = vault.info?.readOnly ?? true
@@ -70,14 +72,15 @@ export function WikiCategory({ path }: { path: string }) {
       <label className="field"><span>Ordem</span><select className="select" aria-label="Ordem da categoria" value={order} onChange={e=>{setOrder(e.target.value as typeof order);setLimit(24)}}><option value="name">Nome (A–Z)</option><option value="recent">Editados por último</option></select></label>
       <div className="row" role="group" aria-label="Exibição da categoria"><button className={`btn ${mode === "grid" ? "primary" : ""}`} aria-pressed={mode === "grid"} onClick={()=>chooseMode("grid")}><Grid2X2 size={16}/> Grade</button><button className={`btn ${mode === "list" ? "primary" : ""}`} aria-pressed={mode === "list"} onClick={()=>chooseMode("list")}><List size={16}/> Lista</button></div>
     </section>
-    {(facets.length > 0 || subfolders.length > 0 || (!players && !isRoot && fieldInfo.length > 0)) && <details className="wiki-category-filters" open={facets.length > 0 || undefined}><summary>Filtros</summary>
+    {/* Os filtros começam fechados; o título conta os ligados e o Limpar fica à vista, para nada filtrar escondido. */}
+    {(facets.length > 0 || subfolders.length > 0 || (!players && !isRoot && fieldInfo.length > 0)) && <div className="wiki-category-filters-wrap"><details className="wiki-category-filters"><summary>Filtros{activeCount > 0 && <span className="chip cyan wiki-filters-count">{activeCount === 1 ? "1 ligado" : `${activeCount} ligados`}</span>}</summary>
       {!players && !isRoot && <div className="wiki-category-filters-head"><span className="small muted">{chosen ? "Escolhidos para esta categoria." : "Automáticos: os campos com 2 a 8 valores."}</span><button className="btn sm" disabled={readOnly} onClick={() => setChoosing(true)}><SlidersHorizontal size={14}/> Escolher filtros</button></div>}
       {subfolders.length > 0 && <fieldset><legend>Subpasta</legend><div className="row-wrap">{[{value:"",label:"Todas"},{value:".",label:"Na raiz"},...subfolders.map(value=>({value,label:value}))].map(option=><button className={`chip hit-area ${subfolder === option.value ? "cyan" : ""}`} aria-pressed={subfolder === option.value} key={option.value} onClick={()=>{setSubfolder(option.value);setLimit(24)}}>{option.label}</button>)}</div></fieldset>}
       {facets.map(facet=>facet.values.length <= 8
         ? <fieldset key={facet.key}><legend>{facet.label}</legend><div className="row-wrap">{[{text:"",count:notes.length},...facet.values].map(({text,count})=>{const on=(!applied[facet.key] && !text) || applied[facet.key] === text;return <button key={text} className={`chip hit-area ${on ? "cyan" : ""}`} aria-pressed={on} onClick={()=>pick(facet.key,text)}>{text || "Todas"}<span className="chip-count">{count}</span></button>})}</div></fieldset>
         : <label key={facet.key} className="field wiki-category-select"><span>{facet.label}</span><select className="select" value={applied[facet.key] ?? ""} onChange={e=>pick(facet.key,e.target.value)}><option value="">Todas ({notes.length})</option>{facet.values.map(({text,count})=><option key={text} value={text}>{text} ({count})</option>)}</select></label>)}
       {facets.length === 0 && subfolders.length === 0 && <p className="small muted">Nenhum filtro ativo nesta categoria.</p>}
-    </details>}
+    </details>{activeCount > 0 && <button type="button" className="btn sm ghost wiki-filters-clear" onClick={clearFilters} aria-label="Limpar filtros">Limpar</button>}</div>}
     {notes.length === 0 ? <Empty title="Nenhum artigo nesta categoria">{players ? "Não há artigos públicos nesta pasta." : "Crie o primeiro artigo para começar esta categoria."}</Empty> : filtered.length === 0 ? <Empty title="Nenhum artigo com esses filtros" action={<button className="btn" onClick={clear}>Limpar filtros</button>}>Tente outro nome, apelido ou valor dos campos.</Empty> : <>
       <p className="small muted" role="status">{Math.min(limit,filtered.length)} de {filtered.length} {filtered.length === 1 ? "artigo" : "artigos"}{filtered.length !== notes.length ? ` · ${notes.length} na categoria` : ""}</p>
       <div className={`wiki-category-results ${mode}`} aria-label="Artigos da categoria">{filtered.slice(0,limit).map(note=>{const info=articleCardFields(note);return <a className="wiki-category-article" key={note.path} href={href(articleRoute(note.path))}>

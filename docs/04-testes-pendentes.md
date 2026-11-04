@@ -1334,3 +1334,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Wiki: filtros fechados e “Só categorias”
+
+- [ ] Abrir uma categoria com campos: o painel “Filtros” começa fechado; escolher um filtro mostra “1 ligado” no
+  título e o botão “Limpar”, que desliga tudo de uma vez.
+- [ ] No início da Wiki, “Só categorias”: as listas de recentes e “a escrever” somem e as categorias viram blocos
+  (ícone, nome, quantidade); clicar no bloco abre a categoria. A escolha fica lembrada ao voltar.
+- [ ] Em 320 px os blocos ficam em uma coluna, sem quebrar o nome no meio; no tema claro também.
