@@ -1334,3 +1334,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## VTT: selo “Sala aberta” e jogador vira o próprio token
+
+- [ ] Com a sala ligada, fora da mesa: em vez do aviso grande embaixo, um selo “● Sala aberta” na barra de cima
+  (no celular, só a bolinha). O menu dele tem “Voltar à mesa” e “Encerrar sala…”, que pede confirmação.
+- [ ] Carta X acionada: o aviso flutuante continua aparecendo em qualquer tela até “Confirmar pausa”.
+- [ ] **Jogador (página da sala, com código de assento):** com “mover” liberado, o botão “Virar meu token” aparece
+  nas ferramentas e a tecla F vira o próprio token; o mestre vê o token virado. Token travado pelo mestre ou de outro
+  jogador não vira; com “mover” desligado o botão some.
+- [ ] Testar no PC e no Android (o Android também hospeda a sala).

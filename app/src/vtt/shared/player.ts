@@ -71,6 +71,7 @@ export type PlayerClientMessage =
   | CollaborationReply
   | { type: "ping" }
   | { type: "move"; tokenId: string; x: number; y: number }
+  | { type: "flip"; tokenId: string }
 
 const COORDINATE_LIMIT = 1_000_000
 
