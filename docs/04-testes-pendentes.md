@@ -1371,3 +1371,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] **Android:** segurar o dedo numa nota ou pasta abre o menu (sem o menu do sistema do link e sem começar a
   arrastar); a dica “Segure uma nota ou pasta…” aparece uma vez e some com “Entendi”.
 - [ ] O ⋯ da nota aberta (Fixar, cor e ícone…) continua igual.
+
+## VTT: selo “Sala aberta” e jogador vira o próprio token
+
+- [ ] Com a sala ligada, fora da mesa: em vez do aviso grande embaixo, um selo “● Sala aberta” na barra de cima
+  (no celular, só a bolinha). O menu dele tem “Voltar à mesa” e “Encerrar sala…”, que pede confirmação.
+- [ ] Carta X acionada: o aviso flutuante continua aparecendo em qualquer tela até “Confirmar pausa”.
+- [ ] **Jogador (página da sala, com código de assento):** com “mover” liberado, o botão “Virar meu token” aparece
+  nas ferramentas e a tecla F vira o próprio token; o mestre vê o token virado. Token travado pelo mestre ou de outro
+  jogador não vira; com “mover” desligado o botão some.
+- [ ] Testar no PC e no Android (o Android também hospeda a sala).

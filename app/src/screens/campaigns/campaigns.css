@@ -181,6 +181,16 @@
 
 .active-room { position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:45;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:calc(100vw - 24px);padding:10px;background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--radius);box-shadow:var(--shadow); }
 @media(max-width:860px){.active-room{bottom:calc(var(--bottomnav-height) + 8px);width:calc(100vw - 24px)}}
+/* Sala do VTT aberta: selo na barra de cima (portal no .top-actions do Shell), antes do “Novo”. */
+.top-actions > .kit-menu-wrap:has(> .room-chip) { order: -1; }
+.room-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--green) 45%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--green) 12%, var(--panel)); color: var(--text); font-size: calc(13px * var(--font-scale, 1)); font-weight: 600; white-space: nowrap; }
+.room-chip:hover { background: color-mix(in srgb, var(--green) 20%, var(--panel)); }
+.room-chip svg { color: var(--muted); }
+.room-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+@media (prefers-reduced-motion: no-preference) { .room-dot { animation: room-pulse 2.4s ease-in-out infinite; } }
+@keyframes room-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--green) 10%, transparent); } }
+@media (max-width: 860px) { .room-chip { min-height: 44px; } }
+@media (max-width: 480px) { .room-chip-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .room-chip { padding: 0 12px; } }
 
 .campaign-person .grow { min-width: 0; overflow-wrap: anywhere; }
 
