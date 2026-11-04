@@ -1334,3 +1334,10 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Configurações: trocar de seção sem rolar (atualização depois da 1.0)
+
+- [ ] Em Configurações, role a Ajuda para baixo e clique em Acessibilidade: a página volta ao topo, com o título
+  “Configurações” e o índice à vista. Repita indo de outra tela direto para `#/config/acessibilidade` (Ctrl K).
+- [ ] Com o leitor de tela (Orca/NVDA), a troca de seção continua anunciando a seção aberta.
+- [ ] No celular (320 px): abrir uma seção pela lista começa do topo, com “‹ Configurações” visível.
