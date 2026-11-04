@@ -5,11 +5,11 @@ import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Pin, PinOff, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
-import { archivePath, NOTE_COLORS, noteFlags, unarchivePath, type NoteColor } from "../../core/note-flags"
+import { archivePath, unarchivePath } from "../../core/note-flags"
 import { scopeOf } from "../../core/spaces"
 import { fillTemplate, insertTemplate } from "../../core/templates"
 import { dirname, extname, foldName, noteName, textToSave, toEditorText } from "../../core/text"
@@ -29,7 +29,7 @@ import { TaskEditDialog } from "../tasks/TaskEditDialog"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
-import { Modal, Segmented, useToast } from "../ui"
+import { Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
 import { LINK_SELECTOR, targetOf, useLinkPreview } from "./LinkPreview"
 import type { LivePreviewHost } from "./live-preview"
@@ -48,7 +48,7 @@ import { countWords } from "../../core/books"
 import { shortcutLabel, shortcutText, type ShortcutAction } from "../../core/shortcuts"
 import { usePreferences } from "../../lib/customization"
 import { updateAppearance, useAppearance } from "../../lib/appearance"
-import { ICON_LABELS, NOTE_ICONS } from "./Customization"
+import { NoteDecorateDialog } from "./Customization"
 
 /** Os três modos do Obsidian: leitura, live preview ("Editar") e código-fonte. */
 export type ViewMode = "leitura" | "live" | "fonte"
@@ -398,7 +398,6 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   }
 
   // Fixar, colorir e arquivar (propriedades `fixada` e `cor`; arquivar move para Notas/Arquivo, com os links).
-  const flags = noteFlags(note)
   const toArchive = archivePath(path)
   const fromArchive = unarchivePath(path)
   const organize = (action: () => Promise<unknown>) => {
@@ -406,7 +405,6 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
       .then(action)
       .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
   }
-  const setColor = (color: NoteColor | undefined) => organize(() => vault.setProperty(path, "cor", color))
   const move = (to: string) =>
     organize(async () => {
       await vault.rename(path, to)
@@ -727,28 +725,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
       {showKeyboardBar && <KeyboardBar onFormat={() => setGallery(true)} onSlash={() => editor.current?.openSlash()} onWrap={(mark) => editor.current?.wrap(mark)} onLink={openLinkDialog} onTask={() => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" }))} />}
       {gallery && <FormatGallery code={mode === "fonte"} extra={extraFormatters} onClose={() => setGallery(false)} onInsert={insertFormatter} />}
       {dialog === "images" && <NoteImagesDialog path={path} text={draft} onRename={renameImage} onClose={() => setDialog(null)} />}
-      {dialog === "decorate" && (
-        <Modal title="Fixar, cor e ícone" onClose={() => setDialog(null)} footer={<button className="btn" onClick={() => setDialog(null)}>Fechar</button>}>
-          <button className="btn" onClick={() => organize(() => vault.setProperty(path, "fixada", flags.pinned ? undefined : true))}>
-            {flags.pinned ? <PinOff size={15} /> : <Pin size={15} />} {flags.pinned ? "Desafixar" : "Fixar no topo da lista"}
-          </button>
-          <div className="note-colors" role="group" aria-label="Cor da nota">
-            {(Object.keys(NOTE_COLORS) as NoteColor[]).map((color) => (
-              <button
-                key={color}
-                className={`note-swatch ${flags.color === color ? "active" : ""}`}
-                style={{ ["--swatch" as string]: NOTE_COLORS[color] }}
-                title={color}
-                aria-label={`Cor ${color}`}
-                aria-pressed={flags.color === color}
-                onClick={() => setColor(flags.color === color ? undefined : color)}
-              />
-            ))}
-            {flags.color && <button className="btn sm ghost" onClick={() => setColor(undefined)}>Sem cor</button>}
-          </div>
-          <label className="field"><span>Ícone da nota</span><select className="input" aria-label="Ícone da nota" value={String(note.meta.frontmatter?.data?.icone ?? "file")} onChange={event => organize(() => vault.setProperty(path, "icone", event.target.value))}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
-        </Modal>
-      )}
+      {dialog === "decorate" && <NoteDecorateDialog path={path} before={flush} onClose={() => setDialog(null)} />}
 
       {linkPreview}
       {imageRename && <ImageRenameDialog path={imageRename} onClose={() => setImageRename(null)} />}

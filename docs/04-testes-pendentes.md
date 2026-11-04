@@ -1334,3 +1334,15 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Notas: pastas do tamanho das notas e menu de contexto
+
+- [ ] Na lista de Notas, as pastas têm a altura e a fonte das notas, com uma segunda linha (“3 notas · 1 pasta”).
+- [ ] Botão direito numa pasta: Nova nota aqui, Nova pasta aqui…, Favoritar, Ícone e cor…, Exportar pasta…,
+  Renomear ou mover… e Mandar para a lixeira… (o aviso conta as notas). Os 5 botões que apareciam no hover viraram um ⋯.
+- [ ] Botão direito numa nota: Abrir numa aba nova, Favoritar, Copiar link da nota, Exportar…, Renomear ou mover…,
+  Fixar, cor e ícone… e Mandar para a lixeira…. O ⋯ aparece no hover e com o foco.
+- [ ] Teclado: com o foco numa nota ou pasta, Shift+F10 (ou a tecla Menu) abre o menu; Esc fecha e devolve o foco.
+- [ ] **Android:** segurar o dedo numa nota ou pasta abre o menu (sem o menu do sistema do link e sem começar a
+  arrastar); a dica “Segure uma nota ou pasta…” aparece uma vez e some com “Entendi”.
+- [ ] O ⋯ da nota aberta (Fixar, cor e ícone…) continua igual.
