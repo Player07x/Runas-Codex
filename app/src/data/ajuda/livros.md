@@ -39,6 +39,10 @@ Leitura fácil — e deixa ajustar:
 
 - Fontes do título e do texto (cerca de dez fontes livres embutidas, mais as fontes `.ttf`/`.otf`/`.woff2` do cofre),
   tamanho e entrelinha, texto justificado e **hifenização** em português.
+- **Recuo na primeira linha** (desligado por padrão): o parágrafo que vem logo depois de outro recua a primeira
+  linha e os parágrafos ficam sem espaço entre si, como nos livros impressos; o primeiro depois de um título, imagem,
+  lista, citação ou ficha não recua. Vale no papel, no PDF, no EPUB e no DOCX, e não muda o capítulo no Obsidian.
+  Um `&emsp;` digitado no começo do parágrafo continua funcionando e soma com o recuo.
 - Colunas (1 a 4), papel (A4, Carta, A5, 6×9), margens, cor do papel, do texto e do destaque.
 - O desenho das **fichas** (tipográfico, fundo suave ou faixa no nome; veja Fichas e caixas).
 - **Capa**, **sumário**, aberturas de capítulo, cabeçalhos e numeração das páginas.
