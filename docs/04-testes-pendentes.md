@@ -1334,3 +1334,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Importar do Notion (PR `importar/notion`)
+
+- [ ] Exportar um espaço do Notion em “Markdown & CSV” (com subpáginas) e importar o `.zip` em Importar e exportar:
+  a prévia diz “Exportação do Notion reconhecida”, os arquivos entram em `Notion/` sem os códigos nos nomes, os links
+  entre páginas e as imagens abrem, e as páginas de um banco de dados mostram as colunas como propriedades.
+- [ ] Uma exportação grande (ZIP com `…-Part-1.zip` dentro) e uma com nomes acentuados.
+- [ ] Abrir a pasta `Notion/` no Obsidian: links, imagens e propriedades iguais.
