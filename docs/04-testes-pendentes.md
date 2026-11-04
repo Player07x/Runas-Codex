@@ -1334,3 +1334,12 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Livros: recuo na primeira linha (U15)
+
+- [ ] Diagramar › Estilo do livro: “Recuo na primeira linha” começa desligado em todos os modelos; ligado, os
+  parágrafos seguidos recuam a primeira linha e ficam sem espaço entre si; o primeiro depois de título, imagem, lista,
+  citação, callout ou ficha não recua. Conferir em uma e em duas colunas, justificado e à esquerda.
+- [ ] “Salvar como modelo” leva o `recuo`; um livro com `recuo: false` desliga o do modelo.
+- [ ] Exportar PDF, EPUB e DOCX com o recuo ligado: o recuo aparece nos três (no DOCX, “Primeira linha” no parágrafo).
+- [ ] O capítulo no editor e no Obsidian não muda.

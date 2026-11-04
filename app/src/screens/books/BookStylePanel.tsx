@@ -118,6 +118,7 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         <div className="book-style-row"><span>Entrelinha</span><ChoiceGroup label="Entrelinha" value={style.leading} options={[{ value: "justa", label: "Justa" }, { value: "normal", label: "Normal" }, { value: "folgada", label: "Folgada" }]} onChange={(v) => set("entrelinha", v, base.leading)} /></div>
         <div className="book-style-row"><span>Alinhamento</span><ChoiceGroup label="Alinhamento" value={style.justify ? "justificado" : "esquerda"} options={[{ value: "esquerda", label: "Esquerda" }, { value: "justificado", label: "Justificado" }]} onChange={(v) => set("alinhamento", v, base.justify ? "justificado" : "esquerda")} /></div>
         <label className="check"><input type="checkbox" checked={style.hyphenate} onChange={(e) => set("hifenizar", e.target.checked, base.hyphenate)} />Hifenizar em português</label>
+        <label className="check"><input type="checkbox" checked={style.indent} onChange={(e) => set("recuo", e.target.checked, base.indent)} />Recuo na primeira linha</label>
       </Group>
       <Group title="Cores">
         {([["cor_papel", "Papel", style.paper, base.paper], ["cor_texto", "Texto", style.ink, base.ink], ["cor_destaque", "Destaque", style.accent, base.accent]] as const).map(([key, label, value, baseValue]) =>

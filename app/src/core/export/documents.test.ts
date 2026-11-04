@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { resolveStyle } from "../book-style"
 import { strFromU8, unzipSync } from "fflate"
 import { VaultIndex } from "../vault-index"
 import { documentPaths, generateStaticSite, staticDocumentIndex } from "./documents"
@@ -56,5 +57,21 @@ describe("colunas automáticas dos livros",()=>{
   expect(doc).toContain(`w:num="${count}"`);expect(doc).toContain('w:num="1"')
   expect(doc.indexOf("Antes")).toBeLessThan(doc.indexOf("Fluxo automático"));expect(doc.indexOf("Fluxo automático")).toBeLessThan(doc.indexOf("Depois"))
   expect(strFromU8(generateRtf(columns))).toContain(`\\cols${count}`)
+ })
+})
+describe("recuo na primeira linha (U15)",()=>{
+ const nodes=[el("h2",["Título"]),el("p",["Primeiro"]),el("p",["Segundo"]),el("blockquote",[el("p",["Citado"])]),el("p",["Depois da citação"])]
+ const paragraph=(doc:string,text:string)=>{const end=doc.indexOf(text);return doc.slice(doc.lastIndexOf("<w:p>",end),end)}
+ it("DOCX recua só o parágrafo que vem depois de outro, sem espaço entre eles",async()=>{
+  const doc=strFromU8(unzipSync(await generateDocx({...book,assets:[],style:resolveStyle({recuo:true}),sections:[{...book.sections[0],nodes}]}))["word/document.xml"])
+  expect(paragraph(doc,"Segundo")).toContain('w:firstLine="340"')
+  expect(paragraph(doc,"Primeiro")).not.toContain("w:firstLine")
+  expect(paragraph(doc,"Depois da citação")).not.toContain("w:firstLine")
+  expect(paragraph(doc,"Primeiro")).toContain('w:after="0"')
+ })
+ it("DOCX sem recuo fica como antes",async()=>{
+  const doc=strFromU8(unzipSync(await generateDocx({...book,assets:[],style:resolveStyle({}),sections:[{...book.sections[0],nodes}]}))["word/document.xml"])
+  expect(doc).not.toContain("w:firstLine")
+  expect(paragraph(doc,"Segundo")).toContain('w:after="140"')
  })
 })
