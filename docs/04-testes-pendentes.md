@@ -1414,3 +1414,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   vira anexo no cofre, que a faixa aparece no topo do cartão (no desktop e no Android) e que a nota
   `Wikis/<Mundo>/<Mundo>.md` ganhou `cor`, `icone` e `capa` (e abre igual no Obsidian).
 - [ ] Personalizar uma campanha e uma categoria com imagem “Do computador…”: a capa aparece no cartão e na página.
+
+## Importar do Notion (PR `importar/notion`)
+
+- [ ] Exportar um espaço do Notion em “Markdown & CSV” (com subpáginas) e importar o `.zip` em Importar e exportar:
+  a prévia diz “Exportação do Notion reconhecida”, os arquivos entram em `Notion/` sem os códigos nos nomes, os links
+  entre páginas e as imagens abrem, e as páginas de um banco de dados mostram as colunas como propriedades.
+- [ ] Uma exportação grande (ZIP com `…-Part-1.zip` dentro) e uma com nomes acentuados.
+- [ ] Abrir a pasta `Notion/` no Obsidian: links, imagens e propriedades iguais.

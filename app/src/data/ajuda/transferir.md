@@ -17,3 +17,13 @@ Escolha **Gerar documento ou site** para abrir a exportação de Livros e docume
 ### Importar arquivos avulsos
 
 Na direção **Importar**, você também pode escolher Markdown, imagens, PDFs ou outros anexos sem montar um pacote. Informe a pasta de destino, confira a lista e resolva os conflitos. Limites de tamanho e quantidade protegem o cofre; se um arquivo exceder o limite, a tela explica qual precisa ser reduzido.
+
+### Importar do Notion
+
+No Notion, use **Exportar** (no menu ⋯ de uma página ou nas configurações do espaço de trabalho), escolha **Markdown & CSV** com as subpáginas e, aqui, importe o `.zip` como qualquer outro pacote. O app reconhece a exportação e, antes da prévia:
+
+- põe tudo na pasta `Notion/` e tira dos nomes o código de 32 letras que o Notion acrescenta;
+- troca os links do Notion por links do Obsidian (`[[Notion/Página]]`) e as imagens por `![[…]]`;
+- transforma cada banco de dados numa nota com a lista das páginas; as colunas viram **propriedades** de cada página (datas como `"2026-10-17"`, relações como links), e as linhas sem página viram notas novas.
+
+Exportações grandes, que o Notion divide em vários ZIPs dentro de um ZIP, também servem. Fórmulas, visões dos bancos (quadro, calendário) e comentários não vêm na exportação do Notion.
