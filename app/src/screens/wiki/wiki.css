@@ -407,3 +407,24 @@
 .fyear-day.today .fyear-dot { background: var(--on-accent); }
 /* No celular, uma coluna de meses e dias com alvo maior. */
 @media (max-width: 640px) { .fyear-day { min-height: 40px; } .fyear-strip .fyear-day { width: 40px; } }
+
+/* Filtros fechados: a contagem dos ligados no título e o Limpar no canto, fora do summary (botão dentro de botão não). */
+.wiki-category-filters-wrap { position:relative; }
+.wiki-category-filters summary { gap:10px; padding-right:96px; }
+.wiki-category-filters summary .wiki-filters-count { min-height:0;padding:2px 9px;cursor:inherit;font-weight:600; }
+.wiki-category-filters summary .wiki-filters-count::before { content:none; }
+.wiki-filters-clear { position:absolute;top:12px;right:12px;min-height:44px; }
+
+/* Início da Wiki: busca e a escolha “Mostrar” na mesma linha; em “Só categorias”, blocos menores e o bloco inteiro
+   abre a categoria (o link do título se estende sobre o cartão). */
+.wiki-home-toolbar { display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-column); }
+.wiki-home-toolbar .wiki-search { flex:1 1 280px; }
+.category-grid.only-categories { grid-template-columns:repeat(auto-fill, minmax(min(200px, 100%), 1fr)); }
+.category-card.compact .wiki-category-heading h2 { word-break:normal;overflow-wrap:break-word;hyphens:auto; }
+.category-card.compact { position:relative; }
+.category-card.compact .wiki-category-heading::after { content:"";position:absolute;inset:0;border-radius:inherit; }
+.category-card.compact .wiki-category-heading:focus-visible { outline:none; }
+.category-card.compact:has(.wiki-category-heading:focus-visible) { outline:3px solid var(--cyan);outline-offset:2px; }
+.category-card.compact:hover { border-color:var(--line-strong); }
+.category-card.compact .wiki-category-description { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden; }
+@media (max-width: 460px) { .category-grid.only-categories { grid-template-columns:minmax(0, 1fr); } }

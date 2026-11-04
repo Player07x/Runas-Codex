@@ -1341,3 +1341,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   “Configurações” e o índice à vista. Repita indo de outra tela direto para `#/config/acessibilidade` (Ctrl K).
 - [ ] Com o leitor de tela (Orca/NVDA), a troca de seção continua anunciando a seção aberta.
 - [ ] No celular (320 px): abrir uma seção pela lista começa do topo, com “‹ Configurações” visível.
+
+## Wiki: filtros fechados e “Só categorias”
+
+- [ ] Abrir uma categoria com campos: o painel “Filtros” começa fechado; escolher um filtro mostra “1 ligado” no
+  título e o botão “Limpar”, que desliga tudo de uma vez.
+- [ ] No início da Wiki, “Só categorias”: as listas de recentes e “a escrever” somem e as categorias viram blocos
+  (ícone, nome, quantidade); clicar no bloco abre a categoria. A escolha fica lembrada ao voltar.
+- [ ] Em 320 px os blocos ficam em uma coluna, sem quebrar o nome no meio; no tema claro também.
