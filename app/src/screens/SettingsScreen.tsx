@@ -187,8 +187,11 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   const narrow = useNarrow()
   const asked = sections.some((item) => item.id === section) ? section : undefined
   const current = asked ?? (narrow ? undefined : sections[0]!.id)
+  // Só a seção escolhida aparece, logo abaixo do título: trocar de seção volta ao topo, sem rolar até a seção (que
+  // escondia o título e o índice). O foco do leitor de tela continua indo para a seção (Shell, data-route-focus).
   useEffect(() => {
-    if (asked) document.getElementById(`config-${asked}`)?.scrollIntoView({ block: "start" })
+    const main = document.getElementById("runas-main")
+    if (main) main.scrollTop = 0
   }, [asked])
   return (
     <div className={`page settings-page${current ? " has-current" : ""}`}>
