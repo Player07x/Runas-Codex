@@ -1334,3 +1334,20 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Livros: sumário em árvore (sem o modo Organizar)
+
+- [ ] Abrir um livro com Partes, Capítulos e Seções: as seções aparecem recuadas embaixo do capítulo (setinha fecha e
+  abre, lembrado no aparelho); a Parte é um título dourado; o capítulo fechado soma as palavras das seções.
+- [ ] Arrastar pelo ⠿: para cima/baixo muda a ordem (a linha azul mostra onde cai); para a direita, sob um capítulo,
+  vira seção; para a esquerda vira capítulo; o capítulo leva as seções junto.
+- [ ] O ⋯ de cada linha: Nova seção dentro, Novo capítulo depois, Renomear (links atualizados), Duplicar (com as
+  seções, “(cópia)”), Subir, Descer, Virar seção / Virar capítulo, Status, Remover… (Tirar do livro → vai para
+  “Fora do livro”; Mandar para a lixeira → `.trash`).
+- [ ] Teclado na árvore: ↑ ↓, → ←, Enter, Alt+↑ ↓, Alt+→ ← (sem voltar a página), F2, Ctrl+D e Del; o leitor de
+  tela anuncia cada movimento.
+- [ ] “Mostrar resumos” põe o resumo embaixo de cada capítulo.
+- [ ] Os modos Escrever e Diagramar ficam logo depois de “Sumário” e não mudam de lugar ao trocar de modo nem de livro;
+  o modo Organizar não existe mais.
+- [ ] No Obsidian, a nota do livro continua com a lista `estrutura` reta; só o `tipo` das notas muda ao recuar.
+- [ ] No celular: ⠿ e ⋯ sempre visíveis, linhas de 44 px, arrastar pelo ⠿ funciona com o dedo.
