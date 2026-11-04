@@ -60,3 +60,14 @@ todos os aparelhos e o Obsidian mostra como propriedades comuns.
   cartões, os filtros e o Novo artigo tratam o tipo novo como os prontos. Um nome de tipo pronto (“Personagem”) não
   é redefinido: vale o pronto. Tirar um campo da ficha não apaga o valor dos artigos que já o têm. Limite conhecido:
   duas wikis com o mesmo nome de artigo (“Monstro”) dividem a ficha da primeira.
+
+## Adendo — a wiki inteira e a capa do computador (1.1)
+
+- **A wiki também se personaliza**, pelo botão “Personalizar” da página inicial. As mesmas propriedades (`cor`,
+  `icone`, `capa`) ficam na nota da página inicial (`Wikis/<Mundo>/<Mundo>.md`, a mesma que o botão “Página inicial”
+  abre); se ela ainda não existe, o diálogo a cria só com o título, sem `tipo`. A cor vale para a página inicial da
+  wiki; categorias com cor própria continuam com a delas.
+- **A capa usa o seletor do livro** (`components/kit/CoverImagePicker.tsx`, que saiu de `screens/books/`): miniaturas
+  das imagens do cofre, com filtro, ou “Do computador…”, que grava a imagem como anexo perto da nota (pela pasta de
+  anexos do cofre) e guarda o link `[[caminho]]`. Vale para campanha, categoria e wiki. A capa aparece numa faixa no
+  topo do cartão, fora do texto, para o contraste não depender da imagem.

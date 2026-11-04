@@ -1334,3 +1334,10 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.0.0.
 - [ ] As sobras da revisão das Campanhas (seção acima) entraram depois das conferências: conferir no uso real.
 
+
+## Personalização da wiki e capa do computador (PR `wiki/personalizacao`)
+
+- [ ] Wiki › página inicial › **Personalizar**: escolher cor, ícone e uma capa “Do computador…”; conferir que a imagem
+  vira anexo no cofre, que a faixa aparece no topo do cartão (no desktop e no Android) e que a nota
+  `Wikis/<Mundo>/<Mundo>.md` ganhou `cor`, `icone` e `capa` (e abre igual no Obsidian).
+- [ ] Personalizar uma campanha e uma categoria com imagem “Do computador…”: a capa aparece no cartão e na página.

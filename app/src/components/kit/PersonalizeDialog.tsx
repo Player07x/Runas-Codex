@@ -2,13 +2,11 @@ import { useMemo, useState } from "react"
 import { lookOf, lookProperties, type Look } from "../../core/personalization"
 import { setProperty } from "../../core/properties"
 import { EMBLEMS, TONES, parseTone, type Tone } from "../../core/tones"
-import { extname } from "../../core/text"
 import { useVault } from "../../platform/VaultProvider"
 import { Modal, useToast } from "../ui"
+import { CoverImagePicker } from "./CoverImagePicker"
 import { CoverBand, Crest, emblemIcon } from "./Emblem"
 import { Notice } from "./Layout"
-
-const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp"])
 
 /**
  * “Personalizar” de uma campanha ou categoria da Wiki (ADR 0027): cor (12 tons ou uma cor livre, ajustada para o
@@ -34,7 +32,6 @@ export function PersonalizeDialog({ title, name, path, createIn, withDescription
   const [cover, setCover] = useState(initial.cover ?? "")
   const [description, setDescription] = useState(initial.description ?? "")
   const [busy, setBusy] = useState(false)
-  const images = useMemo(() => index.allFiles().filter((f) => IMAGE_EXTENSIONS.has(extname(f.path).toLowerCase())).map((f) => f.path).sort((a, b) => a.localeCompare(b, "pt-BR")), [index, vault.version])
 
   const tone: Tone | null = toneId === "livre" ? parseTone(custom) : toneId ? parseTone(toneId) : null
   const look: Look = { tone, emblem: emblem || null, cover: cover.trim().replace(/^!?\[\[|\]\]$/g, "") || null, ...(withDescription ? { description } : {}) }
@@ -120,16 +117,8 @@ export function PersonalizeDialog({ title, name, path, createIn, withDescription
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Capa</legend>
-          <label className="field">
-            <span>Imagem do cofre · opcional</span>
-            <input className="input" list="personalizar-imagens" value={cover} onChange={(e) => setCover(e.target.value)} placeholder="Imagens/capa.png" aria-label="Imagem de capa" />
-            <datalist id="personalizar-imagens">
-              {images.map((image) => <option key={image} value={image} />)}
-            </datalist>
-          </label>
-        </fieldset>
+        {/* A capa pelo mesmo seletor do livro: imagens do cofre em miniatura ou uma do computador (vira anexo). */}
+        <CoverImagePicker legend="Capa · opcional" value={cover ? `[[${cover.replace(/^!?\[\[|\]\]$/g, "")}]]` : ""} onChange={(link) => setCover(link.replace(/^!?\[\[|\]\]$/g, ""))} nearNote={path} />
 
         {withDescription && (
           <fieldset>

@@ -407,3 +407,11 @@
 .fyear-day.today .fyear-dot { background: var(--on-accent); }
 /* No celular, uma coluna de meses e dias com alvo maior. */
 @media (max-width: 640px) { .fyear-day { min-height: 40px; } .fyear-strip .fyear-day { width: 40px; } }
+
+/* Personalização da wiki (ADR 0027): a capa é uma faixa no topo do cartão, como na campanha; o texto fica no painel,
+   fora da imagem, então o contraste não depende dela. O brasão vai ao lado do nome. */
+.wiki-cover.with-cover { padding-top: 0; overflow: hidden; }
+.wiki-cover-band { flex: 0 0 calc(100% + 48px); margin: 0 -24px; border-radius: 0; }
+.wiki-title { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.wiki-home.toned .wiki-cover { background: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--tone, var(--violet)) 20%, transparent), transparent 60%), var(--panel); }
+@media (max-width: 860px) { .wiki-cover-band { max-height: 72px; } }

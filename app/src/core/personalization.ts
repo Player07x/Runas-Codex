@@ -74,6 +74,15 @@ export function articleCategory(path: string, wikiRoot: string): string | null {
   return first.length > 1 ? `${root}${first[0]}` : null
 }
 
+// ---------- Wiki ----------
+
+/** Página inicial da wiki (`Wikis/Mundo/Mundo.md`): guarda também a cor, o ícone e a capa da wiki inteira. */
+export const wikiHomePath = (root: string, name: string) => `${root.endsWith("/") ? root : `${root}/`}${name}.md`
+
+export function wikiLook(index: VaultIndex, root: string, name: string): Look {
+  return lookOf(dataOf(index.note(wikiHomePath(root, name))))
+}
+
 // ---------- Gravação ----------
 
 /** Propriedades a gravar; `undefined` apaga a chave. `cssclasses` troca só a classe do tom (snippet do Obsidian). */
