@@ -21,9 +21,6 @@
 .vault-folder > summary:hover { background: var(--panel-2); }
 .vault-folder .folder-chevron { transition: transform 120ms; transform: rotate(-90deg); }
 .vault-folder[open] > summary .folder-chevron { transform: none; }
-.vault-folder .folder-actions { display: none; gap: 2px; }
-.vault-folder > summary:hover .folder-actions, .vault-folder > summary:focus-within .folder-actions { display: inline-flex; }
-@media (hover: none) { .vault-folder .folder-actions { display: inline-flex; } }
 .source-editor { min-height: 60vh; }
 .source-editor .cm-editor { min-height: 60vh; }
 /* Live preview: o texto com a letra do modo leitura (o código-fonte continua em fonte mono). */
@@ -90,11 +87,23 @@
 .graph-open:disabled { color: var(--text); cursor: default; text-decoration: none; }
 .graph-node-list { display: grid; gap: 2px; max-height: 260px; margin: 0; padding: 0; overflow: auto; list-style: none; }
 @media (max-width: 860px) { .graph-list { padding: 112px 12px 12px; } }
-/* T7: as ações da pasta ficam ao lado do <summary>, por cima da linha, e aparecem no hover ou com o foco. */
+/* Pasta do tamanho de uma nota: mesmo recuo, mesma fonte e altura de toque (pedido do dono, 11/2026). */
 .vault-folder-wrap { position: relative; }
-.vault-folder-wrap > .folder-actions { position: absolute; top: 0; right: 4px; height: 32px; align-items: center; display: none; gap: 2px; padding-left: 6px; border-radius: 8px; background: var(--panel-2); }
-.vault-folder-wrap:has(> details > summary:hover) > .folder-actions, .vault-folder-wrap > .folder-actions:hover, .vault-folder-wrap > .folder-actions:focus-within, .vault-folder-wrap:has(> details > summary:focus-visible) > .folder-actions { display: inline-flex; }
-/* O nome encolhe (com reticências) para dar lugar aos botões. */
-.vault-folder-wrap > details > summary:is(:hover, :focus-visible), .vault-folder-wrap:has(> .folder-actions:is(:hover, :focus-within)) > details > summary { padding-right: 170px; }
-@media (hover: hover) and (min-width: 861px) { .vault-folder-wrap > .folder-actions .icon-btn { width: 28px; height: 28px; min-width: 28px; min-height: 28px; } }
-@media (hover: none) { .vault-folder-wrap > .folder-actions { display: inline-flex; background: transparent; } .vault-folder-wrap > details > summary { padding-right: 220px; } }
+.vault-folder > summary.folder-summary { align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px; border-radius: 9px; color: var(--text); font-size: calc(14px * var(--font-scale, 1)); font-weight: 600; -webkit-touch-callout: none; user-select: none; }
+.folder-summary .folder-chevron { margin-left: -4px; color: var(--muted); }
+.folder-summary .folder-count { display: block; font-weight: 400; }
+.folder-summary > svg:not(.folder-chevron) { flex: none; color: var(--muted); }
+/*
+ * As ações da pasta e da nota estão no menu de contexto (botão direito, segurar o dedo, tecla Menu ou Shift+F10).
+ * O “⋯” é o mesmo menu para quem usa mouse ou teclado: aparece no hover ou com o foco, por cima do fim da linha
+ * (T7: fora do <summary>/<a>, sem controle dentro de controle). No toque some: lá é segurar o dedo.
+ */
+.note-row { position: relative; }
+.note-row > .list-item.note-item { -webkit-touch-callout: none; }
+.row-menu { position: absolute; top: 50%; right: 4px; display: none; transform: translateY(-50%); border-radius: 8px; background: var(--panel-2); }
+.vault-folder-wrap > .row-menu { top: 22px; }
+.note-row:is(:hover, :focus-within) > .row-menu, .vault-folder-wrap:has(> details > summary:hover) > .row-menu, .vault-folder-wrap:has(> details > summary:focus-visible) > .row-menu, .vault-folder-wrap > .row-menu:is(:hover, :focus-within) { display: inline-flex; }
+.note-row:is(:hover, :focus-within) > .list-item, .vault-folder-wrap:has(> .row-menu:is(:hover, :focus-within)) > details > summary, .vault-folder-wrap > details > summary:is(:hover, :focus-visible) { padding-right: 44px; }
+.row-menu:has([aria-expanded="true"]) { display: inline-flex; }
+@media (hover: none) { .row-menu, .note-row:is(:hover, :focus-within) > .row-menu, .vault-folder-wrap > .row-menu:is(:hover, :focus-within) { display: none; } }
+.notes-hint { display: flex; align-items: center; gap: 8px; margin: 0; }

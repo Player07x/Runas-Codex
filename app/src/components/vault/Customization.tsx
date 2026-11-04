@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { BookOpen, Brush, FileText, Flag, Folder, Gem, Heart, Keyboard, Map, ScrollText, Shield, Skull, Sparkles, Star, Sword, Users } from "lucide-react"
+import { BookOpen, Brush, FileText, Flag, Folder, Gem, Heart, Keyboard, Map, Pin, PinOff, ScrollText, Shield, Skull, Sparkles, Star, Sword, Users } from "lucide-react"
 import { SHORTCUTS, eventShortcut, shortcutAction, type ShortcutAction } from "../../core/shortcuts"
-import { NOTE_COLORS, type NoteColor } from "../../core/note-flags"
+import { NOTE_COLORS, noteFlags, type NoteColor } from "../../core/note-flags"
 import { folderKey, preferences, updatePreferences, usePreferences } from "../../lib/customization"
 import { useVault } from "../../platform/VaultProvider"
 import { Modal, useToast } from "../ui"
@@ -13,13 +13,52 @@ export function NoteIcon({ icon, color, folder = false }: { icon?: string; color
   return <Icon size={14} style={{ color: NOTE_COLORS[color as NoteColor] }} />
 }
 export function FolderAppearance({ path }: { path: string }) {
-  const vault = useVault(), prefs = usePreferences(), toast = useToast(), [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false)
+  return <><button className="icon-btn sm" aria-label={`Aparência da pasta ${path}`} title="Ícone e cor da pasta" onClick={e => { e.preventDefault(); setOpen(true) }}><Sparkles size={13} /></button>{open && <FolderAppearanceDialog path={path} onClose={() => setOpen(false)} />}</>
+}
+/** A janela de ícone e cor da pasta, também aberta pelo menu de contexto da lista de notas. */
+export function FolderAppearanceDialog({ path, onClose }: { path: string; onClose(): void }) {
+  const vault = useVault(), prefs = usePreferences(), toast = useToast()
   const key = folderKey(vault.info!.path, path), current = prefs.folders[key] ?? {}
-  return <><button className="icon-btn sm" aria-label={`Aparência da pasta ${path}`} title="Ícone e cor da pasta" onClick={e => { e.preventDefault(); setOpen(true) }}><Sparkles size={13} /></button>{open && createPortal(<Modal title="Ícone e cor da pasta" onClose={() => setOpen(false)}>
+  return createPortal(<Modal title="Ícone e cor da pasta" onClose={onClose}>
     <p className="small muted">Preferências deste aparelho para {path}.</p>
     <label className="field"><span>Ícone</span><select className="input" aria-label="Ícone da pasta" value={current.icon ?? "folder"} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, icon: e.target.value } } })) } catch (error) { toast(String(error)) } }}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
     <label className="field"><span>Cor</span><select className="input" aria-label="Cor da pasta" value={current.color ?? ""} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, color: e.target.value } } })) } catch (error) { toast(String(error)) } }}><option value="">Padrão</option>{Object.keys(NOTE_COLORS).map(color => <option key={color}>{color}</option>)}</select></label>
-  </Modal>, document.body)}</>
+  </Modal>, document.body)
+}
+/**
+ * Fixar, cor e ícone de uma nota (propriedades `fixada`, `cor` e `icone`, que o Obsidian mostra). Usada pelo ⋯ da
+ * nota aberta e pelo menu de contexto da lista; `before` grava o rascunho aberto antes de mexer no arquivo.
+ */
+export function NoteDecorateDialog({ path, before, onClose }: { path: string; before?: () => Promise<unknown>; onClose(): void }) {
+  const vault = useVault(), toast = useToast()
+  const note = vault.index?.note(path)
+  if (!note) return null
+  const flags = noteFlags(note)
+  const organize = (action: () => Promise<unknown>) => void (before ? before() : Promise.resolve()).then(action).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+  const setColor = (color: NoteColor | undefined) => organize(() => vault.setProperty(path, "cor", color))
+  return (
+    <Modal title="Fixar, cor e ícone" onClose={onClose} footer={<button className="btn" onClick={onClose}>Fechar</button>}>
+      <button className="btn" onClick={() => organize(() => vault.setProperty(path, "fixada", flags.pinned ? undefined : true))}>
+        {flags.pinned ? <PinOff size={15} /> : <Pin size={15} />} {flags.pinned ? "Desafixar" : "Fixar no topo da lista"}
+      </button>
+      <div className="note-colors" role="group" aria-label="Cor da nota">
+        {(Object.keys(NOTE_COLORS) as NoteColor[]).map((color) => (
+          <button
+            key={color}
+            className={`note-swatch ${flags.color === color ? "active" : ""}`}
+            style={{ ["--swatch" as string]: NOTE_COLORS[color] }}
+            title={color}
+            aria-label={`Cor ${color}`}
+            aria-pressed={flags.color === color}
+            onClick={() => setColor(flags.color === color ? undefined : color)}
+          />
+        ))}
+        {flags.color && <button className="btn sm ghost" onClick={() => setColor(undefined)}>Sem cor</button>}
+      </div>
+      <label className="field"><span>Ícone da nota</span><select className="input" aria-label="Ícone da nota" value={String(note.meta.frontmatter?.data?.icone ?? "file")} onChange={event => organize(() => vault.setProperty(path, "icone", event.target.value))}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
+    </Modal>
+  )
 }
 /** Estilos locais e atalhos são carregados uma vez para todas as telas. A CSP continua bloqueando recursos externos. */
 export function CustomizationRuntime() {
