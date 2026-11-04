@@ -51,3 +51,16 @@ repetida (regra 3), notas em `docs/releases/v<versão>.md` (regra 6) e CI verde 
 anotada no commit da `main` e chama o Release na tag; o Release publica como se a tag tivesse sido enviada à mão,
 inclusive com o APK de release conferido. Enviar a tag à mão continua valendo. Quem pode rodar Actions no repositório
 pode lançar, como hoje quem pode enviar tags.
+
+## Adendo — números depois da 1.0 (04/11/2026)
+
+A regra 2 fala em `v0.1.0-beta.N`, o formato das betas. Da 1.0.0 em diante, o número segue o SemVer, que o botão
+“Verificar atualizações” já usa para comparar versões (ADR 0017):
+
+- **1.x.0** (número do meio) quando a versão traz funções novas sem quebrar o que existe (a 1.1.0 é a primeira);
+- **1.x.y** (último número) quando traz só correções;
+- **2.0.0** só para mudança que quebra algo do usuário, como o formato do cofre ou a compatibilidade com o Obsidian;
+- **1.x.0-beta.N** para testar antes, quando o dono pedir: quem está numa estável não recebe betas (ADR 0017).
+
+O resto não muda: tag só da `main`, número sempre maior que o da última tag, notas em `docs/releases/v<versão>.md` e
+o workflow “Lançar versão” para criar a tag.

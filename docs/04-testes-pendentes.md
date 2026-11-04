@@ -1422,3 +1422,9 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   entre páginas e as imagens abrem, e as páginas de um banco de dados mostram as colunas como propriedades.
 - [ ] Uma exportação grande (ZIP com `…-Part-1.zip` dentro) e uma com nomes acentuados.
 - [ ] Abrir a pasta `Notion/` no Obsidian: links, imagens e propriedades iguais.
+
+## Versão 1.1.0
+
+- [ ] Atualizar da 1.0.0 para a 1.1.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.1.0.
+- [ ] As seções acima, de “Configurações: trocar de seção sem rolar” até “Importar do Notion”, entraram nesta versão.
