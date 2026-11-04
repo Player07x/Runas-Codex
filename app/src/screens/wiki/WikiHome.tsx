@@ -1,10 +1,11 @@
 import { ArticleArt } from "./ArticleArt"
-import { CoverBand, emblemIcon } from "../../components/kit/Emblem"
-import { categoryLook, isCategoryNote } from "../../core/personalization"
+import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
+import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
+import { categoryLook, isCategoryNote, wikiHomePath, wikiLook } from "../../core/personalization"
 import { toneStyle } from "../../core/tones"
 import { categoryRoute } from "../../core/wiki-category"
 import { useMemo, useState } from "react"
-import { Folder, FolderPlus, PenLine, Plus, Search, Unlink } from "lucide-react"
+import { Folder, FolderPlus, Palette, PenLine, Plus, Search, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
 import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
@@ -70,7 +71,12 @@ export function WikiHome() {
   const [creating, setCreating] = useState(false)
   const [newCategory, setNewCategory] = useState(false)
   const [homeView, setHomeView] = useRemembered("runas-codex:wiki-inicio-vista", parseHomeView)
+
+  const [personalizing, setPersonalizing] = useState(false)
   const root = wiki!.root
+  // Cor, ícone e capa da wiki ficam na nota da página inicial (`Wikis/<Mundo>/<Mundo>.md`), como na campanha.
+  const look = useMemo(() => wikiLook(index, root, wiki!.name), [index, root, wiki, vault.version])
+  const homePath = wikiHomePath(root, wiki!.name)
   const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
   const tree = useMemo(() => folderTree(notes, root, wiki!.home), [notes, root, wiki])
   const recent = useMemo(() => [...notes].filter((n) => n.path !== wiki!.home).sort((a, b) => b.mtime - a.mtime).slice(0, 6), [notes, wiki])
@@ -82,11 +88,12 @@ export function WikiHome() {
   useCreateRequest("artigo", () => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true)))
 
   return (
-    <div className="page wiki-home">
-      <section className="wiki-cover card">
+    <div className={`page wiki-home${look.tone ? " toned" : ""}`} style={toneStyle(look.tone)}>
+      <section className={`wiki-cover card${look.cover ? " with-cover" : ""}`}>
+        {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={homePath} height={140} className="wiki-cover-band" />}
         <div className="stack" style={{ gap: 6, minWidth: 0 }}>
-          <span className="eyebrow" style={{ color: "var(--violet)" }}>Wiki · {root}</span>
-          <h1 className="page-title">{wiki!.name}</h1>
+          <span className="eyebrow" style={{ color: look.tone ? "var(--tone)" : "var(--violet)" }}>Wiki · {root}</span>
+          <h1 className="page-title wiki-title">{(look.tone || look.emblem) && <Crest tone={look.tone} emblem={look.emblem} name={wiki!.name} size={36} />}{wiki!.name}</h1>
           {home && noteBody(home.text).replace(/^#[^\n]*\n/, "").trim() && (
             <NoteSetContext.Provider value={noteSet}>
               <Markdown source={noteBody(home.text).replace(/^#[^\n]*\n/, "")} className="wiki-intro" />
@@ -108,6 +115,9 @@ export function WikiHome() {
               <PenLine size={15} /> Página inicial
             </a>
           )}
+          <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para personalizar.") : setPersonalizing(true))}>
+            <Palette size={16} /> Personalizar
+          </button>
           <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar categorias.") : setNewCategory(true))}>
             <FolderPlus size={16} /> Nova categoria
           </button>
@@ -183,6 +193,7 @@ export function WikiHome() {
       )}
       {creating && <NewArticleDialog onClose={() => setCreating(false)} />}
       {newCategory && <CategoryKindDialog root={root} wikiName={wiki!.name} onClose={() => setNewCategory(false)} />}
+      {personalizing && <PersonalizeDialog title={`Personalizar ${wiki!.name}`} name={wiki!.name} path={homePath} onClose={() => setPersonalizing(false)} />}
     </div>
   )
 }

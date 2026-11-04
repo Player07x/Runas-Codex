@@ -1,4 +1,4 @@
-import { articleCategory, campaignLook, campaignOfPath, categoryLook, categoryNotePath, imageTarget, isCategoryNote, lookOf, lookProperties } from "./personalization"
+import { articleCategory, campaignLook, campaignOfPath, categoryLook, categoryNotePath, imageTarget, isCategoryNote, lookOf, lookProperties, wikiHomePath, wikiLook } from "./personalization"
 import { parseTone } from "./tones"
 import { VaultIndex } from "./vault-index"
 
@@ -39,6 +39,15 @@ describe("personalização de campanhas e categorias", () => {
     expect(categoryLook(index, "Wikis/Mundo/Locais").tone).toBeNull()
     expect(isCategoryNote(index.note("Wikis/Mundo/Personagens/Personagens.md")!)).toBe(true)
     expect(isCategoryNote(index.note("Wikis/Mundo/Locais/Locais.md")!)).toBe(false)
+  })
+
+  it("a wiki se personaliza pela nota da página inicial", () => {
+    const index = vault({ "Wikis/Mundo/Mundo.md": "---\ncor: jade\nicone: coroa\ncapa: \"[[Imagens/mapa.png]]\"\n---\n# Mundo\n" })
+    expect(wikiHomePath("Wikis/Mundo/", "Mundo")).toBe("Wikis/Mundo/Mundo.md")
+    expect(wikiHomePath("Wikis/Mundo", "Mundo")).toBe("Wikis/Mundo/Mundo.md")
+    const look = wikiLook(index, "Wikis/Mundo/", "Mundo")
+    expect([look.tone?.id, look.emblem, look.cover]).toEqual(["jade", "coroa", "Imagens/mapa.png"])
+    expect(wikiLook(index, "Wikis/Outra/", "Outra").tone).toBeNull()
   })
 
   it("a categoria do artigo é a primeira pasta dentro da wiki", () => {

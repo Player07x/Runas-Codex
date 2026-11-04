@@ -38,7 +38,9 @@ Isso grava a nota da categoria (`Monstros/Monstros.md`) com `artigo`, `campos`, 
   por artigo: imagem, número, data e campos com mais de um valor numa nota ficam de fora, e a janela diz por quê.
   A escolha fica na nota da categoria (`filtros`) e vale em todos os aparelhos; **Voltar ao automático** desfaz.
 - **⋯ › Personalizar categoria…**: cor, ícone, imagem de capa e descrição, que aparecem no cartão, na página e nos
-  artigos.
+  artigos. A capa pode ser uma imagem do cofre ou uma do computador (**Do computador…**, que a copia para o cofre).
+- **Personalizar** (na página inicial da wiki): cor, ícone e capa da wiki inteira, guardados na nota da página
+  inicial.
 - **⋯ › Exportar categoria…**: PDF, DOCX ou HTML com os artigos.
 
 ### O artigo

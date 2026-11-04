@@ -1407,3 +1407,10 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] “Salvar como modelo” leva o `recuo`; um livro com `recuo: false` desliga o do modelo.
 - [ ] Exportar PDF, EPUB e DOCX com o recuo ligado: o recuo aparece nos três (no DOCX, “Primeira linha” no parágrafo).
 - [ ] O capítulo no editor e no Obsidian não muda.
+
+## Personalização da wiki e capa do computador (PR `wiki/personalizacao`)
+
+- [ ] Wiki › página inicial › **Personalizar**: escolher cor, ícone e uma capa “Do computador…”; conferir que a imagem
+  vira anexo no cofre, que a faixa aparece no topo do cartão (no desktop e no Android) e que a nota
+  `Wikis/<Mundo>/<Mundo>.md` ganhou `cor`, `icone` e `capa` (e abre igual no Obsidian).
+- [ ] Personalizar uma campanha e uma categoria com imagem “Do computador…”: a capa aparece no cartão e na página.
