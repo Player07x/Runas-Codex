@@ -1,7 +1,7 @@
-import { BookOpen, ChevronLeft, FileDown, History, LayoutGrid, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { BookOpen, ChevronLeft, FileDown, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
 import { fichaEnd, toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { findBooks, moveBookItem, readBook, type BookItem } from "../../core/books"
+import { findBooks, readBook, type BookItem } from "../../core/books"
 import { reviewComment } from "../../core/books-review"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
@@ -9,7 +9,6 @@ import { NoteView, type NoteEditorApi } from "../../components/vault/NoteView"
 import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { useNarrow } from "../../components/editor/use-narrow"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
-import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { Notice } from "../../components/kit/Layout"
 import { Modal, Segmented } from "../../components/ui"
 import { navigate } from "../../lib/router"
@@ -18,13 +17,13 @@ import { ConfirmDialog } from "../../components/vault/dialogs"
 import { useVault } from "../../platform/VaultProvider"
 import { BookSupport, type SupportTab } from "./BookSupport"
 import { createCursorStore } from "./cursor-store"
+import { BookBinder } from "./BookBinder"
 
 const BookPreview = lazy(() => import("./BookPreview"))
 const BookSidePreview = lazy(() => import("./BookSidePreview"))
 
-type View = "escrever" | "organizar" | "previa"
+type View = "escrever" | "previa"
 const TYPEWRITER_KEY = "runas-codex:livros:maquina"
-const ORGANIZE_KEY = "runas-codex:livros:organizar"
 const KIND_LABEL: Record<string, string> = { capitulo: "Capítulo", parte: "Parte", secao: "Seção", indice: "Índice" }
 type Status = "pronto" | "revisao" | "rascunho"
 const STATUS_TEXT: Record<Status, string> = { pronto: "pronto", revisao: "revisão", rascunho: "rascunho" }
@@ -37,7 +36,7 @@ const closePanel = (id: string) => setPanelCollapsed(id, true)
 const words = (count: number) => `${count.toLocaleString("pt-BR")} ${count === 1 ? "palavra" : "palavras"}`
 
 /**
- * Livros: a mesa do escritor (rework F3b). Três modos — Escrever, Organizar e Diagramar — no lugar de sete botões; o
+ * Livros: a mesa do escritor (rework F3b). Dois modos — Escrever e Diagramar (o Organizar virou o sumário em árvore); o
  * sumário recolhível à esquerda; a formatação aparece onde o cursor está (barra da seleção, menu `/`, galeria); o
  * Apoio (referências, revisão, capítulo) fica fechado até ser pedido. Foco é a única ação solta. Em Escrever, a
  * prévia ao lado mostra as páginas enquanto se escreve (L1); no celular, “Ver a página” abre a página do cursor em tela cheia.
@@ -149,10 +148,6 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     await vault.setProperty(book.path, "estrutura", links)
     setSelected(path)
   }
-  const move = (from: number, to: number) => void run(async () => {
-    await vault.setProperty(book.path, "estrutura", moveBookItem(structure.items.map((i) => i.link), from, to))
-    setAnnouncement(`Capítulo movido para a posição ${to + 1}.`)
-  })
   const open = (path: string) => { setSelected(path); setLineRequest(undefined); setView("escrever"); if (narrow) closePanel("book-binder") }
   const showSupport = (tab: SupportTab) => { if (narrow) closePanel("book-binder"); setSupportTab(tab); setRevealSupport(true); setTimeout(() => setRevealSupport(false)) }
   const newChapter = () => { setCreating(true); setView("escrever") }
@@ -175,7 +170,8 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const toTrash = chapters.filter((path) => path.startsWith(folder) && !otherBooks.has(path))
   const kept = chapters.filter((path) => !toTrash.includes(path))
   bookMenu.push("separator", { label: "Excluir livro…", icon: <Trash2 size={16} />, danger: true, disabled: locked, onSelect: () => setDeleting(true) })
-  const views = [{ value: "escrever" as const, label: "Escrever", icon: <PenLine size={14} /> }, { value: "organizar" as const, label: "Organizar", icon: <LayoutGrid size={14} /> }, { value: "previa" as const, label: "Diagramar", icon: <LayoutTemplate size={14} /> }]
+  // Organizar saiu: o sumário em árvore move, recua, duplica e remove (BookBinder).
+  const views = [{ value: "escrever" as const, label: "Escrever", icon: <PenLine size={14} /> }, { value: "previa" as const, label: "Diagramar", icon: <LayoutTemplate size={14} /> }]
 
   return <div className={`books-editor books-view-${view} ${focus ? "books-focus" : ""}`}>
     {focus ? (
@@ -188,8 +184,9 @@ export function BookEditor({ book }: { book: IndexedNote }) {
       <header className="book-bar">
         <button type="button" className="btn ghost book-back" onClick={() => navigate("/livros")} aria-label="Voltar aos livros"><ChevronLeft size={16} /><span>Livros</span></button>
         <div className="book-slot" ref={setBinderSlot} />
-        <div className="doc-title"><small>Livro</small><h1>{book.name}</h1></div>
+        {/* Os modos vêm antes do título: o que fica antes deles tem sempre a mesma largura, então não andam. */}
         <Segmented<View> label="Modo do livro" value={view} onChange={setView} options={views} />
+        <div className="doc-title"><small>Livro</small><h1 title={book.name}>{book.name}</h1></div>
         <div className="doc-end">
           {view === "escrever" && <div className="book-slot" ref={setChapterSlot} />}
           {view === "escrever" && !narrow && <div className="book-slot book-preview-slot" ref={setPreviewSlot} />}
@@ -206,17 +203,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     <div className="books-layout">
       <ResizablePanel id="book-binder" label="Sumário" side="left" width={260} controlsTarget={binderSlot} reveal={creating} hidden={focus} className="books-binder">
         <nav className="book-toc" aria-label="Sumário do livro">
-          <ol>{structure.items.map((item, i) => {
-            const status = statusOf(item.status), title = item.note?.name ?? item.link
-            return <li key={`${item.link}:${i}`}>
-              <button type="button" className="book-toc-item" disabled={!item.note} aria-current={selected === item.note?.path && view === "escrever" ? "true" : undefined} onClick={() => item.note && open(item.note.path)}>
-                <span className={`book-dot ${status}`} aria-hidden="true" />
-                <span className="book-toc-name">{title}</span>
-                <small aria-hidden="true">{item.note ? item.words.toLocaleString("pt-BR") : "—"}</small>
-                <span className="sr-only">{item.note ? `, ${STATUS_TEXT[status]}, ${words(item.words)}` : ", link quebrado"}</span>
-              </button>
-            </li>
-          })}</ol>
+          <BookBinder book={book} items={structure.items} selected={selected} locked={locked} onOpen={open} onSelect={setSelected} run={run} announce={setAnnouncement} />
           {creating ? <form className="book-new stack" onSubmit={(e) => {
             e.preventDefault(); void run(async () => {
               const path = await vault.createNote(dirname(book.path), name.trim(), `---\ntipo: ${kind}\nstatus: rascunho\nresumo: ""\n---\n# ${name.trim()}\n`)
@@ -249,8 +236,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
         </nav>
       </ResizablePanel>
       <main className="books-main">
-        {view === "organizar" ? <BookOrganize items={structure.items} locked={locked} onOpen={open} onMove={move} />
-          : view === "previa" ? <Suspense fallback={<p className="page">Carregando prévia…</p>}><BookPreview book={book} draft={draft} onClose={() => setView("escrever")} /></Suspense>
+        {view === "previa" ? <Suspense fallback={<p className="page">Carregando prévia…</p>}><BookPreview book={book} draft={draft} onClose={() => setView("escrever")} /></Suspense>
           : current ? <>
             {!focus && <ChapterMeta item={currentItem} onEdit={() => showSupport("capitulo")} />}
             <NoteView
@@ -349,57 +335,4 @@ function CommentDialog({ onClose, onSave }: { onClose(): void; onSave(text: stri
     <label className="field"><span>Comentário</span><textarea ref={field} className="input" rows={3} maxLength={2000} value={text} onChange={(event) => setText(event.target.value)} /></label>
     <p className="small muted">Entra depois do trecho selecionado como <code>%% revisão: … %%</code>, oculto na leitura e na impressão. A lista fica na aba Revisão do Apoio.</p>
   </Modal>
-}
-
-/**
- * Organizar (LIV-6): Estrutura e Cortiça numa visão só, em cartões ou lista. Mover por arrastar, pelo menu de cada
- * capítulo ou com Alt+↑ e Alt+↓ no capítulo focado; a posição nova é anunciada.
- */
-function BookOrganize({ items, locked, onOpen, onMove }: { items: BookItem[]; locked: boolean; onOpen(path: string): void; onMove(from: number, to: number): void }) {
-  const [style, setStyle] = useState<"cartoes" | "lista">(() => (stored(ORGANIZE_KEY) === "lista" ? "lista" : "cartoes"))
-  useEffect(() => store(ORGANIZE_KEY, style), [style])
-  const drag = useRef<number | null>(null)
-  const list = useRef<HTMLOListElement>(null)
-  // Depois de mover pelo teclado, o foco acompanha o capítulo: espera a gravação pôr o mesmo link na posição nova.
-  const [follow, setFollow] = useState<{ link: string; to: number } | null>(null)
-  useEffect(() => {
-    if (!follow || items[follow.to]?.link !== follow.link) return
-    list.current?.querySelector<HTMLElement>(`[data-book-position="${follow.to}"]`)?.focus()
-    setFollow(null)
-  }, [items, follow])
-  const moveTo = (from: number, to: number) => { if (locked || to < 0 || to >= items.length) return; setFollow({ link: items[from]!.link, to }); onMove(from, to) }
-  return <section className={`book-organize ${style}`} aria-label="Organizar capítulos">
-    <div className="book-organize-head">
-      <p className="small muted">Arraste pelo ⠿, use o menu de cada capítulo ou Alt+↑ e Alt+↓ com o capítulo focado.</p>
-      <ChoiceGroup label="Mostrar como" value={style} onChange={setStyle} options={[{ value: "cartoes", label: "Cartões" }, { value: "lista", label: "Lista" }]} />
-    </div>
-    <ol className="book-organize-list" ref={list}>{items.map((item, i) => {
-      const title = item.note?.name ?? item.link, status = statusOf(item.status)
-      return <li key={`${item.link}:${items.slice(0, i).filter((other) => other.link === item.link).length}`} className="book-organize-item" data-book-position={i} tabIndex={0}
-        aria-label={`${i + 1}. ${title}, ${STATUS_TEXT[status]}, ${words(item.words)}`}
-        onKeyDown={(event) => {
-          if (!event.altKey || event.target !== event.currentTarget) return
-          if (event.key === "ArrowUp") { event.preventDefault(); moveTo(i, i - 1) }
-          if (event.key === "ArrowDown") { event.preventDefault(); moveTo(i, i + 1) }
-        }}>
-        <button type="button" className="icon-btn sm book-drag" tabIndex={-1} disabled={locked} aria-label={`Arrastar ${title}`}
-          onPointerDown={(e) => { drag.current = i; e.currentTarget.setPointerCapture(e.pointerId) }} onPointerCancel={() => { drag.current = null }}
-          onPointerUp={(e) => {
-            const from = drag.current; drag.current = null
-            const target = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-book-position]")
-            if (from !== null && target && Number(target.dataset.bookPosition) !== from) onMove(from, Number(target.dataset.bookPosition))
-          }}>⠿</button>
-        <div className="book-organize-text">
-          <small className="book-organize-meta"><span className={`book-dot ${status}`} aria-hidden="true" /> {i + 1} · {STATUS_TEXT[status]}</small>
-          <button type="button" className="book-organize-name" disabled={!item.note} onClick={() => item.note && onOpen(item.note.path)}>{title}</button>
-          <p>{item.note ? item.summary || "Sem resumo" : "Link quebrado: corrija nos metadados do livro."}</p>
-        </div>
-        <OverflowMenu label={`Ações de ${title}`} items={[
-          { label: "Abrir", icon: <PenLine size={16} />, disabled: !item.note, onSelect: () => item.note && onOpen(item.note.path) },
-          { label: "Subir", hint: "Alt+↑", disabled: locked || i === 0, onSelect: () => moveTo(i, i - 1) },
-          { label: "Descer", hint: "Alt+↓", disabled: locked || i === items.length - 1, onSelect: () => moveTo(i, i + 1) },
-        ]} />
-      </li>
-    })}</ol>
-  </section>
 }

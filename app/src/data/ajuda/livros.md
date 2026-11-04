@@ -6,13 +6,20 @@ comum (que o Obsidian abre). Livros › **Novo livro** cria a pasta, a nota do l
 Cada livro aparece com a capa (a imagem da propriedade `capa`, ou uma capa desenhada), o número de capítulos e de
 palavras. **Importar livro** traz do Homebrewery, do GM Binder ou de um DOCX.
 
-### Os três modos do livro
+### Os dois modos do livro
 
 | Modo | Para que serve |
 | :-- | :-- |
 | **Escrever** | O capítulo no editor, com o sumário à esquerda e, se quiser, a **prévia das páginas ao lado**, que acompanha o cursor |
-| **Organizar** | Os capítulos como cartões: arraste para mudar a ordem, mude a situação (rascunho, revisão, pronto) |
 | **Diagramar** | As páginas como vão sair impressas, com o painel **Estilo do livro** |
+
+O **sumário** à esquerda é onde se organiza o livro: as seções aparecem recuadas embaixo do capítulo (que fecha e abre
+pela setinha), e a Parte é um título dourado. Arraste pelo ⠿ para mudar a ordem (para a direita vira seção, para a
+esquerda vira capítulo); o ⋯ de cada linha cria seção ou capítulo, renomeia, duplica (com as seções), sobe, desce,
+muda o nível, muda a situação e remove (tirar do livro ou mandar para a lixeira). Pelo teclado: ↑ ↓ andam, → ← abrem e
+fecham, Alt+↑ ↓ movem, Alt+→ ← mudam o nível, F2 renomeia, Ctrl+D duplica e Del remove. “Mostrar resumos” põe o resumo
+de cada capítulo embaixo do nome. O nível vem do `tipo` de cada nota; a lista `estrutura` do livro continua igual no
+Obsidian.
 
 No sumário, o ponto colorido de cada capítulo mostra a situação. **Foco** esconde tudo menos o texto; a **máquina de
 escrever** mantém a linha do cursor no meio da tela a cada tecla. No celular, “Ver a página” abre a prévia em tela
