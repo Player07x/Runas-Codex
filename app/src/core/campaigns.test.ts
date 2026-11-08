@@ -1,7 +1,7 @@
 import {
   appendToSection, campaignJournal, castRows, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
   nextCampaignSession, npcAppeared, npcAttitude, npcExtra, npcSightings, PREP_STEPS, prepItems, previousSession, reputationOf, secretsOf, sectionText, setClocks, setPrepDetail, setSecretRevealed, setSectionText, setTaskLine,
-  withCampaignPlayer, trackedLinks, campaignContents, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink,
+  withCampaignPlayer, trackedLinks, campaignContents, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink, isGmNote, newGmNote, listGmNotes, withPinnedNote, isSessionNote,
 } from "./campaigns"
 import { setProperty } from "./properties"
 import { parseFrontmatter } from "./parse"
@@ -251,7 +251,7 @@ describe("campanhas", () => {
     const session = newSessionNote({ number: 13, title: "O baile", date: "2026-10-24", time: "19:30", endTime: "23:00", event: "Agenda/2026-10-24 Sessão 13", worldDate: "4031-07-20", present: ["Campanhas/Cinzas/Personagens/Ilsa"] })
     expect(parseFrontmatter(session)!.data).toEqual({ tipo: "sessao", numero: 13, status: "planejada", data: "2026-10-24", hora: "19:30", hora_fim: "23:00", evento: "[[Agenda/2026-10-24 Sessão 13]]", data_mundo: "4031-07-20", presentes: ["[[Campanhas/Cinzas/Personagens/Ilsa]]"] })
     expect(prepItems(session).map((p) => p.label)).toEqual([...PREP_STEPS])
-    expect(session).toContain("# Sessão 13 — O baile")
+    expect(session).toContain("# Sessão 13: O baile")
     expect(parseFrontmatter(newQuestNote("Ponte", { status: "ideia", order: "2", giver: "Conde", reward: "favor" }))!.data).toEqual({ tipo: "missao", status: "ideia", ordem: "2", contratante: "[[Conde]]", recompensa: "favor" })
     expect(uniqueNoteName(index, `${C}Sessões`, "Sessão 11")).toBe("Sessão 11 2")
     expect(uniqueNoteName(index, `${C}Sessões`, "Sessão 13")).toBe("Sessão 13")
@@ -365,5 +365,36 @@ describe("excluir campanha", () => {
     const vault = new VaultIndex(Object.keys(texts).map(path => ({ path, size: 1, mtime: 1 })), texts)
     const brasa = listCampaigns(vault).find((c) => c.name === "Brasa")!
     expect(campaignContents(vault, brasa)).toEqual({ folder: "Campanhas/Brasa", files: 5, sessions: 2, quests: 1 })
+  })
+})
+
+describe("notas do mestre", () => {
+  it("cria uma nota secreta e não a trata como sessão", () => {
+    const text = newGmNote("Pista oculta", "Sessões/Sessão 2")
+    const note = new VaultIndex([{ path: "Campanhas/Cinzas/Notas do mestre/Pista oculta.md", size: text.length, mtime: 1 }], { "Campanhas/Cinzas/Notas do mestre/Pista oculta.md": text }).note("Campanhas/Cinzas/Notas do mestre/Pista oculta.md")!
+    expect(text).toContain("tipo: nota-mestre")
+    expect(text).toContain("segredo: true")
+    expect(isGmNote(note, "Campanhas/Cinzas/")).toBe(true)
+  })
+
+  it("lista as notas do mestre com a sessão e o que está fixado na campanha", () => {
+    const texts: Record<string, string> = {
+      "Campanhas/Cinzas/Cinzas.md": "---\ntipo: campanha\nfixadas: [\"[[Pista oculta]]\", \"[[Regras da casa]]\"]\n---\n# Cinzas",
+      "Campanhas/Cinzas/Notas do mestre/Pista oculta.md": newGmNote("Pista oculta", "Sessão 2"),
+      "Campanhas/Cinzas/Notas do mestre/Plano B.md": newGmNote("Plano B"),
+      "Campanhas/Cinzas/Sessões/Sessão 2.md": "---\ntipo: sessao\n---\n# Sessão 2",
+      "Campanhas/Cinzas/Regras da casa.md": "# Regras",
+    }
+    const vault = new VaultIndex(Object.keys(texts).map((path) => ({ path, size: 1, mtime: 1 })), texts)
+    const campaign = listCampaigns(vault).find((c) => c.name === "Cinzas")!
+    const home = campaign.home!
+    const fixadas = vault.note(home)?.meta.frontmatter?.data?.fixadas
+    expect(listGmNotes(vault, campaign, fixadas)).toEqual([
+      { path: "Campanhas/Cinzas/Notas do mestre/Pista oculta.md", name: "Pista oculta", session: "Sessão 2", pinned: true },
+      { path: "Campanhas/Cinzas/Notas do mestre/Plano B.md", name: "Plano B", pinned: false },
+    ])
+    expect(isSessionNote(vault.note("Campanhas/Cinzas/Notas do mestre/Plano B.md")!, campaign.root)).toBe(false)
+    expect(withPinnedNote(vault, fixadas, home, "Campanhas/Cinzas/Notas do mestre/Pista oculta.md", false)).toEqual(["[[Regras da casa]]"])
+    expect(withPinnedNote(vault, fixadas, home, "Campanhas/Cinzas/Notas do mestre/Plano B.md", true)).toEqual(["[[Pista oculta]]", "[[Regras da casa]]", "[[Plano B]]"])
   })
 })

@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react"
-import { FileText, Search } from "lucide-react"
+import { Dices, FileText, Search } from "lucide-react"
 import { eventFileName, eventNote, type EventInput } from "../../core/agenda"
 import {
+  ATTITUDES,
   CAMPAIGN_ROOT, isPlayerNote, listPlayers, newCampaignNote, newQuestNote, npcExtra, withTrackedLink, newSessionNote, noteTitle, QUEST_STATUS, sessionFileName, uniqueNoteName, withCampaignPlayer,
   type CampaignInfo, type PlayerCharacter, type QuestInfo, type QuestStatus, type TrackedLink,
 } from "../../core/campaigns"
@@ -9,6 +10,11 @@ import { emptyCanvasText } from "../../core/canvas"
 import { noteDateText, parseWorldDate } from "../../core/calendar"
 import { dirname, noteName } from "../../core/text"
 import { articleKind, listWikis, newArticleNote } from "../../core/wiki"
+import { generateDetailed } from "../../core/wiki-tools"
+import { improvisedNpc, improvisedNpcFicha } from "../../core/improvised-npc"
+import { applyFicha, withArticleBody, type FichaValues } from "../../core/wiki-ficha"
+import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
+import { FichaFields } from "../wiki/FichaFields"
 import { setProperty } from "../../core/properties"
 import { nameProblem } from "../../core/names"
 import { useVault } from "../../platform/VaultProvider"
@@ -437,21 +443,44 @@ export function NewNpcDialog({ data, initialName = "", initialKind = "personagem
   const [kind, setKind] = useState<(typeof QUICK_KINDS)[number]["id"]>(initialKind)
   const [name, setName] = useState(initialName.replace(/\.md$/i, "").split("/").pop() ?? "")
   const [appeared, setAppeared] = useState(true)
+  const [attitude, setAttitude] = useState<(typeof ATTITUDES)[number]>("neutro")
+  // “Sortear” (U24): só o que foi sorteado de propósito entra no artigo, e nunca por cima do nome digitado.
+  const [drawn, setDrawn] = useState<{ kind: string; name: string; values: FichaValues; body: string; summary: string } | null>(null)
+  const [ficha, setFicha] = useState<FichaValues>({})
   const problem = name.trim() ? nameProblem(name.trim()) : null
+  const canDraw = kind === "personagem" || kind === "organizacao"
+  const draw = () => {
+    let next: NonNullable<typeof drawn>
+    if (kind === "personagem") {
+      const npc = improvisedNpc()
+      const { values, body } = improvisedNpcFicha(npc)
+      next = { kind, name: npc.name, values, body, summary: `${npc.name}, ${npc.job}. ${npc.look}; ${npc.trait}.` }
+    } else {
+      const faction = generateDetailed("faccao")
+      next = { kind, name: faction.text.split(".")[0]!.trim(), values: faction.values, body: faction.body, summary: faction.text }
+    }
+    // O nome sorteado só entra com o campo vazio ou com o nome do sorteio anterior.
+    setName((current) => !current.trim() || current === drawn?.name ? next.name : current)
+    setDrawn(next)
+  }
+  const kept = drawn && drawn.kind === kind ? drawn : null
   return (
     <FormDialog
-      title={kind === "personagem" ? "Novo NPC" : "Novo artigo na wiki"}
-      confirmLabel={kind === "personagem" ? "Criar e pôr no Elenco" : kind === "organizacao" ? "Criar e acompanhar" : "Criar artigo"}
+      title={kind === "personagem" ? "Novo NPC" : kind === "organizacao" ? "Nova facção" : "Novo artigo na wiki"}
+      confirmLabel={kind === "personagem" ? "Criar NPC" : kind === "organizacao" ? "Criar facção" : "Criar artigo"}
       disabled={!wiki || !name.trim() || Boolean(problem)}
       onClose={onClose}
       onConfirm={async () => {
         const article = articleKind(kind)!
         const folder = `Wikis/${wiki}/${article.folder}`
-        const path = await vault.createNote(folder, uniqueNoteName(index, folder, name.trim()), newArticleNote(article, name.trim()))
+        // O que foi digitado na ficha vale mais que o sorteio.
+        const values = { ...(kept?.values ?? {}), ...Object.fromEntries(Object.entries(ficha).filter(([, value]) => (Array.isArray(value) ? value.length : value.trim()))) }
+        const note = withArticleBody(applyFicha(newArticleNote(article, name.trim()), article, values, data.calendar ? [data.calendar] : []), kept?.body ?? "")
+        const path = await vault.createNote(folder, uniqueNoteName(index, folder, name.trim()), note)
         const home = data.campaign.home
         if (home && (kind === "personagem" || kind === "organizacao")) {
           const key = kind === "personagem" ? "npcs" : "faccoes"
-          const extra = kind === "personagem" ? npcExtra("neutro", appeared) : "0"
+          const extra = kind === "personagem" ? npcExtra(attitude, appeared) : "0"
           await vault.setProperty(home, key, withTrackedLink(data.data[key], -1, vault.index!.linkTarget(path, home), extra))
         }
         onCreated?.(path)
@@ -459,7 +488,7 @@ export function NewNpcDialog({ data, initialName = "", initialKind = "personagem
     >
       <label className="field">
         <span>Nome</span>
-        <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-invalid={Boolean(problem)} aria-label="Nome do artigo" />
+        <div className="row"><input className="input grow" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-invalid={Boolean(problem)} aria-label="Nome do artigo" />{canDraw && <button type="button" className="btn" onClick={draw}><Dices size={15} /> Sortear</button>}</div>
         {problem && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{problem}</span>}
       </label>
       <div className="campaign-form-row">
@@ -477,11 +506,17 @@ export function NewNpcDialog({ data, initialName = "", initialKind = "personagem
           </select>
         </label>
       </div>
+      {kept && <div className="campaign-drawn small" role="status">
+        <span><strong>Sorteado:</strong> {kept.summary}</span>
+        <button type="button" className="btn sm ghost" onClick={() => setDrawn(null)}>Descartar o sorteio</button>
+      </div>}
+      {kind === "personagem" && <ChoiceGroup label="Atitude com o grupo" value={attitude} options={ATTITUDES.map((value) => ({ value, label: value.charAt(0).toLocaleUpperCase("pt-BR") + value.slice(1) }))} onChange={setAttitude} />}
       {kind === "personagem" && (
         <label className="check small">
           <input type="checkbox" checked={appeared} onChange={(e) => setAppeared(e.target.checked)} /> Já apareceu na campanha
         </label>
       )}
+      <details><summary>Ficha (opcional)</summary><FichaFields fields={articleKind(kind)?.fields ?? []} values={ficha} onChange={(key, value) => setFicha((current) => ({ ...current, [key]: value }))} calendars={data.calendar ? [data.calendar] : []} calendar={data.calendar} root={`Wikis/${wiki}/`} from={`Wikis/${wiki}/${articleKind(kind)?.folder ?? ""}/${name.trim()}.md`} /></details>
       {wikis.length === 0 && <p className="small muted">Crie uma wiki na seção Wiki para guardar os artigos.</p>}
       <span className="tiny faint">O artigo vai para Wikis/{wiki || "…"}/{articleKind(kind)?.folder}/ com o modelo do tipo.</span>
     </FormDialog>

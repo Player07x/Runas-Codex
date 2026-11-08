@@ -5,11 +5,11 @@ Cada campanha é uma pasta `Campanhas/<nome>/` com a nota da campanha, as sessõ
 
 | Aba | O que tem |
 | :-- | :-- |
-| **Painel** | Próxima sessão com contagem regressiva, missões ativas, notas recentes e atalhos |
+| **Painel** | Próxima sessão com contagem regressiva, relógio do mundo, missões ativas, notas recentes e atalhos |
 | **Sessões** | Todas as sessões com número, data e situação (planejada, realizada, cancelada) |
-| **Missões** | Quadro de missões em colunas por situação; arraste os cartões entre as colunas |
+| **Missões** | Missões em Colunas por situação (arraste os cartões), no Mapa (arcos e dependências) ou em Relógios |
 | **Elenco** | Jogadores e personagens, NPCs e facções, ligados aos artigos da Wiki |
-| **Ferramentas** | Relógios, tesouro, iniciativa, encontros, segurança, gerador de aventuras e mais |
+| **Ferramentas** | Tesouro, iniciativa, encontros, segurança, gerador de aventuras e mais |
 | **Quadro** | Um quadro (canvas) livre só desta campanha |
 
 ### Sessões
@@ -24,8 +24,19 @@ jogadores. O botão **Painel** da sessão mostra os **Detalhes da sessão**, a *
 - Uma sessão planejada com data no passado ganha um aviso para você marcar como realizada ou cancelada.
 - Os campos gravam ao sair e mostram **Gravado**; fechar o painel no celular também grava o que estava digitado.
 - **Desde a Sessão N**, no topo da preparação: missões mexidas, pistas reveladas, NPCs novos e relógios quase cheios.
-- Marcar a sessão como **realizada** pergunta se o **hoje no mundo** avança para a data no mundo dela. No Painel,
-  **Avançar** (ao lado de “Hoje no mundo”) passa 1 dia, 1 semana ou 1 mês.
+- Marcar a sessão como **realizada** pergunta se o **hoje no mundo** avança para a data no mundo dela.
+- **Notas do mestre**, abaixo das sessões, são notas soltas e secretas da campanha. **+ Novo → Nota do mestre** cria
+  uma de qualquer tela: dentro de uma campanha, cai nela; fora, pergunta em qual. O ⋯ de cada nota tem **Ligar a uma
+  sessão…**, que grava `sessao: "[[Sessão 3]]"` na nota (ou tira o vínculo).
+
+### Relógio do mundo
+
+No Painel, o cartão **Relógio do mundo** mostra a hora do mundo, a data e os períodos (Dia e Noite, para começar).
+Cada volta do mostrador é um período: no fim da volta o relógio passa ao próximo e, depois do último, o dia avança.
+**+10 min** e **+1 h** andam pouco; **Avançar** escolhe quanto: até o próximo período, 1 dia, 1 semana, 1 mês ou até
+a data da próxima sessão. No ⋯ do cartão: **Ajustar data e hora** (data, hora e período de uma vez), **Configurar o
+relógio** (horas por volta, minutos por hora e os períodos, em ordem) e **Abrir o calendário**. Tudo fica no bloco
+`runas-calendario` do calendário da wiki da campanha (`hora: "07:30"`, `periodo: Dia` e `relogio:`), junto do `hoje`.
 
 ### Elenco
 
@@ -35,8 +46,8 @@ a facção. **Abrir na Wiki** leva ao artigo; **Tirar da campanha** só deixa de
 
 ### Ferramentas
 
-- **Relógios de progresso**: contadores em segmentos para ameaças e projetos (**Novo relógio**; o ⋯ edita nome, partes
-  e tipo).
+- **Relógios de progresso**: contadores em segmentos para ameaças e projetos, em **Missões › Relógios** (**Novo
+  relógio**; o ⋯ edita nome, partes e tipo). Ali ficam os da campanha e, embaixo, os de cada missão.
 - **Ganchos, pistas e segredos** rastreados, com a sessão em que foram revelados e para quem. Uma pista pode
   **destravar uma missão** (`- [ ] O selo é falso → [[O Selo do Conde]]`): revelar a pista oferece ativar a missão.
 - **Tesouro do grupo**: itens, moedas e quem carrega (o ⋯ do item edita e remove).
@@ -81,12 +92,15 @@ desenha o mesmo em `Mapa de relações.canvas`, com o grupo no centro.
 
 **Grade** e **Lista**, como nas categorias da Wiki: a lista mostra uma linha por NPC; a grade, um cartão com a imagem
 do artigo (ou a inicial). Os dois têm a atitude, o “Apareceu” e o menu ⋯. A escolha fica lembrada neste aparelho.
+No tamanho **pequeno**, o cartão mostra a atitude e o “apareceu” como etiquetas, e as ações (trocar a atitude, marcar
+que apareceu, abrir a sessão) ficam no ⋯; nas facções, subir e baixar a reputação também vão para o ⋯.
 
 ### Mapa de missões
 
 Em **Missões › Mapa**, cada **arco** (uma missão-mãe) aparece como um grupo com as missões dele em colunas: a missão
 que **depende** de outra fica à direita, ligada por uma seta. Borda tracejada quer dizer **bloqueada** (algum
-pré-requisito ainda não foi concluído). **Árvore** mostra o mesmo como lista. Na nota da missão:
+pré-requisito ainda não foi concluído). O mapa rola dentro do próprio quadro; pelo teclado, Tab passa pelas missões
+na ordem dos arcos, e cada cartão diz a situação, se está bloqueada e o que ela requer. Na nota da missão:
 
 ```yaml
 parte_de: "[[O Selo do Conde]]"

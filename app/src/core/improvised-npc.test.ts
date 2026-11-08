@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { improvisedNpc, improvisedNpcNote } from "./improvised-npc"
+import { improvisedNpc, improvisedNpcFicha, improvisedNpcNote } from "./improvised-npc"
 import { NAME_CULTURES } from "./name-cultures"
 import { articleKind, newArticleNote } from "./wiki"
 
@@ -19,5 +19,15 @@ describe("NPC improvisado", () => {
   it("sem cultura usa os nomes gerais", () => {
     const npc = improvisedNpc(() => 0.5)
     expect(npc.name.split(" ").length).toBeGreaterThanOrEqual(2)
+  })
+
+  it("separa a ocupação da ficha e a descrição, sem mudar a nota da Tela do Mestre", () => {
+    const npc = { name: "Ana", gender: "f" as const, job: "ferreira", look: "mãos queimadas", trait: "fala pouco", desire: "sair da vila", secret: "uma dívida" }
+    const parts = improvisedNpcFicha(npc)
+    expect(parts.values).toEqual({ ocupacao: "ferreira" })
+    expect(parts.body).toBe("**Aparência:** mãos queimadas.\n**Jeito:** fala pouco.\n**Quer:** sair da vila.\n\n> [!segredo]\n> Esconde uma dívida.")
+    const note = improvisedNpcNote(newArticleNote(articleKind("personagem")!, "Ana"), npc)
+    expect(note).toContain('ocupacao: "ferreira"')
+    expect(note).toContain(`# Ana\n\n${parts.body}\n\n_Improvisado na Tela do Mestre._`)
   })
 })
