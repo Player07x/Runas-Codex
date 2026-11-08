@@ -23,20 +23,25 @@ export function improvisedNpc(random: () => number = Math.random, culture?: Name
 }
 
 /**
- * O artigo do NPC: o modelo de personagem da wiki (`base`, de `newArticleNote`) com a ocupação preenchida e a
- * descrição logo depois do título. O segredo vai num callout `[!segredo]`, que a sala não mostra aos jogadores.
+ * As partes do NPC sorteado que vão para um artigo: a ocupação na ficha e a descrição logo depois do título. O segredo
+ * vai num callout `[!segredo]`, que a sala não mostra aos jogadores. `origin` é a linha final em itálico, quando há.
  */
-export function improvisedNpcNote(base: string, npc: ImprovisedNpc): string {
-  const withJob = base.replace(/^ocupacao:[ \t]*$/m, `ocupacao: ${JSON.stringify(npc.job)}`)
-  const description = [
+export function improvisedNpcFicha(npc: ImprovisedNpc, origin?: string): { values: { ocupacao: string }; body: string } {
+  const body = [
     `**Aparência:** ${npc.look}.`,
     `**Jeito:** ${npc.trait}.`,
     `**Quer:** ${npc.desire}.`,
     "",
     "> [!segredo]",
     `> Esconde ${npc.secret}.`,
-    "",
-    "_Improvisado na Tela do Mestre._",
+    ...(origin ? ["", `_${origin}_`] : []),
   ].join("\n")
-  return withJob.replace(/^(# .*)$/m, `$1\n\n${description}`)
+  return { values: { ocupacao: npc.job }, body }
+}
+
+/** O artigo do NPC da Tela do Mestre: o modelo de personagem da wiki (`base`, de `newArticleNote`) com as partes acima. */
+export function improvisedNpcNote(base: string, npc: ImprovisedNpc): string {
+  const { values, body } = improvisedNpcFicha(npc, "Improvisado na Tela do Mestre.")
+  const withJob = base.replace(/^ocupacao:[ \t]*$/m, `ocupacao: ${JSON.stringify(values.ocupacao)}`)
+  return withJob.replace(/^(# .*)$/m, `$1\n\n${body}`)
 }

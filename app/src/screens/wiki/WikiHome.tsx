@@ -11,13 +11,14 @@ import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
 import { dirname, noteName } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
-import { articleKind, articleKinds, newArticleNote, newCalendarNote, newMapNote, type ArticleKind } from "../../core/wiki"
+import { articleKind, articleKinds, type ArticleKind } from "../../core/wiki"
+import { NewArticleDialog } from "./NewArticleDialog"
 import { CategoryKindDialog } from "./CategoryDialogs"
 import { NoteSetContext } from "../../lib/note-set"
-import { href, navigate } from "../../lib/router"
+import { href } from "../../lib/router"
 import { vaultNoteSet } from "../../lib/vault-notes"
 import { Markdown } from "../../components/Markdown"
-import { Modal, useToast } from "../../components/ui"
+import { useToast } from "../../components/ui"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { useRemembered } from "../../lib/remembered"
 import { useVault } from "../../platform/VaultProvider"
@@ -218,134 +219,5 @@ function Category({ folder, compact = false }: { folder: FolderNode; compact?: b
   </section>
 }
 
-const IMAGE = /\.(png|jpe?g|webp|gif|avif|svg)$/i
-
-/** Novo artigo: tipo (com modelo e perguntas-guia), nome e pasta. Calendário e mapa têm o bloco pronto. */
-export function NewArticleDialog({ onClose, initialName = "", initialKind, initialFolder }: { onClose(): void; initialName?: string; initialKind?: string; initialFolder?: string }) {
-  const vault = useVault()
-  const { wiki } = useWiki()
-  const index = vault.index!
-  const kinds = articleKinds(wiki!.root)
-  const [kind, setKind] = useState<ArticleKind>(() => articleKind(initialKind) ?? kinds[0]!)
-  const [newCategory, setNewCategory] = useState(false)
-  const [name, setName] = useState(initialName)
-  const [folder, setFolder] = useState(initialFolder ?? (articleKind(initialKind) ?? kinds[0]!).folder)
-  const [image, setImage] = useState("")
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string>()
-  const root = wiki!.root.replace(/\/$/, "")
-  const images = useMemo(() => index.allFiles().filter((f) => IMAGE.test(f.path)).map((f) => f.path), [index, wiki])
-
-  const create = async () => {
-    if (!name.trim()) return setError("Dê um nome ao artigo.")
-    if (kind.id === "mapa" && !image) return setError("Escolha a imagem do mapa no cofre.")
-    setBusy(true)
-    setError(undefined)
-    try {
-      const title = name.trim()
-      const text =
-        kind.id === "calendario" ? newCalendarNote(title)
-        : kind.id === "mapa" ? newMapNote(title, index.linkTarget(image, `${root}/${folder}/${title}.md`))
-        : newArticleNote(kind, title)
-      const created = await vault.createNote(folder.trim() ? `${root}/${folder.trim()}` : root, title, text)
-      onClose()
-      navigate(kind.id === "mapa" ? `/wiki/mapa/${encodeURIComponent(created)}` : articleRoute(created))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-      setBusy(false)
-    }
-  }
-
-  // Categoria nova criada daqui: volta ao Novo artigo com o tipo dela escolhido.
-  if (newCategory) return <CategoryKindDialog root={wiki!.root} wikiName={wiki!.name} onClose={() => setNewCategory(false)} onCreated={(created) => { setKind(created); setFolder(created.folder) }} />
-  return (
-    <Modal
-      title="Novo artigo"
-      onClose={onClose}
-      wide
-      footer={
-        <>
-          <button className="btn ghost" onClick={onClose} disabled={busy}>
-            Cancelar
-          </button>
-          <button className="btn primary" onClick={() => void create()} disabled={busy} aria-label="Criar artigo">
-            {busy ? "Criando…" : "Criar"}
-          </button>
-        </>
-      }
-    >
-      <div className="template-grid" role="radiogroup" aria-label="Tipo do artigo">
-        {kinds.map((k) => {
-          const Icon = iconByName(k.icon)
-          return (
-            <button
-              key={k.id}
-              type="button"
-              role="radio"
-              aria-checked={k.id === kind.id}
-              className={`card tight template ${k.id === kind.id ? "picked" : ""}`}
-              onClick={() => {
-                setKind(k)
-                setFolder(k.folder)
-              }}
-            >
-              <Icon size={18} />
-              <span className="tiny">{k.label}</span>
-            </button>
-          )
-        })}
-      </div>
-      <p className="small muted new-article-custom">
-        Não achou o tipo?{" "}
-        <button type="button" className="btn sm ghost" onClick={() => setNewCategory(true)} disabled={vault.info?.readOnly ?? true}>
-          <FolderPlus size={14} /> Criar uma categoria
-        </button>
-      </p>
-      <form
-        className="stack"
-        onSubmit={(e) => {
-          e.preventDefault()
-          void create()
-        }}
-      >
-        <div className="form-grid">
-          <label className="field">
-            <span>Nome</span>
-            <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do artigo" />
-          </label>
-          <label className="field">
-            <span>Pasta (dentro de {wiki!.name})</span>
-            <input className="input" value={folder} onChange={(e) => setFolder(e.target.value)} aria-label="Pasta do artigo" />
-          </label>
-        </div>
-        {kind.id === "mapa" && (
-          <label className="field">
-            <span>Imagem do mapa</span>
-            <select className="select" value={image} onChange={(e) => setImage(e.target.value)} aria-label="Imagem do mapa">
-              <option value="">Escolha…</option>
-              {images.map((path) => (
-                <option key={path} value={path}>
-                  {path.startsWith(wiki!.root) ? path.slice(wiki!.root.length) : path}
-                </option>
-              ))}
-            </select>
-            {!images.length && <span className="tiny faint">Nenhuma imagem no cofre. Importe uma imagem numa nota e volte aqui.</span>}
-          </label>
-        )}
-        {kind.questions.length > 0 && (
-          <div className="card tight stack" style={{ gap: 4 }}>
-            <span className="eyebrow">Perguntas-guia ({kind.label})</span>
-            {kind.questions.map((q) => (
-              <span key={q} className="small muted">
-                • {q}
-              </span>
-            ))}
-            <span className="tiny faint">Elas entram no artigo como comentários (%% %%): aparecem só ao editar.</span>
-          </div>
-        )}
-        {kind.fields.length > 0 && <span className="tiny faint">Ficha: {kind.fields.map((field) => field.label).join(", ")}.</span>}
-        {error && <p className="small" style={{ color: "var(--red)" }}>{error}</p>}
-      </form>
-    </Modal>
-  )
-}
+/** O Novo artigo mora em `NewArticleDialog.tsx`; as telas que o importavam daqui continuam funcionando. */
+export { NewArticleDialog } from "./NewArticleDialog"

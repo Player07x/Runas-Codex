@@ -3,7 +3,7 @@ import { ensureSyntaxTree } from "@codemirror/language"
 import { EditorState } from "@codemirror/state"
 import { GFM } from "@lezer/markdown"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
-import { frontmatterRange, renderableBlocks } from "./live-preview"
+import { blockField, frontmatterRange, pointerHeld, pointerHold, renderableBlocks } from "./live-preview"
 
 function state(doc: string) {
   const s = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM, obsidianSyntax] })] })
@@ -66,5 +66,22 @@ describe("live preview", () => {
     ensureSyntaxTree(s, s.doc.length, 5000)!.iterate({ enter: (n) => void names.push(n.name) })
     expect(names).toEqual(expect.arrayContaining(["WikiLink", "Embed", "Highlight", "HashTag", "ObsidianComment"]))
     expect(names.filter((n) => n === "HashTag")).toHaveLength(1)
+  })
+
+  it("com o botão do mouse apertado, o cursor não abre nem fecha blocos até o botão subir (U16)", () => {
+    const doc = "---\ntags: [ideias]\n---\n# Caderno\n\n- Uma ponte\n- Um mercador\n"
+    let s = EditorState.create({ doc, selection: { anchor: doc.length }, extensions: [markdown({ extensions: [GFM, obsidianSyntax] }), pointerHeld, blockField] })
+    const card = (st: EditorState) => st.field(blockField).size
+    expect(card(s)).toBe(1)
+    s = s.update({ effects: pointerHold.of(true) }).state
+    s = s.update({ selection: { anchor: 5 }, userEvent: "select.pointer" }).state
+    // O cursor entrou nas Propriedades, mas o cartão continua no lugar enquanto o botão está apertado.
+    expect(card(s)).toBe(1)
+    s = s.update({ effects: pointerHold.of(false) }).state
+    expect(card(s)).toBe(0)
+    // Pelo teclado, o desenho acompanha na hora, mesmo com o botão apertado.
+    s = s.update({ effects: pointerHold.of(true) }).state
+    s = s.update({ selection: { anchor: doc.length }, userEvent: "select" }).state
+    expect(card(s)).toBe(1)
   })
 })

@@ -10,7 +10,7 @@ import { toneStyle } from "../../core/tones"
 import { CAMPAIGN_STATUS, campaignContents, listCampaigns, listPlayers, listSessions, upcomingSession, type CampaignInfo } from "../../core/campaigns"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { href, navigate } from "../../lib/router"
-import { Empty, useToast } from "../../components/ui"
+import { Empty, Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewCampaignDialog } from "./campaign-dialogs"
 import { campaignRoute, daysFrom, useCampaignData } from "./campaign-state"
@@ -22,7 +22,7 @@ import { BoardsView } from "./CampaignCanvas"
 import { StorytellerScreen } from "./StorytellerScreen"
 import "./campaigns.css"
 import "./register"
-import { useCreateRequest } from "../../lib/create-request"
+import { forwardCreate, useCreateRequest } from "../../lib/create-request"
 
 const TABS = [
   { id: "", label: "Painel", icon: <LayoutDashboard size={15} /> },
@@ -141,6 +141,15 @@ function CampaignList() {
   }, [index, vault.version])
   const create = () => (readOnly ? toast("Libere a gravação em Configurações para criar uma campanha.") : setCreating(true))
   useCreateRequest("campanha", create)
+  // “+ Novo › Nota do mestre” fora de uma campanha: com uma só, vai direto às Sessões dela; com várias, pergunta.
+  const [choosing, setChoosing] = useState(false)
+  const gmNoteIn = (name: string) => forwardCreate("nota-mestre", campaignRoute(name, "sessoes"))
+  useCreateRequest("nota-mestre", () => {
+    if (readOnly) toast("Libere a gravação em Configurações para criar notas do mestre.")
+    else if (campaigns.length === 0) toast("Crie uma campanha antes: a nota do mestre fica dentro dela.")
+    else if (campaigns.length === 1) gmNoteIn(campaigns[0].name)
+    else setChoosing(true)
+  })
   return (
     <div className="page">
       <div className="page-head">
@@ -166,6 +175,13 @@ function CampaignList() {
       {creating && <NewCampaignDialog onClose={() => setCreating(false)} onCreated={(name) => navigate(campaignRoute(name))} />}
       {personalizing && <PersonalizeDialog title={`Personalizar ${personalizing}`} name={personalizing} path={campaignHomePath(personalizing)} onClose={() => setPersonalizing(null)} />}
       {deleting && <DeleteCampaignDialog campaign={deleting} onClose={() => setDeleting(null)} onDeleted={() => setDeleting(null)} />}
+      {choosing && <Modal title="Nota do mestre em qual campanha?" onClose={() => setChoosing(false)} footer={<button className="btn ghost" onClick={() => setChoosing(false)}>Cancelar</button>}>
+        <ul className="stack campaign-choose-list" aria-label="Campanhas">
+          {campaigns.map((c) => <li key={c.name}><button type="button" className="btn campaign-choose" onClick={() => { setChoosing(false); gmNoteIn(c.name) }}>
+            <ScrollText size={16} /> <span className="grow truncate">{c.name}</span> <span className="small muted">{CAMPAIGN_STATUS.find((st) => st.id === c.status)?.label}</span>
+          </button></li>)}
+        </ul>
+      </Modal>}
     </div>
   )
 }

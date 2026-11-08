@@ -1,0 +1,39 @@
+/* Novo artigo (U29): duas colunas a partir de 900 px (tipos à esquerda, nome e ficha à direita); abaixo, dois passos.
+   Os campos ficam na grade do kit (FormGrid): mesma borda esquerda e fileiras alinhadas. A ficha não tem caixa
+   própria, só um fio em cima, para os campos dela alinharem com o Nome. */
+.new-article { display: grid; gap: var(--space-section); min-width: 0; }
+.new-article.two { grid-template-columns: 16.5rem minmax(0, 1fr); align-items: start; column-gap: 20px; }
+.new-article-step { margin: 0; color: var(--muted); font-size: calc(13px * var(--font-scale, 1)); font-weight: 650; }
+.new-article-step:focus-visible { outline-offset: 4px; }
+
+.new-article-types { display: grid; gap: var(--space-group); align-content: start; min-width: 0; }
+.new-article.two .new-article-types { max-height: min(64vh, 36rem); overflow: auto; padding-right: 12px; border-right: 1px solid var(--line); }
+.new-article-groups { display: grid; gap: var(--space-group); }
+.new-article-group { display: grid; gap: 2px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.new-article-group legend { padding: 0 10px 4px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.new-article-kind { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border-radius: 8px; cursor: pointer; }
+.new-article-kind:hover { background: var(--panel-2); }
+.new-article-kind input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--cyan); }
+.new-article-kind svg { flex: none; color: var(--muted); }
+.new-article-kind.on { background: color-mix(in srgb, var(--cyan) 12%, transparent); font-weight: 600; }
+.new-article-kind.on svg { color: var(--cyan); }
+.new-article-category { justify-self: start; }
+
+.new-article-main { display: grid; gap: var(--space-section); align-content: start; min-width: 0; }
+.new-article-name { display: grid; gap: var(--space-field); }
+.new-article-folder { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; }
+.new-article-section { display: grid; gap: var(--space-group); min-width: 0; padding-top: var(--space-section); border-top: 1px solid var(--line); }
+.new-article-section-title { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: calc(15px * var(--font-scale, 1)); font-weight: 700; }
+.new-article-section-title .muted { font-weight: 400; }
+.new-article-section > summary { cursor: pointer; list-style: revert; }
+.new-article-section > summary::-webkit-details-marker { color: var(--muted); }
+
+.ficha-image, .new-article-questions { border-top: 1px solid var(--line); }
+.ficha-image > summary, .new-article-questions > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; cursor: pointer; }
+.ficha-image[open] > summary { margin-bottom: 4px; }
+.new-article-questions ul { display: grid; gap: 4px; margin: 0 0 6px; padding-left: 20px; }
+.new-article-questions .cnt { min-width: 22px; padding: 0 6px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); text-align: center; }
+
+@media (max-width: 860px), (pointer: coarse) {
+  .new-article-kind { min-height: 44px; }
+}

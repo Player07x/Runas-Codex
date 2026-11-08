@@ -90,9 +90,45 @@
 .kit-cover-picker input[type=search] { flex: 1 1 160px; width: auto; }
 .kit-cover-error { color: var(--red); font-size: calc(13px * var(--font-scale, 1)); }
 .kit-cover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 260px; overflow: auto; padding: 2px; }
-.kit-cover-thumb { position: relative; display: grid; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--muted); font-size: calc(11px * var(--font-scale, 1)); cursor: pointer; }
+.kit-cover-thumb { position: relative; display: grid; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); cursor: pointer; }
 .kit-cover-thumb input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .kit-cover-thumb:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
 .kit-cover-thumb img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; background: var(--panel-2); }
 .kit-cover-thumb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kit-cover-thumb.on { border-color: var(--cyan); color: var(--text); font-weight: 650; box-shadow: 0 0 0 1px var(--cyan); }
+
+/* ---------- Formulários (FormGrid, FormField) ----------
+   Os campos de uma fileira dividem as mesmas linhas (subgrid): rótulos embaixo alinhados, controles na mesma altura e
+   dicas na mesma linha, todos com a borda esquerda da coluna. Sem subgrid, cada campo empilha sozinho. */
+.kit-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr)); column-gap: var(--space-column); row-gap: var(--space-group); align-items: start; min-width: 0; }
+.kit-form-grid.one { grid-template-columns: minmax(0, 1fr); }
+.kit-field { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 4px; min-width: 0; }
+.kit-field.wide { grid-column: 1 / -1; }
+.kit-field-label { align-self: end; color: var(--muted); font-size: calc(13px * var(--font-scale, 1)); font-weight: 650; }
+.kit-field-control { display: grid; min-width: 0; }
+.kit-field-hint { color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); }
+.kit-field-hint:empty { display: none; }
+.kit-field-hint.error { color: var(--red); font-weight: 600; }
+.kit-field .input[aria-invalid="true"], .kit-field .select[aria-invalid="true"] { border-color: var(--red); }
+
+/* Data do mundo: dia, mês e ano com a sigla, numa linha que não passa da coluna. */
+.kit-date { display: grid; grid-template-columns: minmax(3.25rem, 4.5rem) minmax(6.5rem, 1fr) minmax(4.25rem, 6rem) auto; gap: 6px; align-items: center; min-width: 0; }
+.kit-date-abbr { color: var(--muted); font: 650 calc(13px * var(--font-scale, 1)) var(--font-mono); }
+span.kit-date-abbr { padding-inline: 2px; }
+select.kit-date-abbr { width: auto; }
+
+/* Combobox de notas e a lista de links. */
+.kit-combobox { position: relative; min-width: 0; }
+.kit-listbox { position: absolute; z-index: 6; top: calc(100% + 4px); left: 0; right: 0; display: grid; gap: 1px; max-height: 280px; margin: 0; padding: 4px; overflow: auto; list-style: none; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); }
+.kit-listbox[hidden] { display: none; }
+.kit-option { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px; border-radius: 7px; cursor: pointer; }
+.kit-option.active { background: var(--panel-2); box-shadow: inset 3px 0 0 var(--cyan); }
+.kit-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kit-option small { color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); }
+.kit-note-list { display: grid; gap: 6px; min-width: 0; }
+.kit-note-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.kit-note-chip { display: inline-flex; align-items: center; gap: 2px; min-height: 30px; padding-left: 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); font-size: calc(13px * var(--font-scale, 1)); }
+@media (max-width: 860px), (pointer: coarse) {
+  .kit-option { min-height: 44px; }
+  .kit-note-chip { min-height: 44px; }
+}

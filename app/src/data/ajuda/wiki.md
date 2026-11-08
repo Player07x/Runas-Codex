@@ -11,8 +11,10 @@ tópico Notas.
 
 ### Tipos de artigo
 
-**Novo artigo** pergunta o tipo, o nome e a pasta. Cada tipo já vem com a ficha (as propriedades), as seções e as
-**perguntas-guia** (comentários `%% %%` que aparecem só ao editar): Personagem, Local, Cidade, Construção,
+**Novo artigo** pergunta o tipo (em grupos, com busca), o nome e a pasta, e já mostra a **ficha** do tipo para
+preencher, se quiser: links escolhidos entre os artigos da wiki, datas pelo dia, mês e ano do calendário do mundo.
+No celular são dois passos (tipo e nome, depois a ficha). Cada tipo já vem com as seções e as **perguntas-guia**
+(comentários `%% %%` que aparecem só ao editar): Personagem, Local, Cidade, Construção,
 Organização, País, Item, Material, Espécie, Cultura, Religião, Idioma, Magia, Tecnologia, Veículo, Mito,
 Acontecimento, Guerra, Documento, Condição, Era, Calendário e Mapa.
 
@@ -56,6 +58,9 @@ O artigo abre como qualquer nota (Leitura, Editar, Código). O botão **Painel**
 - **Mostrar artigo pela sala** / **Encerrar apresentação na sala**: mostra a página (sem segredos) para quem está na
   sala do VTT.
 - **Mídia e recorrência**: música ou som do artigo e, para acontecimentos, a repetição no calendário do mundo.
+- **Token para a mesa**: imagem, tamanho, disposição e barras (PV, PA…) que o token do artigo leva para o VTT.
+  **Importar de um token salvo…** copia um token da Biblioteca do VTT: a imagem vai para os anexos da nota, e o token
+  salvo passa a apontar para o artigo.
 
 Na aba Wiki da galeria Formatar ficam o segredo de jogador, o spoiler, a galeria, o áudio, a tabela rolável e o
 dicionário.

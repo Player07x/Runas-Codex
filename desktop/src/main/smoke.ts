@@ -121,15 +121,21 @@ export const SMOKE_SCRIPT = `(async () => {
   const campaignRoute = "/campanhas/" + encodeURIComponent("Cinzas de Valdris")
   const canvasPath = "Campanhas/Cinzas de Valdris/Quadro.canvas"
   location.hash = campaignRoute
-  await until(() => document.querySelector(".campaign-clock"))
+  await until(() => document.querySelector(".world-clock-card"))
   await wait(300)
   const dashboard = document.querySelector(".main")?.textContent ?? ""
-  const clocks = document.querySelectorAll(".campaign-clock").length
+  // U30: o Painel mostra o relógio do mundo; os relógios de ameaça e meta foram para Missões › Relógios.
+  const worldClock = Boolean(document.querySelector(".world-clock-dial[role=img]")?.getAttribute("aria-label"))
+  try { localStorage.setItem("runas-codex:campanha:missoes-vista", "relogios") } catch { /* fica nas Colunas */ }
+  location.hash = campaignRoute + "/missoes"
+  const campaignClocks = await until(() => document.querySelector("[aria-labelledby=relogios-da-campanha] .campaign-clock")?.closest("section"))
+  const clocks = campaignClocks?.querySelectorAll(".campaign-clock").length ?? 0
   location.hash = "/quadro/" + encodeURIComponent(canvasPath)
   await until(() => document.querySelectorAll(".canvas-card").length > 0)
   await wait(300)
   result.campaign = {
     clocks,
+    worldClock,
     quest: dashboard.includes("Entregar a carta"),
     clue: dashboard.includes("A carta selada pede a prisão"),
     cards: document.querySelectorAll(".canvas-card").length,
@@ -223,6 +229,34 @@ export const SMOKE_SCRIPT = `(async () => {
   const floated = await until(() => document.querySelector(".editor-body .md img.pos-direita"))
   result.position = { link: Boolean(pastedPath && positioned.includes("![[" + pastedPath + "|direita]]")), float: floated ? getComputedStyle(floated).float : null }
   if (pastedPath?.startsWith("Anexos/Imagens/")) result.position.link ||= positioned.includes("![[" + pastedPath.split("/").at(-1) + "|direita]]")
+
+  // U16: o clique no meio de uma linha abaixo do cartão de Propriedades cai nessa linha, sem estender a seleção. Duas
+  // causas: a margem do cartão, que o CodeMirror não mede, e a linha aberta pelo cursor (aqui, a imagem colada acima)
+  // fechando já no mousedown, o que subia o texto enquanto o CodeMirror relia a posição do mouse.
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
+  const findTarget = () => document.querySelector(".cm-lp-properties") && [...document.querySelectorAll(".cm-line")].find((line) => line.textContent.includes("Uma ponte que só aparece"))
+  await until(findTarget)
+  // Espera o editor medir as linhas depois de abrir (antes disso a altura delas é estimada, como em qualquer abertura).
+  await wait(800)
+  const clickTarget = findTarget()
+  let steady = false
+  if (clickTarget) {
+    const box = clickTarget.getBoundingClientRect()
+    // detail 1 é um clique simples; com 0, o CodeMirror no Linux entende clique triplo e seleciona a linha inteira.
+    const at = { bubbles: true, clientX: box.left + 60, clientY: (box.top + box.bottom) / 2, button: 0, detail: 1 }
+    clickTarget.dispatchEvent(new MouseEvent("mousedown", at))
+    // Com o botão apertado, o texto embaixo do mouse não sai do lugar.
+    await wait(60)
+    steady = Math.abs((document.elementFromPoint(at.clientX, at.clientY)?.closest(".cm-line")?.getBoundingClientRect().top ?? -999) - box.top) < 1
+    document.dispatchEvent(new MouseEvent("mouseup", at))
+  }
+  await wait(300)
+  // O cursor vem do próprio editor: a seleção do documento só acompanha quando a janela tem o foco.
+  const clickView = document.querySelector(".cm-content")?.cmTile?.view
+  const clickedRange = clickView?.state.selection.main
+  const clickedText = clickedRange ? clickView.state.doc.lineAt(clickedRange.head).text : ""
+  result.editorClick = { card: Boolean(clickTarget), steady, line: clickedText.includes("Uma ponte que só aparece"), empty: Boolean(clickedRange?.empty) }
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
@@ -591,7 +625,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const bookSide = result.bookSidePreview as Record<string, unknown> | undefined
   if (!bookSide || Number(bookSide.pages) <= 1 || bookSide.marked !== true || bookSide.decorative !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
-  if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
+  if (!campaign || campaign.clocks !== 1 || campaign.worldClock !== true || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
   if (result.migrationFound !== 4) return false
   if (typeof result.linkPreview !== "string" || !result.linkPreview) return false
   if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
@@ -604,7 +638,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const noteWindows = result.noteWindows as Record<string, unknown> | undefined
   if (!noteWindows || !Object.values(noteWindows).every(value => value === true)) return false
   const vttWorlds = result.vttWorlds as Record<string, unknown> | undefined
-  if (!vttWorlds || Object.keys(vttWorlds).length !== 4 || !Object.values(vttWorlds).every(value => value === true)) return false
+  if (!vttWorlds || Object.keys(vttWorlds).length !== 4 || !Object.values(vttWorlds).every(value => value === true) || result.vttWorldCover !== true) return false
   return (
     result.create === "OK" &&
     String(result.createAgain).startsWith("Já existe") &&
@@ -694,5 +728,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.bookImportPreview === true &&
     result.bookImport === true
     && typeof result.touch === "object" && Object.values(result.touch as Record<string, unknown>).length === 6 && Object.values(result.touch as Record<string, unknown>).every(value => value === true)
+    && typeof result.editorClick === "object" && Object.values(result.editorClick as Record<string, unknown>).length === 4 && Object.values(result.editorClick as Record<string, unknown>).every(value => value === true)
   )
 }

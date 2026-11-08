@@ -1,4 +1,4 @@
-import { parseMapExtras, type MapExtras } from "./wiki-map-extras"
+import { mapExtrasYaml, parseMapExtras, type MapExtras } from "./wiki-map-extras"
 import { parse as parseYaml } from "yaml"
 import { findCodeBlocks } from "./codeblocks"
 import { CalendarError, dayNumber, defaultAbbr, noteDateText, parseCalendar, parseWorldDate, sameAbbr, type Calendar, type WorldDate } from "./calendar"
@@ -175,6 +175,12 @@ export function articleImage(note: IndexedNote): string | null {
     if (field.kind !== "imagem") continue
     const value = values(data[field.key]).find(value => value.trim())?.trim()
     if (value) return linkTargetOf(value.replace(/^!/, ""))?.target ?? value
+  }
+  if (articleKind(data.tipo)?.id === "mapa") {
+    const block = findCodeBlocks(note.text, "runas-mapa")[0]
+    if (block) {
+      try { return parseMap(block.content).image } catch { /* a capa quebrada continua mostrando a inicial */ }
+    }
   }
   return note.meta.links.find(link => link.embed && !link.inFrontmatter && ARTICLE_IMAGE_EXTENSIONS.has(extname(link.target)))?.target ?? null
 }
@@ -459,6 +465,27 @@ function declaredRelations(index: VaultIndex, note: IndexedNote): { type: Relati
   })
 }
 
+/** As notas para onde apontam os links de uma propriedade (um link ou uma lista), resolvidos a partir de `from`. */
+export function linkedNotes(index: VaultIndex, value: unknown, from: string): string[] {
+  return values(value).flatMap((item) => { const link = linkTargetOf(item); const dest = link ? resolveTarget(index, link.target, from) : null; return dest ? [dest] : [] })
+}
+
+/** Uma relação declarada numa nota (`from`) para outra (`to`), com o texto entre parênteses (`note`). */
+export interface RelationEdge {
+  from: string
+  to: string
+  type: RelationType
+  note?: string
+}
+
+/**
+ * Todas as relações declaradas nas notas de `scope`, lidas uma vez (U25): o organograma e a árvore consultam esta lista
+ * em vez de varrer o cofre para cada pessoa, como `relationsOf` faz.
+ */
+export function relationEdges(index: VaultIndex, scope = ""): RelationEdge[] {
+  return index.notesIn(scope).flatMap((note) => declaredRelations(index, note).flatMap((r) => (r.other ? [{ from: note.path, to: r.other, type: r.type, ...(r.note ? { note: r.note } : {}) }] : [])))
+}
+
 /** As relações de uma nota: as que ela declara e as que outras notas declaram com ela (no sentido inverso). */
 export function relationsOf(index: VaultIndex, path: string, scope = ""): Relation[] {
   const note = index.note(path)
@@ -712,6 +739,35 @@ export function pinsToYaml(pins: MapPin[]): Record<string, unknown>[] {
     ...(p.layer ? { camada: p.layer } : {}),
     ...(p.secret ? { segredo: true } : {}),
   }))
+}
+
+/**
+ * As chaves do bloco que mudaram de `before` para `after` (para `setBlockKeys`): só o que mudou é regravado, e uma
+ * lista que ficou vazia sai do bloco. Escala e viagem sem valor também saem.
+ */
+export function mapSpecKeys(before: MapSpec, after: MapSpec): Record<string, unknown> {
+  const keys: Record<string, unknown> = {}
+  const extras = mapExtrasYaml(after)
+  if (after.image !== before.image) keys.imagem = `[[${after.image}]]`
+  if (after.layers !== before.layers) keys.camadas = after.layers
+  if (after.pins !== before.pins) keys.pinos = pinsToYaml(after.pins)
+  if (after.images !== before.images) keys.imagens = extras.imagens.length ? extras.imagens : undefined
+  if (after.drawings !== before.drawings) keys.desenhos = extras.desenhos.length ? extras.desenhos : undefined
+  if (after.scale !== before.scale) keys.escala = after.scale ? { pixels: after.scale.pixels, distancia: after.scale.distance, unidade: after.scale.unit } : undefined
+  if (after.travelPerDay !== before.travelPerDay) keys.viagem = after.travelPerDay ? { por_dia: after.travelPerDay } : undefined
+  return keys
+}
+
+const SECRET_LAYER = /^segredos?$/i
+
+/**
+ * O pino aparece para os jogadores? Não quando é segredo, está numa camada de segredos ou aponta para uma nota que eles
+ * não veem (`resolves` falso no índice público: nota secreta ou que não existe). Assim o nome de uma nota secreta
+ * nunca vai para a versão dos jogadores.
+ */
+export function pinForPlayers(pin: MapPin, resolves: (target: string) => boolean): boolean {
+  if (pin.secret || (pin.layer && SECRET_LAYER.test(pin.layer))) return false
+  return !pin.note || resolves(pin.note)
 }
 
 /** Mapas da wiki: notas com um bloco ```runas-mapa```. */

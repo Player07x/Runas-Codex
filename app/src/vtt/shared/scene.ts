@@ -118,6 +118,8 @@ export interface TokenBar {
 
 export interface TokenData {
   name: string
+  /** Caminho da nota da Wiki que originou este token, só no mestre. */
+  notePath?: string
   x: number
   y: number
   /** Tamanho em células. */
@@ -332,8 +334,10 @@ function normalizeBar(value: unknown): TokenBar {
 
 export function normalizeToken(value: unknown): TokenData {
   const raw = record(value)
+  const notePath = str(raw.notePath, "", 500).trim().replace(/\\/g, "/")
   return {
     name: str(raw.name, "Token", 80),
+    ...(notePath && !notePath.includes("..") && !notePath.startsWith("/") ? { notePath } : {}),
     x: num(raw.x, 0),
     y: num(raw.y, 0),
     size: num(raw.size, 1, 0.25, 20),

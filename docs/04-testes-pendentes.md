@@ -1428,3 +1428,182 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] Atualizar da 1.0.0 para a 1.1.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.1.0.
 - [ ] As seções acima, de “Configurações: trocar de seção sem rolar” até “Importar do Notion”, entraram nesta versão.
+
+## Maquetes da atualização 1.2.0
+
+- [ ] Abrir `docs/tarefas/atualizacao-1.2-maquetes.html` (versão 2, de 08/11) sem internet em 320 px, 768 px e no
+  computador; conferir que a página não rola para os lados (as maquetes do computador rolam dentro do próprio quadro),
+  que as telas parecem o app de hoje no tamanho real e que o tema claro funciona e fica lembrado ao recarregar.
+- [x] Responder as duas perguntas de “O que o João decide”: maquetes aprovadas em 08/11; “Importar de novo da nota”
+  segue a recomendação (as barras passam a ser as da nota, mantendo o valor atual das barras de mesmo nome).
+
+## Atualização 1.2.0 · Novo artigo com ficha (PR B, U29)
+
+- [ ] Wiki › Novo artigo no computador: os tipos aparecem em grupos (Pessoas e grupos, Lugares, Coisas, História e
+  mundo, Outros), a busca filtra e diz quantos sobraram, e as setas andam entre os tipos.
+- [ ] Criar um Personagem preenchendo Espécie (digitar e escolher na lista), Afiliação (duas organizações), Nascimento
+  (dia, mês pelo nome e ano) e Retrato: o artigo abre com a ficha preenchida e, no Obsidian, as propriedades aparecem
+  com as datas entre aspas e os links como `[[Nome]]`.
+- [ ] Os campos da ficha ficam alinhados: rótulos na mesma altura em cada fileira, a mesma borda esquerda do Nome, e a
+  data e a Afiliação na largura toda.
+- [ ] No celular (ou janela estreita): “Passo 1 de 2 · Tipo e nome”, Continuar sem nome mostra o erro no campo, e o
+  passo 2 mostra a ficha com Voltar e Criar artigo.
+- [ ] Novo artigo › Mapa exige a imagem (miniaturas do cofre ou “Do computador…”) e abre o mapa criado.
+
+## Atualização 1.2.0 · Relógio do mundo e Missões › Relógios (PR F, U30)
+
+- [ ] Painel da campanha: o cartão “Relógio do mundo” mostra a hora, a data, os períodos (o atual com “agora”) e quanto
+  falta para o próximo; “+10 min”, “+1 h” e “Avançar” (até o próximo período, 1 dia, 1 semana, 1 mês, até a data da
+  próxima sessão) gravam e o cartão mostra o novo estado. Passar do último período vira o dia.
+- [ ] ⋯ › Ajustar data e hora: hora fora do relógio (ex.: 13:00 num relógio de 12 h) mostra o erro no campo; data,
+  hora e período salvam juntos. No Obsidian, o bloco `runas-calendario` ganha `hora: "07:30"`, `periodo:` e
+  `relogio:` e o resto do bloco fica como estava.
+- [ ] ⋯ › Configurar o relógio: trocar horas por volta, renomear, acrescentar, subir, descer e remover períodos; o
+  mostrador passa a ter uma marca por hora e o período atual acompanha a troca de nome.
+- [ ] Campanha sem wiki (ou wiki sem calendário): o cartão diz o que falta e “Abrir os calendários” leva à Wiki.
+- [ ] Missões › “Ver as missões em”: Colunas, Mapa e Relógios (a Árvore saiu). Relógios mostra os da campanha (com
+  “Novo relógio”) e os de cada missão, agrupados pela missão. No Mapa, Tab passa pelas missões na ordem dos arcos e
+  cada cartão diz a situação, “bloqueada” e o que requer.
+- [ ] No celular, a ordem do Painel é: próxima sessão, relógio do mundo, missões ativas, segredos, elenco, limites,
+  linha do tempo e estatísticas recolhidas.
+
+## Atualização 1.2.0 · Relações com organograma novo (PR H, U25)
+
+- [ ] Wiki › Relações: “Visão” (Organograma, Árvore genealógica, Teia diplomática) e “Mostrar como” (Gráfico, Lista)
+  numa linha; a visão escolhida volta ao reabrir a tela.
+- [ ] Organograma de uma organização com cargos (`membro_de: "[[Ordem]] (tesoureira)"`), um líder, alguém com
+  `subordinado_a` e um antigo membro (`(ex-guarda)`): os cartões não se cobrem, o antigo membro tem borda tracejada e
+  “Antigo membro” escrito, e “N membros” fecha e abre o ramo.
+- [ ] Pelo teclado: Tab entra no organograma num nó só, as setas andam (↑ chefe, ↓ subordinado, ← → vizinhos), Enter
+  mostra os detalhes à direita, + e − aproximam e 0 enquadra.
+- [ ] O painel “Detalhes” mostra cargo, situação, as relações, “Abrir artigo” e “Adicionar” (com o campo “Com quem” que
+  sugere artigos); recolher o painel fica lembrado.
+- [ ] No celular: a lista vem primeiro; escolher abre o gráfico com o botão de voltar; tocar num nó sobe os detalhes
+  por cima, e Esc ou “Fechar os detalhes” devolve ao nó.
+
+## Atualização 1.2.0 · Mapas (PRs J, K, L; U17–U21)
+
+- [ ] Abrir Wiki › Mapas e conferir os cartões com a imagem em faixa e o brasão quando a imagem não existe; “Novo mapa”
+  abre o Novo artigo já como Mapa e exige uma imagem.
+- [ ] No mapa Bitu, conferir DocumentBar, SaveStatus, trilho com as seis ferramentas, painel recolhível lembrado,
+  abas Pinos/Áreas/Camadas/Mapa e a versão dos jogadores. No desktop o painel fica ao lado; até 860 px começa fechado,
+  sobe como folha e fecha com Esc sem cobrir a barra inferior.
+- [ ] Pelo teclado, testar Tab e setas no trilho, setas/+/-/0 no mapa, pinos (Enter, `Alt`+setas, Shift, Delete e
+  Desfazer), popover (NoteCombobox, “Criar…”, Esc devolve o foco) e “Pôr pino no meio da vista”.
+- [ ] Desenhar Retângulo, Elipse e Livre, Rota e Rótulo; arrastar formas e editar alças pelo ponteiro e teclado
+  (Enter na alça do meio, Delete, Esc). Conferir opacidade, os 12 tons, borda, camada, nota, segredo e eras.
+- [ ] Na aba Camadas, esconder/mostrar e criar camada; na aba Mapa, trocar imagem pelo CoverImagePicker, editar escala,
+  viagem e camadas de imagem. Pino ligado a nota secreta e camada Segredos não aparece na versão dos jogadores.
+- [ ] Conferir o mapa dentro de uma nota (`runas-mapa`) em modo somente leitura: imagem, lista/pinos, abrir nota e mapa
+  aninhado continuam funcionando.
+- [ ] Não verificado automaticamente: conferência visual lado a lado com a maquete em 1280/320 px, temas escuro/claro,
+  leitor de tela e os dois smokes do Electron; executar no ambiente com tela e registrar prints em `docs/tarefas/prints-1.2/`.
+
+## Atualização 1.2.0 · Capa da mesa (PR C, U23)
+
+- [ ] Em VTT › Criar Sala, escolher ⋯ › Capa…, selecionar uma imagem do cofre e conferir a faixa com `object-fit: cover`;
+  o número de cenas fica no texto do cartão e as Mesas recentes usam a capa na linha.
+- [ ] Usar “Do computador…” e “Tirar a capa”; fechar e reabrir a mesa, recarregar o app e conferir que `mesa.json` mantém
+  a capa. Apagar ou mover a imagem deve mostrar “Capa não encontrada” e permitir trocar.
+- [ ] Conferir que a capa não aparece no mestre remoto e que Android preserva a mesma operação.
+- [ ] Não verificado automaticamente: smoke `vttWorldCover`, Electron, Android e revisão visual em 320 px/tema claro.
+
+## Atualização 1.2.0 · Token ligado a nota (PR D, U22 mesa)
+
+- [ ] Em Biblioteca › Da wiki, conferir a busca, o brasão, o nome e a disposição. Notas de mapa sem imagem de token
+  própria não aparecem.
+- [ ] Arrastar um artigo da lista para o mapa põe o token onde ele caiu; o **+** põe no centro. Nos dois casos a imagem
+  é importada e o token do mestre guarda o `notePath`.
+- [ ] Selecionar o token: o campo Nota tem o link para a Wiki e o ⋯ “Mais ações da nota” com **Trocar nota…**,
+  **Importar de novo da nota** (as barras com o mesmo nome guardam o valor atual) e **Desvincular**. Um token sem nota
+  tem **Ligar a uma nota…**. Nota renomeada ou apagada mostra “nota não encontrada” e permite trocar.
+- [ ] Na Vista dos Jogadores o token aparece quando permitido, mas nunca leva o `notePath`; nota secreta não vaza.
+- [ ] Não verificado: o ⋯ da nota e o diálogo “Ligar o token a uma nota” no aparelho (no navegador do Claude o painel
+  estava escondido e o Pixi não desenha sem animação). O mestre pelo celular não mostra o ⋯ (não tem o cofre).
+
+## Atualização 1.2.0 · Elenco e fileiras (PR E, U28/U33/U34)
+
+- [ ] Em Categorias e no Elenco, “Mostrar mais” acrescenta fileiras inteiras; no celular, conferir a Lista e os alvos
+  de toque.
+- [ ] NPCs e Facções são duas seções do Elenco (não abas), cada uma com Exibição (Grade/Lista) e, na Grade, Tamanho
+  (Pequeno/Médio/Grande), lembrados neste aparelho.
+- [ ] Na Grade **Pequena**, o cartão do NPC mostra a atitude e o “apareceu” em etiquetas; o ⋯ tem as atitudes, marcar
+  ou desmarcar “apareceu”, abrir a sessão e as ações de sempre. Na facção pequena, a reputação é etiqueta e subir/baixar
+  ficam no ⋯.
+- [ ] −/+ da reputação preserva o texto entre parênteses e o anúncio diz qual facção mudou.
+- [ ] Não verificado: revisão visual em 320 px e tema claro, e o foco no primeiro cartão novo de “Mostrar mais”.
+
+## Atualização 1.2.0 · Sessões e notas do mestre (PR G, U31)
+
+- [ ] Sessões mostram o nome da campanha no eyebrow; as notas novas usam o H1 `Sessão N: Título`, sem repetir o número.
+- [ ] **+ Novo → Nota do mestre**: dentro de uma campanha, abre o diálogo nas Sessões dela; fora, com uma campanha só,
+  vai direto; com várias, pergunta “Nota do mestre em qual campanha?”. Em cofre só leitura, avisa e não abre.
+- [ ] O ⋯ das Sessões e a seção “Notas do mestre” também abrem o diálogo; a nota fica em `Notas do mestre/`, com
+  `segredo: true`, e abre no editor.
+- [ ] O ⋯ de cada nota do mestre: Abrir, Fixar/Desafixar na Tela do Mestre, **Ligar a uma sessão…** (grava ou tira
+  `sessao: "[[Sessão N]]"`) e Mandar para a lixeira.
+- [ ] Notas do mestre não entram no diário exportado nem em “Mostrar pela sala”.
+- [ ] Não verificado: revisão visual em 320 px e tema claro, e smoke.
+
+## Atualização 1.2.0 · Ferramentas e recentes (PR M, U26/U27)
+
+- [ ] Cada ferramenta gera o artigo da categoria correspondente; “Guardar na wiki…” abre Novo artigo já com nome, tipo e
+  conteúdo preenchidos, e permite revisar os campos antes de salvar.
+- [ ] A lista de ferramentas e Recentes ficam alinhadas; Recentes persistem ao recarregar e mostram os últimos resultados
+  gerados sem duplicar entradas.
+- [ ] Conferir no aparelho real a ordem dos sorteios e os campos específicos de cada categoria (dogma, verdade, clima etc.).
+- [ ] Não verificado automaticamente: revisão visual, persistência em navegador limpo e conferência de todos os campos da ficha.
+
+## Atualização 1.2.0 · Token na ficha da nota (PR N, U22 nota)
+
+- [ ] Na ficha de um artigo, abrir “Token para a mesa” e conferir a imagem (com o retrato ou o brasão quando falta), o
+  tamanho, a disposição e as barras com nome, valor, máximo e Remover.
+- [ ] Cada mudança grava as propriedades `token_*`; mudar várias coisas seguidas não mostra “mudou fora do app”.
+- [ ] As propriedades de token não viram filtros nem linhas repetidas da ficha.
+- [ ] **Importar de um token salvo…** lista os tokens da Biblioteca com busca; escolher um copia a imagem para os anexos
+  da nota (`<nome> (token).png`), preenche tamanho, disposição e barras, e o token salvo passa a apontar para o artigo.
+- [ ] Não verificado: conferência no Obsidian e a importação no Android.
+
+## Atualização 1.2.0 · Árvore genealógica (PR O, U25)
+
+- [ ] Relações › Árvore genealógica mostra gerações sem sobreposição, casal lado a lado, filhos saindo do meio e irmãos
+  na mesma fileira; ciclos não travam.
+- [ ] Clicar ou pressionar Enter num nó o põe no centro e anuncia “Centralizado em X”; no nó do centro, abre os
+  detalhes. Gerações acima e abaixo (0 a 5) filtram a árvore e são lembradas ao reabrir.
+- [ ] A Lista mostra Pessoa, Pais, Cônjuges e Filhos; no celular a lista continua sendo alternativa acessível.
+- [ ] Não verificado automaticamente: revisão visual do layout grande, teclado completo, leitor de tela e tema claro.
+
+## Atualização 1.2.0 · Novo NPC e nova facção (PR P, U24/U34)
+
+- [ ] Novo NPC e Nova facção têm Nome com Sortear, sem apagar o texto já digitado, atitude, Ficha (opcional) recolhida
+  e a ação principal correta.
+- [ ] NPC usa as tabelas dos geradores, facção usa o gerador de facção, e os campos preenchidos entram na nota criada.
+- [ ] Conferir que o artigo criado entra automaticamente no Elenco ou nas Facções quando a campanha tem vínculo.
+- [ ] Não verificado automaticamente: revisão visual, estados de erro/somente leitura e smoke.
+
+## Atualização 1.2.0 · Clique abaixo das Propriedades (PR A, U16)
+
+- [ ] Abrir uma nota com Propriedades no modo Editar e clicar no meio de várias linhas abaixo do cartão: o cursor cai
+  na linha clicada, sem selecionar até a linha de baixo.
+- [ ] Com o cursor numa linha aberta (o YAML das Propriedades, uma imagem `![[…]]`), clicar numa linha mais abaixo: o
+  texto não pula enquanto o botão está apertado; a linha antiga fecha ao soltar e o cursor fica onde se clicou.
+- [ ] Arrastar para selecionar texto e o clique duplo e triplo continuam iguais; nos Livros, o cartão continua
+  escondido.
+- [ ] Não verificado: mouse de verdade no Windows e toque no Android (o smoke usa eventos sintéticos).
+
+## Atualização 1.2.0 · Geradores ×4 (PR I1/I2, U32)
+
+- [ ] Em Wiki › Ferramentas, gerar várias vezes NPC, Taverna, Gancho, Rumor, Lenda, Masmorra, Divindade, Mercador e
+  Aventura: nenhum resultado traz “variante” ou número de cópia, e as frases concordam em gênero (“a lâmina partida”,
+  “o elmo partido”).
+- [ ] Os nomes das culturas lusófonas continuam os mesmos (249, 250 e 277).
+- [ ] O total das tabelas ficou em cerca de 21.000 opções (antes 8.599). O dono decidiu que bastava, abaixo da meta de
+  34.396 do plano (ADR 0036).
+
+## Versão 1.2.0
+
+- [ ] Atualizar da 1.1.0 para a 1.2.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.2.0.
+- [ ] As seções acima, de “Maquetes da atualização 1.2.0” até “Geradores ×4”, entraram nesta versão.
+- [ ] Abrir no Obsidian um artigo com token (`token_*`) e uma nota do mestre ligada a uma sessão (`sessao`): as
+  propriedades aparecem como texto e nada quebra.

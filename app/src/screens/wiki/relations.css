@@ -1,0 +1,81 @@
+/* Relações da wiki (U25): lista · gráfico · painel do nó, no computador; lista primeiro e painel por cima no celular. */
+.relations-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+.relations-layout {
+  display: grid; grid-template-columns: minmax(200px, 250px) minmax(0, 1fr) var(--panel-wiki-relacoes, 320px);
+  height: min(78vh, 760px); min-height: 420px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden;
+}
+.relations-list { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 12px; border-right: 1px solid var(--line); overflow: auto; }
+.relations-list-rows { display: grid; gap: 2px; align-content: start; }
+.relations-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.relations-empty { padding: 16px; }
+.relations-panel { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 0 12px 12px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
+.relations-panel > .panel-controls { flex: none; margin: 0 -12px; }
+.relations-panel .wiki-relations { padding: 0; border: 0; background: none; box-shadow: none; }
+.relations-panel-close { display: none !important; }
+
+.relations-graph { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.relations-graph-tools { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+.relations-zoom { min-width: 3.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.relations-graph-region { position: relative; flex: 1; min-height: 0; overflow: auto; }
+.relations-graph-size { position: relative; }
+.relations-graph-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.relations-graph-lines { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.relations-graph-lines path { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.relations-help { margin: 0; padding: 6px 12px 10px; }
+.relations-legend { padding: 8px 12px 0; }
+
+.org-card { position: absolute; }
+.org-card-main {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 100%; padding: 8px 10px; border: 1px solid var(--line-strong);
+  border-radius: 12px; background: var(--panel-2); color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.org-card-main:hover { border-color: var(--text); }
+.org-card.org .org-card-main { border-width: 2px; }
+/* Antigo membro: tracejado e escrito; nada de opacidade (D7). */
+.org-card.former .org-card-main { border-style: dashed; background: var(--panel); }
+.org-card-main[aria-current="true"] { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.org-card-text { display: grid; min-width: 0; }
+.org-card-text strong, .org-card-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org-card-text small { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
+.org-fold {
+  position: absolute; left: 50%; top: calc(100% + 6px); z-index: 1; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 4px;
+  min-height: 24px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--text);
+  font: inherit; font-size: calc(12px * var(--font-scale, 1)); white-space: nowrap; cursor: pointer;
+}
+
+.relations-node { display: grid; gap: 12px; }
+.relations-node-head { display: flex; align-items: center; gap: 12px; }
+.relations-node-text { display: grid; gap: 2px; min-width: 0; }
+.relations-node-text h2 { margin: 0; font-size: calc(17px * var(--font-scale, 1)); overflow-wrap: anywhere; }
+.relations-table-wrap { overflow: auto; padding: 12px; }
+.wiki-relations-page .link-btn { min-height: 24px; padding: 0; border: 0; background: none; color: var(--cyan); font: inherit; font-weight: 650; text-align: left; text-decoration: underline; cursor: pointer; }
+.relations-mobile-bar { display: flex; align-items: center; gap: 8px; min-width: 0; padding-bottom: 8px; }
+.relations-mobile-bar .btn { flex: none; white-space: nowrap; }
+
+.diplomacy-graph { flex: 1; min-height: 320px; overflow: hidden; }
+.family-tree svg { display: block; margin: 0 auto; }
+
+@media (max-width: 860px) {
+  .relations-layout { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; border: 0; border-radius: 0; background: none; overflow: visible; }
+  .relations-list { padding: 0; border-right: 0; overflow: visible; }
+  .relations-main { min-height: 0; }
+  .relations-graph { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+  .relations-graph-region { flex: none; height: 62vh; }
+  .diplomacy-graph { flex: none; height: 62vh; }
+  .relations-panel { display: none; }
+  .relations-layout.show-panel .relations-panel {
+    display: flex; position: fixed; z-index: 60; left: 0; right: 0; bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); max-height: 64vh;
+    padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right));
+    border-left: 0; border-top: 1px solid var(--line-strong); border-radius: 16px 16px 0 0; background: var(--panel); box-shadow: var(--shadow);
+  }
+  .relations-panel-close { display: inline-flex !important; align-self: flex-start; }
+  .org-fold { min-height: 44px; }
+  .relations-graph-tools .icon-btn, .relations-graph-tools .btn { min-width: 44px; min-height: 44px; }
+}
+
+/* Árvore genealógica (U25): gerações acima e abaixo, cada uma com −/+ e o número. */
+.relations-family-controls { gap: 12px; margin-bottom: 8px; }
+.relations-stepper { display: flex; align-items: center; gap: 4px; }
+.relations-stepper > span { margin-right: 4px; }
+.relations-stepper .input { width: 4.5em; text-align: center; }
+@media (max-width: 860px), (pointer: coarse) { .relations-stepper .icon-btn { min-width: 44px; min-height: 44px; } }

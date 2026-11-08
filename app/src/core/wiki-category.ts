@@ -1,6 +1,7 @@
 import { imageTarget, isCategoryNote } from "./personalization"
 import { dirname } from "./text"
 import type { IndexedNote, VaultIndex } from "./vault-index"
+import { TOKEN_KEYS } from "./wiki-token"
 import { articleKind, articleKinds, customKindOf, RELATION_TYPES, WIKI_ROOT, type ArticleKind, type FieldDef } from "./wiki"
 const fold = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR")
 export const categoryRoute = (folder: string) => `/wiki/categoria/${encodeURIComponent(folder)}`
@@ -48,7 +49,7 @@ export type FieldProblem = "imagem" | "numero" | "data" | "varios" | "vazio"
 export const FIELD_PROBLEMS: Record<FieldProblem, string> = { imagem: "é imagem", numero: "é número", data: "é data", varios: "tem mais de um valor numa nota", vazio: "ainda sem valores" }
 export interface CategoryField { key: string; label: string; values: { text: string; count: number }[]; problem?: FieldProblem; /** Artigo que mostra o problema. */ example?: string }
 /** Propriedades que organizam a nota e não descrevem o artigo. */
-const NOT_FILTERS = new Set(["tipo","aliases","alias","tags","tag","cssclasses","cssclass","calendario","segredo","exemplo_runas","publish","permalink","cor","icone","capa","descricao","filtros"])
+const NOT_FILTERS = new Set(["tipo","aliases","alias","tags","tag","cssclasses","cssclass","calendario","segredo","exemplo_runas","publish","permalink","cor","icone","capa","descricao","filtros",...TOKEN_KEYS])
 const IMAGE = /\.(png|jpe?g|gif|webp|avif|svg|bmp)$/i
 const humanize = (key: string) => { const text = key.replace(/_/g, " ").trim(); return text.charAt(0).toLocaleUpperCase("pt-BR") + text.slice(1) }
 /** Texto de um valor de um só item (lista de um item conta como o item); `null` se não serve de filtro. */

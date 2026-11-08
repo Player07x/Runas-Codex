@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
-import { ArrowRight, Link2, Lock, Shapes, X } from "lucide-react"
-import { listValue, QUEST_STATUS, type QuestStatus } from "../../core/campaigns"
+import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
+import { Link2, Lock, Shapes, X } from "lucide-react"
+import { listValue, QUEST_STATUS, QUEST_STATUS_ONE, type QuestStatus } from "../../core/campaigns"
 import { buildQuestMap, QUEST_CARD, questMapCanvas, requireProblem, type QuestMapArc, type QuestMapNode } from "../../core/quest-map"
 import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
@@ -11,16 +11,21 @@ import { QuestMenu } from "./QuestPage"
 import { writeGeneratedCanvas } from "./board-actions"
 import { QuestClockChip } from "./quest-actions"
 
-const label = (status: QuestStatus) => QUEST_STATUS.find((s) => s.id === status)?.label ?? status
+/** “Ativa, bloqueada · requer A e B”: a situação e as dependências escritas (a borda e o cadeado só repetem). */
+const metaText = (node: QuestMapNode, title: (path: string) => string) => {
+  const requires = node.requires.filter(Boolean).map(title)
+  return `${QUEST_STATUS_ONE[node.status]}${node.blocked ? ", bloqueada" : ""}${requires.length ? ` · requer ${requires.join(" e ")}` : ""}`
+}
 const color = (status: QuestStatus) => `var(--${QUEST_STATUS.find((s) => s.id === status)?.color ?? "line"})`
 export const QUEST_MAP_FILE = "Mapa de missões.canvas"
 
 /**
  * Mapa de missões: os arcos (missões-mãe, `parte_de`) como grupos e, dentro, as missões em colunas pela ordem dos
- * pré-requisitos (`requer`). A borda é a situação; tracejada quer dizer bloqueada (não depende só da cor). A mesma
- * estrutura aparece como lista, a alternativa para o celular e para leitor de tela.
+ * pré-requisitos (`requer`). A borda é a situação; tracejada quer dizer bloqueada (não depende só da cor). Sem a
+ * vista em lista (a Árvore saiu na 1.2), o próprio mapa é acessível (D11): região com rolagem e nome, os cartões no
+ * Tab na ordem dos arcos, cada um com a situação, “bloqueada” e “requer X” escritos e o ⋯ da missão.
  */
-export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" | "lista" }) {
+export function QuestMapView({ data }: { data: CampaignData }) {
   const vault = useVault()
   const toast = useToast()
   const map = useMemo(() => buildQuestMap(data.quests), [data.quests])
@@ -59,7 +64,6 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
     return () => window.removeEventListener("keydown", onKey)
   }, [linking])
   const campaign = data.campaign.name
-  const questOf = (path: string) => data.quests.find((q) => q.path === path)
   if (!data.quests.length) return <p className="muted small">Crie missões para ver o mapa. Use “Parte de” para pôr uma missão dentro de um arco e “Depende de” para as setas.</p>
   return (
     <div className="stack campaign-questmap">
@@ -76,8 +80,7 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
           </div>
         )}
       </div>
-      {mode === "mapa" ? (
-        <div className="campaign-questmap-scroll" tabIndex={0} role="region" aria-label="Mapa de missões (role para os lados)">
+      <div className="campaign-questmap-scroll" tabIndex={0} role="region" aria-label="Mapa de missões (role para os lados)">
           <LinkLayer map={map} byPath={byPath} readOnly={data.readOnly} onConnect={connect}>
             <svg className="campaign-questmap-edges" width={map.width + 2} height={map.height + 2} aria-hidden="true">
               <defs><marker id="seta-missao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--line-strong)" /></marker></defs>
@@ -88,38 +91,16 @@ export function QuestMapView({ data, mode }: { data: CampaignData; mode: "mapa" 
                 return <path key={`${e.from}>${e.to}`} d={`M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`} fill="none" stroke="var(--line-strong)" strokeWidth="1.5" markerEnd="url(#seta-missao)" />
               })}
             </svg>
-            {map.arcs.map((arc) => <ArcBox key={arc.path ?? "soltas"} arc={arc} campaign={campaign} />)}
-            {map.nodes.map((node) => (
-              <QuestCard key={node.path} node={node} data={data} title={title} readOnly={data.readOnly} onSaveParent={saveParent}
-                linking={linking} onStartLink={(path) => setLinking(linking === path ? null : path)} onLinkHere={(path) => linking && connect(linking, path)} />
-            ))}
+            {/* Ordem do Tab = ordem de leitura: cada arco, depois as missões dele por coluna (pré-requisitos antes). */}
+            {map.arcs.map((arc) => <Fragment key={arc.path ?? "soltas"}>
+              <ArcBox arc={arc} campaign={campaign} />
+              {[...arc.nodes].sort((a, b) => a.x - b.x || a.y - b.y).map((node) => (
+                <QuestCard key={node.path} node={node} data={data} title={title} readOnly={data.readOnly} onSaveParent={saveParent}
+                  linking={linking} onStartLink={(path) => setLinking(linking === path ? null : path)} onLinkHere={(path) => linking && connect(linking, path)} />
+              ))}
+            </Fragment>)}
           </LinkLayer>
         </div>
-      ) : (
-        <ul className="campaign-questmap-list">
-          {map.arcs.map((arc) => (
-            <li key={arc.path ?? "soltas"}>
-              <span className="campaign-questmap-arc-title">
-                {arc.path ? <a href={href(questRoute(campaign, arc.path))}>{arc.order && `${arc.order} · `}{arc.title}</a> : arc.title}
-                <span className="tiny muted"> · {arc.done} de {arc.nodes.length} concluídas</span>
-              </span>
-              {arc.nodes.length > 0 && <ul>
-                {arc.nodes.map((n) => (
-                  <li key={n.path} className={n.blocked ? "blocked" : ""}>
-                    <span className="campaign-questmap-item">
-                      <span className="grow">
-                        <a href={href(questRoute(data.campaign.name, n.path))}>{n.order && `${n.order} `}{n.title}</a>
-                        <span className="tiny muted"> — {label(n.status)}{n.blocked ? ", bloqueada" : ""}{n.requires.length ? `; requer ${n.requires.map(title).join(", ")}` : ""}</span>
-                      </span>
-                      {questOf(n.path) && <QuestMenu data={data} quest={questOf(n.path)!} />}
-                    </span>
-                  </li>
-                ))}
-              </ul>}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }
@@ -149,8 +130,8 @@ function QuestCard({ node, data, title, readOnly, onSaveParent, linking, onStart
   return (
     <div data-quest-path={node.path} className={`campaign-questmap-card ${node.blocked ? "blocked" : ""} ${linking === node.path ? "linking" : ""}`} style={{ left: node.x, top: node.y, width: QUEST_CARD.width, height: QUEST_CARD.height, ["--col" as string]: color(node.status) }}>
       <a className="campaign-questmap-name truncate" href={href(questRoute(data.campaign.name, node.path))}>{node.order && <span className="mono faint">{node.order} </span>}{node.title}</a>
-      <span className="tiny campaign-questmap-meta truncate">
-        {node.blocked ? <><Lock size={11} aria-hidden="true" /> espera {node.requires.filter(Boolean).map(title).join(" e ")}</> : <>{label(node.status)}{node.requires.length ? <> · <ArrowRight size={11} aria-hidden="true" /> depois de {node.requires.length}</> : ""}</>}
+      <span className="tiny campaign-questmap-meta truncate" title={metaText(node, title)}>
+        {node.blocked && <Lock size={11} aria-hidden="true" />}{metaText(node, title)}
         {quest?.clocks?.length ? <> · <QuestClockChip quest={quest} /></> : null}
       </span>
       {node.inferred && !readOnly && (

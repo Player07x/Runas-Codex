@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Copy, Dices, Save } from "lucide-react"
-import { GENERATOR_GROUPS, GENERATOR_KINDS, NAMED_KINDS, generateWorld, parseDictionary, parseRollTable, rollTable, type GeneratorKind } from "../../core/wiki-tools"
+import { GENERATOR_ARTICLE, GENERATOR_GROUPS, GENERATOR_KINDS, NAMED_KINDS, articleFromResult, generateWorld, parseDictionary, parseRollTable, rollTable, type GeneratorKind } from "../../core/wiki-tools"
 import { findCodeBlocks } from "../../core/codeblocks"
 import { useNoteSet } from "../../lib/note-set"
 import { useVault } from "../../platform/VaultProvider"
@@ -11,6 +11,8 @@ import { NAME_CULTURES } from "../../core/name-cultures"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { PageHeader } from "../../components/kit/Layout"
 import { href } from "../../lib/router"
+import { NewArticleDialog } from "./NewArticleDialog"
+import { articleKind } from "../../core/wiki"
 
 export function RollTableBlock({code}:{code:string}) {
  const set=useNoteSet(),[result,setResult]=useState<string[]>([]),[error,setError]=useState("")
@@ -52,14 +54,25 @@ function readPrefs(): { culture: string; gender: string; count: string } {
  * própria wiki, à esquerda; à direita, as opções (cultura, gênero, quantos), os resultados e o que guardar. Os
  * resultados ficam na tela até gerar de novo; os recentes, até sair da Wiki.
  */
+/** “Vai para Personagens (Personagem)”: a pasta e o tipo do artigo que o resultado vira. */
+function destination(id: GeneratorKind): string {
+ const target = GENERATOR_ARTICLE[id], kind = articleKind(target.kind)
+ if (!kind) return ""
+ const field = target.field ? kind.fields.find((f) => f.key === target.field)?.label : undefined
+ return `Vai para ${kind.folder} (${kind.label}${field ? `, campo ${field}` : ""}).`
+}
+
 export function WikiTools() {
  const vault = useVault(), toast = useToast(), { wiki } = useWiki()
  const [tool, setTool] = useState<Tool>({ kind: "gerador", id: "nome" })
  const [prefs, setPrefs] = useState(readPrefs)
  const [results, setResults] = useState<string[]>([])
- const [draft, setDraft] = useState(""), [name, setName] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState("")
+ const [draft, setDraft] = useState(""), [name, setName] = useState(""), [error, setError] = useState("")
+ const [articleOpen, setArticleOpen] = useState(false)
  const [recent, setRecent] = useState<{ label: string; text: string }[]>([])
  const root = wiki!.root
+ useEffect(() => { try { const saved = JSON.parse(localStorage.getItem(`runas-codex:wiki-ferramentas-recentes:${root}`) ?? "[]"); if (Array.isArray(saved)) setRecent(saved.filter((item): item is { label: string; text: string } => Boolean(item && typeof item.label === "string" && typeof item.text === "string")).slice(0, 12)) } catch { /* preferência opcional */ } }, [root])
+ useEffect(() => { try { localStorage.setItem(`runas-codex:wiki-ferramentas-recentes:${root}`, JSON.stringify(recent.slice(0, 12))) } catch { /* preferência opcional */ } }, [recent, root])
  // As tabelas `runas-tabela` dos artigos desta wiki, para rolar sem abrir o artigo.
  const tables = useMemo(() => vault.index!.notesIn(root).flatMap((note) => findCodeBlocks(note.text, "runas-tabela").flatMap((block, index) => {
   try { return [{ path: note.path, index, note: note.name, table: parseRollTable(block.content) }] } catch { return [] }
@@ -87,7 +100,7 @@ export function WikiTools() {
  }
  const use = (text: string) => { setDraft(text); setName(suggestName(text)) }
  const copy = (text: string) => void navigator.clipboard?.writeText(text).then(() => toast("Copiado."), () => toast("Não deu para copiar; selecione o texto."))
- const save = () => { setBusy(true); void vault.createNote(`${root}Geradores`, name.trim(), `# ${name.trim()}\n\n${draft.trim()}\n`).then(() => toast(`“${name.trim()}” guardado em ${root}Geradores/.`)).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e))).finally(() => setBusy(false)) }
+ const save = () => setArticleOpen(true)
  const choose = (next: Tool) => { setTool(next); setResults([]); setDraft(""); setName(""); setError("") }
  const isCurrent = (t: Tool) => tool.kind === t.kind && (t.kind === "gerador" ? tool.kind === "gerador" && tool.id === t.id : tool.kind === "tabela" && tool.path === t.path && tool.index === t.index)
  const item = (t: Tool, text: string, hint?: string) => <button key={t.kind === "gerador" ? t.id : `${t.path}#${t.index}`} type="button" className={`list-item ${isCurrent(t) ? "active" : ""}`} aria-current={isCurrent(t) ? "true" : undefined} onClick={() => choose(t)} title={hint}>{text}</button>
@@ -114,7 +127,7 @@ export function WikiTools() {
    <section className="card stack wiki-tools-result" aria-labelledby="ferramenta-atual">
     <div className="stack" style={{ gap: 2 }}>
      <h2 id="ferramenta-atual" className="wiki-tools-title">{label}</h2>
-     <span className="small muted">{tool.kind === "gerador" ? GENERATOR_HINTS[tool.id] : `Do artigo ${current?.note ?? ""}; resultados que apontam outra tabela rolam a outra também.`}</span>
+     <span className="small muted">{tool.kind === "gerador" ? `${GENERATOR_HINTS[tool.id]} ${destination(tool.id)}` : `Do artigo ${current?.note ?? ""}; resultados que apontam outra tabela rolam a outra também.`}</span>
     </div>
     <div className="wiki-tools-options">
      {tool.kind === "gerador" && NAMED_KINDS.includes(tool.id) && <>
@@ -142,9 +155,9 @@ export function WikiTools() {
      <div className="row-wrap">
       <label className="field grow"><span>Nome da nota</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Taverna da Raposa" /></label>
       <button className="btn" onClick={() => copy(draft)}><Copy size={15} /> Copiar</button>
-      <button className="btn" disabled={busy || readOnly || !name.trim() || !draft.trim()} onClick={save}><Save size={15} /> Guardar na wiki</button>
+      <button className="btn" disabled={readOnly || !draft.trim()} onClick={save}><Save size={15} /> Guardar na wiki…</button>
      </div>
-     <span className="tiny muted">{readOnly ? "Cofre em somente leitura: libere a gravação em Configurações para guardar." : `Vira uma nota em ${root}Geradores/.`}</span>
+     <span className="tiny muted">{readOnly ? "Cofre em somente leitura: libere a gravação em Configurações para guardar." : "Abre o Novo artigo com o resultado; lá você confere o tipo, a pasta e a ficha."}</span>
     </div> : !results.length && !error && <p className="small muted">Escolha as opções e clique em Gerar. {many ? "Com 5 ou 10, escolha o resultado que quiser guardar." : ""}</p>}
    </section>
   </div>
@@ -152,6 +165,11 @@ export function WikiTools() {
    <summary className="section-title">Recentes ({recent.length})</summary>
    <ul>{recent.map((r, i) => <li key={i}><button type="button" className="wiki-tools-recent-item" onClick={() => use(r.text)}><strong>{r.label}:</strong> {r.text.replace(/\n+/g, " ").slice(0, 140)}</button></li>)}</ul>
   </details>}
+  {articleOpen && (() => {
+   // Resultado de gerador: o tipo e o campo da ficha certos (U26); de tabela: só o texto, o tipo fica a escolher.
+   const article = tool.kind === "gerador" ? articleFromResult(tool.id, draft.trim()) : null
+   return <NewArticleDialog initialName={name.trim()} {...(article ? { initialKind: article.kind, initialValues: article.values } : {})} initialBody={article ? article.body : draft.trim()} onClose={() => setArticleOpen(false)} />
+  })()}
   <p className="tiny muted">Tabelas roláveis, dicionários de idiomas e galerias entram nos artigos pelo menu / do editor. <a href={href("/config/ajuda/wiki")}>Como usar na Ajuda</a>.</p>
  </div>
 }

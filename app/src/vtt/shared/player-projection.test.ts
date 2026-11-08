@@ -39,6 +39,12 @@ describe("projeção da Vista dos Jogadores", () => {
     const result = projectScene({ scene: document("scene-1", "scene", sceneData), children: { tokens: [document("token-1", "token", token)], tiles: [], drawings: [], notes: [] }, bars: "friendly" })
     expect(result.children[0]!.data).toHaveProperty("mirror", true)
   })
+
+  it("não envia o vínculo da nota da Wiki aos jogadores", () => {
+    const token = { name: "Guarda", x: 0, y: 0, size: 1, image: null, rotation: 0, mirror: false, hidden: false, locked: false, disposition: "friendly", elevation: 0, notePath: "Wikis/Mundo/Guarda.md", bars: [], showName: true, vision: { enabled: true, range: 0 }, light: { bright: 0, dim: 0, color: "#ffb45a" } } as TokenData
+    const result = projectScene({ scene: document("scene-1", "scene", sceneData), children: { tokens: [document("token-1", "token", token)], tiles: [], drawings: [], notes: [] }, bars: "friendly" })
+    expect(result.children[0]!.data).not.toHaveProperty("notePath")
+  })
 })
 
 describe("régua transmitida", () => {

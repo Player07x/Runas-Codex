@@ -3,8 +3,10 @@ acompanharem pelo navegador do celular ou do computador, sem instalar nada. As m
 
 ### Mesas
 
-VTT › **Criar Sala** lista as mesas em cartões (miniatura, última sessão, número de cenas). **Criar nova** começa uma
-mesa; clique num cartão para abrir. VTT › **Entrar Sala** é para quem vai jogar: cole o link, digite o código
+VTT › **Criar Sala** lista as mesas em cartões (capa, número de cenas e última abertura). O ⋯ de cada mesa tem **Capa…**,
+Renomear e Excluir. Em **Capa…**, escolha uma imagem do cofre ou “Do computador…”; sem imagem, a mesa volta ao desenho
+padrão e avisa “Capa não encontrada” quando o arquivo sumiu. **Criar nova** começa uma mesa; clique num cartão para abrir.
+VTT › **Entrar Sala** é para quem vai jogar: cole o link, digite o código
 (`ABCD-EFGH`) ou leia o QR com a câmera.
 
 ### A cena
@@ -38,6 +40,13 @@ celular e no tablet, mova, edite e desenhe pelo toque; dois dedos aproximam e af
   tudo.
 - **Registro**: testes, danos e avisos das regiões, do mais recente ao mais antigo; dá para apagar tudo.
 - **Sala**: a sala dos jogadores (abaixo).
+
+### Tokens da Wiki
+
+Na **Biblioteca**, o filtro **Da wiki** traz os artigos com imagem de token ou retrato. Arraste um artigo para a cena,
+ou use o **+** dele (põe no centro), para pôr o token com a imagem, o tamanho, a disposição e as barras do artigo. No token
+selecionado, o campo **Nota** mostra o artigo ligado; o ⋯ tem **Trocar nota…**, **Importar de novo da nota** (as
+barras com o mesmo nome guardam o valor atual) e **Desvincular**. Um token sem nota tem **Ligar a uma nota…**.
 
 ### A sala dos jogadores
 

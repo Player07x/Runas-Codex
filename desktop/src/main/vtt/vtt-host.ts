@@ -208,6 +208,11 @@ export class VttHost {
       }
       await this.store.remove(String(id))
     })
+    handle(IPC.worldsCover, (_event, id, cover) => {
+      this.requireWritable()
+      if (typeof id !== "string" || (cover !== undefined && typeof cover !== "string")) throw new Error("Capa inválida.")
+      return this.store.setWorldCover(id, cover)
+    })
 
     handle(IPC.documentsList, (_event, type, parentId) => listDocuments(this.openWorld().database, type as DocumentType, parentId as string | null | undefined))
     handle(IPC.documentsPut, (_event, input) => {

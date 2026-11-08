@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { NoteCrest } from "../../components/kit/Emblem"
 import { Eye, EyeOff, ShieldCheck, X } from "lucide-react"
-import { ClocksEditor } from "./ClocksEditor"
 import { appendToSection, npcAppeared, npcAttitude, SECRETS_HEADING, setSecretRevealed, type QuestInfo, type SecretItem } from "../../core/campaigns"
 import { questOfSecret, secretQuest, withQuestLink } from "../../core/campaign-insights"
 import { useVault } from "../../platform/VaultProvider"
@@ -14,25 +13,6 @@ import { revealSession, useCampaignEdits } from "./campaign-edits"
 
 const MAX_LINES = 6
 const SHOW_SECRETS = "runas-codex:campanha:mostrar-segredos"
-
-/** Relógios de progresso e ameaças (bloco runas-relogios na nota da campanha). */
-export function ClocksCard({ data }: { data: CampaignData }) {
-  if ("error" in data.clocks) {
-    return (
-      <section className="card stack">
-        <span className="section-title">Relógios</span>
-        <p className="small" style={{ color: "var(--red)" }}>O bloco runas-relogios tem erro: {data.clocks.error}</p>
-      </section>
-    )
-  }
-  return (
-    <section className="card stack">
-      <span className="section-title">Relógios</span>
-      {data.clocks.length === 0 && <span className="muted small">Nenhum relógio. Use para ameaças que avançam e metas do grupo.</span>}
-      <ClocksEditor path={data.campaign.home} clocks={data.clocks} readOnly={data.readOnly || !data.campaign.home} />
-    </section>
-  )
-}
 
 export function QuestsCard({ data }: { data: CampaignData }) {
   const active = data.quests.filter((q) => q.status === "ativa")

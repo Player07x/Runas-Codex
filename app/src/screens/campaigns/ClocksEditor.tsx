@@ -53,7 +53,7 @@ export function ClocksEditor({ path, clocks, readOnly, size, onChanged }: {
             <ClockDial segments={c.segments} filled={c.filled} color={c.kind === "ameaca" ? "var(--red)" : "var(--green)"} {...(size ? { size } : {})} />
             <span className="small">{c.name}</span>
             <span className="tiny faint">
-              {c.filled}/{c.segments} · {c.kind === "ameaca" ? "ameaça" : "progresso"}
+              {c.kind === "ameaca" ? "Ameaça" : "Progresso"} · {c.filled} de {c.segments}
             </span>
             {!readOnly && (
               <span className="row" style={{ gap: 2 }}>

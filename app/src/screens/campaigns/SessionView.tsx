@@ -3,25 +3,31 @@ import { Crest } from "../../components/kit/Emblem"
 import { imageTarget } from "../../core/personalization"
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
-import { CalendarDays, ChevronLeft, Download, FileDown, Globe, PanelRight, Plus, Search, Users } from "lucide-react"
+import { CalendarDays, ChevronLeft, Download, FileDown, FileText, Globe, LockKeyhole, PanelRight, Pin, PinOff, Plus, Search, Trash2, Users } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
-import { campaignJournal, previousSession, SESSION_STATUS, setPrepDetail, setSectionText, setTaskLine, SUMMARY_HEADING, type SessionInfo, type SessionStatus } from "../../core/campaigns"
+import { campaignJournal, GM_NOTES_FOLDER, listGmNotes, newGmNote, withPinnedNote, previousSession, SESSION_STATUS, setPrepDetail, setSectionText, setTaskLine, SUMMARY_HEADING, uniqueNoteName, type SessionInfo, type SessionStatus } from "../../core/campaigns"
 import { dirname, noteName } from "../../core/text"
 import { href, navigate } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
 import { NoteView } from "../../components/vault/NoteView"
 import { Markdown } from "../../components/Markdown"
 import { noteBody } from "../../core/sections"
-import { Empty, Progress, useToast } from "../../components/ui"
+import { Empty, Modal, Progress, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewNpcDialog, NewSessionDialog } from "./campaign-dialogs"
 import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
-import { DraftsContext, useBlurSave, useDrafts } from "./campaign-edits"
+import { DraftsContext, useBlurSave, useCampaignEdits, useDrafts } from "./campaign-edits"
+import { ListRow } from "../../components/kit/Layout"
+import { FormField, FormGrid } from "../../components/kit/FormField"
+import { ConfirmDialog } from "../../components/vault/dialogs"
+import { nameProblem } from "../../core/names"
 import { SavedMark, useSavedMark } from "./SavedMark"
 import { ChangesSinceCard } from "./CampaignInsights"
 import { worldDateText, type WorldDate } from "../../core/calendar"
 import { worldDateAhead } from "../../core/world-today"
 import { useSetWorldToday } from "../wiki/world-today"
+import { useCreateRequest } from "../../lib/create-request"
+import { Link2 } from "lucide-react"
 
 export function SessionsView({ data, path }: { data: CampaignData; path?: string }) {
   if (path) return <SessionPage key={path} data={data} path={path} />
@@ -41,6 +47,8 @@ function SessionList({ data }: { data: CampaignData }) {
     }
   }
   const [creating, setCreating] = useState(false)
+  const [gmCreating, setGmCreating] = useState(false)
+  useCreateRequest("nota-mestre", () => (data.readOnly ? toast("Libere a gravação em Configurações para criar notas do mestre.") : setGmCreating(true)))
   const [query, setQuery] = useState("")
   const q = query.trim().toLocaleLowerCase("pt-BR")
   const matches = (s: SessionInfo) => !q || `${s.title} ${s.number ?? ""} ${s.summary}`.toLocaleLowerCase("pt-BR").includes(q)
@@ -52,7 +60,7 @@ function SessionList({ data }: { data: CampaignData }) {
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">{data.campaign.root}Sessões/</span>
+          <span className="eyebrow">{data.campaign.name} · Sessões</span>
           <h1 className="page-title">Sessões</h1>
         </div>
         <div className="kit-actions">
@@ -60,6 +68,7 @@ function SessionList({ data }: { data: CampaignData }) {
             <Plus size={16} /> Nova sessão
           </button>
           <OverflowMenu label="Ações das sessões" items={[
+            { label: "Nova nota do mestre…", icon: <Plus size={15} />, onSelect: () => setGmCreating(true), disabled: data.readOnly },
             { label: "Exportar diário (Markdown)", icon: <Download size={15} />, onSelect: () => void exportJournal() },
             { label: "Exportar diário (PDF, HTML…)…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: data.sessions.filter(session => session.status === "realizada").map(session => session.path), title: `Diário — ${data.campaign.name}`, journal: data.campaign.name }) },
           ]} />
@@ -104,9 +113,126 @@ function SessionList({ data }: { data: CampaignData }) {
       </section>
       ))}
       <PlayerDiaries data={data} />
+      <GmNotes data={data} onCreate={() => setGmCreating(true)} />
       {creating && <NewSessionDialog data={data} onClose={() => setCreating(false)} onCreated={(path) => navigate(campaignRoute(data.campaign.name, "sessoes", path))} />}
+      {gmCreating && <GmNoteDialog data={data} onClose={() => setGmCreating(false)} />}
     </div>
   )
+}
+
+/**
+ * Notas do mestre (U31): notas soltas e secretas em `Notas do mestre/`, cada uma ligada ou não a uma sessão. O ⋯ de
+ * cada nota fixa na Tela do Mestre (a mesma propriedade `fixadas` da campanha) e manda para a lixeira.
+ */
+// Os títulos de sessão costumam já começar por "Sessão N —"; não repete o número.
+function sessionName(session: { number?: number | null; title?: string | null }): string {
+  const prefix = `Sessão ${session.number ?? "—"}`
+  if (!session.title) return prefix
+  return session.title.startsWith(prefix) ? session.title : `${prefix}: ${session.title}`
+}
+
+function GmNotes({ data, onCreate }: { data: CampaignData; onCreate(): void }) {
+  const vault = useVault()
+  const { setHome } = useCampaignEdits(data)
+  const [trashing, setTrashing] = useState<{ path: string; name: string } | null>(null)
+  const [linking, setLinking] = useState<{ path: string; name: string; session?: string } | null>(null)
+  const notes = listGmNotes(vault.index!, data.campaign, data.data.fixadas)
+  const canEdit = !data.readOnly && Boolean(data.campaign.home)
+  if (!notes.length && !canEdit) return null
+  const sessionLabel = (target?: string) => {
+    if (!target) return "sem sessão"
+    const session = data.sessions.find((item) => noteName(item.path) === noteName(target))
+    return session ? sessionName(session) : noteName(target)
+  }
+  const pin = (path: string, on: boolean) => void setHome("fixadas", withPinnedNote(vault.index!, data.data.fixadas, data.campaign.home!, path, on))
+  return <section className="card stack campaign-gm-notes" aria-labelledby="notas-do-mestre">
+    <div className="row between">
+      <h2 id="notas-do-mestre" className="section-title">Notas do mestre · {notes.length}</h2>
+      {canEdit && <button type="button" className="btn sm" onClick={onCreate}><Plus size={14} /> Nota do mestre</button>}
+    </div>
+    {notes.length === 0
+      ? <p className="small muted">Pistas, planos e o que os jogadores não podem ver. Ficam em {GM_NOTES_FOLDER}, fora do diário exportado e da sala.</p>
+      : <div className="stack campaign-gm-list">{notes.map((note) => <div key={note.path} className="campaign-gm-row">
+        <ListRow href={href(noteRoute(note.path))} media={<LockKeyhole size={16} aria-hidden="true" />} title={note.name}
+          meta={<><span className="campaign-gm-secret">Segredo</span> · {sessionLabel(note.session)}{note.pinned ? " · Fixada na Tela do Mestre" : ""}</>} />
+        <OverflowMenu label={`Ações de ${note.name}`} items={[
+          { label: "Abrir", icon: <FileText size={15} />, onSelect: () => navigate(noteRoute(note.path)) },
+          ...(canEdit ? [
+            note.pinned
+              ? { label: "Desafixar da Tela do Mestre", icon: <PinOff size={15} />, onSelect: () => pin(note.path, false) }
+              : { label: "Fixar na Tela do Mestre", icon: <Pin size={15} />, onSelect: () => pin(note.path, true) },
+            { label: "Ligar a uma sessão…", icon: <Link2 size={15} />, onSelect: () => setLinking({ path: note.path, name: note.name, session: note.session }) },
+            { label: "Mandar para a lixeira…", icon: <Trash2 size={15} />, danger: true, onSelect: () => setTrashing({ path: note.path, name: note.name }) },
+          ] : []),
+        ]} />
+      </div>)}</div>}
+    {trashing && <ConfirmDialog title={`Mandar “${trashing.name}” para a lixeira?`} confirmLabel="Mandar para a lixeira" danger onClose={() => setTrashing(null)} onConfirm={async () => {
+      if (notes.find((note) => note.path === trashing.path)?.pinned) await setHome("fixadas", withPinnedNote(vault.index!, data.data.fixadas, data.campaign.home!, trashing.path, false))
+      await vault.trash(trashing.path)
+    }}>A nota vai para a lixeira do cofre (.trash) e dá para recuperar de lá.</ConfirmDialog>}
+    {linking && <LinkSessionDialog data={data} note={linking} onClose={() => setLinking(null)} />}
+  </section>
+}
+
+/** “Ligar a uma sessão…”: troca (ou tira) a `sessao` da nota do mestre numa gravação só. */
+function LinkSessionDialog({ data, note, onClose }: { data: CampaignData; note: { path: string; name: string; session?: string }; onClose(): void }) {
+  const vault = useVault()
+  const current = note.session ? data.sessions.find((item) => noteName(item.path) === noteName(note.session!))?.path ?? "" : ""
+  const [session, setSession] = useState(current)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string>()
+  const save = async () => {
+    setBusy(true); setError(undefined)
+    try {
+      await vault.setProperty(note.path, "sessao", session ? `[[${vault.index!.linkTarget(session, note.path)}]]` : undefined)
+      onClose()
+    } catch (err) { setError(err instanceof Error ? err.message : String(err)); setBusy(false) }
+  }
+  return <Modal title={`Ligar “${note.name}” a uma sessão`} onClose={() => !busy && onClose()} footer={<><button className="btn ghost" onClick={onClose} disabled={busy}>Cancelar</button><button className="btn primary" onClick={() => void save()} disabled={busy || session === current}>{busy ? "Gravando…" : "Ligar"}</button></>}>
+    <FormGrid columns={1}>
+      <FormField label="Sessão">
+        {(c) => <select id={c.id} aria-describedby={c.describedBy} className="select" autoFocus value={session} onChange={(event) => setSession(event.target.value)}>
+          <option value="">Nenhuma</option>
+          {data.sessions.map((item) => <option key={item.path} value={item.path}>{sessionName(item)}</option>)}
+        </select>}
+      </FormField>
+    </FormGrid>
+    {error && <p className="small" role="alert" style={{ color: "var(--red)" }}>{error}</p>}
+  </Modal>
+}
+
+function GmNoteDialog({ data, onClose }: { data: CampaignData; onClose(): void }) {
+  const vault = useVault()
+  const [title, setTitle] = useState("")
+  const [session, setSession] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string>()
+  const problem = title.trim() ? nameProblem(title.trim()) : null
+  const create = async () => {
+    if (!title.trim() || problem) return
+    setBusy(true); setError(undefined)
+    try {
+      const folder = `${data.campaign.root}${GM_NOTES_FOLDER}`
+      const target = session ? vault.index!.linkTarget(session, `${folder}/${title.trim()}.md`) : undefined
+      const path = await vault.createNote(folder, uniqueNoteName(vault.index!, folder, title.trim()), newGmNote(title.trim(), target))
+      onClose(); navigate(noteRoute(path))
+    } catch (err) { setError(err instanceof Error ? err.message : String(err)); setBusy(false) }
+  }
+  return <Modal title="Nova nota do mestre" onClose={() => !busy && onClose()} footer={<><button className="btn ghost" onClick={onClose} disabled={busy}>Cancelar</button><button className="btn primary" onClick={() => void create()} disabled={busy || !title.trim() || Boolean(problem)}>{busy ? "Criando…" : "Criar nota"}</button></>}>
+    <FormGrid columns={1}>
+      <FormField label="Título" error={problem ?? undefined}>
+        {(c) => <input id={c.id} aria-describedby={c.describedBy} aria-invalid={c.invalid} className="input" autoFocus required value={title} onChange={(event) => setTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void create() }} />}
+      </FormField>
+      <FormField label="Sessão" hint="Opcional: a sessão em que a nota vai ser usada.">
+        {(c) => <select id={c.id} aria-describedby={c.describedBy} className="select" value={session} onChange={(event) => setSession(event.target.value)}>
+          <option value="">Nenhuma</option>
+          {data.sessions.map((item) => <option key={item.path} value={item.path}>{sessionName(item)}</option>)}
+        </select>}
+      </FormField>
+    </FormGrid>
+    <p className="small muted">A nota nasce com <code>segredo: true</code>: fica fora do diário exportado e do que a sala mostra.</p>
+    {error && <p role="alert" className="small" style={{ color: "var(--red)" }}>{error}</p>}
+  </Modal>
 }
 
 /** Entradas do diário que os jogadores mandaram pela sala (antes ficavam escondidas no gerador de aventuras). */

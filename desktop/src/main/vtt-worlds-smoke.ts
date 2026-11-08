@@ -5,6 +5,12 @@
 export const VTT_WORLDS_SMOKE = `
   {
     const extra = await bridge.vtt.createWorld({ title: "Mesa para renomear" })
+    const coverEntry = (await bridge.vault.list()).find((entry) => /\.(png|jpe?g|webp)$/i.test(entry.path))
+    if (coverEntry && bridge.vtt.setWorldCover) {
+      const covered = await bridge.vtt.setWorldCover(extra.id, coverEntry.path)
+      const reopened = (await bridge.vtt.listWorlds()).find((world) => world.id === extra.id)
+      result.vttWorldCover = covered.cover === coverEntry.path && reopened?.cover === coverEntry.path
+    } else result.vttWorldCover = false
     location.hash = "/vtt"
     await wait(100)
     location.hash = "/vtt/criar"

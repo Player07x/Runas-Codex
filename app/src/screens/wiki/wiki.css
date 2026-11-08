@@ -14,9 +14,6 @@
    empurrar o contador para fora (a coluna automática cresceria até caber a linha inteira). */
 .category-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; border-top: 3px solid var(--cat); }
 .cat-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--cat) 16%, transparent); color: var(--cat); }
-.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
-.template { display: grid; justify-items: center; gap: 4px; color: var(--muted); }
-.template.picked { border-color: var(--cyan); color: var(--cyan); background: color-mix(in srgb, var(--cyan) 8%, var(--panel)); }
 
 /* Artigo */
 .article { display: flow-root; width: 100%; max-width: 880px; margin: 0 auto; padding: 24px 32px 80px; }
@@ -62,21 +59,6 @@
 .tl-label { padding: 1px 6px; border-radius: 5px; background: color-mix(in srgb, var(--panel) 92%, transparent); }
 .tl-event:hover .tl-label { background: var(--panel-2); color: var(--cyan); }
 
-/* Mapa */
-.map-screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.map-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
-.map-body { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg-deep); }
-.map-canvas { width: 100%; height: 100%; display: block; }
-.map-pin { cursor: pointer; }
-.map-pin.active circle { stroke: var(--cyan); stroke-width: 3; }
-.map-compass { position: absolute; left: 16px; top: 14px; color: var(--muted); }
-.map-panel { position: absolute; right: 12px; top: 12px; width: 270px; }
-@media (max-width: 860px) {
-  .map-body { overflow: auto; }
-  .map-canvas { width: 760px; height: auto; }
-  .map-panel { position: static; width: auto; padding: 10px; }
-}
-
 /* Gráfico */
 .graph-screen { position: relative; flex: 1; min-height: 0; background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--violet) 8%, transparent), transparent 70%), var(--bg-deep); }
 .graph-canvas { width: 100%; height: 100%; display: block; }
@@ -101,7 +83,6 @@
 .wiki-subfolder > summary { cursor: pointer; padding: 4px 2px; }
 .wiki-subfolder > .list { padding-left: 10px; }
 .wiki-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--space-column); align-items: start; }
-.template.card { cursor: pointer; }
 
 /* Artigo: editor no centro, ficha e relações ao lado */
 .wiki-article-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; flex: 1; min-height: 0; }
@@ -158,51 +139,13 @@
 .track-chip { cursor: pointer; border-color: var(--tr); color: var(--tr); }
 .track-chip.off, .chip.off { opacity: 0.45; text-decoration: line-through; }
 
-/* Mapas */
-.map-screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.map-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
-.map-view { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.map-view.compact { height: 360px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-.map-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
-.map-layers { flex-wrap: wrap; gap: 4px; }
-.map-layers .chip { cursor: pointer; }
-.map-box { position: relative; flex: 1; min-height: 260px; overflow: hidden; background: var(--bg-deep); cursor: grab; touch-action: none; user-select: none; }
-.map-box.tool-pino, .map-box.tool-regua { cursor: crosshair; }
-.map-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
-.map-world > img { display: block; max-width: none; pointer-events: none; }
-.map-missing { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; color: var(--muted); text-align: center; }
-.map-pin { position: absolute; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; color: var(--gold); cursor: pointer; transform-origin: 50% 100%; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 50%)); }
-.map-pin svg { fill: color-mix(in srgb, var(--gold) 35%, transparent); }
-.map-pin.active, .map-pin:hover { color: var(--cyan); }
-.map-pin.broken { color: var(--red); }
-.map-pin.nested svg { fill: color-mix(in srgb, var(--violet) 55%, transparent); color: var(--violet); }
-.map-pin-label { margin-top: 1px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--text); font-size: calc(11px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; }
-.map-ruler { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
-.map-ruler line { stroke: var(--cyan); stroke-dasharray: 8 6; }
-.map-ruler circle { fill: var(--cyan); }
-.map-distance { position: absolute; left: 10px; bottom: 10px; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 92%, transparent); color: var(--cyan); font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; }
-.map-popup { position: absolute; top: 10px; right: 10px; display: grid; gap: 6px; width: min(260px, calc(100% - 20px)); }
-.map-hint { padding: 4px 10px; }
-.map-block { display: grid; gap: 6px; }
-.map-block-open { justify-self: start; }
-
 /* Relações */
 .wiki-relations-page { gap: var(--space-section); }
-.diplomacy-graph { height: min(62vh, 560px); padding: 0; overflow: hidden; }
-.family-tree { overflow-x: auto; }
-.family-tree svg { display: block; margin: 0 auto; }
 .tree-box { fill: var(--panel-2); stroke: var(--line-strong); }
 .tree-box.center { fill: color-mix(in srgb, var(--cyan) 22%, var(--panel)); stroke: var(--cyan); }
 .tree-name { fill: var(--text); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; }
 .tree-line { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
 .tree-marriage { stroke: var(--gold); stroke-width: 1.5; stroke-dasharray: 5 4; }
-.org-tree, .org-tree ul { list-style: none; margin: 0; padding-left: 22px; }
-.org-tree { padding-left: 0; }
-.org-tree li { position: relative; padding: 4px 0; }
-.org-tree ul li::before { content: ""; position: absolute; left: -14px; top: 0; bottom: 50%; width: 12px; border-left: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); border-bottom-left-radius: 6px; }
-.org-node { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font-size: calc(13px * var(--font-scale, 1)); text-decoration: none; }
-.org-node.root { border-color: var(--violet); font-weight: 700; }
-.org-node.leader { border-color: var(--gold); color: var(--gold); }
 .wiki-graph { position: relative; flex: 1; min-height: 0; }
 
 .wiki-resource-insert { display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;align-items:center; }
@@ -216,15 +159,6 @@
 .wiki-article-main details.spoiler[open] { display:inline-block; }
 .wiki-article-main details.spoiler summary { cursor:pointer;color:var(--cyan); }
 .wiki-table { display:grid;gap:10px; }
-
-.map-images-settings { padding:8px 14px;border-bottom:1px solid var(--line);max-height:40vh;overflow:auto; }
-.map-images-settings summary,.map-drawing-tools summary { min-height:44px;cursor:pointer; }
-.map-images-settings .input { max-width:220px;min-width:0; }
-.map-drawing-tools { max-width:100%; }
-.map-drawing-tools .row-wrap { padding:10px; }
-.map-toolbar label { display:grid;gap:4px;max-width:100%; }
-.map-toolbar .input { width:150px;max-width:100%; }
-.map-toolbar .map-layers { flex-wrap:wrap; }
 
 /* W1 — categorias resumidas e navegação por arte, sem estilos no leitor compartilhado. */
 /* Ícone, nome e contagem no mesmo centro vertical; um nome longo quebra em duas linhas e continua centrado. */
@@ -305,7 +239,6 @@
 @media (max-width: 860px) { .wiki-tools-layout { grid-template-columns: minmax(0, 1fr); } .wiki-tools-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
 
 /* Teia diplomática em tabela (rework F4b, WIK-4). */
-.relations-table { margin-top: var(--space-section); }
 .relation-kind { display: inline-flex; align-items: center; gap: 8px; }
 .relation-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
@@ -347,7 +280,6 @@
 .category-kind-row .field.grow { flex:1 1 180px;min-width:0; }
 .category-kind-row .select { min-width:150px; }
 .category-kind-key { flex-basis:100%;padding-left:2px; }
-.new-article-custom { display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:8px 0 0; }
 
 /* Ferramentas do mundo (beta.22): geradores em grupos, opções numa linha e vários resultados com “Usar”. */
 .wiki-tools-list { gap: 14px; }
@@ -436,3 +368,19 @@
 .wiki-title { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
 .wiki-home.toned .wiki-cover { background: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--tone, var(--violet)) 20%, transparent), transparent 60%), var(--panel); }
 @media (max-width: 860px) { .wiki-cover-band { max-height: 72px; } }
+
+.category-card > .wiki-article-art.cover { width:100%; height:120px; border-radius:var(--radius); }
+
+/* Ficha › Token para a mesa (U22, PR N). */
+.infobox-token { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.infobox-token > summary { cursor: pointer; font-weight: 650; min-height: 32px; display: flex; align-items: center; }
+.infobox-token .kit-form-grid { margin-top: 8px; }
+.infobox-token-bar { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; align-items: end; }
+.infobox-token-bar label { display: grid; gap: 2px; min-width: 0; }
+.infobox-token-error { color: var(--red); }
+@media (max-width: 420px) { .infobox-token-bar { grid-template-columns: 1fr 1fr; } }
+
+/* “Importar de um token salvo…” */
+.infobox-saved-tokens { list-style: none; margin: 0; padding: 0; gap: 4px; }
+.infobox-saved-token { gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.infobox-saved-token:last-child { border-bottom: 0; }

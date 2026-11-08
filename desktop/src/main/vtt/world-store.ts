@@ -11,6 +11,7 @@ import {
   createWorldManifest,
   parseWorldManifest,
   renameWorldManifest,
+  setWorldCoverManifest,
   worldFolderName,
   type NewWorldInput,
   type WorldManifest,
@@ -106,6 +107,15 @@ export class WorldStore {
     const renamed = { ...manifest, path: summary.path, scenes: summary.scenes }
     if (this.current?.summary.id === id) this.current = { ...this.current, summary: { ...manifest, path: summary.path } }
     return renamed
+  }
+
+  async setWorldCover(id: string, cover: string | undefined): Promise<WorldSummary> {
+    const summary = await this.find(id)
+    const manifest = setWorldCoverManifest(stripPath(summary), cover, Date.now())
+    await writeJsonAtomically(join(summary.path, WORLD_MANIFEST_FILE), manifest)
+    const next = { ...manifest, path: summary.path, scenes: summary.scenes }
+    if (this.current?.summary.id === id) this.current = { ...this.current, summary: next }
+    return next
   }
 
   /** A pasta inteira vai para a lixeira do cofre (`.trash/<pasta>`), como as notas; nada é apagado de vez. */
