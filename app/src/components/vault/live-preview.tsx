@@ -118,8 +118,14 @@ class PropertiesWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
+    // O espaço em volta do cartão fica no padding do invólucro: o CodeMirror mede a altura do bloco pela borda e não
+    // conta margens entre os filhos do conteúdo. Com margem, tudo abaixo ficava 14 px fora do lugar e o clique caía
+    // na linha de baixo (U16).
+    const wrap = document.createElement("div")
+    wrap.className = "cm-lp-properties-wrap"
     const dom = document.createElement("div")
     dom.className = "cm-lp-properties"
+    wrap.append(dom)
     const data = parseFrontmatter(this.yaml)?.data ?? {}
     const title = document.createElement("div")
     title.className = "cm-lp-properties-title"
@@ -135,12 +141,12 @@ class PropertiesWidget extends WidgetType {
       row.append(name, shown)
       dom.append(row)
     }
-    dom.addEventListener("mousedown", (event) => {
+    wrap.addEventListener("mousedown", (event) => {
       event.preventDefault()
       view.dispatch({ selection: { anchor: 4 } })
       view.focus()
     })
-    return dom
+    return wrap
   }
 }
 
@@ -524,7 +530,8 @@ const theme = EditorView.baseTheme({
   ".cm-lp-block:hover": { outline: "1px dashed var(--line)", outlineOffset: "4px", borderRadius: "6px" },
   ".cm-lp-inline-embed": { display: "inline-block", maxWidth: "100%", verticalAlign: "top", fontFamily: "var(--font-sans)", whiteSpace: "normal" },
   ".cm-lp-frontmatter, .cm-lp-frontmatter span": { fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: "400", color: "var(--muted)" },
-  ".cm-lp-properties": { margin: "4px 0 10px", padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px", cursor: "text" },
+  ".cm-lp-properties-wrap": { padding: "4px 0 10px", cursor: "text" },
+  ".cm-lp-properties": { padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px", cursor: "text" },
   ".cm-lp-properties-title": { marginBottom: "4px", color: "var(--faint)", fontSize: "11px", fontWeight: "700", letterSpacing: "0.06em", textTransform: "uppercase" },
   ".cm-lp-property": { display: "grid", gridTemplateColumns: "minmax(90px, 30%) 1fr", gap: "10px", padding: "2px 0" },
   ".cm-lp-property > span:first-child": { color: "var(--muted)" },

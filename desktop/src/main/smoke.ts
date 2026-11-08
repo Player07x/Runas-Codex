@@ -224,6 +224,26 @@ export const SMOKE_SCRIPT = `(async () => {
   result.position = { link: Boolean(pastedPath && positioned.includes("![[" + pastedPath + "|direita]]")), float: floated ? getComputedStyle(floated).float : null }
   if (pastedPath?.startsWith("Anexos/Imagens/")) result.position.link ||= positioned.includes("![[" + pastedPath.split("/").at(-1) + "|direita]]")
 
+  // U16: o clique no meio de uma linha abaixo do cartão de Propriedades cai nessa linha (a margem do cartão, que o
+  // CodeMirror não mede, deslocava tudo 14 px e o clique ia para a linha de baixo).
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
+  const findTarget = () => document.querySelector(".cm-lp-properties") && [...document.querySelectorAll(".cm-line")].find((line) => line.textContent.includes("Uma ponte que só aparece"))
+  await until(findTarget)
+  // Espera o editor medir as linhas depois de abrir (antes disso a altura delas é estimada, como em qualquer abertura).
+  await wait(800)
+  const clickTarget = findTarget()
+  if (clickTarget) {
+    const box = clickTarget.getBoundingClientRect()
+    const at = { bubbles: true, clientX: box.left + 60, clientY: (box.top + box.bottom) / 2, button: 0 }
+    clickTarget.dispatchEvent(new MouseEvent("mousedown", at))
+    document.dispatchEvent(new MouseEvent("mouseup", at))
+  }
+  await wait(300)
+  const clickedNode = document.getSelection()?.focusNode
+  const clickedLine = (clickedNode?.nodeType === 1 ? clickedNode : clickedNode?.parentElement)?.closest(".cm-line")
+  result.editorClick = { card: Boolean(clickTarget), line: Boolean(clickedLine?.textContent.includes("Uma ponte que só aparece")) }
+  ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
+
   // Renomear pela interface: os links das outras notas precisam acompanhar.
   if (aldren) {
     location.hash = "/notas/" + encodeURIComponent(aldren.path)
@@ -694,5 +714,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.bookImportPreview === true &&
     result.bookImport === true
     && typeof result.touch === "object" && Object.values(result.touch as Record<string, unknown>).length === 6 && Object.values(result.touch as Record<string, unknown>).every(value => value === true)
+    && typeof result.editorClick === "object" && Object.values(result.editorClick as Record<string, unknown>).length === 2 && Object.values(result.editorClick as Record<string, unknown>).every(value => value === true)
   )
 }

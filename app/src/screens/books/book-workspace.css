@@ -24,7 +24,7 @@
 .books-editor .note-editor { flex: 1 0 auto; }
 .books-editor .editor-body { width: calc(100% - 40px); max-width: 820px; min-height: 72vh; margin: 12px auto 32px; padding: 40px 48px 80px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); box-shadow: 0 2px 14px rgb(0 0 0 / 12%); }
 /* As propriedades do capítulo ficam na linha de cima e na aba Capítulo do Apoio, não no meio do texto. */
-.books-editor .cm-lp-properties { display: none; }
+.books-editor .cm-lp-properties-wrap { display: none; }
 
 /* Linha do capítulo (tipo · status · palavras · resumo) */
 .book-chapter-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; width: calc(100% - 40px); max-width: 820px; margin: 16px auto 0; padding: 6px 10px; border: 1px dashed transparent; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-size: calc(13px * var(--font-scale, 1)); text-align: left; cursor: pointer; }
