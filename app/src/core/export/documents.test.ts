@@ -11,7 +11,7 @@ const texts = {
   "Wikis/Mundo/Porto.md": "# Porto\n\n[[Torre]]\n\n> [!segredo]\n> O esconderijo.\n\nFim.",
   "Wikis/Mundo/Torre.md": "# Torre\n\n[[Porto]] e [[Rei]].",
   "Wikis/Mundo/Rei.md": "---\nsegredo: true\n---\nO traidor.",
-  "Wikis/Mundo/Mapa.md": '```runas-mapa\nimagem: mapa.png\npinos:\n  - nota: Porto\n    x: 0.2\n    y: 0.3\n  - rotulo: Cofre oculto\n    x: 0.5\n    y: 0.5\n    segredo: true\n  - rotulo: Passagem secreta\n    x: 0.7\n    y: 0.7\n    camada: Segredos\n```\n\nDepois do mapa.',
+  "Wikis/Mundo/Mapa.md": '```runas-mapa\nimagem: mapa.png\npinos:\n  - nota: Porto\n    x: 0.2\n    y: 0.3\n  - nota: Rei\n    x: 0.4\n    y: 0.4\n  - rotulo: Cofre oculto\n    x: 0.5\n    y: 0.5\n    segredo: true\n  - rotulo: Passagem secreta\n    x: 0.7\n    y: 0.7\n    camada: Segredos\n```\n\nDepois do mapa.',
 }
 const index = new VaultIndex(Object.entries(texts).map(([path,text]) => ({ path, size:text.length,mtime:1 })),texts)
 const el = (tag: string, children: ExportNode[], attrs: Record<string,string> = {}): ExportNode => ({ tag, children, attrs })
@@ -29,6 +29,8 @@ describe("X4: documentos e sites", () => {
   const prepared=staticDocumentIndex(index,true), text=prepared.note("Wikis/Mundo/Mapa.md")!.text
   expect(text).toContain("![[mapa.png]]");expect(text).toContain("[[Porto]]");expect(text).toContain("Depois do mapa.")
   expect(text).not.toContain("runas-mapa");expect(text).not.toContain("Cofre oculto");expect(text).not.toContain("Passagem secreta")
+  // Pino público ligado a nota secreta: o nome da nota não vai para os jogadores (PR K).
+  expect(text).not.toContain("Rei")
   expect(index.note("Wikis/Mundo/Mapa.md")!.text).toBe(texts["Wikis/Mundo/Mapa.md"])
  })
  it("empacota uma página por nota com links recíprocos, imagens e CSS locais", () => {

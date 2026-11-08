@@ -1,5 +1,5 @@
 import { openDocumentExport } from "../../components/export/ExportDialog"
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { ArrowLeft, FileDown, Folder, Grid2X2, List, ListChecks, Palette, Plus, Search, SlidersHorizontal } from "lucide-react"
 import { CoverBand, emblemIcon } from "../../components/kit/Emblem"
 import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
@@ -13,6 +13,8 @@ import { CategoryKindDialog, FilterChooser } from "./CategoryDialogs"
 import { href } from "../../lib/router"
 import { Empty } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
+import { useGridColumns } from "../../components/kit/useGridColumns"
+import { fullRows, nextLimit } from "../../core/grid-rows"
 import { ArticleArt } from "./ArticleArt"
 import { NewArticleDialog } from "./WikiHome"
 import { articleRoute, iconByName, useWiki } from "./wiki-state"
@@ -40,6 +42,7 @@ export function WikiCategory({ path }: { path: string }) {
   const setOrder = (value: typeof order) => setView(current => ({ ...current, order: value }))
   const setSubfolder = (value: string) => setView(current => ({ ...current, subfolder: value }))
   const [mode,setMode] = useState<Mode>(storedMode), [limit,setLimit] = useState(24), [creating,setCreating] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null), columns = useGridColumns(resultsRef, 220, mode)
   // Um filtro que saiu da escolha deixa de valer, mesmo com um valor marcado antes.
   const applied = useMemo(() => Object.fromEntries(Object.entries(fields).filter(([key]) => facets.some(facet => facet.key === key))), [fields, facets])
   const filtered = useMemo(() => filterCategory(notes,folder,{text:query,order,fields:applied,subfolder}), [notes,folder,query,order,applied,subfolder])
@@ -82,11 +85,11 @@ export function WikiCategory({ path }: { path: string }) {
       {facets.length === 0 && subfolders.length === 0 && <p className="small muted">Nenhum filtro ativo nesta categoria.</p>}
     </details>{activeCount > 0 && <button type="button" className="btn sm ghost wiki-filters-clear" onClick={clearFilters} aria-label="Limpar filtros">Limpar</button>}</div>}
     {notes.length === 0 ? <Empty title="Nenhum artigo nesta categoria">{players ? "Não há artigos públicos nesta pasta." : "Crie o primeiro artigo para começar esta categoria."}</Empty> : filtered.length === 0 ? <Empty title="Nenhum artigo com esses filtros" action={<button className="btn" onClick={clear}>Limpar filtros</button>}>Tente outro nome, apelido ou valor dos campos.</Empty> : <>
-      <p className="small muted" role="status">{Math.min(limit,filtered.length)} de {filtered.length} {filtered.length === 1 ? "artigo" : "artigos"}{filtered.length !== notes.length ? ` · ${notes.length} na categoria` : ""}</p>
-      <div className={`wiki-category-results ${mode}`} aria-label="Artigos da categoria">{filtered.slice(0,limit).map(note=>{const info=articleCardFields(note);return <a className="wiki-category-article" key={note.path} href={href(articleRoute(note.path))}>
+      <p className="small muted" role="status">{Math.min(mode === "grid" ? fullRows(filtered.length, limit, columns) : limit,filtered.length)} de {filtered.length} {filtered.length === 1 ? "artigo" : "artigos"}{filtered.length !== notes.length ? ` · ${notes.length} na categoria` : ""}</p>
+      <div ref={resultsRef} className={`wiki-category-results ${mode}`} aria-label="Artigos da categoria">{filtered.slice(0,mode === "grid" ? fullRows(filtered.length, limit, columns) : limit).map(note=>{const info=articleCardFields(note);return <a className="wiki-category-article" key={note.path} href={href(articleRoute(note.path))}>
         <ArticleArt note={note} size={mode === "grid" ? "cover" : "list"}/><div className="wiki-category-copy"><h2>{note.name}</h2>{info.summary.length > 0 && <p className="wiki-category-summary" title={info.summary.join(" · ")}>{info.summary.join(" · ")}</p>}<div className="wiki-category-badges">{info.badges.map(field=><span className="chip" key={field.key} title={`${field.label}: ${field.text}`}>{field.text}</span>)}</div></div>
       </a>})}</div>
-      {filtered.length > limit && <button className="btn wiki-category-more" onClick={()=>setLimit(count=>count+24)}>Mostrar mais ({filtered.length-limit} restantes)</button>}
+      {filtered.length > (mode === "grid" ? fullRows(filtered.length, limit, columns) : limit) && <button className="btn wiki-category-more" onClick={()=>setLimit(count=>nextLimit(filtered.length, mode === "grid" ? fullRows(filtered.length, count, columns) : count, mode === "grid" ? columns : 1, 24))}>Mostrar mais ({filtered.length-(mode === "grid" ? fullRows(filtered.length, limit, columns) : limit)} restantes)</button>}
     </>}
     {creating && <NewArticleDialog initialFolder={folder.slice(root.length)} initialKind={kind?.id} onClose={()=>setCreating(false)}/>}
     {choosing && <FilterChooser folder={folder} name={name} fields={fieldInfo} chosen={chosen} onClose={() => setChoosing(false)} />}
