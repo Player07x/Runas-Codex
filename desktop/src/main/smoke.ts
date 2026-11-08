@@ -224,24 +224,32 @@ export const SMOKE_SCRIPT = `(async () => {
   result.position = { link: Boolean(pastedPath && positioned.includes("![[" + pastedPath + "|direita]]")), float: floated ? getComputedStyle(floated).float : null }
   if (pastedPath?.startsWith("Anexos/Imagens/")) result.position.link ||= positioned.includes("![[" + pastedPath.split("/").at(-1) + "|direita]]")
 
-  // U16: o clique no meio de uma linha abaixo do cartão de Propriedades cai nessa linha (a margem do cartão, que o
-  // CodeMirror não mede, deslocava tudo 14 px e o clique ia para a linha de baixo).
+  // U16: o clique no meio de uma linha abaixo do cartão de Propriedades cai nessa linha, sem estender a seleção. Duas
+  // causas: a margem do cartão, que o CodeMirror não mede, e a linha aberta pelo cursor (aqui, a imagem colada acima)
+  // fechando já no mousedown, o que subia o texto enquanto o CodeMirror relia a posição do mouse.
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
   const findTarget = () => document.querySelector(".cm-lp-properties") && [...document.querySelectorAll(".cm-line")].find((line) => line.textContent.includes("Uma ponte que só aparece"))
   await until(findTarget)
   // Espera o editor medir as linhas depois de abrir (antes disso a altura delas é estimada, como em qualquer abertura).
   await wait(800)
   const clickTarget = findTarget()
+  let steady = false
   if (clickTarget) {
     const box = clickTarget.getBoundingClientRect()
-    const at = { bubbles: true, clientX: box.left + 60, clientY: (box.top + box.bottom) / 2, button: 0 }
+    // detail 1 é um clique simples; com 0, o CodeMirror no Linux entende clique triplo e seleciona a linha inteira.
+    const at = { bubbles: true, clientX: box.left + 60, clientY: (box.top + box.bottom) / 2, button: 0, detail: 1 }
     clickTarget.dispatchEvent(new MouseEvent("mousedown", at))
+    // Com o botão apertado, o texto embaixo do mouse não sai do lugar.
+    await wait(60)
+    steady = Math.abs((document.elementFromPoint(at.clientX, at.clientY)?.closest(".cm-line")?.getBoundingClientRect().top ?? -999) - box.top) < 1
     document.dispatchEvent(new MouseEvent("mouseup", at))
   }
   await wait(300)
-  const clickedNode = document.getSelection()?.focusNode
-  const clickedLine = (clickedNode?.nodeType === 1 ? clickedNode : clickedNode?.parentElement)?.closest(".cm-line")
-  result.editorClick = { card: Boolean(clickTarget), line: Boolean(clickedLine?.textContent.includes("Uma ponte que só aparece")) }
+  // O cursor vem do próprio editor: a seleção do documento só acompanha quando a janela tem o foco.
+  const clickView = document.querySelector(".cm-content")?.cmTile?.view
+  const clickedRange = clickView?.state.selection.main
+  const clickedText = clickedRange ? clickView.state.doc.lineAt(clickedRange.head).text : ""
+  result.editorClick = { card: Boolean(clickTarget), steady, line: clickedText.includes("Uma ponte que só aparece"), empty: Boolean(clickedRange?.empty) }
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
@@ -714,6 +722,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.bookImportPreview === true &&
     result.bookImport === true
     && typeof result.touch === "object" && Object.values(result.touch as Record<string, unknown>).length === 6 && Object.values(result.touch as Record<string, unknown>).every(value => value === true)
-    && typeof result.editorClick === "object" && Object.values(result.editorClick as Record<string, unknown>).length === 2 && Object.values(result.editorClick as Record<string, unknown>).every(value => value === true)
+    && typeof result.editorClick === "object" && Object.values(result.editorClick as Record<string, unknown>).length === 4 && Object.values(result.editorClick as Record<string, unknown>).every(value => value === true)
   )
 }
