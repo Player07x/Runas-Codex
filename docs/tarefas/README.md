@@ -302,3 +302,7 @@ Fases, arquivos e situação em [`livro-impresso.md`](livro-impresso.md); decis�
 falta, o que falhou, o que mudou no plano e o plano original de 14/10. Abra no navegador. Para atualizar, edite as
 listas no fim do arquivo; os números se recalculam. O que cada frente faz continua em [`rumo-a-1.0.md`](rumo-a-1.0.md).
 
+
+## Atualização 1.2.0 (07/11/2026)
+
+Plano aprovado, itens U16–U34 e passagem para o Codex: [atualizacao-1.2.md](atualizacao-1.2.md).
