@@ -1599,3 +1599,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] Os nomes das culturas lusófonas continuam os mesmos (249, 250 e 277).
 - [ ] O total das tabelas ficou em cerca de 21.000 opções (antes 8.599). O dono decidiu que bastava, abaixo da meta de
   34.396 do plano (ADR 0036).
+
+## Versão 1.2.0
+
+- [ ] Atualizar da 1.1.0 para a 1.2.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.2.0.
+- [ ] As seções acima, de “Maquetes da atualização 1.2.0” até “Geradores ×4”, entraram nesta versão.
+- [ ] Abrir no Obsidian um artigo com token (`token_*`) e uma nota do mestre ligada a uma sessão (`sessao`): as
+  propriedades aparecem como texto e nada quebra.
