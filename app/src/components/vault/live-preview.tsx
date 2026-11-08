@@ -1,6 +1,6 @@
 import { createRoot, type Root } from "react-dom/client"
 import { syntaxTree } from "@codemirror/language"
-import { Facet, StateField, type EditorState, type Extension, type Range } from "@codemirror/state"
+import { Facet, StateEffect, StateField, type EditorState, type Extension, type Range, type Transaction } from "@codemirror/state"
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import type { SyntaxNodeRef } from "@lezer/common"
 import { changeEmbed } from "../../core/embeds"
@@ -118,8 +118,14 @@ class PropertiesWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
+    // O espaço em volta do cartão fica no padding do invólucro: o CodeMirror mede a altura do bloco pela borda e não
+    // conta margens entre os filhos do conteúdo. Com margem, tudo abaixo ficava 14 px fora do lugar e o clique caía
+    // na linha de baixo (U16).
+    const wrap = document.createElement("div")
+    wrap.className = "cm-lp-properties-wrap"
     const dom = document.createElement("div")
     dom.className = "cm-lp-properties"
+    wrap.append(dom)
     const data = parseFrontmatter(this.yaml)?.data ?? {}
     const title = document.createElement("div")
     title.className = "cm-lp-properties-title"
@@ -135,12 +141,12 @@ class PropertiesWidget extends WidgetType {
       row.append(name, shown)
       dom.append(row)
     }
-    dom.addEventListener("mousedown", (event) => {
+    wrap.addEventListener("mousedown", (event) => {
       event.preventDefault()
       view.dispatch({ selection: { anchor: 4 } })
       view.focus()
     })
-    return dom
+    return wrap
   }
 }
 
@@ -304,9 +310,58 @@ function buildBlocks(state: EditorState): DecorationSet {
   return Decoration.set(ranges, true)
 }
 
+// ---------- Clique sem pulo (U16) ----------
+// Enquanto o botão do mouse está apertado, o que o cursor revela fica como estava. Se a linha aberta fechasse já no
+// mousedown, o texto abaixo subiria e o CodeMirror, que relê a posição do mouse ao redesenhar e ao soltar o botão,
+// levaria o cursor (ou a seleção) para a linha de baixo. Ao soltar, tudo se redesenha com o cursor já no lugar.
+
+const pointerHold = StateEffect.define<boolean>()
+const pointerHeld = StateField.define<boolean>({
+  create: () => false,
+  update(value, tr) {
+    for (const effect of tr.effects) if (effect.is(pointerHold)) value = effect.value
+    return value
+  },
+})
+
+/** A transação só move o cursor com o mouse, com o botão ainda apertado? Então o desenho espera o botão subir. */
+function waitsForRelease(tr: Transaction): boolean {
+  return !tr.docChanged && tr.startState.field(pointerHeld, false) === true && tr.state.field(pointerHeld, false) === true && tr.isUserEvent("select.pointer")
+}
+function released(tr: Transaction): boolean {
+  return tr.effects.some((effect) => effect.is(pointerHold) && !effect.value)
+}
+
+const pointerHoldEvents = EditorView.domEventHandlers({
+  mousedown(event, view) {
+    if (event.button === 0 && !view.state.field(pointerHeld)) view.dispatch({ effects: pointerHold.of(true) })
+    return false
+  },
+})
+
+const pointerRelease = ViewPlugin.fromClass(
+  class {
+    constructor(readonly view: EditorView) {
+      this.release = this.release.bind(this)
+      // Na janela, e não no documento: o CodeMirror fecha a seleção do mouse no documento, antes deste aviso.
+      window.addEventListener("mouseup", this.release)
+      window.addEventListener("blur", this.release)
+    }
+    release() {
+      if (this.view.state.field(pointerHeld, false)) this.view.dispatch({ effects: pointerHold.of(false) })
+    }
+    destroy() {
+      window.removeEventListener("mouseup", this.release)
+      window.removeEventListener("blur", this.release)
+    }
+  },
+)
+
 const blockField = StateField.define<DecorationSet>({
   create: buildBlocks,
   update(value, tr) {
+    if (released(tr)) return buildBlocks(tr.state)
+    if (waitsForRelease(tr)) return value
     if (tr.docChanged || tr.selection || syntaxTree(tr.state) !== syntaxTree(tr.startState)) return buildBlocks(tr.state)
     return value
   },
@@ -476,7 +531,8 @@ const inlinePlugin = ViewPlugin.fromClass(
       this.decorations = buildInline(view)
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.selectionSet || update.viewportChanged || syntaxTree(update.state) !== syntaxTree(update.startState)) this.decorations = buildInline(update.view)
+      const waiting = update.transactions.length > 0 && update.transactions.every(waitsForRelease)
+      if (update.transactions.some(released) || update.docChanged || (update.selectionSet && !waiting) || update.viewportChanged || syntaxTree(update.state) !== syntaxTree(update.startState)) this.decorations = buildInline(update.view)
     }
   },
   { decorations: (plugin) => plugin.decorations },
@@ -524,7 +580,8 @@ const theme = EditorView.baseTheme({
   ".cm-lp-block:hover": { outline: "1px dashed var(--line)", outlineOffset: "4px", borderRadius: "6px" },
   ".cm-lp-inline-embed": { display: "inline-block", maxWidth: "100%", verticalAlign: "top", fontFamily: "var(--font-sans)", whiteSpace: "normal" },
   ".cm-lp-frontmatter, .cm-lp-frontmatter span": { fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: "400", color: "var(--muted)" },
-  ".cm-lp-properties": { margin: "4px 0 10px", padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px", cursor: "text" },
+  ".cm-lp-properties-wrap": { padding: "4px 0 10px", cursor: "text" },
+  ".cm-lp-properties": { padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px", cursor: "text" },
   ".cm-lp-properties-title": { marginBottom: "4px", color: "var(--faint)", fontSize: "11px", fontWeight: "700", letterSpacing: "0.06em", textTransform: "uppercase" },
   ".cm-lp-property": { display: "grid", gridTemplateColumns: "minmax(90px, 30%) 1fr", gap: "10px", padding: "2px 0" },
   ".cm-lp-property > span:first-child": { color: "var(--muted)" },
@@ -532,7 +589,7 @@ const theme = EditorView.baseTheme({
 
 /** O live preview inteiro: liga com `livePreviewHost.of(...)` para os links e blocos desenhados. */
 export function livePreview(): Extension {
-  return [blockField, inlinePlugin, clicks, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
+  return [pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
 }
 
-export { frontmatterRange, renderableBlocks }
+export { frontmatterRange, renderableBlocks, blockField, pointerHeld, pointerHold }
