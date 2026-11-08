@@ -121,6 +121,21 @@
 .campaign-cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 8px; }
 .campaign-tracked { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: calc(13px * var(--font-scale, 1)); }
 .campaign-tracked:first-of-type { border-top: 0; }
+.campaign-cast-view-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-left: auto; }
+.campaign-cast-view-controls .kit-choice { flex: none; }
+.campaign-faction-list, .campaign-faction-grid { margin: 0; padding: 0; list-style: none; }
+.campaign-faction-list { display: grid; }
+.campaign-faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.campaign-faction-grid.size-small { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.campaign-faction-grid.size-medium { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.campaign-faction-grid.size-large { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+.campaign-faction-grid .campaign-tracked { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-content: start; min-width: 0; min-height: 112px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.campaign-faction-grid .campaign-tracked:first-child { border-top: 1px solid var(--line); }
+.campaign-faction-grid .campaign-faction-reputation { grid-column: 1 / -1; justify-content: flex-end; margin-top: auto; }
+.campaign-faction-grid .campaign-tracked > .kit-menu-wrap { justify-self: end; }
+.campaign-roster-grid.size-small { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+.campaign-roster-grid.size-medium { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.campaign-roster-grid.size-large { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
 .campaign-seen a { color: inherit; }
 .campaign-attitude { width: auto; min-height: 32px; font-size: calc(12px * var(--font-scale, 1)); }
 @media (max-width: 860px) { .campaign-attitude { min-height: 44px; } }
@@ -256,6 +271,10 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-appeared { gap: 4px; min-height: 30px; cursor: pointer; }
 .campaign-appeared:disabled { cursor: default; opacity: 1; }
 @media (max-width: 860px) {
+  .campaign-cast-view-controls { margin-left: 0; }
+  .campaign-cast-view-controls > * { flex: 1 1 auto; }
+  .campaign-faction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .campaign-faction-grid.size-small, .campaign-faction-grid.size-medium, .campaign-faction-grid.size-large { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .campaign-roster-tools > * { flex: 1 1 100%; }
   .campaign-roster-row .campaign-attitude { flex: 1 1 auto; }
   .campaign-appeared, .campaign-roster-tools .select { min-height: 44px; }
@@ -287,9 +306,6 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-questmap-meta { display: flex; align-items: center; gap: 4px; color: var(--muted); }
 .campaign-questmap-link { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1px dashed var(--line-strong); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .campaign-questmap-link:hover { color: var(--cyan); border-color: var(--cyan); }
-.campaign-questmap-list { display: grid; gap: 10px; margin: 0; padding-left: 18px; }
-.campaign-questmap-list ul { display: grid; gap: 4px; margin: 4px 0 0; padding-left: 18px; }
-.campaign-questmap-list li.blocked > a { text-decoration: underline dashed; }
 .campaign-requires { border: 0; padding: 0; margin: 0; }
 .campaign-requires legend { padding: 0; margin-bottom: 4px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 650; }
 .campaign-requires-list { display: grid; gap: 2px; max-height: 180px; overflow: auto; }
@@ -313,7 +329,6 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-saved, .field > .campaign-saved { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-weight: 650; }
 .campaign-saved:empty, .campaign-advance-slot:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .campaign-advance { gap: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--gold) 8%, var(--panel)); }
-.campaign-world-today { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .campaign-clock-add { justify-self: start; }
 
 /* Mapa de missões: ligar arrastando da bolinha de um cartão até outro, ou pelo modo “Ligar aqui” (toque e teclado). */
@@ -335,3 +350,64 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-secret-quest { text-decoration: none; }
 .campaign-relations { display: grid; gap: 4px; margin: 0; padding-left: 18px; }
 .campaign-delete-note { margin-top: 8px; }
+
+/* Relógio do mundo no Painel (U30): mostrador à esquerda, o mesmo texto à direita; nada se anima (D16). */
+.world-clock-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.world-clock-calendar { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.world-clock { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: var(--space-column); align-items: center; }
+.world-clock-dial { width: 136px; height: 136px; }
+.world-clock-dial .ring { fill: none; stroke: var(--line); stroke-width: 6; }
+.world-clock-dial .progress { fill: none; stroke: var(--cyan); stroke-width: 6; stroke-linecap: round; }
+.world-clock-dial .face { fill: var(--panel-2); stroke: var(--line-strong); stroke-width: 1; }
+.world-clock-dial .tick { stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+/* 15 unidades num desenho de 160 mostrado a 136 px = 12,75 px (D7). */
+.world-clock-dial .num { fill: var(--muted); font: 600 15px var(--font-mono); }
+.world-clock-dial .hour { stroke: var(--text); stroke-width: 5; stroke-linecap: round; }
+.world-clock-dial .minute { stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+.world-clock-dial .pin { fill: var(--text); }
+.world-clock-text { display: grid; gap: 4px; min-width: 0; }
+.world-clock-time { font: 650 calc(32px * var(--font-scale, 1)) / 1.1 var(--font-mono); color: var(--text); }
+.world-clock-periods { display: flex; flex-wrap: wrap; gap: 0 6px; }
+.world-clock-periods .now { font-weight: 650; }
+.world-clock-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.world-clock-period-list { display: grid; gap: 8px; }
+.world-clock-period-list ol { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.world-clock-period-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 4px; align-items: center; }
+.world-clock-period-list .btn { justify-self: start; }
+@media (max-width: 560px) {
+  .world-clock { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .world-clock-dial { width: 96px; height: 96px; }
+  /* No mostrador pequeno os números ficariam abaixo de 12 px: a hora já está escrita ao lado. */
+  .world-clock-dial .num { display: none; }
+  .world-clock-time { font-size: calc(26px * var(--font-scale, 1)); }
+  .world-clock-actions > * { flex: 1 1 auto; }
+  .world-clock-actions > :last-child { flex-basis: 100%; }
+  .world-clock-actions .kit-menu-wrap > .btn { width: 100%; justify-content: center; }
+}
+
+/* Missões › Relógios (U30): os da campanha e os de cada missão, agrupados pela missão. */
+.campaign-quest-clocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: var(--space-column); align-items: start; }
+.campaign-quest-clocks h2 { margin: 0; }
+.campaign-quest-clock-group { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.campaign-quest-clock-group:first-of-type { padding-top: 0; border-top: 0; }
+.campaign-quest-clock-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.campaign-quest-clock-title a { font-weight: 650; }
+
+/* Novo NPC / Nova facção (U24): o que o “Sortear” vai pôr no artigo, à vista e descartável. */
+.campaign-drawn { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-2, var(--panel)); color: var(--muted); }
+.campaign-drawn strong { color: var(--text); }
+
+/* Sessões › Notas do mestre (U31): linha com o ⋯ ao lado; segredo em violeta, com cadeado e a palavra. */
+.campaign-gm-list { gap: 4px; }
+.campaign-gm-row { display: flex; align-items: center; gap: 4px; }
+.campaign-gm-row > .kit-row { flex: 1 1 auto; min-width: 0; }
+.campaign-gm-row .kit-row-media { color: var(--violet); }
+.campaign-gm-secret { color: var(--violet); font-weight: 600; }
+
+/* “+ Novo › Nota do mestre” fora de uma campanha: escolher qual. */
+.campaign-choose-list { list-style: none; margin: 0; padding: 0; gap: 6px; }
+.campaign-choose { width: 100%; justify-content: flex-start; min-height: 44px; }
+
+/* Cartão Pequeno do Elenco (U33): atitude em texto e o ⋯; o resto mora no menu. */
+.campaign-npc-card-compact { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
+.campaign-npc-card-tags { gap: 4px; min-width: 0; }

@@ -55,6 +55,13 @@ function createBrowserPreviewApi(): VttApi {
       if (index < 0) throw new Error("Mesa não encontrada.")
       worlds.splice(index, 1)
     },
+    setWorldCover: async (id, cover) => {
+      const world = worlds.find((candidate) => candidate.id === id)
+      if (!world) throw new Error("Mesa não encontrada.")
+      world.cover = cover?.trim() || undefined
+      world.updatedAt = Date.now()
+      return world
+    },
     documents: {
       list: async (type, parentId) => [...documents.values()].filter((document) => document.type === type && (parentId === undefined || document.parentId === parentId)),
       put: async (input) => {

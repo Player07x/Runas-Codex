@@ -17,6 +17,13 @@ import type { SoundData } from "../shared/audio"
 import { REGION_SHAPES, REGION_TRIGGERS, type RegionData, type RegionShape, type RegionTrigger } from "../shared/region"
 import type { AssetKind, WorldDocument } from "../shared/world"
 import { resolveAssetUrl, vtt } from "../api"
+import { useOptionalVault } from "../../platform/VaultProvider"
+import { href } from "../../lib/router"
+import { noteName } from "../../core/text"
+import { listWikiTokens, wikiTokenSource } from "../wiki-tokens"
+import { placeWikiToken, reimportWikiToken, WIKI_TOKEN_DRAG_TYPE } from "../library-actions"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
+import { WikiTokenPicker } from "../panels/WikiTokenPicker"
 import { noteRoute } from "../../lib/vault-notes"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
@@ -133,6 +140,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   }
   const scene = sceneId ? store.get<SceneData>(sceneId) : null
   const reportError = (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))
+  const vault = useOptionalVault()
   const edit = (change: SceneEdit) => {
     const first = pendingEdits.current.size === 0
     pendingEdits.current.set(change.id, change)
@@ -263,6 +271,14 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
       }).catch(reportError)
       return
     }
+    // Da Wiki (U22): a nota vira um token ligado a ela, onde foi solto.
+    const notePath = event.dataTransfer.getData(WIKI_TOKEN_DRAG_TYPE)
+    if (notePath && scene) {
+      const source = vault?.index ? wikiTokenSource(vault.index, notePath) : null
+      if (source) void placeWikiToken(store, source, scene.id, at).catch(reportError)
+      else reportError(new Error("Essa nota não tem imagem de token nem retrato."))
+      return
+    }
     for (const file of Array.from(event.dataTransfer.files).filter((candidate) => candidate.type.startsWith("image/"))) void addTile(file, at)
   }
   const keep = (tokenId: string) => void saveTokenToLibrary(store, tokenId).then((name) => setStatus(`“${name}” guardado na biblioteca.`), reportError)
@@ -383,7 +399,7 @@ function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove
         <button className="icon-toggle" aria-label="Fechar propriedades" onClick={onClose}><X size={15} /></button>
       </div>
     </header>
-    {document.type === "token" && <TokenFields data={document.data as TokenData} scene={scene} store={store} update={update} />}
+    {document.type === "token" && <TokenFields tokenId={document.id} data={document.data as TokenData} scene={scene} store={store} update={update} />}
     {document.type === "tile" && <TileFields data={document.data as TileData} update={update} />}
     {document.type === "drawing" && <DrawingFields data={document.data as DrawingData} update={update} />}
     {document.type === "note" && <NoteFields data={document.data as NoteData} update={update} />}
@@ -420,8 +436,32 @@ function ImagePicker({ kind, path, onChange }: { kind: AssetKind; path: string |
 /** Assentos da sala (`player-1`…): o jogador daquele assento pode mover este token. */
 const PLAYER_SLOTS = Array.from({ length: 12 }, (_, index) => `player-${index + 1}`)
 
-function TokenFields({ data, scene, store, update }: { data: TokenData; scene: WorldDocument<SceneData>; store: DocumentStore; update: (patch: Partial<TokenData>) => void }) {
+function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string; data: TokenData; scene: WorldDocument<SceneData>; store: DocumentStore; update: (patch: Partial<TokenData>) => void }) {
+  const vault = useOptionalVault()
+  const [choosing, setChoosing] = useState(false)
+  const [noteError, setNoteError] = useState("")
+  // O mestre remoto não tem o cofre: lá o token mostra a nota só pelo nome.
+  const local = Boolean(vault?.index) && Boolean(library)
+  const source = data.notePath && vault?.index ? wikiTokenSource(vault.index, data.notePath) : null
+  const act = (work: Promise<void>) => { setNoteError(""); void work.catch((reason: unknown) => setNoteError(reason instanceof Error ? reason.message : String(reason))) }
   return <>
+    <Field label="Nota">
+      {data.notePath
+        ? <div className="note-token-link">
+          {source ? <a href={href(noteRoute(data.notePath))}>{source.name}</a> : <span className="small">{noteName(data.notePath)}: nota não encontrada</span>}
+          {local && <OverflowMenu label="Mais ações da nota" items={[
+            { label: "Trocar nota…", onSelect: () => setChoosing(true) },
+            ...(source ? [{ label: "Importar de novo da nota", hint: "o valor das barras fica", onSelect: () => act(reimportWikiToken(store, tokenId, source)) }] : []),
+            { label: "Desvincular", onSelect: () => update({ notePath: undefined }) },
+          ]} />}
+        </div>
+        : <div className="note-token-link">
+          <span className="small muted">Token sem nota da Wiki.</span>
+          {local && <button className="ghost" type="button" onClick={() => setChoosing(true)}>Ligar a uma nota…</button>}
+        </div>}
+      {noteError && <small className="hint danger" role="alert">{noteError}</small>}
+    </Field>
+    {choosing && vault?.index && <WikiTokenPicker sources={listWikiTokens(vault.index, "Wikis/")} current={data.notePath} onClose={() => setChoosing(false)} onPick={(picked) => { setChoosing(false); act(reimportWikiToken(store, tokenId, picked)) }} />}
     <ImagePicker kind="tokens" path={data.image} onChange={(image) => update({ image })} />
     <Field label="Nome"><TextInput value={data.name} onCommit={(name) => update({ name })} /></Field>
     <div className="field-row">

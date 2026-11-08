@@ -1,7 +1,7 @@
 import { parseCalendar } from "./calendar"
 import * as Tables from "./generator-tables"
 import { NAME_CULTURES } from "./name-cultures"
-import { generateWorld, GENERATOR_KINDS, parseDictionary, parseRollTable, rollTable, worldEventOn, type GeneratorKind } from "./wiki-tools"
+import { articleFromResult, generateDetailed, generateWorld, GENERATOR_KINDS, parseDictionary, parseRollTable, rollTable, worldEventOn, type GeneratorKind } from "./wiki-tools"
 import { inEra, mapExtrasYaml, parseMapExtras } from "./wiki-map-extras"
 import { parseMap } from "./wiki"
 const calendar=parseCalendar('nome: Mundo\nsemana: [A,B,C]\nmeses: [{nome: Sol, dias: 30}, {nome: Lua, dias: 20}]\n')
@@ -24,6 +24,26 @@ describe("Ferramentas de fechamento da Wiki",()=>{
   expect(generateWorld("aventura",()=>0)).toContain("## Encontro")
   expect(generateWorld("nome",()=>0)).toBe("Ana das Neves")
  })
+ it("o sorteio detalhado é o mesmo do gerador e leva o pedaço certo para a ficha",()=>{
+  const seeded=(seed:number)=>()=>{seed=(seed*16807)%2147483647;return seed/2147483647}
+  for(const kind of Object.keys(GENERATOR_KINDS) as GeneratorKind[]) {
+   const detailed=generateDetailed(kind,seeded(11))
+   expect(detailed.text,kind).toBe(generateWorld(kind,seeded(11)))
+   expect(articleFromResult(kind,detailed.text),kind).toEqual(detailed)
+  }
+  expect(generateDetailed("nome",()=>0)).toMatchObject({kind:"personagem",values:{},body:"Ana das Neves"})
+  const weather=generateDetailed("clima",seeded(3))
+  expect(weather).toMatchObject({kind:"local",values:{clima:weather.text},body:""})
+  const legend=generateDetailed("lenda",seeded(5))
+  expect(legend.kind).toBe("mito")
+  expect(legend.text.endsWith(legend.values.verdade!)).toBe(true)
+  const deity=generateDetailed("divindade",seeded(7))
+  expect(deity.kind).toBe("religiao")
+  expect(deity.text).toContain(`Mandamento: ${deity.values.dogma}`)
+  expect(generateDetailed("rumor",seeded(9))).toMatchObject({kind:"mito",values:{}})
+  // O resultado escolhido entre vários é separado no primeiro “. ”: nenhum assunto de lenda pode ter um.
+  expect(Tables.LEGEND_SUBJECTS.filter(subject=>subject.includes(". "))).toEqual([])
+ })
  it("tem o dobro das opções da beta.22, sem itens repetidos nas listas",()=>{
   const lists:[string,unknown[]][]=Object.entries(Tables).flatMap(([name,value]):[string,unknown[]][]=>Array.isArray(value)?[[name,value]]:Object.entries(value as Record<string,unknown[]>).map(([season,list]):[string,unknown[]]=>[`${name}.${season}`,list]))
   for(const [name,list] of lists) expect(new Set(list.map(item=>JSON.stringify(item))).size,name).toBe(list.length)
@@ -32,6 +52,16 @@ describe("Ferramentas de fechamento da Wiki",()=>{
   const cultures=NAME_CULTURES.slice(1).reduce((sum,c)=>sum+c.female.length+c.male.length+c.surnames.length,0)
   expect(lists.reduce((sum,[,list])=>sum+list.length,0)+cultures).toBeGreaterThanOrEqual(19_384)
   expect(Object.keys(GENERATOR_KINDS).length).toBeGreaterThanOrEqual(14)
+ })
+ it("os geradores ×4 (U32) mais que dobram as tabelas, sem repetir opção nem mudar os nomes",()=>{
+  const lists:unknown[][]=Object.values(Tables).flatMap((value):unknown[][]=>Array.isArray(value)?[value]:Object.values(value as Record<string,unknown[]>))
+  const total=lists.reduce((sum,list)=>sum+list.length,0)
+  // Antes da 1.2 eram 8.599 opções nas tabelas (sem os nomes por cultura).
+  expect(total).toBeGreaterThanOrEqual(21_000)
+  // As três listas lusófonas ficam como estavam.
+  expect([Tables.FEMALE_NAMES.length,Tables.MALE_NAMES.length,Tables.SURNAMES.length]).toEqual([249,250,277])
+  const key=(item:unknown)=>(Array.isArray(item)?item.join("|"):String(item)).toLocaleLowerCase("pt-BR").replace(/[.\s]+$/,"").trim()
+  for(const list of lists) expect(new Set(list.map(key)).size).toBe(list.length)
  })
  it("concorda o gênero do nome com a profissão e o da taverna com o adjetivo",()=>{
   const seq=(values:number[])=>{let i=0;return ()=>values[i++%values.length]!}

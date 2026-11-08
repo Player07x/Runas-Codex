@@ -17,6 +17,8 @@ import { toneStyle } from "../../core/tones"
 import { categoryRoute } from "../../core/wiki-category"
 import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleExtras } from "./WikiArticleExtras"
+import { FormField, FormGrid } from "../../components/kit/FormField"
+import { NoteCombobox } from "../../components/kit/NoteCombobox"
 import { WIKI_INSERTS } from "./WikiTools"
 
 /** Recursos da Wiki: aba Wiki na galeria Formatar e seção no menu `/` (rework F3). */
@@ -97,7 +99,8 @@ export function WikiArticleView({ path }: { path: string }) {
   )
 }
 
-function Relations({ path, root, readOnly }: { path: string; root: string; readOnly: boolean }) {
+/** As relações de um artigo, com “Adicionar”; a tela de Relações usa o mesmo bloco no painel do nó (sem os atalhos). */
+export function Relations({ path, root, readOnly, shortcuts = true }: { path: string; root: string; readOnly: boolean; shortcuts?: boolean }) {
   const vault = useVault()
   const toast = useToast()
   const index = vault.index!
@@ -139,7 +142,7 @@ function Relations({ path, root, readOnly }: { path: string; root: string; readO
           ))}
         </div>
       ))}
-      {(family || org) && (
+      {shortcuts && (family || org) && (
         <div className="row-wrap">
           {family && (
             <a className="btn sm" href={href(`/wiki/relacoes/${encodeURIComponent(path)}`)}>
@@ -157,55 +160,45 @@ function Relations({ path, root, readOnly }: { path: string; root: string; readO
   )
 }
 
+/** Nova relação (D12): tipo, a nota pelo `NoteCombobox` e a atitude opcional, gravadas pelo `setProperty`. */
 function AddRelation({ path, root, onDone, onError }: { path: string; root: string; onDone(): void; onError(message: string): void }) {
   const vault = useVault()
   const index = vault.index!
   const [type, setType] = useState(RELATION_TYPES[0]!.key)
   const [target, setTarget] = useState("")
   const [attitude, setAttitude] = useState("")
-  const names = useMemo(() => index.notesIn(root).filter((n) => n.path !== path).map((n) => n.path), [index, root, path])
+  const [error, setError] = useState("")
   const save = async () => {
-    const dest = names.find((p) => noteName(p).toLocaleLowerCase("pt-BR") === target.trim().toLocaleLowerCase("pt-BR")) ?? names.find((p) => p === target.trim())
-    if (!target.trim()) return onError("Escolha a nota.")
-    const link = `[[${dest ? index.linkTarget(dest, path) : target.trim()}]]${attitude.trim() ? ` (${attitude.trim()})` : ""}`
+    const clean = target.trim().replace(/^\[\[|\]\]$/g, "")
+    if (!clean) return setError("Escolha a nota.")
+    const link = `[[${clean}]]${attitude.trim() ? ` (${attitude.trim()})` : ""}`
     const current = index.note(path)?.meta.frontmatter?.data?.[type]
     const list = Array.isArray(current) ? current.map(String) : typeof current === "string" && current.trim() ? [current] : []
     try {
       await vault.setProperty(path, type, [...list, link])
       onDone()
-    } catch (error) {
-      onError(error instanceof Error ? error.message : String(error))
+    } catch (err) {
+      onError(err instanceof Error ? err.message : String(err))
     }
   }
   return (
-    <form
-      className="stack add-relation"
-      onSubmit={(e) => {
-        e.preventDefault()
-        void save()
-      }}
-    >
-      <select className="select" value={type} onChange={(e) => setType(e.target.value)} aria-label="Tipo da relação">
-        {RELATION_TYPES.map((r) => (
-          <option key={r.key} value={r.key}>
-            {r.label}
-          </option>
-        ))}
-      </select>
-      <input className="input" list="relacao-notas" placeholder="Nota" value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Nota da relação" />
-      <datalist id="relacao-notas">
-        {names.map((p) => (
-          <option key={p} value={noteName(p)} />
-        ))}
-      </datalist>
-      <input className="input" placeholder="Atitude (opcional): hostil, amigo de infância…" value={attitude} onChange={(e) => setAttitude(e.target.value)} aria-label="Atitude" />
+    <form className="stack add-relation" onSubmit={(e) => { e.preventDefault(); void save() }}>
+      <FormGrid columns={1}>
+        <FormField label="Tipo da relação">
+          {(control) => <select id={control.id} className="select" value={type} onChange={(e) => setType(e.target.value)}>
+            {RELATION_TYPES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+          </select>}
+        </FormField>
+        <FormField label="Com quem" error={error} hint="Um artigo da wiki">
+          {(control) => <NoteCombobox id={control.id} value={target} onChange={(value) => { setTarget(value); setError("") }} root={root} from={path} describedBy={control.describedBy} invalid={control.invalid} />}
+        </FormField>
+        <FormField label="Atitude (opcional)" hint="Ex.: hostil, amigo de infância, tesoureira">
+          {(control) => <input id={control.id} className="input" value={attitude} onChange={(e) => setAttitude(e.target.value)} aria-describedby={control.describedBy} />}
+        </FormField>
+      </FormGrid>
       <div className="row" style={{ gap: 6 }}>
-        <button className="btn sm primary" type="submit">
-          Adicionar
-        </button>
-        <button className="btn sm ghost" type="button" onClick={onDone}>
-          Cancelar
-        </button>
+        <button className="btn sm primary" type="submit">Adicionar</button>
+        <button className="btn sm ghost" type="button" onClick={onDone}>Cancelar</button>
       </div>
     </form>
   )

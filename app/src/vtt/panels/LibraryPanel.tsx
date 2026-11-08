@@ -2,12 +2,15 @@ import { useEffect, useState } from "react"
 import { Download, Map as MapIcon, Plus, Trash2, UserRound } from "lucide-react"
 import { platform } from "../../platform"
 import { library } from "../library"
-import { LIBRARY_CHANGED, LIBRARY_DRAG_TYPE, placeScene, placeToken } from "../library-actions"
+import { LIBRARY_CHANGED, LIBRARY_DRAG_TYPE, placeScene, placeToken, placeWikiToken, WIKI_TOKEN_DRAG_TYPE } from "../library-actions"
 import { filterLibrary, itemAssets, type LibraryItem, type LibraryKind } from "../shared/library"
 import type { SceneData, TokenData } from "../shared/scene"
 import type { DocumentStore } from "../document-store"
+import { useOptionalVault } from "../../platform/VaultProvider"
+import { listWikiTokens, type WikiTokenSource } from "../wiki-tokens"
+import { NoteCrest } from "../../components/kit/Emblem"
 
-const KINDS: { value: LibraryKind | "todos"; label: string }[] = [{ value: "todos", label: "Tudo" }, { value: "token", label: "Tokens" }, { value: "scene", label: "Mapas" }]
+const KINDS: { value: LibraryKind | "wiki" | "todos"; label: string }[] = [{ value: "todos", label: "Tudo" }, { value: "token", label: "Tokens" }, { value: "scene", label: "Mapas" }, { value: "wiki", label: "Da wiki" }]
 
 /** Miniatura do item, lida da própria biblioteca (a imagem pode não estar nesta mesa). */
 function Thumb({ item }: { item: LibraryItem }) {
@@ -31,9 +34,10 @@ function Thumb({ item }: { item: LibraryItem }) {
  * uma cópia: token novo no ponto solto, mapa como cena nova. “Guardar na biblioteca” fica no token e na cena.
  */
 export function LibraryPanel({ store, sceneId, onOpenScene }: { store: DocumentStore; sceneId: string | null; onOpenScene: (id: string) => void }) {
+  const vault = useOptionalVault()
   const [items, setItems] = useState<LibraryItem[] | null>(null)
   const [query, setQuery] = useState("")
-  const [kind, setKind] = useState<LibraryKind | "todos">("todos")
+  const [kind, setKind] = useState<LibraryKind | "wiki" | "todos">("todos")
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const reload = () => { if (library) void library.list().then(setItems, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))) }
@@ -47,7 +51,8 @@ export function LibraryPanel({ store, sceneId, onOpenScene }: { store: DocumentS
     void action().then((done) => { if (done) setMessage(done) }, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
   }
   if (!library) return <div className="scenes-panel"><p className="hint">A biblioteca fica no cofre do computador da sala; o mestre remoto não a alcança.</p></div>
-  const shown = items ? filterLibrary(items, query, kind) : []
+  const shown = items && kind !== "wiki" ? filterLibrary(items, query, kind) : []
+  const wikiTokens = vault?.index ? listWikiTokens(vault.index, "Wikis/").filter((item) => !query.trim() || item.name.toLocaleLowerCase("pt-BR").includes(query.trim().toLocaleLowerCase("pt-BR"))) : []
   const place = (item: LibraryItem) => run(async () => {
     if (item.kind === "scene") { onOpenScene(await placeScene(store, item)); return `Cena “${item.name}” criada.` }
     const scene = sceneId ? store.get<SceneData>(sceneId) : null
@@ -71,10 +76,11 @@ export function LibraryPanel({ store, sceneId, onOpenScene }: { store: DocumentS
     </div>
     {message && <p className="hint" role="status">{message}</p>}
     {error && <p className="hint danger" role="alert">{error}</p>}
-    {items && !items.length && <p className="hint">Nada guardado ainda. No token, use “Guardar na biblioteca” nas propriedades ou no menu do objeto; no mapa, em Cenas › Guardar mapa na biblioteca. Para trazer a biblioteca de outro cofre, importe o pacote em Importar e exportar.</p>}
-    {items && items.length > 0 && !shown.length && <p className="hint">Nada com esse nome.</p>}
+    {kind === "wiki" && wikiTokens.length === 0 && <p className="hint">Nenhuma nota da wiki tem imagem de token ou retrato.</p>}
+    {kind !== "wiki" && items && !items.length && <p className="hint">Nada guardado ainda. No token, use “Guardar na biblioteca” nas propriedades ou no menu do objeto; no mapa, em Cenas › Guardar mapa na biblioteca. Para trazer a biblioteca de outro cofre, importe o pacote em Importar e exportar.</p>}
+    {kind !== "wiki" && items && items.length > 0 && !shown.length && <p className="hint">Nada com esse nome.</p>}
     <ul className="scene-list library-list">
-      {shown.map((item) => <li key={item.id} draggable onDragStart={(event) => { event.dataTransfer.setData(LIBRARY_DRAG_TYPE, item.id); event.dataTransfer.effectAllowed = "copy" }}>
+      {kind === "wiki" ? wikiTokens.map((source) => <WikiRow key={source.notePath} source={source} store={store} sceneId={sceneId} run={run} />) : shown.map((item) => <li key={item.id} draggable onDragStart={(event) => { event.dataTransfer.setData(LIBRARY_DRAG_TYPE, item.id); event.dataTransfer.effectAllowed = "copy" }}>
         <div className="library-item">
           <Thumb item={item} />
           <span><strong>{item.name}</strong><small>{item.kind === "token" ? `Token · ${(item.data as TokenData).size} ${(item.data as TokenData).size === 1 ? "célula" : "células"}` : `Mapa · ${item.children.length} ${item.children.length === 1 ? "objeto" : "objetos"}`}</small></span>
@@ -86,4 +92,17 @@ export function LibraryPanel({ store, sceneId, onOpenScene }: { store: DocumentS
       </li>)}
     </ul>
   </div>
+}
+
+/** “Da wiki”: o botão põe no centro; arrastar para o mapa põe onde soltar (a mesma ação, D11). */
+function WikiRow({ source, store, sceneId, run }: { source: WikiTokenSource; store: DocumentStore; sceneId: string | null; run(action: () => Promise<string | void>): void }) {
+  const place = () => run(async () => {
+    const scene = sceneId ? store.get<SceneData>(sceneId) : null
+    if (!scene) throw new Error("Abra uma cena para pôr o token.")
+    await placeWikiToken(store, source, scene.id, { x: scene.data.width / 2, y: scene.data.height / 2 })
+    return `“${source.name}” no centro da cena.`
+  })
+  return <li draggable onDragStart={(event) => { event.dataTransfer.setData(WIKI_TOKEN_DRAG_TYPE, source.notePath); event.dataTransfer.effectAllowed = "copy" }}>
+    <div className="library-item"><NoteCrest path={source.notePath} name={source.name} size={32} /><span><strong>{source.name}</strong><small>{source.meta}</small></span><button className="icon-toggle" aria-label={`Pôr ${source.name} na cena`} title="Pôr no centro da cena (ou arraste para o mapa)" onClick={place}><Plus size={15} /></button></div>
+  </li>
 }

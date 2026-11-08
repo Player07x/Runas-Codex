@@ -72,6 +72,14 @@ export interface Holiday {
   color?: string
 }
 
+export interface WorldClockConfig {
+  hora: string
+  periodo: string
+  horas: number
+  minutos: number
+  periodos: string[]
+}
+
 export interface Calendar {
   name: string
   /** Sigla que acompanha as datas nas notas (`sigla:`; sem ela, as iniciais do nome). */
@@ -86,6 +94,8 @@ export interface Calendar {
   eras: Era[]
   equivalents: { name: string; offset: number }[]
   holidays: Holiday[]
+  /** Relógio opcional do mundo, gravado no mesmo bloco do hoje. */
+  worldClock?: WorldClockConfig
   today?: WorldDate
   /** Dias que este calendário e outro marcam juntos (o outro é o alvo de um link). */
   correspondences: { calendar: string; here: WorldDate; there: WorldDate }[]
@@ -139,6 +149,28 @@ export class CalendarError extends Error {}
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : typeof v === "number" ? String(v) : "")
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined)
+
+/**
+ * Relógio do mundo (U30), no mesmo bloco: `hora: "07:30"`, `periodo: Dia` e
+ * `relogio: { horas: 12, minutos: 60, periodos: [Dia, Noite] }`. Só existe com `relogio:`; sem `hora:`, começa no
+ * início do primeiro período.
+ */
+export function parseClockData(data: unknown): WorldClockConfig | undefined {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return undefined
+  const d = data as Record<string, unknown>
+  const clockData = d.relogio && typeof d.relogio === "object" && !Array.isArray(d.relogio) ? d.relogio as Record<string, unknown> : undefined
+  if (!clockData) return undefined
+  const clockTime = typeof d.hora === "string" && /^\d{1,2}:\d{2}$/.test(d.hora.trim()) ? d.hora.trim().padStart(5, "0") : "00:00"
+  const clockPeriods = Array.isArray(clockData.periodos) ? [...new Set(clockData.periodos.map(str).filter(Boolean))] : []
+  const periods = clockPeriods.length ? clockPeriods : ["Dia", "Noite"]
+  return {
+    hora: clockTime,
+    periodo: periods.includes(str(d.periodo)) ? str(d.periodo) : periods[0]!,
+    horas: Math.max(1, Math.min(99, Math.round(num(clockData.horas) ?? 12))),
+    minutos: Math.max(1, Math.min(99, Math.round(num(clockData.minutos) ?? 60))),
+    periodos: periods,
+  }
+}
 
 /** Lê o YAML de um bloco ```runas-calendario```. Erros dizem o que corrigir. */
 export function parseCalendar(source: string): Calendar {
@@ -242,6 +274,9 @@ export function parseCalendar(source: string): Calendar {
     const there = parseWorldDate(o.data_no_outro)
     return target && here && there ? [{ calendar: target, here, there }] : []
   })
+  const worldClock = parseClockData(d)
+  if (worldClock) calendar.worldClock = worldClock
+
   const today = parseWorldDate(d.hoje)
   if (today) {
     const problem = dateProblem(calendar, today)

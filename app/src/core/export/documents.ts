@@ -1,6 +1,6 @@
 import { zipSync, strToU8, type Zippable } from "fflate"
 import { findCodeBlocks } from "../codeblocks"
-import { parseMap } from "../wiki"
+import { parseMap, pinForPlayers } from "../wiki"
 import { VaultIndex as Index } from "../vault-index"
 import { publicWikiIndex } from "../wiki-public"
 import type { VaultIndex } from "../vault-index"
@@ -77,7 +77,8 @@ export function staticDocumentIndex(index: VaultIndex, players: boolean): VaultI
     for (const block of findCodeBlocks(text, "runas-mapa").reverse()) {
       try {
         const spec = parseMap(block.content)
-        const pins = spec.pins.filter(pin => !players || (!pin.secret && !/segredo|secret/i.test(pin.layer ?? "")))
+        // Para os jogadores, sem pino secreto nem o nome de uma nota que eles não veem.
+        const pins = spec.pins.filter(pin => !players || (pinForPlayers(pin, (target) => Boolean(source.resolve({ kind: "wiki", embed: false, target, start: 0, end: 0, raw: "", inFrontmatter: false }, note.path).dest)) && !/segredo|secret/i.test(pin.layer ?? "")))
         const content = ["**Mapa**", `![[${spec.image}]]`, ...pins.map(pin => `- ${pin.note ? `[[${pin.note.replace(/^\[\[|\]\]$/g, "")}]]` : (pin.label ?? "Local")}${pin.label && pin.note ? ` — ${pin.label}` : ""}`)].join("\n\n")
         text = replace(block.contentStart, block.contentEnd, content)
       } catch { text = replace(block.contentStart, block.contentEnd, "_Mapa indisponível: confira sua configuração no aplicativo._") }

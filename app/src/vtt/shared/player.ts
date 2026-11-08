@@ -125,7 +125,7 @@ export function projectScene(input: ProjectionInput): PlayerProjection {
     if (!visible(document)) continue
     // Com névoa, tokens fora da visão dos aliados nem saem do VTT.
     if (sight && !isTokenVisible(sight, document.id, document.data, cell)) continue
-    const { bars, vision: _vision, light: _light, ...visibleData } = structuredClone(document.data)
+    const { bars, vision: _vision, light: _light, notePath: _notePath, ...visibleData } = structuredClone(document.data)
     const visibleBars = playerBars(bars, input.bars, document.data.disposition, document.data.playerSlotId)
     if (visibleData.image) assets.add(visibleData.image)
     children.push({ id: document.id, type: "token", parentId: input.scene.id, sort: document.sort, data: { ...visibleData, bars: visibleBars } })

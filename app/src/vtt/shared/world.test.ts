@@ -1,4 +1,4 @@
-import { WORLD_FORMAT_VERSION, createWorldManifest, parseWorldManifest, renameWorldManifest, worldFolderName } from "./world"
+import { WORLD_FORMAT_VERSION, createWorldManifest, parseWorldManifest, renameWorldManifest, setWorldCoverManifest, worldFolderName } from "./world"
 
 describe("formato da mesa", () => {
   it("cria um manifesto normalizado", () => {
@@ -23,6 +23,13 @@ describe("formato da mesa", () => {
     const manifest = parseWorldManifest({ formatVersion: 1, id: "x", title: "", createdAt: 5 })
     expect(manifest.title).toBe("Mesa sem nome")
     expect(manifest.updatedAt).toBe(5)
+  })
+
+  it("preserva e troca a capa da mesa", () => {
+    const manifest = createWorldManifest({ title: "Teste" }, "id-1", 1)
+    expect(parseWorldManifest({ ...manifest, cover: "capas/mesa.png" }).cover).toBe("capas/mesa.png")
+    expect(setWorldCoverManifest(manifest, "  capas/nova.png  ", 5)).toMatchObject({ cover: "capas/nova.png", updatedAt: 5 })
+    expect(setWorldCoverManifest({ ...manifest, cover: "antiga.png" }, undefined, 6)).not.toHaveProperty("cover")
   })
 })
 

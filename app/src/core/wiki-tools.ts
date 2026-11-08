@@ -50,6 +50,11 @@ export const NAMED_KINDS:readonly GeneratorKind[]=["nome","npc","mercador","aven
 export interface GeneratorOptions { culture?: NameCulture; gender?: "f" | "m" }
 /** Sorteio dos geradores; as listas ficam em `generator-tables.ts`. `random` fixo deixa o resultado previsível nos testes. */
 export function generateWorld(kind:GeneratorKind, random=Math.random, options:GeneratorOptions={}):string {
+  return drawGenerator(kind, random, options).text
+}
+/** Partes de um sorteio: o texto inteiro e, quando o gerador tem, o pedaço que vai para um campo da ficha. */
+interface GeneratorDraw { text: string; field?: string }
+function drawGenerator(kind:GeneratorKind, random:()=>number, options:GeneratorOptions):GeneratorDraw {
   const pick=<T,>(values:readonly T[])=>values[Math.max(0,Math.min(values.length-1,Math.floor(random()*values.length)))]!
   const person=()=>{const gender=options.gender??pick(["f","m"] as const),name=options.culture?cultureName(options.culture,gender,random):`${pick(gender==="f"?T.FEMALE_NAMES:T.MALE_NAMES)} ${pick(T.SURNAMES)}`;return {gender,name,job:pick(T.PROFESSIONS)[gender==="f"?1:0]}}
   const name=()=>person().name
@@ -57,21 +62,45 @@ export function generateWorld(kind:GeneratorKind, random=Math.random, options:Ge
   const hook=()=>`${pick(T.HOOK_EVENTS)}. ${pick(T.HOOK_TURNS)}.`
   const treasure=()=>`${pick(T.COIN_AMOUNTS)} ${pick(T.COIN_KINDS)}, ${pick(T.TRINKETS)} e ${pick(T.TREASURE_EXTRAS)}.`
   const place=()=>`${pick(T.PLACE_HEADS)} ${pick(T.PLACE_TAILS)}`
-  if(kind==="nome") return name()
-  if(kind==="npc") return npc()
-  if(kind==="taverna") {const [noun,gender]=pick(T.TAVERN_NOUNS),adjective=pick(T.TAVERN_ADJECTIVES)[gender==="f"?1:0];return `${gender==="f"?"A":"O"} ${noun} ${adjective}. Serve ${pick(T.DISHES)} e ${pick(T.DRINKS)}. Chama atenção: ${pick(T.TAVERN_DETAILS)}. Rumor: ${pick(T.RUMORS)}`}
-  if(kind==="tesouro") return treasure()
-  if(kind==="clima") {const season=pick(Object.keys(T.WEATHER));return `${season}: ${pick(T.WEATHER[season]!)}`}
-  if(kind==="gancho") return hook()
-  if(kind==="rumor") return pick(T.RUMORS)
-  if(kind==="lugar") return place()
-  if(kind==="item") return `${pick(T.MAGIC_ITEMS)} ${pick(T.MAGIC_POWERS)}. ${pick(T.MAGIC_QUIRKS)}`
-  if(kind==="faccao") return `${pick(T.FACTION_NOUNS)} ${pick(T.FACTION_EMBLEMS)}. Quer ${pick(T.FACTION_GOALS)}; age por meio de ${pick(T.FACTION_METHODS)}.`
-  if(kind==="divindade") {const syllables=Array.from({length:2+Math.floor(random()*2)},()=>pick(T.DEITY_SYLLABLES)).join(""),deity=syllables.charAt(0).toLocaleUpperCase("pt-BR")+syllables.slice(1);return `${deity}, divindade ${pick(T.DEITY_DOMAINS)}. Símbolo: ${pick(T.DEITY_SYMBOLS)}. Mandamento: ${pick(T.DEITY_TENETS)}`}
-  if(kind==="masmorra") return `${pick(T.DUNGEON_ROOMS)}. ${pick(T.DUNGEON_FEATURES)} Perigo: ${pick(T.DUNGEON_DANGERS)}.`
-  if(kind==="lenda") return `${pick(T.LEGEND_SUBJECTS)}. ${pick(T.LEGEND_TRUTHS)}`
-  if(kind==="mercador") {const p=person();return `${p.name} vende ${pick(T.MERCHANT_WARES)} e ${pick(T.MERCHANT_QUIRKS)}.`}
-  return `## Gancho\n${hook()}\n\n## Onde\n${place()}\n\n## NPC\n${npc()}\n\n## Encontro\n${pick(T.ENCOUNTERS)}\n\n## Reviravolta\n${pick(T.TWISTS)}\n\n## Recompensa\n${treasure()}`
+  if(kind==="nome") return {text:name()}
+  if(kind==="npc") return {text:npc()}
+  if(kind==="taverna") {const [noun,gender]=pick(T.TAVERN_NOUNS),adjective=pick(T.TAVERN_ADJECTIVES)[gender==="f"?1:0];return {text:`${gender==="f"?"A":"O"} ${noun} ${adjective}. Serve ${pick(T.DISHES)} e ${pick(T.DRINKS)}. Chama atenção: ${pick(T.TAVERN_DETAILS)}. Rumor: ${pick(T.RUMORS)}`}}
+  if(kind==="tesouro") return {text:treasure()}
+  if(kind==="clima") {const season=pick(Object.keys(T.WEATHER));return {text:`${season}: ${pick(T.WEATHER[season]!)}`}}
+  if(kind==="gancho") return {text:hook()}
+  if(kind==="rumor") return {text:pick(T.RUMORS)}
+  if(kind==="lugar") return {text:place()}
+  if(kind==="item") return {text:`${pick(T.MAGIC_ITEMS)} ${pick(T.MAGIC_POWERS)}. ${pick(T.MAGIC_QUIRKS)}`}
+  if(kind==="faccao") return {text:`${pick(T.FACTION_NOUNS)} ${pick(T.FACTION_EMBLEMS)}. Quer ${pick(T.FACTION_GOALS)}; age por meio de ${pick(T.FACTION_METHODS)}.`}
+  if(kind==="divindade") {const syllables=Array.from({length:2+Math.floor(random()*2)},()=>pick(T.DEITY_SYLLABLES)).join(""),deity=syllables.charAt(0).toLocaleUpperCase("pt-BR")+syllables.slice(1);const domain=pick(T.DEITY_DOMAINS),symbol=pick(T.DEITY_SYMBOLS),tenet=pick(T.DEITY_TENETS);return {text:`${deity}, divindade ${domain}. Símbolo: ${symbol}. Mandamento: ${tenet}`,field:tenet}}
+  if(kind==="masmorra") return {text:`${pick(T.DUNGEON_ROOMS)}. ${pick(T.DUNGEON_FEATURES)} Perigo: ${pick(T.DUNGEON_DANGERS)}.`}
+  if(kind==="lenda") {const subject=pick(T.LEGEND_SUBJECTS),truth=pick(T.LEGEND_TRUTHS);return {text:`${subject}. ${truth}`,field:truth}}
+  if(kind==="mercador") {const p=person();return {text:`${p.name} vende ${pick(T.MERCHANT_WARES)} e ${pick(T.MERCHANT_QUIRKS)}.`}}
+  return {text:`## Gancho\n${hook()}\n\n## Onde\n${place()}\n\n## NPC\n${npc()}\n\n## Encontro\n${pick(T.ENCOUNTERS)}\n\n## Reviravolta\n${pick(T.TWISTS)}\n\n## Recompensa\n${treasure()}`}
+}
+
+/** O tipo de artigo e o campo da ficha de cada gerador (U26): “Guardar na wiki…” abre o Novo artigo assim. */
+export const GENERATOR_ARTICLE: Record<GeneratorKind, { kind: string; field?: string }> = {
+  nome: { kind: "personagem" }, npc: { kind: "personagem" }, mercador: { kind: "personagem" },
+  lugar: { kind: "local" }, taverna: { kind: "construcao" }, masmorra: { kind: "local" }, clima: { kind: "local", field: "clima" },
+  gancho: { kind: "evento" }, rumor: { kind: "mito" }, lenda: { kind: "mito", field: "verdade" }, aventura: { kind: "evento" },
+  faccao: { kind: "organizacao" }, divindade: { kind: "religiao", field: "dogma" }, item: { kind: "item" }, tesouro: { kind: "item" },
+}
+export interface GeneratedArticle { text: string; kind: string; values: Record<string, string>; body: string }
+/** Um sorteio pronto para virar artigo: o mesmo sorteio de `generateWorld` (mesma ordem), o tipo e o campo da ficha. */
+export function generateDetailed(kind: GeneratorKind, random = Math.random, options: GeneratorOptions = {}): GeneratedArticle {
+  return generatedArticle(kind, drawGenerator(kind, random, options))
+}
+function generatedArticle(kind: GeneratorKind, draw: GeneratorDraw): GeneratedArticle {
+  const target = GENERATOR_ARTICLE[kind]
+  // Clima é o campo inteiro; lenda e divindade levam só a verdade e o mandamento para a ficha, o resto vai no texto.
+  const value = target.field ? (kind === "clima" ? draw.text : draw.field) : undefined
+  return { text: draw.text, kind: target.kind, values: target.field && value ? { [target.field]: value } : {}, body: kind === "clima" ? "" : draw.text }
+}
+/** O mesmo, a partir de um texto já sorteado (o resultado escolhido entre 5 ou 10). */
+export function articleFromResult(kind: GeneratorKind, text: string): GeneratedArticle {
+  const field = kind === "lenda" ? text.slice(text.indexOf(". ") + 2) : kind === "divindade" ? text.split("Mandamento: ").at(-1) : undefined
+  return generatedArticle(kind, { text, ...(field ? { field } : {}) })
 }
 /** Recorrência no calendário escolhido; não usa meses/dias do calendário real. */
 export function worldEventOn(data:Record<string,unknown>, cal:Calendar, date:WorldDate):boolean {

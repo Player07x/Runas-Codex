@@ -5,6 +5,7 @@ import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
   Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
   ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords, Accessibility,
+  LockKeyhole,
 } from "lucide-react"
 import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
@@ -105,6 +106,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
     { label: "Artigo da Wiki", icon: <Library size={16} />, onSelect: () => requestCreate("artigo"), disabled: readOnly },
     { label: "Campanha", icon: <Swords size={16} />, onSelect: () => requestCreate("campanha"), disabled: readOnly },
     { label: "Livro", icon: <BookPlus size={16} />, onSelect: () => requestCreate("livro"), disabled: readOnly },
+    { label: "Nota do mestre", icon: <LockKeyhole size={16} />, onSelect: () => requestCreate("nota-mestre"), disabled: readOnly },
   ]
 
   return (

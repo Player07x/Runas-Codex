@@ -491,3 +491,11 @@
 .vtt-root .table-events { display: grid; gap: 8px; }
 .vtt-root .table-events > summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: calc(13px * var(--font-scale, 1)); }
 .vtt-root .table-events .log-list .link { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: calc(12px * var(--font-scale, 1)); }
+
+/* Token ligado a nota da Wiki (U22): o nome da nota como link e o ⋯ ao lado. */
+.vtt-root .note-token-link { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.vtt-root .note-token-link a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+/* “Trocar nota…”: o diálogo abre fora da mesa, com as peças do app. */
+.wiki-token-picker { list-style: none; margin: 0; padding: 0; gap: 4px; }
+.wiki-token-choice { width: 100%; justify-content: flex-start; gap: 10px; min-height: 44px; }
+.wiki-token-choice[aria-current="true"] { border-color: var(--cyan); }

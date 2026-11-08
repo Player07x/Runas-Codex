@@ -6,7 +6,7 @@ describe("Notas da mesa (U14)", () => {
     const note = sessionFromTableNotes({ number: 12, title: " O selo ", date: "2026-10-31", text: "Os jogadores fugiram pela cripta.\nO conde desconfia." })
     expect(note).toContain('data: "2026-10-31"')
     expect(note).toContain("status: realizada")
-    expect(note).toContain("# Sessão 12 — O selo")
+    expect(note).toContain("# Sessão 12: O selo")
     expect(note).toMatch(/## Anotações\n+Os jogadores fugiram pela cripta\.\nO conde desconfia\./)
     expect(parseNote(note).frontmatter?.data).toMatchObject({ tipo: "sessao", numero: 12, data: "2026-10-31" })
   })

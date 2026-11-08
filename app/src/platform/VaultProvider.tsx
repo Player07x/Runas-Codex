@@ -374,3 +374,8 @@ export function useVault(): VaultState {
 
 /** Visão derivada para leitura (ex.: prévia pública da Wiki), sem outro fluxo de gravação. */
 export function VaultView({value,children}:{value:VaultState;children:ReactNode}) {return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>}
+
+/** O cofre, quando há um: a mesa do mestre remoto (ADR 0016) roda sem `VaultProvider` e recebe `null`. */
+export function useOptionalVault(): VaultState | null {
+  return useContext(VaultContext)
+}

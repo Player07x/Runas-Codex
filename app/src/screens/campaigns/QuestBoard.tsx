@@ -8,12 +8,13 @@ import { href, navigate } from "../../lib/router"
 import { useToast } from "../../components/ui"
 import { NewQuestDialog } from "./campaign-dialogs"
 import { QuestMapView } from "./QuestMap"
+import { QuestClocks } from "./QuestClocks"
 import { QuestMenu, QuestPage } from "./QuestPage"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { questRoute, type CampaignData } from "./campaign-state"
 
 const VIEW_KEY = "runas-codex:campanha:missoes-vista"
-type View = "colunas" | "mapa" | "lista"
+type View = "colunas" | "mapa" | "relogios"
 
 /**
  * Missões em colunas pela propriedade `status`; arrastar (ou escolher no seletor, no celular) grava o status. No
@@ -33,7 +34,8 @@ function QuestColumns({ data }: { data: CampaignData }) {
   const [over, setOver] = useState<QuestStatus | null>(null)
   const [creating, setCreating] = useState<QuestStatus | null>(null)
   const [column, setColumn] = useState<QuestStatus>("ativa")
-  const [view, setViewState] = useState<View>(() => { try { const saved = localStorage.getItem(VIEW_KEY); return saved === "mapa" || saved === "lista" ? saved : "colunas" } catch { return "colunas" } })
+  // A vista “Árvore” (lista) saiu na 1.2: quem a deixou lembrada volta às Colunas.
+  const [view, setViewState] = useState<View>(() => { try { const saved = localStorage.getItem(VIEW_KEY); return saved === "mapa" || saved === "relogios" ? saved : "colunas" } catch { return "colunas" } })
   const setView = (next: View) => { setViewState(next); try { localStorage.setItem(VIEW_KEY, next) } catch { /* só não é lembrado */ } }
   const move = (quest: QuestInfo, status: QuestStatus) => void setStatus(quest, status)
   return (
@@ -52,8 +54,8 @@ function QuestColumns({ data }: { data: CampaignData }) {
           ]} />
         </div>
       </div>
-      <ChoiceGroup label="Ver as missões em" value={view} onChange={setView} options={[{ value: "colunas", label: "Colunas" }, { value: "mapa", label: "Mapa" }, { value: "lista", label: "Árvore" }]} />
-      {view !== "colunas" ? <QuestMapView data={data} mode={view} /> : <>
+      <ChoiceGroup label="Ver as missões em" value={view} onChange={setView} options={[{ value: "colunas", label: "Colunas" }, { value: "mapa", label: "Mapa" }, { value: "relogios", label: "Relógios" }]} />
+      {view === "mapa" ? <QuestMapView data={data} /> : view === "relogios" ? <QuestClocks data={data} /> : <>
       <label className="field campaign-kanban-pick">
         <span>Coluna</span>
         <select className="select" value={column} onChange={(e) => setColumn(e.target.value as QuestStatus)}>

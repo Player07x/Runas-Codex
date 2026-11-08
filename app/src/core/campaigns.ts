@@ -297,6 +297,34 @@ export function isSessionNote(note: IndexedNote, root: string): boolean {
   return isType(note, ["sessao", "sessão"]) || inFolder(note, root, /^Sess[õo]es\//i)
 }
 
+export const GM_NOTES_FOLDER = "Notas do mestre"
+
+export interface GmNoteInfo { path: string; name: string; session?: string; pinned: boolean }
+
+export function isGmNote(note: IndexedNote, root?: string): boolean {
+  return isType(note, ["nota-mestre", "nota mestre"]) || Boolean(root && inFolder(note, root, new RegExp(`^${GM_NOTES_FOLDER}/`, "i")))
+}
+
+/** As notas do mestre da campanha; `pinned` diz se a nota está no `fixadas` da nota da campanha (Tela do Mestre). */
+export function listGmNotes(index: VaultIndex, campaign: CampaignInfo, fixadas?: unknown): GmNoteInfo[] {
+  const pinned = new Set(campaign.home ? listValue(fixadas).flatMap((raw) => {
+    const link = linkItem(raw)
+    const dest = link && resolveTarget(index, link.target, campaign.home!)
+    return dest ? [dest] : []
+  }) : [])
+  return index.notesIn(campaign.root).filter((note) => isGmNote(note, campaign.root)).map((note) => {
+    const session = linkItem(String(dataOf(note).sessao ?? ""))?.target
+    return { path: note.path, name: note.name, ...(session ? { session } : {}), pinned: pinned.has(note.path) }
+  })
+}
+
+/** A lista `fixadas` da campanha com a nota fixada ou tirada (as outras ficam como estão, na ordem). */
+export function withPinnedNote(index: VaultIndex, fixadas: unknown, home: string, path: string, pin: boolean): string[] {
+  const raw = listValue(fixadas)
+  const kept = raw.filter((item) => { const link = linkItem(item); return !link || resolveTarget(index, link.target, home) !== path })
+  return pin ? [...kept, `[[${index.linkTarget(path, home)}]]`] : kept
+}
+
 export function sessionInfo(index: VaultIndex, note: IndexedNote, today: Date): SessionInfo {
   const data = dataOf(note)
   const date = str(data.data)?.slice(0, 10)
@@ -368,6 +396,9 @@ export const QUEST_STATUS: { id: QuestStatus; label: string; color: string }[] =
   { id: "concluida", label: "Concluídas", color: "green" },
   { id: "falhou", label: "Falharam", color: "red" },
 ]
+
+/** A situação de uma missão só (“Ativa”, “Falhou”), para cartões e listas; `QUEST_STATUS` nomeia as colunas. */
+export const QUEST_STATUS_ONE: Record<QuestStatus, string> = { ideia: "Ideia", ativa: "Ativa", pausada: "Em pausa", concluida: "Concluída", falhou: "Falhou" }
 
 export interface QuestInfo {
   path: string
@@ -639,6 +670,14 @@ export function reputationOf(extra: string): number {
   return m ? Math.max(-3, Math.min(3, Number(m[1]))) : 0
 }
 
+/** Troca somente o número da reputação e preserva o texto entre parênteses. */
+export function withReputation(extra: string, reputation: number): string {
+  const value = Math.max(-3, Math.min(3, Math.trunc(reputation)))
+  const text = extra.trim()
+  const formatted = value > 0 ? `+${value}` : String(value)
+  return /[+-]?\d+/.test(text) ? text.replace(/[+-]?\d+/, formatted) : [formatted, text].filter(Boolean).join(", ")
+}
+
 // ---------- Segredos e pistas ----------
 
 export const SECRETS_HEADING = "Segredos e pistas"
@@ -799,7 +838,7 @@ export function newSessionNote(session: NewSession): string {
   if (session.event) lines.push(`evento: ${q(`[[${session.event}]]`)}`)
   if (session.worldDate) lines.push(`data_mundo: ${q(session.worldDate)}`)
   lines.push(`presentes: [${(session.present ?? []).map((p) => q(`[[${p}]]`)).join(", ")}]`, "---")
-  const title = `Sessão ${session.number}${session.title ? ` — ${session.title}` : ""}`
+  const title = `Sessão ${session.number}${session.title ? `: ${session.title}` : ""}`
   return `${lines.join("\n")}
 # ${title}
 
@@ -811,6 +850,10 @@ ${PREP_STEPS.map((step) => `- [ ] **${step}**`).join("\n")}
 
 ## ${SUMMARY_HEADING}
 `
+}
+
+export function newGmNote(title: string, session?: string): string {
+  return ["---", "tipo: nota-mestre", "segredo: true", ...(session ? [`sessao: ${q(`[[${session}]]`)}`] : []), "---", `# ${title.trim()}`, ""].join("\n")
 }
 
 export function newQuestNote(title: string, options: { status?: QuestStatus; order?: string; giver?: string; reward?: string; parent?: string; requires?: string[] } = {}): string {

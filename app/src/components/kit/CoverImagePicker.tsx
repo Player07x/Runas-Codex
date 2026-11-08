@@ -1,5 +1,5 @@
 import { ImagePlus, X } from "lucide-react"
-import { useMemo, useRef, useState } from "react"
+import { useId, useMemo, useRef, useState } from "react"
 import "./kit.css"
 import { basename, extname } from "../../core/text"
 import { useVault } from "../../platform/VaultProvider"
@@ -13,6 +13,7 @@ const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".av
  */
 export function CoverImagePicker({ value, onChange, nearNote, legend = "Imagem da capa" }: { value: string; onChange(link: string): void; nearNote: string; legend?: string }) {
   const vault = useVault(), index = vault.index!
+  const name = useId()
   const [filter, setFilter] = useState("")
   const [error, setError] = useState("")
   const input = useRef<HTMLInputElement>(null)
@@ -42,7 +43,7 @@ export function CoverImagePicker({ value, onChange, nearNote, legend = "Imagem d
     {error && <p role="alert" className="book-style-error kit-cover-error">{error}</p>}
     {images.length === 0 ? <p className="small muted">Ainda não há imagens no cofre. Use “Do computador…”.</p> : <div className="book-cover-grid kit-cover-grid" role="radiogroup" aria-label="Imagens do cofre">
       {shown.map((path) => <label key={path} className={`book-cover-thumb kit-cover-thumb${path === current ? " on" : ""}`} title={path}>
-        <input type="radio" name="book-cover-image" checked={path === current} onChange={() => onChange(`[[${path}]]`)} />
+        <input type="radio" name={name} checked={path === current} onChange={() => onChange(`[[${path}]]`)} />
         <img src={vault.platform.fileUrl(path) ?? ""} alt="" loading="lazy" />
         <span>{basename(path)}</span>
       </label>)}
