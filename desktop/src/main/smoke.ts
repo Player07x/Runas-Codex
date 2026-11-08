@@ -121,15 +121,21 @@ export const SMOKE_SCRIPT = `(async () => {
   const campaignRoute = "/campanhas/" + encodeURIComponent("Cinzas de Valdris")
   const canvasPath = "Campanhas/Cinzas de Valdris/Quadro.canvas"
   location.hash = campaignRoute
-  await until(() => document.querySelector(".campaign-clock"))
+  await until(() => document.querySelector(".world-clock-card"))
   await wait(300)
   const dashboard = document.querySelector(".main")?.textContent ?? ""
-  const clocks = document.querySelectorAll(".campaign-clock").length
+  // U30: o Painel mostra o relógio do mundo; os relógios de ameaça e meta foram para Missões › Relógios.
+  const worldClock = Boolean(document.querySelector(".world-clock-dial[role=img]")?.getAttribute("aria-label"))
+  try { localStorage.setItem("runas-codex:campanha:missoes-vista", "relogios") } catch { /* fica nas Colunas */ }
+  location.hash = campaignRoute + "/missoes"
+  const campaignClocks = await until(() => document.querySelector("[aria-labelledby=relogios-da-campanha] .campaign-clock")?.closest("section"))
+  const clocks = campaignClocks?.querySelectorAll(".campaign-clock").length ?? 0
   location.hash = "/quadro/" + encodeURIComponent(canvasPath)
   await until(() => document.querySelectorAll(".canvas-card").length > 0)
   await wait(300)
   result.campaign = {
     clocks,
+    worldClock,
     quest: dashboard.includes("Entregar a carta"),
     clue: dashboard.includes("A carta selada pede a prisão"),
     cards: document.querySelectorAll(".canvas-card").length,
@@ -591,7 +597,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const bookSide = result.bookSidePreview as Record<string, unknown> | undefined
   if (!bookSide || Number(bookSide.pages) <= 1 || bookSide.marked !== true || bookSide.decorative !== true) return false
   const campaign = result.campaign as Record<string, unknown> | undefined
-  if (!campaign || campaign.clocks !== 1 || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
+  if (!campaign || campaign.clocks !== 1 || campaign.worldClock !== true || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
   if (result.migrationFound !== 4) return false
   if (typeof result.linkPreview !== "string" || !result.linkPreview) return false
   if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
@@ -604,7 +610,7 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   const noteWindows = result.noteWindows as Record<string, unknown> | undefined
   if (!noteWindows || !Object.values(noteWindows).every(value => value === true)) return false
   const vttWorlds = result.vttWorlds as Record<string, unknown> | undefined
-  if (!vttWorlds || Object.keys(vttWorlds).length !== 4 || !Object.values(vttWorlds).every(value => value === true)) return false
+  if (!vttWorlds || Object.keys(vttWorlds).length !== 4 || !Object.values(vttWorlds).every(value => value === true) || result.vttWorldCover !== true) return false
   return (
     result.create === "OK" &&
     String(result.createAgain).startsWith("Já existe") &&

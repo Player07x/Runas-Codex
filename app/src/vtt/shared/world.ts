@@ -27,6 +27,8 @@ export interface WorldManifest {
   description: string
   createdAt: number
   updatedAt: number
+  /** Caminho relativo de imagem no cofre usada como capa da mesa. */
+  cover?: string
 }
 
 export interface WorldSummary extends WorldManifest {
@@ -119,6 +121,14 @@ export function renameWorldManifest(manifest: WorldManifest, title: string, now:
   return { ...manifest, title: name, updatedAt: now }
 }
 
+/** Atualiza a capa sem perder campos desconhecidos do manifesto. */
+export function setWorldCoverManifest(manifest: WorldManifest, cover: string | undefined, now: number): WorldManifest {
+  const value = cover?.trim()
+  if (value) return { ...manifest, cover: value, updatedAt: now }
+  const { cover: _cover, ...withoutCover } = manifest
+  return { ...withoutCover, updatedAt: now }
+}
+
 /**
  * Lê um manifesto vindo do disco. Um manifesto de versão futura é recusado:
  * abrir uma mesa criada por uma versão mais nova do app poderia corrompê-la.
@@ -139,5 +149,6 @@ export function parseWorldManifest(value: unknown): WorldManifest {
     description: typeof raw.description === "string" ? raw.description : "",
     createdAt,
     updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : createdAt,
+    ...(typeof raw.cover === "string" && raw.cover.trim() ? { cover: raw.cover.trim() } : {}),
   }
 }

@@ -5,6 +5,7 @@ import {
   isDocumentType,
   parseWorldManifest,
   renameWorldManifest,
+  setWorldCoverManifest,
   worldFolderName,
   type DocumentType,
   type NewWorldInput,
@@ -172,6 +173,15 @@ export class PortableWorldStore {
     await this.files.write(`${path}/mesa.json`, encode(renamed), file)
     if (this.openWorld?.summary.id === id) this.openWorld = { ...this.openWorld, summary: { ...renamed, path, scenes } }
     return { ...renamed, path, scenes }
+  }
+  async setWorldCover(id: string, cover: string | undefined): Promise<WorldSummary> {
+    const summary = await this.find(id)
+    const file = (await this.files.list()).find((entry) => entry.path === `${summary.path}/mesa.json`) ?? null
+    const { path, scenes, ...manifest } = summary
+    const next = setWorldCoverManifest(manifest, cover, Date.now())
+    await this.files.write(`${path}/mesa.json`, encode(next), file)
+    if (this.openWorld?.summary.id === id) this.openWorld = { ...this.openWorld, summary: { ...next, path, scenes } }
+    return { ...next, path, scenes }
   }
   /** Fecha a mesa, se aberta, e devolve a pasta para quem a manda à lixeira do cofre. */
   async detach(id: string): Promise<string> {

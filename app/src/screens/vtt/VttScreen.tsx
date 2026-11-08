@@ -1,7 +1,8 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Download, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash } from "lucide-react"
+import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash } from "lucide-react"
 import { ListRow, PageHeader } from "../../components/kit/Layout"
+import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { href, navigate } from "../../lib/router"
 import { relativeDays } from "../../lib/navigation"
@@ -10,6 +11,7 @@ import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
 import { MesaTable } from "../../vtt/MesaTable"
 import { isBrowserPreview, vtt } from "../../vtt/api"
 import type { WorldSummary } from "../../vtt/shared/world"
+import { useVault } from "../../platform/VaultProvider"
 import "./vtt.css"
 
 export function VttScreen({ route }: { route: string[] }) {
@@ -56,7 +58,7 @@ function VttHome() {
           {mesas.map((mesa) => (
             <ListRow
               key={mesa.id}
-              media={<Map size={18} aria-hidden="true" />}
+              media={<MesaMedia mesa={mesa} />}
               title={mesa.title}
               meta={`${mesa.scenes ?? 0} ${mesa.scenes === 1 ? "cena" : "cenas"} · aberta ${relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}`}
               trailing={<span className="small">Abrir</span>}
@@ -71,10 +73,11 @@ function VttHome() {
 
 /** Criar Sala: as mesas do cofre (`.runas/mesas/`) e "Criar Nova". */
 function CreateRoom() {
+  const vault = useVault()
   const [mesas, setMesas] = useState<WorldSummary[] | null>(null)
   const [error, setError] = useState<string>()
   const [creating, setCreating] = useState(false)
-  const [editing, setEditing] = useState<{ kind: "rename" | "delete"; mesa: WorldSummary } | null>(null)
+  const [editing, setEditing] = useState<{ kind: "rename" | "delete" | "cover"; mesa: WorldSummary } | null>(null)
   const reload = () => vtt.listWorlds().then(setMesas, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
   useEffect(() => { void reload() }, [])
   return (
@@ -117,21 +120,21 @@ function CreateRoom() {
             <article key={mesa.id} className="mesa-card" data-mesa={mesa.title}>
               <button type="button" className="mesa-card-open" onClick={() => navigate(`/vtt/mesa/${mesa.id}`)}>
                 <div className="mesa-thumb" style={{ background: "radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--cyan) 30%, var(--panel-2)), var(--bg-deep))" }}>
-                  <Map size={34} style={{ color: "var(--cyan)", opacity: 0.6 }} />
-                  <span className="chip">
-                    {mesa.scenes ?? 0} {mesa.scenes === 1 ? "cena" : "cenas"}
-                  </span>
+                  {mesa.cover && vault.platform.fileUrl(mesa.cover) ? <img src={vault.platform.fileUrl(mesa.cover)!} alt="" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.nextElementSibling?.removeAttribute("hidden") }} /> : null}
+                  <span className="mesa-thumb-fallback" hidden={Boolean(mesa.cover && vault.platform.fileUrl(mesa.cover))}><Map size={34} style={{ color: "var(--cyan)" }} /></span>
                 </div>
                 <div className="stack" style={{ gap: 4, padding: "12px 52px 12px 12px" }}>
                   <strong className="display" style={{ fontSize: 16 }}>{mesa.title}</strong>
                   {mesa.description && <span className="muted small">{mesa.description}</span>}
                   <span className="muted small row">
-                    <Clock size={13} /> Aberta {relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}
+                    <Clock size={13} /> {mesa.scenes ?? 0} {mesa.scenes === 1 ? "cena" : "cenas"} · Aberta {relativeDays(new Date(mesa.updatedAt).toISOString(), new Date())}
                   </span>
+                  {mesa.cover && !vault.platform.fileUrl(mesa.cover) && <span className="small" style={{ color: "var(--red)" }}>Capa não encontrada</span>}
                 </div>
               </button>
               <span className="mesa-card-menu">
                 <OverflowMenu label={`Ações da mesa ${mesa.title}`} items={[
+                  { label: "Capa…", icon: <ImagePlus size={16} />, onSelect: () => setEditing({ kind: "cover", mesa }) },
                   { label: "Renomear…", icon: <PenLine size={16} />, onSelect: () => setEditing({ kind: "rename", mesa }) },
                   "separator",
                   { label: "Excluir…", icon: <Trash2 size={16} />, danger: true, onSelect: () => setEditing({ kind: "delete", mesa }) },
@@ -154,8 +157,36 @@ function CreateRoom() {
           Nada é apagado de vez.
         </ConfirmDialog>
       )}
+      {editing?.kind === "cover" && <CoverDialog mesa={editing.mesa} onClose={() => setEditing(null)} onSaved={(mesa) => { setMesas((list) => list?.map((item) => item.id === mesa.id ? mesa : item) ?? list); setEditing(null) }} />}
     </div>
   )
+}
+
+function MesaMedia({ mesa }: { mesa: WorldSummary }) {
+  const vault = useVault()
+  const url = mesa.cover ? vault.platform.fileUrl(mesa.cover) : null
+  return url ? <img className="mesa-list-cover" src={url} alt="" /> : <Map size={18} aria-hidden="true" />
+}
+
+function CoverDialog({ mesa, onClose, onSaved }: { mesa: WorldSummary; onClose(): void; onSaved(mesa: WorldSummary): void }) {
+  const vault = useVault()
+  const [value, setValue] = useState(mesa.cover ? `[[${mesa.cover}]]` : "")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string>()
+  const save = async () => {
+    if (!vtt.setWorldCover) { setError("Esta plataforma não permite trocar a capa da mesa."); return }
+    setBusy(true); setError(undefined)
+    try {
+      const cover = value.replace(/^!?\[\[|\]\]$/g, "").trim() || undefined
+      onSaved(await vtt.setWorldCover(mesa.id, cover))
+    } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); setBusy(false) }
+  }
+  return <Modal title={`Capa da mesa: ${mesa.title}`} onClose={() => !busy && onClose()} footer={<><button className="btn" onClick={onClose} disabled={busy}>Cancelar</button><button className="btn primary" onClick={() => void save()} disabled={busy}>Usar esta imagem</button></>}>
+    <CoverImagePicker legend="Imagem da capa" value={value} nearNote="" onChange={setValue} />
+    {value && <button className="btn ghost" type="button" onClick={() => setValue("")} disabled={busy}>Tirar a capa</button>}
+    {mesa.cover && !vault.platform.fileUrl(mesa.cover) && <p className="small" style={{ color: "var(--red)" }}>Capa não encontrada: escolha outra imagem ou tire a capa.</p>}
+    {error && <p role="alert" className="small" style={{ color: "var(--red)" }}>{error}</p>}
+  </Modal>
 }
 
 function NewMesaModal({ onClose }: { onClose: () => void }) {

@@ -261,6 +261,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
       }),
     closeWorld: () => ordered(close),
     renameWorld: (id, title) => store.rename(id, title),
+    setWorldCover: (id, cover) => store.setWorldCover(id, cover),
     deleteWorld: (id) =>
       ordered(async () => {
         if (store.openWorld?.summary.id === id) {

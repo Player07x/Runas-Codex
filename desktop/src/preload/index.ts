@@ -143,6 +143,7 @@ const bridge: RunasCodexBridge = {
     },
     renameWorld: (id, title) => invoke(VTT.renameWorld, id, title),
     deleteWorld: (id) => invoke(VTT.deleteWorld, id),
+    setWorldCover: (id, cover) => invoke(VTT.worldsCover, id, cover),
   },
   saveBytes: (name, bytes) => invoke(IPC.saveBytes, name, bytes),
   updates: {
