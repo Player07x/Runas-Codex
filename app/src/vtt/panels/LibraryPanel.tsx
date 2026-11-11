@@ -9,6 +9,7 @@ import type { DocumentStore } from "../document-store"
 import { useOptionalVault } from "../../platform/VaultProvider"
 import { listWikiTokens, type WikiTokenSource } from "../wiki-tokens"
 import { NoteCrest } from "../../components/kit/Emblem"
+import { tokenSizeLabel } from "../../core/token-size"
 
 const KINDS: { value: LibraryKind | "wiki" | "todos"; label: string }[] = [{ value: "todos", label: "Tudo" }, { value: "token", label: "Tokens" }, { value: "scene", label: "Mapas" }, { value: "wiki", label: "Da wiki" }]
 
@@ -83,7 +84,7 @@ export function LibraryPanel({ store, sceneId, onOpenScene }: { store: DocumentS
       {kind === "wiki" ? wikiTokens.map((source) => <WikiRow key={source.notePath} source={source} store={store} sceneId={sceneId} run={run} />) : shown.map((item) => <li key={item.id} draggable onDragStart={(event) => { event.dataTransfer.setData(LIBRARY_DRAG_TYPE, item.id); event.dataTransfer.effectAllowed = "copy" }}>
         <div className="library-item">
           <Thumb item={item} />
-          <span><strong>{item.name}</strong><small>{item.kind === "token" ? `Token · ${(item.data as TokenData).size} ${(item.data as TokenData).size === 1 ? "célula" : "células"}` : `Mapa · ${item.children.length} ${item.children.length === 1 ? "objeto" : "objetos"}`}</small></span>
+          <span><strong>{item.name}</strong><small>{item.kind === "token" ? `Token · ${tokenSizeLabel((item.data as TokenData).size)}` : `Mapa · ${item.children.length} ${item.children.length === 1 ? "objeto" : "objetos"}`}</small></span>
           <button className="icon-toggle" aria-label={item.kind === "token" ? `Pôr ${item.name} na cena` : `Criar cena com ${item.name}`} title={item.kind === "token" ? "Pôr no centro da cena (ou arraste para o mapa)" : "Criar uma cena com este mapa"} onClick={() => place(item)}><Plus size={15} /></button>
           <button className="icon-toggle danger" aria-label={`Tirar ${item.name} da biblioteca`} onClick={() => {
             if (window.confirm(`Tirar “${item.name}” da biblioteca? O item vai para a lixeira do cofre; o que já está nas mesas continua.`)) run(async () => { await library!.remove(item); reload() })

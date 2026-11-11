@@ -409,7 +409,7 @@ function TypedToday({ calendar, readOnly, onSet }: { calendar: Calendar; readOnl
       <span className="tiny muted">Ou digite o dia de hoje:</span>
       <div className="row" style={{ gap: 6 }}>
         <input className="input sm mono" value={text} onChange={(e) => setText(e.target.value)} placeholder="ANO-MM-DD" aria-label="Dia de hoje no mundo" disabled={readOnly} style={{ flex: 1, minWidth: 0 }} />
-        <button className="btn sm primary" disabled={readOnly || !text.trim()}>Definir hoje</button>
+        <button type="submit" className="btn sm primary" disabled={readOnly || !text.trim()}>Definir hoje</button>
       </div>
       {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
     </form>
@@ -475,7 +475,7 @@ function SyncCalendars({ refs, current, readOnly, onAlign }: { refs: CalendarRef
           </label>
           <input className="input sm mono" value={there} onChange={(e) => setThere(e.target.value)} placeholder={`ANO-MM-DD (${other?.calendar.abbr ?? ""})`} aria-label="Dia no outro calendário" />
           {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
-          <button className="btn sm primary" disabled={!here.trim() || !there.trim()}>Sincronizar</button>
+          <button type="submit" className="btn sm primary" disabled={!here.trim() || !there.trim()}>Sincronizar</button>
         </form>
       )}
     </section>

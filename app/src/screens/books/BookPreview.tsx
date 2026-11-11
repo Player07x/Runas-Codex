@@ -217,6 +217,6 @@ function BookMetadata({ book, onClose }: { book: IndexedNote; onClose(): void })
     {COVER_FIELDS.map(([key, label]) => <label key={key} className="field"><span>{label}</span><textarea className="input" rows={key === "creditos" || key === "contracapa" ? 3 : 1} aria-label={label} placeholder={key === "titulo_capa" ? book.name : undefined} value={values[key] ?? ""} onChange={(e) => setValues({ ...values, [key]: e.target.value })} /></label>)}
     <CoverImagePicker value={values.capa ?? ""} nearNote={book.path} onChange={(link) => setValues({ ...values, capa: link })} />
     {error && <p role="alert">{error}</p>}
-    <div className="row-wrap"><button className="btn primary" disabled={busy}>Salvar capa e créditos</button><button type="button" className="btn" disabled={busy} onClick={onClose}>Cancelar</button></div>
+    <div className="row-wrap"><button type="submit" className="btn primary" disabled={busy}>Salvar capa e créditos</button><button type="button" className="btn" disabled={busy} onClick={onClose}>Cancelar</button></div>
   </form>
 }

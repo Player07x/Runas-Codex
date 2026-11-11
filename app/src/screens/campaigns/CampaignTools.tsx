@@ -135,7 +135,7 @@ function TreasuryPanel({ data }: { data: CampaignData }) {
               Moedas (sem regras de sistema)
               <input className="input" name="coins" key={state.coins} defaultValue={state.coins} disabled={data.readOnly} />
             </label>
-            <button className="btn" disabled={tool.disabled}>Salvar moedas</button>
+            <button type="submit" className="btn" disabled={tool.disabled}>Salvar moedas</button>
           </form>
           {state.items.length === 0 ? (
             <p className="muted small">Nenhum item. Recompensas de missões concluídas também chegam aqui.</p>
@@ -209,7 +209,7 @@ function TreasureItemForm({ disabled, onAdd }: { disabled: boolean; onAdd(item: 
       <label>Quantidade<input className="input" type="number" min={0} step="any" value={quantity} onChange={(e) => setQuantity(Math.max(0, Number(e.target.value) || 0))} /></label>
       <label>Portador<input className="input" value={holder} onChange={(e) => setHolder(e.target.value)} /></label>
       <label>Notas do item<input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
-      <button className="btn" disabled={disabled || !name.trim()}>Acrescentar item</button>
+      <button type="submit" className="btn" disabled={disabled || !name.trim()}>Acrescentar item</button>
     </form>
   )
 }
@@ -312,7 +312,7 @@ export function InitiativePanel({ data, level = 2 }: { data: CampaignData; level
             <label>Participante<input className="input" required value={name} onChange={(e) => setName(e.target.value)} /></label>
             <label>Iniciativa<input className="input" type="number" value={value} onChange={(e) => setValue(Number(e.target.value) || 0)} /></label>
             <label className="check"><input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />Oculto</label>
-            <button className="btn" disabled={tool.disabled || !name.trim()}>Acrescentar participante</button>
+            <button type="submit" className="btn" disabled={tool.disabled || !name.trim()}>Acrescentar participante</button>
           </form>
           {encounters.length > 0 && (
             <div className="row-wrap">

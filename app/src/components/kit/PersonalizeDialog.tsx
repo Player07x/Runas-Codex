@@ -63,8 +63,8 @@ export function PersonalizeDialog({ title, name, path, createIn, withDescription
       onClose={onClose}
       footer={
         <>
-          <button className="btn ghost" onClick={onClose} disabled={busy}>Cancelar</button>
-          <button className="btn primary" onClick={() => void save()} disabled={busy || readOnly || (toneId === "livre" && !tone)}>{busy ? "Gravando…" : "Salvar"}</button>
+          <button type="button" className="btn ghost" onClick={onClose} disabled={busy}>Cancelar</button>
+          <button type="button" className="btn primary" onClick={() => void save()} disabled={busy || readOnly || (toneId === "livre" && !tone)}>{busy ? "Gravando…" : "Salvar"}</button>
         </>
       }
     >

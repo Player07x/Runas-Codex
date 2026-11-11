@@ -29,6 +29,7 @@ import { newId, useDocumentsVersion, type DocumentStore } from "../document-stor
 import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
 import { SceneHistory, type SceneEdit } from "./history"
 import { useSceneKeyboard } from "./keyboard"
+import { TokenSizeField } from "../../components/kit/TokenSizeField"
 
 const TOOLS: { id: SceneTool; label: string; action: KeyAction; icon: typeof Ruler }[] = [
   { id: "select", label: "Selecionar e mover", action: "toolSelect", icon: MousePointer2 },
@@ -468,8 +469,8 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
       <Field label="Posição X"><NumberInput value={data.x} onCommit={(x) => update({ x })} /></Field>
       <Field label="Posição Y"><NumberInput value={data.y} onCommit={(y) => update({ y })} /></Field>
     </div>
+    <div className="field token-size-field"><span aria-hidden="true">Tamanho (células)</span><TokenSizeField value={data.size} onCommit={(size) => update({ size, ...snapTokenCenter({ x: data.x, y: data.y }, size, scene.data.grid) })} /></div>
     <div className="field-row">
-      <Field label="Tamanho (células)"><NumberInput value={data.size} step={0.5} onCommit={(size) => update({ size, ...snapTokenCenter({ x: data.x, y: data.y }, size, scene.data.grid) })} /></Field>
       <Field label="Elevação"><NumberInput value={data.elevation} onCommit={(elevation) => update({ elevation })} /></Field>
       <Field label="Rotação"><NumberInput value={data.rotation} step={15} onCommit={(rotation) => update({ rotation })} /></Field>
     </div>

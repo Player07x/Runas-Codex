@@ -218,7 +218,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
               <option value="secao">Seção</option>
             </select></label>
             <div className="row">
-              <button className="btn sm primary" aria-label="Confirmar criar capítulo" disabled={locked || !name.trim()}>Criar</button>
+              <button type="submit" className="btn sm primary" aria-label="Confirmar criar capítulo" disabled={locked || !name.trim()}>Criar</button>
               <button type="button" className="btn sm ghost" onClick={() => setCreating(false)}>Cancelar</button>
             </div>
           </form> : <button type="button" className="btn ghost book-toc-new" disabled={locked} onClick={() => setCreating(true)}><Plus size={16} /> Novo capítulo</button>}

@@ -89,7 +89,7 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
       <label className="field"><span>Nome do modelo</span><input className="input" required value={modelName} onChange={(e) => setModelName(e.target.value)} /></label>
       <p className="small muted">Vira a nota <code>{MODELS_FOLDER}/{modelName.trim() || "…"}.md</code>, com estas fontes, cores e colunas. Outros livros podem usar o mesmo modelo.</p>
       {modelError && <p role="alert" className="book-style-error">{modelError}</p>}
-      <div className="row"><button className="btn sm primary" disabled={!modelName.trim()}>Salvar modelo</button><button type="button" className="btn sm ghost" onClick={() => setSaving(false)}>Cancelar</button></div>
+      <div className="row"><button type="submit" className="btn sm primary" disabled={!modelName.trim()}>Salvar modelo</button><button type="button" className="btn sm ghost" onClick={() => setSaving(false)}>Cancelar</button></div>
     </form>}
     <fieldset className="book-style-groups" disabled={readOnly}>
       <Group title="Modelo" open>

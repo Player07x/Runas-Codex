@@ -77,7 +77,7 @@ function BookList() {
     {creating && <form className="row-wrap" onSubmit={(e) => { e.preventDefault(); if (!busy) void create() }}>
       <label className="field">Título do livro<input className="input" aria-label="Título do livro" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </label>
-      <button className="btn primary" disabled={busy || !title.trim()}>Criar livro</button>
+      <button type="submit" className="btn primary" disabled={busy || !title.trim()}>Criar livro</button>
     </form>}
     {error && <p role="alert">{error} Se houve criação parcial, as notas permanecem disponíveis em Notas.</p>}
     <div className="book-shelf">{findBooks(index).map((book) => {
