@@ -1618,3 +1618,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   no Obsidian aparece como cancelada. Numa tarefa que repete, a próxima ocorrência é criada.
 - [ ] Editar tarefa: na frente só descrição, estado, prioridade, prazo e repetição (em português); “Mais opções” abre
   sozinho quando a tarefa já tem outra data, id, dependência ou 🏁. A 375 px cabe sem rolagem para os lados.
+
+## Atualização 1.3.0 · Central de avisos (PR C: U45)
+
+- [ ] O sino ao lado do tema mostra a contagem do que não foi visto; ao abrir, a contagem zera e volta só com um aviso
+  novo. No celular, o sino fica na barra do topo com 44 px e o painel ocupa a largura da tela.
+- [ ] Concluir, Falhou, Adiar para amanhã e Abrir no painel mudam a tarefa na nota de origem (conferir no Obsidian).
+- [ ] Em Configurações › Agenda e tarefas, “Avisar das tarefas às” 09:00 (padrão): no dia do prazo chega **uma**
+  notificação do sistema por tarefa aberta, no Linux, no Windows e no Android. Um lembrete de evento não chega
+  duplicado.
+- [ ] Com o PIN das Notas bloqueado, tarefas de notas do espaço Notas não aparecem no sino nem viram notificação.
