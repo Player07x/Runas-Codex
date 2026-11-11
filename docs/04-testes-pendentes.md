@@ -207,6 +207,7 @@ automáticos). Falta o uso de verdade:
 - [ ] Importar uma imagem de token pelo celular (galeria ou câmera).
 - [ ] Tablet e celular deitado: até a X3 (layout por toque), a mesa usa o layout do desktop. Captura do celular em pé em `docs/imagens/vtt-9/`.
 - [ ] Windows: firewall pedindo permissão para a porta da sala na primeira vez.
+
 ## Atualizações (botão "Verificar atualizações")
 
 - [ ] Instalar a pré-release `v0.1.0-beta.1` (Windows `.exe`, Linux AppImage e `.deb`), abrir Configurações › Verificar atualizações: aparece a `v0.1.0-beta.2`, com "O que mudou".
@@ -276,6 +277,7 @@ automáticos). Falta o uso de verdade:
 A X3 foi conferida no emulador Android 15 (CI): 31,8 FPS na cena simples e 24 FPS no mapa de 4096 px com névoa e
 luzes, com resolução adaptada para 1 e GPU por software. Os números e capturas estão na ADR 0006; a conferência em
 aparelho físico acima continua necessária.
+
 ## Notas: links, gráfico e notas pessoais (C5a)
 
 - [ ] Prévia de link: na leitura, passar o mouse num link; no modo Editar, com Ctrl apertado; no celular, tocar e
@@ -318,6 +320,7 @@ aparelho físico acima continua necessária.
 - [ ] Arrastar uma nota e uma pasta para outra pasta (e para a raiz) no app desktop; conferir no Obsidian que os links
   continuam funcionando. Arrastar uma nota da árvore para dentro do editor insere `[[link]]`.
 - [ ] Ordem da lista (botão de setas): cada opção, e a escolha lembrada depois de fechar o app.
+
 ## C5c — painéis e ferramentas de notas
 
 - [ ] Desktop: abrir notas em abas, fixar, arrastar entre painéis, empilhar, dividir para baixo/ao lado e restaurar
@@ -398,7 +401,7 @@ aparelho físico acima continua necessária.
 - Colar/arrastar/importar imagens em vários espaços, renomear pelo link, pelo botão da nota e pelo botão direito;
   repetir o mesmo arquivo em duas notas e num quadro/mapa. Reunir arquivos com nomes iguais e conferir no Obsidian.
 - Conferir fonte/zoom e menus no teclado virtual e multitouch físicos. Android não foi implementado/testado nesta
-  rodada. O roteiro completo está em `docs/tarefas/revisao-completa-complementar.md`.
+  rodada. O roteiro completo está em `docs/tarefas/concluidas/revisao-completa-complementar.md`.
 
 
 ## W1 — categorias da Wiki
@@ -555,6 +558,7 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - APK debug antigo (até beta.13) tem outra assinatura. A nova beta não consegue substituí-lo automaticamente;
   planejar a migração manual preservando o cofre e exportando backups antes de remover uma instalação antiga.
   A implementação não desinstala nem apaga a versão antiga.
+
 ## Tarefas do plugin Tasks e tempo livre (ADR 0020)
 
 Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
@@ -636,7 +640,7 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
   aberto no Word e no LibreOffice; “Exportar…” em cada módulo; versão dos jogadores sem segredos; site offline em ZIP
   aberto sem internet. A parte visual da escrita de Livros será refeita pelo rework e conferida de novo.
 - **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
-  existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
+  existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/concluidas/codex-durante-rework.md), item 1).
 - **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.
 
 ## Rework visual — F1 fundações (21/10/2026)
@@ -1116,7 +1120,7 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 
 ## R1 e T7 — revisão para a 1.0 e defeitos de tela
 
-- [ ] Ler `docs/tarefas/revisao-1.0.md` e decidir a ordem do que ficou aberto (D11, D13 e a revisão das Campanhas).
+- [ ] Ler `docs/tarefas/concluidas/revisao-1.0.md` e decidir a ordem do que ficou aberto (D11, D13 e a revisão das Campanhas).
 - [ ] Notas com várias abas: clicar no nome troca de aba, “Fechar” e “Ações da aba” continuam funcionando, o botão do
   meio fecha e arrastar reordena; com o teclado, Tab passa por nome, ações e fechar de cada aba.
 - [ ] Árvore das Notas: os botões da pasta (Exportar, Aparência, Favoritar, Nova nota, Renomear) aparecem no hover e
@@ -1128,6 +1132,7 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   “Você está em” fácil de tocar.
 - [ ] Conferências que a R1 não fez por falta de ambiente: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %,
   Android físico, sala com dois aparelhos, impressão e o smoke `--write` no CI.
+
 ## T1 — backups agendados (29/10/2026)
 
 - [ ] Configurações › Backups no computador: mudar o **Horário** para dali a dois minutos e deixar o app aberto (ou
@@ -1283,7 +1288,7 @@ A beta.23 não foi publicada; as conferências dela (seção acima) valem para a
 
 ## Versão 1.0.0 (T8, preparada em 31/10/2026)
 
-A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferencias-1.0.md`](tarefas/conferencias-1.0.md)
+A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas/conferencias-1.0.md`](tarefas/concluidas/conferencias-1.0.md)
 (seção A: só num aparelho real; seção B: funções novas desde a beta.21; seção C: o que saiu da lista e por quê).
 
 - [ ] Atualizar de uma beta para a 1.0.0 pelo botão “Verificar atualizações” no Ubuntu (`.deb`), AppImage, Windows e
@@ -1326,7 +1331,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 ## Versão 1.0.0 lançada (01/11/2026)
 
 - **Aprovado pelo dono em 01/11**: as conferências da 1.0 (seções A e B de
-  [`conferencias-1.0.md`](tarefas/conferencias-1.0.md)) tiveram êxito.
+  [`conferencias-1.0.md`](tarefas/concluidas/conferencias-1.0.md)) tiveram êxito.
 - Lançada no mesmo dia pelo workflow “Lançar versão” (tag `v1.0.0` no `6b3e96a`), com Linux, Windows e os jobs Android
   verdes: [página da versão](https://github.com/Player07x/Runas-Codex/releases/tag/v1.0.0), com APK, `.deb`, AppImage,
   instalador do Windows e `SHA256SUMS.txt`.
@@ -1431,7 +1436,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 
 ## Maquetes da atualização 1.2.0
 
-- [ ] Abrir `docs/tarefas/atualizacao-1.2-maquetes.html` (versão 2, de 08/11) sem internet em 320 px, 768 px e no
+- [ ] Abrir `docs/tarefas/concluidas/atualizacao-1.2-maquetes.html` (versão 2, de 08/11) sem internet em 320 px, 768 px e no
   computador; conferir que a página não rola para os lados (as maquetes do computador rolam dentro do próprio quadro),
   que as telas parecem o app de hoje no tamanho real e que o tema claro funciona e fica lembrado ao recarregar.
 - [x] Responder as duas perguntas de “O que o João decide”: maquetes aprovadas em 08/11; “Importar de novo da nota”
@@ -1606,4 +1611,124 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.2.0.
 - [ ] As seções acima, de “Maquetes da atualização 1.2.0” até “Geradores ×4”, entraram nesta versão.
 - [ ] Abrir no Obsidian um artigo com token (`token_*`) e uma nota do mestre ligada a uma sessão (`sessao`): as
+  propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.3.0 · Constância e correções (PR A: U36, U40, U41, U44)
+
+- [ ] Passar por Início, Notas, Agenda, Wiki (Artigos, Calendário, Linha do tempo, Mapa), Campanhas, Livros, VTT,
+  Importar e Configurações: a barra do topo e as abas da Wiki ficam na mesma altura em todas, também nas páginas
+  longas (antes encolhiam de 56 para ~45 px).
+- [ ] O título da janela do app fica sempre “Runas-Codex” ao trocar de tela; uma nota aberta em janela própria mostra
+  “‹nota› — Runas-Codex”. No Windows, conferir também o nome na barra de tarefas.
+- [ ] Na ficha da Wiki (Token para a mesa) e nas propriedades do token da mesa, digitar 1,7 e 2,5: o token fica com
+  esse tamanho, centrado na grade; os atalhos 0,5 · 1 · 2 · 3 · 4 continuam a um toque. No celular, os atalhos têm
+  44 px.
+- [ ] No evento da Agenda, ligar e desligar “Dia inteiro” não salva nem fecha o diálogo.
+
+## Atualização 1.3.0 · Tarefas na Agenda (PR B: U37, U38)
+
+- [ ] Agenda › Tarefas: as tarefas do cofre aparecem em Atrasadas, Hoje, Hábitos, Próximas e, recolhidas, Sem prazo e
+  Feitas (7 dias). Nenhuma tarefa aparece em duas seções.
+- [ ] Criar “Ler 10 páginas” com **Todo dia**: vai para `Agenda/Tarefas.md` como `- [ ] Ler 10 páginas 🔁 every day 🏁 delete 📅 <hoje>`.
+  Concluir: a linha de hoje some e fica só a de amanhã. Abrir a nota no Obsidian com o Tasks: mesma tarefa, mesma regra.
+- [ ] Numa tarefa atrasada, o ⊗ (Falhou): a linha ganha `[-]` e `❌ <hoje>`, aparece com o selo “Falhou” em Feitas;
+  no Obsidian aparece como cancelada. Numa tarefa que repete, a próxima ocorrência é criada.
+- [ ] Editar tarefa: na frente só descrição, estado, prioridade, prazo e repetição (em português); “Mais opções” abre
+  sozinho quando a tarefa já tem outra data, id, dependência ou 🏁. A 375 px cabe sem rolagem para os lados.
+
+## Atualização 1.3.0 · Central de avisos (PR C: U45)
+
+- [ ] O sino ao lado do tema mostra a contagem do que não foi visto; ao abrir, a contagem zera e volta só com um aviso
+  novo. No celular, o sino fica na barra do topo com 44 px e o painel ocupa a largura da tela.
+- [ ] Concluir, Falhou, Adiar para amanhã e Abrir no painel mudam a tarefa na nota de origem (conferir no Obsidian).
+- [ ] Em Configurações › Agenda e tarefas, “Avisar das tarefas às” 09:00 (padrão): no dia do prazo chega **uma**
+  notificação do sistema por tarefa aberta, no Linux, no Windows e no Android. Um lembrete de evento não chega
+  duplicado.
+- [ ] Com o PIN das Notas bloqueado, tarefas de notas do espaço Notas não aparecem no sino nem viram notificação.
+
+## Atualização 1.3.0 · Configurar calendário (PR D: U35)
+
+- [ ] Wiki › Calendário › Configurar: renomear um mês, mudar dias, acrescentar uma lua e um feriado. A grade muda na
+  hora e o bloco `runas-calendario` da nota tem só essas mudanças (comentários, `hoje:`, `hora:` e correspondências
+  ficam iguais). Abrir a nota no Obsidian: o bloco continua legível.
+- [ ] Apagar o nome ou deixar um mês com 0 dias: aparece “Não salvo: …” e nada é gravado.
+- [ ] Novo artigo › Calendário com cada modelo (Gregoriano, 12×30, 13×28, Em branco): a tela abre na aba Configurar;
+  no Gregoriano, 11/11/2026 cai numa quarta.
+- [ ] No celular (320 px), o botão Configurar abre o painel por cima, sem rolagem para os lados.
+
+## Atualização 1.3.0 · Tempo de cada campanha (PR E: U39)
+
+- [ ] Numa campanha que segue a wiki, o cartão do relógio diz “segue a wiki”. Clicar +1 h: passa a “tempo desta
+  campanha”, a nota da campanha ganha `data_mundo: "…"`, `hora_mundo: "…"` e `periodo_mundo`, e o bloco do calendário
+  **não muda** (conferir o `hoje:` e a `hora:` na nota do calendário).
+- [ ] Duas campanhas da mesma wiki avançam datas diferentes; Wiki › Calendário › Hoje no mundo lista as duas.
+- [ ] Marcar uma sessão como realizada e aceitar “avançar hoje no mundo”: muda a data da campanha, não a da wiki.
+- [ ] “Configurar o relógio” (horas e períodos) muda a regra no calendário e vale para todas as campanhas.
+- [ ] ⋯ › Voltar a seguir a wiki: as três propriedades somem e o cartão volta a mostrar o “hoje” da wiki.
+
+## Atualização 1.3.0 · Barra das Notas (PR F: U42)
+
+- [ ] Na barra das Notas, cada nota ocupa uma linha só (sem a prévia embaixo); passar o mouse mostra a prévia como
+  dica. Na busca, a linha com o trecho encontrado continua aparecendo.
+- [ ] As pastas mostram o número de notas num selo à direita e as subpastas têm uma linha-guia à esquerda.
+- [ ] Menu “⋯” → “Recolher tudo”: todas as pastas fecham, menos a da nota aberta.
+- [ ] No celular (ou tablet), as linhas de nota e pasta têm 44 px e a lista não rola para os lados.
+
+## Atualização 1.3.0 · Diagramação dos livros (PR G1: U43, parte 1)
+
+- [ ] No Valknut (Diagramar › Estilo do livro › Parágrafos), trocar o recuo entre Nenhum, Todos os parágrafos e
+  Menos o primeiro depois de título: o recuo vale também dentro das colunas, caixas e fichas; o `recuo: true` que o
+  livro já tinha continua igual a “Menos o primeiro”.
+- [ ] Trocar o tamanho do recuo e o espaço entre parágrafos (Nenhum a 1½): muda igual no capítulo, nas colunas e nas
+  fichas.
+- [ ] Página › Tabelas: a Tabela de Carma deixa de dar ¼ da largura para a coluna Descrição vazia; “Ajustar ao
+  conteúdo” deixa as tabelas do tamanho do texto.
+- [ ] As seções (Runas de Reforço, Magias de Fogo…) não começam mais numa página nova depois de uma página quase
+  vazia. No menu “⋯” de uma seção, “Começar em página nova” liga a página nova só dela (grava `nova_pagina:`);
+  “Seções em página nova” liga para todas.
+- [ ] Exportar em PDF, EPUB e DOCX: o recuo e o espaço saem como na prévia.
+- [ ] Abrir no Obsidian um capítulo com `nova_pagina:` e o livro com `recuo: todos`: as propriedades aparecem como
+  texto e nada quebra.
+
+## Atualização 1.3.0 · Livros sem gambiarras (PR G2: U43, parte 2)
+
+- [ ] No Valknut, menu ⋯ do livro → **Revisar o livro…**: aparecem as linhas com `\`, o `::: runas-colunas-2`
+  vazio e os `::: runas-colunas-1` em volta das tabelas (Começo Rápido e Equipamentos), com o antes e o depois.
+- [ ] Marcar uma troca e confirmar: só ela muda; em Escrever → Snapshots do capítulo está a versão de antes. Abrir o
+  capítulo no Obsidian: o texto continua certo (os `%% livro: … %%` não aparecem).
+- [ ] Depois das trocas, o `\` que saía impresso em Arquétipos some, e a Tabela de Carma (com o título) continua na
+  largura toda da página.
+- [ ] Ligar **Linhas vazias contam** (Estilo do livro › Parágrafos): as linhas vazias a mais viram espaço na prévia
+  e no PDF; desligar volta a juntar.
+- [ ] Num capítulo, testar `%% livro: espaco 2 %%`, `%% livro: nova-pagina %%` e `%% livro: largura-toda %%` antes
+  de uma tabela num livro de duas colunas.
+
+## Atualização 1.3.0 · Mapa e acessibilidade (PR J: U48)
+
+- [ ] Mapa da Wiki a 1280 px com Configurações › Tamanho do texto em 120% e 140%: as abas do painel (Pinos, Áreas,
+  Camadas, Mapa) não ficam escondidas; se não cabem, quebram em duas linhas. Em 100% continuam numa linha.
+- [ ] No celular, abrir um mapa em pé e girar para deitado: o mapa se enquadra de novo. Depois de aproximar ou
+  arrastar, girar não muda a vista.
+- [ ] Com o Orca (Linux) ou o NVDA (Windows), nas Relações › Organograma: cada nó é lido com o cargo e “sob ‹chefe›”,
+  e o botão do ramo diz de quem é (“Ramo de ‹nome›: 2 membros”). Na Árvore genealógica: “Pôr ‹nome› no centro (1
+  geração acima)”.
+- [ ] Gráfico global com `?cofre-grande=10000` (ou um cofre grande) num computador **sem placa de vídeo** (ou com o
+  Chrome em `--disable-gpu`): as ligações somem enquanto o gráfico se acomoda e voltam quando ele para; arrastar e
+  aproximar respondem. Num computador com placa de vídeo o gráfico continua igual.
+
+## Atualização 1.3.0 · Limpeza do repositório (PR K: U49)
+
+- [ ] No GitHub, abrir `docs/tarefas/README.md`: ele mostra só o que está aberto e aponta para `concluidas/` e
+      `docs/historico/`. Clicar em dois ou três links de uma tarefa concluída (por exemplo, `concluidas/rumo-a-1.0.md`
+      → ADR, `docs/04`) e ver que abrem.
+- [ ] Abrir o app (Notas, Calendário da Wiki, grafo): nada some com a remoção do código sem uso (`MoonIcon`,
+      `NoteEditor`, `NotePanels`, `lib/fictional-calendar`, `lib/graph`, que ninguém importava).
+- [ ] As imagens dos PRs antigos continuam abrindo (elas são lidas do branch de cada PR, não da `main`).
+
+## Versão 1.3.0
+
+- [ ] Atualizar da 1.2.0 para a 1.3.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.3.0.
+- [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
+- [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
   propriedades aparecem como texto e nada quebra.

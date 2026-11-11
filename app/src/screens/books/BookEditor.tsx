@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, FileDown, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { BookOpen, ChevronLeft, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
 import { fichaEnd, toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, readBook, type BookItem } from "../../core/books"
@@ -18,6 +18,7 @@ import { useVault } from "../../platform/VaultProvider"
 import { BookSupport, type SupportTab } from "./BookSupport"
 import { createCursorStore } from "./cursor-store"
 import { BookBinder } from "./BookBinder"
+import { BookReviewDialog } from "./BookReviewDialog"
 
 const BookPreview = lazy(() => import("./BookPreview"))
 const BookSidePreview = lazy(() => import("./BookSidePreview"))
@@ -65,6 +66,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const [error, setError] = useState("")
   const [announcement, setAnnouncement] = useState("")
   const [deleting, setDeleting] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
   const narrow = useNarrow()
   // Prévia ao lado (L1): o cursor vai para um repositório próprio, para só a prévia redesenhar a cada movimento.
   const cursor = useMemo(createCursorStore, [])
@@ -156,6 +158,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     { label: "Novo capítulo…", icon: <Plus size={16} />, disabled: locked, onSelect: newChapter },
     { label: "Metadados do livro…", icon: <SlidersHorizontal size={16} />, onSelect: () => navigate(vaultRoute(book.path)) },
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => setView("previa") },
+    { label: "Revisar o livro…", icon: <FileSearch size={16} />, onSelect: () => setReviewing(true) },
     // No celular, Foco sai da barra (o lugar fica para “Ver a página”) e mora aqui.
     ...(narrow && view === "escrever" ? [{ label: "Foco (só a página)", icon: <Maximize2 size={16} />, onSelect: () => setFocus(true) }] : []),
     "separator",
@@ -218,7 +221,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
               <option value="secao">Seção</option>
             </select></label>
             <div className="row">
-              <button className="btn sm primary" aria-label="Confirmar criar capítulo" disabled={locked || !name.trim()}>Criar</button>
+              <button type="submit" className="btn sm primary" aria-label="Confirmar criar capítulo" disabled={locked || !name.trim()}>Criar</button>
               <button type="button" className="btn sm ghost" onClick={() => setCreating(false)}>Cancelar</button>
             </div>
           </form> : <button type="button" className="btn ghost book-toc-new" disabled={locked} onClick={() => setCreating(true)}><Plus size={16} /> Novo capítulo</button>}
@@ -291,6 +294,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     {sheet && narrow && view === "escrever" && <Suspense fallback={null}>
       <BookSidePreview variant="tela" book={book} draft={draft} chapterPath={selected} cursor={cursor} onOpenAt={openAt} onDiagramar={() => { setSheet(false); setView("previa") }} onClose={closeSheet} />
     </Suspense>}
+    {reviewing && <BookReviewDialog book={book} items={structure.items} locked={locked} onClose={() => setReviewing(false)} />}
     {deleting && <ConfirmDialog title="Excluir livro" confirmLabel="Mandar para a lixeira" danger onClose={() => setDeleting(false)} onConfirm={async () => {
       await flushOpenNotes()
       // Capítulos antes; a nota do livro por último (sem ela a tela do livro fecha).

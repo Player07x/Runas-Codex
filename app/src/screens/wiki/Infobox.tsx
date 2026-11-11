@@ -13,6 +13,7 @@ import { Modal } from "../../components/ui"
 import type { LibraryItem } from "../../vtt/shared/library"
 import type { TokenData } from "../../vtt/shared/scene"
 import { FormField, FormGrid } from "../../components/kit/FormField"
+import { TokenSizeField } from "../../components/kit/TokenSizeField"
 import { useVault } from "../../platform/VaultProvider"
 import { TOKEN_DISPOSITIONS } from "../../vtt/shared/scene"
 
@@ -149,7 +150,6 @@ export function Infobox({ note, calendar, calendars, calendarError, readOnly, on
 }
 
 const DISPOSITION_LABELS: Record<string, string> = { player: "Jogador", friendly: "Aliado", neutral: "Neutro", hostile: "Hostil", secret: "Secreto" }
-const TOKEN_SIZES = [0.5, 1, 2, 3, 4]
 const EMPTY_TOKEN: WikiToken = { size: 1, disposition: "neutral", bars: [] }
 
 /**
@@ -177,14 +177,11 @@ function TokenSection({ note, readOnly }: { note: IndexedNote; readOnly: boolean
   }
   const bar = (index: number, patch: Partial<WikiToken["bars"][number]>) => ({ ...token, bars: token.bars.map((item, i) => i === index ? { ...item, ...patch } : item) })
   const number = (value: string) => Number.isFinite(Number(value)) ? Number(value) : 0
-  const sizes = TOKEN_SIZES.includes(token.size) ? TOKEN_SIZES : [...TOKEN_SIZES, token.size].sort((x, y) => x - y)
   return <details className="infobox-token" open={Boolean(initial)}>
     <summary>Token para a mesa</summary>
     <FormGrid>
-      <FormField label="Tamanho" hint="Em células da grade">
-        {(c) => <select id={c.id} aria-describedby={c.describedBy} className="select" disabled={readOnly} value={token.size} onChange={(event) => commit({ ...token, size: Number(event.target.value) })}>
-          {sizes.map((size) => <option key={size} value={size}>{String(size).replace(".", ",")} {size === 1 ? "célula" : "células"}</option>)}
-        </select>}
+      <FormField label="Tamanho" hint="Em células da grade, de 0,25 a 20">
+        {(c) => <TokenSizeField id={c.id} describedBy={c.describedBy} disabled={readOnly} value={token.size} onCommit={(size) => commit({ ...token, size })} />}
       </FormField>
       <FormField label="Disposição">
         {(c) => <select id={c.id} aria-describedby={c.describedBy} className="select" disabled={readOnly} value={token.disposition} onChange={(event) => commit({ ...token, disposition: event.target.value as WikiToken["disposition"] })}>

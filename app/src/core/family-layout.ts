@@ -88,3 +88,11 @@ export function layoutFamily(tree: FamilyTree, size = { w: 170, h: 52, gapX: 24,
   const height = size.margin * 2 + levels.length * size.h + Math.max(0, levels.length - 1) * size.gapY
   return { nodes, lines, width, height }
 }
+
+/** A geração em palavras, para o leitor de tela (U48): “centro”, “1 geração acima”, “2 gerações abaixo”. */
+export function generationLabel(generation: number, isCenter = false): string {
+  if (isCenter) return "centro"
+  if (generation === 0) return "mesma geração"
+  const n = Math.abs(generation)
+  return `${n} ${n === 1 ? "geração" : "gerações"} ${generation < 0 ? "acima" : "abaixo"}`
+}

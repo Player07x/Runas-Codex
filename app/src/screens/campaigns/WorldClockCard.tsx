@@ -12,6 +12,7 @@ import { Modal, useToast } from "../../components/ui"
 import { navigate } from "../../lib/router"
 import { useSetWorldClock } from "../wiki/world-today"
 import type { CampaignData } from "./campaign-state"
+import { useFollowWiki, useSetCampaignTime } from "./campaign-time"
 
 const calendarRoute = (path: string) => `/wiki/calendario/${encodeURIComponent(path)}`
 
@@ -55,6 +56,8 @@ function Dial({ clock, label }: { clock: WorldClock; label: string }) {
 export function WorldClockCard({ data }: { data: CampaignData }) {
   const toast = useToast()
   const setClock = useSetWorldClock()
+  const setCampaignTime = useSetCampaignTime()
+  const followWiki = useFollowWiki()
   const [dialog, setDialog] = useState<"ajustar" | "configurar" | null>(null)
   const [said, setSaid] = useState("")
   const { calendar, calendarRef: ref } = data
@@ -70,9 +73,24 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
 
   const write = async (next: WorldClock, nextToday?: WorldDate) => {
     try {
-      await setClock(ref, next, nextToday)
+      // U39: o ponteiro e a data são da campanha (gravados na nota dela); sem data nenhuma, fica no calendário.
+      const when = nextToday ?? today
+      if (when) await setCampaignTime(data, when, next)
+      else await setClock(ref, next)
       const text = clockSentence(next, calendar, nextToday ?? today)
       setSaid(text)
+      return true
+    } catch (err) {
+      toast(err instanceof Error ? err.message : String(err))
+      return false
+    }
+  }
+  // A regra do relógio (horas, minutos, períodos) é do mundo: vai para o calendário, sem trocar a hora da wiki.
+  const saveRule = async (rule: WorldClock) => {
+    const wiki = parseWorldClock(ref.calendar)
+    try {
+      await setClock(ref, { ...rule, hora: wiki.hora, periodo: rule.periodos.includes(wiki.periodo) ? wiki.periodo : rule.periodos[0]! })
+      if (data.ownTime && today) await setCampaignTime(data, today, { ...rule, hora: clock.hora, periodo: rule.periodos.includes(clock.periodo) ? clock.periodo : rule.periodos[0]! })
       return true
     } catch (err) {
       toast(err instanceof Error ? err.message : String(err))
@@ -97,6 +115,7 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
   const moreItems: MenuEntry[] = [
     { label: "Ajustar data e hora…", onSelect: () => setDialog("ajustar"), disabled: data.readOnly },
     { label: "Configurar o relógio…", onSelect: () => setDialog("configurar"), disabled: data.readOnly },
+    ...(data.ownTime ? [{ label: "Voltar a seguir a wiki", hint: "a data e a hora do calendário", onSelect: () => void followWiki(data).then(() => setSaid("A campanha segue a data da wiki")).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err))), disabled: data.readOnly }] : []),
     "separator",
     { label: "Abrir o calendário", onSelect: () => navigate(calendarRoute(ref.path)) },
   ]
@@ -106,7 +125,7 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
   return <section className="card stack world-clock-card">
     <div className="world-clock-head">
       <span className="section-title row"><Clock3 size={16} aria-hidden="true" /> Relógio do mundo</span>
-      <span className="small muted world-clock-calendar">{calendar.name}</span>
+      <span className="small muted world-clock-calendar" title={data.ownTime ? "Data e hora gravadas na nota da campanha" : "Segue o “hoje” do calendário da wiki; mudar daqui dá à campanha a sua própria data"}>{calendar.name} · {data.ownTime ? "tempo desta campanha" : "segue a wiki"}</span>
       <OverflowMenu label="Mais ações do relógio" items={moreItems} />
     </div>
     <div className="world-clock">
@@ -130,7 +149,7 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
     {data.readOnly && <p className="small muted">O cofre está só para leitura: o relógio não avança daqui.</p>}
     <p className="sr-only" role="status">{said && `Agora: ${said}.`}</p>
     {dialog === "ajustar" && <AdjustDialog calendar={calendar} clock={clock} today={today} onClose={() => setDialog(null)} onSave={(c, d) => write(c, d)} />}
-    {dialog === "configurar" && <ConfigureDialog clock={clock} onClose={() => setDialog(null)} onSave={(c) => write(c)} />}
+    {dialog === "configurar" && <ConfigureDialog clock={clock} onClose={() => setDialog(null)} onSave={(c) => saveRule(c)} />}
   </section>
 }
 

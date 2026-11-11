@@ -118,7 +118,7 @@ export function CampaignRoomTools({ campaign, root, readOnly, onlyPoll = false }
             <textarea className="input" rows={4} placeholder={"25/10 às 19:30\n26/10 às 20:00"} value={options} onChange={(e) => setOptions(e.target.value)} />
           </label>
         )}
-        <button className="btn primary" disabled={readOnly || busy || !enabled || !vtt.collaboration}>Abrir atividade para os jogadores</button>
+        <button type="submit" className="btn primary" disabled={readOnly || busy || !enabled || !vtt.collaboration}>Abrir atividade para os jogadores</button>
       </form>
       {state?.prompt && !state.closed && (
         <>

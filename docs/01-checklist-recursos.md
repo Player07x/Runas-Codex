@@ -2,7 +2,7 @@
 
 > **Como usar:** todos os itens começam marcados (`[x]`). **Desmarque** (`[ ]`) o que não vamos fazer. Itens com
 > **(obrigatório)** vêm de pedidos seus; desmarque só se mudar de ideia. A origem de cada item está entre parênteses.
-> Detalhes de cada produto no [estudo](00-estudo.md); custo e ordem no [plano de viabilidade](02-viabilidade-e-etapas.md).
+> Detalhes de cada produto no [estudo](historico/00-estudo.md); custo e ordem no [plano de viabilidade](02-viabilidade-e-etapas.md).
 > 
 > Só entram recursos que o Runas-Core e o RunasVTT **ainda não têm**. Quando algo existe só em parte, o item descreve
 > **o que falta** e o estado atual aparece como "hoje: …".

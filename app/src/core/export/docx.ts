@@ -1,6 +1,7 @@
 // Portado do Runas Book/toDocx.ts (ADR 0004): títulos, runs, tabelas e imagens.
 // A entrada agora é a árvore do leitor das notas; não usa HTML salvo em outro app.
 import { AlignmentType, BorderStyle, ColumnBreak, Document, ExternalHyperlink, HeadingLevel, ImageRun, LevelFormat, Packer, PageBreak, Paragraph, SectionType, ShadingType, Table, TableCell, TableRow, TextRun, WidthType, type IRunOptions, type ISectionOptions, type ParagraphChild } from "docx"
+import { LEADING } from "../book-style"
 import { BOOK_SIZES } from "../books-preview"
 import { plainText, type ExportBook, type ExportNode } from "./book"
 
@@ -21,7 +22,10 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
   let contentWidth = width
   // Cor de destaque e fonte do texto do estilo do livro (L3); o Word usa a fonte se ela estiver instalada.
   const theme = (book.style?.accent ?? "#7b251c").slice(1).toUpperCase()
-  const indent = Boolean(book.style?.indent)
+  // Parágrafos (U15, U43): o mesmo recuo e o mesmo espaço da prévia. 340 twips = 1,5 em; o espaço vem em linhas.
+  const indentMode = book.style?.indent ?? "nenhum"
+  const firstLine = Math.round(340 * (book.style?.indentEm ?? 1.5) / 1.5)
+  const gapAfter = book.style ? Math.round(book.style.paragraphGap * LEADING[book.style.leading] * book.style.sizePt * 20) : 140
   const assets = new Map(book.assets.map((a) => [a.name, a]))
   function inline(nodes: ExportNode[], style: IRunOptions = {}): ParagraphChild[] {
     return nodes.flatMap((node): ParagraphChild[] => {
@@ -73,12 +77,13 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
     for (const child of node.children) { const result = find(child, tag); if (result) return result }
   }
   // O último bloco foi um parágrafo de texto? (U15: só o parágrafo logo depois de outro recua; o `flow` manda um nó por vez.)
-  let previousBody = false
+  // O que veio antes do bloco: começo (de seção ou de caixa), parágrafo de texto, título ou outra coisa.
+  let previous: "inicio" | "corpo" | "titulo" | "outro" = "inicio"
   function blocks(nodes: ExportNode[], level = 0): (Paragraph | Table)[] {
     const out: (Paragraph | Table)[] = []
     for (const node of nodes) {
-      const afterBody = previousBody
-      previousBody = false
+      const before = previous
+      previous = "outro"
       if (typeof node === "string") { if (node.trim()) out.push(new Paragraph({ children: inline([node]) })); continue }
       const cls = classes(node)
       if (cls.includes("quebra-pagina")) { out.push(new Paragraph({ children: [new PageBreak()] })); continue }
@@ -98,8 +103,9 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
         continue
       }
       if (cls.includes("callout") || node.tag === "blockquote") {
+        previous = "inicio"
         out.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [new TableCell({ shading: { fill: "F2EBDD", type: ShadingType.CLEAR }, margins: { top: 140, bottom: 140, left: 160, right: 160 }, children: [...blocks(node.children), new Paragraph("")] })] })] }))
-        previousBody = false
+        previous = "outro"
         continue
       }
       if (["ul", "ol"].includes(node.tag)) {
@@ -109,23 +115,23 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
           out.push(new Paragraph({ children: inline(item.children.filter((n) => typeof n === "string" || !["ul", "ol"].includes(n.tag))), ...(node.tag === "ul" ? { bullet: { level: Math.min(level, 8) } } : { numbering: { reference: ref, level: Math.min(level, 8) } }) }))
           out.push(...blocks(elements(item.children).filter((n) => ["ul", "ol"].includes(n.tag)), level + 1))
         }
-        previousBody = false
+        previous = "outro"
         continue
       }
       if (node.tag === "hr") { out.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: theme } } })); continue }
       if (/^h[1-6]$/.test(node.tag) || ["p", "pre", "figcaption", "dt", "dd", "summary", "img"].includes(node.tag)) {
         const align = node.attrs.align ?? /text-align:\s*(\w+)/.exec(node.attrs.style ?? "")?.[1]
-        // Recuo na primeira linha (U15): parágrafo de texto logo depois de outro recua ~1,5 em e o corpo fica sem espaço entre eles.
+        // Recuo na primeira linha: em todos, ou em todos menos o primeiro (do começo ou depois de um título).
         const body = node.tag === "p" && !elements(node.children).some((child) => child.tag === "img")
-        const indented = indent && body && afterBody
+        const indented = body && (indentMode === "todos" || (indentMode === "menos-primeiro" && before !== "inicio" && before !== "titulo"))
         out.push(new Paragraph({ heading: /^h[1-6]$/.test(node.tag) ? headings[Number(node.tag[1]) - 1] : undefined,
           alignment: align === "center" ? AlignmentType.CENTER : align === "right" ? AlignmentType.RIGHT : align === "justify" ? AlignmentType.JUSTIFIED : undefined,
-          children: inline(node.tag === "img" ? [node] : node.children, node.tag === "pre" ? { font: "Courier New", size: 18 } : {}), spacing: { after: indent && body ? 0 : 140 },
-          ...(indented ? { indent: { firstLine: 340 } } : {}),
+          children: inline(node.tag === "img" ? [node] : node.children, node.tag === "pre" ? { font: "Courier New", size: 18 } : {}), spacing: { after: body ? gapAfter : 140 },
+          ...(indented ? { indent: { firstLine } } : {}),
         }))
-        previousBody = body
+        previous = /^h[1-6]$/.test(node.tag) ? "titulo" : body ? "corpo" : "outro"
         continue
-      } else { out.push(...blocks(node.children, level)); previousBody = false }
+      } else { previous = "inicio"; out.push(...blocks(node.children, level)); previous = "outro" }
     }
     return out
   }
@@ -148,7 +154,7 @@ export async function generateDocx(book: ExportBook): Promise<Uint8Array> {
       else pending.push(...blocks([node]))
     }
   }
-  book.sections.forEach((section, i) => { if (i) pending.push(new Paragraph({ children: [new PageBreak()] })); previousBody = false; flow(section.nodes) })
+  book.sections.forEach((section, i) => { if (i) pending.push(new Paragraph({ children: [new PageBreak()] })); previous = "inicio"; flow(section.nodes) })
   flush()
   if (!sections.length) sections.push({ properties: properties(), children: [new Paragraph(book.title)] })
   const document = new Document({ title: book.title, creator: book.author, description: "Exportado das notas do Runas-Codex", sections, numbering: { config: numbering }, styles: { default: { document: { run: { font: book.style?.textFont ?? "EB Garamond", size: 22, language: { value: "pt-BR" } } }, heading1: { run: { color: theme, bold: true, size: 36 } }, heading2: { run: { color: theme, bold: true, size: 28 } } } } })

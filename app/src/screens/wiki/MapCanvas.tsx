@@ -136,7 +136,9 @@ export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawi
       if (w === last.w && h === last.h) return
       const dx = (w - last.w) / 2, dy = (h - last.h) / 2
       last = { w, h }
-      framed.current = false
+      // Enquadrado, quem cuida é o observador de cima (enquadra de novo). Este roda antes dele, e desligar o
+      // `framed` aqui fazia o mapa não se enquadrar ao girar o celular (U48).
+      if (framed.current) return
       setView((v) => ({ ...v, x: v.x + dx, y: v.y + dy }))
     })
     observer.observe(el)

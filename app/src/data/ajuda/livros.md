@@ -39,14 +39,34 @@ Leitura fácil — e deixa ajustar:
 
 - Fontes do título e do texto (cerca de dez fontes livres embutidas, mais as fontes `.ttf`/`.otf`/`.woff2` do cofre),
   tamanho e entrelinha, texto justificado e **hifenização** em português.
-- **Recuo na primeira linha** (desligado por padrão): o parágrafo que vem logo depois de outro recua a primeira
-  linha e os parágrafos ficam sem espaço entre si, como nos livros impressos; o primeiro depois de um título, imagem,
-  lista, citação ou ficha não recua. Vale no papel, no PDF, no EPUB e no DOCX, e não muda o capítulo no Obsidian.
-  Um `&emsp;` digitado no começo do parágrafo continua funcionando e soma com o recuo.
+- **Parágrafos**: **recuo na primeira linha** em nenhum parágrafo (padrão), em **todos** ou em todos **menos o
+  primeiro depois de um título**, com o tamanho do recuo; e o **espaço entre parágrafos** (de nenhum a 1½ linha).
+  Sem escolha, quem recua fica sem espaço e quem não recua ganha meia linha. Vale no capítulo inteiro — também dentro
+  de colunas, caixas e fichas —, no papel, no PDF, no EPUB e no DOCX, e não muda o capítulo no Obsidian. Imagem
+  sozinha, item de lista e célula de tabela não recuam. Um `&emsp;` no começo do parágrafo continua somando.
 - Colunas (1 a 4), papel (A4, Carta, A5, 6×9), margens, cor do papel, do texto e do destaque.
+- **Tabelas**: as colunas seguem o conteúdo (uma coluna vazia fica estreita); a tabela ocupa a **largura toda** da
+  coluna ou **se ajusta ao conteúdo**.
+- **Página nova**: “Capítulos em página nova” e “Seções em página nova” valem para o livro todo; um capítulo ou
+  seção pede o contrário no menu “⋯” da estrutura (**Começar em página nova**, grava `nova_pagina:` na nota). Sem
+  isso, a seção continua na mesma página do capítulo.
 - O desenho das **fichas** (tipográfico, fundo suave ou faixa no nome; veja Fichas e caixas).
 - **Capa**, **sumário**, aberturas de capítulo, cabeçalhos e numeração das páginas.
 - Imagens: **tela** (leve), **gráfica** (300 ppi) ou **original**; e se o fundo do papel sai na impressão.
+
+**Linhas vazias contam** (em Parágrafos, `linhas_vazias: respeitar`): cada linha vazia a mais entre dois blocos vira uma
+linha de espaço, só no livro — o Obsidian continua juntando as linhas. Para um ajuste num lugar só, escreva um
+comentário do Obsidian (ele não aparece na leitura) numa linha própria:
+
+- `%% livro: espaco 2 %%` — duas linhas de espaço (de 1 a 6);
+- `%% livro: nova-pagina %%` — o que vem depois começa numa página nova;
+- `%% livro: largura-toda %%` — o bloco logo abaixo (até a próxima linha vazia), como uma tabela com o título, ocupa
+  a largura toda da página, mesmo num livro de duas colunas.
+
+**Revisar o livro** (menu ⋯ do livro) lista o que o livro não precisa mais: linhas só com `\` para separar
+parágrafos (e o `\` que saía impresso antes de uma caixa), blocos `::: runas-colunas` vazios e `::: runas-colunas-1`
+só em volta de uma tabela (vira `%% livro: largura-toda %%`). Cada troca mostra o antes e o depois; nada muda sem você
+marcar e confirmar, e a versão de antes de cada capítulo fica em **Snapshots do capítulo**.
 
 **Salvar como modelo** grava o estilo numa nota (`Livros/Modelos/<nome>.md`, `tipo: modelo-livro`) para usar em
 outros livros. Num capítulo, a propriedade `colunas:` muda só ele.

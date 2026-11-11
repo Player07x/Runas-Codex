@@ -71,7 +71,7 @@ export function WorkspaceMenu({ workspaces, onSave, onOpen, onDelete }: Props) {
             }}
           >
             <input className="input grow" placeholder="Nome (ex.: Sessão)" value={name} onChange={(event) => setName(event.target.value)} aria-label="Nome do workspace" />
-            <button className="btn sm" disabled={!name.trim()} title={names.includes(name.trim()) ? "Substitui o que tem esse nome" : undefined}>
+            <button type="submit" className="btn sm" disabled={!name.trim()} title={names.includes(name.trim()) ? "Substitui o que tem esse nome" : undefined}>
               {names.includes(name.trim()) ? "Trocar" : "Guardar"}
             </button>
           </form>

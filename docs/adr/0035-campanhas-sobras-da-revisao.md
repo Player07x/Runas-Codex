@@ -4,7 +4,7 @@
 
 ## Contexto
 A [revisão das Campanhas](../propostas/campanhas-revisao.html) (30/10) deixou itens sem fazer, listados em
-[`rumo-a-1.0.md`](../tarefas/rumo-a-1.0.md): avançar a data do mundo pelo Painel, retorno “Gravado”, desfazer em vez de
+[`rumo-a-1.0.md`](../tarefas/concluidas/rumo-a-1.0.md): avançar a data do mundo pelo Painel, retorno “Gravado”, desfazer em vez de
 confirmar, Ferramentas em linhas únicas, Quadro sem renomear e sem modelos, ligar missões só pelo diálogo e as ideias
 da revisão. O dono pediu todos antes da 1.0 (01/11).
 

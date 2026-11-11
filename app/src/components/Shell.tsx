@@ -166,6 +166,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
             <button className="icon-btn" onClick={onToggleTheme} title={theme === "dark" ? "Tema claro" : "Tema escuro"} aria-label={theme === "dark" ? "Usar o tema claro" : "Usar o tema escuro"}>
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            <NoticeBell />
           </div>
         </header>
         <SyncConflictBanner />
@@ -382,3 +383,4 @@ import { useRef } from "react"
 
 import { useVaultCounts } from "../lib/vault-counts"
 import { SyncConflictBanner } from "./vault/SyncConflicts"
+import { NoticeBell } from "./notices/NoticeBell"

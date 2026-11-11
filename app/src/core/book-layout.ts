@@ -72,8 +72,10 @@ type Page = { width: number; height: number }
 const BAND = 0.42
 
 /**
- * Regras de página do layout, para o Paged.js. Cabeçalho só nas páginas que não abrem capítulo (página nomeada
- * `capitulo`, que só existe com “capítulos em página nova”); capa, sumário, partes e páginas em branco sem cabeçalho.
+ * Regras de página do layout, para o Paged.js. Capítulos e seções usam a mesma página nomeada `capitulo` (U43): no
+ * Paged.js a troca de nome força página nova, e a seção começava sempre numa página nova. A página nova agora vem só da
+ * classe `nova-pagina` (books-preview.ts › startsNewPage). Cabeçalho só nas páginas que não abrem capítulo, com
+ * “capítulos em página nova”; capa, sumário, partes e páginas em branco sem cabeçalho.
  */
 export function layoutPageRules(page: Page, margin: number, layout: BookLayout, newChapter: boolean): string {
   const inner = layout.mirrored ? margin + 4 : margin
@@ -97,10 +99,12 @@ export function layoutPageRules(page: Page, margin: number, layout: BookLayout, 
       ? `@page :left { margin-left: ${margin}mm; margin-right: ${inner}mm; ${boxes("left")} } @page :right { margin-left: ${inner}mm; margin-right: ${margin}mm; ${boxes("right")} }`
       : `@page { ${boxes(null)} }`,
     `@page cover { ${none} } @page sumario { ${noHead} } @page parte { ${noHead} } @page :blank { ${none} }`,
-    newChapter ? `.book-print.chapters-new-page .book-chapter { page: capitulo; } @page capitulo:first { ${noHead} }` : "",
+    // Lista simples: o Paged.js parte o seletor nas vírgulas e não entende `:is(a, b)`.
+    `.book-print .book-chapter, .book-print .book-section { page: capitulo; }`,
+    newChapter ? `@page capitulo:first { ${noHead} }` : "",
     `.book-print .book-part { page: parte; } .book-print-toc { page: sumario; break-after: page; }`,
-    // Depois do `page:`: o Paged.js só quebra a página nomeada quando o nome muda, e os capítulos têm todos o mesmo.
-    `.book-print .book-part, .book-print.chapters-new-page .book-chapter { break-before: ${layout.mirrored ? "right" : "page"}; }`,
+    // Depois do `page:`: o Paged.js só quebra a página nomeada quando o nome muda, e capítulos e seções têm o mesmo.
+    `.book-print .book-part, .book-print .nova-pagina { break-before: ${layout.mirrored ? "right" : "page"}; }`,
     `.book-print-toc a::after { content: target-counter(attr(href), page); }`,
     // A capa e a abertura em página inteira ocupam a área do texto (um pouco menos, para não empurrar uma página vazia).
     `.book-print .book-print-cover { height: ${(height - 2).toFixed(1)}mm; min-height: 0; }`,

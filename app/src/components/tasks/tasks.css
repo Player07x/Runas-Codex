@@ -60,3 +60,35 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
 }
 /* T7: a área de toque da caixa da tarefa tem ao menos 24 px também no computador (WCAG 2.5.8). */
 @media (min-width: 701px) { .task-box-hit { padding: 4px; margin: -4px 0 -4px -4px; } }
+
+/* U37: o estado em texto (não só pela cor da data) e a vista Tarefas da Agenda. */
+.task-badge { display: inline-flex; align-items: center; padding: 0 7px; border: 1px solid currentColor; border-radius: 999px; font-size: calc(11.5px * var(--font-scale, 1)); font-weight: 650; line-height: 1.5; white-space: nowrap; }
+.task-badge.late { color: var(--gold); }
+.task-badge.failed { color: var(--red); }
+.agenda-tasks { display: grid; gap: 18px; padding: 16px; min-width: 0; }
+.agenda-tasks-add { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }
+.agenda-tasks-add .input[type="date"] { width: auto; }
+.agenda-tasks-add label.check { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
+.agenda-tasks-section { display: grid; gap: 6px; min-width: 0; }
+.agenda-tasks-section > h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.agenda-tasks-section > h3 .count { color: var(--faint); font-variant-numeric: tabular-nums; }
+.agenda-tasks-section.late > h3 { color: var(--gold); }
+.agenda-tasks-section .task-list { margin: 0; }
+@media (max-width: 860px) {
+  .agenda-tasks { padding: 12px; }
+  .agenda-tasks-add { grid-template-columns: minmax(0, 1fr) auto; }
+  .agenda-tasks-add > .input:first-child { grid-column: 1 / -1; }
+}
+
+/* U38: Editar tarefa compacto. */
+.task-edit-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: start; }
+.task-edit-habit { align-self: end; min-height: 36px; }
+.task-edit-more { display: grid; gap: 10px; }
+.task-edit-more > summary { cursor: pointer; color: var(--muted); font-weight: 650; min-height: 32px; display: flex; align-items: center; }
+.task-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 8px; }
+@media (max-width: 860px), (pointer: coarse) { .task-edit-more > summary { min-height: 44px; } }
+.agenda-tasks details.agenda-tasks-section > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--muted); font-weight: 650; }
+@media (max-width: 860px), (pointer: coarse) { .agenda-tasks details.agenda-tasks-section > summary { min-height: 44px; } }
+.task-edit-more > summary::before, .agenda-tasks details.agenda-tasks-section > summary::before { content: "▸"; margin-right: 6px; color: var(--faint); }
+.task-edit-more[open] > summary::before, .agenda-tasks details.agenda-tasks-section[open] > summary::before { content: "▾"; }
+@media (prefers-reduced-motion: no-preference) { .task-edit-more > summary, .agenda-tasks details > summary { transition: color .15s; } }

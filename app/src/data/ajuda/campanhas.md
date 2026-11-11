@@ -122,3 +122,12 @@ só as missões que eles conhecem.
 **Novo quadro** começa em branco ou de um modelo: **Mapa de missões**, **Mapa de relações**, **Linha do tempo** (as
 sessões em ordem) ou **Investigação** (três pistas para cada conclusão). O ⋯ da barra renomeia o quadro ou o manda
 para a lixeira do cofre.
+
+### Data e hora de cada campanha
+
+Cada campanha pode ter a sua data e a sua hora no mundo, separadas da wiki. Enquanto você não mexe, ela segue o “hoje”
+do calendário da wiki (o cartão do relógio diz “segue a wiki”). Na primeira vez que você avança o relógio ou ajusta a
+data pela campanha, ela passa a ter as suas (“tempo desta campanha”), gravadas na nota dela como `data_mundo`,
+`hora_mundo` e `periodo_mundo`. A regra do relógio (horas, minutos e períodos) continua no calendário, porque é do
+mundo. No ⋯ do relógio, **Voltar a seguir a wiki** apaga as três propriedades. Em Wiki › Calendário › Hoje no mundo
+aparece a data de cada campanha que tem a sua.

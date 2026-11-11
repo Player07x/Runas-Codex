@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type R
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minus, Plus, ZoomIn, ZoomOut } from "lucide-react"
 import type { GraphData } from "../../core/graph-data"
 import { layoutNeighbors, layoutOrg, orgStructureOf, type LayoutNode, type OrgPerson, type OrgStructure } from "../../core/relation-layout"
-import { familyGraph, layoutFamily } from "../../core/family-layout"
+import { familyGraph, generationLabel, layoutFamily } from "../../core/family-layout"
 import { noteName } from "../../core/text"
 import { articleKind, diplomacy, relationEdges, relationsOf } from "../../core/wiki"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
@@ -302,8 +302,11 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
               onFocus={() => setActive(node.path)} onClick={() => { setActive(node.path); onSelect(node.path) }}>
               <NoteCrest path={node.path} name={noteName(node.path)} size={32} round={node.kind === "person"} />
               <span className="org-card-text"><strong>{noteName(node.path)}</strong><small>{personMeta(node, vault.index!.note(node.path)?.meta.frontmatter?.data?.status)}</small></span>
+              {/* Para o leitor de tela: a quem responde e quantos tem abaixo (o desenho mostra pelas linhas). */}
+              {node.parent && <span className="sr-only">, sob {noteName(node.parent)}</span>}
+              {node.childCount > 0 && <span className="sr-only">, {plural(node.childCount, "membro", "membros")} abaixo{node.collapsed ? ", ramo fechado" : ""}</span>}
             </button>
-            {node.childCount > 0 && node.kind === "person" && <button type="button" className="org-fold" tabIndex={-1} aria-expanded={!node.collapsed} onClick={() => onToggle(node.path)}>
+            {node.childCount > 0 && node.kind === "person" && <button type="button" className="org-fold" tabIndex={-1} aria-expanded={!node.collapsed} aria-label={`Ramo de ${noteName(node.path)}: ${plural(node.childCount, "membro", "membros")}`} onClick={() => onToggle(node.path)}>
               {node.collapsed ? <ChevronRight size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}{plural(node.childCount, "membro", "membros")}
             </button>}
           </div>)}
@@ -374,15 +377,15 @@ function FamilyTreeView({ center, root, onSelect }: { center: string; root: stri
       <div className="row-wrap relations-family-controls">{stepper("up", "Gerações acima")}{stepper("down", "Gerações abaixo")}</div>
       <p className="sr-only" aria-live="polite">Centralizado em {noteName(center)}</p>
       <div className="relations-graph-region family-tree" role="region" aria-label={`Árvore genealógica de ${noteName(center)}`}>
-        <svg viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height}>
-          {layout.lines.map((line, i) => line.kind === "casamento"
+        <svg viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height} role="group" aria-label={`${layout.nodes.length} pessoas, por geração`}>
+          <g aria-hidden="true">{layout.lines.map((line, i) => line.kind === "casamento"
             ? <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} className="tree-marriage" />
-            : <path key={i} d={`M${line.x1},${line.y1} C${line.x1},${(line.y1 + line.y2) / 2} ${line.x2},${(line.y1 + line.y2) / 2} ${line.x2},${line.y2}`} className="tree-line" />)}
+            : <path key={i} d={`M${line.x1},${line.y1} C${line.x1},${(line.y1 + line.y2) / 2} ${line.x2},${(line.y1 + line.y2) / 2} ${line.x2},${line.y2}`} className="tree-line" />)}</g>
           {layout.nodes.map((p) => (
             <a key={p.path} href={href(noteRoute(p.path))} data-node={p.path} aria-current={p.path === center ? "true" : undefined} onClick={(event) => { event.preventDefault(); onSelect(p.path) }}>
-              <title>{p.path === center ? `${noteName(p.path)}: ver os detalhes` : `Pôr ${noteName(p.path)} no centro`}</title>
+              <title>{p.path === center ? `${noteName(p.path)} (centro): ver os detalhes` : `Pôr ${noteName(p.path)} no centro (${generationLabel(p.generation)})`}</title>
               <rect x={p.x} y={p.y} width={p.w} height={p.h} rx={10} className={`tree-box ${p.path === center ? "center" : ""}`} />
-              <text x={p.x + p.w / 2} y={p.y + p.h / 2 + 4} textAnchor="middle" className="tree-name">
+              <text aria-hidden="true" x={p.x + p.w / 2} y={p.y + p.h / 2 + 4} textAnchor="middle" className="tree-name">
                 {noteName(p.path).length > 20 ? noteName(p.path).slice(0, 19) + "…" : noteName(p.path)}
               </text>
             </a>

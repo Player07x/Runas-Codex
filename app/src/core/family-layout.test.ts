@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { familyGraph, layoutFamily } from "./family-layout"
+import { familyGraph, generationLabel, layoutFamily } from "./family-layout"
 import { VaultIndex } from "./vault-index"
 
 const vault = (files: Record<string, string>) => new VaultIndex(Object.keys(files).map((path) => ({ path, size: files[path]!.length, mtime: 1 })), files)
@@ -40,5 +40,14 @@ describe("árvore genealógica", () => {
     const layout = layoutFamily(familyGraph(cycle, `${W}A.md`, 5, 5, W))
     expect(layout.nodes).toHaveLength(2)
     expect(new Set(layout.nodes.map((n) => `${n.x}:${n.y}`)).size).toBe(2)
+  })
+})
+
+describe("geração em palavras (U48)", () => {
+  it("diz a geração de cada nome para o leitor de tela", () => {
+    expect(generationLabel(0, true)).toBe("centro")
+    expect(generationLabel(0)).toBe("mesma geração")
+    expect(generationLabel(-1)).toBe("1 geração acima")
+    expect(generationLabel(2)).toBe("2 gerações abaixo")
   })
 })

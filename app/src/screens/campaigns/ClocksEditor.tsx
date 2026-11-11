@@ -109,7 +109,7 @@ function ClockForm({ onSubmit, onCancel }: { onSubmit(clock: Clock): void; onCan
         <option value="ameaca">Ameaça</option>
         <option value="progresso">Progresso</option>
       </select>
-      <button className="btn sm primary" disabled={!name.trim()}>Criar</button>
+      <button type="submit" className="btn sm primary" disabled={!name.trim()}>Criar</button>
       <button type="button" className="btn sm ghost" onClick={onCancel}>Cancelar</button>
     </form>
   )

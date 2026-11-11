@@ -7,6 +7,7 @@ import { parseRecurrence } from "../../core/tasks/recurrence"
 import { TASK_ID, type OnCompletion, type Priority } from "../../core/tasks/serializer"
 import { statusRegistry, type TasksSettings } from "../../core/tasks/settings"
 import { parseContext, type Task } from "../../core/tasks/task"
+import { recurrenceLabel, statusLabel } from "../../core/tasks/agenda"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { Modal } from "../ui"
 import type { TaskActions } from "./useTaskActions"
@@ -29,6 +30,16 @@ const PRIORITIES: { value: Priority; label: string }[] = [
   { value: "5", label: "⏬ Baixíssima" },
 ]
 
+const RECURRENCES: { value: string; label: string }[] = [
+  { value: "", label: "Não repete" },
+  { value: "every day", label: "Todo dia" },
+  { value: "every weekday", label: "Dias úteis" },
+  { value: "every week", label: "Toda semana" },
+  { value: "every 2 weeks", label: "A cada 2 semanas" },
+  { value: "every month", label: "Todo mês" },
+  { value: "every year", label: "Todo ano" },
+]
+
 const randomId = () => Math.random().toString(36).slice(2, 8)
 
 interface Props {
@@ -42,7 +53,10 @@ interface Props {
   onClose(): void
 }
 
-/** "Criar ou editar tarefa" do Tasks: todos os campos, datas por extenso (pt ou en), e a mesma transição de estado do clique. */
+/**
+ * "Criar ou editar tarefa" do Tasks: datas por extenso (pt ou en) e a mesma transição de estado do clique. U38: na
+ * frente só o que se usa sempre (descrição, estado, prioridade, prazo, repetição em português); o resto em "Mais opções".
+ */
 export function TaskEditDialog({ task, actions, initialLine, settings: given, onLines, onClose }: Props) {
   const { vault, toast } = useTasksVault()
   const settings = actions?.settings ?? given!
@@ -106,6 +120,22 @@ export function TaskEditDialog({ task, actions, initialLine, settings: given, on
     }
   }
 
+  const preset = RECURRENCES.some((r) => r.value === recurrence.trim()) ? recurrence.trim() : "custom"
+  // "Mais opções" abre sozinho quando a tarefa já usa algum desses campos (nada fica escondido com valor).
+  const moreCount = DATES.slice(1).filter((d) => dates[d.key].trim()).length + (id ? 1 : 0) + (deps.length ? 1 : 0) + (onCompletion === "keep" || (onCompletion === "delete" && !recurrence.trim()) ? 1 : 0)
+  const [moreOpen] = useState(moreCount > 0)
+  const dateField = (d: (typeof DATES)[number]) => (
+    <label className="field" key={d.key}>
+      <span>
+        {d.icon} {d.label}
+      </span>
+      <input className="input" value={dates[d.key]} placeholder="amanhã, sexta, 2026-10-30" onChange={(e) => setDates({ ...dates, [d.key]: e.target.value })} aria-label={d.label} aria-invalid={Boolean(dates[d.key].trim() && !parsed[d.key])} />
+      <span className={`tiny ${dates[d.key].trim() && !parsed[d.key] ? "danger-text" : "faint"}`}>
+        {dates[d.key].trim() ? (parsed[d.key] && isValidDate(parsed[d.key]!) ? new Date(`${parsed[d.key]}T12:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "data não entendida") : "sem data"}
+      </span>
+    </label>
+  )
+
   return (
     <Modal
       title={task ? "Editar tarefa" : "Nova tarefa"}
@@ -113,10 +143,10 @@ export function TaskEditDialog({ task, actions, initialLine, settings: given, on
       wide
       footer={
         <>
-          <button className="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={onClose}>
             Cancelar
           </button>
-          <button className="btn primary" disabled={!valid || saving} onClick={() => void save()}>
+          <button type="button" className="btn primary" disabled={!valid || saving} onClick={() => void save()}>
             {task ? "Salvar" : "Inserir"}
           </button>
         </>
@@ -127,13 +157,13 @@ export function TaskEditDialog({ task, actions, initialLine, settings: given, on
           <span>Descrição</span>
           <input className="input" value={description} autoFocus onChange={(e) => setDescription(e.target.value)} aria-label="Descrição da tarefa" />
         </label>
-        <div className="form-grid">
+        <div className="task-edit-row">
           <label className="field">
             <span>Estado</span>
             <select className="select" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Estado">
               {[...registry.statuses, ...(registry.statuses.some((s) => s.symbol === base.status.symbol) ? [] : [base.status])].map((s) => (
                 <option key={s.symbol} value={s.symbol}>
-                  [{s.symbol}] {s.name}
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
@@ -148,59 +178,65 @@ export function TaskEditDialog({ task, actions, initialLine, settings: given, on
               ))}
             </select>
           </label>
+          {dateField(DATES[0]!)}
         </div>
-        <div className="form-grid">
-          {DATES.map((d) => (
-            <label className="field" key={d.key}>
-              <span>
-                {d.icon} {d.label}
-              </span>
-              <input className="input" value={dates[d.key]} placeholder="ex.: amanhã, sexta, 2026-10-30" onChange={(e) => setDates({ ...dates, [d.key]: e.target.value })} aria-label={d.label} aria-invalid={Boolean(dates[d.key].trim() && !parsed[d.key])} />
-              <span className={`tiny ${dates[d.key].trim() && !parsed[d.key] ? "danger-text" : "faint"}`}>
-                {dates[d.key].trim() ? (parsed[d.key] && isValidDate(parsed[d.key]!) ? new Date(`${parsed[d.key]}T12:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "data não entendida") : "sem data"}
-              </span>
-            </label>
-          ))}
-        </div>
-        <label className="check small">
-          <input type="checkbox" checked={forwardOnly} onChange={(e) => setForwardOnly(e.target.checked)} /> Só datas futuras (para “sexta”, “segunda”…)
-        </label>
-        <div className="form-grid">
+        <div className="task-edit-row">
           <label className="field">
-            <span>🔁 Repete (em inglês, como no Tasks)</span>
-            <input className="input" value={recurrence} placeholder="every week, every month on the 1st, every day when done" onChange={(e) => setRecurrence(e.target.value)} aria-label="Regra de repetição" aria-invalid={!recurrenceOk} />
-            {!recurrenceOk && <span className="tiny danger-text">Regra não entendida.</span>}
-          </label>
-          <label className="field">
-            <span>🏁 Ao concluir</span>
-            <select className="select" value={onCompletion} onChange={(e) => setOnCompletion(e.target.value as OnCompletion)} aria-label="Ao concluir">
-              <option value="">Nada (padrão)</option>
-              <option value="keep">Manter (keep)</option>
-              <option value="delete">Apagar a ocorrência concluída (delete)</option>
+            <span>🔁 Repete</span>
+            <select className="select" value={preset} onChange={(e) => setRecurrence(e.target.value === "custom" ? (recurrence || "every 2 days") : e.target.value)} aria-label="Repetição">
+              {RECURRENCES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              <option value="custom">Outra regra…</option>
             </select>
           </label>
+          {preset === "custom" && (
+            <label className="field">
+              <span>Regra (em inglês, como no Tasks)</span>
+              <input className="input" value={recurrence} placeholder="every month on the 1st, every 3 days when done" onChange={(e) => setRecurrence(e.target.value)} aria-label="Regra de repetição" aria-invalid={!recurrenceOk} />
+              <span className={`tiny ${recurrenceOk ? "faint" : "danger-text"}`}>{recurrenceOk ? recurrenceLabel(recurrence) : "Regra não entendida."}</span>
+            </label>
+          )}
+          {recurrence.trim() && (
+            <label className="check small task-edit-habit">
+              <input type="checkbox" checked={onCompletion === "delete"} onChange={(e) => setOnCompletion(e.target.checked ? "delete" : "")} /> Apagar a feita (só a próxima fica)
+            </label>
+          )}
         </div>
-        <div className="form-grid">
-          <label className="field">
-            <span>🆔 Id</span>
-            <span className="row">
-              <input className="input grow" value={id} onChange={(e) => setId(e.target.value)} aria-label="Id da tarefa" aria-invalid={!idOk} />
-              <button type="button" className="btn sm" onClick={() => setId(randomId())}>
-                Gerar
-              </button>
-            </span>
+        <details className="task-edit-more" open={moreOpen}>
+          <summary>Mais opções{moreCount > 0 ? ` (${moreCount})` : ""}</summary>
+          <div className="task-edit-grid">
+            {DATES.slice(1).map((d) => dateField(d))}
+            <label className="field">
+              <span>🏁 Ao concluir</span>
+              <select className="select" value={onCompletion} onChange={(e) => setOnCompletion(e.target.value as OnCompletion)} aria-label="Ao concluir">
+                <option value="">Nada (padrão)</option>
+                <option value="keep">Manter (keep)</option>
+                <option value="delete">Apagar a ocorrência concluída (delete)</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>🆔 Id</span>
+              <span className="row">
+                <input className="input grow" value={id} onChange={(e) => setId(e.target.value)} aria-label="Id da tarefa" aria-invalid={!idOk} />
+                <button type="button" className="btn sm" onClick={() => setId(randomId())}>
+                  Gerar
+                </button>
+              </span>
+            </label>
+            <label className="field">
+              <span>⛔ Depende de (ids, com vírgula)</span>
+              <input className="input" list="task-known-ids" value={dependsOn} onChange={(e) => setDependsOn(e.target.value)} aria-label="Depende de" aria-invalid={!depsOk} />
+              <datalist id="task-known-ids">
+                {knownIds.map((k) => (
+                  <option key={k} value={k} />
+                ))}
+              </datalist>
+            </label>
+          </div>
+          <label className="check small">
+            <input type="checkbox" checked={forwardOnly} onChange={(e) => setForwardOnly(e.target.checked)} /> Só datas futuras (para “sexta”, “segunda”…)
           </label>
-          <label className="field">
-            <span>⛔ Depende de (ids, separados por vírgula)</span>
-            <input className="input" list="task-known-ids" value={dependsOn} onChange={(e) => setDependsOn(e.target.value)} aria-label="Depende de" aria-invalid={!depsOk} />
-            <datalist id="task-known-ids">
-              {knownIds.map((k) => (
-                <option key={k} value={k} />
-              ))}
-            </datalist>
-          </label>
-        </div>
-        <code className="tiny faint task-preview">{valid ? lines().join("\n") : "…"}</code>
+          <code className="tiny faint task-preview">{valid ? lines().join("\n") : "…"}</code>
+        </details>
       </form>
     </Modal>
   )

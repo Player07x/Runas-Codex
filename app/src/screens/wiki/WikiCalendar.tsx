@@ -1,4 +1,4 @@
-import { ResizablePanel } from "../../components/ResizablePanel"
+import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
@@ -18,6 +18,10 @@ import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { useRemembered } from "../../lib/remembered"
 import { YearGrid } from "./CalendarYear"
 import { useSetWorldToday } from "./world-today"
+import { CalendarConfig, takeConfigureRequest } from "./CalendarConfig"
+import { campaignTime } from "../../core/campaign-time"
+import { listCampaigns } from "../../core/campaigns"
+import { campaignRoute } from "../campaigns/campaign-state"
 
 type CalendarMode = "mes" | "ano"
 const parseMode = (raw: unknown): CalendarMode => (raw === "ano" ? "ano" : "mes")
@@ -143,7 +147,7 @@ export function WikiCalendar({ path }: { path?: string }) {
   const calendar = ref?.calendar ?? null
   const [shown, setShown] = useState<{ year: number; month: number } | null>(null)
   const [selected, setSelected] = useState<WorldDate | null>(null)
-  const [sideTab, setSideTab] = useState<"dia" | "hoje" | "sincronizar" | "ajuda">("dia")
+  const [sideTab, setSideTab] = useState<"dia" | "hoje" | "configurar" | "sincronizar" | "ajuda">(() => (path && takeConfigureRequest(path) ? "configurar" : "dia"))
   // Mês ou ano inteiro (U9), lembrado por aparelho.
   const [mode, setMode] = useRemembered("runas-codex:wiki-calendario-vista", parseMode)
   const readOnly = vault.info?.readOnly ?? true
@@ -173,6 +177,11 @@ export function WikiCalendar({ path }: { path?: string }) {
   }
 
   const refs = all.filter((c): c is CalendarRef => "calendar" in c)
+  // U39: campanhas desta wiki com data própria neste calendário (a data delas fica na nota da campanha).
+  const campaignDates = useMemo(() => (calendar ? listCampaigns(index).filter((c) => !c.wiki || `Wikis/${c.wiki}/` === wiki!.root).flatMap((c) => {
+    const time = campaignTime(c.home ? index.note(c.home)?.meta.frontmatter?.data : undefined, calendar)
+    return time ? [{ name: c.name, path: c.home!, time }] : []
+  }) : []), [index, wiki, calendar, vault.version])
   const [syncToday, setSyncToday] = useState(true)
   const linked = ref ? refs.filter((c) => c.path !== ref.path && calendarOffsets(refs, ref.path).has(c.path)) : []
   // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
@@ -252,9 +261,9 @@ export function WikiCalendar({ path }: { path?: string }) {
               <ChevronRight size={18} />
             </button>
           </div>
-          <a className="btn sm ghost" href={href(articleRoute(ref!.path))} title="Editar o bloco do calendário">
-            <Pencil size={14} /> Editar
-          </a>
+          <button type="button" className="btn sm ghost" onClick={() => { setSideTab("configurar"); setPanelCollapsed("agenda", false) }} title="Configurar meses, semana, luas, eras, feriados e relógio">
+            <Pencil size={14} /> Configurar
+          </button>
         </div>
       </div>
 
@@ -272,6 +281,7 @@ export function WikiCalendar({ path }: { path?: string }) {
           <PanelTabs label="Detalhes do calendário" idPrefix="calendario-painel" value={sideTab} onChange={setSideTab} tabs={[
             { value: "dia", label: "Dia" },
             { value: "hoje", label: "Hoje no mundo" },
+            { value: "configurar", label: "Configurar" },
             ...(refs.length > 1 ? [{ value: "sincronizar" as const, label: "Sincronizar" }] : []),
             { value: "ajuda", label: "Ajuda" },
           ]} />
@@ -329,6 +339,10 @@ export function WikiCalendar({ path }: { path?: string }) {
                 </button>
               )}
             </div>
+            {campaignDates.length > 0 && <div className="stack" style={{ gap: 2 }}>
+              <span className="tiny muted">Campanhas com data própria (o “hoje” acima não muda a delas):</span>
+              {campaignDates.map((c) => <a key={c.path} className="small" href={href(campaignRoute(c.name))}>{c.name}: {formatDate(calendar, c.time.today)}{c.time.hora ? `, ${c.time.hora}` : ""}</a>)}
+            </div>}
             <TypedToday key={`${ref!.path}:${calendar.today ? worldDateText(calendar.today) : ""}`} calendar={calendar} readOnly={readOnly} onSet={(next) => setToday(next)} />
             {linked.length > 0 && (
               <label className="check small">
@@ -337,6 +351,7 @@ export function WikiCalendar({ path }: { path?: string }) {
             )}
           </section>}
           {sideTab === "sincronizar" && refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
+          {sideTab === "configurar" && <CalendarConfig key={ref!.path} path={ref!.path} readOnly={readOnly} />}
           {sideTab === "ajuda" && <CalendarHelp />}
           </TabPanel>
         </ResizablePanel>
@@ -409,7 +424,7 @@ function TypedToday({ calendar, readOnly, onSet }: { calendar: Calendar; readOnl
       <span className="tiny muted">Ou digite o dia de hoje:</span>
       <div className="row" style={{ gap: 6 }}>
         <input className="input sm mono" value={text} onChange={(e) => setText(e.target.value)} placeholder="ANO-MM-DD" aria-label="Dia de hoje no mundo" disabled={readOnly} style={{ flex: 1, minWidth: 0 }} />
-        <button className="btn sm primary" disabled={readOnly || !text.trim()}>Definir hoje</button>
+        <button type="submit" className="btn sm primary" disabled={readOnly || !text.trim()}>Definir hoje</button>
       </div>
       {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
     </form>
@@ -475,7 +490,7 @@ function SyncCalendars({ refs, current, readOnly, onAlign }: { refs: CalendarRef
           </label>
           <input className="input sm mono" value={there} onChange={(e) => setThere(e.target.value)} placeholder={`ANO-MM-DD (${other?.calendar.abbr ?? ""})`} aria-label="Dia no outro calendário" />
           {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
-          <button className="btn sm primary" disabled={!here.trim() || !there.trim()}>Sincronizar</button>
+          <button type="submit" className="btn sm primary" disabled={!here.trim() || !there.trim()}>Sincronizar</button>
         </form>
       )}
     </section>

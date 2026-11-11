@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { bookLayout, chapterLabel, chapterNumbers, layoutPageRules, roman, tocHtml } from "./book-layout"
-import { pageRules } from "./books-preview"
+import { pageRules, startsNewPage } from "./books-preview"
 
 const A4 = { width: 210, height: 297 }
 
@@ -28,8 +28,8 @@ describe("capa, sumário, aberturas e cabeçalhos (L4)", () => {
     expect(css).toContain("@page capitulo:first { @top-left { content: none; }")
     expect(css).toContain("@page sumario {")
     expect(css).toContain("target-counter(attr(href), page)")
-    expect(layoutPageRules(A4, 18, bookLayout({}), false)).not.toContain("page: capitulo")
-    // A quebra vem depois do nome da página: todos os capítulos se chamam `capitulo`.
+    expect(layoutPageRules(A4, 18, bookLayout({}), false)).not.toContain("@page capitulo:first")
+    // A quebra vem depois do nome da página: capítulos e seções se chamam `capitulo`.
     expect(css.indexOf("break-before: page")).toBeGreaterThan(css.indexOf("page: capitulo"))
   })
   it("páginas espelhadas: margem interna maior, número do lado de fora, capítulo à direita", () => {
@@ -45,5 +45,25 @@ describe("capa, sumário, aberturas e cabeçalhos (L4)", () => {
   it("a capa e a abertura em página inteira ocupam a área do texto", () => {
     expect(pageRules("A5")).toContain(".book-print .book-print-cover { height: 182.0mm;")
     expect(pageRules("A4", undefined, bookLayout({ abertura: "pagina" }))).toContain("abertura-pagina .book-chapter > .book-chapter-opening { height: 259.0mm;")
+  })
+})
+
+describe("página nova por capítulo e por seção (U43)", () => {
+  const book = { newChapter: true, newSection: false }
+  it("capítulo e seção usam a mesma página nomeada: a seção não força página nova", () => {
+    const css = layoutPageRules(A4, 18, bookLayout({}), true)
+    expect(css).toContain(".book-print .book-chapter, .book-print .book-section { page: capitulo; }")
+    expect(css).toContain(".book-print .book-part, .book-print .nova-pagina { break-before: page; }")
+    expect(pageRules("A4")).not.toContain("chapters-new-page")
+  })
+  it("o padrão vem do livro e a nota pode pedir o contrário", () => {
+    expect(startsNewPage("capitulo", undefined, book)).toBe(true)
+    expect(startsNewPage("secao", undefined, book)).toBe(false)
+    expect(startsNewPage("secao", true, book)).toBe(true)
+    expect(startsNewPage("capitulo", false, book)).toBe(false)
+    expect(startsNewPage("secao", undefined, { newChapter: false, newSection: true })).toBe(true)
+    // Apêndices seguem os capítulos; parte é sempre página nova.
+    expect(startsNewPage("glossario", undefined, { newChapter: false, newSection: true })).toBe(false)
+    expect(startsNewPage("parte", false, book)).toBe(true)
   })
 })

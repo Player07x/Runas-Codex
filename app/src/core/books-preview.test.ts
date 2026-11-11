@@ -17,7 +17,7 @@ it("mantém padrões seguros para tema e página desconhecidos", () => {
   const { book } = fixture()
   book.meta.frontmatter!.data!.tema = "../../outro"
   book.meta.frontmatter!.data!.pagina = "A0; }"
-  expect(previewSettings(book)).toEqual({ theme: "manual", size: "A4", newChapter: true })
+  expect(previewSettings(book)).toEqual({ theme: "manual", size: "A4", newChapter: true, newSection: false, blankLines: false })
   book.meta.frontmatter!.data!.tema = "minimalista"
   expect(previewSettings(book).newChapter).toBe(false)
   book.meta.frontmatter!.data!.capitulos_nova_pagina = true

@@ -5,6 +5,7 @@ import { STATUS_TYPES, type Status } from "../../core/tasks/status"
 import { importTasksSettings, resetTasksSettings, saveTasksSettings, useTasksSettings } from "../../lib/tasks"
 import { useVault } from "../../platform/VaultProvider"
 import { Switch, useToast } from "../ui"
+import { useTaskNoticeTime } from "../notices/useNotices"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
@@ -25,6 +26,7 @@ const STATUS_TYPE_LABEL: Record<string, string> = { TODO: "A fazer", DONE: "Feit
  * (sem mudar o arquivo); daí em diante o app usa a cópia daqui.
  */
 export function TasksSettingsCard() {
+  const [noticeTime, setNoticeTime] = useTaskNoticeTime()
   const vault = useVault()
   const toast = useToast()
   const path = vault.info?.path
@@ -43,6 +45,9 @@ export function TasksSettingsCard() {
       <span className="section-title row settings-card-head">
         <ListChecks size={16} /> Tarefas (plugin Tasks)
       </span>
+      <Row title="Avisar das tarefas às" hint="No dia do prazo, uma notificação para cada tarefa aberta. Vale só neste aparelho.">
+        <input className="input" type="time" aria-label="Hora do aviso das tarefas" value={noticeTime} onChange={(e) => e.target.value && setNoticeTime(e.target.value)} style={{ width: "auto" }} />
+      </Row>
       <Row title="Configurações do Obsidian" hint="Lê .obsidian/plugins/obsidian-tasks-plugin/data.json deste cofre, sem mudar o arquivo.">
         <span className="row-wrap">
           <button

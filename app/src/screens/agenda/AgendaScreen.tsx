@@ -2,13 +2,14 @@ import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePan
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { toneStyle, type Tone } from "../../core/tones"
-import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, Hourglass, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload, Vote } from "lucide-react"
+import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, Hourglass, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload, Vote, ListChecks } from "lucide-react"
 import { AGENDA_ROOT, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
 import { listCampaigns, listSessions, SESSION_STATUS, sessionInfo } from "../../core/campaigns"
 import { isDone, parseContext, parseTaskLine, type Task } from "../../core/tasks/task"
 import { checkboxLines } from "../../markdown/task-checkboxes"
 import { TaskRow } from "../../components/tasks/TaskRow"
 import { TaskEditDialog } from "../../components/tasks/TaskEditDialog"
+import { AgendaTasks } from "./AgendaTasks"
 import { useTaskActions, type TaskActions } from "../../components/tasks/useTaskActions"
 import { vaultTasks } from "../../lib/tasks"
 import { useNotesLock } from "../../lib/notes-lock"
@@ -34,7 +35,7 @@ import "../agenda.css"
 import { useCreateRequest } from "../../lib/create-request"
 import { useAgendaActions, type AgendaAction } from "../../lib/agenda-request"
 
-type View = "mes" | "semana" | "dia" | "lista"
+type View = "mes" | "semana" | "dia" | "lista" | "tarefas"
 type Tab = "dia" | "evento" | "tarefas"
 const VIEW_KEY = "runas-codex:agenda-visao"
 const TAB_KEY = "runas-codex:agenda-aba"
@@ -43,7 +44,7 @@ const LIST_DAYS = 60
 function savedView(): View {
   try {
     const v = localStorage.getItem(VIEW_KEY)
-    return v === "semana" || v === "dia" || v === "lista" ? v : "mes"
+    return v === "semana" || v === "dia" || v === "lista" || v === "tarefas" ? v : "mes"
   } catch {
     return "mes"
   }
@@ -369,7 +370,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
         menu={<OverflowMenu label="Mais ações da agenda" items={menu} />}
       />
       <div className="agenda-nav" role="group" aria-label="Período">
-        <div className="row" style={{ gap: 4 }}>
+        <div className="row" style={{ gap: 4, visibility: view === "tarefas" ? "hidden" : undefined }}>
           <button className="icon-btn" aria-label={`${unit === "semana" ? "Semana anterior" : unit === "mês" ? "Mês anterior" : unit === "dia" ? "Dia anterior" : "Período anterior"}`} onClick={() => move(-1)}>
             <ChevronLeft size={18} />
           </button>
@@ -380,7 +381,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
             <ChevronRight size={18} />
           </button>
         </div>
-        <h2 className="agenda-period" aria-live="polite">{period}</h2>
+        <h2 className="agenda-period" aria-live="polite">{view === "tarefas" ? "Tarefas" : period}</h2>
         <Segmented<View>
           label="Visão"
           value={view}
@@ -390,6 +391,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
             { value: "semana", label: "Semana", icon: <Columns3 size={14} /> },
             { value: "dia", label: "Dia", icon: <CalendarRange size={14} /> },
             { value: "lista", label: "Lista", icon: <List size={14} /> },
+            { value: "tarefas", label: "Tarefas", icon: <ListChecks size={14} /> },
           ]}
         />
       </div>
@@ -412,6 +414,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
               freeLabel={freeLabel}
             />
           )}
+          {view === "tarefas" && <AgendaTasks tasks={allTasks} actions={actions} today={todayIso} />}
           {view === "lista" && <ListView from={cursor} days={listDays} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} onMore={() => setListDays((d) => d + LIST_DAYS)} />}
         </div>
 

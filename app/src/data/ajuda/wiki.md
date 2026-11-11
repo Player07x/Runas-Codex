@@ -65,6 +65,14 @@ O artigo abre como qualquer nota (Leitura, Editar, Código). O botão **Painel**
 Na aba Wiki da galeria Formatar ficam o segredo de jogador, o spoiler, a galeria, o áudio, a tabela rolável e o
 dicionário.
 
+### Configurar um calendário
+
+Em Wiki › Calendário, o botão **Configurar** (ou a aba de mesmo nome no painel) mostra o calendário num formulário:
+nome, sigla das datas, semana (com nomes ou só números), meses com dias, estação e “fora da semana”, ano bissexto,
+luas, eras, feriados e relógio. Cada mudança grava sozinha no bloco `runas-calendario` da nota, sem mexer no resto
+dele (data de hoje, hora, correspondências, comentários); “Ver o código” abre a nota para quem preferir o YAML. Em
+**Novo artigo › Calendário**, escolha um modelo para começar: Gregoriano, 12 meses de 30, 13 meses de 28 ou em branco.
+
 ### Segredos e a visão dos jogadores
 
 O botão **Visão do mestre** na barra da Wiki troca para a visão dos jogadores: somem as caixas `[!segredo]`, os

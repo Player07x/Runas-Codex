@@ -121,7 +121,7 @@ export function SecretsCard({ data }: { data: CampaignData }) {
               {open.map((q) => <option key={q.path} value={q.path}>Destrava: {q.order ? `${q.order} ` : ""}{q.title}</option>)}
             </select>
           )}
-          <button className="btn sm">Anotar</button>
+          <button type="submit" className="btn sm">Anotar</button>
         </form>
       )}
       <span className="tiny faint">Marcar registra a sessão ({session ? noteName(session.path) : "nenhuma ainda"}).</span>
@@ -228,7 +228,7 @@ function SafetyList({ label, hint, items, readOnly, onChange }: { label: string;
           }}
         >
           <input className="input" placeholder={`Acrescentar em ${label}`} value={text} onChange={(e) => setText(e.target.value)} aria-label={`Acrescentar em ${label}`} />
-          <button className="btn sm" disabled={!text.trim()}>Acrescentar</button>
+          <button type="submit" className="btn sm" disabled={!text.trim()}>Acrescentar</button>
         </form>
       )}
     </div>

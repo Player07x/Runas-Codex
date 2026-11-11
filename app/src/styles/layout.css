@@ -29,6 +29,9 @@
 .shell.collapsed .offline-pill { justify-content: center; }
 
 .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* U36: só o conteúdo cresce e encolhe. A barra do topo (e o aviso de conflito) têm altura fixa: com flex-basis auto
+   no conteúdo, uma página mais alta que a janela fazia a barra encolher (56 → 44,8 px) e mudar de uma tela para outra. */
+.main > :not(.content) { flex: none; }
 .topbar {
   position: sticky; top: 0; z-index: 30;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
@@ -47,7 +50,7 @@
 .search-trigger kbd { margin-left: auto; }
 .top-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .new-trigger { min-height: 36px; padding: 0 12px; }
-.content { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.content { flex: 1 1 0; min-height: 0; overflow: auto; }
 .content.fill { overflow: hidden; display: flex; flex-direction: column; }
 
 /* ---------- Barra inferior (celular) ---------- */
