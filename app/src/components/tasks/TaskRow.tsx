@@ -1,6 +1,7 @@
 import { useTasksVault } from "../../lib/tasks"
 import { useState, type ReactNode } from "react"
-import { FileText, Pencil, SkipForward } from "lucide-react"
+import { CircleX, FileText, Pencil, SkipForward } from "lucide-react"
+import { canFail, isFailed, statusLabel } from "../../core/tasks/agenda"
 import { isValidDate } from "../../core/tasks/dates"
 import { postponeField } from "../../core/tasks/edit"
 import type { QueryElement, TaskElement } from "../../core/tasks/query"
@@ -69,6 +70,7 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
   const registry = statusRegistry(actions.settings)
   const statuses = registry.statuses
   const canPostpone = !actions.readOnly && show("postpone button") && task.status.type !== "DONE" && task.status.type !== "CANCELLED" && task.status.type !== "NON_TASK" && postponeField(task, actions.settings.postponeDateField) !== null && DATE_FIELDS.every((d) => !task[d.field] || isValidDate(task[d.field]!))
+  const failable = !actions.readOnly && canFail(task, options.today)
   const late = task.dueDate && isValidDate(task.dueDate) && task.dueDate < options.today && task.status.type !== "DONE" && task.status.type !== "CANCELLED"
   const field = (icon: string, label: string, value: string) => (options.shortMode ? <span className="task-field" title={`${label}: ${value}`}>{icon}</span> : <span className="task-field" title={label}>{icon} {value}</span>)
   return (
@@ -87,7 +89,7 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
             checked={task.status.symbol !== " "}
             disabled={actions.readOnly}
             aria-label={`${task.status.symbol === " " ? "Marcar" : "Mudar o estado de"}: ${task.description}`}
-            title={`${task.status.name} (clique: ${registry.next(task.status).name}; botão direito: outros estados)`}
+            title={`${statusLabel(task.status)} (clique: ${statusLabel(registry.next(task.status))}; botão direito: outros estados)`}
             onChange={() => void actions.toggle(task)}
             onContextMenu={(e) => {
               if (actions.readOnly) return
@@ -98,6 +100,8 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
         </label>
         <span className="task-body">
           <TaskText task={task} hideTags={!show("tags")} globalFilter={actions.settings.removeGlobalFilter ? actions.settings.globalFilter : undefined} />
+          {isFailed(task) && <span className="task-badge failed">Falhou</span>}
+          {late && <span className="task-badge late">Atrasada</span>}
           {show("id") && task.id && field("🆔", "Id", task.id)}
           {show("depends on") && task.dependsOn.length > 0 && field("⛔", "Depende de", task.dependsOn.join(", "))}
           {show("priority") && PRIORITY_ICON[task.priority] && <span className="task-field" title={`Prioridade ${PRIORITY_LABEL[task.priority]}`}>{PRIORITY_ICON[task.priority]}</span>}
@@ -128,6 +132,11 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
               <SkipForward size={14} />
             </button>
           )}
+          {failable && (
+            <button type="button" className="icon-btn task-btn" title="Falhou (passou do prazo sem fazer)" aria-label={`Marcar como falhou: ${task.description}`} onClick={() => void actions.fail(task)}>
+              <CircleX size={14} />
+            </button>
+          )}
           {!actions.readOnly && show("edit button") && (
             <button className="icon-btn task-btn" title="Editar tarefa" aria-label="Editar tarefa" onClick={() => setEditing(true)}>
               <Pencil size={14} />
@@ -141,6 +150,8 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
           task={task}
           statuses={statuses as Status[]}
           canPostpone={canPostpone}
+          canFail={failable}
+          onFail={() => (setMenu(false), void actions.fail(task))}
           onStatus={(s) => (setMenu(false), void actions.setStatus(task, s))}
           onPostpone={(days) => (setMenu(false), void actions.postpone(task, days))}
           onFixed={(days) => (setMenu(false), void actions.setPostponeDate(task, days))}
@@ -152,15 +163,20 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
   )
 }
 
-function TaskMenu({ task, statuses, canPostpone, onStatus, onPostpone, onFixed, onClose }: { task: Task; statuses: Status[]; canPostpone: boolean; onStatus(s: Status): void; onPostpone(days: number): void; onFixed(days: number | null): void; onClose(): void }) {
+function TaskMenu({ task, statuses, canPostpone, canFail: failable, onFail, onStatus, onPostpone, onFixed, onClose }: { task: Task; statuses: Status[]; canPostpone: boolean; canFail: boolean; onFail(): void; onStatus(s: Status): void; onPostpone(days: number): void; onFixed(days: number | null): void; onClose(): void }) {
   return (
     <div className="task-menu card" role="menu" aria-label="Ações da tarefa" onKeyDown={(e) => e.key === "Escape" && onClose()}>
       <span className="eyebrow">Estado</span>
       {statuses.map((s) => (
         <button key={s.symbol} role="menuitem" className={`menu-item ${s.symbol === task.status.symbol ? "active" : ""}`} onClick={() => onStatus(s)}>
-          <code>[{s.symbol}]</code> {s.name}
+          <code>[{s.symbol}]</code> {statusLabel(s)}
         </button>
       ))}
+      {failable && (
+        <button role="menuitem" className="menu-item" onClick={onFail}>
+          <code>[-]</code> Falhou (cancelada depois do prazo)
+        </button>
+      )}
       {canPostpone && (
         <>
           <span className="eyebrow">Adiar</span>

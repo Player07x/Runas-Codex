@@ -60,3 +60,22 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
 }
 /* T7: a área de toque da caixa da tarefa tem ao menos 24 px também no computador (WCAG 2.5.8). */
 @media (min-width: 701px) { .task-box-hit { padding: 4px; margin: -4px 0 -4px -4px; } }
+
+/* U37: o estado em texto (não só pela cor da data) e a vista Tarefas da Agenda. */
+.task-badge { display: inline-flex; align-items: center; padding: 0 7px; border: 1px solid currentColor; border-radius: 999px; font-size: calc(11.5px * var(--font-scale, 1)); font-weight: 650; line-height: 1.5; white-space: nowrap; }
+.task-badge.late { color: var(--gold); }
+.task-badge.failed { color: var(--red); }
+.agenda-tasks { display: grid; gap: 18px; padding: 16px; min-width: 0; }
+.agenda-tasks-add { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }
+.agenda-tasks-add .input[type="date"] { width: auto; }
+.agenda-tasks-add label.check { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
+.agenda-tasks-section { display: grid; gap: 6px; min-width: 0; }
+.agenda-tasks-section > h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.agenda-tasks-section > h3 .count { color: var(--faint); font-variant-numeric: tabular-nums; }
+.agenda-tasks-section.late > h3 { color: var(--gold); }
+.agenda-tasks-section .task-list { margin: 0; }
+@media (max-width: 860px) {
+  .agenda-tasks { padding: 12px; }
+  .agenda-tasks-add { grid-template-columns: minmax(0, 1fr) auto; }
+  .agenda-tasks-add > .input:first-child { grid-column: 1 / -1; }
+}

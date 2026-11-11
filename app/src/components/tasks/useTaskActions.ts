@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from "react"
 import { changeTaskInText, postponedDate, postponeField, updateTaskInText, type DateField } from "../../core/tasks/edit"
 import type { Status } from "../../core/tasks/status"
 import { parseContext, type ParseContext, type Task } from "../../core/tasks/task"
+import { AGENDA_TASKS_PATH, agendaTaskLine, appendTaskLine, failTaskInText, newAgendaTasksNote, type NewAgendaTask } from "../../core/tasks/agenda"
 import { useTasksSettings, useTasksVault } from "../../lib/tasks"
 import { flushOpenNotes } from "../../lib/vault-notes"
 
@@ -61,8 +62,25 @@ export function useTaskActions() {
         if (!field) return Promise.resolve()
         return update(task, { [field]: days === null ? null : postponedDate(null, parseContext(settings).today, days) })
       },
+      /** U37: cancela com ❌ hoje uma tarefa vencida (e cria a próxima, se repete). */
+      fail: (task: Task) => run(task, (text, ctx) => failTaskInText(text, task, ctx)),
+      /** U37: tarefa nova da Agenda, no fim de `Agenda/Tarefas.md` (criada na primeira vez). */
+      async create(input: NewAgendaTask): Promise<boolean> {
+        if (readOnly || !vault) return false
+        try {
+          const line = agendaTaskLine(input, parseContext(settings).today)
+          await flushOpenNotes()
+          const note = vault.index?.note(AGENDA_TASKS_PATH)
+          if (note) await vault.save(AGENDA_TASKS_PATH, appendTaskLine(note.text, line))
+          else await vault.createNote("Agenda", "Tarefas", newAgendaTasksNote(line))
+          return true
+        } catch (error) {
+          toast(error instanceof Error ? error.message : String(error))
+          return false
+        }
+      },
     }
-  }, [readOnly, run, settings])
+  }, [readOnly, run, settings, toast, vault])
 }
 
 export type TaskActions = ReturnType<typeof useTaskActions>
