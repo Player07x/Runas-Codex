@@ -39,11 +39,17 @@ Leitura fácil — e deixa ajustar:
 
 - Fontes do título e do texto (cerca de dez fontes livres embutidas, mais as fontes `.ttf`/`.otf`/`.woff2` do cofre),
   tamanho e entrelinha, texto justificado e **hifenização** em português.
-- **Recuo na primeira linha** (desligado por padrão): o parágrafo que vem logo depois de outro recua a primeira
-  linha e os parágrafos ficam sem espaço entre si, como nos livros impressos; o primeiro depois de um título, imagem,
-  lista, citação ou ficha não recua. Vale no papel, no PDF, no EPUB e no DOCX, e não muda o capítulo no Obsidian.
-  Um `&emsp;` digitado no começo do parágrafo continua funcionando e soma com o recuo.
+- **Parágrafos**: **recuo na primeira linha** em nenhum parágrafo (padrão), em **todos** ou em todos **menos o
+  primeiro depois de um título**, com o tamanho do recuo; e o **espaço entre parágrafos** (de nenhum a 1½ linha).
+  Sem escolha, quem recua fica sem espaço e quem não recua ganha meia linha. Vale no capítulo inteiro — também dentro
+  de colunas, caixas e fichas —, no papel, no PDF, no EPUB e no DOCX, e não muda o capítulo no Obsidian. Imagem
+  sozinha, item de lista e célula de tabela não recuam. Um `&emsp;` no começo do parágrafo continua somando.
 - Colunas (1 a 4), papel (A4, Carta, A5, 6×9), margens, cor do papel, do texto e do destaque.
+- **Tabelas**: as colunas seguem o conteúdo (uma coluna vazia fica estreita); a tabela ocupa a **largura toda** da
+  coluna ou **se ajusta ao conteúdo**.
+- **Página nova**: “Capítulos em página nova” e “Seções em página nova” valem para o livro todo; um capítulo ou
+  seção pede o contrário no menu “⋯” da estrutura (**Começar em página nova**, grava `nova_pagina:` na nota). Sem
+  isso, a seção continua na mesma página do capítulo.
 - O desenho das **fichas** (tipográfico, fundo suave ou faixa no nome; veja Fichas e caixas).
 - **Capa**, **sumário**, aberturas de capítulo, cabeçalhos e numeração das páginas.
 - Imagens: **tela** (leve), **gráfica** (300 ppi) ou **original**; e se o fundo do papel sai na impressão.

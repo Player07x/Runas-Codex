@@ -2,7 +2,7 @@ import { Minus, Plus, Undo2 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { SaveStatus } from "../../components/kit/Layout"
-import { BOOK_MODELS, STYLE_KEYS, bookModel, modelNoteFor, modelNoteText, resolveStyle, vaultModels, type BookStyle, type ModelId } from "../../core/book-style"
+import { BOOK_MODELS, INDENT_MODES, STYLE_KEYS, TABLE_WIDTHS, bookModel, modelNoteFor, modelNoteText, resolveStyle, vaultModels, type BookStyle, type ModelId } from "../../core/book-style"
 import { bookProperties } from "../../core/books"
 import { scopeBookCss } from "../../core/books-finish"
 import { BOOK_SIZES, previewSettings, type BookSize } from "../../core/books-preview"
@@ -118,7 +118,13 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         <div className="book-style-row"><span>Entrelinha</span><ChoiceGroup label="Entrelinha" value={style.leading} options={[{ value: "justa", label: "Justa" }, { value: "normal", label: "Normal" }, { value: "folgada", label: "Folgada" }]} onChange={(v) => set("entrelinha", v, base.leading)} /></div>
         <div className="book-style-row"><span>Alinhamento</span><ChoiceGroup label="Alinhamento" value={style.justify ? "justificado" : "esquerda"} options={[{ value: "esquerda", label: "Esquerda" }, { value: "justificado", label: "Justificado" }]} onChange={(v) => set("alinhamento", v, base.justify ? "justificado" : "esquerda")} /></div>
         <label className="check"><input type="checkbox" checked={style.hyphenate} onChange={(e) => set("hifenizar", e.target.checked, base.hyphenate)} />Hifenizar em português</label>
-        <label className="check"><input type="checkbox" checked={style.indent} onChange={(e) => set("recuo", e.target.checked, base.indent)} />Recuo na primeira linha</label>
+      </Group>
+      <Group title="Parágrafos" open={!narrow}>
+        <label className="book-style-row"><span>Recuo na primeira linha</span><select className="select" value={style.indent} onChange={(e) => set("recuo", e.target.value, base.indent)}>{options(INDENT_MODES).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+        {style.indent !== "nenhum" && <div className="book-style-row"><span>Tamanho do recuo</span><ChoiceGroup label="Tamanho do recuo" value={String(style.indentEm)} options={INDENT_SIZES.map((n) => ({ value: String(n), label: `${n.toLocaleString("pt-BR")} em` }))} onChange={(v) => set("recuo_em", Number(v), base.indentEm)} /></div>}
+        {/* Sem `base`: o espaço padrão depende do recuo, então a escolha fica gravada mesmo quando coincide com ele. */}
+        <div className="book-style-row"><span>Espaço entre parágrafos (linhas)</span><ChoiceGroup label="Espaço entre parágrafos, em linhas" value={String(style.paragraphGap)} options={GAPS.map((n) => ({ value: String(n), label: GAP_LABELS[n] ?? String(n) }))} onChange={(v) => set("espaco_paragrafos", Number(v), undefined, "espaco_paragrafos")} /></div>
+        <p className="small muted">Vale no capítulo inteiro, também dentro de colunas, caixas e fichas. Sem escolha, quem recua não ganha espaço e quem não recua ganha meia linha.</p>
       </Group>
       <Group title="Cores">
         {([["cor_papel", "Papel", style.paper, base.paper], ["cor_texto", "Texto", style.ink, base.ink], ["cor_destaque", "Destaque", style.accent, base.accent]] as const).map(([key, label, value, baseValue]) =>
@@ -131,6 +137,7 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         <div className="book-style-row"><span>Tamanho</span><ChoiceGroup label="Tamanho da página" value={settings.size} options={(Object.keys(BOOK_SIZES) as BookSize[]).map((size) => ({ value: size, label: size === "6x9" ? "6×9" : size }))} onChange={(v) => set("pagina", v, "A4")} /></div>
         <div className="book-style-row"><span>Colunas do livro</span><ChoiceGroup label="Colunas do livro" value={String(style.columns) as "1" | "2" | "3"} options={[{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }]} onChange={(v) => set("colunas", Number(v), base.columns)} /></div>
         <p className="small muted">Um capítulo pode pedir outra com <code>colunas:</code> nas propriedades; quem já usa <code>::: runas-colunas</code> fica como está.</p>
+        <div className="book-style-row"><span>Tabelas</span><ChoiceGroup label="Largura das tabelas" value={style.tables} options={options(TABLE_WIDTHS)} onChange={(v) => set("tabelas", v, base.tables)} /></div>
         <label className="check"><input type="checkbox" checked={layout.mirrored} onChange={(e) => onChange({ espelhadas: e.target.checked || undefined })} />Páginas espelhadas (margem interna maior)</label>
         <label className="book-style-row"><span>Margem (mm)</span><input className="input book-number" type="number" min="0" max="40" step="0.5" placeholder={String(BOOK_SIZES[settings.size].margin)} value={typeof props.margem_mm === "number" ? props.margem_mm : ""} onChange={(e) => set("margem_mm", e.target.value === "" ? undefined : Number(e.target.value), undefined, "margem_mm")} /></label>
         <label className="book-style-row"><span>Sangria (mm)</span><input className="input book-number" type="number" min="0" max="10" step="0.5" value={typeof props.sangria_mm === "number" ? props.sangria_mm : 0} onChange={(e) => set("sangria_mm", e.target.value === "" ? undefined : Number(e.target.value), 0, "sangria_mm")} /></label>
@@ -146,6 +153,8 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         <div className="book-style-row"><span>Numeração</span><ChoiceGroup label="Numeração dos capítulos" value={layout.numbering} options={options(NUMBERINGS)} onChange={(v) => set("numeracao", v, "arabico")} /></div>
         <label className="check"><input type="checkbox" checked={layout.dropCap} onChange={(e) => set("capitular", e.target.checked || undefined)} />Letra capitular no começo do capítulo</label>
         <label className="check"><input type="checkbox" checked={settings.newChapter} onChange={(e) => onChange({ capitulos_nova_pagina: e.target.checked })} />Capítulos em página nova</label>
+        <label className="check"><input type="checkbox" checked={settings.newSection} onChange={(e) => set("secoes_nova_pagina", e.target.checked || undefined)} />Seções em página nova</label>
+        <p className="small muted">Um capítulo ou seção pode pedir o contrário no menu da estrutura (“Começar em página nova”), que grava <code>nova_pagina:</code> na nota.</p>
       </Group>
       <Group title="Cabeçalho e rodapé">
         <label className="book-style-row"><span>Cabeçalho</span><select className="select" value={layout.head} onChange={(e) => set("cabecalho", e.target.value, "livro-capitulo")}>{options(RUNNING_HEADS).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
@@ -175,6 +184,10 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
     </fieldset>
   </aside>
 }
+
+const INDENT_SIZES = [1, 1.5, 2, 3]
+const GAPS = [0, 0.25, 0.5, 1, 1.5]
+const GAP_LABELS: Record<number, string> = { 0: "Nenhum", 0.25: "¼", 0.5: "½", 1: "1", 1.5: "1½" }
 
 /** Grupo recolhível do painel; o título é um botão de verdade (summary) com o nome do grupo. */
 export function Group({ title, open = false, children }: { title: string; open?: boolean; children: ReactNode }) {

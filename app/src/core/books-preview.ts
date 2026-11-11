@@ -17,7 +17,19 @@ export function previewSettings(book: IndexedNote) {
   const data = bookProperties(book)
   const size: BookSize = typeof data.pagina === "string" && Object.hasOwn(BOOK_SIZES, data.pagina) ? data.pagina as BookSize : "A4"
   const theme: BookTheme = typeof data.tema === "string" && Object.hasOwn(BOOK_THEMES, data.tema) ? data.tema as BookTheme : "manual"
-  return { size, theme, newChapter: typeof data.capitulos_nova_pagina === "boolean" ? data.capitulos_nova_pagina : theme !== "minimalista" }
+  return {
+    size, theme, newChapter: typeof data.capitulos_nova_pagina === "boolean" ? data.capitulos_nova_pagina : theme !== "minimalista",
+    newSection: data.secoes_nova_pagina === true,
+  }
+}
+/**
+ * Se o capítulo ou a seção começa em página nova (U43): a nota manda (`nova_pagina:`); sem isso, o livro. Partes
+ * sempre; apêndices (índice, glossário) seguem os capítulos.
+ */
+export function startsNewPage(kind: string, own: unknown, settings: { newChapter: boolean; newSection: boolean }): boolean {
+  if (kind === "parte") return true
+  if (typeof own === "boolean") return own
+  return kind === "secao" ? settings.newSection : settings.newChapter
 }
 export interface PreviewChapter { path: string; title: string; kind: string; body: string }
 export function previewChapters(index: VaultIndex, book: IndexedNote, draft?: { path: string; text: string }): PreviewChapter[] {
@@ -38,7 +50,7 @@ export function pageRules(size: BookSize, options?: PrintOptions, layout: BookLa
   .book-print-cover { page: cover; break-after: page; }
   .book-print-credits { break-after: page; }
   .book-print-back { page: cover; break-before: page; }
-  .book-print .book-part, .book-print.chapters-new-page .book-chapter { break-before: page; }
+  .book-print .book-part, .book-print .nova-pagina { break-before: page; }
   .book-print .quebra-pagina { break-after: page; }
   .book-print .quebra-coluna { break-after: column; }
   .book-print .md-largo { column-span: all; }

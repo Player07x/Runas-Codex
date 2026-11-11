@@ -1666,3 +1666,18 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] As pastas mostram o número de notas num selo à direita e as subpastas têm uma linha-guia à esquerda.
 - [ ] Menu “⋯” → “Recolher tudo”: todas as pastas fecham, menos a da nota aberta.
 - [ ] No celular (ou tablet), as linhas de nota e pasta têm 44 px e a lista não rola para os lados.
+## Atualização 1.3.0 · Diagramação dos livros (PR G1: U43, parte 1)
+
+- [ ] No Valknut (Diagramar › Estilo do livro › Parágrafos), trocar o recuo entre Nenhum, Todos os parágrafos e
+  Menos o primeiro depois de título: o recuo vale também dentro das colunas, caixas e fichas; o `recuo: true` que o
+  livro já tinha continua igual a “Menos o primeiro”.
+- [ ] Trocar o tamanho do recuo e o espaço entre parágrafos (Nenhum a 1½): muda igual no capítulo, nas colunas e nas
+  fichas.
+- [ ] Página › Tabelas: a Tabela de Carma deixa de dar ¼ da largura para a coluna Descrição vazia; “Ajustar ao
+  conteúdo” deixa as tabelas do tamanho do texto.
+- [ ] As seções (Runas de Reforço, Magias de Fogo…) não começam mais numa página nova depois de uma página quase
+  vazia. No menu “⋯” de uma seção, “Começar em página nova” liga a página nova só dela (grava `nova_pagina:`);
+  “Seções em página nova” liga para todas.
+- [ ] Exportar em PDF, EPUB e DOCX: o recuo e o espaço saem como na prévia.
+- [ ] Abrir no Obsidian um capítulo com `nova_pagina:` e o livro com `recuo: todos`: as propriedades aparecem como
+  texto e nada quebra.

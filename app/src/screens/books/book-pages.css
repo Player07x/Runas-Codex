@@ -32,7 +32,9 @@
 .book-print .callout.segredo.hidden .callout-body { filter: none; }
 .book-print .callout-title button { display: none; }
 .book-print .table-wrap { overflow: visible; }
-.book-print table { font-size: 9pt; table-layout: fixed; }
+/* Tabelas (U43): as colunas seguem o conteúdo (uma coluna vazia não ocupa ¼ da largura); a largura da tabela vem do
+   Estilo do livro (Ajustar ao conteúdo · Largura toda). */
+.book-print .md table { font-size: 9pt; table-layout: auto; width: var(--book-table-width, 100%); max-width: 100%; }
 .book-print th, .book-print td { padding: 2mm; border-color: var(--rule); }
 .book-print th { font-size: 8pt; color: var(--accent); }
 .book-print table.listrada tr:nth-child(odd) td { background: var(--panel-2); }
@@ -73,10 +75,14 @@
 /* L3: o estilo resolvido (core/book-style.ts) chega como variáveis no .book-paper; os temas antigos viraram modelos. */
 .book-print { font-size: var(--book-size, 11pt); line-height: var(--book-leading, 1.4); }
 .book-print p, .book-print li { text-align: var(--book-align, left); }
-/* Recuo na primeira linha (U15, estilo do livro): o parágrafo do corpo logo depois de outro recua e cola nele, como nos
-   livros impressos. O primeiro depois de título, imagem, lista, citação, callout ou ficha não recua (não é p + p). */
-.book-print :is(.book-chapter, .book-section) > .md > p + p { margin-top: var(--book-indent-gap, 0.8em); text-indent: var(--book-indent, 0); }
-.book-print :is(.book-chapter, .book-section) > .md > p + p:has(> img:only-child, > .embed-image:only-child) { text-indent: 0; }
+/* Parágrafos (U15, U43): uma regra só para o capítulo inteiro, também dentro de colunas, citações, caixas e fichas.
+   O recuo vem do Estilo do livro (--book-indent; o primeiro parágrafo depois de um título usa --book-indent-first) e
+   o espaço entre dois parágrafos seguidos é --book-gap. Não recuam: imagem sozinha, item de lista, célula de tabela e
+   o “título de bloco” à mão (**NOME**\ e a linha de baixo). */
+.book-print :is(.book-chapter, .book-section) .md p { text-indent: var(--book-indent, 0); }
+.book-print :is(.book-chapter, .book-section) .md :is(p:first-child, :is(h1, h2, h3, h4, h5, h6, .ficha-tags, .ficha-stats, .ficha-campos) + p) { text-indent: var(--book-indent-first, 0); }
+.book-print :is(.book-chapter, .book-section) .md :is(p:has(> img:only-child, > .embed-image:only-child), li p, td p, th p, p.ficha-tags, p.ficha-campos, p:has(> strong:first-child + br)) { text-indent: 0; }
+.book-print :is(.book-chapter, .book-section) .md p + p { margin-top: var(--book-gap, .7em); }
 .book-print :is(.book-chapter, .book-section) > .md { column-count: var(--book-columns, 1); column-gap: 6mm; }
 /* Grimório: moldura dupla na página, herdada do tema Pergaminho. */
 .book-paper.modelo-grimorio .pagedjs_pagebox { outline: 3px double var(--rule); outline-offset: -5mm; }
@@ -120,7 +126,7 @@
 .book-print .book-chapter-opening { margin: 0 0 6mm; break-after: avoid; break-inside: avoid; }
 .book-print .book-chapter-opening h1.book-chapter-heading { margin: 0; }
 /* Sem página nova, o capítulo seguinte ganha espaço antes da abertura (senão o “Capítulo 2” colava no texto de cima). */
-.book-print:not(.chapters-new-page) .book-chapter > .book-chapter-opening { margin-top: 9mm; }
+.book-print .book-chapter:not(.nova-pagina) > .book-chapter-opening { margin-top: 9mm; }
 .book-print .book-chapter-kicker { margin: 0 0 1.5mm; font-family: var(--font-display); font-size: 8.5pt; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
 /* Faixa: o título numa faixa na cor de destaque. */
 .book-print.abertura-faixa .book-chapter > .book-chapter-opening { padding: 6mm 6mm 5mm; background: var(--accent); }
@@ -158,7 +164,8 @@
 .book-print .ficha-campo b, .book-print .ficha .ficha-rotulo { color: var(--accent); font-variant: small-caps; font-weight: 700; letter-spacing: .04em; }
 .book-print .ficha-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(13mm, 1fr)); gap: 1mm 2mm; margin: .4mm 0 1.8mm; font-variant-numeric: lining-nums tabular-nums; font-weight: 600; }
 .book-print .ficha-stats small { display: block; color: var(--accent); font-size: .78em; font-variant: small-caps; font-weight: 700; letter-spacing: .05em; }
-.book-print .ficha .callout-body > p { margin: 0 0 .45em; }
+/* O espaço entre os parágrafos da ficha é o mesmo do livro (--book-gap, U43). */
+.book-print .ficha .callout-body > p { margin-bottom: 0; }
 /* O texto da ficha começa depois de um respiro: a linha em branco (`>`) depois dos campos, na nota, vira espaço. */
 .book-print .ficha .callout-body > :is(.ficha-tags, .ficha-stats, .ficha-campos) + p { margin-top: .7em; }
 .book-print .ficha img { display: block; max-width: 70%; max-height: 45mm; margin: 2mm auto 0; }
