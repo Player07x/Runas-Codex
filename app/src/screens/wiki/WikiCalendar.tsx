@@ -19,6 +19,9 @@ import { useRemembered } from "../../lib/remembered"
 import { YearGrid } from "./CalendarYear"
 import { useSetWorldToday } from "./world-today"
 import { CalendarConfig, takeConfigureRequest } from "./CalendarConfig"
+import { campaignTime } from "../../core/campaign-time"
+import { listCampaigns } from "../../core/campaigns"
+import { campaignRoute } from "../campaigns/campaign-state"
 
 type CalendarMode = "mes" | "ano"
 const parseMode = (raw: unknown): CalendarMode => (raw === "ano" ? "ano" : "mes")
@@ -174,6 +177,11 @@ export function WikiCalendar({ path }: { path?: string }) {
   }
 
   const refs = all.filter((c): c is CalendarRef => "calendar" in c)
+  // U39: campanhas desta wiki com data própria neste calendário (a data delas fica na nota da campanha).
+  const campaignDates = useMemo(() => (calendar ? listCampaigns(index).filter((c) => !c.wiki || `Wikis/${c.wiki}/` === wiki!.root).flatMap((c) => {
+    const time = campaignTime(c.home ? index.note(c.home)?.meta.frontmatter?.data : undefined, calendar)
+    return time ? [{ name: c.name, path: c.home!, time }] : []
+  }) : []), [index, wiki, calendar, vault.version])
   const [syncToday, setSyncToday] = useState(true)
   const linked = ref ? refs.filter((c) => c.path !== ref.path && calendarOffsets(refs, ref.path).has(c.path)) : []
   // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
@@ -331,6 +339,10 @@ export function WikiCalendar({ path }: { path?: string }) {
                 </button>
               )}
             </div>
+            {campaignDates.length > 0 && <div className="stack" style={{ gap: 2 }}>
+              <span className="tiny muted">Campanhas com data própria (o “hoje” acima não muda a delas):</span>
+              {campaignDates.map((c) => <a key={c.path} className="small" href={href(campaignRoute(c.name))}>{c.name}: {formatDate(calendar, c.time.today)}{c.time.hora ? `, ${c.time.hora}` : ""}</a>)}
+            </div>}
             <TypedToday key={`${ref!.path}:${calendar.today ? worldDateText(calendar.today) : ""}`} calendar={calendar} readOnly={readOnly} onSet={(next) => setToday(next)} />
             {linked.length > 0 && (
               <label className="check small">
