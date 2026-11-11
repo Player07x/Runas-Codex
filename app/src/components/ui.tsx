@@ -12,7 +12,7 @@ export function Modal({ title, onClose, children, footer, wide }: { title: React
       <div className={`modal ${wide ? "wide" : ""}`} ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="modal-head">
           <strong id={titleId}>{title}</strong>
-          <button className="icon-btn sm" onClick={onClose} aria-label="Fechar">
+          <button type="button" className="icon-btn sm" onClick={onClose} aria-label="Fechar">
             <X size={16} />
           </button>
         </div>
@@ -27,7 +27,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
   return (
     <div className="segmented" role="tablist" aria-label={label}>
       {options.map((option) => (
-        <button key={option.value} title={typeof option.label === "string" ? option.label : undefined} role="tab" tabIndex={value === option.value ? 0 : -1} aria-selected={value === option.value} onKeyDown={event => {
+        <button type="button" key={option.value} title={typeof option.label === "string" ? option.label : undefined} role="tab" tabIndex={value === option.value ? 0 : -1} aria-selected={value === option.value} onKeyDown={event => {
           const at = options.findIndex(item => item.value === value)
           const next = event.key === "ArrowRight" ? (at + 1) % options.length : event.key === "ArrowLeft" ? (at + options.length - 1) % options.length : event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : -1
           if (next < 0) return
@@ -53,7 +53,7 @@ export function Empty({ title, children, action }: { title: string; children?: R
 }
 
 export function Switch({ on, onChange, label }: { on: boolean; onChange?: (value: boolean) => void; label: string }) {
-  return <button className={`switch ${on ? "on" : ""}`} disabled={!onChange} role="switch" aria-checked={on} aria-label={label} onClick={() => onChange?.(!on)} />
+  return <button type="button" className={`switch ${on ? "on" : ""}`} disabled={!onChange} role="switch" aria-checked={on} aria-label={label} onClick={() => onChange?.(!on)} />
 }
 
 export function Progress({ value, max, color = "var(--cyan)" }: { value: number; max: number; color?: string }) {

@@ -36,7 +36,7 @@ export class NoteWindows {
       minWidth: 360,
       minHeight: 400,
       backgroundColor: "#11131a",
-      title: "Runas-Codex",
+      title: `${noteTitle(route)} — Runas-Codex`,
       autoHideMenuBar: true,
       webPreferences: {
         preload: join(__dirname, "../preload/index.js"),
@@ -54,6 +54,8 @@ export class NoteWindows {
       if (url.split("#")[0] !== window.webContents.getURL().split("#")[0]) event.preventDefault()
     })
     attachContextMenu(window)
+    // U40: a janela da nota mantém o nome da nota com que abriu, mesmo com o título da rota mudando.
+    window.webContents.on("page-title-updated", (event) => event.preventDefault())
     this.windows.add(window)
     let closing = false, flushing = false
     window.on("close", event => {
@@ -72,4 +74,12 @@ export class NoteWindows {
     if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(`${process.env.ELECTRON_RENDERER_URL.replace(/\/$/, "")}/?janela=1#${route}`)
     else void window.loadFile(join(__dirname, "../renderer/index.html"), { query: { janela: "1" }, hash: route })
   }
+}
+
+/** Nome da nota de uma rota `/notas/<caminho>`: o último trecho, sem `.md`. */
+export function noteTitle(route: string): string {
+  const last = route.slice("/notas/".length).split("/").filter(Boolean).at(-1) ?? ""
+  let name = last
+  try { name = decodeURIComponent(last) } catch { /* fica como veio */ }
+  return name.replace(/\.md$/i, "") || "Nota"
 }

@@ -225,6 +225,8 @@ function createMainWindow(): BrowserWindow {
 
   // Sugestões do corretor e recortar/copiar/colar no clique direito.
   attachContextMenu(window)
+  // U40: o título de cada rota (document.title) serve ao leitor de tela; a janela fica sempre "Runas-Codex".
+  window.webContents.on("page-title-updated", (event) => event.preventDefault())
 
   if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void window.loadFile(join(__dirname, "../renderer/index.html"))

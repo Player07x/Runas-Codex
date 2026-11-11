@@ -499,3 +499,6 @@
 .wiki-token-picker { list-style: none; margin: 0; padding: 0; gap: 4px; }
 .wiki-token-choice { width: 100%; justify-content: flex-start; gap: 10px; min-height: 44px; }
 .wiki-token-choice[aria-current="true"] { border-color: var(--cyan); }
+
+/* U41: o campo do tamanho do token fica com a largura do número; os atalhos vão ao lado. */
+.vtt-root .field.token-size-field .kit-token-size-input input.input:not([type="color"]) { width: 5rem; }

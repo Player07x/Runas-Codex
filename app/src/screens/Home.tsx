@@ -247,7 +247,7 @@ function Sparks() {
       >
         <label className="sr-only" htmlFor="home-capture-input">Uma ideia para guardar</label>
         <input id="home-capture-input" className="input" placeholder="Uma ideia antes que ela escape…" value={text} onChange={(event) => setText(event.target.value)} disabled={readOnly} />
-        <button className="btn primary" disabled={!text.trim() || readOnly}>
+        <button type="submit" className="btn primary" disabled={!text.trim() || readOnly}>
           <Plus size={16} /> Capturar
         </button>
       </form>

@@ -159,6 +159,16 @@ export const SMOKE_SCRIPT = `(async () => {
   result.linkPreview = (await until(() => document.querySelector(".link-preview .link-preview-head strong")?.textContent, 30)) ?? ""
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
 
+  // U36: a barra do topo mede sempre --topbar-height, em toda rota (antes encolhia nas páginas longas).
+  const topbarExpected = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height"))
+  result.topbar = { expected: topbarExpected, wrong: [] }
+  for (const route of ["/", "/notas", "/notas/grafico", "/agenda", "/wiki", "/wiki/calendario", "/wiki/linha-do-tempo", "/wiki/mapa", "/campanhas", "/livros", "/vtt", "/transferir", "/config"]) {
+    location.hash = route
+    await wait(400)
+    const height = document.querySelector(".topbar")?.getBoundingClientRect().height ?? 0
+    if (Math.abs(height - topbarExpected) > 0.5) result.topbar.wrong.push(route + " " + height)
+  }
+
   if (result.vault.readOnly) {
     result.write = await errorOf(bridge.vault.write("Notas/Smoke.md", "x", null))
     result.snippet = await errorOf(bridge.vault.installSnippet("x"))
@@ -628,6 +638,8 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
   if (!campaign || campaign.clocks !== 1 || campaign.worldClock !== true || campaign.quest !== true || campaign.clue !== true || campaign.cards !== 3 || campaign.edges !== 1) return false
   if (result.migrationFound !== 4) return false
   if (typeof result.linkPreview !== "string" || !result.linkPreview) return false
+  const topbar = result.topbar as { expected?: number; wrong?: string[] } | undefined
+  if (!topbar || !(Number(topbar.expected) > 0) || !Array.isArray(topbar.wrong) || topbar.wrong.length > 0) return false
   if (!/^\d+\.\d+\.\d+/.test(String(result.version)) || result.updatesRow !== true) return false
   if (vault?.readOnly) return String(result.write).startsWith("Cofre em somente leitura") && String(result.snippet).startsWith("Cofre em somente leitura") && String(result.binaryWrite).startsWith("Cofre em somente leitura")
   const links = Array.isArray(result.linksAfterRename) ? (result.linksAfterRename as string[]) : []

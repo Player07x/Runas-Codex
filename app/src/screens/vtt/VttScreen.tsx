@@ -310,7 +310,7 @@ function JoinRoom() {
               <input className="input mono" placeholder="http://192.168.0.12:30000/?k=… ou https://….trycloudflare.com/?k=…" value={link} onChange={(event) => setLink(event.target.value)} aria-label="Link da sala" autoFocus />
             </label>
             {error && <span className="small" style={{ color: "var(--red)" }}>{error}</span>}
-            <button className="btn primary lg" disabled={!link.trim()}>
+            <button type="submit" className="btn primary lg" disabled={!link.trim()}>
               <LogIn size={18} /> Entrar
             </button>
           </form>

@@ -187,7 +187,7 @@ function PropertiesPanel({ index, path, readOnly, onSetProperty, onCreate }: Pro
               </option>
             ))}
           </select>
-          <button className="icon-btn" title="Adicionar propriedade" disabled={!newKey.trim()}>
+          <button type="submit" className="icon-btn" title="Adicionar propriedade" disabled={!newKey.trim()}>
             <Plus size={16} />
           </button>
         </form>

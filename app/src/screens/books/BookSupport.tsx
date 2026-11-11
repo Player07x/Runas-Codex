@@ -118,7 +118,7 @@ function ChapterFields({ chapter }: { chapter: IndexedNote }) {
     <label className="field"><span>Tipo</span><select className="select" value={values.tipo} disabled={readOnly} onChange={(event) => setValues({ ...values, tipo: event.target.value })}>{options(KINDS, values.tipo).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label className="field"><span>Status</span><select className="select" value={values.status} disabled={readOnly} onChange={(event) => setValues({ ...values, status: event.target.value })}>{options(STATUSES, values.status).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label className="field"><span>Resumo</span><textarea className="input" rows={3} value={values.resumo} disabled={readOnly} onChange={(event) => setValues({ ...values, resumo: event.target.value })} /></label>
-    <button className="btn sm primary" disabled={readOnly || busy || !changed.length}>{busy ? "Salvando…" : "Salvar capítulo"}</button>
+    <button type="submit" className="btn sm primary" disabled={readOnly || busy || !changed.length}>{busy ? "Salvando…" : "Salvar capítulo"}</button>
     {readOnly && <p className="small muted">Cofre em somente leitura.</p>}
   </form>
 }
