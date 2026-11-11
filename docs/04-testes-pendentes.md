@@ -1648,3 +1648,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] Novo artigo › Calendário com cada modelo (Gregoriano, 12×30, 13×28, Em branco): a tela abre na aba Configurar;
   no Gregoriano, 11/11/2026 cai numa quarta.
 - [ ] No celular (320 px), o botão Configurar abre o painel por cima, sem rolagem para os lados.
+
+## Atualização 1.3.0 · Tempo de cada campanha (PR E: U39)
+
+- [ ] Numa campanha que segue a wiki, o cartão do relógio diz “segue a wiki”. Clicar +1 h: passa a “tempo desta
+  campanha”, a nota da campanha ganha `data_mundo: "…"`, `hora_mundo: "…"` e `periodo_mundo`, e o bloco do calendário
+  **não muda** (conferir o `hoje:` e a `hora:` na nota do calendário).
+- [ ] Duas campanhas da mesma wiki avançam datas diferentes; Wiki › Calendário › Hoje no mundo lista as duas.
+- [ ] Marcar uma sessão como realizada e aceitar “avançar hoje no mundo”: muda a data da campanha, não a da wiki.
+- [ ] “Configurar o relógio” (horas e períodos) muda a regra no calendário e vale para todas as campanhas.
+- [ ] ⋯ › Voltar a seguir a wiki: as três propriedades somem e o cartão volta a mostrar o “hoje” da wiki.

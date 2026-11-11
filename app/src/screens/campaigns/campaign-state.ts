@@ -8,6 +8,7 @@ import { listWikis, mainCalendar, type CalendarRef } from "../../core/wiki"
 import { nextSession, overdueSessions, type NextSession } from "../../core/next-session"
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
+import { calendarForCampaign, campaignTime } from "../../core/campaign-time"
 
 /** Rota de uma tela da campanha (`/campanhas/<nome>/<seção>/<caminho>`). */
 export function campaignRoute(name: string, section = "", id?: string): string {
@@ -44,6 +45,8 @@ export interface CampaignData {
   calendar: Calendar | null
   /** A nota do calendário, para avançar “hoje no mundo” pelo Painel. */
   calendarRef: CalendarRef | null
+  /** U39: a campanha tem data e hora próprias (`data_mundo` na nota dela); sem isso, segue o `hoje` da wiki. */
+  ownTime: boolean
   readOnly: boolean
 }
 
@@ -62,7 +65,8 @@ export function useCampaignData(name: string): CampaignData {
     // O calendário principal da wiki da campanha (o da nota inicial ou o que as datas mais usam).
     const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
     const calendarRef = mainCalendar(index, root, listWikis(index).find((w) => w.root === root)?.home)
-    const calendar = calendarRef?.calendar ?? null
+    const time = campaignTime(home?.meta.frontmatter?.data, calendarRef?.calendar ?? null)
+    const calendar = calendarRef ? calendarForCampaign(calendarRef.calendar, time) : null
     return {
       campaign,
       ...(home ? { home } : {}),
@@ -85,6 +89,7 @@ export function useCampaignData(name: string): CampaignData {
       stats: campaignStats(sessions, players),
       calendar,
       calendarRef,
+      ownTime: time !== null,
       readOnly,
     }
     // `version` muda a cada alteração do índice.

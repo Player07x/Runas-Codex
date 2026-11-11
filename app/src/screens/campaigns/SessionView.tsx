@@ -25,9 +25,9 @@ import { SavedMark, useSavedMark } from "./SavedMark"
 import { ChangesSinceCard } from "./CampaignInsights"
 import { worldDateText, type WorldDate } from "../../core/calendar"
 import { worldDateAhead } from "../../core/world-today"
-import { useSetWorldToday } from "../wiki/world-today"
 import { useCreateRequest } from "../../lib/create-request"
 import { Link2 } from "lucide-react"
+import { useSetCampaignTime } from "./campaign-time"
 
 export function SessionsView({ data, path }: { data: CampaignData; path?: string }) {
   if (path) return <SessionPage key={path} data={data} path={path} />
@@ -360,7 +360,7 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
   }
   // Marcar como realizada uma sessão que termina depois de “hoje no mundo” oferece avançar o calendário.
   const [advance, setAdvance] = useState<WorldDate | null>(null)
-  const setWorldToday = useSetWorldToday()
+  const setCampaignTime = useSetCampaignTime()
   const changeStatus = (status: SessionStatus) => void set("status", status).then((ok) => {
     if (!ok) return
     mark("status")
@@ -368,7 +368,7 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
   })
   const advanceWorld = (date: WorldDate) => {
     if (!data.calendarRef) return
-    setWorldToday(data.calendarRef, date).then(() => {
+    setCampaignTime(data, date).then(() => {
       setAdvance(null)
       toast(`Hoje no mundo: ${worldDateLabel(data.calendar, worldDateText(date))}`)
     }, (err: unknown) => toast(err instanceof Error ? err.message : String(err)))
