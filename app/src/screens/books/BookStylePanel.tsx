@@ -125,6 +125,8 @@ export function BookStylePanel({ book, style, onChange, onUndo, canUndo, saveSta
         {/* Sem `base`: o espaço padrão depende do recuo, então a escolha fica gravada mesmo quando coincide com ele. */}
         <div className="book-style-row"><span>Espaço entre parágrafos (linhas)</span><ChoiceGroup label="Espaço entre parágrafos, em linhas" value={String(style.paragraphGap)} options={GAPS.map((n) => ({ value: String(n), label: GAP_LABELS[n] ?? String(n) }))} onChange={(v) => set("espaco_paragrafos", Number(v), undefined, "espaco_paragrafos")} /></div>
         <p className="small muted">Vale no capítulo inteiro, também dentro de colunas, caixas e fichas. Sem escolha, quem recua não ganha espaço e quem não recua ganha meia linha.</p>
+        <label className="check"><input type="checkbox" checked={settings.blankLines} onChange={(e) => set("linhas_vazias", e.target.checked ? "respeitar" : undefined)} />Linhas vazias contam</label>
+        <p className="small muted">Cada linha vazia a mais entre dois blocos vira uma linha de espaço, só no livro (o Obsidian continua juntando). Para um ajuste num lugar só: <code>%% livro: espaco 2 %%</code>, <code>%% livro: nova-pagina %%</code> ou <code>%% livro: largura-toda %%</code> antes de uma tabela.</p>
       </Group>
       <Group title="Cores">
         {([["cor_papel", "Papel", style.paper, base.paper], ["cor_texto", "Texto", style.ink, base.ink], ["cor_destaque", "Destaque", style.accent, base.accent]] as const).map(([key, label, value, baseValue]) =>

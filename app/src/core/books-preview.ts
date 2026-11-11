@@ -20,6 +20,8 @@ export function previewSettings(book: IndexedNote) {
   return {
     size, theme, newChapter: typeof data.capitulos_nova_pagina === "boolean" ? data.capitulos_nova_pagina : theme !== "minimalista",
     newSection: data.secoes_nova_pagina === true,
+    /** `linhas_vazias: respeitar` (U43): as linhas vazias seguidas do capítulo viram espaço no livro (core/book-source.ts). */
+    blankLines: data.linhas_vazias === "respeitar",
   }
 }
 /**
@@ -52,6 +54,7 @@ export function pageRules(size: BookSize, options?: PrintOptions, layout: BookLa
   .book-print-back { page: cover; break-before: page; }
   .book-print .book-part, .book-print .nova-pagina { break-before: page; }
   .book-print .quebra-pagina { break-after: page; }
+  .book-print .livro-nova-pagina { break-before: page; }
   .book-print .quebra-coluna { break-after: column; }
   .book-print .md-largo { column-span: all; }
   .book-print h1, .book-print h2, .book-print h3 { break-after: avoid; }

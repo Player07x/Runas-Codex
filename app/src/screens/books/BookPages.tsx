@@ -4,6 +4,7 @@ import { bookProperties } from "../../core/books"
 import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings, startsNewPage } from "../../core/books-preview"
 import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
 import { bookStyle, styleCss } from "../../core/book-style"
+import { bookSource } from "../../core/book-source"
 import { bookLayout, chapterLabel, chapterNumbers } from "../../core/book-layout"
 import { insertToc, markDropCaps } from "./book-toc"
 import { layoutFichas } from "./book-fichas"
@@ -187,7 +188,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
               <h1 className="book-chapter-heading">{title}</h1>
               {image && <div className="book-opening-art"><PreviewMarkdown path={chapter.path} text={`!${image}`} /></div>}
             </header>)}
-            {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={body} showSecrets={showSecrets} />}
+            {chapter.kind === "indice" ? <ul>{indexEntries(index, book, draft).map(entry => <li key={entry.term}><strong>{entry.term}</strong>: {entry.chapters.map((number, i) => <span key={number}>{i > 0 && ", "}<a href={`#book-chapter-${number}`}>Capítulo {number + 1}</a></span>)}</li>)}</ul> : <PreviewMarkdown path={chapter.path} text={bookSource(body, settings)} showSecrets={showSecrets} />}
           </section>
         })}
         {whole && typeof data.contracapa === "string" && data.contracapa.trim() && <section className="book-print-back"><h1>{book.name}</h1><p>{data.contracapa}</p></section>}
