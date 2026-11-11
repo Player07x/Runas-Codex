@@ -59,6 +59,18 @@ padrão do Tasks.
 Tarefas com prazo, agendamento ou início aparecem no dia certo da Agenda e na aba **Tarefas** do painel, com a nota
 de onde vieram. O **Tempo livre** (⋯ da Agenda) usa seus horários disponíveis e desconta os eventos.
 
+### Vista Tarefas, atrasos, falhas e hábitos
+
+Em Agenda › **Tarefas** ficam as tarefas de todas as notas, em seções: **Atrasadas** (prazo antes de hoje), **Hoje**,
+**Hábitos**, **Próximas** e, recolhidas, **Sem prazo** e as **Feitas** dos últimos 7 dias. O campo do topo cria uma
+tarefa em `Agenda/Tarefas.md` (as que já estão em outras notas ficam onde estão).
+
+- **Falhou:** numa tarefa atrasada, o botão ⊗ (ou o botão direito na caixa) cancela com ❌ hoje. Como o cancelamento é
+  depois do prazo, o app mostra “Falhou”; cancelada antes do prazo continua “Cancelada”. No Obsidian, as duas aparecem
+  como canceladas. Se a tarefa repete, a próxima ocorrência é criada, como ao concluir.
+- **Hábito diário:** marque **Todo dia** ao criar. A linha ganha `🔁 every day 🏁 delete`: ao concluir, a ocorrência feita
+  sai e só a de amanhã fica, então a nota não cresce uma linha por dia.
+
 ### Configurações
 
 Em Configurações › Agenda e tarefas: o filtro global (só linhas com `#tarefa`, por exemplo, contam), o formato
