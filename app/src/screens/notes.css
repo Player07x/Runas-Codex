@@ -107,3 +107,18 @@
 .row-menu:has([aria-expanded="true"]) { display: inline-flex; }
 @media (hover: none) { .row-menu, .note-row:is(:hover, :focus-within) > .row-menu, .vault-folder-wrap > .row-menu:is(:hover, :focus-within) { display: none; } }
 .notes-hint { display: flex; align-items: center; gap: 8px; margin: 0; }
+
+/* U42: árvore compacta. Uma linha de 32 px por nota e por pasta (44 px no toque e com “Controles maiores”), a
+   contagem numa bolinha à direita e 16 px de recuo por nível com uma linha-guia. */
+.list-item.note-item.compact { align-items: center; min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
+.vault-folder > summary.folder-summary { min-height: 32px; padding: 4px 10px; }
+.vault-folder-wrap > .row-menu { top: 16px; }
+.folder-badge { flex: none; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font: 600 calc(11.5px * var(--font-scale, 1)) / 18px var(--font-mono); text-align: center; font-variant-numeric: tabular-nums; }
+.vault-folder-children { position: relative; margin-left: 15px; padding-left: 8px; border-left: 1px solid var(--line); }
+.vault-folder-children:hover { border-left-color: var(--line-strong); }
+@media (pointer: coarse) {
+  .list-item.note-item.compact, .vault-folder > summary.folder-summary { min-height: 44px; }
+  .vault-folder-wrap > .row-menu { top: 22px; }
+}
+:root[data-tablet="true"] .list-item.note-item.compact, :root[data-tablet="true"] .vault-folder > summary.folder-summary { min-height: 44px; }
+:root[data-tablet="true"] .vault-folder-wrap > .row-menu { top: 22px; }

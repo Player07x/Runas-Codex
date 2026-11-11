@@ -2,7 +2,7 @@ import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
 import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
-import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault } from "lucide-react"
+import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
@@ -398,14 +398,16 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian).
       onClick={(event) => (event.ctrlKey || event.metaKey) && (event.preventDefault(), openNote(n.path, "aba"))}
       onAuxClick={(event) => event.button === 1 && (event.preventDefault(), openNote(n.path, "aba"))}
-      className={`list-item note-item ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
+      title={extra === undefined ? preview(n) || undefined : undefined}
+      className={`list-item note-item ${extra === undefined ? "compact" : ""} ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
       <span className="grow" style={{ minWidth: 0 }}>
         <span className="truncate note-item-name" style={{ display: "block", fontWeight: 600 }}>
           {flags.pinned && <Pin size={12} className="note-pin" aria-label="fixada" />}
           <NoteIcon icon={String(n.meta.frontmatter?.data?.icone ?? "file")} color={flags.color} />{" "}
           {n.name}
         </span>
-        <span className="truncate tiny faint" style={{ display: "block" }}>{extra ?? (preview(n) || "Vazia")}</span>
+        {/* U42: na árvore, uma linha só; a prévia fica no título (dica) e a segunda linha só aparece na busca. */}
+        {extra !== undefined && <span className="truncate tiny faint" style={{ display: "block" }}>{extra}</span>}
       </span>
     </a>
     <span className="row-menu"><OverflowMenu label={`Ações da nota ${n.name}`} triggerClassName="icon-btn sm" items={noteMenu(n.path)} /></span>
@@ -455,7 +457,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     ]
   }
 
-  // Segunda linha da pasta, como a prévia da nota: as duas ficam da mesma altura.
+  const [collapseAll, setCollapseAll] = useState(0)
+  // Contagem por extenso da pasta: dica e nome acessível da bolinha (U42).
   const folderCount = (folder: TreeFolder) => {
     const parts = [folder.notes.length === 1 ? "1 nota" : `${folder.notes.length} notas`]
     if (folder.folders.size) parts.push(folder.folders.size === 1 ? "1 pasta" : `${folder.folders.size} pastas`)
@@ -471,18 +474,16 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     const content = (
       <>
         {subfolders.map((sub) => (
-          <LazyFolder key={sub.path} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
+          <LazyFolder key={sub.path} collapse={collapseAll} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
             <summary className="row folder-summary" {...dragSource(sub.path)} {...contextMenuProps((at) => setMenu({ at, kind: "folder", path: sub.path }))}>
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={14} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />}
-              <span className="grow" style={{ minWidth: 0 }}>
-                <span className="truncate" style={{ display: "block" }}>{sub.name}</span>
-                <span className="truncate tiny faint folder-count">{folderCount(sub)}</span>
-              </span>
+              <span className="grow truncate" style={{ minWidth: 0 }}>{sub.name}</span>
+              <span className="folder-badge" title={folderCount(sub)} aria-label={folderCount(sub)}>{sub.notes.length}</span>
             </summary>} actions={
               <span className="row-menu folder-menu"><OverflowMenu label={`Ações da pasta ${sub.name}`} triggerClassName="icon-btn sm" items={folderMenu(sub.path)} /></span>
             }>
-            {() => <div style={{ paddingLeft: 10 }}>{renderFolder(sub, depth + 1)}</div>}
+            {() => <div className="vault-folder-children">{renderFolder(sub, depth + 1)}</div>}
           </LazyFolder>
         ))}
         <NoteChunks items={items} active={note?.path} render={noteItem} />
@@ -498,6 +499,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     ] : []),
     { label: "Nota aleatória", icon: <Shuffle size={16} />, onSelect: () => { const picked = pickRandom(); if (picked) navigate(vaultRoute(picked)); else toast("Não há notas para sortear.") } },
     { label: "Gráfico", icon: <Network size={16} />, onSelect: () => navigate("/notas/grafico") },
+    { label: "Recolher tudo", icon: <ChevronsDownUp size={16} />, onSelect: () => setCollapseAll((n) => n + 1) },
     sep,
     ...(!readOnly ? [{ label: "Buscar e substituir…", icon: <Replace size={16} />, onSelect: () => void flushOpenNotes().then(() => setReplacing(true)) }] : []),
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(currentFolder ? currentFolder + "/" : root).map((note) => note.path), title: currentFolder || root || vault.info?.name || "Notas" }) },
@@ -784,9 +786,11 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
  * fechadas desenhavam tudo escondido. Em cofre pequeno continua tudo no DOM, como antes (a busca do navegador e o
  * smoke do Electron contam com isso). Abre sozinha quando a nota aberta está dentro dela.
  */
-function LazyFolder({ lazy, initialOpen, forceOpen, className, zone, summary, actions, children }: { lazy: boolean; initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
+function LazyFolder({ collapse, lazy, initialOpen, forceOpen, className, zone, summary, actions, children }: { collapse: number; lazy: boolean; initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
   const [open, setOpen] = useState(initialOpen || forceOpen)
   useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
+  // "Recolher tudo" (U42): cada pedido fecha a pasta, menos a que tem a nota aberta.
+  useEffect(() => { if (collapse > 0 && !forceOpen) setOpen(false) }, [collapse])
   // Os botões da pasta ficam fora do <summary> (T7: controle dentro de controle confunde teclado e leitor de tela).
   return (
     <div className="vault-folder-wrap">

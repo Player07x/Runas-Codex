@@ -1619,3 +1619,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   esse tamanho, centrado na grade; os atalhos 0,5 · 1 · 2 · 3 · 4 continuam a um toque. No celular, os atalhos têm
   44 px.
 - [ ] No evento da Agenda, ligar e desligar “Dia inteiro” não salva nem fecha o diálogo.
+
+## Atualização 1.3.0 · Barra das Notas (PR F: U42)
+
+- [ ] Na barra das Notas, cada nota ocupa uma linha só (sem a prévia embaixo); passar o mouse mostra a prévia como
+  dica. Na busca, a linha com o trecho encontrado continua aparecendo.
+- [ ] As pastas mostram o número de notas num selo à direita e as subpastas têm uma linha-guia à esquerda.
+- [ ] Menu “⋯” → “Recolher tudo”: todas as pastas fecham, menos a da nota aberta.
+- [ ] No celular (ou tablet), as linhas de nota e pasta têm 44 px e a lista não rola para os lados.
