@@ -1,6 +1,6 @@
 # ADR 0015 — Android: cofre real, emulador no CI e APK assinado (etapa A1)
 
-Data: 18/10/2026. Pedido: [docs/tarefas/android-a.md](../tarefas/android-a.md) (A1, fase C8). A sala hospedada pelo
+Data: 18/10/2026. Pedido: [docs/tarefas/concluidas/android-a.md](../tarefas/concluidas/android-a.md) (A1, fase C8). A sala hospedada pelo
 celular (A2, X7) acrescenta uma seção aqui.
 
 ## Contexto

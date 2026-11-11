@@ -1,0 +1,1414 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maquetes da 1.2.0</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Documento de leitura numa coluna de até 1180 px; as maquetes do computador ficam no tamanho real do app (texto a
+   15 px) com rolagem própria, e as do celular a 360 px, que encolhem com a página até 320 px.
+   Cores: os tokens do Órbita (app/src/styles/tokens.css), escuro como padrão, claro pela preferência ou pelo botão. */
+:root {
+  --bg: #11131a; --bg-deep: #0c0f15; --panel: #191d27; --panel-2: #242936; --panel-hover: #303748;
+  --text: #f0f2fa; --muted: #b0b8cd; --line: #303747; --line-strong: #69799c;
+  --cyan: #bec6ff; --green: #9dcbb4; --red: #ffa48e; --gold: #ecc484; --violet: #bfadf1; --on-accent: #1a2040;
+  --scrim: rgb(5 7 12 / 55%); --shadow: 0 18px 44px rgb(0 0 0 / 34%);
+  /* Ilustração do mapa: é uma imagem do cofre, então não muda com o tema. */
+  --map-sea: #1d3247; --map-land: #3b4a3a; --map-sand: #6f6a4c; --map-river: #7fa6c4; --map-road: #c9b07a;
+  --sans: "Geist Variable", "Geist", system-ui, "Segoe UI", sans-serif;
+  --mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #ffffff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+  --text: #222a42; --muted: #53617c; --line: #cbd3e6; --line-strong: #68799a;
+  --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #ffffff;
+  --scrim: rgb(34 42 66 / 35%); --shadow: 0 14px 34px rgb(34 42 66 / 14%);
+  color-scheme: light;
+} }
+:root[data-theme="light"] {
+  --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #ffffff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+  --text: #222a42; --muted: #53617c; --line: #cbd3e6; --line-strong: #68799a;
+  --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #ffffff;
+  --scrim: rgb(34 42 66 / 35%); --shadow: 0 14px 34px rgb(34 42 66 / 14%);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 72px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+h1, h2, h3, h4, p, ul, ol, figure { margin: 0; }
+h1, h2, h3 { line-height: 1.2; text-wrap: balance; }
+a { color: var(--cyan); }
+code { font-family: var(--mono); font-size: .88em; }
+:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1180px; margin-inline: auto; }
+.prose { max-width: 74ch; }
+.eyebrow { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.muted { color: var(--muted); }
+
+/* Cabeçalho e sumário */
+.doc-head { display: grid; gap: 16px; padding-block: 48px 30px; }
+.doc-head h1 { font-size: clamp(32px, 5.5vw, 50px); font-weight: 650; letter-spacing: -.03em; }
+.doc-head .lede { font-size: 18px; color: var(--muted); max-width: 66ch; }
+.head-row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.doc-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel-2); color: var(--text); font: 650 15px var(--sans); cursor: pointer; text-decoration: none; }
+.doc-btn:hover { background: var(--panel-hover); }
+.toc { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; border-block: 1px solid var(--line); background: var(--bg); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)); }
+.toc ol { list-style: none; display: flex; gap: 4px; overflow-x: auto; max-width: 1180px; margin-inline: auto; padding: 8px 0; scrollbar-width: thin; }
+.toc a { display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.toc a:hover, .toc a:focus-visible { background: var(--panel-2); color: var(--text); }
+
+main { display: grid; gap: 64px; padding-top: 40px; }
+section.part { display: grid; gap: 22px; scroll-margin-top: 70px; min-width: 0; }
+.part-head { display: grid; gap: 8px; }
+.part-head h2 { font-size: clamp(25px, 3.6vw, 34px); font-weight: 650; letter-spacing: -.02em; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); color: var(--muted); font: 650 13px var(--sans); }
+.tag.pr { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 45%, var(--line)); }
+
+/* Regras D1–D17 */
+.rules { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+.rule { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.rule b:first-child { font: 700 14px var(--mono); color: var(--cyan); padding-top: 2px; }
+.rule span { font-size: 15px; }
+.rule small { display: block; color: var(--muted); font-size: 13.5px; }
+
+/* O que mudou */
+.changes { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.changes > div { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.changes h3 { font-size: 16px; }
+.changes ul { padding-left: 20px; display: grid; gap: 6px; font-size: 15px; }
+.changes li::marker { color: var(--muted); }
+.d { display: inline-block; padding: 0 6px; margin-right: 4px; border-radius: 6px; background: var(--panel-2); color: var(--cyan); font: 700 12px/20px var(--mono); vertical-align: 1px; }
+.decided { border-left: 3px solid var(--line-strong); padding: 10px 14px; background: var(--panel); border-radius: 0 12px 12px 0; font-size: 15px; display: grid; gap: 4px; }
+.decided b { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+/* Figuras */
+figure { display: grid; gap: 10px; min-width: 0; }
+figcaption { color: var(--muted); font-size: 14.5px; max-width: 80ch; }
+figcaption b { color: var(--text); }
+.scroll { overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: thin; }
+.scroll:focus-visible { outline-offset: 0; }
+.desk { min-width: 980px; }
+.phones { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+.phones figure { width: min(360px, 100%); }
+.smalls { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); align-items: start; }
+
+/* ===== Peças do app, nas medidas do kit (base.css e kit.css) ===== */
+.app { position: relative; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--bg); color: var(--text); font: 15px/1.45 var(--sans); box-shadow: var(--shadow); }
+.app.phone { border-radius: 26px; }
+.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.i.lg { width: 20px; height: 20px; }
+.bar { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.bar .ttl { display: grid; min-width: 0; line-height: 1.25; }
+.bar .ttl small { color: var(--muted); font-size: 12px; }
+.bar .ttl strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp { flex: 1 1 auto; }
+.save { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.save::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.bt { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); color: var(--text); font-size: 14px; font-weight: 650; white-space: nowrap; }
+.bt.sm { min-height: 30px; padding: 0 10px; font-size: 13px; border-radius: 8px; }
+.bt.pri { border-color: transparent; background: var(--cyan); color: var(--on-accent); }
+.bt.gh { border-color: transparent; background: transparent; color: var(--muted); }
+.bt.dash { border-style: dashed; border-color: var(--line-strong); background: transparent; color: var(--muted); }
+.bt.blk { width: 100%; min-height: 44px; }
+.bt.fix { min-width: 132px; }
+.ib { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1px solid transparent; border-radius: 12px; color: var(--muted); flex: none; }
+.ib.on { background: color-mix(in srgb, var(--cyan) 14%, var(--panel-2)); border-color: color-mix(in srgb, var(--cyan) 40%, var(--line)); color: var(--cyan); }
+.ib.box { border-color: var(--line); background: var(--panel); }
+.phone .ib, .phone .bt:not(.sm) { min-height: 44px; }
+.phone .ib { width: 44px; height: 44px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+.chip.v { color: var(--violet); border-color: color-mix(in srgb, var(--violet) 45%, var(--line)); }
+.chip.g { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 45%, var(--line)); }
+.chip.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
+.ey { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ptitle { font-size: 26px; font-weight: 600; line-height: 1.2; }
+.stitle { font-size: 15px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.small { font-size: 13px; }
+.tiny { font-size: 12px; }
+.mono { font-family: var(--mono); }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px 20px 10px; }
+.head > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 0 20px 14px; }
+.card { display: grid; gap: 12px; align-content: start; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); padding: 16px; min-width: 0; }
+.card-h { display: flex; align-items: center; gap: 8px; }
+.tabs { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tab { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border-bottom: 2px solid transparent; color: var(--muted); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.tab.on { border-bottom-color: var(--cyan); color: var(--text); }
+.cnt { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: 12px; text-align: center; }
+.phone .tab { min-height: 44px; }
+.choice { display: inline-flex; flex-wrap: wrap; gap: 2px; max-width: 100%; padding: 3px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel-2); }
+.opt { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border: 1px solid transparent; border-radius: 7px; color: var(--muted); font-size: 14px; white-space: nowrap; }
+.opt.on { border-color: var(--line-strong); background: var(--panel); color: var(--text); font-weight: 600; }
+.phone .opt { min-height: 42px; }
+.cg { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cg > span:first-child { color: var(--muted); font-size: 13px; font-weight: 600; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 52px; padding: 6px 10px; border-radius: 10px; }
+.row.cur { background: color-mix(in srgb, var(--cyan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cyan); }
+.row .tx { display: grid; min-width: 0; }
+.row .tx > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .tx small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12.5px; }
+.row .end { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.crest { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: color-mix(in srgb, var(--t, var(--cyan)) 18%, var(--panel-2)); color: var(--t, var(--cyan)); border: 1px solid color-mix(in srgb, var(--t, var(--cyan)) 40%, var(--line)); flex: none; }
+.crest.round { border-radius: 50%; }
+.crest.sm { width: 32px; height: 32px; }
+.crest.xl { width: 72px; height: 72px; border-radius: 50%; }
+.crest.v { --t: var(--violet); }
+.crest.g { --t: var(--gold); }
+.crest.ok { --t: var(--green); }
+.portrait { width: 40px; height: 40px; border-radius: 50%; flex: none; background: radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--gold) 70%, var(--panel)) 0 22%, transparent 23%), radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--cyan) 55%, var(--panel)) 0 46%, transparent 47%), var(--panel-2); border: 1px solid var(--line-strong); }
+.field { display: grid; gap: 5px; min-width: 0; }
+.field > .lab { font-size: 13px; font-weight: 600; color: var(--muted); }
+.field > .hint { font-size: 12.5px; color: var(--muted); }
+.inp { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg); color: var(--text); min-width: 0; overflow: hidden; white-space: nowrap; }
+.inp.ph { color: var(--muted); }
+.inp.foc { outline: 3px solid var(--cyan); outline-offset: 1px; }
+.inp .sp + .i { color: var(--muted); }
+.phone .inp { min-height: 44px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 6px; min-height: 36px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg); }
+.pill { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 0 4px 0 9px; border-radius: 999px; background: var(--panel-2); font-size: 13px; }
+.radio { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border-radius: 8px; }
+.radio::before { content: ""; width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid var(--line-strong); }
+.radio.on { background: color-mix(in srgb, var(--cyan) 12%, transparent); font-weight: 600; }
+.radio.on::before { border-color: var(--cyan); background: radial-gradient(circle, var(--cyan) 0 40%, transparent 46%); }
+.radio .i { color: var(--muted); }
+.fs { display: grid; gap: 2px; padding: 0; margin: 0; border: 0; }
+.fs > .lg { padding: 10px 10px 4px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.check::before { content: ""; width: 18px; height: 18px; flex: none; border-radius: 5px; border: 2px solid var(--line-strong); }
+.check.on::before { background: var(--cyan); border-color: var(--cyan); box-shadow: inset 0 0 0 3px var(--panel); }
+.det { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; font-weight: 600; }
+.det::before { content: "▸"; color: var(--muted); font-size: 13px; }
+.det.open::before { content: "▾"; }
+.notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--tone, var(--cyan)) 45%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--tone, var(--cyan)) 8%, var(--panel)); }
+.notice.warn { --tone: var(--gold); }
+.notice .i { color: var(--tone, var(--cyan)); }
+.notice > span { flex: 1 1 200px; display: grid; gap: 2px; }
+.notice small { color: var(--muted); font-size: 13.5px; }
+.menu { position: absolute; z-index: 3; display: grid; gap: 1px; min-width: 240px; padding: 5px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+.menu .mi { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border-radius: 8px; font-size: 14px; white-space: nowrap; }
+.menu .mi .i { color: var(--muted); }
+.menu .mi.f { background: var(--panel-2); }
+.menu .mi.dg, .menu .mi.dg .i { color: var(--red); }
+.menu .mi small { margin-left: auto; padding-left: 16px; color: var(--muted); font-size: 12.5px; }
+.menu .sep { height: 1px; margin: 4px 6px; background: var(--line); }
+.menu .mh { padding: 6px 10px 4px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.side { display: grid; align-content: start; border-left: 1px solid var(--line); background: var(--panel); min-width: 0; }
+.side-bar { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px 0 14px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--muted); }
+.side-body { display: grid; gap: 10px; padding: 12px; align-content: start; }
+.modal { display: grid; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow); overflow: hidden; }
+.modal-h { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px 20px; }
+.modal-h strong { font-size: 18px; font-weight: 650; }
+.modal-b { display: grid; gap: 14px; padding: 6px 20px 18px; min-width: 0; }
+.modal-f { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--bg-deep); }
+.phone .modal-f .bt { flex: 1 1 auto; }
+.scrim { padding: 28px; background: var(--scrim); }
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); min-height: 64px; border-top: 1px solid var(--line); background: var(--panel); }
+.nav span { display: grid; justify-items: center; align-content: center; gap: 2px; font-size: 12px; color: var(--muted); }
+.nav span.on { color: var(--cyan); font-weight: 650; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 64px; z-index: 2; display: grid; border-top: 1px solid var(--line-strong); border-radius: 20px 20px 0 0; background: var(--panel); box-shadow: 0 -14px 34px rgb(0 0 0 / 28%); }
+.grab { width: 40px; height: 4px; margin: 8px auto 2px; border-radius: 3px; background: var(--line-strong); }
+.camp { display: flex; align-items: center; gap: 4px; padding: 6px 14px; border-bottom: 1px solid var(--line); background: var(--bg-deep); overflow: hidden; }
+.camp .sw { display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; min-height: 32px; margin-right: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-weight: 650; white-space: nowrap; }
+.camp .tb { display: inline-flex; align-items: center; min-height: 36px; padding: 0 10px; border-radius: 8px; color: var(--muted); white-space: nowrap; }
+.camp .tb.on { background: var(--panel-2); color: var(--text); font-weight: 600; }
+
+/* Mapa */
+.map-wrap { display: grid; grid-template-columns: 76px minmax(0, 1fr) 356px; height: 520px; }
+.rail { display: grid; align-content: start; gap: 4px; padding: 8px 6px; border-right: 1px solid var(--line); background: var(--bg-deep); }
+.tool { display: grid; justify-items: center; gap: 2px; padding: 7px 2px 6px; border: 1px solid transparent; border-radius: 10px; color: var(--muted); font-size: 12px; text-align: center; }
+.tool.on { background: color-mix(in srgb, var(--cyan) 14%, var(--panel-2)); border-color: color-mix(in srgb, var(--cyan) 40%, var(--line)); color: var(--cyan); font-weight: 650; }
+.map { position: relative; overflow: hidden; background: var(--map-sea); }
+.map svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pin { position: absolute; display: grid; justify-items: center; gap: 3px; transform: translate(-50%, -100%); }
+.pin .mk { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); background: var(--panel); border: 2px solid var(--gold); color: var(--gold); }
+.pin .mk .i { transform: rotate(45deg); width: 14px; height: 14px; }
+.pin.sec .mk { border-color: var(--violet); color: var(--violet); border-style: dashed; }
+.pin.sel .mk { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.pin .lb { padding: 1px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); font-size: 12.5px; font-weight: 650; white-space: nowrap; }
+.zoom { position: absolute; right: 12px; bottom: 12px; display: grid; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.area-lb { position: absolute; padding: 1px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); font-size: 12.5px; }
+.toolstrip { display: flex; gap: 2px; padding: 4px 6px; border-bottom: 1px solid var(--line); background: var(--bg-deep); overflow-x: auto; }
+.toolstrip .tool { min-width: 60px; min-height: 52px; }
+.popover { position: absolute; z-index: 3; width: 320px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+.listbox { display: grid; gap: 1px; padding: 4px; margin-top: 4px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); }
+.listbox .o { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 8px; border-radius: 6px; font-size: 14px; }
+.listbox .o.f { background: var(--panel-2); }
+.listbox .o small { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+.cards3 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.mcard { display: grid; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); overflow: hidden; }
+.band { height: 110px; background: var(--map-sea); position: relative; overflow: hidden; }
+.band svg { width: 100%; height: 100%; display: block; }
+.band.plain { display: grid; place-items: center; background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--cyan) 30%, var(--panel-2)), var(--bg-deep)); color: var(--cyan); }
+.mcard .mt { display: grid; gap: 3px; padding: 12px 14px; position: relative; }
+.mcard .mt strong { font-size: 16px; }
+.mcard .mt .ib { position: absolute; right: 6px; top: 6px; }
+
+/* Novo artigo */
+.na { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
+.na-types { display: grid; gap: 6px; align-content: start; max-height: 520px; overflow: hidden; padding-right: 10px; border-right: 1px solid var(--line); mask-image: linear-gradient(#000 88%, transparent); }
+.ficha { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.ficha-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.date3 { display: grid; grid-template-columns: minmax(46px, 64px) minmax(92px, 1fr) minmax(58px, 80px) auto; gap: 6px; align-items: center; }
+
+/* Relações */
+.rel { display: grid; grid-template-columns: 270px minmax(0, 1fr) 310px; height: 500px; border-top: 1px solid var(--line); }
+.rel-list { display: grid; gap: 4px; align-content: start; padding: 12px; border-right: 1px solid var(--line); background: var(--panel); }
+.graph { position: relative; overflow: hidden; background: var(--bg-deep); }
+.graph svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.node { position: absolute; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center; width: 164px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel); transform: translateX(-50%); }
+.node .tx { display: grid; min-width: 0; line-height: 1.25; }
+.node .tx strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node .tx small { font-size: 12.5px; color: var(--muted); }
+.node.org { border-color: var(--cyan); }
+.node.cur { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.node.old { border-style: dashed; background: var(--bg); }
+.node.fold { width: auto; grid-template-columns: auto; padding: 6px 12px; font-size: 13px; font-weight: 650; color: var(--cyan); }
+.gctl { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.tree { display: grid; gap: 18px; padding: 18px; background: var(--bg-deep); border-radius: 12px; overflow: hidden; }
+.gen { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; }
+.gen + .gen::before { content: ""; position: absolute; top: -18px; left: 50%; width: 2px; height: 18px; background: var(--line-strong); }
+.gen .node { position: static; transform: none; width: 150px; }
+.couple { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 4px; border: 1px dashed var(--line); border-radius: 14px; }
+
+/* Relógio */
+.clock { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: center; }
+.dial { width: 150px; height: 150px; }
+.dial .ring { fill: none; stroke: var(--panel-2); stroke-width: 7; }
+.dial .prog { fill: none; stroke: var(--cyan); stroke-width: 7; stroke-linecap: round; }
+.dial .face { fill: var(--panel); stroke: var(--line); }
+.dial .tick { stroke: var(--muted); stroke-width: 2; }
+.dial .num { fill: var(--muted); font: 600 12px var(--mono); }
+.dial .hh { stroke: var(--text); stroke-width: 5; stroke-linecap: round; }
+.dial .mh { stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+.dial .dot { fill: var(--text); }
+.time { font: 650 30px/1.1 var(--mono); }
+.periods { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13.5px; }
+.periods .now { font-weight: 700; color: var(--text); }
+.periods .now::before { content: "● "; color: var(--cyan); }
+.qclock { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line-strong); flex: none; background: conic-gradient(var(--qc, var(--gold)) 0 var(--p, 50%), var(--panel-2) 0); }
+.qclock.thr { --qc: var(--red); }
+.qrow { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.qrow + .qrow { border-top: 1px solid var(--line); }
+.qrow .tx { display: grid; flex: 1; }
+.qrow small { color: var(--muted); font-size: 13px; }
+
+/* Elenco */
+.cast { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.npc { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); position: relative; min-width: 0; }
+.npc .top { display: flex; gap: 10px; align-items: center; min-width: 0; padding-right: 30px; }
+.npc .top > div { display: grid; min-width: 0; }
+.npc strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.npc small { color: var(--muted); font-size: 12.5px; }
+.npc .ib { position: absolute; right: 6px; top: 6px; width: 30px; height: 30px; }
+.rep { display: flex; align-items: center; gap: 8px; }
+.att { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 32px; padding: 0 8px 0 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--bg); font-size: 13px; font-weight: 600; }
+.att .i { color: var(--muted); width: 14px; height: 14px; }
+.rep .val { flex: 1; text-align: center; font-weight: 650; font-variant-numeric: tabular-nums; }
+.cast.small-cards { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.cast.small-cards .npc { padding: 10px; gap: 6px; }
+
+/* Sessões */
+.list { display: grid; gap: 2px; padding: 0 12px 12px; }
+.sec-h { display: flex; align-items: center; gap: 10px; padding: 14px 20px 6px; }
+
+@media (max-width: 640px) {
+  .doc-head { padding-block: 30px 22px; }
+  main { gap: 52px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6Z"/></symbol>
+    <symbol id="i-area" viewBox="0 0 24 24"><path d="M4 7 9 4l8 2 3 7-5 7-9-2Z" stroke-dasharray="3 2.5"/></symbol>
+    <symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21Z"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2"/></symbol>
+    <symbol id="i-zin" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M11 8v6M8 11h6"/></symbol>
+    <symbol id="i-zout" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8 11h6"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 21s7-3.5 7-9.5V5l-7-2.5L5 5v6.5C5 17.5 12 21 12 21Z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m9 4-6 3v13l6-3 6 3 6-3V4l-6 3-6-3ZM9 4v13M15 7v13"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 16l9 5 9-5"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L6 20"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 17h2c2 0 3-1 4-2.5l4-5C14 8 15 7 17 7h4M18 4l3 3-3 3M3 7h2c1.5 0 2.5.6 3.3 1.6M21 17h-4c-1.5 0-2.6-.7-3.4-1.8M18 14l3 3-3 3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 19V5a2 2 0 0 1 2-2h12v16H7a2 2 0 0 0 0 4h12"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 7 4 9h10l4-9-5 4-4-6-4 6-5-4ZM6 20h12"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+    <symbol id="i-pinned" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6ZM12 13v7"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4Z"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z"/><path d="M15 3v4h4M9 12h7M9 16h5"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/></symbol>
+    <symbol id="i-gen" viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header class="doc-head">
+  <span class="eyebrow">Runas-Codex · atualização 1.2.0 · maquetes, versão 2 · 8 de novembro de 2026</span>
+  <h1>Maquetes da 1.2.0</h1>
+  <p class="lede">As telas novas da atualização desenhadas com as regras do rework visual: o tamanho de texto do app, uma ação principal por lugar, as peças do kit e uma alternativa em texto para cada desenho. Cada tela diz o que mudou em relação à versão 1 e qual regra pediu a mudança.</p>
+  <div class="head-row">
+    <button class="doc-btn" id="tema" type="button" aria-pressed="false">Usar tema claro</button>
+    <span class="muted">Plano: <code>docs/tarefas/concluidas/atualizacao-1.2.md</code> · regras D1–D17 na seção “Regras de design”</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Seções das maquetes"><ol>
+  <li><a href="#regras">Regras</a></li>
+  <li><a href="#mapa">Mapa</a></li>
+  <li><a href="#artigo">Novo artigo</a></li>
+  <li><a href="#relacoes">Relações</a></li>
+  <li><a href="#relogio">Painel e Missões</a></li>
+  <li><a href="#elenco">Elenco</a></li>
+  <li><a href="#token">Token e nota</a></li>
+  <li><a href="#mesa">Capa da mesa</a></li>
+  <li><a href="#npc">Novo NPC</a></li>
+  <li><a href="#sessoes">Sessões</a></li>
+  <li><a href="#ferramentas">Ferramentas</a></li>
+  <li><a href="#decisoes">Decisões</a></li>
+</ol></nav>
+
+<main>
+
+<!-- ============ REGRAS ============ -->
+<section class="part" id="regras" aria-labelledby="regras-t">
+  <div class="part-head">
+    <span class="eyebrow">Antes das telas</span>
+    <h2 id="regras-t">As regras que as maquetes seguem</h2>
+    <p class="prose muted">Resumo das ADR 0001, 0026 e 0027 e da regra de UX/UI do projeto. Os números aparecem nas notas de cada tela. As maquetes são figuras: os botões desenhados não funcionam, e cada figura tem a descrição em texto embaixo.</p>
+  </div>
+  <div class="rules">
+    <div class="rule"><b>D1</b><span>Duas anatomias e o diálogo<small>Lista: cabeçalho com uma ação e ⋯. Documento: barra do documento. Diálogo: ação principal no rodapé.</small></span></div>
+    <div class="rule"><b>D2</b><span>Uma ação principal por lugar<small>O resto num ⋯ com nome, ou no contexto.</small></span></div>
+    <div class="rule"><b>D3</b><span>Peças do kit<small>Cabeçalho, barra, menu, abas, aviso, linha, seletor, imagem, brasão.</small></span></div>
+    <div class="rule"><b>D4</b><span>Um painel por tela, à direita<small>ResizablePanel; no celular sobe por cima, um por vez.</small></span></div>
+    <div class="rule"><b>D5</b><span>Abas para o que ver, seletor para como ver<small>Nunca na mesma fileira; opção com o nome inteiro.</small></span></div>
+    <div class="rule"><b>D6</b><span>Cor com função<small>Lavanda ação, dourado narrativa, violeta segredo, verde feito, vermelho perigo.</small></span></div>
+    <div class="rule"><b>D7</b><span>Texto e medidas<small>15 px no app, nada abaixo de 12 px, títulos em Geist, sem esmaecer por opacidade.</small></span></div>
+    <div class="rule"><b>D8</b><span>Nomes, não caminhos<small>Ícone sozinho só se universal; nada de .md, [[ ]] ou ↗ falso.</small></span></div>
+    <div class="rule"><b>D9</b><span>Alvos<small>24 px no mouse, 44 px no toque.</small></span></div>
+    <div class="rule"><b>D10</b><span>320 px<small>Sem rolar para os lados; a barra inferior do app não ganha concorrente.</small></span></div>
+    <div class="rule"><b>D11</b><span>Teclado e alternativa<small>Todo desenho tem lista ou texto; arrastar nunca é o único jeito.</small></span></div>
+    <div class="rule"><b>D12</b><span>Formulários<small>Rótulo sempre à vista; data, link e imagem pelos campos próprios.</small></span></div>
+    <div class="rule"><b>D13</b><span>Estados<small>Vazio, erro, somente leitura; nota grava sozinha.</small></span></div>
+    <div class="rule"><b>D14</b><span>Nada simulado nem perdido<small>Só dados que existem; nenhuma função some.</small></span></div>
+    <div class="rule"><b>D15</b><span>Imagens<small>Sem imagem, brasão; capa no topo, sem texto por cima.</small></span></div>
+    <div class="rule"><b>D16</b><span>Movimento<small>Com movimento reduzido, nada anima.</small></span></div>
+    <div class="rule"><b>D17</b><span>Onde mora<small>Preferência de tela no aparelho; conteúdo no cofre.</small></span></div>
+  </div>
+</section>
+
+<!-- ============ 01 MAPA ============ -->
+<section class="part" id="mapa" aria-labelledby="mapa-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 01 · Wiki › Mapas</span>
+    <h2 id="mapa-t">Mapa com trilho de ferramentas e painel</h2>
+    <div class="tags"><span class="tag">U17 · U18 · U19 · U20 · U21</span><span class="tag pr">PRs J, K, L</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete do mapa no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true">
+        <div class="bar">
+          <span class="bt gh"><svg class="i"><use href="#i-back"/></svg>Mapas</span>
+          <div class="ttl"><small>Mapa · Wiki Ordem x Caos</small><strong>Bitu</strong></div>
+          <span class="sp"></span>
+          <span class="save">Salvo</span>
+          <span class="bt sm"><svg class="i"><use href="#i-panel"/></svg>Painel</span>
+          <span class="ib"><svg class="i"><use href="#i-more"/></svg></span>
+        </div>
+        <div class="map-wrap">
+          <div class="rail">
+            <span class="tool on"><svg class="i lg"><use href="#i-pointer"/></svg>Mover</span>
+            <span class="tool"><svg class="i lg"><use href="#i-pin"/></svg>Pino</span>
+            <span class="tool"><svg class="i lg"><use href="#i-area"/></svg>Área</span>
+            <span class="tool"><svg class="i lg"><use href="#i-ruler"/></svg>Medir</span>
+          </div>
+          <div class="map">
+            <svg class="art" viewBox="0 0 600 520" preserveAspectRatio="xMidYMid slice">
+              <rect width="600" height="520" fill="var(--map-sea)"/>
+              <path d="M40 120 Q120 60 230 90 T420 70 Q540 80 570 170 Q590 300 520 380 Q430 470 300 450 Q170 470 90 400 Q20 320 40 220Z" fill="var(--map-sand)"/>
+              <path d="M60 135 Q130 85 230 110 T415 92 Q520 100 548 180 Q566 290 505 365 Q420 445 300 430 Q180 448 108 385 Q45 315 62 225Z" fill="var(--map-land)"/>
+              <path d="M300 100 Q290 190 330 250 T350 430" fill="none" stroke="var(--map-river)" stroke-width="6"/>
+              <path d="M120 330 Q220 300 300 320 T470 290" fill="none" stroke="var(--map-road)" stroke-width="4" stroke-dasharray="10 6"/>
+              <path d="M380 150 L470 140 L500 210 L430 250 L370 220Z" fill="var(--gold)" fill-opacity=".2" stroke="var(--gold)" stroke-width="2"/>
+            </svg>
+            <span class="area-lb" style="left:62%;top:34%">Pântano Alto</span>
+            <span class="pin" style="left:24%;top:66%"><span class="mk"><svg class="i"><use href="#i-pin"/></svg></span><span class="lb">Porto de Bitu</span></span>
+            <span class="pin sel" style="left:48%;top:46%"><span class="mk"><svg class="i"><use href="#i-pin"/></svg></span><span class="lb">Bosque Salgado</span></span>
+            <span class="pin sec" style="left:73%;top:72%"><span class="mk"><svg class="i"><use href="#i-lock"/></svg></span><span class="lb">Gruta dos Juncos</span></span>
+            <span class="pin" style="left:34%;top:28%"><span class="mk"><svg class="i"><use href="#i-pin"/></svg></span><span class="lb">Torre Velha</span></span>
+            <div class="zoom"><span class="ib"><svg class="i"><use href="#i-zin"/></svg></span><span class="ib"><svg class="i"><use href="#i-zout"/></svg></span><span class="ib"><svg class="i"><use href="#i-fit"/></svg></span></div>
+          </div>
+          <div class="side">
+            <div class="side-bar">Painel do mapa<span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+            <div class="tabs"><span class="tab on">Pinos <span class="cnt">4</span></span><span class="tab">Áreas <span class="cnt">1</span></span><span class="tab">Camadas <span class="cnt">2</span></span><span class="tab">Mapa</span></div>
+            <div class="side-body">
+              <div class="field"><span class="lab">Buscar pinos</span><span class="inp ph"><svg class="i"><use href="#i-search"/></svg>Nome da nota ou rótulo</span></div>
+              <div style="display:grid;gap:2px">
+                <div class="row"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Porto de Bitu</span><small>Cidade · Superfície</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+                <div class="row cur"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Bosque Salgado</span><small>Local · Superfície</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+                <div class="row"><span class="crest sm v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>Gruta dos Juncos</span><small>Segredo · Local · Subterrâneo</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+                <div class="row"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Torre Velha</span><small>Rótulo, sem nota</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+              </div>
+              <span class="bt sm" style="justify-self:start"><svg class="i"><use href="#i-plus"/></svg>Pôr pino no centro</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador.</b> Barra do documento com voltar, o nome do mapa, “Salvo”, Painel e ⋯ (Abrir a nota do mapa, Versão dos jogadores, Trocar a imagem). À esquerda, o trilho só com as ferramentas, cada uma com o nome escrito. No mapa, os pinos mostram o título da nota; o pino de segredo tem cadeado, borda tracejada e o tom violeta. Aproximar, afastar e enquadrar ficam no canto. À direita, o painel com as abas Pinos, Áreas, Camadas e Mapa; a lista de pinos é a alternativa do desenho e cada linha centraliza o pino.</figcaption>
+  </figure>
+
+  <div class="phones">
+    <figure>
+      <div class="app phone" aria-hidden="true" style="height:640px;display:grid;grid-template-rows:auto auto 1fr auto">
+        <div class="bar" style="padding:6px 8px;gap:4px">
+          <span class="ib"><svg class="i lg"><use href="#i-back"/></svg></span>
+          <div class="ttl"><strong>Bitu</strong><small>Salvo</small></div>
+          <span class="sp"></span>
+          <span class="ib on"><svg class="i lg"><use href="#i-panel"/></svg></span>
+          <span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span>
+        </div>
+        <div class="toolstrip">
+          <span class="tool on"><svg class="i lg"><use href="#i-pointer"/></svg>Mover</span>
+          <span class="tool"><svg class="i lg"><use href="#i-pin"/></svg>Pino</span>
+          <span class="tool"><svg class="i lg"><use href="#i-area"/></svg>Área</span>
+          <span class="tool"><svg class="i lg"><use href="#i-ruler"/></svg>Medir</span>
+        </div>
+        <div class="map">
+          <svg class="art" viewBox="0 0 360 400" preserveAspectRatio="xMidYMid slice">
+            <rect width="360" height="400" fill="var(--map-sea)"/>
+            <path d="M20 80 Q90 30 180 60 T340 70 V330 Q250 380 160 360 Q60 370 20 290Z" fill="var(--map-land)"/>
+            <path d="M190 50 Q180 140 210 200 T220 380" fill="none" stroke="var(--map-river)" stroke-width="5"/>
+          </svg>
+          <span class="pin sel" style="left:42%;top:30%"><span class="mk"><svg class="i"><use href="#i-pin"/></svg></span><span class="lb">Bosque Salgado</span></span>
+        </div>
+        <div class="nav"><span><svg class="i lg"><use href="#i-home"/></svg>Início</span><span><svg class="i lg"><use href="#i-note"/></svg>Notas</span><span><svg class="i lg"><use href="#i-cal"/></svg>Agenda</span><span><svg class="i lg"><use href="#i-dice"/></svg>VTT</span></div>
+        <div class="sheet" style="height:300px">
+          <div class="grab"></div>
+          <div class="tabs"><span class="tab on">Pinos <span class="cnt">4</span></span><span class="tab">Áreas</span><span class="tab">Camadas</span><span class="tab">Mapa</span></div>
+          <div style="display:grid;gap:2px;padding:8px">
+            <div class="row"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Porto de Bitu</span><small>Cidade</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="row cur"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Bosque Salgado</span><small>Local</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="row"><span class="crest sm v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>Gruta dos Juncos</span><small>Segredo · Local</small></span><span class="end"><svg class="i"><use href="#i-more"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Celular.</b> As ferramentas ficam numa faixa no topo do mapa, com alvos de 44 px; a barra inferior do app continua onde está. O painel sobe por cima do mapa e fecha com o mesmo botão ou com Esc.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="app" aria-hidden="true" style="height:520px;background:var(--map-sea)">
+        <svg class="art" viewBox="0 0 360 520" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><path d="M0 60 Q120 20 220 60 T360 50 V420 H0Z" fill="var(--map-land)"/></svg>
+        <span class="pin sel" style="left:22%;top:22%"><span class="mk"><svg class="i"><use href="#i-pin"/></svg></span></span>
+        <div class="popover" style="left:12px;right:12px;width:auto;top:118px">
+          <div class="modal-h" style="padding:12px 10px 4px 16px"><strong style="font-size:16px">Pino novo</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+          <div class="modal-b" style="padding:4px 16px 14px;gap:10px">
+            <div class="field"><span class="lab">Nota</span><span class="inp foc">Gruta<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span>
+              <div class="listbox"><span class="o f"><svg class="i"><use href="#i-pin"/></svg>Gruta dos Juncos<small>Local</small></span><span class="o"><svg class="i"><use href="#i-plus"/></svg>Criar “Gruta”…</span></div>
+            </div>
+            <div class="field"><span class="lab">Camada</span><span class="inp">Superfície<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div>
+            <span class="check">Segredo do mestre</span>
+          </div>
+          <div class="modal-f" style="padding:10px 12px"><span class="ib box"><svg class="i"><use href="#i-more"/></svg></span><span class="sp"></span><span class="bt pri">Pronto</span></div>
+        </div>
+      </div>
+      <figcaption><b>Popover do pino (PR K).</b> Abre junto ao ponto ao pôr ou escolher um pino. A nota vem do campo de busca de notas, com “Criar…” no fim, que abre o Novo artigo. O rótulo só aparece em pino sem nota. Esc fecha e devolve o foco ao pino.</figcaption>
+    </figure>
+  </div>
+
+  <figure>
+    <div class="cards3" aria-hidden="true">
+      <div class="mcard"><div class="band"><svg viewBox="0 0 220 110" preserveAspectRatio="xMidYMid slice"><rect width="220" height="110" fill="var(--map-sea)"/><path d="M10 40 Q60 10 110 30 T210 25 V100 H10Z" fill="var(--map-land)"/><path d="M110 20 Q105 60 120 100" stroke="var(--map-river)" stroke-width="4" fill="none"/></svg></div><div class="mt"><strong>Bitu</strong><span class="small muted">4 pinos · 1 área</span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+      <div class="mcard"><div class="band"><svg viewBox="0 0 220 110" preserveAspectRatio="xMidYMid slice"><rect width="220" height="110" fill="var(--map-sand)"/><path d="M0 70 Q70 40 140 70 T220 60 V110 H0Z" fill="var(--map-sea)"/></svg></div><div class="mt"><strong>Costa de Vatu</strong><span class="small muted">9 pinos</span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+      <div class="mcard"><div class="band plain"><span class="crest xl" style="--t:var(--green)"><svg class="i lg"><use href="#i-map"/></svg></span></div><div class="mt"><strong>Mapa sem imagem</strong><span class="small muted">Sem imagem ainda</span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+    </div>
+    <figcaption><b>Lista de mapas (U21).</b> A imagem do mapa vira a capa, numa faixa no topo do cartão, sem texto por cima. Mapa sem imagem mostra o brasão, nunca a inicial. O cabeçalho da lista tem uma ação principal, “+ Novo mapa”, que abre o Novo artigo já como Mapa.</figcaption>
+  </figure>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D3</span>O trilho tinha as mesmas quatro abas do painel. Agora tem as ferramentas, e as abas ficam só no painel.</li>
+      <li><span class="d">D13</span>Saiu o “Salvar”: o mapa grava sozinho e mostra “Salvo”.</li>
+      <li><span class="d">D8</span>O pino mostrava <code>[[Bosque Salgado]]</code>; agora mostra o título da nota.</li>
+      <li><span class="d">D6</span>O segredo estava em vermelho, a cor de perigo. Agora usa violeta, cadeado e a palavra “Segredo”.</li>
+      <li><span class="d">D10</span>No celular, as ferramentas estavam embaixo, em cima da barra do app. Agora ficam no topo do mapa.</li>
+      <li><span class="d">D2</span>“Criar nota…” era o botão principal do painel. Agora fica no popover do pino, onde a nota é escolhida.</li>
+      <li><span class="d">D15</span>A capa da lista virou a imagem do mapa ou o brasão, em vez da letra.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>O painel abre aberto no computador e fechado até 860 px, lembrado pelo ResizablePanel. A imagem vem do seletor de imagens do kit (cofre e “Do computador…”). A ferramenta Área tem Retângulo, Elipse e Livre; começa em Retângulo e lembra a última. Alças de vértice têm 24 px de área de toque (44 px no celular) e funcionam com Tab e setas.</div>
+  </div>
+</section>
+
+<!-- ============ 02 NOVO ARTIGO ============ -->
+<section class="part" id="artigo" aria-labelledby="artigo-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 02 · Wiki › Novo artigo</span>
+    <h2 id="artigo-t">Novo artigo com a ficha já na criação</h2>
+    <div class="tags"><span class="tag">U29</span><span class="tag pr">PR B · base de U19, U22, U24, U26</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete do Novo artigo no computador, com rolagem para os lados">
+      <div class="app desk scrim" aria-hidden="true">
+        <div class="modal" style="max-width:940px;margin:auto">
+          <div class="modal-h"><strong>Novo artigo</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+          <div class="modal-b">
+            <div class="na">
+              <div class="na-types">
+                <div class="field"><span class="lab">Buscar tipo</span><span class="inp ph"><svg class="i"><use href="#i-search"/></svg>Personagem, Local, Item…</span></div>
+                <div class="fs"><span class="lg">Pessoas e grupos</span>
+                  <span class="radio on"><svg class="i"><use href="#i-user"/></svg>Personagem</span>
+                  <span class="radio"><svg class="i"><use href="#i-shield"/></svg>Organização</span>
+                  <span class="radio"><svg class="i"><use href="#i-user"/></svg>Espécie</span>
+                  <span class="radio"><svg class="i"><use href="#i-user"/></svg>Cultura</span>
+                  <span class="radio"><svg class="i"><use href="#i-crown"/></svg>Religião</span>
+                </div>
+                <div class="fs"><span class="lg">Lugares</span>
+                  <span class="radio"><svg class="i"><use href="#i-pin"/></svg>Local</span>
+                  <span class="radio"><svg class="i"><use href="#i-crown"/></svg>Cidade</span>
+                  <span class="radio"><svg class="i"><use href="#i-home"/></svg>Construção</span>
+                </div>
+                <div class="fs"><span class="lg">Criados nesta wiki</span>
+                  <span class="radio"><svg class="i"><use href="#i-shield"/></svg>Monstro</span>
+                </div>
+                <div class="fs"><span class="lg">Outros</span>
+                  <span class="radio"><svg class="i"><use href="#i-book"/></svg>Idioma</span>
+                </div>
+              </div>
+              <div style="display:grid;gap:14px;align-content:start;min-width:0">
+                <div class="field"><span class="lab">Nome</span><span class="inp foc">Capitã Brites</span></div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="small muted">Em <b style="color:var(--text)">Personagens</b></span><span class="bt sm gh">Trocar pasta</span></div>
+                <div class="ficha">
+                  <span class="stitle">Ficha · Personagem <span class="small muted" style="font-weight:400">opcional</span></span>
+                  <div class="ficha-grid">
+                    <div class="field"><span class="lab">Espécie</span><span class="inp">Humana<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span><span class="hint">Artigo da wiki</span></div>
+                    <div class="field"><span class="lab">Ocupação</span><span class="inp">Capitã da guarda</span></div>
+                    <div class="field" style="grid-column:1/-1"><span class="lab">Nascimento</span><div class="date3" style="max-width:420px"><span class="inp">12</span><span class="inp">Ogronios<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span><span class="inp">5601</span><span class="small muted">CR</span></div><span class="hint">Dia, mês do calendário do mundo e ano</span></div>
+                    <div class="field"><span class="lab">Residência</span><span class="inp">Bitu<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span><span class="hint">Artigo da wiki</span></div>
+                    <div class="field"><span class="lab">Situação</span><span class="inp">Viva</span></div>
+                    <div class="field" style="grid-column:1/-1"><span class="lab">Afiliação</span><div class="pills"><span class="pill">Ordem do Sal <svg class="i"><use href="#i-x"/></svg></span><span class="pill">Guarda de Bitu <svg class="i"><use href="#i-x"/></svg></span><span class="small muted">Acrescentar artigo…</span></div></div>
+                  </div>
+                  <span class="det">Imagem (opcional)</span>
+                </div>
+                <span class="det">Perguntas-guia <span class="cnt">4</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-f"><span class="bt">Cancelar</span><span class="bt pri">Criar artigo</span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador (900 px ou mais).</b> À esquerda, os tipos em grupos de rádios com busca, inclusive “Criados nesta wiki” e “Outros”; as setas andam entre eles. À direita, Nome, a pasta numa linha e a ficha do tipo: links pelo campo de busca de artigos, datas por dia, mês do calendário e ano com a sigla, várias afiliações como fichas. Imagem e Perguntas-guia começam recolhidas. “Criar artigo” fica no rodapé.</figcaption>
+  </figure>
+
+  <div class="phones">
+    <figure>
+      <div class="app phone" aria-hidden="true">
+        <div class="modal" style="border:0;border-radius:0;box-shadow:none">
+          <div class="modal-h"><div style="display:grid"><span class="tiny muted">Passo 1 de 2 · Tipo e nome</span><strong>Novo artigo</strong></div><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+          <div class="modal-b">
+            <div class="field"><span class="lab">Nome</span><span class="inp">Capitã Brites</span></div>
+            <div class="field"><span class="lab">Buscar tipo</span><span class="inp ph"><svg class="i"><use href="#i-search"/></svg>Personagem, Local…</span></div>
+            <div class="fs"><span class="lg">Pessoas e grupos</span>
+              <span class="radio on" style="min-height:44px"><svg class="i"><use href="#i-user"/></svg>Personagem</span>
+              <span class="radio" style="min-height:44px"><svg class="i"><use href="#i-shield"/></svg>Organização</span>
+              <span class="radio" style="min-height:44px"><svg class="i"><use href="#i-user"/></svg>Espécie</span>
+            </div>
+          </div>
+          <div class="modal-f"><span class="bt pri">Continuar</span></div>
+        </div>
+      </div>
+      <figcaption><b>Celular, passo 1.</b> O texto diz em que passo a pessoa está; o foco vai para o título do passo.</figcaption>
+    </figure>
+    <figure>
+      <div class="app phone" aria-hidden="true">
+        <div class="modal" style="border:0;border-radius:0;box-shadow:none">
+          <div class="modal-h"><div style="display:grid"><span class="tiny muted">Passo 2 de 2 · Ficha</span><strong>Capitã Brites</strong></div><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+          <div class="modal-b">
+            <div class="field"><span class="lab">Espécie</span><span class="inp">Humana<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div>
+            <div class="field"><span class="lab">Ocupação</span><span class="inp">Capitã da guarda</span></div>
+            <div class="field"><span class="lab">Nascimento</span><div class="date3" style="grid-template-columns:56px minmax(0,1fr) 68px"><span class="inp">12</span><span class="inp">Ogronios</span><span class="inp">5601</span></div><span class="hint">Calendário Rúnico (CR)</span></div>
+            <span class="det">Imagem (opcional)</span>
+          </div>
+          <div class="modal-f"><span class="bt">Voltar</span><span class="bt pri">Criar artigo</span></div>
+        </div>
+      </div>
+      <figcaption><b>Celular, passo 2.</b> Os mesmos campos em uma coluna; Voltar e Criar artigo no rodapé, com 44 px.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D14</span>Os tipos agrupados à mão escondiam Idioma, Documento, Condição e os tipos criados pelo usuário. Agora todo tipo tem grupo.</li>
+      <li><span class="d">D12</span>Espécie era texto livre e a imagem, um caminho digitado. Agora cada campo usa o controle do seu tipo, e o valor é gravado pelo <code>setProperty</code>.</li>
+      <li><span class="d">D1</span>“Criar artigo” estava no meio da coluna. Agora fica no rodapé do diálogo.</li>
+      <li><span class="d">D8</span>“Ligado a [[Bitu]]” e a pasta em caminho viraram nomes.</li>
+      <li><span class="d">D5</span>Os tipos eram fichas soltas sem setas. Agora são rádios de verdade.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>A ficha mostra todos os campos do tipo, os mesmos da ficha do artigo; nada é obrigatório além do Nome. Perguntas-guia começam recolhidas. O nome do arquivo segue o Nome, com acentos, como hoje.</div>
+  </div>
+</section>
+
+<!-- ============ 03 RELAÇÕES ============ -->
+<section class="part" id="relacoes" aria-labelledby="relacoes-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 03 · Wiki › Relações</span>
+    <h2 id="relacoes-t">Organograma e árvore genealógica</h2>
+    <div class="tags"><span class="tag">U25</span><span class="tag pr">PRs H, O</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete das Relações no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true" style="min-width:1120px">
+        <div class="head"><div><span class="ey">Wiki · Ordem x Caos</span><span class="ptitle">Relações</span></div></div>
+        <div class="line">
+          <span class="cg"><span>Visão</span><span class="choice"><span class="opt on">Organograma</span><span class="opt">Árvore genealógica</span><span class="opt">Teia diplomática</span></span></span>
+          <span class="cg"><span>Mostrar como</span><span class="choice"><span class="opt on">Gráfico</span><span class="opt">Lista</span></span></span>
+        </div>
+        <div class="rel">
+          <div class="rel-list">
+            <div class="field"><span class="lab">Organizações</span><span class="inp ph"><svg class="i"><use href="#i-search"/></svg>Buscar organização</span></div>
+            <div class="row cur"><span class="crest"><svg class="i"><use href="#i-shield"/></svg></span><span class="tx"><span>Ordem do Sal</span><small>6 membros</small></span><span></span></div>
+            <div class="row"><span class="crest g"><svg class="i"><use href="#i-crown"/></svg></span><span class="tx"><span>Casa Vatu</span><small>5 membros</small></span><span></span></div>
+            <div class="row"><span class="crest ok"><svg class="i"><use href="#i-shield"/></svg></span><span class="tx"><span>Guarda de Bitu</span><small>8 membros</small></span><span></span></div>
+          </div>
+          <div class="graph">
+            <svg class="lines" viewBox="0 0 400 500" preserveAspectRatio="none"><path d="M200 92 V150 M72 150 H328 M72 150 V190 M200 150 V190 M328 150 V190 M200 242 V340" fill="none" stroke="var(--line-strong)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+            <div class="node org" style="left:50%;top:40px"><span class="crest sm"><svg class="i"><use href="#i-shield"/></svg></span><span class="tx"><strong>Ordem do Sal</strong><small>Organização</small></span></div>
+            <div class="node" style="left:18%;top:190px"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Mestre Ilan</strong><small>Líder · vivo</small></span></div>
+            <div class="node cur" style="left:50%;top:190px"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Capitã Brites</strong><small>Tesoureira · viva</small></span></div>
+            <div class="node old" style="left:82%;top:190px"><span class="crest sm round"><svg class="i"><use href="#i-user"/></svg></span><span class="tx"><strong>Lázaro</strong><small>Antigo membro</small></span></div>
+            <div class="node fold" style="left:50%;top:340px">▸ Guarda do porto · 4 membros</div>
+            <div class="gctl"><span class="ib"><svg class="i"><use href="#i-zin"/></svg></span><span class="ib"><svg class="i"><use href="#i-zout"/></svg></span><span class="ib"><svg class="i"><use href="#i-fit"/></svg></span></div>
+          </div>
+          <div class="side">
+            <div class="side-bar">Capitã Brites<span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+            <div class="side-body">
+              <div style="display:flex;gap:12px;align-items:center"><span class="portrait" style="width:56px;height:56px"></span><div style="display:grid"><strong>Capitã Brites</strong><span class="small muted">Tesoureira da Ordem do Sal</span><span class="small muted">Situação: viva</span></div></div>
+              <div style="display:grid;gap:4px"><span class="ey">Relações</span>
+                <span class="small">Membro de <a href="#relacoes" tabindex="-1">Ordem do Sal</a> (tesoureira)</span>
+                <span class="small">Aliada de <a href="#relacoes" tabindex="-1">Casa Vatu</a></span>
+                <span class="small">Filha de <a href="#relacoes" tabindex="-1">Ormund</a></span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="bt sm">Abrir artigo</span><span class="bt sm gh"><svg class="i"><use href="#i-plus"/></svg>Relação</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador.</b> Um cabeçalho e, numa linha, dois seletores: a visão (Organograma, Árvore genealógica, Teia diplomática) e como mostrar (Gráfico ou Lista). À esquerda, a lista de organizações com busca; no meio, o gráfico numa região com rolagem própria, onde as setas andam pelos nós e Enter abre o nó; à direita, o painel do nó escolhido. O antigo membro tem borda tracejada e “Antigo membro” escrito; o ramo fechado é um botão.</figcaption>
+  </figure>
+
+  <div class="phones">
+    <figure>
+      <div class="app phone" aria-hidden="true">
+        <div class="head" style="padding:14px 14px 8px"><div><span class="ey">Wiki · Ordem x Caos</span><span class="ptitle" style="font-size:22px">Relações</span></div></div>
+        <div class="line" style="padding:0 14px 12px"><span class="choice"><span class="opt on">Organograma</span><span class="opt">Árvore</span><span class="opt">Teia</span></span></div>
+        <div style="display:grid;gap:2px;padding:0 8px 12px">
+          <div class="row"><span class="crest"><svg class="i"><use href="#i-shield"/></svg></span><span class="tx"><span>Ordem do Sal</span><small>6 membros</small></span><span class="end"><svg class="i" style="transform:rotate(180deg)"><use href="#i-back"/></svg></span></div>
+          <div class="row"><span class="crest g"><svg class="i"><use href="#i-crown"/></svg></span><span class="tx"><span>Casa Vatu</span><small>5 membros</small></span><span class="end"><svg class="i" style="transform:rotate(180deg)"><use href="#i-back"/></svg></span></div>
+          <div class="row"><span class="crest ok"><svg class="i"><use href="#i-shield"/></svg></span><span class="tx"><span>Guarda de Bitu</span><small>8 membros</small></span><span class="end"><svg class="i" style="transform:rotate(180deg)"><use href="#i-back"/></svg></span></div>
+        </div>
+      </div>
+      <figcaption><b>Celular, primeiro.</b> A lista vem antes do gráfico, como a lista de seções das Configurações; os nomes curtos do seletor cabem em 320 px.</figcaption>
+    </figure>
+    <figure>
+      <div class="app phone" aria-hidden="true" style="height:560px">
+        <div class="bar" style="padding:6px 8px;gap:4px"><span class="ib"><svg class="i lg"><use href="#i-back"/></svg></span><div class="ttl"><strong>Ordem do Sal</strong><small>Organograma</small></div><span class="sp"></span><span class="ib"><svg class="i lg"><use href="#i-fit"/></svg></span></div>
+        <div class="graph" style="height:500px">
+          <svg class="lines" viewBox="0 0 360 500" preserveAspectRatio="none"><path d="M180 82 V120 M90 120 H270 M90 120 V150 M270 120 V150" fill="none" stroke="var(--line-strong)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+          <div class="node org" style="left:50%;top:30px;width:170px"><span class="crest sm"><svg class="i"><use href="#i-shield"/></svg></span><span class="tx"><strong>Ordem do Sal</strong><small>Organização</small></span></div>
+          <div class="node cur" style="left:25%;top:150px;width:44%"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Capitã Brites</strong><small>Tesoureira</small></span></div>
+          <div class="node old" style="left:75%;top:150px;width:44%"><span class="crest sm round"><svg class="i"><use href="#i-user"/></svg></span><span class="tx"><strong>Lázaro</strong><small>Antigo membro</small></span></div>
+        </div>
+        <div class="sheet" style="bottom:0;padding-bottom:12px">
+          <div class="grab"></div>
+          <div style="display:flex;gap:12px;align-items:center;padding:8px 16px"><span class="portrait" style="width:48px;height:48px"></span><div style="display:grid;flex:1"><strong>Capitã Brites</strong><span class="small muted">Tesoureira · viva</span></div><span class="ib"><svg class="i lg"><use href="#i-x"/></svg></span></div>
+          <div style="display:flex;gap:8px;padding:0 16px"><span class="bt" style="flex:1">Abrir artigo</span><span class="bt gh"><svg class="i"><use href="#i-plus"/></svg>Relação</span></div>
+        </div>
+      </div>
+      <figcaption><b>Celular, depois de escolher.</b> O gráfico ocupa a tela com rolagem própria; o nó escolhido sobe por cima, com “Abrir artigo”.</figcaption>
+    </figure>
+  </div>
+
+  <figure>
+    <div class="tree" aria-hidden="true">
+      <div class="line" style="padding:0;justify-content:center">
+        <span class="cg"><span>Gerações acima</span><span class="bt sm"><svg class="i"><use href="#i-minus"/></svg></span><b class="mono">2</b><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></span>
+        <span class="cg"><span>Gerações abaixo</span><span class="bt sm"><svg class="i"><use href="#i-minus"/></svg></span><b class="mono">1</b><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></span>
+      </div>
+      <div class="gen"><span class="couple"><span class="node"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Ormund</strong><small>Pai</small></span></span><span class="node"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Iara</strong><small>Mãe</small></span></span></span></div>
+      <div class="gen"><span class="node cur"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Capitã Brites</strong><small>Centro</small></span></span><span class="node"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Nilo</strong><small>Irmão</small></span></span></div>
+      <div class="gen"><span class="node"><span class="portrait" style="width:32px;height:32px"></span><span class="tx"><strong>Yara</strong><small>Filha</small></span></span></div>
+    </div>
+    <figcaption><b>Árvore genealógica (PR O).</b> Uma fileira por geração, casal lado a lado, irmãos na mesma fileira. Enter ou clique num nó recentraliza e anuncia “Centralizado em …”. As gerações acima e abaixo são campos com −/+, lembrados no aparelho. Na Lista, uma tabela Pessoa · Pais · Cônjuges · Filhos.</figcaption>
+  </figure>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D5</span>“Como lista” era uma terceira aba ao lado de Organograma e Árvore. Agora é o seletor “Mostrar como”.</li>
+      <li><span class="d">D7</span>O antigo membro era esmaecido por opacidade, abaixo de 4,5:1. Agora tem borda tracejada e “Antigo membro” escrito.</li>
+      <li><span class="d">D14</span>O código começado tinha −, 100 % e + sem ação. Os controles desenhados aqui funcionam também pelo teclado (+, −, 0).</li>
+      <li><span class="d">D4</span>O painel do nó é o painel da tela; no celular sobe por cima.</li>
+      <li><span class="d">D8</span>“☰ Nós” virou a lista com nome; a ordem das visões é a mesma no celular e no computador.</li>
+      <li>A Teia diplomática entra no mesmo desenho.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>Abre na última visão usada no aparelho; na primeira vez, na que tem dados. Antigos membros aparecem sempre, marcados. No computador, o painel do nó fica ao lado; no celular, por cima.</div>
+  </div>
+</section>
+
+<!-- ============ 04 PAINEL E MISSÕES ============ -->
+<section class="part" id="relogio" aria-labelledby="relogio-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 04 · Campanhas › Painel e Missões</span>
+    <h2 id="relogio-t">Relógio do mundo no Painel, Relógios nas Missões</h2>
+    <div class="tags"><span class="tag">U30</span><span class="tag pr">PR F</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete do Painel da campanha no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true">
+        <div class="camp"><span class="sw"><svg class="i"><use href="#i-crown"/></svg>Jornada para Vatu<svg class="i"><use href="#i-down"/></svg></span><span class="tb on">Painel</span><span class="tb">Sessões</span><span class="tb">Missões</span><span class="tb">Elenco</span><span class="tb">Quadros</span><span class="tb">Ferramentas</span><span class="sp"></span><span class="tb">Tela do Mestre</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;padding:18px 20px 22px">
+          <div class="card">
+            <div class="card-h"><span class="stitle"><svg class="i"><use href="#i-book"/></svg>Próxima sessão</span></div>
+            <strong style="font-size:18px">Sessão 13: O farol</strong>
+            <span class="small muted">Sábado, 14 de novembro, 20h · faltam 6 dias</span>
+            <span class="chip g" style="justify-self:start">Planejada</span>
+          </div>
+          <div class="card" style="position:relative">
+            <div class="card-h"><span class="stitle"><svg class="i"><use href="#i-clock"/></svg>Relógio do mundo</span><span class="small muted">Calendário Rúnico</span><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="clock">
+              <svg class="dial" viewBox="0 0 160 160">
+                <circle class="ring" cx="80" cy="80" r="70"/>
+                <path class="prog" d="M80 10 A70 70 0 1 1 30.5 129.5"/>
+                <circle class="face" cx="80" cy="80" r="62"/>
+                <path class="tick" d="M80 24V18M108 31.5l3-5.2M128.5 52l5.2-3M136 80h6M128.5 108l5.2 3M108 128.5l3 5.2M80 136v6M52 128.5l-3 5.2M31.5 108l-5.2 3M24 80h-6M31.5 52l-5.2-3M52 31.5l-3-5.2"/>
+                <text class="num" x="80" y="42" text-anchor="middle">12</text><text class="num" x="122" y="84" text-anchor="middle">3</text><text class="num" x="80" y="126" text-anchor="middle">6</text><text class="num" x="38" y="84" text-anchor="middle">9</text>
+                <line class="mh" x1="80" y1="80" x2="80" y2="128"/>
+                <line class="hh" x1="80" y1="80" x2="53" y2="107"/>
+                <circle class="dot" cx="80" cy="80" r="5"/>
+              </svg>
+              <div style="display:grid;gap:6px;min-width:0">
+                <span class="time">07:30</span>
+                <span>9 de Ogronios de 5631 CR</span>
+                <span class="periods"><span class="now">Dia, agora</span><span class="muted">· Noite</span></span>
+                <span class="small muted">Noite em 4 h 30 min</span>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px"><span class="bt sm">+10 min</span><span class="bt sm">+1 h</span><span class="bt sm" style="border-color:var(--line-strong)">Avançar<svg class="i"><use href="#i-down"/></svg></span></div>
+              </div>
+            </div>
+            <div class="menu" style="right:16px;top:208px">
+              <span class="mh">Avançar o mundo</span>
+              <span class="mi f">Até a Noite<small>próximo período</small></span>
+              <span class="mi">1 dia</span>
+              <span class="mi">1 semana</span>
+              <span class="mi">1 mês</span>
+              <span class="sep"></span>
+              <span class="mi">Até a próxima sessão<small>16 de Ogronios</small></span>
+            </div>
+          </div>
+          <div class="card" style="grid-column:1/-1;min-height:250px">
+            <div class="card-h"><span class="stitle">Missões ativas</span><span class="cnt">3</span></div>
+            <div style="display:grid;gap:2px;max-width:56%">
+              <div class="row"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Sinal no pântano</span><small>Ativa · Arco do Pântano</small></span><span></span></div>
+              <div class="row"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Encontrar a ponte perdida</span><small>Em aberto</small></span><span></span></div>
+              <div class="row"><span class="crest sm g"><svg class="i"><use href="#i-pin"/></svg></span><span class="tx"><span>Falar com Yara</span><small>Em aberto</small></span><span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador.</b> O cartão do relógio fica no lugar dos relógios de ameaça. O mostrador tem o mesmo texto ao lado: a hora, a data, a sequência dos períodos com o atual marcado e quanto falta para o próximo. O anel lavanda mostra quanto da volta (do período) já passou. Nenhum botão principal no cartão; “Avançar” é um menu com o quanto avança. O ⋯ tem Ajustar data e hora, Configurar o relógio e Abrir o calendário.</figcaption>
+  </figure>
+
+  <div class="smalls">
+    <figure>
+      <div class="modal" aria-hidden="true">
+        <div class="modal-h"><strong>Ajustar data e hora</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+        <div class="modal-b">
+          <div class="field"><span class="lab">Data no mundo</span><div class="date3"><span class="inp">9</span><span class="inp">Ogronios<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span><span class="inp">5631</span><span class="small muted">CR</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="field"><span class="lab">Hora (HH:MM)</span><span class="inp mono">07:30</span></div><div class="field"><span class="lab">Período</span><span class="inp">Dia<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div></div>
+        </div>
+        <div class="modal-f"><span class="bt">Cancelar</span><span class="bt pri">Salvar</span></div>
+      </div>
+      <figcaption><b>Ajustar data e hora.</b> Data, hora e período juntos, gravados de uma vez no bloco do calendário.</figcaption>
+    </figure>
+    <figure>
+      <div class="modal" aria-hidden="true">
+        <div class="modal-h"><strong>Configurar o relógio</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+        <div class="modal-b">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="field"><span class="lab">Horas por volta</span><span class="inp mono">12</span></div><div class="field"><span class="lab">Minutos por hora</span><span class="inp mono">60</span></div></div>
+          <div class="field"><span class="lab">Períodos, em ordem</span>
+            <div style="display:grid;gap:6px">
+              <div style="display:flex;gap:6px"><span class="inp" style="flex:1">Dia</span><span class="ib box"><svg class="i"><use href="#i-down"/></svg></span><span class="ib box"><svg class="i"><use href="#i-trash"/></svg></span></div>
+              <div style="display:flex;gap:6px"><span class="inp" style="flex:1">Noite</span><span class="ib box"><svg class="i" style="transform:rotate(180deg)"><use href="#i-down"/></svg></span><span class="ib box"><svg class="i"><use href="#i-trash"/></svg></span></div>
+              <span class="bt sm dash" style="justify-self:start"><svg class="i"><use href="#i-plus"/></svg>Acrescentar período</span>
+            </div>
+            <span class="hint">Uma volta completa passa ao próximo período; depois do último, o dia avança.</span>
+          </div>
+        </div>
+        <div class="modal-f"><span class="bt">Cancelar</span><span class="bt pri">Salvar</span></div>
+      </div>
+      <figcaption><b>Configurar o relógio.</b> Um campo por período, com subir, descer e remover; nada de lista separada por vírgula.</figcaption>
+    </figure>
+    <figure>
+      <div class="card" aria-hidden="true">
+        <div class="card-h"><span class="stitle"><svg class="i"><use href="#i-clock"/></svg>Relógio do mundo</span></div>
+        <div class="notice"><svg class="i"><use href="#i-cal"/></svg><span><b>Esta campanha ainda não tem calendário do mundo.</b><small>O relógio usa o “hoje” do calendário da wiki da campanha.</small></span><span class="bt sm">Abrir os calendários</span></div>
+      </div>
+      <figcaption><b>Sem calendário.</b> O cartão explica o que falta e leva ao lugar real onde se resolve. No cofre só leitura, os botões ficam desativados e o motivo aparece em texto.</figcaption>
+    </figure>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete das Missões na vista Relógios, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true">
+        <div class="head"><div><span class="ey">Jornada para Vatu</span><span class="ptitle">Missões</span></div><div class="acts"><span class="bt pri"><svg class="i"><use href="#i-plus"/></svg>Nova missão</span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+        <div class="line"><span class="cg"><span>Ver as missões em</span><span class="choice"><span class="opt">Colunas</span><span class="opt">Mapa</span><span class="opt on">Relógios</span></span></span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 20px 22px">
+          <div class="card">
+            <div class="card-h"><span class="stitle">Relógios da campanha</span><span class="sp"></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Relógio</span></div>
+            <div>
+              <div class="qrow"><span class="qclock thr" style="--p:62.5%"></span><span class="tx"><b>Ritual no pântano</b><small>Ameaça · 5 de 8</small></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div>
+              <div class="qrow"><span class="qclock" style="--p:33%"></span><span class="tx"><b>Paciência da Guarda</b><small>Meta · 2 de 6</small></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><span class="stitle">Relógios das missões</span></div>
+            <div style="display:grid;gap:4px">
+              <a href="#relogio" tabindex="-1" style="font-weight:650">Sinal no pântano</a><span class="small muted">Ativa</span>
+              <div class="qrow"><span class="qclock thr" style="--p:37.5%"></span><span class="tx"><b>A maré sobe</b><small>3 de 8</small></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div>
+              <a href="#relogio" tabindex="-1" style="font-weight:650;padding-top:8px">Encontrar a ponte perdida</a><span class="small muted">Em aberto</span>
+              <div class="qrow"><span class="qclock" style="--p:25%"></span><span class="tx"><b>A ponte cede</b><small>1 de 4</small></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Missões › Relógios.</b> “Árvore” sai do seletor e entra “Relógios”: primeiro os relógios da campanha (os de ameaça e meta que saíram do Painel), depois os de cada missão, agrupados por missão, com o nome como link e a situação escrita. Cada relógio diz “5 de 8” em texto. O Mapa de missões continua e passa a ser acessível sozinho: cartões no Tab na ordem dos arcos, com situação e dependências escritas e o ⋯ de cada missão.</figcaption>
+  </figure>
+
+  <div class="phones">
+    <figure>
+      <div class="app phone" aria-hidden="true">
+        <div class="bar" style="padding:6px 8px"><span class="ib"><svg class="i lg"><use href="#i-back"/></svg></span><div class="ttl"><strong>Jornada para Vatu</strong><small>Painel</small></div><span class="sp"></span><span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span></div>
+        <div style="display:grid;gap:12px;padding:12px">
+          <div class="card" style="padding:14px"><span class="stitle">Próxima sessão</span><strong>Sessão 13: O farol</strong><span class="small muted">Sábado, 20h · faltam 6 dias</span></div>
+          <div class="card" style="padding:14px">
+            <div class="card-h"><span class="stitle">Relógio do mundo</span><span class="sp"></span><span class="ib" style="width:36px;height:36px;min-height:36px"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="clock" style="grid-template-columns:96px minmax(0,1fr);gap:12px">
+              <svg class="dial" viewBox="0 0 160 160" style="width:96px;height:96px"><circle class="ring" cx="80" cy="80" r="70"/><path class="prog" d="M80 10 A70 70 0 1 1 30.5 129.5"/><circle class="face" cx="80" cy="80" r="62"/><line class="mh" x1="80" y1="80" x2="80" y2="128"/><line class="hh" x1="80" y1="80" x2="53" y2="107"/><circle class="dot" cx="80" cy="80" r="6"/></svg>
+              <div style="display:grid;gap:4px;min-width:0"><span class="time" style="font-size:26px">07:30</span><span class="small">9 de Ogronios de 5631 CR</span><span class="periods"><span class="now">Dia</span><span class="muted">· Noite em 4 h 30</span></span></div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><span class="bt" style="flex:1">+10 min</span><span class="bt" style="flex:1">+1 h</span><span class="bt" style="flex:1 1 100%">Avançar<svg class="i"><use href="#i-down"/></svg></span></div>
+          </div>
+          <div class="card" style="padding:14px"><span class="stitle">Missões ativas · 3</span></div>
+        </div>
+      </div>
+      <figcaption><b>Celular.</b> A ordem do Painel fica: próxima sessão, relógio do mundo, missões ativas, segredos, elenco, limites e linha do tempo, também no HTML. Sem números no mostrador pequeno; a hora está escrita ao lado.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li>O anel dividia o mostrador entre Dia e Noite, mas cada volta é um período inteiro. Agora o anel mostra quanto da volta passou e os períodos aparecem em texto.</li>
+      <li><span class="d">D7</span>Números do mostrador a 10 e 11 px viraram 12 px, e só nos quartos.</li>
+      <li><span class="d">D6</span>A hora estava em lavanda, a cor de ação. Agora usa a cor do texto.</li>
+      <li><span class="d">D8</span>“Avançar” não dizia quanto. Agora é um menu com o quanto avança.</li>
+      <li><span class="d">D14</span>“Data editada aqui” não tinha campo de data. Agora “Ajustar data e hora” tem.</li>
+      <li><span class="d">D12</span>Os períodos eram uma lista separada por vírgula; agora têm um campo cada.</li>
+      <li><span class="d">D11</span>A Árvore era a lista do Mapa de missões; com ela fora, o Mapa precisa da ordem e do texto próprios.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>“Avançar” é um menu (próximo período, 1 dia, 1 semana, 1 mês, até a próxima sessão). Os períodos começam em Dia e Noite e se trocam em “Configurar o relógio”. Os relógios das missões ficam agrupados por missão.</div>
+  </div>
+</section>
+
+<!-- ============ 05 ELENCO ============ -->
+<section class="part" id="elenco" aria-labelledby="elenco-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 05 · Campanhas › Elenco</span>
+    <h2 id="elenco-t">Elenco com tamanho de cartão e Facções iguais aos NPCs</h2>
+    <div class="tags"><span class="tag">U28 · U33 · U34</span><span class="tag pr">PRs E, P</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete do Elenco no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true" style="padding:18px 20px 22px;display:grid;gap:16px">
+        <div class="card">
+          <div class="card-h"><span class="stitle">NPCs · 40</span><span class="sp"></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Novo NPC</span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>NPC da wiki</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+            <span class="inp ph" style="flex:1 1 260px"><svg class="i"><use href="#i-search"/></svg>Buscar entre 40 NPCs (nome, local, facção)</span>
+            <span class="cg"><span>Situação</span><span class="choice"><span class="opt on">Todos 40</span><span class="opt">Apareceram 22</span><span class="opt">Ainda não 18</span></span></span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center">
+            <span class="small muted">40 NPCs</span><span class="sp"></span>
+            <span class="cg"><span>Exibição</span><span class="choice"><span class="opt on">Grade</span><span class="opt">Lista</span></span></span>
+            <span class="cg"><span>Tamanho</span><span class="choice"><span class="opt">Pequeno</span><span class="opt on">Médio</span><span class="opt">Grande</span></span></span>
+          </div>
+          <div class="cast">
+            <div class="npc"><div class="top"><span class="portrait"></span><div><strong>Capitã Brites</strong><small>Guarda de Bitu</small></div></div><span class="att" style="color:var(--green)">aliado<svg class="i"><use href="#i-down"/></svg></span><small>Visto na Sessão 12</small><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="npc"><div class="top"><span class="portrait"></span><div><strong>Yara</strong><small>Casa Vatu</small></div></div><span class="att">neutro<svg class="i"><use href="#i-down"/></svg></span><small>Ainda não apareceu</small><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="npc"><div class="top"><span class="crest round"><svg class="i"><use href="#i-user"/></svg></span><div><strong>Alda das Lanternas</strong><small>Barqueira</small></div></div><span class="att" style="color:var(--green)">amigável<svg class="i"><use href="#i-down"/></svg></span><small>Visto na Sessão 11</small><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="npc"><div class="top"><span class="portrait"></span><div><strong>Mestre Ilan</strong><small>Ordem do Sal</small></div></div><span class="att" style="color:var(--red)">hostil<svg class="i"><use href="#i-down"/></svg></span><small>Visto na Sessão 9</small><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          </div>
+          <span class="bt sm gh" style="justify-self:start">Mostrar mais 8 de 36</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="stitle">Facções · 6</span><span class="sp"></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Nova facção</span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Facção da wiki</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center">
+            <span class="small muted">6 facções</span><span class="sp"></span>
+            <span class="cg"><span>Exibição</span><span class="choice"><span class="opt on">Grade</span><span class="opt">Lista</span></span></span>
+            <span class="cg"><span>Tamanho</span><span class="choice"><span class="opt">Pequeno</span><span class="opt on">Médio</span><span class="opt">Grande</span></span></span>
+          </div>
+          <div class="cast">
+            <div class="npc"><div class="top"><span class="crest"><svg class="i"><use href="#i-shield"/></svg></span><div><strong>Ordem do Sal</strong><small>Reputação</small></div></div><div class="rep"><span class="bt sm"><svg class="i"><use href="#i-minus"/></svg></span><span class="val">+2 · amistosa</span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="npc"><div class="top"><span class="crest g"><svg class="i"><use href="#i-crown"/></svg></span><div><strong>Casa Vatu</strong><small>Reputação</small></div></div><div class="rep"><span class="bt sm"><svg class="i"><use href="#i-minus"/></svg></span><span class="val">0 · neutra</span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="npc"><div class="top"><span class="crest ok"><svg class="i"><use href="#i-shield"/></svg></span><div><strong>Guarda de Bitu</strong><small>Reputação</small></div></div><div class="rep"><span class="bt sm"><svg class="i"><use href="#i-minus"/></svg></span><span class="val">−1 (deve um favor)</span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="npc"><div class="top"><span class="crest v"><svg class="i"><use href="#i-lock"/></svg></span><div><strong>Os Silentes</strong><small>Reputação</small></div></div><div class="rep"><span class="bt sm"><svg class="i"><use href="#i-minus"/></svg></span><span class="val">−3 · hostil</span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg></span></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador, tamanho Médio (o de hoje).</b> O Elenco continua em seções. Facções ganha o mesmo cabeçalho dos NPCs (“Nova facção” e “Facção da wiki”) e a mesma linha de exibição. “Exibição” e “Tamanho” são seletores com o nome inteiro. A reputação tem −/+ com nome (“Baixar a reputação com a Guarda de Bitu”), o valor escrito e o texto entre parênteses preservado. “Mostrar mais” completa fileiras inteiras.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete dos cartões pequenos, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true" style="padding:16px 20px">
+        <div class="cast small-cards">
+          <div class="npc"><div class="top"><span class="portrait" style="width:32px;height:32px"></span><div><strong>Capitã Brites</strong><small>aliado</small></div></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          <div class="npc"><div class="top"><span class="portrait" style="width:32px;height:32px"></span><div><strong>Yara</strong><small>neutro</small></div></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          <div class="npc"><div class="top"><span class="crest sm round"><svg class="i"><use href="#i-user"/></svg></span><div><strong>Alda das Lanternas</strong><small>amigável</small></div></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          <div class="npc"><div class="top"><span class="portrait" style="width:32px;height:32px"></span><div><strong>Mestre Ilan</strong><small>hostil</small></div></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          <div class="npc"><div class="top"><span class="portrait" style="width:32px;height:32px"></span><div><strong>Nilo</strong><small>desconfiado</small></div></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+          <div class="npc"><div class="top"><span class="portrait" style="width:32px;height:32px"></span><div><strong>Ormund</strong><small>aliado</small></div></div><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Tamanho Pequeno.</b> Retrato, nome e atitude em texto; o resto (atitude, sessões, −/+ das facções) vai para o ⋯ do cartão. Nada some, só muda de lugar.</figcaption>
+  </figure>
+
+  <div class="phones">
+    <figure>
+      <div class="app phone" aria-hidden="true">
+        <div class="card" style="border:0;border-radius:0;background:var(--bg)">
+          <div class="card-h"><span class="stitle">NPCs · 40</span><span class="sp"></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Novo NPC</span></div>
+          <span class="inp ph"><svg class="i"><use href="#i-search"/></svg>Buscar entre 40 NPCs</span>
+          <span class="cg"><span>Exibição</span><span class="choice"><span class="opt">Grade</span><span class="opt on">Lista</span></span></span>
+          <div style="display:grid;gap:2px">
+            <div class="row"><span class="portrait"></span><span class="tx"><span>Capitã Brites</span><small>aliado · Sessão 12</small></span><span class="end"><span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span></span></div>
+            <div class="row"><span class="portrait"></span><span class="tx"><span>Yara</span><small>neutro · ainda não apareceu</small></span><span class="end"><span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span></span></div>
+            <div class="row"><span class="crest round"><svg class="i"><use href="#i-user"/></svg></span><span class="tx"><span>Alda das Lanternas</span><small>amigável · Sessão 11</small></span><span class="end"><span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span></span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Celular, Lista.</b> Linhas de lista com retrato ou brasão, nome, atitude e a última sessão, e o ⋯ com 44 px. O tamanho só aparece na Grade.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D5</span>“Personagens · Facções · Grade · Lista” estavam numa fileira só. O Elenco é feito de seções, e exibição e tamanho são seletores.</li>
+      <li><span class="d">D5</span>“P M G” virou “Pequeno · Médio · Grande”.</li>
+      <li><span class="d">D2</span>“Nova facção” era o botão principal do Elenco inteiro. Agora fica no cabeçalho da seção Facções, como “Novo NPC”.</li>
+      <li><span class="d">D9</span>No celular, “− ＋” era texto solto. Agora são botões de 44 px, ou ficam no ⋯.</li>
+      <li><span class="d">D14</span>“NPC da wiki” e “Facção da wiki” continuam.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>O tamanho padrão é Médio, o de hoje: ninguém vê mudança até escolher. Facções abrem em Grade. Exibição e tamanho ficam lembrados no aparelho, separados para NPCs e Facções.</div>
+  </div>
+</section>
+
+<!-- ============ 06 TOKEN ============ -->
+<section class="part" id="token" aria-labelledby="token-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 06 · Wiki e VTT</span>
+    <h2 id="token-t">Token ligado à nota</h2>
+    <div class="tags"><span class="tag">U22</span><span class="tag pr">PRs D, N</span></div>
+  </div>
+
+  <div class="smalls">
+    <figure>
+      <div class="app" aria-hidden="true">
+        <div class="tabs" style="padding-top:4px"><span class="tab on">Ficha</span><span class="tab">Relações <span class="cnt">3</span></span><span class="tab">Citado em <span class="cnt">7</span></span><span class="tab">Links</span></div>
+        <div class="side-body" style="gap:12px">
+          <div style="display:grid;grid-template-columns:100px 1fr;gap:6px 12px;font-size:14px"><span class="muted">Espécie</span><span>Humana</span><span class="muted">Ocupação</span><span>Capitã da guarda</span><span class="muted">Afiliação</span><span>Ordem do Sal, Guarda de Bitu</span></div>
+          <span class="det open">Token para a mesa</span>
+          <div style="display:grid;gap:12px;padding:0 4px">
+            <div style="display:flex;gap:12px;align-items:center"><span class="portrait" style="width:64px;height:64px;border:3px solid var(--green)"></span><div style="display:grid;gap:4px"><span class="small muted">Imagem do token</span><span class="small">brites-token.png</span><span class="bt sm" style="justify-self:start">Trocar imagem…</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="field"><span class="lab">Tamanho</span><span class="inp">1 célula<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div><div class="field"><span class="lab">Disposição</span><span class="inp">Aliado<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div></div>
+            <div class="field"><span class="lab">Barras</span>
+              <div style="display:grid;grid-template-columns:minmax(0,1.2fr) 64px 64px 36px;gap:6px;align-items:center">
+                <span class="tiny muted">Nome</span><span class="tiny muted">Valor</span><span class="tiny muted">Máximo</span><span></span>
+                <span class="inp">PV</span><span class="inp mono">12</span><span class="inp mono">12</span><span class="ib box" style="width:36px"><svg class="i"><use href="#i-trash"/></svg></span>
+                <span class="inp">PA</span><span class="inp mono">3</span><span class="inp mono">3</span><span class="ib box" style="width:36px"><svg class="i"><use href="#i-trash"/></svg></span>
+              </div>
+              <span class="bt sm dash" style="justify-self:start"><svg class="i"><use href="#i-plus"/></svg>Acrescentar barra</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="bt sm">Importar de um token salvo…</span><span class="sp"></span><span class="save">Salvo</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Nota › aba Ficha (PR N).</b> “Token para a mesa” é uma seção recolhível no fim da Ficha. A imagem vem do seletor do kit (sem ela, o retrato); tamanho e disposição são listas com nome; cada barra tem nome, valor e máximo rotulados, como as barras da mesa. Cada mudança grava sozinha, numa gravação só.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="app" aria-hidden="true" style="min-height:520px">
+        <div class="side-bar">Biblioteca · 14 itens<span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+        <div class="side-body">
+          <span class="inp ph"><svg class="i"><use href="#i-search"/></svg>Buscar mapas e tokens…</span>
+          <span class="cg"><span>Mostrar</span><span class="choice"><span class="opt">Tudo</span><span class="opt">Tokens</span><span class="opt">Mapas</span><span class="opt on">Da wiki</span></span></span>
+          <div style="display:grid;gap:2px">
+            <div class="row"><span class="portrait"></span><span class="tx"><span>Capitã Brites</span><small>Aliado · PV 12/12</small></span><span class="end"><span class="ib box"><svg class="i"><use href="#i-plus"/></svg></span></span></div>
+            <div class="row"><span class="crest round"><svg class="i"><use href="#i-user"/></svg></span><span class="tx"><span>Alda das Lanternas</span><small>Neutro · usa o brasão</small></span><span class="end"><span class="ib box"><svg class="i"><use href="#i-plus"/></svg></span></span></div>
+            <div class="row"><span class="portrait"></span><span class="tx"><span>Mestre Ilan</span><small>Hostil · PV 30/30</small></span><span class="end"><span class="ib box"><svg class="i"><use href="#i-plus"/></svg></span></span></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:14px;right:14px;bottom:14px" class="card">
+          <span class="small muted">Propriedades do token · Voltar a Biblioteca</span>
+          <div class="field"><span class="lab">Nota</span><div style="display:flex;align-items:center;gap:8px"><span class="crest sm round"><svg class="i"><use href="#i-link"/></svg></span><a href="#token" tabindex="-1" style="flex:1">Capitã Brites</a><span class="ib box"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+          <div class="menu" style="right:8px;bottom:58px;position:absolute">
+            <span class="mh">Mais ações da nota</span>
+            <span class="mi f"><svg class="i"><use href="#i-link"/></svg>Trocar nota…</span>
+            <span class="mi"><svg class="i"><use href="#i-upload"/></svg>Importar de novo da nota</span>
+            <span class="sep"></span>
+            <span class="mi"><svg class="i"><use href="#i-x"/></svg>Desvincular</span>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Mesa › Biblioteca e propriedades (PR D).</b> “Da wiki” entra como mais uma opção do “Mostrar” que já existe, com a mesma linha e o mesmo “+ Pôr na cena” dos itens guardados; arrastar também vale. Nas propriedades do token, a nota é um link e o resto fica no ⋯. O caminho da nota nunca vai para os jogadores.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D6</span>“Token (para a mesa)” estava em violeta, a cor de segredo. Agora é uma seção comum da Ficha.</li>
+      <li><span class="d">D12</span>As barras eram fichas escolhíveis (“PV 12/12”); agora têm nome, valor e máximo rotulados. A imagem era um caminho; agora vem do seletor.</li>
+      <li><span class="d">D8</span><code>Capitã Brites.md</code> e <code>[[Anexos/Brites-token.png]]</code> viraram nomes.</li>
+      <li><span class="d">D15</span>A prévia “CB” virou o retrato ou o brasão.</li>
+      <li><span class="d">D2</span>Trocar, Desvincular e Importar de novo eram três botões soltos, com “Importar de novo” como principal. Agora ficam no ⋯ da nota.</li>
+      <li><span class="d">D14</span>“Importar” virou “Pôr na cena”, o nome que a biblioteca já usa.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>Nota secreta ligada a token nunca aparece aos jogadores. Nota apagada ou renomeada: “Nota não encontrada” e “Trocar nota…”. Falta uma escolha sua sobre “Importar de novo”, no fim da página.</div>
+  </div>
+</section>
+
+<!-- ============ 07 MESA ============ -->
+<section class="part" id="mesa" aria-labelledby="mesa-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 07 · VTT › Criar Sala</span>
+    <h2 id="mesa-t">Capa da mesa</h2>
+    <div class="tags"><span class="tag">U23</span><span class="tag pr">PR C</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete do Criar Sala no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true" style="min-height:470px">
+        <div class="head"><div><span class="ey">VTT</span><span class="ptitle">Criar Sala</span></div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:4px 20px 24px">
+          <div class="mcard" style="border-style:dashed;border-color:var(--line-strong);place-items:center;min-height:226px;color:var(--muted)"><div style="display:grid;justify-items:center;gap:8px"><svg class="i lg"><use href="#i-plus"/></svg><b style="color:var(--text)">Criar Nova</b></div></div>
+          <div class="mcard" style="position:relative;overflow:visible">
+            <div class="band" style="border-radius:18px 18px 0 0"><svg viewBox="0 0 220 110" preserveAspectRatio="xMidYMid slice"><rect width="220" height="110" fill="var(--map-sea)"/><path d="M0 60 Q50 30 110 55 T220 45 V110 H0Z" fill="var(--map-sand)"/><path d="M60 110 L80 40 L100 110Z" fill="var(--map-land)"/><circle cx="170" cy="30" r="12" fill="var(--map-road)"/></svg></div>
+            <div class="mt" style="padding-right:48px"><strong>Jornada para Vatu</strong><span class="small muted">Mar e pântano</span><span class="small muted">3 cenas · Aberta há 2 dias</span><span class="ib on"><svg class="i"><use href="#i-more"/></svg></span></div>
+            <div class="menu" style="left:96px;top:186px"><span class="mi f"><svg class="i"><use href="#i-image"/></svg>Capa…</span><span class="mi"><svg class="i"><use href="#i-pen"/></svg>Renomear…</span><span class="sep"></span><span class="mi dg"><svg class="i"><use href="#i-trash"/></svg>Excluir…</span></div>
+          </div>
+          <div class="mcard"><div class="band plain"><svg class="i lg"><use href="#i-map"/></svg></div><div class="mt" style="padding-right:48px"><strong>Ilha de Bitu</strong><span class="small muted">1 cena · Aberta há 9 dias</span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+          <div class="mcard"><div class="band plain"><svg class="i lg"><use href="#i-map"/></svg></div><div class="mt" style="padding-right:48px"><strong>Torneio de Ormund</strong><span class="small muted">2 cenas · Aberta há 1 mês</span><span class="small" style="display:inline-flex;gap:6px;align-items:center;color:var(--gold)"><svg class="i"><use href="#i-image"/></svg>Capa não encontrada</span><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador.</b> O cartão continua sendo um botão que abre a mesa, com o ⋯ fora dele. “Capa…” entra no ⋯ antes de Renomear e Excluir. A capa preenche a faixa do topo, e “3 cenas” sai de cima da imagem para a linha de texto. Sem capa, o desenho de hoje; com a imagem sumida, o mesmo desenho e “Capa não encontrada” escrito. O cartão mostra só o que o arquivo da mesa guarda.</figcaption>
+  </figure>
+
+  <div class="smalls">
+    <figure>
+      <div class="modal" aria-hidden="true">
+        <div class="modal-h"><strong>Capa da mesa</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+        <div class="modal-b">
+          <div style="display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px">
+            <span class="small muted" style="font-weight:650">Imagem da capa</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="inp ph" style="flex:1 1 160px"><svg class="i"><use href="#i-search"/></svg>Filtrar imagens do cofre</span><span class="bt sm"><svg class="i"><use href="#i-upload"/></svg>Do computador…</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px">
+              <span style="display:grid;gap:4px;padding:4px;border:1px solid var(--cyan);border-radius:8px;box-shadow:0 0 0 1px var(--cyan);font-size:12px;font-weight:650"><span style="aspect-ratio:1;border-radius:4px;background:var(--map-sea)"></span>vatu-capa.jpg</span>
+              <span style="display:grid;gap:4px;padding:4px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--muted)"><span style="aspect-ratio:1;border-radius:4px;background:var(--map-land)"></span>bitu.png</span>
+              <span style="display:grid;gap:4px;padding:4px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--muted)"><span style="aspect-ratio:1;border-radius:4px;background:var(--map-sand)"></span>farol.jpg</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-f"><span class="bt gh" style="margin-right:auto">Tirar a capa</span><span class="bt">Cancelar</span><span class="bt pri">Usar esta imagem</span></div>
+      </div>
+      <figcaption><b>Diálogo da capa.</b> O mesmo seletor de imagens das campanhas, categorias e livros.</figcaption>
+    </figure>
+    <figure style="width:min(360px,100%)">
+      <div class="app phone" aria-hidden="true">
+        <div class="head" style="padding:14px 14px 8px"><div><span class="ey">VTT</span><span class="ptitle" style="font-size:22px">Mesas recentes</span></div></div>
+        <div style="display:grid;gap:2px;padding:0 8px 14px">
+          <div class="row"><span style="width:40px;height:40px;border-radius:10px;background:var(--map-sea);flex:none"></span><span class="tx"><span>Jornada para Vatu</span><small>Aberta há 2 dias</small></span><span></span></div>
+          <div class="row"><span class="crest"><svg class="i"><use href="#i-map"/></svg></span><span class="tx"><span>Ilha de Bitu</span><small>Aberta há 9 dias</small></span><span></span></div>
+        </div>
+      </div>
+      <figcaption><b>Mesas recentes.</b> Na tela inicial do VTT, a capa vira a imagem da linha. Criar Sala e Entrar Sala continuam as duas escolhas.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D14</span>“Última sessão · 9 de Ogronios”, “2 jogadores” e “aberta” não existem no arquivo da mesa. Saíram.</li>
+      <li><span class="d">D2</span>“Abrir” e “⋯ Capa…” eram botões dentro do cartão, que já é um botão (o HTML não aceita). Agora o cartão abre e “Capa…” fica no ⋯.</li>
+      <li><span class="d">D15</span>O selo de cenas ficava sobre a imagem; a letra em Cinzel saiu.</li>
+      <li><span class="d">D14</span>“Mapa de Bitu” aparecia como mesa; aqui só há mesas.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>A capa vem do seletor do kit (imagens do cofre, inclusive as anexadas a artigos, e “Do computador…”). Imagem sumida: o cartão diz “Capa não encontrada” e “Capa…” troca; o caminho gravado fica até alguém trocar.</div>
+  </div>
+</section>
+
+<!-- ============ 08 NOVO NPC ============ -->
+<section class="part" id="npc" aria-labelledby="npc-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 08 · Elenco › Novo NPC e Nova facção</span>
+    <h2 id="npc-t">Criação rápida com ficha opcional</h2>
+    <div class="tags"><span class="tag">U24 · U34</span><span class="tag pr">PR P</span></div>
+  </div>
+
+  <div class="smalls">
+    <figure>
+      <div class="modal" aria-hidden="true">
+        <div class="modal-h"><strong>Novo NPC</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+        <div class="modal-b">
+          <div class="field"><span class="lab">Nome</span><div style="display:flex;gap:8px"><span class="inp foc" style="flex:1">Alda das Lanternas</span><span class="bt"><svg class="i"><use href="#i-shuffle"/></svg>Sortear</span></div></div>
+          <div class="field"><span class="lab">Atitude com o grupo</span><span class="choice"><span class="opt">Aliado</span><span class="opt">Amigável</span><span class="opt on">Neutro</span><span class="opt">Desconfiado</span><span class="opt">Hostil</span></span></div>
+          <span class="det open">Ficha (opcional)</span>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;padding:0 4px">
+            <div class="field"><span class="lab">Espécie</span><span class="inp">Humana<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div>
+            <div class="field"><span class="lab">Ocupação</span><span class="inp">Barqueira</span></div>
+            <div class="field"><span class="lab">Residência</span><span class="inp">Bitu<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span></div>
+            <div class="field"><span class="lab">Retrato</span><span class="bt sm" style="justify-self:start"><svg class="i"><use href="#i-image"/></svg>Escolher imagem…</span></div>
+          </div>
+        </div>
+        <div class="modal-f"><span class="bt">Cancelar</span><span class="bt pri">Criar NPC</span></div>
+      </div>
+      <figcaption><b>Computador.</b> Nome com “Sortear” ao lado, atitude num seletor com as atitudes do Elenco e a ficha de Personagem recolhida. “Criar NPC” no rodapé.</figcaption>
+    </figure>
+    <figure style="width:min(360px,100%)">
+      <div class="app phone" aria-hidden="true">
+        <div class="modal" style="border:0;border-radius:0;box-shadow:none">
+          <div class="modal-h"><strong>Nova facção</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+          <div class="modal-b">
+            <div class="field"><span class="lab">Nome</span><span class="inp">Casa Vatu</span></div>
+            <span class="bt" style="justify-self:start"><svg class="i"><use href="#i-shuffle"/></svg>Sortear facção</span>
+            <div class="field"><span class="lab">Atitude com o grupo</span><span class="choice"><span class="opt">Aliado</span><span class="opt">Amigável</span><span class="opt on">Neutro</span><span class="opt">Desconfiado</span><span class="opt">Hostil</span></span></div>
+            <span class="det">Ficha (opcional)</span>
+          </div>
+          <div class="modal-f"><span class="bt">Cancelar</span><span class="bt pri">Criar facção</span></div>
+        </div>
+      </div>
+      <figcaption><b>Celular, Nova facção.</b> O mesmo diálogo com o título da facção e a ficha de Organização recolhida.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D1</span>“Sortear” e “Criar NPC” estavam no topo do diálogo. Agora “Sortear” fica junto ao Nome e “Criar NPC” no rodapé.</li>
+      <li><span class="d">D12</span>“Ficha opcional” era desenhada como um campo de texto. Agora é uma seção recolhível de verdade.</li>
+      <li><span class="d">D14</span>As atitudes vêm da lista que o Elenco já usa (aliado, amigável, neutro, desconfiado, hostil).</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>Sortear nunca apaga o que a pessoa digitou: preenche os campos vazios e troca só o que ele mesmo sorteou antes. Sortear existe só no diálogo.</div>
+  </div>
+</section>
+
+<!-- ============ 09 SESSÕES ============ -->
+<section class="part" id="sessoes" aria-labelledby="sessoes-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 09 · Campanhas › Sessões</span>
+    <h2 id="sessoes-t">“Sessão N: Título” e notas do mestre</h2>
+    <div class="tags"><span class="tag">U31</span><span class="tag pr">PR G</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete das Sessões no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true" style="min-height:560px">
+        <div class="head"><div><span class="ey">Jornada para Vatu</span><span class="ptitle">Sessões</span></div><div class="acts"><span class="bt pri"><svg class="i"><use href="#i-plus"/></svg>Nova sessão</span><span class="ib on"><svg class="i"><use href="#i-more"/></svg></span></div></div>
+        <div class="menu" style="right:20px;top:66px"><span class="mi f"><svg class="i"><use href="#i-lock"/></svg>Nova nota do mestre…</span><span class="sep"></span><span class="mi"><svg class="i"><use href="#i-upload"/></svg>Exportar diário (Markdown)</span><span class="mi"><svg class="i"><use href="#i-upload"/></svg>Exportar diário (PDF, HTML…)…</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:6px 20px 24px">
+          <div class="card" style="padding:8px">
+            <div class="row"><span class="crest g"><svg class="i"><use href="#i-book"/></svg></span><span class="tx"><span>Sessão 13: O farol</span><small>14 de novembro · 16 de Ogronios no mundo</small></span><span class="end"><span class="chip g">Planejada</span></span></div>
+            <div class="row"><span class="crest ok"><svg class="i"><use href="#i-book"/></svg></span><span class="tx"><span>Sessão 12: A ponte</span><small>7 de novembro · 9 de Ogronios no mundo</small></span><span class="end"><span class="chip ok">Realizada</span></span></div>
+            <div class="row"><span class="crest ok"><svg class="i"><use href="#i-book"/></svg></span><span class="tx"><span>Sessão 11: Lanternas no cais</span><small>31 de outubro · 2 de Ogronios no mundo</small></span><span class="end"><span class="chip ok">Realizada</span></span></div>
+          </div>
+          <div class="card" style="padding:8px;position:relative">
+            <div class="card-h" style="padding:8px 8px 4px"><span class="stitle"><svg class="i"><use href="#i-lock"/></svg>Notas do mestre · 3</span><span class="sp"></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Nota do mestre</span></div>
+            <div class="row"><span class="crest v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>A passagem pelos juncos</span><small>Segredo · Sessão 12 · fixada na Tela do Mestre</small></span><span class="end"><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></span></div>
+            <div class="row"><span class="crest v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>O que a Ordem sabe</span><small>Segredo · sem sessão</small></span><span class="end"><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></span></div>
+            <div class="row"><span class="crest v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>Quem é o Silente</span><small>Segredo · Sessão 13</small></span><span class="end"><span class="ib"><svg class="i"><use href="#i-more"/></svg></span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador.</b> “+ Nova sessão” continua a única ação principal. “Nova nota do mestre…” fica no ⋯ das Sessões, no “+ Novo” do app e no cabeçalho da seção “Notas do mestre”. Cada nota diz “Segredo” e a sessão ligada em texto; o ⋯ dela fixa na Tela do Mestre (a propriedade <code>fixadas</code> da campanha, como hoje), liga a uma sessão ou manda para a lixeira. O eyebrow mostra o nome da campanha, não a pasta.</figcaption>
+  </figure>
+
+  <div class="smalls">
+    <figure>
+      <div class="modal" aria-hidden="true">
+        <div class="modal-h"><strong>Nova nota do mestre</strong><span class="sp"></span><span class="ib"><svg class="i"><use href="#i-x"/></svg></span></div>
+        <div class="modal-b">
+          <div class="field"><span class="lab">Título</span><span class="inp foc">A passagem pelos juncos</span></div>
+          <div class="field"><span class="lab">Sessão ligada (opcional)</span><span class="inp">Sessão 12: A ponte<span class="sp"></span><svg class="i"><use href="#i-down"/></svg></span><span class="hint">Dá para trocar depois, nas Propriedades.</span></div>
+          <div class="notice" style="--tone:var(--violet)"><svg class="i"><use href="#i-lock"/></svg><span><b>Só o mestre vê esta nota.</b><small>Ela fica em Notas do mestre, marcada como segredo, e não vai para a sala nem para o diário.</small></span></div>
+        </div>
+        <div class="modal-f"><span class="bt">Cancelar</span><span class="bt pri">Criar nota</span></div>
+      </div>
+      <figcaption><b>Diálogo.</b> Título e sessão ligada; “Criar nota” abre a nota no editor, que grava sozinho.</figcaption>
+    </figure>
+    <figure style="width:min(360px,100%)">
+      <div class="app phone" aria-hidden="true">
+        <div class="head" style="padding:14px 14px 8px"><div><span class="ey">Jornada para Vatu</span><span class="ptitle" style="font-size:22px">Sessões</span></div><div class="acts"><span class="bt pri"><svg class="i"><use href="#i-plus"/></svg>Nova</span><span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span></div></div>
+        <div style="display:grid;gap:2px;padding:0 8px">
+          <div class="row"><span class="crest g"><svg class="i"><use href="#i-book"/></svg></span><span class="tx"><span>Sessão 13: O farol</span><small>Planejada · 14 de novembro</small></span><span></span></div>
+          <div class="row"><span class="crest ok"><svg class="i"><use href="#i-book"/></svg></span><span class="tx"><span>Sessão 12: A ponte</span><small>Realizada · 7 de novembro</small></span><span></span></div>
+        </div>
+        <div class="sec-h" style="padding:12px 14px 4px"><span class="stitle">Notas do mestre · 3</span><span class="sp"></span><span class="bt sm"><svg class="i"><use href="#i-plus"/></svg>Nota</span></div>
+        <div style="display:grid;gap:2px;padding:0 8px 12px">
+          <div class="row"><span class="crest v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>A passagem pelos juncos</span><small>Segredo · Sessão 12</small></span><span class="end"><span class="ib"><svg class="i lg"><use href="#i-more"/></svg></span></span></div>
+          <div class="row"><span class="crest v"><svg class="i"><use href="#i-lock"/></svg></span><span class="tx"><span>O que a Ordem sabe</span><small>Segredo · sem sessão</small></span><span class="end"><span class="ib on"><svg class="i lg"><use href="#i-more"/></svg></span></span></div>
+        </div>
+        <div style="height:262px"></div>
+        <div class="menu" style="right:10px;left:10px;min-width:0;bottom:12px"><span class="mh">Ações de O que a Ordem sabe</span><span class="mi f" style="min-height:44px">Abrir</span><span class="mi" style="min-height:44px"><svg class="i"><use href="#i-pinned"/></svg>Fixar na Tela do Mestre</span><span class="mi" style="min-height:44px"><svg class="i"><use href="#i-link"/></svg>Ligar a uma sessão…</span><span class="sep"></span><span class="mi dg" style="min-height:44px"><svg class="i"><use href="#i-trash"/></svg>Mandar para a lixeira</span></div>
+      </div>
+      <figcaption><b>Celular.</b> A mesma ordem: sessões, depois as notas do mestre. O ⋯ de cada nota tem 44 px e abre as ações dela: Abrir, Fixar na Tela do Mestre, Ligar a uma sessão e Mandar para a lixeira.</figcaption>
+    </figure>
+  </div>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D2</span>O cabeçalho tinha “+ Nota do mestre” e “+ Nova sessão” lado a lado. A nota do mestre foi para o ⋯ e para a seção dela.</li>
+      <li><span class="d">D13</span>“Salvar nota” saiu: a nota grava sozinha.</li>
+      <li><span class="d">D2</span>“Fixar” era o botão principal da nota; agora fica no ⋯ dela.</li>
+      <li><span class="d">D14</span>A pergunta “lembrar Fixar por campanha ou por aparelho” já tinha resposta no código: as notas fixadas moram na campanha.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>A nota do mestre aparece em Sessões e, quando fixada, na Tela do Mestre. A sessão ligada é opcional na criação e editável depois. As exportações do diário e “Mostrar pela sala” pulam as notas do mestre.</div>
+  </div>
+</section>
+
+<!-- ============ 10 FERRAMENTAS ============ -->
+<section class="part" id="ferramentas" aria-labelledby="ferramentas-t">
+  <div class="part-head">
+    <span class="eyebrow">Tela 10 · Wiki › Ferramentas</span>
+    <h2 id="ferramentas-t">Geradores alinhados e “Guardar na wiki” no lugar certo</h2>
+    <div class="tags"><span class="tag">U26 · U27 · U32</span><span class="tag pr">PRs M, I1, I2</span></div>
+  </div>
+
+  <figure>
+    <div class="scroll" tabindex="0" role="region" aria-label="Maquete das Ferramentas no computador, com rolagem para os lados">
+      <div class="app desk" aria-hidden="true">
+        <div class="head"><div><span class="ey">Wiki · funciona sem internet</span><span class="ptitle">Ferramentas do mundo</span><span class="small muted">40 geradores, nomes de 12 culturas e 3 tabelas da wiki</span></div></div>
+        <div style="display:grid;grid-template-columns:250px minmax(0,1fr);border-top:1px solid var(--line);min-height:500px">
+          <div style="display:grid;gap:2px;align-content:start;padding:12px 8px;border-right:1px solid var(--line);background:var(--panel)">
+            <span class="ey" style="padding:6px 10px">Pessoas</span>
+            <div class="row" style="min-height:40px"><span></span><span class="tx"><span>Nome</span></span><span></span></div>
+            <div class="row cur" style="min-height:40px"><span></span><span class="tx"><span>NPC</span></span><span></span></div>
+            <div class="row" style="min-height:40px"><span></span><span class="tx"><span>Mercador</span></span><span></span></div>
+            <span class="ey" style="padding:10px 10px 6px">Lugares</span>
+            <div class="row" style="min-height:40px"><span></span><span class="tx"><span>Nome de lugar</span></span><span></span></div>
+            <div class="row" style="min-height:40px"><span></span><span class="tx"><span>Taverna</span></span><span></span></div>
+          </div>
+          <div style="display:grid;gap:14px;align-content:start;padding:18px 20px">
+            <h3 style="font-size:20px">NPC</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end">
+              <span class="cg"><span>Gênero</span><span class="choice"><span class="opt on">Qualquer</span><span class="opt">Feminino</span><span class="opt">Masculino</span></span></span>
+              <span class="cg"><span>Quantos</span><span class="choice"><span class="opt">1</span><span class="opt on">5</span><span class="opt">10</span></span></span>
+              <span class="bt pri"><svg class="i"><use href="#i-gen"/></svg>Gerar</span>
+            </div>
+            <div style="display:grid;gap:6px">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--cyan);border-radius:12px;background:color-mix(in srgb,var(--cyan) 8%,var(--panel))"><span>Alda das Lanternas, barqueira humana; quer pagar a dívida do irmão antes da maré grande.</span><span class="bt sm fix" style="border-color:var(--cyan)"><svg class="i"><use href="#i-check"/></svg>Escolhido</span></div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px"><span>Ilan Cardo, sacerdote do sal; esconde que perdeu a fé depois do naufrágio.</span><span class="bt sm fix">Usar este</span></div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px"><span>Mira Tosca, vendedora de redes que ouve tudo no cais e cobra por segredos.</span><span class="bt sm fix">Usar este</span></div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:4px"><span class="small muted">Vai para <b style="color:var(--text)">Personagens</b> (Personagem)</span><span class="bt">Guardar na wiki…</span></div>
+            <span class="det open" style="margin-top:6px">Recentes <span class="cnt">12</span></span>
+            <div style="display:grid;gap:2px">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;padding:8px 10px"><span style="display:grid;gap:2px"><b class="small">Taverna</b><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">O Cais Azul: chão de tábuas que rangem, ensopado de enguia e uma mesa reservada para quem paga em pérolas…</span><span class="small" style="color:var(--cyan)">Mostrar tudo</span></span><span class="bt sm">Usar</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Computador.</b> A anatomia da F4b continua: geradores à esquerda, resultado à direita. “Gerar” é a única ação principal. Cada resultado mostra o texto inteiro e um botão de largura fixa, “Usar este” ou “Escolhido”, alinhado à direita em todas as linhas. “Guardar na wiki…” diz para onde vai e abre o Novo artigo preenchido. Recentes mostram duas linhas e “Mostrar tudo”.</figcaption>
+  </figure>
+
+  <div class="changes">
+    <div><h3>O que mudou da versão 1</h3><ul>
+      <li><span class="d">D1</span>A lista de geradores à esquerda (decisão WIK-5 da F4b) tinha virado abas por grupo. Voltou.</li>
+      <li><span class="d">D2</span>“Escolhido” era um botão principal em cada resultado, ao lado de “Usar” e “Guardar na wiki”. Agora há um botão por resultado, que muda de estado, e um “Guardar na wiki…” só.</li>
+      <li><span class="d">D8</span>“Abrir inteiro ↗” virou “Mostrar tudo”, que abre ali mesmo.</li>
+      <li><span class="d">D7</span>Os textos cortados viraram texto inteiro nos resultados e duas linhas nos Recentes.</li>
+    </ul></div>
+    <div class="decided"><b>Decidido</b>Recentes guarda os 12 de hoje, agora no aparelho. “Guardar na wiki…” abre o Novo artigo preenchido, que já é a confirmação. As tabelas ×4 crescem só no fim, então os primeiros itens e a ordem ficam iguais.</div>
+  </div>
+</section>
+
+<!-- ============ DECISÕES ============ -->
+<section class="part" id="decisoes" aria-labelledby="decisoes-t">
+  <div class="part-head">
+    <span class="eyebrow">Para fechar</span>
+    <h2 id="decisoes-t">O que o João decide</h2>
+    <p class="prose muted">A versão 1 trazia 25 perguntas. A maioria já tinha resposta nas regras do rework ou no código, e essas respostas estão nas caixas “Decidido” de cada tela. Ficam duas.</p>
+  </div>
+  <div class="rules" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+    <div class="rule"><b>1</b><span>Aprovar estas maquetes<small>Com a aprovação, a ADR 0036 registra as decisões e os PRs de tela começam pelo B (Novo artigo), que serve a mapa, ferramentas, token e NPC.</small></span></div>
+    <div class="rule"><b>2</b><span>Token: “Importar de novo da nota”<small>Recomendado: as barras do token passam a ser as da nota, mantendo o valor atual das barras de mesmo nome (o PV perdido na luta não volta a 12). A outra opção é só acrescentar as barras que faltam.</small></span></div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement
+  const botao = document.getElementById("tema")
+  const chave = "runas-codex:maquetes-tema"
+  const escuroDoSistema = () => window.matchMedia && !window.matchMedia("(prefers-color-scheme: light)").matches
+  try { const salvo = localStorage.getItem(chave); if (salvo === "light" || salvo === "dark") root.dataset.theme = salvo } catch { /* só não lembra */ }
+  const claro = () => root.dataset.theme ? root.dataset.theme === "light" : !escuroDoSistema()
+  const sync = () => { const c = claro(); botao.textContent = c ? "Usar tema escuro" : "Usar tema claro"; botao.setAttribute("aria-pressed", String(c)) }
+  botao.addEventListener("click", () => {
+    const proximo = claro() ? "dark" : "light"
+    root.dataset.theme = proximo
+    try { localStorage.setItem(chave, proximo) } catch { /* só não lembra */ }
+    sync()
+  })
+  sync()
+})()
+</script>
+</body>
+</html>

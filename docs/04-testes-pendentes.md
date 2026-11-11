@@ -398,7 +398,7 @@ aparelho físico acima continua necessária.
 - Colar/arrastar/importar imagens em vários espaços, renomear pelo link, pelo botão da nota e pelo botão direito;
   repetir o mesmo arquivo em duas notas e num quadro/mapa. Reunir arquivos com nomes iguais e conferir no Obsidian.
 - Conferir fonte/zoom e menus no teclado virtual e multitouch físicos. Android não foi implementado/testado nesta
-  rodada. O roteiro completo está em `docs/tarefas/revisao-completa-complementar.md`.
+  rodada. O roteiro completo está em `docs/tarefas/concluidas/revisao-completa-complementar.md`.
 
 
 ## W1 — categorias da Wiki
@@ -636,7 +636,7 @@ seções antigas ficam como histórico (o arquivo só recebe acréscimos).
   aberto no Word e no LibreOffice; “Exportar…” em cada módulo; versão dos jogadores sem segredos; site offline em ZIP
   aberto sem internet. A parte visual da escrita de Livros será refeita pelo rework e conferida de novo.
 - **X7, sala hospedada no celular:** funciona na rede local; pela internet (Cloudflare) não abre, porque o túnel não
-  existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/codex-durante-rework.md), item 1).
+  existe no Android. Passado ao Codex ([codex-durante-rework.md](tarefas/concluidas/codex-durante-rework.md), item 1).
 - **Restauração da X4 e da X7 (#52):** os quatro itens da seção acima, na beta.16.
 
 ## Rework visual — F1 fundações (21/10/2026)
@@ -1116,7 +1116,7 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
 
 ## R1 e T7 — revisão para a 1.0 e defeitos de tela
 
-- [ ] Ler `docs/tarefas/revisao-1.0.md` e decidir a ordem do que ficou aberto (D11, D13 e a revisão das Campanhas).
+- [ ] Ler `docs/tarefas/concluidas/revisao-1.0.md` e decidir a ordem do que ficou aberto (D11, D13 e a revisão das Campanhas).
 - [ ] Notas com várias abas: clicar no nome troca de aba, “Fechar” e “Ações da aba” continuam funcionando, o botão do
   meio fecha e arrastar reordena; com o teclado, Tab passa por nome, ações e fechar de cada aba.
 - [ ] Árvore das Notas: os botões da pasta (Exportar, Aparência, Favoritar, Nova nota, Renomear) aparecem no hover e
@@ -1283,7 +1283,7 @@ A beta.23 não foi publicada; as conferências dela (seção acima) valem para a
 
 ## Versão 1.0.0 (T8, preparada em 31/10/2026)
 
-A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferencias-1.0.md`](tarefas/conferencias-1.0.md)
+A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas/conferencias-1.0.md`](tarefas/concluidas/conferencias-1.0.md)
 (seção A: só num aparelho real; seção B: funções novas desde a beta.21; seção C: o que saiu da lista e por quê).
 
 - [ ] Atualizar de uma beta para a 1.0.0 pelo botão “Verificar atualizações” no Ubuntu (`.deb`), AppImage, Windows e
@@ -1326,7 +1326,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 ## Versão 1.0.0 lançada (01/11/2026)
 
 - **Aprovado pelo dono em 01/11**: as conferências da 1.0 (seções A e B de
-  [`conferencias-1.0.md`](tarefas/conferencias-1.0.md)) tiveram êxito.
+  [`conferencias-1.0.md`](tarefas/concluidas/conferencias-1.0.md)) tiveram êxito.
 - Lançada no mesmo dia pelo workflow “Lançar versão” (tag `v1.0.0` no `6b3e96a`), com Linux, Windows e os jobs Android
   verdes: [página da versão](https://github.com/Player07x/Runas-Codex/releases/tag/v1.0.0), com APK, `.deb`, AppImage,
   instalador do Windows e `SHA256SUMS.txt`.
@@ -1431,7 +1431,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 
 ## Maquetes da atualização 1.2.0
 
-- [ ] Abrir `docs/tarefas/atualizacao-1.2-maquetes.html` (versão 2, de 08/11) sem internet em 320 px, 768 px e no
+- [ ] Abrir `docs/tarefas/concluidas/atualizacao-1.2-maquetes.html` (versão 2, de 08/11) sem internet em 320 px, 768 px e no
   computador; conferir que a página não rola para os lados (as maquetes do computador rolam dentro do próprio quadro),
   que as telas parecem o app de hoje no tamanho real e que o tema claro funciona e fica lembrado ao recarregar.
 - [x] Responder as duas perguntas de “O que o João decide”: maquetes aprovadas em 08/11; “Importar de novo da nota”
@@ -1706,3 +1706,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] Gráfico global com `?cofre-grande=10000` (ou um cofre grande) num computador **sem placa de vídeo** (ou com o
   Chrome em `--disable-gpu`): as ligações somem enquanto o gráfico se acomoda e voltam quando ele para; arrastar e
   aproximar respondem. Num computador com placa de vídeo o gráfico continua igual.
+## Atualização 1.3.0 · Limpeza do repositório (PR K: U49)
+
+- [ ] No GitHub, abrir `docs/tarefas/README.md`: ele mostra só o que está aberto e aponta para `concluidas/` e
+      `docs/historico/`. Clicar em dois ou três links de uma tarefa concluída (por exemplo, `concluidas/rumo-a-1.0.md`
+      → ADR, `docs/04`) e ver que abrem.
+- [ ] Abrir o app (Notas, Calendário da Wiki, grafo): nada some com a remoção do código sem uso (`MoonIcon`,
+      `NoteEditor`, `NotePanels`, `lib/fictional-calendar`, `lib/graph`, que ninguém importava).
+- [ ] As imagens dos PRs antigos continuam abrindo (elas são lidas do branch de cada PR, não da `main`).

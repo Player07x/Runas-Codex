@@ -27,10 +27,10 @@ O que ainda falta conferir à mão está em [Testes pendentes](docs/04-testes-pe
 
 ## Documentos
 
-1. [Estudo](docs/00-estudo.md) — o que já existe no Runas-Core e no RunasVTT e o que os outros gerenciadores e VTTs fazem.
+1. [Estudo](docs/historico/00-estudo.md) — o que já existe no Runas-Core e no RunasVTT e o que os outros gerenciadores e VTTs fazem.
 2. [Checklist de recursos](docs/01-checklist-recursos.md) — validada com os 283 itens.
 3. [Viabilidade e etapas](docs/02-viabilidade-e-etapas.md) — stack, arquitetura, riscos e plano de etapas.
-4. [Comparação dos protótipos](docs/03-comparacao-prototipos.md) — Original, Atlas e Órbita (histórico).
+4. [Comparação dos protótipos](docs/historico/03-comparacao-prototipos.md) — Original, Atlas e Órbita (histórico).
 5. [Testes pendentes](docs/04-testes-pendentes.md) — o que conferir à mão em cada etapa.
 6. [Decisões de arquitetura](docs/adr/) — ADRs numeradas.
 7. [Tarefas em andamento](docs/tarefas/README.md) — quem faz o quê; as regras para agentes estão no [AGENTS.md](AGENTS.md).
@@ -55,7 +55,7 @@ No celular, no mesmo Wi-Fi: rode `npm run dev:rede` e abra no celular o endereç
 O visual oficial é o **Órbita**: grafite e lavanda no tema escuro (padrão), com variação clara no botão de tema,
 barra lateral recolhível no computador e barra inferior no celular. A página inicial destaca a próxima sessão da
 campanha. A escolha está registrada na [ADR 0001](docs/adr/0001-design-orbita.md); a comparação com as outras
-propostas (Original e Atlas) fica em [Comparação dos protótipos](docs/03-comparacao-prototipos.md) e no primeiro
+propostas (Original e Atlas) fica em [Comparação dos protótipos](docs/historico/03-comparacao-prototipos.md) e no primeiro
 commit do repositório.
 
 `npm run build` gera a versão estática em `app/dist/` (abre de qualquer pasta).
