@@ -1607,3 +1607,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] As seções acima, de “Maquetes da atualização 1.2.0” até “Geradores ×4”, entraram nesta versão.
 - [ ] Abrir no Obsidian um artigo com token (`token_*`) e uma nota do mestre ligada a uma sessão (`sessao`): as
   propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.3.0 · Tarefas na Agenda (PR B: U37, U38)
+
+- [ ] Agenda › Tarefas: as tarefas do cofre aparecem em Atrasadas, Hoje, Hábitos, Próximas e, recolhidas, Sem prazo e
+  Feitas (7 dias). Nenhuma tarefa aparece em duas seções.
+- [ ] Criar “Ler 10 páginas” com **Todo dia**: vai para `Agenda/Tarefas.md` como `- [ ] Ler 10 páginas 🔁 every day 🏁 delete 📅 <hoje>`.
+  Concluir: a linha de hoje some e fica só a de amanhã. Abrir a nota no Obsidian com o Tasks: mesma tarefa, mesma regra.
+- [ ] Numa tarefa atrasada, o ⊗ (Falhou): a linha ganha `[-]` e `❌ <hoje>`, aparece com o selo “Falhou” em Feitas;
+  no Obsidian aparece como cancelada. Numa tarefa que repete, a próxima ocorrência é criada.
+- [ ] Editar tarefa: na frente só descrição, estado, prioridade, prazo e repetição (em português); “Mais opções” abre
+  sozinho quando a tarefa já tem outra data, id, dependência ou 🏁. A 375 px cabe sem rolagem para os lados.

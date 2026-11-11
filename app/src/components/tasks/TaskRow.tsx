@@ -1,7 +1,7 @@
 import { useTasksVault } from "../../lib/tasks"
 import { useState, type ReactNode } from "react"
 import { CircleX, FileText, Pencil, SkipForward } from "lucide-react"
-import { canFail, isFailed, statusLabel } from "../../core/tasks/agenda"
+import { canFail, isFailed, recurrenceLabel, statusLabel } from "../../core/tasks/agenda"
 import { isValidDate } from "../../core/tasks/dates"
 import { postponeField } from "../../core/tasks/edit"
 import type { QueryElement, TaskElement } from "../../core/tasks/query"
@@ -105,8 +105,8 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
           {show("id") && task.id && field("🆔", "Id", task.id)}
           {show("depends on") && task.dependsOn.length > 0 && field("⛔", "Depende de", task.dependsOn.join(", "))}
           {show("priority") && PRIORITY_ICON[task.priority] && <span className="task-field" title={`Prioridade ${PRIORITY_LABEL[task.priority]}`}>{PRIORITY_ICON[task.priority]}</span>}
-          {show("recurrence rule") && task.recurrenceText && field("🔁", "Repete", task.recurrence?.text ?? task.recurrenceText)}
-          {show("on completion") && task.onCompletion && field("🏁", "Ao concluir", task.onCompletion)}
+          {show("recurrence rule") && task.recurrenceText && field("🔁", "Repete", recurrenceLabel(task.recurrence?.text ?? task.recurrenceText))}
+          {show("on completion") && task.onCompletion && field("🏁", "Ao concluir", task.onCompletion === "delete" ? "apaga a feita" : "mantém")}
           {DATE_FIELDS.map((d) => {
             const value = task[d.field]
             if (!value || !show(d.element)) return null

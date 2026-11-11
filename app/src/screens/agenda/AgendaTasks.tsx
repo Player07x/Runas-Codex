@@ -9,7 +9,7 @@ import "../../components/tasks/tasks.css"
 const HIDDEN = new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"] as const)
 
 /**
- * Vista Tarefas da Agenda (U37): Atrasadas, Hoje, Próximas, Sem prazo, Hábitos e Feitas (7 dias). Lê as tarefas de
+ * Vista Tarefas da Agenda (U37): Atrasadas, Hoje, Hábitos, Próximas e, recolhidas, Sem prazo e Feitas (7 dias). Lê as tarefas de
  * todas as notas no formato do Tasks; as criadas aqui vão para `Agenda/Tarefas.md`.
  */
 export function AgendaTasks({ tasks, actions, today }: { tasks: Task[]; actions: TaskActions; today: string }) {
@@ -19,7 +19,6 @@ export function AgendaTasks({ tasks, actions, today }: { tasks: Task[]; actions:
     { key: "hoje", title: "Hoje", list: groups.hoje, empty: "Nada vence hoje." },
     { key: "habitos", title: "Hábitos", list: groups.habitos, empty: "Nenhum hábito. Marque “Todo dia” ao criar uma tarefa." },
     { key: "proximas", title: "Próximas", list: groups.proximas },
-    { key: "sem-prazo", title: "Sem prazo", list: groups.semPrazo },
   ]
   const options = { today, hidden: HIDDEN }
   return (
@@ -35,6 +34,14 @@ export function AgendaTasks({ tasks, actions, today }: { tasks: Task[]; actions:
           )}
         </section>
       ))}
+      {groups.semPrazo.length > 0 && (
+        <details className="agenda-tasks-section">
+          <summary>Sem prazo ({groups.semPrazo.length})</summary>
+          <ul className="task-list">
+            {groups.semPrazo.map((t) => <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={options} />)}
+          </ul>
+        </details>
+      )}
       {groups.feitas.length > 0 && (
         <details className="agenda-tasks-section">
           <summary>Feitas, canceladas e falhas nos últimos 7 dias ({groups.feitas.length})</summary>

@@ -79,3 +79,16 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
   .agenda-tasks-add { grid-template-columns: minmax(0, 1fr) auto; }
   .agenda-tasks-add > .input:first-child { grid-column: 1 / -1; }
 }
+
+/* U38: Editar tarefa compacto. */
+.task-edit-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: start; }
+.task-edit-habit { align-self: end; min-height: 36px; }
+.task-edit-more { display: grid; gap: 10px; }
+.task-edit-more > summary { cursor: pointer; color: var(--muted); font-weight: 650; min-height: 32px; display: flex; align-items: center; }
+.task-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 8px; }
+@media (max-width: 860px), (pointer: coarse) { .task-edit-more > summary { min-height: 44px; } }
+.agenda-tasks details.agenda-tasks-section > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--muted); font-weight: 650; }
+@media (max-width: 860px), (pointer: coarse) { .agenda-tasks details.agenda-tasks-section > summary { min-height: 44px; } }
+.task-edit-more > summary::before, .agenda-tasks details.agenda-tasks-section > summary::before { content: "▸"; margin-right: 6px; color: var(--faint); }
+.task-edit-more[open] > summary::before, .agenda-tasks details.agenda-tasks-section[open] > summary::before { content: "▾"; }
+@media (prefers-reduced-motion: no-preference) { .task-edit-more > summary, .agenda-tasks details > summary { transition: color .15s; } }
