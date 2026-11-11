@@ -1607,3 +1607,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] As seções acima, de “Maquetes da atualização 1.2.0” até “Geradores ×4”, entraram nesta versão.
 - [ ] Abrir no Obsidian um artigo com token (`token_*`) e uma nota do mestre ligada a uma sessão (`sessao`): as
   propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.3.0 · Configurar calendário (PR D: U35)
+
+- [ ] Wiki › Calendário › Configurar: renomear um mês, mudar dias, acrescentar uma lua e um feriado. A grade muda na
+  hora e o bloco `runas-calendario` da nota tem só essas mudanças (comentários, `hoje:`, `hora:` e correspondências
+  ficam iguais). Abrir a nota no Obsidian: o bloco continua legível.
+- [ ] Apagar o nome ou deixar um mês com 0 dias: aparece “Não salvo: …” e nada é gravado.
+- [ ] Novo artigo › Calendário com cada modelo (Gregoriano, 12×30, 13×28, Em branco): a tela abre na aba Configurar;
+  no Gregoriano, 11/11/2026 cai numa quarta.
+- [ ] No celular (320 px), o botão Configurar abre o painel por cima, sem rolagem para os lados.

@@ -1,4 +1,4 @@
-import { isMap, isSeq, parse as parseYaml, parseDocument, Scalar, type Document, type YAMLMap } from "yaml"
+import { isMap, isSeq, parse as parseYaml, parseDocument, Scalar, YAMLSeq, type Document, type YAMLMap } from "yaml"
 import { CalendarError, parseCalendar } from "./calendar"
 
 /**
@@ -83,8 +83,8 @@ function flowItem(doc: Document, entries: [string, unknown][]): YAMLMap {
 
 function setList(doc: Document, key: string, items: YAMLMap[]): void {
   if (!items.length) return void doc.delete(key)
-  const seq = doc.createNode([])
-  if (isSeq(seq)) for (const item of items) seq.items.push(item)
+  const seq = new YAMLSeq<YAMLMap>()
+  seq.items.push(...items)
   doc.set(key, seq)
 }
 

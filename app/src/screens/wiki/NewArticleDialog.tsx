@@ -1,7 +1,10 @@
 import "./new-article.css"
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { FolderPlus, Search } from "lucide-react"
-import { articleKind, articleKinds, newArticleNote, newCalendarNote, newMapNote, type ArticleKind } from "../../core/wiki"
+import { articleKind, articleKinds, newArticleNote, newMapNote, type ArticleKind } from "../../core/wiki"
+import { CALENDAR_TEMPLATES, calendarNoteBody, calendarTemplate, type CalendarTemplate } from "../../core/calendar-form"
+import { defaultAbbr } from "../../core/calendar"
+import { openConfigureNext } from "./CalendarConfig"
 import { applyFicha, fichaErrors, groupKinds, linkName, withArticleBody, type FichaInput, type FichaValues } from "../../core/wiki-ficha"
 import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { FormField, FormGrid } from "../../components/kit/FormField"
@@ -62,7 +65,8 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
   const folderPath = folder.trim() ? `${root}/${folder.trim().replace(/^\/+|\/+$/g, "")}` : root
   const from = `${folderPath}/${name.trim() || "Sem título"}.md`
   const hasFicha = kind.id !== "calendario" && kind.id !== "mapa" && kind.fields.length > 0
-  const needsStep2 = hasFicha || kind.id === "mapa" || kind.questions.length > 0
+  const needsStep2 = hasFicha || kind.id === "mapa" || kind.id === "calendario" || kind.questions.length > 0
+  const [template, setTemplate] = useState<CalendarTemplate>("gregoriano")
 
   const groups = useMemo(() => {
     const term = fold(query.trim())
@@ -97,12 +101,13 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
     try {
       const title = name.trim()
       const text =
-        kind.id === "calendario" ? newCalendarNote(title)
+        kind.id === "calendario" ? calendarArticle(title, template)
         : kind.id === "mapa" ? newMapNote(title, index.linkTarget(linkName(image), `${folderPath}/${title}.md`))
         : withArticleBody(applyFicha(newArticleNote(kind, title), kind, ficha, allCalendars), initialBody)
       const created = await vault.createNote(folderPath, title, text)
       onClose()
       if (onCreated) onCreated(created)
+      else if (kind.id === "calendario") (openConfigureNext(created), navigate(`/wiki/calendario/${encodeURIComponent(created)}`))
       else navigate(kind.id === "mapa" ? `/wiki/mapa/${encodeURIComponent(created)}` : articleRoute(created))
     } catch (err) {
       setErrors({ general: err instanceof Error ? err.message : String(err) })
@@ -161,6 +166,14 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
         <div className="new-article-main">
           {wide && nameBlock}
           {showFicha && <>
+            {kind.id === "calendario" && <fieldset className="new-article-section new-calendar-templates">
+              <legend className="new-article-section-title">Começar de um modelo</legend>
+              {CALENDAR_TEMPLATES.map((t) => <label key={t.value} className={`new-article-kind${t.value === template ? " on" : ""}`}>
+                <input type="radio" name={`${ids}-modelo`} value={t.value} checked={t.value === template} onChange={() => setTemplate(t.value)} />
+                <span><strong>{t.label}</strong><small className="muted"> · {t.hint}</small></span>
+              </label>)}
+              <p className="small muted">Depois de criar, a aba Configurar abre para você ajustar meses, semana, luas e feriados.</p>
+            </fieldset>}
             {kind.id === "mapa" && <section className="new-article-section" aria-labelledby={`${ids}-mapa`}>
               <h3 id={`${ids}-mapa`} className="new-article-section-title">Imagem do mapa</h3>
               <CoverImagePicker legend="Imagem do mapa (obrigatória)" nearNote={from} value={image} onChange={(link) => { setImage(link); setErrors({}) }} />
@@ -181,4 +194,13 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
       </form>
     </Modal>
   )
+}
+
+/** Nota de calendário nova a partir de um modelo (U35): o gregoriano começa no dia de hoje; os outros, no ano 1. */
+function calendarArticle(title: string, kind: CalendarTemplate): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const now = new Date()
+  const today = kind === "gregoriano" ? `${String(now.getFullYear()).padStart(4, "0")}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` : "0001-01-01"
+  const form = { ...calendarTemplate(kind, title), sigla: defaultAbbr(title) }
+  return `---\ntipo: calendario\n---\n# ${title}\n\n${calendarNoteBody(form, today)}`
 }
