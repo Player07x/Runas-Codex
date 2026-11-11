@@ -1,0 +1,875 @@
+<title>Runas-Codex 1.3.0</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: uma coluna de leitura larga; cada pedido = texto curto + maquete na escala real do app (Órbita). */
+:root {
+  color-scheme: dark;
+  --bg: #11131a; --bg-deep: #0c0f15; --panel: #191d27; --panel-2: #242936; --panel-hover: #303748;
+  --text: #f0f2fa; --muted: #b0b8cd; --faint: #a0aabe; --line: #303747; --line-strong: #69799c;
+  --cyan: #bec6ff; --green: #9dcbb4; --red: #ffa48e; --gold: #ecc484; --violet: #bfadf1; --on-accent: #1a2040;
+  --red-soft: color-mix(in srgb, var(--red) 14%, transparent); --gold-soft: color-mix(in srgb, var(--gold) 14%, transparent);
+  --cyan-soft: color-mix(in srgb, var(--cyan) 14%, transparent); --green-soft: color-mix(in srgb, var(--green) 14%, transparent);
+  --paper: #fbf8f1; --ink: #1e1c19; --ink-soft: #5c574e; --ink-band: #363430; --ink-line: #d8d1c2; --ink-stripe: #efe9db;
+  --sans: "Geist", system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace; --book: "Libre Baskerville", Georgia, serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #fff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+    --text: #222a42; --muted: #53617c; --faint: #57657f; --line: #cbd3e6; --line-strong: #68799a;
+    --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #fff;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #fff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+  --text: #222a42; --muted: #53617c; --faint: #57657f; --line: #cbd3e6; --line-strong: #68799a;
+  --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-deep); color: var(--text); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 40px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 56px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
+h2 { font-size: 24px; line-height: 1.2; }
+h3 { font-size: 16px; }
+p { margin: 0; max-width: 70ch; }
+a { color: var(--cyan); }
+code, .mono { font-family: var(--mono); font-size: 13px; }
+p code, li code, td code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+.eyebrow { color: var(--faint); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* Abertura */
+.hero { display: grid; gap: 14px; }
+.hero p { color: var(--muted); font-size: 17px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.fact { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; color: var(--muted); background: var(--panel); }
+.fact b { color: var(--text); }
+.toc { display: flex; flex-wrap: wrap; gap: 6px; }
+.toc a { text-decoration: none; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background: var(--panel); }
+.toc a:hover { border-color: var(--line-strong); }
+.toc a:focus-visible, button:focus-visible, .m-btn:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* Tabela de itens */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+table.items { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+table.items th { text-align: left; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); padding: 12px 14px; border-bottom: 1px solid var(--line); }
+table.items td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.items tr:last-child td { border-bottom: 0; }
+table.items td:first-child { font-family: var(--mono); color: var(--cyan); white-space: nowrap; }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.cause { background: var(--green-soft); color: var(--green); }
+.tag.new { background: var(--cyan-soft); color: var(--cyan); }
+.tag.fix { background: var(--red-soft); color: var(--red); }
+.tag.opt { background: var(--gold-soft); color: var(--gold); }
+.pr { font-family: var(--mono); font-weight: 600; }
+
+/* Seções de pedido */
+section.req { display: grid; gap: 20px; scroll-margin-top: 16px; }
+.req-head { display: grid; gap: 6px; }
+.req-body { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.req-body.stack { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 920px) { .req-body { grid-template-columns: minmax(0, 1fr); } }
+.notes { display: grid; gap: 14px; }
+.notes h3 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.callout { border: 1px solid var(--line); border-left: 3px solid var(--green); border-radius: 10px; padding: 12px 14px; background: var(--panel); display: grid; gap: 6px; }
+.callout.gold { border-left-color: var(--gold); }
+.callout strong { font-size: 13px; }
+
+/* Moldura das maquetes */
+.mock-col { display: grid; gap: 14px; min-width: 0; }
+.frame { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--bg); min-width: 0; }
+.frame-cap { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--bg-deep); color: var(--faint); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+.frame-scroll { overflow-x: auto; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+figure { margin: 0; display: grid; gap: 6px; }
+figcaption { font-size: 13px; color: var(--muted); }
+figure img { display: block; border-radius: 10px; border: 1px solid var(--line); max-width: 100%; height: auto; }
+
+/* Peças do app (kit Órbita) */
+.m { font-size: 14px; color: var(--text); }
+.m-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: 600 13px var(--sans); white-space: nowrap; }
+.m-btn.primary { background: var(--cyan); color: var(--on-accent); border-color: transparent; }
+.m-btn.ghost { background: transparent; }
+.m-btn.danger { color: var(--red); }
+.m-btn.sm { min-height: 28px; padding: 0 9px; font-size: 12px; }
+.m-icon { width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: 9px; color: var(--muted); }
+.m-input { min-height: 34px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); padding: 0 10px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); min-width: 0; }
+.m-input.sel::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-2px); }
+.m-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.m-field { display: grid; gap: 4px; min-width: 0; }
+.m-hint { font-size: 12px; color: var(--faint); }
+.m-seg { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-deep); }
+.m-seg span { padding: 4px 10px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.m-seg span.on { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.m-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); padding: 0 12px; overflow-x: auto; }
+.m-tabs span { padding: 10px 10px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; border-bottom: 2px solid transparent; }
+.m-tabs span.on { color: var(--text); border-bottom-color: var(--cyan); }
+.m-section-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.m-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted); background: var(--panel); white-space: nowrap; }
+.m-chip.on { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-soft); }
+.m-chip.red { border-color: transparent; background: var(--red-soft); color: var(--red); }
+.m-chip.gold { border-color: transparent; background: var(--gold-soft); color: var(--gold); }
+.m-chip.green { border-color: transparent; background: var(--green-soft); color: var(--green); }
+.m-check { width: 18px; height: 18px; border: 2px solid var(--line-strong); border-radius: 5px; flex: none; display: inline-grid; place-items: center; }
+.m-check.on { background: var(--cyan); border-color: var(--cyan); }
+.m-check.on::after { content: ""; width: 5px; height: 9px; border: solid var(--on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.m-check.fail { border-color: var(--red); }
+.m-check.fail::after { content: "×"; color: var(--red); font-weight: 700; font-size: 14px; line-height: 1; }
+.m-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.m-grow { flex: 1 1 auto; min-width: 0; }
+.m-trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-card { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.m-sep { height: 1px; background: var(--line); }
+.m-badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--panel-2); color: var(--muted); font-variant-numeric: tabular-nums; }
+.m-badge.hot { background: var(--red); color: var(--bg); }
+svg.ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* U36: barras medidas */
+.bars { display: grid; gap: 8px; padding: 16px; }
+.bar-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 64px; gap: 10px; align-items: center; font-size: 13px; }
+.bar-track { position: relative; height: 18px; background: var(--panel-2); border-radius: 5px; }
+.bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: var(--cyan); }
+.bar-fill.short { background: var(--red); }
+.bar-target { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); left: 93.33%; }
+.bar-val { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
+.bar-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); padding: 0 16px 14px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+@media (max-width: 520px) { .bar-row { grid-template-columns: 96px minmax(0, 1fr) 52px; } }
+
+/* Página de livro (U43) */
+.page-mini { background: var(--paper); color: var(--ink); font-family: var(--book); font-size: 12px; line-height: 1.6; padding: 22px 24px; border-radius: 6px; display: grid; gap: 8px; }
+.page-mini h4 { margin: 0; font-size: 15px; }
+.page-mini p { margin: 0; text-align: justify; hyphens: auto; }
+.page-mini p.ind { text-indent: 1.4em; }
+.page-mini table { border-collapse: collapse; width: auto; font-size: 12px; }
+.page-mini table.full { width: 100%; table-layout: fixed; }
+.page-mini th { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); font-weight: 400; padding: 4px 10px; border-bottom: 1px solid var(--ink-line); }
+.page-mini td { padding: 4px 10px; border-bottom: 1px solid var(--ink-line); }
+.page-mini tr:nth-child(even) td { background: var(--ink-stripe); }
+.page-mini .c { text-align: center; }
+.pm-label { font-family: var(--sans); font-size: 12px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Decisões */
+.decisions { display: grid; gap: 10px; counter-reset: d; }
+.decision { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.decision::before { counter-increment: d; content: counter(d); width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); font-weight: 700; }
+.decision p { color: var(--muted); }
+.decision .rec { color: var(--text); }
+
+/* Ordem dos PRs */
+.prs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.pr-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); display: grid; gap: 4px; align-content: start; }
+.pr-card .pr { font-size: 18px; color: var(--cyan); }
+.pr-card small { color: var(--faint); font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevr" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1"/><circle cx="15.5" cy="15.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/><circle cx="8.5" cy="15.5" r="1"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+</svg>
+
+<main class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Runas-Codex · próxima atualização · plano de 11/11/2026</span>
+  <h1>Runas-Codex 1.3.0</h1>
+  <p>Os 12 pedidos de hoje, a limpeza do repositório e duas sobras da 1.2, com a causa de cada problema achada no código e uma maquete para cada tela nova. Nada foi implementado: você aprova ou ajusta, e os PRs saem na ordem do fim da página.</p>
+  <div class="facts">
+    <span class="fact"><b>15</b> itens (U35–U49)</span>
+    <span class="fact"><b>13</b> PRs, cada um numa janela de 5 h</span>
+    <span class="fact"><b>3</b> problemas com causa exata já achada</span>
+    <span class="fact"><b>7</b> decisões suas no fim</span>
+  </div>
+  <nav class="toc" aria-label="Pedidos">
+    <a href="#constancia">2 · Telas constantes</a>
+    <a href="#calendario">1 · Calendário sem código</a>
+    <a href="#tempo">5 · Tempo por campanha</a>
+    <a href="#tarefas">3 e 4 · Tarefas</a>
+    <a href="#avisos">11 · Avisos</a>
+    <a href="#notas">8 · Notas</a>
+    <a href="#livros">9 · Livros</a>
+    <a href="#rapidos">6, 7 e 10 · Ajustes</a>
+    <a href="#inicio">12 · Início</a>
+    <a href="#sobras">Sobras da 1.2</a>
+    <a href="#limpeza">Limpeza do repositório</a>
+    <a href="#ordem">Ordem</a>
+    <a href="#decisoes">Decisões</a>
+  </nav>
+</header>
+
+<section class="req" aria-labelledby="t-itens">
+  <h2 id="t-itens">Os 15 itens</h2>
+  <div class="table-scroll">
+    <table class="items">
+      <thead><tr><th>Item</th><th>Pedido</th><th>O que achei</th><th>Tipo</th><th>PR</th></tr></thead>
+      <tbody>
+        <tr><td>U35</td><td>1. Calendário sem editar código</td><td>Hoje é um bloco YAML escrito à mão; “Editar” só abre a nota</td><td><span class="tag new">Tela nova</span></td><td class="pr">D</td></tr>
+        <tr><td>U36</td><td>2. Telas que mudam de tamanho</td><td>A barra do topo encolhe quando a página é longa: 56 → 44,8 px</td><td><span class="tag cause">Causa achada</span></td><td class="pr">A</td></tr>
+        <tr><td>U37</td><td>3. Tarefas com prazo e diárias</td><td>As tarefas do Tasks já existem; faltam atraso, falha, vista própria e hábito diário</td><td><span class="tag new">Tela nova</span></td><td class="pr">B</td></tr>
+        <tr><td>U38</td><td>4. Editar tarefa</td><td>Um campo por linha, seis datas abertas, estado e repetição em inglês</td><td><span class="tag new">Redesenho</span></td><td class="pr">B</td></tr>
+        <tr><td>U39</td><td>5. Data e relógio por campanha</td><td>Todas as campanhas avançam a mesma linha <code>hoje:</code> da wiki</td><td><span class="tag new">Tela nova</span></td><td class="pr">E</td></tr>
+        <tr><td>U40</td><td>6. Nome da janela</td><td>O título de cada rota vira o título da janela no Electron</td><td><span class="tag cause">Causa achada</span></td><td class="pr">A</td></tr>
+        <tr><td>U41</td><td>7. Tamanho livre do token</td><td>A mesa aceita 0,25 a 20; a ficha da Wiki só oferece 0,5/1/2/3/4</td><td><span class="tag fix">Ajuste</span></td><td class="pr">A</td></tr>
+        <tr><td>U42</td><td>8. Barra das Notas</td><td>Nota com ~56 px, pasta com 2ª linha, subpasta com 10 px de recuo e sem guia</td><td><span class="tag new">Redesenho</span></td><td class="pr">F</td></tr>
+        <tr><td>U43</td><td>9. Prévia dos livros</td><td>Recuo só em <code>p + p</code>, tabelas com colunas iguais, seção sempre em página nova</td><td><span class="tag cause">Causas achadas</span></td><td class="pr">G1, G2</td></tr>
+        <tr><td>U44</td><td>10. “Dia inteiro” salva o evento</td><td>O interruptor é um botão sem <code>type="button"</code> dentro do formulário</td><td><span class="tag cause">Causa achada</span></td><td class="pr">A</td></tr>
+        <tr><td>U45</td><td>11. Avisos</td><td>Os lembretes viram notificação do sistema, mas não aparecem no app</td><td><span class="tag new">Tela nova</span></td><td class="pr">C</td></tr>
+        <tr><td>U46</td><td>12. Início</td><td>Seis contadores repetem a barra lateral; o dia (tarefas, sessão, mundo) não aparece</td><td><span class="tag opt">Opcional</span></td><td class="pr">H</td></tr>
+        <tr><td>U47</td><td>Sobra: mestre remoto</td><td>O celular que comanda a sala não tem Biblioteca, Salvar Sessão nem o ⋯ da nota</td><td><span class="tag fix">Sobra</span></td><td class="pr">I</td></tr>
+        <tr><td>U48</td><td>Sobra: mapa e acessibilidade</td><td>Abas cortadas a 1280 px, enquadramento a 320 px, Relações sem leitor de tela, gráfico sem GPU</td><td><span class="tag fix">Sobra</span></td><td class="pr">J</td></tr>
+        <tr><td>U49</td><td>Limpeza do repositório</td><td>O repositório está organizado; o lixo são 21 GB de worktrees antigos no disco, 5 arquivos de código e 83 imagens sem uso</td><td><span class="tag cause">Levantado</span></td><td class="pr">K</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ U36 ============ -->
+<section class="req" id="constancia" aria-labelledby="t-u36">
+  <div class="req-head"><span class="eyebrow">Pedido 2 · U36 · PR A</span><h2 id="t-u36">Todas as telas com as mesmas medidas</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p>Não é impressão: a barra do topo <strong>muda de altura</strong>. Ela fica numa coluna flexível sem a regra que a proíbe de encolher, e o conteúdo abaixo ocupa “o quanto quiser”. Quando a página é mais alta que a janela, o navegador tira altura dos dois, e a barra perde até 11 px. Tudo abaixo dela sobe junto, inclusive as abas da Wiki.</p>
+      <div class="callout"><strong>Nas suas capturas</strong><span class="small muted">Medido nas imagens: a barra tem cerca de 68 px na Linha do tempo (página curta) e 54 px no Calendário (página longa, com o ano inteiro).</span></div>
+      <h3>A correção</h3>
+      <ul class="small">
+        <li>A casa do app vira uma grade de duas linhas fixas: a barra tem sempre <code>--topbar-height</code> e o resto rola.</li>
+        <li>Toda barra fixa (topo, abas da Wiki, barra do documento, barra do livro) ganha <code>flex: none</code> e altura por variável.</li>
+        <li><strong>O que impede de voltar:</strong> uma checagem automática percorre todas as rotas no computador e no celular e falha se uma barra medir diferente da variável.</li>
+      </ul>
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Altura medida da barra do topo, por tela</span><span>1920 × 1040, app de teste</span></div>
+        <div class="bars" role="img" aria-label="Altura da barra do topo: 56 px em Agenda, Calendário, Linha do tempo, Mapas, Campanhas, Livros, VTT e Início; 44,8 px em Wiki Artigos e Notas. O alvo é 56 px.">
+          <div class="bar-row"><span>Agenda</span><div class="bar-track"><div class="bar-fill" style="width:93.33%"></div><div class="bar-target"></div></div><span class="bar-val">56</span></div>
+          <div class="bar-row"><span>Wiki · Calendário</span><div class="bar-track"><div class="bar-fill" style="width:93.33%"></div><div class="bar-target"></div></div><span class="bar-val">56</span></div>
+          <div class="bar-row"><span>Wiki · Linha do tempo</span><div class="bar-track"><div class="bar-fill" style="width:93.33%"></div><div class="bar-target"></div></div><span class="bar-val">56</span></div>
+          <div class="bar-row"><span>Wiki · Artigos</span><div class="bar-track"><div class="bar-fill short" style="width:74.67%"></div><div class="bar-target"></div></div><span class="bar-val">44,8</span></div>
+          <div class="bar-row"><span>Notas</span><div class="bar-track"><div class="bar-fill short" style="width:74.67%"></div><div class="bar-target"></div></div><span class="bar-val">44,8</span></div>
+          <div class="bar-row"><span>Campanhas</span><div class="bar-track"><div class="bar-fill" style="width:93.33%"></div><div class="bar-target"></div></div><span class="bar-val">56</span></div>
+          <div class="bar-row"><span>Livros</span><div class="bar-track"><div class="bar-fill" style="width:93.33%"></div><div class="bar-target"></div></div><span class="bar-val">56</span></div>
+          <div class="bar-row"><span>Início</span><div class="bar-track"><div class="bar-fill" style="width:93.33%"></div><div class="bar-target"></div></div><span class="bar-val">56</span></div>
+        </div>
+        <div class="bar-legend"><span><i class="sw" style="background:var(--cyan)"></i>altura certa</span><span><i class="sw" style="background:var(--red)"></i>encolheu</span><span><i class="sw" style="background:var(--text)"></i>alvo: 56 px</span><span>escala de 0 a 60 px</span></div>
+      </div>
+      <div class="frame">
+        <div class="frame-cap"><span>styles/layout.css</span><span>antes → depois</span></div>
+        <pre class="mono" style="margin:0;padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.6"><span style="color:var(--faint)">/* antes: a barra é item flexível que pode encolher */</span>
+.main    { display: flex; flex-direction: column; }
+.content { flex: 1 1 auto; }
+
+<span style="color:var(--faint)">/* depois: linhas fixas, só o conteúdo rola */</span>
+.main    { display: grid; grid-template-rows: var(--topbar-height) minmax(0, 1fr); }
+.topbar, .wiki-header, .kit-docbar, .book-bar { flex: none; }</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U35 ============ -->
+<section class="req" id="calendario" aria-labelledby="t-u35">
+  <div class="req-head"><span class="eyebrow">Pedido 1 · U35 · PR D</span><h2 id="t-u35">Calendário configurado pelo painel, sem código</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p>O painel “Detalhes do calendário” ganha a aba <strong>Configurar</strong>. Cada campo grava no mesmo bloco <code>runas-calendario</code> da nota, mantendo os comentários e a ordem; o Obsidian continua lendo igual.</p>
+      <ul class="small">
+        <li>Meses numa lista que se reordena (arrastar ou ↑↓ pelo teclado), com dias, estação e “fora da semana”.</li>
+        <li>Semana com nomes ou só números (o seu Calendário Rúnico usa 1 a 7).</li>
+        <li>Bissexto, luas, eras, feriados e relógio em seções que abrem quando precisa.</li>
+        <li><strong>Novo artigo › Calendário</strong> abre o mesmo formulário, como a ficha da 1.2, começando de um modelo.</li>
+        <li>“Ver o código” continua para quem quiser o YAML.</li>
+      </ul>
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · Wiki › Calendário › painel</span><span>380 px</span></div>
+        <div class="frame-scroll">
+        <div class="m" style="width:380px;max-width:100%;min-width:340px;margin:0 auto;background:var(--panel);border-left:1px solid var(--line)">
+          <div class="m-row" style="padding:12px 14px;border-bottom:1px solid var(--line)"><span class="m-section-title m-grow">Detalhes do calendário</span><span class="m-icon"><svg class="ic"><use href="#i-more"/></svg></span></div>
+          <div class="m-tabs"><span>Dia</span><span>Hoje no mundo</span><span class="on">Configurar</span><span>Ajuda</span></div>
+          <div style="padding:14px;display:grid;gap:14px">
+            <div class="m-field"><span class="m-label">Nome</span><div class="m-input">Calendário Rúnico</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="m-field"><span class="m-label">Sigla nas datas</span><div class="m-input">R</div></div>
+              <div class="m-field"><span class="m-label">Depois do ano</span><div class="m-input">C.R.</div></div>
+            </div>
+            <div class="m-field"><span class="m-label">Semana</span>
+              <div class="m-row" style="flex-wrap:wrap;gap:6px"><span class="m-seg"><span class="on">Números</span><span>Nomes</span></span><span class="m-input" style="width:72px">7</span><span class="m-hint">dias</span></div>
+            </div>
+            <div class="m-field">
+              <div class="m-row"><span class="m-label m-grow">Meses · 12</span><span class="m-hint">336 dias no ano</span></div>
+              <div class="m-card" style="display:grid">
+                <div class="m-row" style="padding:6px 8px;gap:8px"><svg class="ic" style="color:var(--faint)"><use href="#i-grip"/></svg><span class="m-grow">Samonios</span><span class="m-chip">28 dias</span><span class="m-chip">Outono</span></div>
+                <div class="m-sep"></div>
+                <div class="m-row" style="padding:6px 8px;gap:8px"><svg class="ic" style="color:var(--faint)"><use href="#i-grip"/></svg><span class="m-grow">Dumannios</span><span class="m-chip">28 dias</span><span class="m-chip">Outono</span></div>
+                <div class="m-sep"></div>
+                <div class="m-row" style="padding:6px 8px;gap:8px;background:var(--panel-2)"><svg class="ic" style="color:var(--faint)"><use href="#i-grip"/></svg><span class="m-grow">Riuros</span><span class="m-input" style="width:58px;min-height:28px">28</span><span class="m-input sel" style="width:96px;min-height:28px">Outono</span></div>
+                <div class="m-sep"></div>
+                <div class="m-row" style="padding:6px 8px;gap:8px"><svg class="ic" style="color:var(--faint)"><use href="#i-grip"/></svg><span class="m-grow">Anagantio</span><span class="m-chip">28 dias</span><span class="m-chip">Inverno</span></div>
+                <div class="m-sep"></div>
+                <div class="m-row" style="padding:8px;color:var(--muted);font-size:13px">… mais 8 meses</div>
+              </div>
+              <span class="m-btn sm ghost" style="justify-self:start"><svg class="ic"><use href="#i-plus"/></svg>Mês</span>
+            </div>
+            <div class="m-card" style="display:grid">
+              <div class="m-row" style="padding:10px 12px"><svg class="ic"><use href="#i-chevr"/></svg><span class="m-grow">Ano bissexto</span><span class="m-hint">nenhum</span></div><div class="m-sep"></div>
+              <div class="m-row" style="padding:10px 12px"><svg class="ic"><use href="#i-chevr"/></svg><span class="m-grow">Luas</span><span class="m-hint">1</span></div><div class="m-sep"></div>
+              <div class="m-row" style="padding:10px 12px"><svg class="ic"><use href="#i-chevr"/></svg><span class="m-grow">Eras</span><span class="m-hint">2</span></div><div class="m-sep"></div>
+              <div class="m-row" style="padding:10px 12px"><svg class="ic"><use href="#i-chevr"/></svg><span class="m-grow">Feriados</span><span class="m-hint">9</span></div><div class="m-sep"></div>
+              <div class="m-row" style="padding:10px 12px"><svg class="ic"><use href="#i-chevr"/></svg><span class="m-grow">Relógio</span><span class="m-hint">12 h · Dia e Noite</span></div>
+            </div>
+            <div class="m-row"><span class="m-hint m-grow">Salvo no bloco da nota “Calendário Rúnico”.</span><span class="m-btn sm ghost">Ver o código</span></div>
+          </div>
+        </div>
+        </div>
+      </div>
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · Novo artigo › Calendário</span><span>começar de um modelo</span></div>
+        <div class="m" style="padding:14px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+          <div class="m-card" style="padding:12px;display:grid;gap:4px;border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)"><strong>Gregoriano</strong><span class="m-hint">12 meses, 365 dias, bissexto a cada 4 anos</span></div>
+          <div class="m-card" style="padding:12px;display:grid;gap:4px"><strong>12 meses de 30</strong><span class="m-hint">360 dias, sem bissexto</span></div>
+          <div class="m-card" style="padding:12px;display:grid;gap:4px"><strong>13 meses de 28</strong><span class="m-hint">364 dias, semana de 7</span></div>
+          <div class="m-card" style="padding:12px;display:grid;gap:4px"><strong>Em branco</strong><span class="m-hint">você cria os meses</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U39 ============ -->
+<section class="req" id="tempo" aria-labelledby="t-u39">
+  <div class="req-head"><span class="eyebrow">Pedido 5 · U39 · PR E</span><h2 id="t-u39">Cada campanha no seu próprio tempo</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p>A campanha começa <strong>seguindo a data da wiki</strong>. Quando você avança o dia ou o relógio dentro dela, ela passa a ter a sua data e a sua hora, guardadas na nota da campanha (<code>data_mundo</code>, <code>hora_mundo</code>, <code>periodo_mundo</code>). As outras campanhas e a wiki não mudam.</p>
+      <ul class="small">
+        <li>A <strong>regra</strong> do relógio (horas por volta, Dia e Noite) continua no calendário, porque é do mundo. O <strong>ponteiro</strong> é de cada campanha.</li>
+        <li>Na wiki, “Hoje no mundo” vira uma escolha: data manual ou <strong>seguir uma campanha</strong>.</li>
+        <li>A aba lista a data atual de cada campanha daquele calendário, para você saber onde cada mesa está.</li>
+        <li>“Voltar a seguir a wiki” apaga as três propriedades da campanha.</li>
+      </ul>
+    </div>
+    <div class="mock-col">
+      <div class="pair">
+        <div class="frame">
+          <div class="frame-cap"><span>Maquete · Campanha › Painel</span><span>relógio do mundo</span></div>
+          <div class="m" style="padding:14px">
+            <div class="m-card" style="padding:14px;display:grid;gap:10px">
+              <div class="m-row"><span class="m-section-title m-grow">No mundo</span><span class="m-chip gold">Data desta campanha</span><span class="m-icon"><svg class="ic"><use href="#i-more"/></svg></span></div>
+              <div class="m-row" style="gap:14px">
+                <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="none" stroke="var(--line-strong)" stroke-width="2"/><path d="M32 32 L32 10" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/><path d="M32 32 L48 40" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="32" r="3" fill="var(--gold)"/></svg>
+                <div style="display:grid;gap:2px"><strong style="font-size:16px">3 de Cutios de 5631 C.R.</strong><span class="muted small">Noite · 09:40</span></div>
+              </div>
+              <div class="m-row" style="flex-wrap:wrap;gap:6px"><span class="m-btn sm primary">Avançar</span><span class="m-btn sm">+1 hora</span><span class="m-btn sm">Próximo período</span></div>
+              <span class="m-hint">A wiki está em 15 de Ogronios de 5631 C.R.</span>
+            </div>
+          </div>
+        </div>
+        <div class="frame">
+          <div class="frame-cap"><span>Maquete · Wiki › Calendário › Hoje no mundo</span></div>
+          <div class="m" style="padding:14px;display:grid;gap:12px">
+            <span class="m-section-title">De onde vem o “hoje”</span>
+            <div style="display:grid;gap:8px">
+              <label class="m-row" style="gap:8px"><span class="m-check" style="border-radius:999px"></span><span class="m-grow">Data manual</span><span class="m-hint">15 de Ogronios</span></label>
+              <label class="m-row" style="gap:8px"><span class="m-check on" style="border-radius:999px"></span><span>Seguir uma campanha</span></label>
+              <div class="m-input sel" style="margin-left:26px">Chamas da Centelha</div>
+            </div>
+            <div class="m-sep"></div>
+            <span class="m-section-title">Campanhas neste calendário</span>
+            <div style="display:grid;gap:8px;font-size:13px">
+              <div class="m-row"><span class="m-grow m-trunc">Chamas da Centelha</span><span class="muted">3 de Cutios · Noite 09:40</span></div>
+              <div class="m-row"><span class="m-grow m-trunc">Floresta de Aska</span><span class="muted">20 de Riuros · Dia 07:00</span></div>
+              <div class="m-row"><span class="m-grow m-trunc">Jornada para Vatu</span><span class="m-chip">segue a wiki</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U37 + U38 ============ -->
+<section class="req" id="tarefas" aria-labelledby="t-u37">
+  <div class="req-head"><span class="eyebrow">Pedidos 3 e 4 · U37 e U38 · PR B</span><h2 id="t-u37">Tarefas da vida do mestre, com atraso e falha</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p>As tarefas continuam sendo linhas do plugin Tasks (<code>- [ ] texto 📅 2026-11-11</code>), então abrem no Obsidian como hoje. O que muda é o que o app faz com elas:</p>
+      <ul class="small">
+        <li><strong>Atrasada</strong>: aberta com prazo antes de hoje. Aparece em vermelho, com o texto “há 3 dias”, nunca só pela cor.</li>
+        <li><strong>Falhou</strong>: cancelada depois de o prazo passar. O Obsidian a mostra como cancelada; o app separa “Falhou” de “Cancelada” pela data.</li>
+        <li><strong>Hábito diário</strong>: repete todo dia e, ao concluir, a linha feita sai e fica só a de amanhã. A nota não cresce uma linha por dia.</li>
+        <li>A Agenda ganha a vista <strong>Tarefas</strong>, ao lado de Mês, Semana, Dia e Lista. Tarefas novas vão para <code>Agenda/Tarefas.md</code>.</li>
+      </ul>
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · Agenda › vista Tarefas (dados de exemplo)</span><span>quarta, 11 de novembro</span></div>
+        <div class="frame-scroll">
+        <div class="m" style="min-width:600px;padding:16px;display:grid;gap:14px">
+          <div class="m-row"><h3 class="m-grow" style="font-size:20px">Agenda</h3><span class="m-btn primary"><svg class="ic"><use href="#i-plus"/></svg>Tarefa</span><span class="m-icon"><svg class="ic"><use href="#i-more"/></svg></span></div>
+          <div class="m-row"><span class="m-seg"><span>Mês</span><span>Semana</span><span>Dia</span><span>Lista</span><span class="on">Tarefas</span></span><span class="m-grow"></span><span class="m-chip">#rpg</span><span class="m-chip">Todas as notas</span></div>
+          <div style="display:grid;gap:6px">
+            <div class="m-row"><span class="m-section-title" style="color:var(--red)">Atrasadas · 2</span></div>
+            <div class="m-card" style="display:grid">
+              <div class="m-row" style="padding:8px 12px"><span class="m-check"></span><span class="m-grow m-trunc">Mandar o lembrete no grupo</span><span class="m-chip red">venceu há 26 dias</span><span class="m-btn sm">Concluir</span><span class="m-btn sm danger">Falhou</span><span class="m-btn sm ghost">Amanhã</span></div>
+              <div class="m-sep"></div>
+              <div class="m-row" style="padding:8px 12px"><span class="m-check"></span><span class="m-grow m-trunc">Revisar as anotações da sessão</span><span class="m-chip red">venceu há 2 dias</span><span class="m-btn sm">Concluir</span><span class="m-btn sm danger">Falhou</span><span class="m-btn sm ghost">Amanhã</span></div>
+            </div>
+          </div>
+          <div style="display:grid;gap:6px">
+            <span class="m-section-title" style="color:var(--gold)">Vencem hoje · 1</span>
+            <div class="m-card"><div class="m-row" style="padding:8px 12px"><span class="m-check"></span><span class="m-grow m-trunc">Desenhar o mapa da masmorra</span><span class="m-hint">Tarefas › Rotina</span></div></div>
+          </div>
+          <div style="display:grid;gap:6px">
+            <span class="m-section-title">Hábitos de hoje · 1 de 2</span>
+            <div class="m-card" style="display:grid">
+              <div class="m-row" style="padding:8px 12px"><span class="m-check on"></span><span class="m-grow m-trunc" style="color:var(--muted);text-decoration:line-through">Beber 2 L de água</span><span class="m-chip"><svg class="ic" style="width:12px;height:12px"><use href="#i-repeat"/></svg>Todo dia</span></div>
+              <div class="m-sep"></div>
+              <div class="m-row" style="padding:8px 12px"><span class="m-check"></span><span class="m-grow m-trunc">Ler 20 páginas</span><span class="m-chip"><svg class="ic" style="width:12px;height:12px"><use href="#i-repeat"/></svg>Dias úteis</span></div>
+            </div>
+          </div>
+          <div style="display:grid;gap:6px">
+            <span class="m-section-title">Próximas · 3</span>
+            <div class="m-card" style="display:grid">
+              <div class="m-row" style="padding:8px 12px"><span class="m-check"></span><span class="m-grow m-trunc">Pintar as miniaturas</span><span class="m-hint">17 de nov.</span></div>
+              <div class="m-sep"></div>
+              <div class="m-row" style="padding:8px 12px"><span class="m-check"></span><span class="m-grow m-trunc">Escrever a aventura</span><span class="m-hint">21 de nov.</span></div>
+            </div>
+          </div>
+          <div class="m-row" style="color:var(--muted);font-size:13px"><svg class="ic"><use href="#i-chevr"/></svg>Encerradas nos últimos 7 dias · 1 feita · 1 falhou</div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="req-body">
+    <div class="notes">
+      <h3>Editar tarefa (U38)</h3>
+      <p>Hoje são 14 campos empilhados, um por linha, com “Todo” e a repetição em inglês. O novo diálogo mostra o que se usa sempre e guarda o resto em “Mais opções”.</p>
+      <ul class="small">
+        <li>Prazo com atalhos (Hoje, Amanhã, Sexta) e a data por extenso embaixo.</li>
+        <li>Repete em português (Não repete, Todo dia, Dias úteis, Toda semana, Todo mês, Personalizar…). O app grava em inglês, como o Tasks exige, mas você nunca digita.</li>
+        <li>Estado em botões: Por fazer, Fazendo, Feita, Cancelada. Se o prazo passou, “Cancelada” aparece como <strong>Falhou</strong>.</li>
+        <li>Agendada, Início, Ao concluir e dependências ficam em “Mais opções”.</li>
+      </ul>
+      
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · Editar tarefa</span><span>560 px</span></div>
+        <div class="frame-scroll">
+        <div class="m" style="width:560px;max-width:100%;min-width:480px;margin:16px auto;background:var(--panel);border:1px solid var(--line-strong);border-radius:16px;overflow:hidden">
+          <div class="m-row" style="padding:14px 16px;border-bottom:1px solid var(--line)"><strong class="m-grow">Editar tarefa</strong><span class="m-icon"><svg class="ic"><use href="#i-x"/></svg></span></div>
+          <div style="padding:16px;display:grid;gap:14px">
+            <div class="m-field"><span class="m-label">O que fazer</span><div class="m-input">Beber 2 L de água</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="m-field"><span class="m-label">Prazo</span><div class="m-input"><svg class="ic" style="color:var(--faint)"><use href="#i-cal"/></svg>11/11/2026</div><div class="m-row" style="gap:4px"><span class="m-chip on">Hoje</span><span class="m-chip">Amanhã</span><span class="m-chip">Sexta</span></div></div>
+              <div class="m-field"><span class="m-label">Repete</span><div class="m-input sel"><svg class="ic" style="color:var(--faint)"><use href="#i-repeat"/></svg>Todo dia</div><span class="m-hint">Ao concluir, fica só a próxima</span></div>
+            </div>
+            <div class="m-field"><span class="m-label">Estado</span><span class="m-seg" style="justify-self:start"><span class="on">Por fazer</span><span>Fazendo</span><span>Feita</span><span>Cancelada</span></span></div>
+            <div class="m-field"><span class="m-label">Prioridade</span><span class="m-seg" style="justify-self:start"><span>Baixa</span><span class="on">Normal</span><span>Média</span><span>Alta</span><span>Urgente</span></span></div>
+            <div class="m-row" style="color:var(--muted);font-size:13px"><svg class="ic"><use href="#i-chevr"/></svg>Mais opções · Agendada, Início, Ao concluir, dependências</div>
+            <code style="display:block;padding:8px 10px;border-radius:8px;background:var(--bg-deep);color:var(--faint);font-size:12px;overflow-x:auto;white-space:nowrap">- [ ] Beber 2 L de água 🔁 every day 🏁 delete 📅 2026-11-11</code>
+          </div>
+          <div class="m-row" style="padding:12px 16px;border-top:1px solid var(--line);justify-content:flex-end"><span class="m-btn">Cancelar</span><span class="m-btn primary">Salvar</span></div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U45 ============ -->
+<section class="req" id="avisos" aria-labelledby="t-u45">
+  <div class="req-head"><span class="eyebrow">Pedido 11 · U45 · PR C</span><h2 id="t-u45">Avisos ao lado do tema</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p>Um sino com a contagem do que pede atenção. O painel junta três coisas que hoje ficam espalhadas:</p>
+      <ul class="small">
+        <li><strong>Atrasadas</strong>: tarefas com prazo vencido.</li>
+        <li><strong>Vencem hoje</strong>: último dia do prazo.</li>
+        <li><strong>Lembretes</strong>: eventos com lembrete nas próximas 24 horas e os que já tocaram.</li>
+      </ul>
+      <p class="small muted">Cada aviso tem as ações ali mesmo. O que você já viu fica marcado só neste aparelho. Tarefas não ganham sintaxe nova: o app avisa no dia do prazo, na hora que você escolher (09:00 por padrão), pela mesma notificação do sistema que os eventos já usam.</p>
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · barra do topo com o painel aberto</span></div>
+        <div class="frame-scroll">
+        <div class="m" style="min-width:620px;position:relative;height:440px;background:var(--bg)">
+          <div class="m-row" style="height:56px;padding:0 20px;border-bottom:1px solid var(--line)">
+            <span class="muted small m-grow">Wiki <span style="color:var(--faint)">›</span> <strong style="color:var(--text)">Calendário</strong></span>
+            <div class="m-input" style="width:240px;color:var(--faint)"><svg class="ic"><use href="#i-search"/></svg>Buscar notas e comandos…</div>
+            <span class="m-grow"></span>
+            <span class="m-btn"><svg class="ic"><use href="#i-plus"/></svg>Novo</span>
+            <span class="m-icon" style="position:relative;background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line-strong)"><svg class="ic"><use href="#i-bell"/></svg><span class="m-badge hot" style="position:absolute;top:-6px;right:-8px">4</span></span>
+            <span class="m-icon"><svg class="ic"><use href="#i-sun"/></svg></span>
+          </div>
+          <div class="m-card" style="position:absolute;right:20px;top:62px;width:380px;box-shadow:0 24px 70px rgb(0 0 0 / 35%);display:grid;overflow:hidden">
+            <div class="m-row" style="padding:12px 14px;border-bottom:1px solid var(--line)"><strong class="m-grow">Avisos</strong><span class="m-btn sm ghost">Marcar como vistos</span></div>
+            <div style="padding:10px 14px;display:grid;gap:8px">
+              <span class="m-section-title" style="color:var(--red)">Atrasadas · 2</span>
+              <div style="display:grid;gap:4px"><span class="m-trunc">Mandar o lembrete no grupo</span><div class="m-row" style="gap:6px"><span class="m-hint m-grow">venceu há 26 dias</span><span class="m-btn sm">Concluir</span><span class="m-btn sm danger">Falhou</span><span class="m-btn sm ghost">Amanhã</span></div></div>
+              <div class="m-sep"></div>
+              <div style="display:grid;gap:4px"><span class="m-trunc">Revisar as anotações da sessão</span><div class="m-row" style="gap:6px"><span class="m-hint m-grow">venceu há 2 dias</span><span class="m-btn sm">Concluir</span><span class="m-btn sm danger">Falhou</span><span class="m-btn sm ghost">Amanhã</span></div></div>
+            </div>
+            <div class="m-sep"></div>
+            <div style="padding:10px 14px;display:grid;gap:6px">
+              <span class="m-section-title" style="color:var(--gold)">Vencem hoje · 1</span>
+              <div class="m-row"><span class="m-grow m-trunc">Desenhar o mapa da masmorra</span><span class="m-btn sm">Concluir</span></div>
+            </div>
+            <div class="m-sep"></div>
+            <div style="padding:10px 14px 14px;display:grid;gap:6px">
+              <span class="m-section-title">Lembretes · 1</span>
+              <div class="m-row"><svg class="ic" style="color:var(--gold)"><use href="#i-clock"/></svg><span class="m-grow m-trunc">Sessão 12 · Chamas da Centelha</span><span class="m-hint">hoje, 19:30</span></div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U42 ============ -->
+<section class="req" id="notas" aria-labelledby="t-u42">
+  <div class="req-head"><span class="eyebrow">Pedido 8 · U42 · PR F</span><h2 id="t-u42">Barra das Notas enxuta, em árvore</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <ul class="small">
+        <li>Uma linha por nota e por pasta: 32 px no computador, 44 px no celular e com “Controles maiores”. Antes, cerca de 56 px.</li>
+        <li>Sem prévia nas notas e sem “1 nota” embaixo da pasta: a contagem vai numa bolinha à direita.</li>
+        <li>Cada nível recua 16 px e ganha uma linha-guia, como no Obsidian.</li>
+        <li>Sem espaço vazio entre uma nota e outra.</li>
+        <li>“Recolher tudo” no ⋯ da lista.</li>
+        <li>Arrastar para dentro de uma pasta continua, e o menu da nota ganha “Mover para…”.</li>
+      </ul>
+      <div class="callout gold"><strong>Pergunta para você</strong><span class="small muted">“Aninhar” é isto (pastas dentro de pastas, com guias), ou você quer também <strong>nota-pasta</strong>, uma nota que abre a pasta e guarda as outras dentro (como o plugin Folder Notes do Obsidian)?</span></div>
+    </div>
+    <div class="mock-col">
+      <div class="pair">
+        
+        <div class="frame">
+          <div class="frame-cap"><span>Maquete · depois</span><span>280 px</span></div>
+          <div class="m" style="background:var(--bg-deep);padding:10px 8px;font-size:14px">
+            <div class="m-row" style="padding:0 6px 10px"><strong class="m-grow">Notas</strong><span class="m-btn sm primary"><svg class="ic"><use href="#i-plus"/></svg>Nova nota</span><span class="m-icon"><svg class="ic"><use href="#i-more"/></svg></span></div>
+            <div style="display:grid">
+              <div class="m-row" style="height:32px;padding:0 6px;gap:6px;color:var(--faint)"><svg class="ic" style="width:14px"><use href="#i-chev"/></svg><svg class="ic" style="width:14px"><use href="#i-star"/></svg><span class="m-grow m-section-title">Favoritos</span><span class="m-badge">2</span></div>
+              <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:14px;color:var(--faint)"><use href="#i-chev"/></svg><svg class="ic" style="width:15px;color:var(--gold)"><use href="#i-folder"/></svg><span class="m-grow m-trunc">Diário</span><span class="m-badge">1</span></div>
+              <div style="margin-left:13px;border-left:1px solid var(--line);padding-left:8px">
+                <div class="m-row" style="height:32px;padding:0 6px;gap:6px;background:var(--panel-2);border-radius:7px;box-shadow:inset 2px 0 0 var(--cyan)"><svg class="ic" style="width:15px;color:var(--muted)"><use href="#i-file"/></svg><span class="m-grow m-trunc">2026-10-13</span></div>
+              </div>
+              <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:14px;color:var(--faint)"><use href="#i-chev"/></svg><svg class="ic" style="width:15px;color:var(--cyan)"><use href="#i-folder"/></svg><span class="m-grow m-trunc">Do Obsidian</span><span class="m-badge">4</span></div>
+              <div style="margin-left:13px;border-left:1px solid var(--line);padding-left:8px">
+                <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:15px;color:var(--muted)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Coroação de Ormund</span></div>
+                <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:15px;color:var(--muted)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Emboscada na estrada</span></div>
+                <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:14px;color:var(--faint)"><use href="#i-chev"/></svg><svg class="ic" style="width:15px;color:var(--violet)"><use href="#i-folder"/></svg><span class="m-grow m-trunc">Criaturas</span><span class="m-badge">2</span></div>
+                <div style="margin-left:13px;border-left:1px solid var(--line);padding-left:8px">
+                  <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:15px;color:var(--muted)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Lobo de Cinzas</span></div>
+                  <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:15px;color:var(--muted)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Urso das Brumas</span></div>
+                </div>
+                <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:15px;color:var(--muted)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Mapa do condado</span></div>
+              </div>
+              <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:14px;color:var(--faint);transform:rotate(-90deg)"><use href="#i-chev"/></svg><svg class="ic" style="width:15px;color:var(--faint)"><use href="#i-folder"/></svg><span class="m-grow m-trunc">Modelos</span><span class="m-badge">2</span></div>
+              <div class="m-row" style="height:32px;padding:0 6px;gap:6px"><svg class="ic" style="width:14px;color:var(--faint);transform:rotate(-90deg)"><use href="#i-chev"/></svg><svg class="ic" style="width:15px;color:var(--faint)"><use href="#i-folder"/></svg><span class="m-grow m-trunc">Projetos</span><span class="m-badge">6</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U43 ============ -->
+<section class="req" id="livros" aria-labelledby="t-u43">
+  <div class="req-head"><span class="eyebrow">Pedido 9 · U43 · PRs G1 e G2</span><h2 id="t-u43">A prévia do Valknut sem gambiarras</h2></div>
+  <div class="req-body stack">
+    <div class="notes">
+      <p>Abri uma <strong>cópia</strong> do Valknut (1ª Edição) num app de teste (seu cofre não foi tocado): 16 capítulos e seções, 3.332 palavras, 9 imagens, 19 páginas na prévia. O Markdown está limpo; as gambiarras são de estrutura, e cada uma tem uma causa no código.</p>
+      <div class="facts">
+        <span class="fact"><b>16</b> linhas só com <code>\</code>, em 10 capítulos</span>
+        <span class="fact"><b>4</b> blocos <code>::: runas-colunas</code> para alargar tabela</span>
+        <span class="fact"><b>11</b> sequências de linhas vazias que não fazem nada</span>
+        <span class="fact"><b>4 de 95</b> parágrafos com recuo</span>
+        <span class="fact"><b>7</b> espaçamentos diferentes entre parágrafos</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="table-scroll">
+    <table class="items">
+      <thead><tr><th>Sintoma</th><th>Causa no código</th><th>Correção</th><th>PR</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--sans);color:var(--text)">Recuo “quando quer”</td><td>Só vale para parágrafo logo depois de outro parágrafo, no nível de cima (<code>.md &gt; p + p</code>). Não pega depois de título, lista, cartão ou <code>\</code>, nem dentro de colunas e cartões</td><td>Escolha clara: Nenhum, Todos, Menos o primeiro depois de título; tamanho do recuo; vale em colunas e cartões</td><td class="pr">G1</td></tr>
+        <tr><td style="font-family:var(--sans);color:var(--text)">Tabelas não se ajustam</td><td><code>table-layout: fixed</code>: as colunas dividem a largura em partes iguais</td><td>Ajustar ao conteúdo (padrão) ou Largura toda, no livro e por tabela</td><td class="pr">G1</td></tr>
+        <tr><td style="font-family:var(--sans);color:var(--text)">Sem espaço entre parágrafos</td><td>O tema põe 0 e conta com o recuo; cartões e colunas têm cada um a sua margem</td><td>“Espaço entre parágrafos” de 0 a 1,5 linha, igual em todo o livro</td><td class="pr">G1</td></tr>
+        <tr><td style="font-family:var(--sans);color:var(--text)">Seção sempre em página nova</td><td>O capítulo usa uma página nomeada e a seção não; no Paged.js, trocar de página nomeada força quebra</td><td>As duas na mesma página nomeada; “Começar em nova página” por capítulo e por seção</td><td class="pr">G1</td></tr>
+        <tr><td style="font-family:var(--sans);color:var(--text)">Linhas vazias não contam</td><td>O Markdown junta linhas vazias seguidas</td><td>Opção do livro “Linhas vazias contam”: cada linha a mais vira espaço só na prévia e no PDF</td><td class="pr">G2</td></tr>
+        <tr><td style="font-family:var(--sans);color:var(--text)">Ajuste de uma tabela só</td><td>Não há como</td><td>Comentário do Obsidian (que ele esconde): <code>%% livro: largura-toda %%</code>, <code>%% livro: nova-pagina %%</code>, <code>%% livro: espaco 2 %%</code></td><td class="pr">G2</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="req-body">
+    <div class="notes">
+      <h3>Diagramar › Parágrafos, Tabelas e Quebras</h3>
+      <p class="small">Três grupos novos no painel de estilo do livro, abaixo de Tipografia. Valem para o livro e para o modelo, como as outras opções.</p>
+      <h3>Revisar o livro</h3>
+      <p class="small">Lista as gambiarras que deixaram de ser necessárias e troca cada uma <strong>só quando você confirmar</strong>, com backup antes. Nada é mudado sozinho.</p>
+      <div class="callout"><strong>O leitor das notas não muda</strong><span class="small muted">Tudo isso é do livro: regras próprias da prévia e do PDF. As notas continuam iguais no app e no Obsidian.</span></div>
+    </div>
+    <div class="mock-col">
+      <div class="pair">
+        <div class="frame">
+          <div class="frame-cap"><span>Maquete · Estilo do livro</span><span>painel</span></div>
+          <div class="m" style="padding:14px;display:grid;gap:14px;background:var(--panel)">
+            <span class="m-section-title">Parágrafos</span>
+            <div class="m-field"><span class="m-label">Recuo na primeira linha</span><span class="m-seg" style="flex-wrap:wrap"><span>Nenhum</span><span>Todos</span><span class="on">Menos depois de título</span></span></div>
+            <div class="m-row"><span class="m-label m-grow">Tamanho do recuo</span><span class="m-input" style="width:90px">1,5 em</span></div>
+            <div class="m-field"><div class="m-row"><span class="m-label m-grow">Espaço entre parágrafos</span><span class="small" style="font-variant-numeric:tabular-nums">0,5 linha</span></div>
+              <div style="position:relative;height:20px"><div style="position:absolute;top:8px;left:0;right:0;height:4px;border-radius:4px;background:var(--panel-2)"></div><div style="position:absolute;top:8px;left:0;width:33%;height:4px;border-radius:4px;background:var(--cyan)"></div><div style="position:absolute;top:2px;left:calc(33% - 8px);width:16px;height:16px;border-radius:999px;background:var(--cyan)"></div></div></div>
+            <div class="m-row"><span class="m-check on"></span><span class="m-grow">Linhas vazias contam</span></div>
+            <div class="m-sep"></div>
+            <span class="m-section-title">Tabelas</span>
+            <span class="m-seg" style="justify-self:start"><span class="on">Ajustar ao conteúdo</span><span>Largura toda</span></span>
+            <div class="m-sep"></div>
+            <span class="m-section-title">Quebras de página</span>
+            <div class="m-row"><span class="m-check on"></span><span class="m-grow">Capítulo começa em página nova</span></div>
+            <div class="m-row"><span class="m-check"></span><span class="m-grow">Seção começa em página nova</span></div>
+          </div>
+        </div>
+        <div class="frame">
+          <div class="frame-cap"><span>Maquete · Tabela de Carma, depois</span><span>papel do livro</span></div>
+          <div style="padding:14px">
+            <div class="page-mini">
+              <span class="pm-label">Ajustar ao conteúdo</span>
+              <h4>Tabela de Carma</h4>
+              <table>
+                <thead><tr><th class="c">Nível</th><th>Carma</th><th class="c">Pontos</th></tr></thead>
+                <tbody>
+                  <tr><td class="c">+3</td><td>Altruísta</td><td class="c">61 a 100</td></tr>
+                  <tr><td class="c">+2</td><td>Bondoso</td><td class="c">31 a 60</td></tr>
+                  <tr><td class="c">+1</td><td>Empático</td><td class="c">11 a 30</td></tr>
+                  <tr><td class="c">+0</td><td>Neutro</td><td class="c">10 a −10</td></tr>
+                  <tr><td class="c">−1</td><td>Egoísta</td><td class="c">−11 a −20</td></tr>
+                </tbody>
+              </table>
+              <p class="ind" style="margin-top:6px">O alinhamento é baseado em Carma e Darma. Seu carma determina seu nível de bondade e maldade, com base nas suas ações.</p>
+              <p class="ind">Já o darma determina sua natureza, seja ela caótica, ordeira ou neutra.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · Revisar o livro</span><span>achados reais no Valknut</span></div>
+        <div class="frame-scroll">
+        <div class="m" style="min-width:560px;padding:14px;display:grid;gap:8px">
+          <div class="m-row"><strong class="m-grow">6 ajustes possíveis em 4 capítulos</strong><span class="m-btn primary">Aplicar os marcados</span></div>
+          <div class="m-card" style="display:grid">
+            <div class="m-row" style="padding:9px 12px"><span class="m-check on"></span><span class="m-grow"><strong>Começo Rápido</strong> · 3 linhas <code>\</code> entre atributos <span class="m-hint">→ o espaço entre parágrafos já separa</span></span><span class="m-btn sm ghost">Ver</span></div><div class="m-sep"></div>
+            <div class="m-row" style="padding:9px 12px"><span class="m-check on"></span><span class="m-grow"><strong>Arquétipos</strong> · <code>\</code> impresso na página 5 <span class="m-hint">→ tirar a linha</span></span><span class="m-btn sm ghost">Ver</span></div><div class="m-sep"></div>
+            <div class="m-row" style="padding:9px 12px"><span class="m-check on"></span><span class="m-grow"><strong>Começo Rápido</strong> · <code>::: runas-colunas-1</code> só em volta da Tabela de Carma <span class="m-hint">→ <code>%% livro: largura-toda %%</code></span></span><span class="m-btn sm ghost">Ver</span></div><div class="m-sep"></div>
+            <div class="m-row" style="padding:9px 12px"><span class="m-check on"></span><span class="m-grow"><strong>Começo Rápido</strong> · bloco <code>::: runas-colunas-2</code> vazio no fim <span class="m-hint">→ tirar</span></span><span class="m-btn sm ghost">Ver</span></div><div class="m-sep"></div>
+            <div class="m-row" style="padding:9px 12px"><span class="m-check"></span><span class="m-grow"><strong>Magias de Fogo</strong> · 3 linhas <code>\</code> dentro de cartões <span class="m-hint">→ o cartão ganha o mesmo espaço</span></span><span class="m-btn sm ghost">Ver</span></div>
+          </div>
+          <span class="m-hint">Antes de gravar, o app faz um backup das notas que vão mudar.</span>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U40 U41 U44 ============ -->
+<section class="req" id="rapidos" aria-labelledby="t-rap">
+  <div class="req-head"><span class="eyebrow">Pedidos 6, 7 e 10 · U40, U41 e U44 · PR A</span><h2 id="t-rap">Três ajustes pequenos que vão logo no primeiro PR</h2></div>
+  <div class="prs" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    <div class="pr-card" style="gap:10px">
+      <span class="eyebrow">6 · Nome da janela</span>
+      <div class="m" style="display:grid;gap:6px">
+        <div class="m-row" style="padding:6px 10px;border-radius:8px;background:var(--bg-deep);justify-content:center;font-size:13px"><s class="muted">Calendário · Wiki · Runas-Codex</s></div>
+        <div class="m-row" style="padding:6px 10px;border-radius:8px;background:var(--bg-deep);justify-content:center;font-size:13px;font-weight:600">Runas-Codex</div>
+      </div>
+      <p class="small muted">A janela principal fica sempre “Runas-Codex”. Uma nota aberta em janela própria mostra o nome da nota, que não muda. O título de cada rota continua por dentro, para o leitor de tela anunciar onde você está.</p>
+    </div>
+    <div class="pr-card" style="gap:10px">
+      <span class="eyebrow">7 · Tamanho do token</span>
+      <div class="m m-field"><span class="m-label">Tamanho, em células da grade</span><div class="m-input" style="width:120px">1,7</div><div class="m-row" style="gap:4px;flex-wrap:wrap"><span class="m-chip">0,5</span><span class="m-chip">1</span><span class="m-chip">2</span><span class="m-chip">3</span><span class="m-chip">4</span></div><span class="m-hint">De 0,25 a 20. Os botões são atalhos.</span></div>
+      <p class="small muted">O mesmo campo na ficha da Wiki, nas propriedades do token na mesa e na Biblioteca. O token continua centrado na grade.</p>
+    </div>
+    <div class="pr-card" style="gap:10px">
+      <span class="eyebrow">10 · “Dia inteiro”</span>
+      <pre class="mono" style="margin:0;padding:10px;border-radius:8px;background:var(--bg-deep);font-size:12px;overflow-x:auto">&lt;button role="switch" …&gt;          <span style="color:var(--red)">← envia o formulário</span>
+&lt;button type="button" role="switch"&gt; <span style="color:var(--green)">← só liga e desliga</span></pre>
+      <p class="small muted">Um botão sem tipo, dentro de um formulário, é um botão de enviar. O interruptor ganha <code>type="button"</code>, e um teste procura no app inteiro qualquer outro botão sem tipo dentro de formulário.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ U46 ============ -->
+<section class="req" id="inicio" aria-labelledby="t-u46">
+  <div class="req-head"><span class="eyebrow">Pedido 12 · U46 · PR H · proposta minha</span><h2 id="t-u46">Início: a mesa de hoje</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p>Abrir o app e saber em um olhar o que fazer hoje, sem visitar a Agenda, a campanha e a mesa.</p>
+      <ul class="small">
+        <li><strong>Hoje</strong>: compromissos do dia, tarefas que vencem ou atrasaram, hábitos com caixa de marcar.</li>
+        <li><strong>Próxima sessão</strong>: quanto falta, a preparação feita e o botão que abre a mesa daquela campanha.</li>
+        <li><strong>Campanhas ativas</strong>: a data e a hora no mundo de cada uma (depende do pedido 5).</li>
+        <li><strong>Centelhas</strong> e <strong>Retome o fio</strong> menores, embaixo.</li>
+        <li>A fileira de seis contadores sai: os números já estão na barra lateral.</li>
+      </ul>
+      
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Maquete · Início (dados de exemplo)</span><span>1280 px</span></div>
+        <div class="frame-scroll">
+        <div class="m" style="min-width:760px;padding:20px;display:grid;gap:16px">
+          <div class="m-row"><div class="m-grow" style="display:grid;gap:2px"><span class="m-section-title">Quarta-feira, 11 de novembro</span><h3 style="font-size:24px">Boa tarde, João</h3></div><span class="m-btn"><svg class="ic"><use href="#i-plus"/></svg>Novo</span></div>
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px">
+            <div class="m-card" style="padding:16px;display:grid;gap:12px;border-color:color-mix(in srgb, var(--gold) 45%, var(--line))">
+              <div class="m-row"><span class="m-section-title m-grow" style="color:var(--gold)">Próxima sessão · hoje, 19:30</span><span class="m-chip gold">em 4 h 40 min</span></div>
+              <strong style="font-size:18px">Sessão 12 · Chamas da Centelha</strong>
+              <div style="display:grid;gap:6px;font-size:13px">
+                <div class="m-row"><span class="m-check on"></span><span class="muted">Revisar o resumo da sessão 11</span></div>
+                <div class="m-row"><span class="m-check on"></span><span class="muted">Preparar o encontro na ponte</span></div>
+                <div class="m-row"><span class="m-check"></span><span>Escolher a música da taverna</span></div>
+              </div>
+              <div class="m-row" style="gap:8px"><span class="m-btn primary"><svg class="ic"><use href="#i-dice"/></svg>Abrir a mesa</span><span class="m-btn">Abrir a sessão</span><span class="m-hint m-grow" style="text-align:right">preparação 2 de 3</span></div>
+            </div>
+            <div class="m-card" style="padding:16px;display:grid;gap:10px;align-content:start">
+              <div class="m-row"><span class="m-section-title m-grow">Hoje</span><span class="m-chip red">2 atrasadas</span></div>
+              <div class="m-row" style="font-size:13px"><span style="width:44px;color:var(--gold);font-variant-numeric:tabular-nums">19:30</span><span class="m-grow m-trunc">Sessão 12</span></div>
+              <div class="m-sep"></div>
+              <div class="m-row" style="font-size:13px"><span class="m-check"></span><span class="m-grow m-trunc">Desenhar o mapa da masmorra</span><span class="m-hint">vence hoje</span></div>
+              <div class="m-row" style="font-size:13px"><span class="m-check on"></span><span class="m-grow m-trunc muted" style="text-decoration:line-through">Beber 2 L de água</span><span class="m-hint">todo dia</span></div>
+              <div class="m-row" style="font-size:13px"><span class="m-check"></span><span class="m-grow m-trunc">Ler 20 páginas</span><span class="m-hint">dias úteis</span></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div class="m-card" style="padding:12px 14px;display:grid;gap:4px"><strong class="m-trunc">Chamas da Centelha</strong><span class="small muted">3 de Cutios de 5631 · Noite 09:40</span><span class="m-hint">próxima sessão hoje</span></div>
+            <div class="m-card" style="padding:12px 14px;display:grid;gap:4px"><strong class="m-trunc">Floresta de Aska</strong><span class="small muted">20 de Riuros de 5631 · Dia 07:00</span><span class="m-hint">sem sessão marcada</span></div>
+            <div class="m-card" style="padding:12px 14px;display:grid;gap:4px"><strong class="m-trunc">Jornada para Vatu</strong><span class="small muted">segue a wiki · 15 de Ogronios</span><span class="m-hint">sessão 4 em 18 de nov.</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="display:grid;gap:4px"><span class="m-section-title">Retome o fio</span>
+              <div class="m-row" style="height:32px;font-size:13px"><svg class="ic" style="color:var(--faint)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Começo Rápido</span><span class="m-hint">Livros · ontem</span></div>
+              <div class="m-row" style="height:32px;font-size:13px"><svg class="ic" style="color:var(--faint)"><use href="#i-file"/></svg><span class="m-grow m-trunc">Arquétipos</span><span class="m-hint">Livros · ontem</span></div>
+            </div>
+            <div style="display:grid;gap:8px;align-content:start"><span class="m-section-title">Centelhas</span><div class="m-row"><div class="m-input m-grow" style="color:var(--faint)">Uma ideia antes que ela escape…</div><span class="m-btn">Capturar</span></div></div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Sobras ============ -->
+<section class="req" id="sobras" aria-labelledby="t-sob">
+  <div class="req-head"><span class="eyebrow">Escolhidas por você no começo · PRs I e J</span><h2 id="t-sob">Sobras da 1.2</h2></div>
+  <div class="prs" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <div class="pr-card"><span class="pr">U47 · I</span><strong>Mestre remoto completo</strong><p class="small muted">O celular que comanda a sala do computador ganha a Biblioteca, o “Salvar Sessão” e o ⋯ da nota no token. Ele não tem o cofre, então tudo passa pela sala: o computador lê e grava, o celular só pede.</p></div>
+    <div class="pr-card"><span class="pr">U48 · J</span><strong>Mapa e acessibilidade</strong><p class="small muted">Abas do painel do mapa sem corte a 1280 px; enquadramento certo a 320 px; árvore e organograma das Relações conferidos com leitor de tela; gráfico global com 10 mil notas desenhando mais leve sem placa de vídeo.</p></div>
+  </div>
+</section>
+
+<!-- ============ U49 ============ -->
+<section class="req" id="limpeza" aria-labelledby="t-u49">
+  <div class="req-head"><span class="eyebrow">Pedido de 11/11 · U49 · PR K</span><h2 id="t-u49">Limpeza do repositório</h2></div>
+  <div class="req-body">
+    <div class="notes">
+      <p><strong>Não precisa reorganizar.</strong> Os 1.123 arquivos seguem a divisão combinada no <code>AGENTS.md</code> (núcleo, telas, componentes, desktop, celular), o histórico inteiro ocupa 4,5 MiB e nada gerado pelo build está versionado.</p>
+      <p>O lixo de verdade está <strong>em volta</strong> do repositório, no seu disco: cópias de trabalho de fases que já entraram na <code>main</code>.</p>
+      <div class="callout gold"><strong>Precisa da sua autorização</strong><span class="small muted">Apagar pastas e branches no seu computador. Nada sai sem conferir antes, e o que tiver mudança sem commit vira patch guardado.</span></div>
+      <div class="callout"><strong>O que fica</strong><span class="small muted">Os 9 branches já mesclados no GitHub ficam: as imagens dos PRs antigos são lidas desses branches.</span></div>
+    </div>
+    <div class="mock-col">
+      <div class="frame">
+        <div class="frame-cap"><span>Espaço ocupado, no disco e no repositório</span><span>medido em 11/11</span></div>
+        <div class="bars" role="img" aria-label="Worktrees antigos 21 GB; out/worktrees 962 MB; desktop/release 503 MB; imagens sem uso 4,1 MB; histórico do git 4,5 MB.">
+          <div class="bar-row"><span>Worktrees antigos</span><div class="bar-track"><div class="bar-fill short" style="width:100%"></div></div><span class="bar-val">21 GB</span></div>
+          <div class="bar-row"><span>out/worktrees</span><div class="bar-track"><div class="bar-fill short" style="width:4.6%"></div></div><span class="bar-val">962 MB</span></div>
+          <div class="bar-row"><span>desktop/release</span><div class="bar-track"><div class="bar-fill short" style="width:2.4%"></div></div><span class="bar-val">503 MB</span></div>
+          <div class="bar-row"><span>Imagens sem uso</span><div class="bar-track"><div class="bar-fill" style="width:0.4%;min-width:3px"></div></div><span class="bar-val">4,1 MB</span></div>
+          <div class="bar-row"><span>Histórico do git</span><div class="bar-track"><div class="bar-fill" style="width:0.4%;min-width:3px"></div></div><span class="bar-val">4,5 MB</span></div>
+        </div>
+        <div class="bar-legend"><span><i class="sw" style="background:var(--red)"></i>fora do repositório, no disco</span><span><i class="sw" style="background:var(--cyan)"></i>dentro do repositório</span><span>escala de 0 a 21 GB</span></div>
+      </div>
+      <div class="table-scroll">
+        <table class="items" style="min-width:620px">
+          <thead><tr><th>Onde</th><th>O quê</th><th>O que fazer</th></tr></thead>
+          <tbody>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Repositório</td><td>5 arquivos de código que ninguém importa (500 linhas, o mais antigo de 14/10)</td><td>Apagar, com testes e builds passando</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Repositório</td><td>83 de 132 imagens de <code>docs/imagens</code> sem citação (4,1 MB)</td><td>Apagar da <code>main</code>; os PRs antigos leem do próprio branch</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Repositório</td><td>31 arquivos em <code>docs/tarefas</code>, ao menos 19 já concluídos; 3 documentos históricos</td><td>Mover para <code>concluidas/</code> e <code>historico/</code>, com os links consertados</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Repositório</td><td>Nada impede o lixo de voltar</td><td>Teste que falha com arquivo órfão ou imagem não citada</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Disco</td><td>37 worktrees em <code>.worktrees/</code>: 27 limpos e já na <code>main</code>, 5 com mudanças sem commit</td><td>Remover os 27; conferir os 5 um a um</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Disco</td><td><code>out/worktrees</code> (962 MB) e <code>desktop/release</code> da 0.0.1 (503 MB) na pasta principal</td><td>Apagar</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Disco</td><td>97 de 103 branches locais já mesclados; 4 stashes antigos; pastas vazias <code>.agents</code>, <code>.aws</code>, <code>.codex</code></td><td>Apagar os branches mesclados; stashes viram patch antes</td></tr>
+            <tr><td style="font-family:var(--sans);color:var(--text)">Disco</td><td>A pasta principal parou em <code>7041feb</code>, 30+ commits atrás</td><td>Atualizar para a <code>main</code> (está limpa)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Ordem ============ -->
+<section class="req" id="ordem" aria-labelledby="t-ord">
+  <div class="req-head"><span class="eyebrow">Um branch e um PR por linha, cada um numa janela de 5 h</span><h2 id="t-ord">Ordem dos PRs</h2></div>
+  <div class="prs">
+    <div class="pr-card"><span class="pr">A</span><strong>Medidas e ajustes</strong><small>U36, U40, U41, U44 · primeiro, porque corrige o que incomoda hoje</small></div>
+    <div class="pr-card"><span class="pr">B</span><strong>Tarefas</strong><small>U37, U38</small></div>
+    <div class="pr-card"><span class="pr">C</span><strong>Avisos</strong><small>U45 · depois do B</small></div>
+    <div class="pr-card"><span class="pr">D</span><strong>Calendário</strong><small>U35</small></div>
+    <div class="pr-card"><span class="pr">E</span><strong>Tempo por campanha</strong><small>U39 · depois do D</small></div>
+    <div class="pr-card"><span class="pr">F</span><strong>Barra das Notas</strong><small>U42 · depois do A</small></div>
+    <div class="pr-card"><span class="pr">G1</span><strong>Livros: diagramação</strong><small>U43 · recuo, espaço, tabelas, quebras</small></div>
+    <div class="pr-card"><span class="pr">G2</span><strong>Livros: sem gambiarras</strong><small>U43 · linhas vazias, ajustes por comentário, Revisar o livro</small></div>
+    <div class="pr-card"><span class="pr">H</span><strong>Início</strong><small>U46 · depois do B, C e E</small></div>
+    <div class="pr-card"><span class="pr">I</span><strong>Mestre remoto</strong><small>U47</small></div>
+    <div class="pr-card"><span class="pr">J</span><strong>Mapa e acessibilidade</strong><small>U48</small></div>
+    <div class="pr-card"><span class="pr">K</span><strong>Limpeza do repositório</strong><small>U49 · a limpeza do disco é feita à parte, sem PR</small></div>
+    <div class="pr-card"><span class="pr">V</span><strong>Versão 1.3.0</strong><small>notas, o que conferir e o lançamento quando você pedir</small></div>
+  </div>
+</section>
+
+<!-- ============ Decisões ============ -->
+<section class="req" id="decisoes" aria-labelledby="t-dec">
+  <div class="req-head"><span class="eyebrow">Responda pelo chat; o resto eu decido e registro</span><h2 id="t-dec">O que você decide</h2></div>
+  <div class="decisions">
+    <div class="decision"><div><strong>Maquetes</strong><p>Aprovar as telas desta página (Configurar calendário, Tempo da campanha, Tarefas, Editar tarefa, Avisos, Notas, Estilo do livro e Revisar o livro, Início) ou dizer o que mudar.</p></div></div>
+    <div class="decision"><div><strong>Nome da janela</strong><p><span class="rec">Recomendo sempre “Runas-Codex”.</span> A outra opção é janela sem nome.</p></div></div>
+    <div class="decision"><div><strong>“Falhou” nas tarefas</strong><p><span class="rec">Recomendo “cancelada depois do prazo”</span>, que o Obsidian já entende. Um estado próprio <code>[f]</code> apareceria no Obsidian como tarefa aberta, a menos que você o cadastre no plugin Tasks.</p></div></div>
+    <div class="decision"><div><strong>“Aninhar” nas Notas</strong><p>Pastas dentro de pastas com guias bastam, ou você quer também nota-pasta?</p></div></div>
+    <div class="decision"><div><strong>Linhas vazias no livro</strong><p><span class="rec">Recomendo valer só no livro</span> (prévia e PDF). No Obsidian e no leitor das notas, as linhas vazias continuam se juntando, como sempre.</p></div></div>
+    <div class="decision"><div><strong>Início</strong><p><span class="rec">Recomendo a “mesa de hoje”.</span> A alternativa menor é manter o Início atual e só acrescentar a coluna Hoje.</p></div></div>
+    <div class="decision"><div><strong>Limpeza do disco</strong><p><span class="rec">Recomendo autorizar</span> a remoção dos 27 worktrees já mesclados (cerca de 18 GB), de <code>out/worktrees</code>, de <code>desktop/release</code> e dos 97 branches locais mesclados. Os 5 worktrees com mudanças sem commit só saem depois de virar patch guardado.</p></div></div>
+  </div>
+</section>
+
+<footer class="small muted">Plano no repositório: <code>docs/tarefas/atualizacao-1.3.md</code>, no branch <code>tarefas/atualizacao-1.3</code>. Medidas feitas no app de teste a partir da <code>main</code> da v1.2.0; as maquetes usam as cores e as medidas do Órbita nos temas escuro e claro.</footer>
+</main>
