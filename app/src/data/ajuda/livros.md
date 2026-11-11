@@ -54,6 +54,20 @@ Leitura fácil — e deixa ajustar:
 - **Capa**, **sumário**, aberturas de capítulo, cabeçalhos e numeração das páginas.
 - Imagens: **tela** (leve), **gráfica** (300 ppi) ou **original**; e se o fundo do papel sai na impressão.
 
+**Linhas vazias contam** (em Parágrafos, `linhas_vazias: respeitar`): cada linha vazia a mais entre dois blocos vira uma
+linha de espaço, só no livro — o Obsidian continua juntando as linhas. Para um ajuste num lugar só, escreva um
+comentário do Obsidian (ele não aparece na leitura) numa linha própria:
+
+- `%% livro: espaco 2 %%` — duas linhas de espaço (de 1 a 6);
+- `%% livro: nova-pagina %%` — o que vem depois começa numa página nova;
+- `%% livro: largura-toda %%` — o bloco logo abaixo (até a próxima linha vazia), como uma tabela com o título, ocupa
+  a largura toda da página, mesmo num livro de duas colunas.
+
+**Revisar o livro** (menu ⋯ do livro) lista o que o livro não precisa mais: linhas só com `\` para separar
+parágrafos (e o `\` que saía impresso antes de uma caixa), blocos `::: runas-colunas` vazios e `::: runas-colunas-1`
+só em volta de uma tabela (vira `%% livro: largura-toda %%`). Cada troca mostra o antes e o depois; nada muda sem você
+marcar e confirmar, e a versão de antes de cada capítulo fica em **Snapshots do capítulo**.
+
 **Salvar como modelo** grava o estilo numa nota (`Livros/Modelos/<nome>.md`, `tipo: modelo-livro`) para usar em
 outros livros. Num capítulo, a propriedade `colunas:` muda só ele.
 

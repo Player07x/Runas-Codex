@@ -1,0 +1,10 @@
+/* Revisar o livro (U43, G2): o antes e o depois de cada troca, lado a lado (um embaixo do outro no celular). */
+.book-review { display: grid; gap: 12px; }
+.book-review-chapter h3 { margin: 6px 0 4px; font-size: 15px; }
+.book-review-chapter ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.book-review-diff { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+.book-review-diff pre { margin: 0; padding: 6px 8px; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.book-review-diff .antes { border-left: 3px solid var(--red); }
+.book-review-diff .depois { border-left: 3px solid var(--green); }
+@media (max-width: 600px) { .book-review-diff { grid-template-columns: 1fr; } }
+@media (pointer: coarse) { .book-review .check { min-height: 44px; } }

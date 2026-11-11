@@ -1623,3 +1623,16 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] Exportar em PDF, EPUB e DOCX: o recuo e o espaço saem como na prévia.
 - [ ] Abrir no Obsidian um capítulo com `nova_pagina:` e o livro com `recuo: todos`: as propriedades aparecem como
   texto e nada quebra.
+
+## Atualização 1.3.0 · Livros sem gambiarras (PR G2: U43, parte 2)
+
+- [ ] No Valknut, menu ⋯ do livro → **Revisar o livro…**: aparecem as linhas com `\`, o `::: runas-colunas-2`
+  vazio e os `::: runas-colunas-1` em volta das tabelas (Começo Rápido e Equipamentos), com o antes e o depois.
+- [ ] Marcar uma troca e confirmar: só ela muda; em Escrever → Snapshots do capítulo está a versão de antes. Abrir o
+  capítulo no Obsidian: o texto continua certo (os `%% livro: … %%` não aparecem).
+- [ ] Depois das trocas, o `\` que saía impresso em Arquétipos some, e a Tabela de Carma (com o título) continua na
+  largura toda da página.
+- [ ] Ligar **Linhas vazias contam** (Estilo do livro › Parágrafos): as linhas vazias a mais viram espaço na prévia
+  e no PDF; desligar volta a juntar.
+- [ ] Num capítulo, testar `%% livro: espaco 2 %%`, `%% livro: nova-pagina %%` e `%% livro: largura-toda %%` antes
+  de uma tabela num livro de duas colunas.

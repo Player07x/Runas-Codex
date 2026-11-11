@@ -83,6 +83,17 @@
 .book-print :is(.book-chapter, .book-section) .md :is(p:first-child, :is(h1, h2, h3, h4, h5, h6, .ficha-tags, .ficha-stats, .ficha-campos) + p) { text-indent: var(--book-indent-first, 0); }
 .book-print :is(.book-chapter, .book-section) .md :is(p:has(> img:only-child, > .embed-image:only-child), li p, td p, th p, p.ficha-tags, p.ficha-campos, p:has(> strong:first-child + br)) { text-indent: 0; }
 .book-print :is(.book-chapter, .book-section) .md p + p { margin-top: var(--book-gap, .7em); }
+/* Ajustes do livro (U43, core/book-source.ts): `%% livro: … %%` e as linhas vazias que contam viram estes contêineres.
+   A quebra de página fica nas regras de página (o Paged.js só lê as quebras de lá). */
+.book-print .md-container.livro-largo { column-span: all; margin-block: .6em; }
+.book-print .md-container.livro-largo table { width: 100%; }
+.book-print .md-container:is(.livro-nova-pagina, [class*="livro-espaco-"]) { margin: 0; }
+.book-print .md-container.livro-espaco-1 { height: calc(1em * var(--book-leading, 1.4)); }
+.book-print .md-container.livro-espaco-2 { height: calc(2em * var(--book-leading, 1.4)); }
+.book-print .md-container.livro-espaco-3 { height: calc(3em * var(--book-leading, 1.4)); }
+.book-print .md-container.livro-espaco-4 { height: calc(4em * var(--book-leading, 1.4)); }
+.book-print .md-container.livro-espaco-5 { height: calc(5em * var(--book-leading, 1.4)); }
+.book-print .md-container.livro-espaco-6 { height: calc(6em * var(--book-leading, 1.4)); }
 .book-print :is(.book-chapter, .book-section) > .md { column-count: var(--book-columns, 1); column-gap: 6mm; }
 /* Grimório: moldura dupla na página, herdada do tema Pergaminho. */
 .book-paper.modelo-grimorio .pagedjs_pagebox { outline: 3px double var(--rule); outline-offset: -5mm; }
