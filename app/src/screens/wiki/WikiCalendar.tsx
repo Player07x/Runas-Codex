@@ -1,4 +1,4 @@
-import { ResizablePanel } from "../../components/ResizablePanel"
+import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
@@ -18,6 +18,7 @@ import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { useRemembered } from "../../lib/remembered"
 import { YearGrid } from "./CalendarYear"
 import { useSetWorldToday } from "./world-today"
+import { CalendarConfig, takeConfigureRequest } from "./CalendarConfig"
 
 type CalendarMode = "mes" | "ano"
 const parseMode = (raw: unknown): CalendarMode => (raw === "ano" ? "ano" : "mes")
@@ -143,7 +144,7 @@ export function WikiCalendar({ path }: { path?: string }) {
   const calendar = ref?.calendar ?? null
   const [shown, setShown] = useState<{ year: number; month: number } | null>(null)
   const [selected, setSelected] = useState<WorldDate | null>(null)
-  const [sideTab, setSideTab] = useState<"dia" | "hoje" | "sincronizar" | "ajuda">("dia")
+  const [sideTab, setSideTab] = useState<"dia" | "hoje" | "configurar" | "sincronizar" | "ajuda">(() => (path && takeConfigureRequest(path) ? "configurar" : "dia"))
   // Mês ou ano inteiro (U9), lembrado por aparelho.
   const [mode, setMode] = useRemembered("runas-codex:wiki-calendario-vista", parseMode)
   const readOnly = vault.info?.readOnly ?? true
@@ -252,9 +253,9 @@ export function WikiCalendar({ path }: { path?: string }) {
               <ChevronRight size={18} />
             </button>
           </div>
-          <a className="btn sm ghost" href={href(articleRoute(ref!.path))} title="Editar o bloco do calendário">
-            <Pencil size={14} /> Editar
-          </a>
+          <button type="button" className="btn sm ghost" onClick={() => { setSideTab("configurar"); setPanelCollapsed("agenda", false) }} title="Configurar meses, semana, luas, eras, feriados e relógio">
+            <Pencil size={14} /> Configurar
+          </button>
         </div>
       </div>
 
@@ -272,6 +273,7 @@ export function WikiCalendar({ path }: { path?: string }) {
           <PanelTabs label="Detalhes do calendário" idPrefix="calendario-painel" value={sideTab} onChange={setSideTab} tabs={[
             { value: "dia", label: "Dia" },
             { value: "hoje", label: "Hoje no mundo" },
+            { value: "configurar", label: "Configurar" },
             ...(refs.length > 1 ? [{ value: "sincronizar" as const, label: "Sincronizar" }] : []),
             { value: "ajuda", label: "Ajuda" },
           ]} />
@@ -337,6 +339,7 @@ export function WikiCalendar({ path }: { path?: string }) {
             )}
           </section>}
           {sideTab === "sincronizar" && refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
+          {sideTab === "configurar" && <CalendarConfig key={ref!.path} path={ref!.path} readOnly={readOnly} />}
           {sideTab === "ajuda" && <CalendarHelp />}
           </TabPanel>
         </ResizablePanel>
