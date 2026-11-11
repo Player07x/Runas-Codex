@@ -61,14 +61,37 @@ describe("hifenização (L5)", () => {
     expect(resolveStyle({ modelo: "[[M]]" }, { tipo: "modelo-livro", modelo: "facil", hifenizar: true }).hyphenate).toBe(true)
   })
   it("recuo na primeira linha: desligado por padrão, o livro manda por cima do modelo (U15)", () => {
-    expect(resolveStyle({ modelo: "manual" }).indent).toBe(false)
-    expect(resolveStyle({ modelo: "romance" }).indent).toBe(false)
-    expect(resolveStyle({ recuo: true }).indent).toBe(true)
-    expect(resolveStyle({ modelo: "[[M]]" }, { tipo: "modelo-livro", recuo: true }).indent).toBe(true)
-    expect(resolveStyle({ modelo: "[[M]]", recuo: false }, { tipo: "modelo-livro", recuo: true }).indent).toBe(false)
-    expect(styleProperties(resolveStyle({ recuo: true })).recuo).toBe(true)
-    expect(modelNoteText(resolveStyle({ recuo: true }))).toContain("recuo: true")
-    expect(styleCss(resolveStyle({ recuo: true }))).toContain("--book-indent:1.5em;--book-indent-gap:0")
-    expect(styleCss(resolveStyle({}))).toContain("--book-indent:0;--book-indent-gap:0.8em")
+    expect(resolveStyle({ modelo: "manual" }).indent).toBe("nenhum")
+    expect(resolveStyle({ modelo: "romance" }).indent).toBe("nenhum")
+    // O `recuo: true` de antes continua: recua todos menos o primeiro depois de um título.
+    expect(resolveStyle({ recuo: true }).indent).toBe("menos-primeiro")
+    expect(resolveStyle({ modelo: "[[M]]" }, { tipo: "modelo-livro", recuo: true }).indent).toBe("menos-primeiro")
+    expect(resolveStyle({ modelo: "[[M]]", recuo: false }, { tipo: "modelo-livro", recuo: true }).indent).toBe("nenhum")
+    expect(styleProperties(resolveStyle({ recuo: "todos" })).recuo).toBe("todos")
+    expect(modelNoteText(resolveStyle({ recuo: "todos" }))).toContain("recuo: todos")
+  })
+})
+
+describe("parágrafos e tabelas (U43)", () => {
+  it("recua todos, ou todos menos o primeiro depois de título, no tamanho escolhido", () => {
+    expect(styleCss(resolveStyle({ recuo: "todos", recuo_em: 2 }))).toContain("--book-indent:2em;--book-indent-first:2em;")
+    expect(styleCss(resolveStyle({ recuo: "menos-primeiro" }))).toContain("--book-indent:1.5em;--book-indent-first:0;")
+    expect(styleCss(resolveStyle({}))).toContain("--book-indent:0;--book-indent-first:0;")
+    expect(resolveStyle({ recuo: "torto", recuo_em: 99 })).toMatchObject({ indent: "nenhum", indentEm: 4 })
+  })
+  it("espaço entre parágrafos: o escolhido, ou 0 com recuo e meia linha sem", () => {
+    expect(resolveStyle({}).paragraphGap).toBe(0.5)
+    expect(resolveStyle({ recuo: "todos" }).paragraphGap).toBe(0)
+    expect(resolveStyle({ recuo: "todos", espaco_paragrafos: 0.5 }).paragraphGap).toBe(0.5)
+    expect(resolveStyle({ espaco_paragrafos: 9 }).paragraphGap).toBe(1.5)
+    expect(resolveStyle({ modelo: "[[M]]" }, { tipo: "modelo-livro", recuo: "todos", espaco_paragrafos: 1 }).paragraphGap).toBe(1)
+    // Em linhas da entrelinha do livro: ½ linha de 1,4 = 0,7em.
+    expect(styleCss(resolveStyle({}))).toContain("--book-gap:0.7em;")
+    expect(styleCss(resolveStyle({ entrelinha: "folgada", espaco_paragrafos: 1 }))).toContain("--book-gap:1.6em;")
+  })
+  it("tabelas na largura toda por padrão, ou do tamanho do conteúdo", () => {
+    expect(styleCss(resolveStyle({}))).toContain("--book-table-width:100%")
+    expect(styleCss(resolveStyle({ tabelas: "ajustar" }))).toContain("--book-table-width:auto")
+    expect(styleProperties(resolveStyle({ tabelas: "ajustar" })).tabelas).toBe("ajustar")
   })
 })

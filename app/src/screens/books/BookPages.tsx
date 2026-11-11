@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type MouseEvent } from "react"
 import { Markdown } from "../../components/Markdown"
 import { bookProperties } from "../../core/books"
-import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings } from "../../core/books-preview"
+import { BOOK_SIZES, chapterTitle, previewChapters, previewSettings, startsNewPage } from "../../core/books-preview"
 import { bookDecorationCss, indexEntries, printOptions } from "../../core/books-finish"
 import { bookStyle, styleCss } from "../../core/book-style"
 import { bookLayout, chapterLabel, chapterNumbers } from "../../core/book-layout"
@@ -158,7 +158,7 @@ export const BookPages = forwardRef<BookPagesHandle, {
       <div className={`book-preview-output ${paperClass} zoom-${zoom}`} ref={output} style={{ zoom: scale }} aria-busy={!state.ready} aria-hidden={decorative || undefined} onClick={onPagesClick} />
     </div>
     <div className={`book-preview-source ${paperClass}`} ref={source} aria-hidden="true" inert>
-      <div className={`book-print ${settings.newChapter ? "chapters-new-page" : ""} abertura-${layout.opening}${layout.dropCap ? " capitular-auto" : ""}${layout.mirrored ? " espelhadas" : ""}`}>
+      <div className={`book-print abertura-${layout.opening}${layout.dropCap ? " capitular-auto" : ""}${layout.mirrored ? " espelhadas" : ""}`}>
         {whole && data.exportar_capa !== false && <section className={`book-print-cover capa-${layout.cover}`}>
           <div className="book-cover-text">
             <h1 className="book-print-title">{text(data.titulo_capa) ?? book.name}</h1>
@@ -179,7 +179,9 @@ export const BookPages = forwardRef<BookPagesHandle, {
           const own = /^(?:::: *runas-colunas-\d|> *\[!colunas\])/m.test(body)
           const asked = index.note(chapter.path) ? bookProperties(index.note(chapter.path)!).colunas : undefined
           const columns = own ? 1 : asked === 1 || asked === 2 || asked === 3 ? asked : undefined
-          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} data-book-kind={chapter.kind} className={chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"} style={columns ? { ["--book-columns" as string]: columns } : undefined}>
+          const newPage = startsNewPage(chapter.kind, chapterNote && chapter.path !== book.path ? bookProperties(chapterNote).nova_pagina : undefined, settings)
+          const kindClass = chapter.kind === "parte" ? "book-part" : chapter.kind === "capitulo" ? "book-chapter" : "book-section"
+          return <section id={`book-chapter-${i}`} key={`${chapter.path}:${i}`} data-book-chapter={i} data-book-path={chapter.path} data-book-kind={chapter.kind} className={`${kindClass}${newPage && chapter.kind !== "parte" ? " nova-pagina" : ""}`} style={columns ? { ["--book-columns" as string]: columns } : undefined}>
             {title !== null && (chapter.kind === "secao" ? <h2 className="book-chapter-heading book-section-title">{title}</h2> : <header className="book-chapter-opening">
               {label && <p className="book-chapter-kicker" data-toc={n !== null ? chapterLabel(n, layout.numbering, true) ?? "" : ""}>{label}</p>}
               <h1 className="book-chapter-heading">{title}</h1>

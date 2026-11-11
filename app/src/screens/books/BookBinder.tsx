@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, Circle, Copy, FilePlus2, PenLine, Plus, Trash2 } from "lucide-react"
 import { blockOf, bookOutline, canIndent, canOutdent, copyName, moveInOutline, moveRange, retitle, visibleRows, type OutlineRow } from "../../core/books-outline"
-import type { BookItem } from "../../core/books"
+import { bookProperties, type BookItem } from "../../core/books"
+import { previewSettings, startsNewPage } from "../../core/books-preview"
 import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
@@ -101,6 +102,17 @@ export function BookBinder({ book, items, selected, locked, onOpen, onSelect, ru
     const path = pathAt(pos)
     if (path) void run(async () => { await vault.setProperty(path, "status", status); announce(`${nameAt(pos)}: ${STATUS_TEXT[status]}.`) })
   }
+  // Página nova por nota (U43): grava `nova_pagina:` só quando difere do padrão do livro; igual ao padrão, apaga.
+  const toggleNewPage = (pos: number) => {
+    const item = items[pos], path = pathAt(pos)
+    if (!item?.note || !path) return
+    const settings = previewSettings(book)
+    const next = !startsNewPage(item.kind, bookProperties(item.note).nova_pagina, settings)
+    void run(async () => {
+      await vault.setProperty(path, "nova_pagina", next === startsNewPage(item.kind, undefined, settings) ? undefined : next)
+      announce(`${nameAt(pos)}: ${next ? "começa em página nova" : "continua na página de antes"}.`)
+    })
+  }
   const duplicate = (pos: number) => {
     if (locked) return
     const [from, to] = blockOf(rows, pos)
@@ -185,6 +197,7 @@ export function BookBinder({ book, items, selected, locked, onOpen, onSelect, ru
       { label: "Descer", icon: <ArrowDown size={16} />, hint: "Alt+↓", disabled: locked || !moveInOutline(rows, pos, 1), onSelect: () => move(pos, 1) },
       ...(canIndent(rows, pos) ? [{ label: "Virar seção do capítulo de cima", icon: <ArrowRight size={16} />, hint: "Alt+→", disabled: locked, onSelect: () => setKind(pos, "secao") }] : []),
       ...(canOutdent(rows, pos) ? [{ label: "Virar capítulo", icon: <ArrowLeft size={16} />, hint: "Alt+←", disabled: locked, onSelect: () => setKind(pos, "capitulo") }] : []),
+      ...(item.kind !== "parte" ? [{ label: "Começar em página nova", icon: item.note && startsNewPage(item.kind, bookProperties(item.note).nova_pagina, previewSettings(book)) ? <Check size={16} /> : <Circle size={12} />, disabled: locked || !path, onSelect: () => toggleNewPage(pos) }] : []),
       "separator",
       ...STATUS.map((s) => ({ label: `Status: ${s.label.toLowerCase()}`, icon: s.id === status ? <Check size={16} /> : <Circle size={12} style={STATUS_ICON[s.id]} />, disabled: locked || !path || s.id === status, onSelect: () => setStatus(pos, s.id) })),
       "separator",

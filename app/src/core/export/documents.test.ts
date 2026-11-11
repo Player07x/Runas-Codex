@@ -64,16 +64,25 @@ describe("colunas automáticas dos livros",()=>{
 describe("recuo na primeira linha (U15)",()=>{
  const nodes=[el("h2",["Título"]),el("p",["Primeiro"]),el("p",["Segundo"]),el("blockquote",[el("p",["Citado"])]),el("p",["Depois da citação"])]
  const paragraph=(doc:string,text:string)=>{const end=doc.indexOf(text);return doc.slice(doc.lastIndexOf("<w:p>",end),end)}
- it("DOCX recua só o parágrafo que vem depois de outro, sem espaço entre eles",async()=>{
+ it("DOCX recua todos menos o primeiro depois de título, sem espaço entre eles (recuo: true)",async()=>{
   const doc=strFromU8(unzipSync(await generateDocx({...book,assets:[],style:resolveStyle({recuo:true}),sections:[{...book.sections[0],nodes}]}))["word/document.xml"])
   expect(paragraph(doc,"Segundo")).toContain('w:firstLine="340"')
   expect(paragraph(doc,"Primeiro")).not.toContain("w:firstLine")
-  expect(paragraph(doc,"Depois da citação")).not.toContain("w:firstLine")
+  // U43: depois de citação também recua; o primeiro de dentro da citação não.
+  expect(paragraph(doc,"Depois da citação")).toContain('w:firstLine="340"')
+  expect(paragraph(doc,"Citado")).not.toContain("w:firstLine")
   expect(paragraph(doc,"Primeiro")).toContain('w:after="0"')
  })
- it("DOCX sem recuo fica como antes",async()=>{
+ it("DOCX com recuo em todos, no tamanho e com o espaço escolhidos (U43)",async()=>{
+  const style=resolveStyle({recuo:"todos",recuo_em:3,espaco_paragrafos:1,corpo_pt:10,entrelinha:"normal"})
+  const doc=strFromU8(unzipSync(await generateDocx({...book,assets:[],style,sections:[{...book.sections[0],nodes}]}))["word/document.xml"])
+  expect(paragraph(doc,"Primeiro")).toContain('w:firstLine="680"')
+  // 1 linha de 1,4 × 10 pt = 14 pt = 280 twips.
+  expect(paragraph(doc,"Segundo")).toContain('w:after="280"')
+ })
+ it("DOCX sem recuo fica como antes, com meia linha entre os parágrafos",async()=>{
   const doc=strFromU8(unzipSync(await generateDocx({...book,assets:[],style:resolveStyle({}),sections:[{...book.sections[0],nodes}]}))["word/document.xml"])
   expect(doc).not.toContain("w:firstLine")
-  expect(paragraph(doc,"Segundo")).toContain('w:after="140"')
+  expect(paragraph(doc,"Segundo")).toContain('w:after="147"')
  })
 })
