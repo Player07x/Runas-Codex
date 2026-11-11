@@ -207,6 +207,7 @@ automáticos). Falta o uso de verdade:
 - [ ] Importar uma imagem de token pelo celular (galeria ou câmera).
 - [ ] Tablet e celular deitado: até a X3 (layout por toque), a mesa usa o layout do desktop. Captura do celular em pé em `docs/imagens/vtt-9/`.
 - [ ] Windows: firewall pedindo permissão para a porta da sala na primeira vez.
+
 ## Atualizações (botão "Verificar atualizações")
 
 - [ ] Instalar a pré-release `v0.1.0-beta.1` (Windows `.exe`, Linux AppImage e `.deb`), abrir Configurações › Verificar atualizações: aparece a `v0.1.0-beta.2`, com "O que mudou".
@@ -276,6 +277,7 @@ automáticos). Falta o uso de verdade:
 A X3 foi conferida no emulador Android 15 (CI): 31,8 FPS na cena simples e 24 FPS no mapa de 4096 px com névoa e
 luzes, com resolução adaptada para 1 e GPU por software. Os números e capturas estão na ADR 0006; a conferência em
 aparelho físico acima continua necessária.
+
 ## Notas: links, gráfico e notas pessoais (C5a)
 
 - [ ] Prévia de link: na leitura, passar o mouse num link; no modo Editar, com Ctrl apertado; no celular, tocar e
@@ -318,6 +320,7 @@ aparelho físico acima continua necessária.
 - [ ] Arrastar uma nota e uma pasta para outra pasta (e para a raiz) no app desktop; conferir no Obsidian que os links
   continuam funcionando. Arrastar uma nota da árvore para dentro do editor insere `[[link]]`.
 - [ ] Ordem da lista (botão de setas): cada opção, e a escolha lembrada depois de fechar o app.
+
 ## C5c — painéis e ferramentas de notas
 
 - [ ] Desktop: abrir notas em abas, fixar, arrastar entre painéis, empilhar, dividir para baixo/ao lado e restaurar
@@ -555,6 +558,7 @@ Os testes manuais da beta.13 foram informados como aprovados pelo dono. Conferir
 - APK debug antigo (até beta.13) tem outra assinatura. A nova beta não consegue substituí-lo automaticamente;
   planejar a migração manual preservando o cofre e exportando backups antes de remover uma instalação antiga.
   A implementação não desinstala nem apaga a versão antiga.
+
 ## Tarefas do plugin Tasks e tempo livre (ADR 0020)
 
 Use uma **cópia** de um cofre de teste, com o plugin Tasks 8.6.0 no Obsidian.
@@ -1128,6 +1132,7 @@ Entram as imagens dentro das fichas e as tarefas no painel da Agenda (listas aci
   “Você está em” fácil de tocar.
 - [ ] Conferências que a R1 não fez por falta de ambiente: teclado e diálogos, Orca/NVDA/TalkBack, texto a 140 %,
   Android físico, sala com dois aparelhos, impressão e o smoke `--write` no CI.
+
 ## T1 — backups agendados (29/10/2026)
 
 - [ ] Configurações › Backups no computador: mudar o **Horário** para dali a dois minutos e deixar o app aberto (ou
@@ -1619,6 +1624,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   esse tamanho, centrado na grade; os atalhos 0,5 · 1 · 2 · 3 · 4 continuam a um toque. No celular, os atalhos têm
   44 px.
 - [ ] No evento da Agenda, ligar e desligar “Dia inteiro” não salva nem fecha o diálogo.
+
 ## Atualização 1.3.0 · Tarefas na Agenda (PR B: U37, U38)
 
 - [ ] Agenda › Tarefas: as tarefas do cofre aparecem em Atrasadas, Hoje, Hábitos, Próximas e, recolhidas, Sem prazo e
@@ -1639,6 +1645,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   notificação do sistema por tarefa aberta, no Linux, no Windows e no Android. Um lembrete de evento não chega
   duplicado.
 - [ ] Com o PIN das Notas bloqueado, tarefas de notas do espaço Notas não aparecem no sino nem viram notificação.
+
 ## Atualização 1.3.0 · Configurar calendário (PR D: U35)
 
 - [ ] Wiki › Calendário › Configurar: renomear um mês, mudar dias, acrescentar uma lua e um feriado. A grade muda na
@@ -1666,6 +1673,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] As pastas mostram o número de notas num selo à direita e as subpastas têm uma linha-guia à esquerda.
 - [ ] Menu “⋯” → “Recolher tudo”: todas as pastas fecham, menos a da nota aberta.
 - [ ] No celular (ou tablet), as linhas de nota e pasta têm 44 px e a lista não rola para os lados.
+
 ## Atualização 1.3.0 · Diagramação dos livros (PR G1: U43, parte 1)
 
 - [ ] No Valknut (Diagramar › Estilo do livro › Parágrafos), trocar o recuo entre Nenhum, Todos os parágrafos e
@@ -1694,6 +1702,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   e no PDF; desligar volta a juntar.
 - [ ] Num capítulo, testar `%% livro: espaco 2 %%`, `%% livro: nova-pagina %%` e `%% livro: largura-toda %%` antes
   de uma tabela num livro de duas colunas.
+
 ## Atualização 1.3.0 · Mapa e acessibilidade (PR J: U48)
 
 - [ ] Mapa da Wiki a 1280 px com Configurações › Tamanho do texto em 120% e 140%: as abas do painel (Pinos, Áreas,
@@ -1706,6 +1715,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Gráfico global com `?cofre-grande=10000` (ou um cofre grande) num computador **sem placa de vídeo** (ou com o
   Chrome em `--disable-gpu`): as ligações somem enquanto o gráfico se acomoda e voltam quando ele para; arrastar e
   aproximar respondem. Num computador com placa de vídeo o gráfico continua igual.
+
 ## Atualização 1.3.0 · Limpeza do repositório (PR K: U49)
 
 - [ ] No GitHub, abrir `docs/tarefas/README.md`: ele mostra só o que está aberto e aponta para `concluidas/` e
@@ -1714,3 +1724,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Abrir o app (Notas, Calendário da Wiki, grafo): nada some com a remoção do código sem uso (`MoonIcon`,
       `NoteEditor`, `NotePanels`, `lib/fictional-calendar`, `lib/graph`, que ninguém importava).
 - [ ] As imagens dos PRs antigos continuam abrindo (elas são lidas do branch de cada PR, não da `main`).
+
+## Versão 1.3.0
+
+- [ ] Atualizar da 1.2.0 para a 1.3.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.3.0.
+- [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
+- [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
+  propriedades aparecem como texto e nada quebra.

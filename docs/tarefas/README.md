@@ -6,7 +6,7 @@ Quem está trabalhando em quê, para dois agentes não mexerem nos mesmos arquiv
 
 | Tarefa | Pedido | Situação |
 |---|---|---|
-| Atualização 1.3.0 (U35–U49) | `atualizacao-1.3.md` e as maquetes, no PR #116 | PRs A–K abertos (#117–#125 e o da limpeza); H espera B, C e E; I adiado pelo dono |
+| Atualização 1.3.0 (U35–U49) | [atualizacao-1.3.md](atualizacao-1.3.md) e as [maquetes](atualizacao-1.3-maquetes.html) | lançada na 1.3.0 sem o H (Início “Mesa de hoje”, U46) e o I (mestre remoto, U47), que ficam para depois |
 
 O que o dono confere à mão está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
 

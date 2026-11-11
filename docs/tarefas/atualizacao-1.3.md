@@ -6,7 +6,7 @@
 > recomendações (ver "O que o João decide", no fim) e começar pelo PR A.
 
 Funções novas depois da 1.2 = **1.3.0** (ADR 0025, adendo de SemVer). Itens **U35 a U49**. As regras de design
-**D1–D17** de [`atualizacao-1.2.md`](atualizacao-1.2.md#regras-de-design-valem-para-todo-pr-de-tela) continuam valendo
+**D1–D17** de [`atualizacao-1.2.md`](concluidas/atualizacao-1.2.md#regras-de-design-valem-para-todo-pr-de-tela) continuam valendo
 para todo PR de tela, e cada PR segue o `AGENTS.md`.
 
 ## Itens
