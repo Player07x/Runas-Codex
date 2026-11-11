@@ -71,6 +71,13 @@ tarefa em `Agenda/Tarefas.md` (as que já estão em outras notas ficam onde est�
 - **Hábito diário:** marque **Todo dia** ao criar. A linha ganha `🔁 every day 🏁 delete`: ao concluir, a ocorrência feita
   sai e só a de amanhã fica, então a nota não cresce uma linha por dia.
 
+### Avisos (o sino)
+
+O sino ao lado do botão de tema mostra **Atrasadas**, **Vencem hoje** e os **Lembretes** dos eventos das últimas e
+das próximas 24 horas. Cada tarefa tem Concluir, Falhou (se já venceu), Adiar para amanhã e Abrir. O número no sino é
+o que você ainda não viu neste aparelho. No dia do prazo, cada tarefa aberta também vira uma notificação do sistema,
+na hora escolhida em Configurações › Agenda e tarefas (padrão 09:00).
+
 ### Configurações
 
 Em Configurações › Agenda e tarefas: o filtro global (só linhas com `#tarefa`, por exemplo, contam), o formato

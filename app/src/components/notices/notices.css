@@ -1,0 +1,32 @@
+/* Central de avisos (U45): sino na barra do topo e o painel que abre embaixo dele. */
+.notice-bell { position: relative; display: inline-flex; }
+.notice-trigger { position: relative; }
+.notice-count { position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: var(--red); color: var(--bg); font: 700 calc(10.5px * var(--font-scale, 1)) / 17px var(--font-mono); text-align: center; pointer-events: none; }
+.notice-panel { position: absolute; z-index: 70; top: calc(100% + 8px); right: 0; display: grid; gap: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); padding: 14px; overflow: auto; border: 1px solid var(--line-strong); background: var(--panel); box-shadow: var(--shadow); }
+.notice-panel:focus { outline: none; }
+.notice-panel:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.notice-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.notice-empty { margin: 0; }
+.notice-section { display: grid; gap: 4px; }
+.notice-section > h3 { display: flex; gap: 6px; margin: 0; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.notice-section.late > h3 { color: var(--gold); }
+.notice-section .count { color: var(--faint); }
+.notice-section ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.notice-item { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 6px; border-radius: 8px; }
+.notice-item:hover { background: var(--panel-2); }
+.notice-item.upcoming { opacity: .8; }
+.notice-text { display: grid; flex: 1; min-width: 0; }
+.notice-text strong { display: -webkit-box; overflow: hidden; font-weight: 600; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.notice-text small { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.notice-actions { display: inline-flex; flex: none; gap: 2px; }
+.notice-actions .icon-btn { width: 32px; height: 32px; }
+@media (max-width: 860px), (pointer: coarse) {
+  .notice-trigger { min-width: 44px; min-height: 44px; }
+  .notice-actions .icon-btn { width: 44px; height: 44px; }
+  .notice-item { flex-wrap: wrap; }
+  .notice-actions { margin-left: auto; }
+}
+@media (max-width: 860px) {
+  /* No celular o painel ocupa a largura da tela, preso abaixo da barra do topo. */
+  .notice-panel { position: fixed; top: calc(var(--topbar-height) + env(safe-area-inset-top) + 4px); left: 12px; right: 12px; width: auto; max-height: calc(100dvh - var(--topbar-height) - var(--bottomnav-height) - 32px); }
+}
