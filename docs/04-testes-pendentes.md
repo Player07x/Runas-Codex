@@ -1607,3 +1607,15 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
 - [ ] As seções acima, de “Maquetes da atualização 1.2.0” até “Geradores ×4”, entraram nesta versão.
 - [ ] Abrir no Obsidian um artigo com token (`token_*`) e uma nota do mestre ligada a uma sessão (`sessao`): as
   propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.3.0 · Constância e correções (PR A: U36, U40, U41, U44)
+
+- [ ] Passar por Início, Notas, Agenda, Wiki (Artigos, Calendário, Linha do tempo, Mapa), Campanhas, Livros, VTT,
+  Importar e Configurações: a barra do topo e as abas da Wiki ficam na mesma altura em todas, também nas páginas
+  longas (antes encolhiam de 56 para ~45 px).
+- [ ] O título da janela do app fica sempre “Runas-Codex” ao trocar de tela; uma nota aberta em janela própria mostra
+  “‹nota› — Runas-Codex”. No Windows, conferir também o nome na barra de tarefas.
+- [ ] Na ficha da Wiki (Token para a mesa) e nas propriedades do token da mesa, digitar 1,7 e 2,5: o token fica com
+  esse tamanho, centrado na grade; os atalhos 0,5 · 1 · 2 · 3 · 4 continuam a um toque. No celular, os atalhos têm
+  44 px.
+- [ ] No evento da Agenda, ligar e desligar “Dia inteiro” não salva nem fecha o diálogo.
