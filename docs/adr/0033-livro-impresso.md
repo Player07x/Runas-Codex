@@ -38,7 +38,7 @@ Fases, cada uma um PR a partir da `main`: **L1** prévia ao lado; **L2** limpeza
 por capítulo, fluxo das colunas, fonte estática, imagens reduzidas, título, marcadores e marcação do PDF); **L3**
 Estilo do livro, cinco modelos (Manual de RPG, Grimório, Romance, Moderno, Leitura fácil), modelos próprios como notas
 `tipo: modelo-livro`, colunas do livro e fontes; **L4** capa, sumário, aberturas e cabeçalhos; **L5** fichas e
-hifenização. A tarefa está em [`docs/tarefas/livro-impresso.md`](../tarefas/livro-impresso.md).
+hifenização. A tarefa está em [`docs/tarefas/concluidas/livro-impresso.md`](../tarefas/concluidas/livro-impresso.md).
 
 ### Como a L1 funciona
 - `screens/books/BookPages.tsx` pagina (Paged.js, o mesmo leitor das notas) e serve ao Diagramar e à prévia ao lado;

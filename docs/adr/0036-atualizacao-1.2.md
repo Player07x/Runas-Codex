@@ -4,11 +4,11 @@
 
 ## Contexto
 Em 07/11 o dono mandou 16 capturas com problemas e pedidos em Wiki, Campanhas, VTT e editor. O plano
-([`atualizacao-1.2.md`](../tarefas/atualizacao-1.2.md)) dividiu tudo em U16–U34 e nos PRs A–P. O Codex fez uma
+([`atualizacao-1.2.md`](../tarefas/concluidas/atualizacao-1.2.md)) dividiu tudo em U16–U34 e nos PRs A–P. O Codex fez uma
 primeira versão das maquetes e do código, e ela quebrava o rework: texto de 9 a 11 px, Cinzel na interface, dois
 botões principais, abas misturadas com vistas, "Salvar" em nota e dados de mesa inventados. Na revisão de 08/11, o
 plano ganhou as regras **D1–D17** e as maquetes foram refeitas
-([versão 2](../tarefas/atualizacao-1.2-maquetes.html)). Esta ADR registra o que vale daqui em diante e as escolhas de
+([versão 2](../tarefas/concluidas/atualizacao-1.2-maquetes.html)). Esta ADR registra o que vale daqui em diante e as escolhas de
 cada item que não estão no código.
 
 ## Decisão

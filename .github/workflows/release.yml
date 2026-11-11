@@ -647,7 +647,7 @@ jobs:
           retention-days: 14
 
   android-revisao:
-    # R1 e R3 (docs/tarefas/revisao-1.0.md, ADR 0030): as telas do app no emulador (411 px claro e escuro, 320 px,
+    # R1 e R3 (docs/tarefas/concluidas/revisao-1.0.md, ADR 0030): as telas do app no emulador (411 px claro e escuro, 320 px,
     # deitado, texto a 140 %, botão voltar e teclado, com axe-core) e o cofre de 10 mil notas da T6. É revisão e
     # medição: não entra na publicação e o resumo sai no log e no artefato.
     needs: targets

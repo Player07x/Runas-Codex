@@ -4,7 +4,7 @@
 
 ## Contexto
 Depois da beta.24 o dono registrou quatro pedidos para a mesa do VTT (U11 a U14 em
-[`rumo-a-1.0.md`](../tarefas/rumo-a-1.0.md)): o painel de propriedades do token abria por cima do painel lateral; as
+[`rumo-a-1.0.md`](../tarefas/concluidas/rumo-a-1.0.md)): o painel de propriedades do token abria por cima do painel lateral; as
 barras do token eram só PV, PA e PE; não havia como guardar mapas e tokens para usar em outra mesa; e o “Registro” não
 servia para anotar a sessão.
 

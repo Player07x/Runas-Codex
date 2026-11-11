@@ -1,7 +1,7 @@
 # ADR 0020 — Tarefas do plugin Tasks e tempo livre na Agenda
 
-Data: 18/10/2026. Pedido: [docs/tarefas/tasks-tempo-livre.md](../tarefas/tasks-tempo-livre.md). Matriz:
-[docs/tarefas/tasks-matriz.md](../tarefas/tasks-matriz.md).
+Data: 18/10/2026. Pedido: [docs/tarefas/concluidas/tasks-tempo-livre.md](../tarefas/concluidas/tasks-tempo-livre.md). Matriz:
+[docs/tarefas/concluidas/tasks-matriz.md](../tarefas/concluidas/tasks-matriz.md).
 
 ## Decisões
 

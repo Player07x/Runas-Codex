@@ -5,7 +5,7 @@
 ## Contexto
 A etapa 1 produziu três visuais navegáveis para o mesmo app: o **Original** (paleta "Livro Vermelho" do Runas DM,
 fundo ilustrado), o **Atlas** (editorial, papel claro e verde) e o **Órbita** (painel imersivo do mestre, grafite e
-lavanda). A comparação está em [03 — Comparação dos protótipos](../03-comparacao-prototipos.md).
+lavanda). A comparação está em [03 — Comparação dos protótipos](../historico/03-comparacao-prototipos.md).
 
 ## Decisão
 Adotar o **Órbita** em todo o app:

@@ -1,6 +1,6 @@
 # 02 — Viabilidade e etapas
 
-> Baseado no [estudo](00-estudo.md) e na [checklist](01-checklist-recursos.md). As estimativas mudam conforme os itens
+> Baseado no [estudo](historico/00-estudo.md) e na [checklist](01-checklist-recursos.md). As estimativas mudam conforme os itens
 > que você desmarcar.
 >
 > **Atualização (14/10/2026):** o Runas-Codex é independente da Runas Suite e só reaproveita código dela
