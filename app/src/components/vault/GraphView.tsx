@@ -4,6 +4,7 @@ import { Application, Container, Graphics, Text } from "pixi.js"
 import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY, type Simulation, type SimulationLinkDatum, type SimulationNodeDatum } from "d3-force"
 import { useEffect, useRef, useState } from "react"
 import type { GraphData, GraphGroup, GraphNode } from "../../core/graph-data"
+import { isSoftwareRenderer } from "../../core/gpu"
 
 /**
  * Gráfico de notas em WebGL (PixiJS) com simulação de forças (d3-force): fluido com milhares de notas, ao contrário
@@ -68,6 +69,26 @@ function readPalette(): Palette {
 /** A partir de quantos nós o gráfico usa o modo leve (T6). */
 const LARGE_GRAPH = 1500
 
+/**
+ * O WebGL daqui é feito pela CPU (SwiftShader, llvmpipe, “Microsoft Basic Render”…)? Pelo nome do renderizador ou
+ * porque o navegador recusa o contexto com `failIfMajorPerformanceCaveat`. Sem WebGL nenhum não conta (o gráfico
+ * mostra o erro).
+ */
+function softwareWebGL(): boolean {
+  const probe = (options?: WebGLContextAttributes) => {
+    const gl = document.createElement("canvas").getContext("webgl", options) as WebGLRenderingContext | null
+    if (!gl) return null
+    const info = gl.getExtension("WEBGL_debug_renderer_info")
+    const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? "")
+    gl.getExtension("WEBGL_lose_context")?.loseContext()
+    return name
+  }
+  try {
+    const plain = probe()
+    return plain !== null && (isSoftwareRenderer(plain) || probe({ failIfMajorPerformanceCaveat: true }) === null)
+  } catch { return false }
+}
+
 class GraphRuntime {
   private app = new Application()
   private world = new Container()
@@ -84,6 +105,12 @@ class GraphRuntime {
   private hover: string | null = null
   private focused: string | null = null
   private dirty = true
+  /** WebGL feito pela CPU (sem placa de vídeo): sem antisserrilhado, resolução 1 e menos redesenhos (U48). */
+  private software = false
+  private lastDraw = 0
+  /** O último desenho saiu sem as ligações (sem placa de vídeo, enquanto acomoda ou se mexe). */
+  private sketched = false
+  private wheelUntil = 0
   private fitPending = true
   private ticks = 0
   /** T6: com muitos nós a simulação esfria mais rápido, sem colisão, e o desenho acompanha a cada poucos quadros. */
@@ -106,7 +133,8 @@ class GraphRuntime {
 
   async init(): Promise<void> {
     const { clientWidth, clientHeight } = this.host
-    await this.app.init({ width: Math.max(1, clientWidth), height: Math.max(1, clientHeight), backgroundAlpha: 0, antialias: true, autoDensity: true, resolution: window.devicePixelRatio || 1, preference: "webgl" })
+    this.software = softwareWebGL()
+    await this.app.init({ width: Math.max(1, clientWidth), height: Math.max(1, clientHeight), backgroundAlpha: 0, antialias: !this.software, autoDensity: true, resolution: this.software ? 1 : window.devicePixelRatio || 1, preference: "webgl" })
     if (this.destroyed) {
       this.app.destroy(true)
       return
@@ -115,6 +143,9 @@ class GraphRuntime {
     this.world.addChild(this.edges, this.dots, this.labelLayer)
     this.app.stage.addChild(this.world)
     this.world.position.set(clientWidth / 2, clientHeight / 2)
+    // O PixiJS desenharia a tela inteira a cada quadro, mesmo parada; aqui ela só é desenhada quando muda (draw()).
+    // Sem placa de vídeo, cada quadro de 10 mil notas custava cerca de 1 s (U48); com ela, poupa bateria.
+    this.app.ticker.remove(this.app.render, this.app)
     this.app.ticker.add(() => this.frame())
     this.bindEvents()
     this.ready = true
@@ -247,13 +278,21 @@ class GraphRuntime {
       }
     }
     this.frames++
-    // Enquanto o gráfico grande se mexe, redesenhar 30 mil linhas a cada quadro trava; um quadro em quatro basta.
+    // Enquanto o gráfico grande se mexe, redesenhar 30 mil linhas a cada quadro trava; um quadro em quatro basta (sem
+    // placa de vídeo, no máximo um a cada 400 ms).
     const settling = this.large && this.sim.alpha() >= this.sim.alphaMin() && !this.gesture
-    if (this.dirty && (!settling || this.frames % 4 === 0)) this.draw()
+    const wait = settling && (this.software ? performance.now() - this.lastDraw < 400 : this.frames % 4 !== 0)
+    // Sem placa de vídeo, as 30 mil ligações custam a maior parte do desenho: saem enquanto o gráfico acomoda, é
+    // arrastado ou aproximado, e voltam quando ele para.
+    const sketch = this.software && this.large && (settling || this.gesture !== null || performance.now() < this.wheelUntil)
+    if (this.sketched && !sketch) this.dirty = true
+    if (this.dirty && !wait) this.draw(sketch)
   }
 
-  private draw(): void {
+  private draw(sketch = false): void {
     this.dirty = false
+    this.sketched = sketch
+    this.lastDraw = performance.now()
     const { forces, center, labels } = this.settings.current
     const k = this.world.scale.x
     const active = this.hover ?? this.focused
@@ -276,7 +315,7 @@ class GraphRuntime {
     const dim: SimLink[] = []
     const normal: SimLink[] = []
     const strong: SimLink[] = []
-    for (const link of this.links) {
+    for (const link of sketch ? [] : this.links) {
       if (this.large && !visible(link.source) && !visible(link.target)) continue
       if (!active) normal.push(link)
       else if (link.source.id === active || link.target.id === active) strong.push(link)
@@ -293,7 +332,7 @@ class GraphRuntime {
     }
     for (const [color, list] of byColor) paint(list, color || this.palette.edge, color ? 0.85 : 0.55)
     paint(strong, this.palette.highlight, 0.9)
-    if (forces.arrows) {
+    if (forces.arrows && !sketch) {
       for (const link of this.links) {
         this.arrow(link.source, link.target)
         if (link.mutual) this.arrow(link.target, link.source)
@@ -339,7 +378,7 @@ class GraphRuntime {
       if (!text) {
         text = new Text({ text: n.node.label, style: { fontFamily: "Geist Variable, system-ui, sans-serif", fontSize: 12, fill: this.palette.text } })
         text.anchor.set(0.5, 0)
-        text.resolution = window.devicePixelRatio || 1
+        text.resolution = this.software ? 1 : window.devicePixelRatio || 1
         this.labelLayer.addChild(text)
         this.labels.set(id, text)
       }
@@ -348,6 +387,8 @@ class GraphRuntime {
       text.alpha = lit(id) ? 0.95 : 0.25
       text.position.set(n.x!, n.y! + this.radius(n.node) + 3 / k)
     }
+    // A tela só é desenhada aqui (o desenho automático do PixiJS foi desligado em init()).
+    this.app.render()
   }
 
   private arrow(from: SimNode, to: SimNode): void {
@@ -470,6 +511,7 @@ class GraphRuntime {
       }
     })
     on("wheel", (event) => {
+      this.wheelUntil = performance.now() + 250
       event.preventDefault()
       this.zoomAt(this.local(event), Math.exp(-event.deltaY * 0.0015))
     }, { passive: false })
@@ -546,3 +588,4 @@ export function GraphView({ data, groups, forces, focus, center, labels = "auto"
     </div>
   )
 }
+

@@ -1694,3 +1694,15 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/conferenci
   e no PDF; desligar volta a juntar.
 - [ ] Num capítulo, testar `%% livro: espaco 2 %%`, `%% livro: nova-pagina %%` e `%% livro: largura-toda %%` antes
   de uma tabela num livro de duas colunas.
+## Atualização 1.3.0 · Mapa e acessibilidade (PR J: U48)
+
+- [ ] Mapa da Wiki a 1280 px com Configurações › Tamanho do texto em 120% e 140%: as abas do painel (Pinos, Áreas,
+  Camadas, Mapa) não ficam escondidas; se não cabem, quebram em duas linhas. Em 100% continuam numa linha.
+- [ ] No celular, abrir um mapa em pé e girar para deitado: o mapa se enquadra de novo. Depois de aproximar ou
+  arrastar, girar não muda a vista.
+- [ ] Com o Orca (Linux) ou o NVDA (Windows), nas Relações › Organograma: cada nó é lido com o cargo e “sob ‹chefe›”,
+  e o botão do ramo diz de quem é (“Ramo de ‹nome›: 2 membros”). Na Árvore genealógica: “Pôr ‹nome› no centro (1
+  geração acima)”.
+- [ ] Gráfico global com `?cofre-grande=10000` (ou um cofre grande) num computador **sem placa de vídeo** (ou com o
+  Chrome em `--disable-gpu`): as ligações somem enquanto o gráfico se acomoda e voltam quando ele para; arrastar e
+  aproximar respondem. Num computador com placa de vídeo o gráfico continua igual.

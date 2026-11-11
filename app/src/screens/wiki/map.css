@@ -183,3 +183,7 @@
 .map-panel .kit-tab { gap: 4px; padding: 0 8px; }
 @container map-panel (max-width: 420px) { .map-panel .kit-tab > svg { display: none; } }
 .map-panel { container: map-panel / inline-size; }
+/* Com o texto maior (Configurações › Tamanho do texto) ou o painel mais estreito, as abas não rolam escondidas: quebram
+   em mais de uma linha e dividem a largura (U48). */
+.map-panel .kit-tabs { flex-wrap: wrap; overflow-x: visible; }
+.map-panel .kit-tab { flex: 1 0 auto; justify-content: center; }
