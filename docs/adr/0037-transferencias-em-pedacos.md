@@ -22,9 +22,12 @@ quase não comprimem, então o tamanho compactado fica perto do real.
 3. **Plataforma**: `openSave(nome, mime)` devolve um destino com `write`, `close` e `abort`. No desktop, o diálogo
    abre antes, os pedaços (juntados em blocos de 8 MB) vão por IPC para um arquivo `<destino>.parcial`, que só ganha
    o nome final no `close`; `abort` e o fechamento do app apagam o parcial. No navegador, os pedaços viram um
-   download no fim. Sem `openSave` (Android até o PR A2), a tela usa o caminho antigo.
-4. **Limites**: desktop com 4 GB por pacote, 1 GB de conteúdo ao importar e 512 MB por arquivo; Android com os de
-   antes (64/96/32 MB) até o PR A2. Quando o pacote passa de 128 MB, a tela avisa que ele só abre na 1.4 ou mais nova.
+   download no fim. No Android (PR A2), o seletor de documentos abre antes e os pedaços vão em base64 de 2 MB pelo
+   plugin `RunasVault` (`saveStreamStart/Write/Finish/Abort`); o seletor não deixa renomear depois, então o arquivo
+   já tem o nome final, e cancelar, falhar ou fechar o app o apaga. Sem `openSave`, a tela usa o caminho antigo.
+4. **Limites**: desktop com 4 GB por pacote, 1 GB de conteúdo ao importar e 512 MB por arquivo; Android com 4 GB por
+   pacote, 64 MB por arquivo (cada um ainda passa inteiro em base64 pela ponte) e 96 MB de conteúdo ao importar
+   (a importação ainda guarda tudo na memória até o PR C). Quando o pacote passa de 128 MB, a tela avisa que ele só abre na 1.4 ou mais nova.
 5. A versão dos arquivos lida no começo é conferida no fim; se algo mudou, a exportação é desfeita.
 
 ## Consequências

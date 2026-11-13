@@ -68,6 +68,7 @@ public class RunasVaultPlugin extends Plugin {
 
     private volatile VaultFs store;
     private String openError;
+    private final SaveStreams saveStreams = new SaveStreams();
     private boolean pickSaf;
     private VaultWatcher watcher;
     private boolean testVault;
@@ -684,6 +685,68 @@ public class RunasVaultPlugin extends Plugin {
         }
     }
 
+    /**
+     * Exportação em pedaços (U50, ADR 0037): o seletor abre antes, e a interface manda o pacote aos poucos, sem
+     * montar tudo na memória nem passar um base64 do tamanho do pacote pela ponte.
+     */
+    @PluginMethod
+    public void saveStreamStart(PluginCall call) {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .setType(call.getString("mime", "application/octet-stream"))
+            .putExtra(Intent.EXTRA_TITLE, call.getString("name", "arquivo"));
+        startActivityForResult(call, intent, "saveStreamResult");
+    }
+
+    @ActivityCallback
+    private void saveStreamResult(PluginCall call, ActivityResult result) {
+        JSObject out = new JSObject();
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) {
+            out.put("id", JSONObject.NULL);
+            call.resolve(out);
+            return;
+        }
+        Uri uri = result.getData().getData();
+        ContentResolver resolver = getContext().getContentResolver();
+        try {
+            OutputStream stream = resolver.openOutputStream(uri, "wt");
+            if (stream == null) throw new IOException("O Android não deixou gravar o arquivo.");
+            String name = displayName(resolver, uri, call.getString("name", "arquivo"));
+            out.put("id", saveStreams.start(stream, name, () -> DocumentsContract.deleteDocument(resolver, uri)));
+            out.put("name", name);
+            call.resolve(out);
+        } catch (IOException | RuntimeException e) {
+            fail(call, e);
+        }
+    }
+
+    @PluginMethod
+    public void saveStreamWrite(PluginCall call) {
+        try {
+            saveStreams.write(call.getInt("id", 0), Base64.decode(call.getString("base64", ""), Base64.DEFAULT));
+            call.resolve();
+        } catch (IOException | RuntimeException e) {
+            fail(call, e);
+        }
+    }
+
+    @PluginMethod
+    public void saveStreamFinish(PluginCall call) {
+        try {
+            JSObject out = new JSObject();
+            out.put("name", saveStreams.finish(call.getInt("id", 0)));
+            call.resolve(out);
+        } catch (IOException | RuntimeException e) {
+            fail(call, e);
+        }
+    }
+
+    @PluginMethod
+    public void saveStreamAbort(PluginCall call) {
+        saveStreams.abort(call.getInt("id", 0));
+        call.resolve();
+    }
+
     /** Os provedores do próprio app (o FileProvider e os das bibliotecas), para recusar no "Compartilhar com". */
     private Set<String> ownAuthorities() {
         Set<String> result = new HashSet<>();
@@ -805,6 +868,7 @@ public class RunasVaultPlugin extends Plugin {
     @Override
     protected void handleOnDestroy() {
         if (watcher != null) watcher.stop();
+        saveStreams.abortAll();
         super.handleOnDestroy();
     }
 }

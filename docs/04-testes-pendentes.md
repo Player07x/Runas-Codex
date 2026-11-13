@@ -1742,3 +1742,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Importar esse pacote noutro cofre (ou numa cópia): a prévia aparece, e as notas e imagens chegam iguais.
 - [ ] Um pacote pequeno exportado pela 1.4 continua abrindo na 1.3 (por exemplo, no celular ainda não atualizado).
 - [ ] No Android nada muda neste PR: os limites antigos continuam até o PR A2.
+
+## Atualização 1.4.0 — PR A2 (pacotes em pedaços no Android, U50)
+
+- [ ] No celular, em Importar / Exportar › Levar para outro aparelho, exportar uma **wiki com imagens** (por exemplo,
+  a Cronos, ~253 MB) ou o cofre inteiro: o seletor de onde salvar abre antes, o andamento aparece arquivo por
+  arquivo, o app não fecha sozinho, e no fim a tela diz o tamanho e o aviso de “só abre na 1.4 ou mais nova”.
+- [ ] Abrir esse pacote no computador (com o PR A): a prévia aparece, e as notas e imagens chegam iguais.
+- [ ] Cancelar o seletor não cria arquivo. Sair do app (fechar pela lista de recentes) no meio de uma exportação
+  grande: o arquivo incompleto some da pasta escolhida (alguns provedores, como o Google Drive, podem não deixar
+  apagar; diga se sobrar algum).
+- [ ] Um arquivo de mais de 64 MB no cofre aparece como “passa do limite por arquivo” e não trava a exportação.

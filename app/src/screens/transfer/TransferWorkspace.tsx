@@ -60,7 +60,7 @@ export function TransferWorkspace() {
   const [incoming, setIncoming] = useState<Set<string>>(new Set())
   const [strategy, setStrategy] = useState<ImportStrategy>("merge")
   const [destination, setDestination] = useState("Notas/Importados")
-  // U50 (ADR 0037): o desktop grava em pedaços; o Android mantém os limites antigos até o PR A2.
+  // U50 (ADR 0037): os dois gravam em pedaços; no Android cada arquivo e a importação têm tetos menores (memória da ponte).
   const limits = vault.platform.kind === "capacitor" ? ANDROID_TRANSFER_LIMITS : TRANSFER_LIMITS
   const [notice, setNotice] = useState("")
   const listFiles = () => vault.platform.listTransferFiles?.(worlds || scope === "Mesas") ?? vault.platform.listVault()
