@@ -1,0 +1,570 @@
+<title>Runas-Codex 1.4.0</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: coluna de leitura larga; cada pedido = texto curto ao lado de uma maquete clicável no visual Órbita. */
+:root {
+  color-scheme: dark;
+  --bg: #11131a; --bg-deep: #0c0f15; --panel: #191d27; --panel-2: #242936; --panel-hover: #303748;
+  --text: #f0f2fa; --muted: #b0b8cd; --faint: #a0aabe; --line: #303747; --line-strong: #69799c;
+  --cyan: #bec6ff; --green: #9dcbb4; --red: #ffa48e; --gold: #ecc484; --violet: #bfadf1; --on-accent: #1a2040;
+  --sans: "Geist", system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #fff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+    --text: #222a42; --muted: #53617c; --faint: #57657f; --line: #cbd3e6; --line-strong: #68799a;
+    --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #fff;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #fff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+  --text: #222a42; --muted: #53617c; --faint: #57657f; --line: #cbd3e6; --line-strong: #68799a;
+  --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #fff;
+}
+:root { --cyan-soft: color-mix(in srgb, var(--cyan) 14%, transparent); --gold-soft: color-mix(in srgb, var(--gold) 15%, transparent);
+  --red-soft: color-mix(in srgb, var(--red) 14%, transparent); --green-soft: color-mix(in srgb, var(--green) 15%, transparent); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-deep); color: var(--text); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 40px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 56px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
+h2 { font-size: 24px; line-height: 1.2; }
+h3 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+p { margin: 0; max-width: 70ch; }
+a { color: var(--cyan); }
+code { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+.eyebrow { color: var(--faint); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+.hero { display: grid; gap: 14px; }
+.hero p { color: var(--muted); font-size: 17px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; color: var(--muted); background: var(--panel); }
+.fact b { color: var(--text); }
+.toc { display: flex; flex-wrap: wrap; gap: 6px; }
+.toc a { text-decoration: none; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background: var(--panel); }
+
+section.req { display: grid; gap: 20px; scroll-margin-top: 16px; }
+.req-head { display: grid; gap: 6px; }
+.req-body { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 920px) { .req-body { grid-template-columns: minmax(0, 1fr); } }
+.notes { display: grid; gap: 14px; min-width: 0; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.callout { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--panel); display: grid; gap: 6px; }
+.callout.data { border-left: 3px solid var(--green); }
+.callout.opinion { border-left: 3px solid var(--gold); }
+.label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.callout.data .label { color: var(--green); }
+.callout.opinion .label { color: var(--gold); }
+
+/* Gráfico de barras: tamanho medido x limites de hoje. */
+.chart { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.bars { position: relative; display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr); gap: 12px; align-items: center; }
+.bar-name { font-size: 13px; color: var(--muted); }
+.bar-track { position: relative; height: 26px; }
+.bar { height: 100%; border-radius: 6px; background: var(--cyan-soft); border: 1px solid var(--cyan); display: flex; align-items: center; padding-inline: 8px; font: 12px var(--mono); color: var(--text); white-space: nowrap; min-width: 52px; }
+.bar.over { background: var(--red-soft); border-color: var(--red); }
+.limit { position: absolute; top: -4px; bottom: -4px; border-left: 2px dashed var(--gold); }
+.limit.android { border-left-color: var(--violet); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 0; border-top: 2px dashed var(--gold); vertical-align: middle; margin-right: 6px; }
+.legend i.android { border-top-color: var(--violet); }
+.legend i.box { height: 10px; border: 1px solid var(--red); background: var(--red-soft); }
+
+/* Maquete do app (escala real, cores do tema). */
+.app { border: 1px solid var(--line); border-radius: 16px; background: var(--bg); overflow: hidden; min-width: 0; box-shadow: 0 24px 70px rgb(0 0 0 / 25%); }
+.app-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+.app-bar .title { font-weight: 600; flex: 1 1 auto; }
+.app-body { padding: 16px; display: grid; gap: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel-2); }
+.seg button { border: 0; background: transparent; color: var(--muted); font: 500 13px var(--sans); padding: 8px 12px; min-height: 36px; cursor: pointer; }
+.seg button[aria-selected="true"] { background: var(--cyan); color: var(--on-accent); }
+.group { display: grid; gap: 6px; }
+.group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.group-head span { font-size: 12px; color: var(--faint); }
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); cursor: pointer; min-height: 44px; }
+.item:hover { border-color: var(--line-strong); }
+.item:has(input:checked) { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 7%, var(--panel)); }
+.item input { width: 18px; height: 18px; accent-color: var(--cyan); margin: 0; }
+.item strong { font-weight: 600; display: block; overflow-wrap: anywhere; }
+.item small { color: var(--muted); font-size: 12px; }
+.item .size { font: 12px var(--mono); color: var(--muted); text-align: right; }
+.footer { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+.footer p { font-size: 13px; }
+.btn { border: 1px solid var(--line-strong); background: var(--panel-2); color: var(--text); font: 500 13px var(--sans); padding: 8px 14px; border-radius: 10px; min-height: 40px; cursor: pointer; }
+.btn.primary { background: var(--cyan); color: var(--on-accent); border-color: var(--cyan); }
+.btn.sm { min-height: 32px; padding: 5px 10px; font-size: 12px; }
+.warn { font-size: 12px; color: var(--gold); background: var(--gold-soft); border-radius: 8px; padding: 6px 10px; }
+.input { width: 100%; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: 13px var(--sans); padding: 8px 10px; border-radius: 8px; min-height: 38px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Árvore com caixas de três estados. */
+.tree { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 14px; }
+.tree ul { list-style: none; margin: 0; padding-left: 22px; border-left: 1px solid var(--line); margin-left: 8px; display: grid; gap: 2px; }
+.tree label { display: flex; gap: 8px; align-items: center; padding: 5px 6px; border-radius: 6px; min-height: 34px; cursor: pointer; }
+.tree label:hover { background: var(--panel-2); }
+.tree input { width: 16px; height: 16px; accent-color: var(--cyan); margin: 0; }
+.tree .count { margin-left: auto; font: 12px var(--mono); color: var(--faint); }
+.tree mark { background: var(--gold-soft); color: inherit; border-radius: 3px; padding: 0 2px; }
+
+/* Prévia da importação agrupada. */
+.import-item { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.import-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.import-top input { width: 18px; height: 18px; accent-color: var(--cyan); margin: 0; }
+.pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.new { background: var(--green-soft); color: var(--green); }
+.pill.exists { background: var(--gold-soft); color: var(--gold); }
+.select { border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: 13px var(--sans); padding: 7px 10px; border-radius: 8px; min-height: 38px; max-width: 100%; }
+.progress { display: grid; gap: 6px; }
+.progress-track { height: 8px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+.progress-fill { height: 100%; width: 47%; background: var(--cyan); border-radius: 999px; }
+.ok { color: var(--green); font-size: 13px; }
+
+/* Menu de atalho. */
+.menu { width: min(280px, 100%); border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 6px; display: grid; gap: 2px; box-shadow: 0 12px 30px rgb(0 0 0 / 20%); }
+.menu div { padding: 9px 10px; border-radius: 8px; font-size: 14px; min-height: 40px; display: flex; align-items: center; }
+.menu .on { background: var(--cyan-soft); color: var(--cyan); font-weight: 600; }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+
+/* Tabelas de PRs e decisões. */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 720px; }
+th { text-align: left; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); padding: 12px 14px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-family: var(--mono); color: var(--cyan); white-space: nowrap; font-weight: 600; }
+.decisions { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.decision { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 14px; display: grid; gap: 8px; align-content: start; }
+.decision b { font-size: 15px; }
+.rec { font-size: 12px; font-weight: 600; color: var(--green); }
+@media (prefers-reduced-motion: no-preference) { .progress-fill { transition: width .4s ease; } }
+
+/* Celular: moldura de 320 px e a régua de alturas (antes x depois, mesma escala). */
+.phones { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; min-width: 0; }
+.phone { width: min(320px, 100%); border: 1px solid var(--line-strong); border-radius: 22px; background: var(--bg); overflow: hidden; display: grid; position: relative; }
+.phone-cap { font-size: 12px; color: var(--faint); text-align: center; padding: 8px; border-top: 1px solid var(--line); background: var(--panel); }
+.p-top { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; height: 48px; border-bottom: 1px solid var(--line); background: var(--panel); font-weight: 600; font-size: 14px; }
+.p-top span:last-child { display: flex; gap: 14px; color: var(--muted); font-weight: 400; }
+.p-nav { display: flex; align-items: center; gap: 6px; padding: 8px 10px 4px; }
+.p-nav b { flex: 1; text-align: center; font-size: 15px; }
+.p-icon { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+.p-views { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin: 4px 10px 6px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.p-views span { display: grid; justify-items: center; gap: 1px; font-size: 10px; color: var(--muted); padding: 5px 0; border-radius: 9px; min-height: 44px; align-content: center; }
+.p-views span i { font-style: normal; font-size: 14px; }
+.p-views span.on { background: var(--cyan); color: var(--on-accent); }
+.p-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; padding: 4px 10px 10px; }
+.p-grid .h { font-size: 10px; text-align: center; color: var(--faint); font-weight: 700; padding: 2px 0; }
+.p-cell { min-height: 46px; border: 1px solid var(--line); border-radius: 8px; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 4px 0 0; font-size: 12px; font-weight: 600; position: relative; overflow: hidden; }
+.p-cell.out { color: var(--faint); font-weight: 400; background: var(--bg-deep); opacity: .7; }
+.p-cell.today b { background: var(--cyan); color: var(--on-accent); border-radius: 999px; padding: 0 5px; }
+.p-cell .dots { display: flex; gap: 3px; }
+.p-cell .dots i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.p-cell .more { font-size: 9px; color: var(--muted); font-weight: 500; }
+.p-cell::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 3px; height: 2px; border-radius: 2px; background: var(--line-strong); opacity: .55; }
+.p-cell.out::after { display: none; }
+.d-gold { background: var(--gold); } .d-red { background: var(--red); } .d-violet { background: var(--violet); } .d-green { background: var(--green); }
+.p-fab { position: absolute; right: 12px; bottom: 44px; width: 46px; height: 46px; border-radius: 14px; background: var(--cyan); color: var(--on-accent); display: grid; place-items: center; font-size: 22px; }
+.p-add { display: flex; gap: 6px; padding: 8px 10px; }
+.p-add .input { min-height: 40px; font-size: 13px; }
+.p-add .plus { width: 44px; height: 40px; border-radius: 10px; background: var(--cyan); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+.p-sec { padding: 6px 12px 2px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+.p-task { display: grid; grid-template-columns: 44px minmax(0, 1fr) 40px; align-items: center; min-height: 60px; padding: 4px 8px 4px 2px; border-bottom: 1px solid var(--line); }
+.p-task .box { width: 20px; height: 20px; border: 2px solid var(--line-strong); border-radius: 5px; justify-self: center; }
+.p-task strong { font-size: 13px; font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-task small { font-size: 11px; color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-task small .late { color: var(--red); font-weight: 600; }
+.p-task .dots3 { color: var(--muted); text-align: center; font-size: 18px; line-height: 1; }
+.ruler { display: grid; gap: 10px; min-width: 0; flex: 1 1 260px; }
+.ruler-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: end; }
+.stack-bar { display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); width: 100%; max-width: 220px; }
+.stack-bar span { display: flex; align-items: center; padding-inline: 8px; font-size: 11px; color: var(--text); border-bottom: 1px solid var(--bg); overflow: hidden; white-space: nowrap; }
+/* Varredura: capturas reais a 360 px com a linha de onde o texto começa. */
+.shots { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+.shot { margin: 0; display: grid; gap: 10px; align-content: start; }
+.frame { position: relative; border: 1px solid var(--line-strong); border-radius: 16px; overflow: hidden; background: var(--bg); }
+.frame img { display: block; width: 100%; height: auto; }
+.mark { position: absolute; left: 0; right: 0; border-top: 2px solid var(--red); }
+.mark b { position: absolute; right: 6px; top: -22px; font: 600 11px var(--mono); background: var(--red); color: var(--on-accent); padding: 2px 6px; border-radius: 6px; }
+.shot figcaption { display: grid; gap: 4px; }
+.sev { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.sev.grave { color: var(--red); } .sev.medio { color: var(--gold); } .sev.leve { color: var(--gold); }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.thumbs img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); }
+.s-top { background: var(--panel-2); } .s-head { background: var(--red-soft); } .s-nav { background: var(--gold-soft); } .s-grid { background: var(--cyan-soft); }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow">Plano da atualização · 13/11/2026 · nada implementado ainda</span>
+    <h1>Runas-Codex 1.4.0: importar e exportar tudo, por itens</h1>
+    <p>Você pediu três coisas: que todas as notas selecionadas saiam e entrem de verdade, que dê para escolher wikis, livros e mesas inteiros em vez de marcar nota por nota, e uma revisão das telas no celular, a começar pela Agenda. Achei a causa de cada problema, fiz uma varredura de 15 telas no celular e dividi o trabalho em sete PRs.</p>
+    <div class="facts">
+      <span class="fact">Itens <b>U50–U68</b></span>
+      <span class="fact">PRs <b>A → B → C → D</b>, <b>E → F</b> e <b>G</b> em paralelo + versão</span>
+      <span class="fact">Formato <b>.runas v1</b> mantido</span>
+      <span class="fact">ADR nova <b>0037</b></span>
+    </div>
+    <nav class="toc" aria-label="Seções">
+      <a href="#causa">Por que hoje não sai</a><a href="#exportar">Exportar por itens</a><a href="#notas">Por notas, em árvore</a>
+      <a href="#importar">Importar por itens</a><a href="#atalhos">Atalhos</a><a href="#celular">Agenda no celular</a><a href="#varredura">Varredura no celular</a><a href="#prs">PRs</a><a href="#decide">O que você decide</a>
+    </nav>
+  </header>
+
+  <section class="req" id="causa">
+    <div class="req-head"><span class="eyebrow">U50 · PR A</span><h2>Por que hoje nem tudo sai</h2></div>
+    <div class="req-body">
+      <div class="notes">
+        <p>O pacote é montado inteiro na memória e tem teto fixo: <b>128 MB</b> no desktop e <b>64 MB</b> no Android, compactado. PNG quase não comprime, então uma wiki com muitas imagens bate no teto.</p>
+        <div class="callout data"><span class="label">Medido no seu cofre</span>
+          <p class="small">Cofre inteiro: 562 MB (1.051 arquivos). Wiki Cronos com as imagens que usa: ~253 MB. Dois <code>.kra</code> da Galeria têm 58 MB cada e passam do limite por arquivo (50 MB), o que derruba o “Cofre inteiro” logo no começo.</p>
+          <p class="small muted">Fonte: <code>du</code>/<code>stat</code> em 13/11; limites em <code>core/transfer/archive.ts:5</code> e <code>TransferWorkspace.tsx:62</code>.</p></div>
+        <div class="callout opinion"><span class="label">Leitura minha</span>
+          <p class="small">Não rodei a exportação no app; concluí pelo código e pelos tamanhos. A Cronos recém-importada do Discord não sai por nenhum caminho da tela atual.</p></div>
+        <h3>A correção</h3>
+        <ul class="small">
+          <li>O ZIP é escrito em pedaços, direto no arquivo de destino; só um arquivo por vez fica na memória.</li>
+          <li>A importação lê o pacote por partes e grava em lotes, com progresso.</li>
+          <li>Limite por arquivo: 512 MB no desktop, 64 MB no Android. Teto total: 4 GB (formato ZIP).</li>
+          <li>Imagens, áudio e PDF entram sem recomprimir (mais rápido); texto é comprimido.</li>
+        </ul>
+      </div>
+      <figure class="chart" style="margin:0" aria-label="Gráfico: tamanhos medidos comparados aos limites atuais">
+        <div class="bars" id="bars"></div>
+        <div class="legend"><span><i></i>128 MB: limite do desktop</span><span><i class="android"></i>64 MB: limite do Android</span><span><i class="box"></i>não cabe hoje</span></div>
+        <figcaption class="small muted">Escala linear de 0 a 600 MB. Mesmo dado em texto: cofre inteiro 562 MB; wiki Cronos 253 MB; mesa Jornada para Vatu 13 MB; biblioteca da mesa 11 MB; wiki Valknut 0,5 MB.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="req" id="exportar">
+    <div class="req-head"><span class="eyebrow">U52 · PR B</span><h2>Exportar por itens</h2></div>
+    <div class="req-body">
+      <div class="notes">
+        <p>Em “Levar para outro aparelho”, a aba <b>Por itens</b> abre primeiro: cada wiki, livro e mesa do cofre, com o tamanho já somando os anexos. Marque e salve. Vale também para o ZIP do Obsidian e para gerar documento.</p>
+        <h3>O que entra em cada item</h3>
+        <ul class="small">
+          <li><b>Wiki</b>: a pasta inteira e as imagens que ela usa, mesmo em <code>Anexos/</code>.</li>
+          <li><b>Livro</b>: a nota do livro, os capítulos da estrutura (mesmo fora da pasta), capa e imagens.</li>
+          <li><b>Mesa</b>: cenas, tokens, mapas e a capa. A campanha ligada vai junto só se marcada.</li>
+          <li>Uma imagem usada por dois itens entra uma vez.</li>
+          <li>Links para outra wiki não puxam a outra wiki inteira.</li>
+        </ul>
+        <p class="small muted">A maquete é clicável. Os números são do seu cofre (tamanho das pastas em 13/11; a tela real soma também os anexos de livros e campanhas).</p>
+      </div>
+      <div class="app" role="group" aria-label="Maquete: exportar por itens">
+        <div class="app-bar"><span class="title">Importar / Exportar</span>
+          <div class="seg" role="tablist" aria-label="Como escolher"><button role="tab" aria-selected="true">Por itens</button><button role="tab" aria-selected="false" onclick="location.hash='notas'">Por notas</button></div></div>
+        <div class="app-body" id="items">
+          <div class="group"><div class="group-head"><h3>Wikis</h3><span>2</span></div>
+            <label class="item"><input type="checkbox" data-mb="253" data-kind="wiki" checked><span><strong>Cronos</strong><small>230 arquivos · 236 imagens de Anexos</small></span><span class="size">253 MB</span></label>
+            <label class="item"><input type="checkbox" data-mb="0.5" data-kind="wiki"><span><strong>Valknut</strong><small>111 arquivos</small></span><span class="size">0,5 MB</span></label></div>
+          <div class="group"><div class="group-head"><h3>Livros</h3><span>4</span></div>
+            <label class="item"><input type="checkbox" data-mb="0.06" data-kind="livro" checked><span><strong>Cronos (1ª Edição)</strong><small>13 arquivos</small></span><span class="size">64 KB</span></label>
+            <label class="item"><input type="checkbox" data-mb="0.07" data-kind="livro"><span><strong>Valknut (1ª Edição)</strong><small>17 arquivos</small></span><span class="size">72 KB</span></label>
+            <label class="item"><input type="checkbox" data-mb="0.02" data-kind="livro"><span><strong>Bestiário Valknut (1ª Edição)</strong><small>3 arquivos</small></span><span class="size">16 KB</span></label>
+            <label class="item"><input type="checkbox" data-mb="0.01" data-kind="livro"><span><strong>Insígnia Alva</strong><small>2 arquivos</small></span><span class="size">12 KB</span></label></div>
+          <div class="group"><div class="group-head"><h3>Mesas</h3><span>1 + biblioteca</span></div>
+            <label class="item"><input type="checkbox" data-mb="13" data-kind="mesa"><span><strong>Jornada para Vatu</strong><small>1 cena · tokens e mapas · capa</small></span><span class="size">13 MB</span></label>
+            <label class="item"><input type="checkbox" data-mb="11" data-kind="mesa"><span><strong>Biblioteca da mesa</strong><small>itens prontos para qualquer mesa</small></span><span class="size">11 MB</span></label></div>
+          <div class="group"><div class="group-head"><h3>Campanhas</h3><span>5 · se você aprovar</span></div>
+            <label class="item"><input type="checkbox" data-mb="0.07" data-kind="campanha"><span><strong>Jornada para Vatu</strong><small>13 arquivos · eventos da Agenda</small></span><span class="size">68 KB</span></label>
+            <label class="item"><input type="checkbox" data-mb="0.03" data-kind="campanha"><span><strong>Sagas de Cronos</strong><small>5 arquivos</small></span><span class="size">32 KB</span></label></div>
+          <label class="row small"><input type="checkbox" id="linked"> Incluir notas ligadas de fora dos itens</label>
+        </div>
+        <div class="footer"><div class="row" style="gap:8px"><p id="summary" class="num" role="status"></p><span class="warn" id="warn"></span></div><button class="btn primary">Escolher onde salvar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="notas">
+    <div class="req-head"><span class="eyebrow">U51 · PR B</span><h2>Por notas, em árvore, e conferido no fim</h2></div>
+    <div class="req-body">
+      <div class="notes">
+        <p>A aba <b>Por notas</b> troca a lista plana de caminhos (100 por vez) por uma árvore de pastas. Marcar uma pasta marca tudo dentro; a caixa fica “parcial” quando só parte está marcada.</p>
+        <ul class="small">
+          <li><b>Selecionar os filtrados</b>: filtre “Ald” e marque só o que apareceu.</li>
+          <li>Antes de salvar: quantas notas, quantos anexos, quantos MB.</li>
+          <li>Depois de salvar: o app confere o pacote e diz “todas as 230 notas escolhidas estão no pacote”. Se algo ficou de fora, diz qual e por quê.</li>
+          <li>Funciona por teclado (setas abrem e fecham pastas) e com leitor de tela.</li>
+        </ul>
+      </div>
+      <div class="app" role="group" aria-label="Maquete: escolha por notas em árvore">
+        <div class="app-bar"><span class="title">Importar / Exportar</span>
+          <div class="seg" role="tablist" aria-label="Como escolher"><button role="tab" aria-selected="false" onclick="location.hash='exportar'">Por itens</button><button role="tab" aria-selected="true">Por notas</button></div></div>
+        <div class="app-body">
+          <div class="row"><input class="input" style="flex:1 1 200px" value="Ald" aria-label="Filtrar notas"><button class="btn sm">Selecionar os 2 filtrados</button><button class="btn sm">Limpar</button></div>
+          <ul class="tree" id="tree">
+            <li><label><input type="checkbox" data-node="wikis"> Wikis <span class="count">341</span></label>
+              <ul>
+                <li><label><input type="checkbox" data-node="cronos"> Cronos <span class="count">230</span></label>
+                  <ul>
+                    <li><label><input type="checkbox" data-leaf="cronos"> Acontecimentos <span class="count">10</span></label></li>
+                    <li><label><input type="checkbox" data-leaf="cronos" checked> Espécies <span class="count">40</span></label></li>
+                    <li><label><input type="checkbox" data-leaf="cronos" checked> Locais <span class="count">38</span></label></li>
+                    <li><label><input type="checkbox" data-leaf="cronos"> Personagens <span class="count">60</span></label>
+                      <ul><li><label><input type="checkbox"> <span><mark>Ald</mark>ren Anakoi</span></label></li><li><label><input type="checkbox"> <span><mark>Al</mark>ba de Tenera</span></label></li></ul></li>
+                  </ul></li>
+                <li><label><input type="checkbox" data-leaf="wikis"> Valknut <span class="count">111</span></label></li>
+              </ul></li>
+            <li><label><input type="checkbox"> Livros <span class="count">35</span></label></li>
+            <li><label><input type="checkbox"> Notas <span class="count">—</span></label></li>
+          </ul>
+          <p class="ok">Depois de salvar: ✓ Todas as 78 notas escolhidas e as 61 imagens que elas usam estão no pacote.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="importar">
+    <div class="req-head"><span class="eyebrow">U53 · PR C</span><h2>Importar por itens</h2></div>
+    <div class="req-body">
+      <div class="notes">
+        <p>Ao abrir um pacote, a prévia mostra os <b>itens</b> que vieram, não 466 caminhos. Cada item diz se é novo ou se já existe, e tem a sua própria ação.</p>
+        <ul class="small">
+          <li><b>Adicionar o que falta</b>: mantém o que você já tem.</li>
+          <li><b>Substituir</b>: troca só aquele item, salvando antes um pacote de segurança.</li>
+          <li><b>Importar como cópia</b>: nome editável; links e IDs de mesa ajustados.</li>
+          <li>Imagens compartilhadas entram se algum item marcado usa.</li>
+          <li>Pacotes antigos (1.3), ZIP do Obsidian e Notion têm os itens deduzidos pelas pastas.</li>
+        </ul>
+      </div>
+      <div class="app" role="group" aria-label="Maquete: prévia da importação agrupada por itens">
+        <div class="app-bar"><span class="title">Importar · “Cofre - Cronos.runas”</span><span class="small muted num">3 itens · 279 MB</span></div>
+        <div class="app-body">
+          <div class="import-item"><div class="import-top"><input type="checkbox" checked aria-label="Importar a wiki Cronos"><span><strong>Wiki Cronos</strong><br><small class="muted">230 arquivos · 236 imagens</small></span><span class="pill new">nova</span></div></div>
+          <div class="import-item"><div class="import-top"><input type="checkbox" checked aria-label="Importar o livro Cronos (1ª Edição)"><span><strong>Livro Cronos (1ª Edição)</strong><br><small class="muted">13 arquivos · 11 iguais, 2 diferentes</small></span><span class="pill exists">já existe</span></div>
+            <select class="select" aria-label="Ação para o livro"><option>Substituir os 2 diferentes (pacote de segurança antes)</option><option>Adicionar só o que falta</option><option>Importar como cópia</option></select></div>
+          <div class="import-item"><div class="import-top"><input type="checkbox" checked aria-label="Importar a mesa Jornada para Vatu"><span><strong>Mesa Jornada para Vatu</strong><br><small class="muted">11 arquivos</small></span><span class="pill exists">já existe</span></div>
+            <div class="row"><select class="select" aria-label="Ação para a mesa"><option>Importar como cópia</option><option>Adicionar só o que falta</option><option>Substituir</option></select><input class="input" style="flex:1 1 180px" value="Jornada para Vatu (cópia)" aria-label="Nome da cópia"></div></div>
+          <div class="progress"><div class="row small num" style="justify-content:space-between"><span>Gravando 220 de 466</span><span>131 MB de 279 MB</span></div><div class="progress-track" role="progressbar" aria-valuenow="47" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da importação"><div class="progress-fill"></div></div></div>
+        </div>
+        <div class="footer"><p class="small muted">Antes de gravar: backup de texto do cofre e pacote de segurança do que for substituído.</p><button class="btn primary">Importar 3 itens</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="atalhos">
+    <div class="req-head"><span class="eyebrow">U54, U55 · PR D</span><h2>Atalhos nos módulos</h2></div>
+    <div class="req-body">
+      <div class="notes">
+        <p>Cada módulo ganha um “Exportar…” que abre Importar / Exportar com o item já marcado: wiki, livro, mesa, campanha e pasta das Notas.</p>
+        <p class="small">U55, se você aprovar: seleção múltipla na barra das Notas (Ctrl ou Shift + clique; no celular, “Selecionar” e toque) com “Exportar seleção…”.</p>
+      </div>
+      <div class="row" style="align-items:flex-start;gap:20px">
+        <div class="menu" aria-label="Maquete: menu ⋯ da wiki"><div>Abrir página inicial</div><div>Configurar categorias</div><div>Versão dos jogadores</div><hr><div class="on">Exportar esta wiki…</div></div>
+        <div class="menu" aria-label="Maquete: menu da pasta nas Notas"><div>Nova nota aqui</div><div>Renomear pasta</div><hr><div class="on">Exportar pasta…</div><div class="on">Exportar seleção (12)…</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="celular">
+    <div class="req-head"><span class="eyebrow">U56–U59 · PR E</span><h2>Agenda no celular</h2>
+      <p class="muted">Reproduzi as suas duas capturas no navegador a 420 × 860 px e medi cada parte. O desktop não muda; tudo abaixo vale até 640–700 px de largura.</p></div>
+    <div class="req-body">
+      <div class="notes">
+        <h3>Mês: o que acontece hoje</h3>
+        <ul class="small">
+          <li><b>A grade começa a 319 px do topo</b> (37% da tela). Antes dela: “Agenda” repetido, botão Evento, setas, o nome do mês e as cinco visões em duas linhas (99 px só elas).</li>
+          <li><b>Todo dia tem os mesmos 4 pontos.</b> Suas 6 rotinas repetem quase todo dia e ocupam os 4 pontos, que são os 4 primeiros pela hora. Uma sessão à noite ou a prova de 06/12 pode ficar de fora, sem “+N”.</li>
+          <li>Dias de dezembro têm o mesmo peso dos de novembro.</li>
+          <li>Sob a grade sobram ~84 px vazios, e o botão “+” flutuante cobre o “Painel da agenda”.</li>
+        </ul>
+        <div class="callout data"><span class="label">Medido</span><p class="small">Alturas pelo navegador, com o cofre de exemplo. Causas: <code>agenda.css:82</code> (visões em linha própria), <code>views.tsx:154</code> (os 4 primeiros eventos do dia), <code>agenda.css:87</code> (folga de 72 px em toda visão).</p></div>
+        <h3>Depois</h3>
+        <ul class="small">
+          <li>Mês e setas numa linha; as cinco visões numa linha de ícones com rótulo.</li>
+          <li>Eventos únicos ganham os pontos (até 3 e “+N”); as rotinas viram uma marca fina na base do dia. No ⋯ dá para voltar a mostrar as rotinas.</li>
+          <li>Dias fora do mês apagados; nada de espaço vazio sob a grade.</li>
+        </ul>
+      </div>
+      <div class="phones">
+        <div class="ruler" aria-label="Régua: altura até a grade, antes e depois, em pixels (mesma escala)">
+          <h3>Até a grade começar</h3>
+          <div class="ruler-row"><span class="small muted">Hoje<br><b class="num" style="color:var(--text)">319 px</b></span>
+            <div class="stack-bar"><span class="s-top" style="height:28px">barra do topo 56</span><span class="s-head" style="height:38px">“Agenda” + Evento 76</span><span class="s-nav" style="height:76px">setas, mês e visões 151</span><span style="height:18px">folgas 36</span><span class="s-grid" style="height:20px">grade…</span></div></div>
+          <div class="ruler-row"><span class="small muted">Meta<br><b class="num" style="color:var(--text)">≤ 190 px</b></span>
+            <div class="stack-bar"><span class="s-top" style="height:28px">barra do topo 56</span><span class="s-nav" style="height:67px">mês + visões ≤ 134</span><span class="s-grid" style="height:20px">grade…</span></div></div>
+          <p class="small muted">Escala: 1 px na régua = 2 px na tela.</p>
+        </div>
+        <div class="phone" aria-label="Maquete: mês no celular depois da correção">
+          <div class="p-top"><span>Agenda</span><span>⌕ ＋ ☼ 🔔</span></div>
+          <div class="p-nav"><span class="p-icon" aria-hidden="true">‹</span><b>novembro de 2026</b><span class="p-icon" aria-hidden="true">›</span><span class="p-icon" title="Hoje" aria-hidden="true">◎</span></div>
+          <div class="p-views"><span class="on"><i>▦</i>Mês</span><span><i>▥</i>Semana</span><span><i>▤</i>Dia</span><span><i>☰</i>Lista</span><span><i>☑</i>Tarefas</span></div>
+          <div class="p-grid" id="pgrid"></div>
+          <div class="p-fab" aria-hidden="true">＋</div>
+          <div class="phone-cap">Pontos: sessão (dourado), prova (vermelho), consulta (violeta). Linha fina: há rotinas no dia.</div>
+        </div>
+      </div>
+    </div>
+    <div class="req-body">
+      <div class="notes">
+        <h3>Tarefas: o que acontece hoje</h3>
+        <ul class="small">
+          <li><b>Cada tarefa ocupa 126 px</b>, mesmo com título curto: título, campos, uma linha só para o link da nota (44 px) e uma linha só para os botões (44 px). Cabem umas 2,5 na primeira tela.</li>
+          <li>Campos crus do plugin Tasks: “🏁 mantém”, “▲” sem texto.</li>
+          <li>O formulário de nova tarefa ocupa 148 px em três linhas.</li>
+          <li>Três “+” na tela; o flutuante <b>cria um evento</b> mesmo na visão Tarefas e cobre a última tarefa.</li>
+        </ul>
+        <h3>Depois</h3>
+        <ul class="small">
+          <li>Uma tarefa = caixa, título e ⋯ numa linha; embaixo, prazo, repetição e nota. Meta: até 72 px.</li>
+          <li>Pular, editar e marcar como falha ficam no ⋯; tocar no título abre “Editar tarefa”.</li>
+          <li>Nova tarefa numa linha; data e “Repetir todo dia” aparecem ao tocar no campo.</li>
+          <li>O “+” flutuante segue a visão: em Tarefas, cria tarefa. Sai o botão “Evento” do cabeçalho no celular.</li>
+        </ul>
+        <div class="callout opinion"><span class="label">Achei no seu cofre</span><p class="small">Suas tarefas diárias usam <code>🏁 keep</code>: cada dia concluído fica guardado na nota, que cresce. As criadas pela Agenda usam <code>🏁 delete</code>. Posso pôr “Transformar em hábito” no ⋯ (pergunta 6).</p></div>
+      </div>
+      <div class="phones">
+        <div class="phone" aria-label="Maquete: tarefas no celular depois da correção">
+          <div class="p-top"><span>Agenda</span><span>⌕ ＋ ☼ 🔔</span></div>
+          <div class="p-views" style="margin-top:8px"><span><i>▦</i>Mês</span><span><i>▥</i>Semana</span><span><i>▤</i>Dia</span><span><i>☰</i>Lista</span><span class="on"><i>☑</i>Tarefas</span></div>
+          <div class="p-add"><input class="input" placeholder="Nova tarefa…" aria-label="Nova tarefa (maquete)" id="mock-task"><span class="plus" aria-hidden="true">＋</span></div>
+          <div class="p-sec">Atrasadas 1</div>
+          <div class="p-task"><span class="box"></span><span><strong>Mandar o lembrete no grupo</strong><small><span class="late">atrasada · 16 out.</span> · Checklist de sábado</small></span><span class="dots3">⋯</span></div>
+          <div class="p-sec">Hábitos 3</div>
+          <div class="p-task"><span class="box"></span><span><strong>Beber 2 L de água</strong><small>↻ todo dia · próxima 14 nov.</small></span><span class="dots3">⋯</span></div>
+          <div class="p-task"><span class="box"></span><span><strong>Estudar 1 hora</strong><small>↻ todo dia · desde 10 nov. · Estudar</small></span><span class="dots3">⋯</span></div>
+          <div class="p-task"><span class="box"></span><span><strong>Revisar as anotações da sessão</strong><small>↻ todo dia · Alta · próxima 14 nov.</small></span><span class="dots3">⋯</span></div>
+          <div class="p-sec">Próximas 2</div>
+          <div class="p-task"><span class="box"></span><span><strong>Desenhar o mapa da masmorra</strong><small>21 nov. · Sessão 2</small></span><span class="dots3">⋯</span></div>
+          <div class="p-task" style="border-bottom:0;margin-bottom:56px"><span class="box"></span><span><strong>Pintar as miniaturas</strong><small>28 nov. · #rpg</small></span><span class="dots3">⋯</span></div>
+          <div class="p-fab" aria-hidden="true" title="Nova tarefa">＋</div>
+          <div class="phone-cap">Com até 72 px por tarefa, cabem umas 7 na primeira tela, contra ~2,5 hoje (estimativa pela altura medida).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="varredura">
+    <div class="req-head"><span class="eyebrow">U60 → U61–U68 · PRs F e G</span><h2>Varredura das outras telas no celular</h2>
+      <p class="muted">15 telas a 360 × 780 px, tema escuro, com o cofre de exemplo do navegador. Capturas feitas pelo Chrome sem janela; medidas no navegador do app. As linhas vermelhas marcam onde o texto começa.</p>
+      <div class="facts"><span class="fact"><b>3</b> graves</span><span class="fact"><b>4</b> médios</span><span class="fact"><b>1</b> leve</span><span class="fact"><b>0</b> telas rolando para os lados</span><span class="fact"><b>7</b> telas sem problema relevante</span></div></div>
+
+    <div class="shots">
+      <figure class="shot"><div class="frame"><img src="celular-1.4/05-artigo.jpg" alt="Artigo da wiki a 360 px: sete faixas antes do texto, que começa perto do rodapé" loading="lazy"><span class="mark" style="top:81.2%"><b>texto em 633 px</b></span></div>
+        <figcaption><span class="sev grave">grave · U61 U62</span><b>Artigo da wiki</b><span class="small">Sete faixas antes do texto: wiki, um “⋯” sozinho, seletor “Artigos”, cabeçalho, modos e propriedades. E abre em <b>Editar</b>, com <code>[[links]]</code> crus no lugar da ficha.</span></figcaption></figure>
+      <figure class="shot"><div class="frame"><img src="celular-1.4/09-sessao.jpg" alt="Sessão de campanha a 360 px: título em 517 px" loading="lazy"><span class="mark" style="top:66.3%"><b>título em 517 px</b></span></div>
+        <figcaption><span class="sev grave">grave · U61</span><b>Sessão de campanha</b><span class="small">Campanha, seletor “Sessões”, Tela do Mestre, cabeçalho e modos antes do texto. A trilha do topo vira “Sessões › Sessã…”.</span></figcaption></figure>
+      <figure class="shot"><div class="frame"><img src="celular-1.4/11-livro.jpg" alt="Livro aberto a 360 px: painel de capítulos cobre o texto pela metade" loading="lazy"></div>
+        <figcaption><span class="sev grave">grave · U63</span><b>Livro aberto</b><span class="small">O painel de capítulos abre por cima do texto e sobram pedaços de frase à direita. Barra com 6 ícones sem rótulo e dois “⋯”.</span></figcaption></figure>
+      <figure class="shot"><div class="frame"><img src="celular-1.4/03-nota.jpg" alt="Nota aberta a 360 px: faixa de abas com uma aba só e botão + sobre o texto" loading="lazy"><span class="mark" style="top:47.7%"><b>título em 372 px</b></span></div>
+        <figcaption><span class="sev medio">médio · U61 U64</span><b>Nota aberta</b><span class="small">Faixa de abas com uma aba só, cabeçalho e modos. O “+” flutuante fica por cima do texto enquanto você escreve.</span></figcaption></figure>
+      <figure class="shot"><div class="frame"><img src="celular-1.4/04-wiki.jpg" alt="Início da wiki a 360 px: nenhum artigo na primeira tela" loading="lazy"></div>
+        <figcaption><span class="sev medio">médio · U65 U66 U67</span><b>Início da wiki</b><span class="small">Nenhum artigo na primeira tela. Três botões empilhados, rótulo com o caminho da pasta, busca cortada e o selo “Hoje no mundo” com 24 px de altura.</span></figcaption></figure>
+      <figure class="shot"><div class="frame"><img src="celular-1.4/02-notas.jpg" alt="Lista de notas a 360 px: cabeçalho duplo, dica fixa e botão + sobre a lista" loading="lazy"></div>
+        <figcaption><span class="sev medio">médio · U64 U66 U67 U68</span><b>Lista de notas</b><span class="small">“Lista de notas” e “Notas” em duas faixas, dica fixa, grupos com 32 px de altura e o “+” cobrindo as últimas linhas.</span></figcaption></figure>
+      <figure class="shot"><div class="frame"><img src="celular-1.4/08-campanha.jpg" alt="Painel da campanha a 360 px: trilha do topo cortada" loading="lazy"></div>
+        <figcaption><span class="sev medio">médio · U65</span><b>Painel da campanha</b><span class="small">A trilha do topo vira “Campanhas › A …”. O resto do painel funciona bem.</span></figcaption></figure>
+    </div>
+
+    <div class="req-body">
+      <div class="notes">
+        <h3>O conserto (PR F, e PR G para o livro)</h3>
+        <ul class="small">
+          <li><b>Uma faixa para o módulo</b>: nome ▾, seção ▾ e ⋯ numa linha de 48 px, em Wiki, Campanhas e Notas.</li>
+          <li><b>Cabeçalho da nota</b>: título, um botão Ler/Editar e ⋯. As abas abertas vão para o ⋯ no celular.</li>
+          <li><b>Propriedades recolhidas</b> no celular (“Propriedades (5) ▸”). Meta: título até 260 px do topo.</li>
+          <li><b>Artigo da wiki abre em Leitura</b> no celular, com a ficha; dá para trocar em Configurações.</li>
+          <li>Livro: painel de capítulos em tela inteira, uma barra com Capítulos, Ler/Escrever e um ⋯.</li>
+          <li>“+” flutuante com folga na lista e escondido enquanto se escreve.</li>
+          <li>Topo com só a página atual; rótulos com nomes, não caminhos; buscas com “?” para a sintaxe; tudo com 44 px de toque.</li>
+        </ul>
+      </div>
+      <div class="notes">
+        <h3>Sem problema relevante</h3>
+        <div class="thumbs">
+          <img src="celular-1.4/01-inicio.jpg" alt="Início a 360 px" loading="lazy"><img src="celular-1.4/10-livros.jpg" alt="Lista de livros a 360 px" loading="lazy"><img src="celular-1.4/06-mapa.jpg" alt="Mapas da wiki a 360 px" loading="lazy"><img src="celular-1.4/07-campanhas.jpg" alt="Lista de campanhas a 360 px" loading="lazy"><img src="celular-1.4/12-vtt.jpg" alt="VTT a 360 px" loading="lazy"><img src="celular-1.4/13-vtt-criar.jpg" alt="Criar sala a 360 px" loading="lazy"><img src="celular-1.4/15-config.jpg" alt="Configurações a 360 px" loading="lazy">
+        </div>
+        <p class="small muted">Início, Livros, Mapas, Campanhas, VTT, Criar sala e Configurações. Importar/Exportar será refeita nos PRs B e C.</p>
+        <div class="callout data"><span class="label">Não coberto</span><p class="small">Tema claro (o teste de contraste cobre as cores, não o desenho), o Android de verdade (teclado virtual sobre o editor, gestos), celular deitado e uma mesa aberta no VTT (o cofre de exemplo não tem mesa).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="prs">
+    <div class="req-head"><span class="eyebrow">Ordem de trabalho</span><h2>PRs</h2></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>PR</th><th>O que entrega</th><th>Depende de</th><th>Como confiro</th><th>Custo estimado</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>U50: pacotes em pedaços no desktop e no Android; importação em lotes com progresso; ADR 0037</td><td>main</td><td>O leitor da 1.3 abre o pacote novo; smoke exporta e reimporta 300 MB no Electron e 120 MB no Android</td><td>15–20%</td></tr>
+        <tr><td>B</td><td>U51 e U52: aba Por itens, árvore Por notas, resumo e conferência no fim</td><td>A</td><td>Testes do que entra em cada item; toda nota marcada está no manifesto; 320 px, teclado e leitor de tela</td><td>10–14%</td></tr>
+        <tr><td>C</td><td>U53: prévia da importação por itens, ação por item, cópia com nome</td><td>B</td><td>Pacotes da 1.3 e da 1.4; cópia de wiki com links ajustados; falha no meio</td><td>10–12%</td></tr>
+        <tr><td>D</td><td>U54 (e U55 se aprovado): atalhos nos módulos</td><td>B</td><td>Cada atalho abre a tela com o item marcado</td><td>5–8% (+3%)</td></tr>
+        <tr><td>E</td><td>U56–U59: Agenda no celular (topo, mês, tarefas, botões de criar)</td><td>main (em paralelo com A–D)</td><td>Medidas a 320, 375 e 420 px antes e depois; sessão às 20 h aparece no ponto; temas claro e escuro</td><td>8–12%</td></tr>
+        <tr><td>F</td><td>U61, U62, U64–U68: faixa única do módulo, cabeçalho da nota, Leitura na wiki, topo, buscas, toques</td><td>E</td><td>As mesmas 15 capturas antes e depois a 320 e 360 px; título do artigo até 260 px do topo; teste dos alvos de 44 px</td><td>12–16%</td></tr>
+        <tr><td>G</td><td>U63: livro aberto no celular</td><td>main</td><td>Painel de capítulos por toque e teclado; nada do texto coberto</td><td>5–8%</td></tr>
+        <tr><td>1.4.0</td><td>Versão: notas e o que conferir (ADR 0025)</td><td>A–G</td><td>Workflow Release verde</td><td>~3%</td></tr>
+      </tbody></table></div>
+    <div class="callout opinion"><span class="label">Estimativa minha</span><p class="small">O custo é a fatia da janela de 5 h, baseada nos gastos reais da 1.3 (J ~14%, G1 ~10%, B ~6%). Total: de uma a duas janelas.</p></div>
+    <div class="callout data"><span class="label">Risco sem medida</span><p class="small">Ainda não medi o tempo para passar 253 MB pela ponte do Android. Gatilho: se a Cronos levar mais de ~2 minutos para exportar no seu celular, um PR A2 passa a montagem do ZIP para o código nativo do Android.</p></div>
+  </section>
+
+  <section class="req" id="decide">
+    <div class="req-head"><span class="eyebrow">Antes do PR A</span><h2>O que você decide</h2><p class="muted small">Se não responder, sigo com a recomendação de cada uma.</p></div>
+    <div class="decisions">
+      <div class="decision"><b>1. Mais itens na lista</b><p class="small">Além de wikis, livros e mesas: campanhas, biblioteca da mesa, agenda e notas soltas?</p><span class="rec">Recomendo sim: custa pouco e evita voltar à escolha por notas.</span></div>
+      <div class="decision"><b>2. Seleção múltipla nas Notas (U55)</b><p class="small">Ctrl/Shift + clique e “Exportar seleção…” na barra das Notas.</p><span class="rec">Recomendo sim, no PR D.</span></div>
+      <div class="decision"><b>3. Arquivos terminados em ~</b><p class="small">O <code>.kra~</code> de 58 MB é cópia automática do Krita. Deixar fora do pacote, como o <code>Thumbs.db</code>?</p><span class="rec">Recomendo sim, mostrando quantos ficaram fora.</span></div>
+      <div class="decision"><b>4. Pacote grande e a 1.3</b><p class="small">Só avisar “abre na 1.4 ou mais nova”, ou dividir em partes de até 128 MB?</p><span class="rec">Recomendo só avisar: dividir custa ~8% a mais para um caso que some com a atualização.</span></div>
+      <div class="decision"><b>5. Consertos da varredura</b><p class="small">Quais de U61–U68 entram na 1.4? E o artigo da wiki abre em Leitura no celular (U62)?</p><span class="rec">Recomendo todos, e Leitura. Se precisar cortar: U61, U62 e U63 primeiro.</span></div>
+      <div class="decision"><b>6. Rotinas no mês e hábitos</b><p class="small">Rotinas viram uma linha fina no celular (com opção de mostrar como pontos)? E “Transformar em hábito” para tarefas diárias com <code>🏁 keep</code>?</p><span class="rec">Recomendo sim nas duas.</span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// Gráfico: barras na mesma escala (0–600 MB) e linhas dos limites atuais.
+const SCALE = 600
+const rows = [["Cofre inteiro", 562], ["Wiki Cronos + imagens", 253], ["Mesa Jornada para Vatu", 13], ["Biblioteca da mesa", 11], ["Wiki Valknut", 0.5]]
+const bars = document.getElementById("bars")
+const fmt = mb => mb < 1 ? mb.toLocaleString("pt-BR") + " MB" : Math.round(mb) + " MB"
+for (const [name, mb] of rows) {
+  const row = document.createElement("div"); row.className = "bar-row"
+  row.innerHTML = `<span class="bar-name">${name}</span><div class="bar-track"><div class="bar${mb > 64 ? " over" : ""}" style="width:${Math.max(mb / SCALE * 100, 0)}%">${fmt(mb)}</div><span class="limit" style="left:${128 / SCALE * 100}%" title="128 MB"></span><span class="limit android" style="left:${64 / SCALE * 100}%" title="64 MB"></span></div>`
+  bars.append(row)
+}
+// Maquete de exportar: o resumo acompanha as caixas marcadas.
+const boxes = [...document.querySelectorAll("#items input[data-mb]")]
+function summary() {
+  const on = boxes.filter(b => b.checked)
+  const mb = on.reduce((s, b) => s + Number(b.dataset.mb), 0)
+  const kinds = { wiki: "wiki", livro: "livro", mesa: "mesa", campanha: "campanha" }, count = {}
+  for (const b of on) count[b.dataset.kind] = (count[b.dataset.kind] || 0) + 1
+  const parts = Object.entries(count).map(([k, n]) => `${n} ${kinds[k]}${n > 1 ? "s" : ""}`)
+  document.getElementById("summary").textContent = on.length ? `Vai levar ${parts.join(", ")} · ${mb < 1 ? mb.toFixed(1).replace(".", ",") : Math.round(mb)} MB num pacote .runas` : "Marque ao menos um item."
+  document.getElementById("warn").textContent = mb > 128 ? "Maior que 128 MB: abre na 1.4 ou mais nova" : ""
+  document.getElementById("warn").hidden = mb <= 128
+}
+boxes.forEach(b => b.addEventListener("change", summary)); summary()
+// Árvore: caixas de três estados.
+const leaves = [...document.querySelectorAll("#tree input[data-leaf='cronos']")]
+const cronos = document.querySelector("#tree input[data-node='cronos']"), wikis = document.querySelector("#tree input[data-node='wikis']")
+const valknut = document.querySelector("#tree input[data-leaf='wikis']")
+function sync() {
+  const n = leaves.filter(l => l.checked).length
+  cronos.checked = n === leaves.length; cronos.indeterminate = n > 0 && n < leaves.length
+  const all = [cronos, valknut], m = all.filter(x => x.checked).length
+  wikis.checked = m === all.length; wikis.indeterminate = !wikis.checked && (m > 0 || cronos.indeterminate)
+}
+leaves.forEach(l => l.addEventListener("change", sync)); valknut.addEventListener("change", sync)
+cronos.addEventListener("change", () => { leaves.forEach(l => l.checked = cronos.checked); sync() })
+wikis.addEventListener("change", () => { [...leaves, valknut].forEach(l => l.checked = wikis.checked); sync() })
+sync()
+// Mês no celular (depois): novembro de 2026 começa num domingo; 6 linhas como no app.
+const pgrid = document.getElementById("pgrid")
+for (const h of ["D", "S", "T", "Q", "Q", "S", "S"]) pgrid.insertAdjacentHTML("beforeend", `<span class="h">${h}</span>`)
+const marks = { 14: ["d-gold"], 15: ["d-gold"], 22: ["d-gold"], 25: ["d-violet"], "d6": ["d-red"] }
+for (let i = 0; i < 42; i++) {
+  const out = i >= 30, day = out ? i - 29 : i + 1, key = out ? "d" + day : day
+  const dots = (marks[key] || []).map(c => `<i class="${c}"></i>`).join("")
+  pgrid.insertAdjacentHTML("beforeend", `<span class="p-cell${out ? " out" : ""}${!out && day === 13 ? " today" : ""}"><b>${day}</b><span class="dots">${dots}</span></span>`)
+}
+</script>
