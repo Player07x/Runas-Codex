@@ -133,4 +133,14 @@ export interface Platform {
   listTransferFiles?(includeWorlds?: boolean): Promise<VaultEntry[]>
   /** Importa somente a área interna autorizada das mesas, com versão obrigatória; usada pelo VaultProvider. */
   writeManagedTransfer?(path: string, bytes: Uint8Array, expected: VaultEntry | null): Promise<VaultEntry>
+  /** U50 (ADR 0037): salva em pedaços onde o usuário escolher; `null` se cancelou. Sem isso, use `saveBytes`. */
+  openSave?(name: string, mime: string): Promise<SaveTarget | null>
+}
+
+/** Destino de uma exportação em pedaços. `abort` apaga o que já foi escrito. */
+export interface SaveTarget {
+  write(bytes: Uint8Array): Promise<void>
+  /** Fecha e devolve o nome ou caminho salvo. */
+  close(): Promise<string>
+  abort(): Promise<void>
 }

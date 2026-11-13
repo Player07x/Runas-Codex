@@ -46,6 +46,10 @@ export const IPC = {
   systemShortcutRemove: "desktop:system-shortcut-remove",
   vaultTransferList: "vault:transfer-list",
   vaultTransferWrite: "vault:transfer-write",
+  saveStreamStart: "files:save-stream-start",
+  saveStreamWrite: "files:save-stream-write",
+  saveStreamFinish: "files:save-stream-finish",
+  saveStreamAbort: "files:save-stream-abort",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

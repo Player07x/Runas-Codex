@@ -1,8 +1,18 @@
 import { strFromU8, strToU8, Unzip, UnzipInflate, zipSync, type Zippable } from "fflate"
 import { nameProblem } from "../names"
 import { foldName } from "../text"
+import { crc32, readZipDirectory, readZipEntry, ZipWriter, type ZipSink, type ZipSource } from "./zip-stream"
 
-export const TRANSFER_LIMITS = { archive: 128 * 1024 * 1024, expanded: 256 * 1024 * 1024, file: 50 * 1024 * 1024, files: 10000 } as const
+/**
+ * Limites do desktop (ADR 0037, antes ADR 0020). Na exportação o pacote é escrito em pedaços: o teto é o do ZIP sem
+ * ZIP64. Na importação, o conteúdo descompactado ainda fica na memória até a gravação (1 GB); o PR C troca isso por
+ * leitura sob demanda.
+ */
+export const TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 1024 * 1024 * 1024, file: 512 * 1024 * 1024, files: 10000 } as const
+/** Android até o PR A2: o pacote ainda passa inteiro pela ponte do Capacitor. */
+export const ANDROID_TRANSFER_LIMITS = { archive: 64 * 1024 * 1024, expanded: 96 * 1024 * 1024, file: 32 * 1024 * 1024, files: 10000 } as const
+/** O que a 1.3 abre (ADR 0020): pacotes maiores só abrem na 1.4 ou mais nova. */
+export const LEGACY_ARCHIVE_LIMIT = 128 * 1024 * 1024
 export const PACKAGE_MANIFEST = ".runas-pacote.json"
 export interface TransferFile { path: string; bytes: Uint8Array }
 export interface TransferArchive { title: string; kind: "runas" | "markdown"; files: TransferFile[]; ignored: string[] }
@@ -49,17 +59,6 @@ export function validateTransferPaths(files: TransferFile[]): void {
     const parts = file.path.split("/")
     for (let i = 1; i < parts.length; i++) if (names.has(foldName(parts.slice(0, i).join("/")))) throw new Error(`Um arquivo ocupa o lugar de uma pasta no pacote: ${file.path}`)
   }
-}
-
-const crcTable = Uint32Array.from({ length: 256 }, (_, index) => {
-  let n = index
-  for (let i = 0; i < 8; i++) n = n & 1 ? 0xedb88320 ^ n >>> 1 : n >>> 1
-  return n >>> 0
-})
-function crc32(bytes: Uint8Array): number {
-  let crc = 0xffffffff
-  for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255]! ^ crc >>> 8
-  return (crc ^ 0xffffffff) >>> 0
 }
 
 /** Valida os tamanhos e a integridade do ZIP antes/depois da descompressão em blocos, inclusive ZIPs sem manifesto. */
@@ -128,7 +127,24 @@ export async function sha256(bytes: Uint8Array): Promise<string> {
 function record(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === "object" && !Array.isArray(value) }
 
 export async function readTransferArchive(bytes: Uint8Array, title = "Cofre importado", limits: TransferLimits = TRANSFER_LIMITS): Promise<TransferArchive> {
-  const zip = unzipBounded(bytes, limits), manifestBytes = zip.get(PACKAGE_MANIFEST)
+  return archiveFromZip(unzipBounded(bytes, limits), title, limits)
+}
+
+/**
+ * U50 (ADR 0037): lê o pacote por partes (`File.slice` na tela), um arquivo por vez, sem o teto de tamanho
+ * compactado. O conteúdo descompactado continua na memória e respeita `limits.expanded`.
+ */
+export async function readTransferArchiveFrom(source: ZipSource, title = "Cofre importado", limits: TransferLimits = TRANSFER_LIMITS, onProgress?: (done: number, total: number) => void): Promise<TransferArchive> {
+  const entries = await readZipDirectory(source, limits), zip = new Map<string, Uint8Array>()
+  for (const [index, entry] of entries.entries()) {
+    onProgress?.(index, entries.length)
+    zip.set(entry.name, await readZipEntry(source, entry))
+  }
+  return archiveFromZip(zip, title, limits)
+}
+
+async function archiveFromZip(zip: Map<string, Uint8Array>, title: string, limits: TransferLimits): Promise<TransferArchive> {
+  const manifestBytes = zip.get(PACKAGE_MANIFEST)
   const files: TransferFile[] = [], ignored: string[] = []
   if (manifestBytes) {
     const manifest: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(manifestBytes))
@@ -178,4 +194,33 @@ export async function createTransferArchive(title: string, files: TransferFile[]
   const bytes = zipSync(zip, { level: 6 })
   if (bytes.length > limits.archive) throw new Error("O pacote compactado excede o limite permitido.")
   return bytes
+}
+
+/**
+ * U50 (ADR 0037): escreve o pacote em pedaços no destino, lendo um arquivo do cofre por vez. O manifesto do `.runas`
+ * (mesmo formato, versão 1) vai no fim, com o SHA-256 de cada arquivo. Devolve o tamanho final do pacote.
+ */
+export async function writeTransferArchive(options: {
+  title: string
+  paths: string[]
+  read: (path: string) => Promise<Uint8Array>
+  kind: "runas" | "markdown"
+  limits: TransferLimits
+  sink: ZipSink
+  onProgress?: (done: number, total: number, path: string) => void
+}): Promise<number> {
+  const { title, paths, read, kind, limits, sink, onProgress } = options
+  if (!paths.length || paths.length > limits.files) throw new Error("Selecione arquivos para exportar, dentro do limite de quantidade.")
+  validateTransferPaths(paths.map(path => ({ path, bytes: new Uint8Array() })))
+  const writer = new ZipWriter(sink), entries: { path: string; size: number; sha256: string }[] = []
+  for (const [index, path] of paths.entries()) {
+    onProgress?.(index, paths.length, path)
+    const bytes = await read(path)
+    if (bytes.length > limits.file) throw new Error(`“${path}” passa do limite por arquivo.`)
+    await writer.add((kind === "runas" ? "cofre/" : "") + path, bytes)
+    if (kind === "runas") entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
+    if (writer.written > limits.archive) throw new Error("O pacote passou do limite permitido.")
+  }
+  if (kind === "runas") await writer.add(PACKAGE_MANIFEST, strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries }, null, 2)))
+  return writer.finish()
 }
