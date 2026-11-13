@@ -1742,3 +1742,19 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Importar esse pacote noutro cofre (ou numa cópia): a prévia aparece, e as notas e imagens chegam iguais.
 - [ ] Um pacote pequeno exportado pela 1.4 continua abrindo na 1.3 (por exemplo, no celular ainda não atualizado).
 - [ ] No Android nada muda neste PR: os limites antigos continuam até o PR A2.
+
+## Atualização 1.4.0 — PR B (exportar por itens, U51/U52)
+
+- [ ] Em Importar / Exportar › Exportar, a aba **Por itens** abre primeiro: aparecem suas wikis (Cronos, Valknut, Ordem
+  x Caos…), livros, mesas do VTT, a biblioteca da mesa, campanhas, a Agenda e as outras pastas, cada um com notas,
+  arquivos e tamanho.
+- [ ] Marcar só a **wiki Cronos** e exportar: o resumo antes do botão diz quantas notas e quanto vai sair; no fim
+  aparece “Conferido: N notas escolhidas estão no pacote”. Abrir o pacote noutro cofre (ou no Obsidian, se for ZIP):
+  as notas da Cronos e as imagens de `Anexos/Imagens` que ela usa estão lá, e a Valknut não (com “Incluir notas
+  ligadas” desligado).
+- [ ] Marcar um **livro** com capítulo fora da pasta dele: o capítulo e a capa entram. Marcar uma **mesa**: a capa
+  entra e a campanha não.
+- [ ] Aba **Por notas**: a árvore abre e fecha pastas pelo teclado (Tab até a seta, Enter); marcar uma nota deixa a
+  pasta com o traço (meio marcada); o leitor de tela lê “Pasta X: 3 de 10 marcados”. Digitar no filtro mostra os
+  caminhos inteiros e os botões “Selecionar os filtrados” / “Desmarcar os filtrados”.
+- [ ] No celular (ou a 320 px), as duas abas cabem sem rolar para os lados, e cada linha tem altura de toque.

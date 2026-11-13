@@ -10,6 +10,9 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
     const until = async test => { for (let i=0;i<200;i++) { const value=test(); if(value)return value; await wait(100) } throw Error("A tela de transferência não respondeu: " + test) }
     const button = text => [...document.querySelectorAll("button")].find(el => el.textContent.trim() === text)
+    // U51: o filtro troca a árvore por uma lista com os caminhos inteiros.
+    const filter = value => { const el=document.querySelector('[aria-label="Filtrar arquivos para exportar"]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(el,value); el.dispatchEvent(new Event("input",{bubbles:true})) }
+    const choose = text => [...document.querySelectorAll('[role=tab]')].find(el=>el.textContent.includes(text)).click()
     const select = (label, value) => { const el=document.querySelector('[aria-label="'+label+'"]'); el.value=value; el.dispatchEvent(new Event("change",{bubbles:true})) }
     const upload = () => { const input=document.querySelector('[aria-label="Arquivo para importar"]'), data=new DataTransfer(); data.items.add(new File(["\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n\r\n> [!segredo]\r\n> X4_SEGREDO_NAO_EXPORTAR\r\n"],"Transfer-smoke.md")); data.items.add(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg=="),char=>char.charCodeAt(0))],"Anexos-transfer-smoke.png")); input.files=data.files; input.dispatchEvent(new Event("change",{bubbles:true})) }
     const api=window.runasCodex, checks={}
@@ -33,12 +36,15 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await until(()=>!document.querySelector('[data-transfer-preview]'))
     checks.duplicate=(await api.vault.list()).filter(entry=>entry.path.endsWith("/Transfer-smoke.md")).length===2
     ;[...document.querySelectorAll('[role=tab]')].find(el=>el.textContent.includes("Exportar")).click()
+    await until(()=>[...document.querySelectorAll('[role=tab]')].some(el=>el.textContent.includes("Por notas")))
+    choose("Por notas")
     await until(()=>document.querySelector('[aria-label="O que exportar"]'))
     select("O que exportar","Notas")
     await wait(150)
     document.querySelector("summary").click()
     button("Limpar seleção").click()
     await until(()=>document.querySelector("summary")?.textContent.includes("(0)") && ![...document.querySelectorAll(".transfer-files input")].some(input=>input.checked))
+    filter(path)
     const choice=await until(()=>[...document.querySelectorAll(".transfer-files label")].find(el=>el.textContent.startsWith(path)))
     choice.querySelector("input").click()
     await until(()=>document.querySelector("summary")?.textContent.includes("(1)") && !button("Escolher onde salvar")?.disabled)
@@ -89,6 +95,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     select("O que exportar","Notas")
     const details=await until(()=>document.querySelector("details"))
     if(!details.open)details.querySelector("summary").click()
+    filter("Pacote-grande-smoke")
     await until(()=>bigPaths.every(bigPath=>[...document.querySelectorAll(".transfer-files label")].some(el=>el.textContent.startsWith(bigPath))))
     button("Limpar seleção").click()
     await until(()=>document.querySelector("summary")?.textContent.includes("(0)"))
@@ -98,12 +105,24 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     const bigStatus=await until(()=>{const text=document.querySelector(".transfer-status")?.textContent; return text?.includes("exportados:") && !text.includes(zip) && document.querySelector(".transfer-notice") && text})
     const large=bigStatus.split("exportados: ")[1]
     checks.largeNotice=document.querySelector(".transfer-notice").textContent.includes("1.4 ou mais novo")
+    // U52: exportar por item (a wiki do cofre de exemplo), com a contagem antes e a conferência no fim.
+    filter("")
+    choose("Por itens")
+    const wikiItem=await until(()=>[...document.querySelectorAll("[data-transfer-items] label")].find(el=>el.textContent.startsWith("Ordem x Caos")))
+    wikiItem.querySelector("input").click()
+    await until(()=>document.querySelector("[data-transfer-planned]")?.textContent.includes("de 1 item ") && !button("Escolher onde salvar")?.disabled)
+    checks.itemPlanned=/Vai salvar [1-9][0-9]* notas/.test(document.querySelector("[data-transfer-planned]").textContent)
+    button("Escolher onde salvar").click()
+    const itemStatus=await until(()=>{const text=document.querySelector(".transfer-status")?.textContent; return text?.includes("exportados:") && !text.includes(large) && text})
+    const byItem=itemStatus.split("exportados: ")[1]
+    checks.itemChecked=document.querySelector(".transfer-notice")?.textContent.includes("Conferido:")
+    const wikiNotes=(await api.vault.list()).filter(entry=>entry.path.startsWith("Wikis/Ordem x Caos/")&&entry.path.endsWith(".md")).map(entry=>entry.path)
     const managed=".runas/mesas/transfer-smoke/mesa.json", manifest=new TextEncoder().encode(JSON.stringify({formatVersion:1,id:"transfer-smoke",title:"Transferência",createdAt:1,updatedAt:1}))
     await api.vault.writeManagedTransfer(managed,manifest,null)
     checks.world=(await api.vault.listTransferFiles(true)).some(entry=>entry.path===managed) && !(await api.vault.listTransferFiles(false)).some(entry=>entry.path===managed)
     checks.hidden=await api.vault.writeManagedTransfer(".obsidian/teste.json",manifest,null).then(()=>false,()=>true)
-    return {checks,exported,zip,html,pdf,site,large}
-  })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string; site: string; large: string }
+    return {checks,exported,zip,html,pdf,site,large,byItem,wikiNotes}
+  })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string; site: string; large: string; byItem: string; wikiNotes: string[] }
   const native = await readTransferArchive(new Uint8Array(await readFile(result.exported)))
   const markdown = await readTransferArchive(new Uint8Array(await readFile(result.zip)))
   const html = await readFile(result.html, "utf8")
@@ -124,5 +143,9 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     const files = large.files.filter(item => item.path.startsWith("Notas/Pacote-grande-smoke-"))
     result.checks.largeArchive = size > 128 * 1048576 && large.kind === "runas" && files.length === 2 && files.every(file => file.bytes.length === 70 * 1048576 && file.bytes[4096] === ((4096 * 2654435761) >>> 24 & 255))
   } finally { await handle.close() }
+  // O pacote por item tem todas as notas da wiki e nada de outra pasta de notas.
+  const byItem = await readTransferArchive(new Uint8Array(await readFile(result.byItem)))
+  const itemPaths = new Set(byItem.files.map(file => file.path))
+  result.checks.itemArchive = byItem.kind === "runas" && result.wikiNotes.length > 0 && result.wikiNotes.every(path => itemPaths.has(path)) && !byItem.files.some(file => file.path.startsWith("Notas/Importados/"))
   return { ...result, nativePaths: native.files.map(file=>file.path), markdownPaths: markdown.files.map(file=>file.path), pdfCheck: pdf, ok: Object.values(result.checks).every(Boolean) }
 }

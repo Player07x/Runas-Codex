@@ -26,6 +26,16 @@ quase não comprimem, então o tamanho compactado fica perto do real.
 4. **Limites**: desktop com 4 GB por pacote, 1 GB de conteúdo ao importar e 512 MB por arquivo; Android com os de
    antes (64/96/32 MB) até o PR A2. Quando o pacote passa de 128 MB, a tela avisa que ele só abre na 1.4 ou mais nova.
 5. A versão dos arquivos lida no começo é conferida no fim; se algo mudou, a exportação é desfeita.
+6. **Por itens** (PR B, U51/U52): `core/transfer/items.ts` lista wikis, livros, mesas, a biblioteca da mesa,
+   campanhas, a Agenda e as outras pastas; o que nenhum item cobre vira “Outros”, então todo arquivo do cofre está em
+   algum item. A wiki leva a pasta e os anexos que usa, onde estiverem; o livro, a pasta, os capítulos da `estrutura`
+   de fora dela e a capa; a mesa, a pasta em `.runas/mesas/` e a capa (sem a campanha); a campanha, a pasta, os eventos
+   da Agenda que apontam para ela e a mesa ligada. Um anexo compartilhado entra uma vez. “Incluir notas ligadas”
+   começa desligado por itens (um link para outra wiki não a puxa inteira) e ligado por notas. A escolha por notas
+   virou árvore com caixas de três estados; o filtro mostra os caminhos e tem “Selecionar os filtrados”. A tela conta
+   notas, outros arquivos e tamanho antes de salvar e, no fim, confere que toda nota escolhida entrou no pacote; se
+   faltar alguma, a exportação é desfeita. O formato não mudou (o campo `itens` no manifesto fica para o PR C, que é
+   quem o lê).
 
 ## Consequências
 

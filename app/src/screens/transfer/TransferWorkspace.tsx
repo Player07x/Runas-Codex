@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Archive, ArrowDownToLine, ArrowUpFromLine, BookOpen, CalendarDays, Dices, FileText, FolderOpen, FolderOutput, History, Library, Package, ScrollText } from "lucide-react"
+import { Archive, ArrowDownToLine, ArrowUpFromLine, BookOpen, CalendarDays, Dices, FileText, FolderOpen, FolderOutput, FolderTree, History, Library, ListChecks, Package, ScrollText } from "lucide-react"
 import { useVault } from "../../platform/VaultProvider"
 import { Segmented } from "../../components/ui"
 import { navigate, useRoute } from "../../lib/router"
@@ -11,6 +11,8 @@ import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core
 import "./transfer-workspace.css"
 import { parseWorldManifest } from "../../vtt/shared/world"
 import { DocumentExport } from "./DocumentExport"
+import { expandTransferItems, listTransferItems, missingFromPackage, TRANSFER_ITEM_GROUPS, transferStats, type TransferItem, type TransferWorld } from "../../core/transfer/items"
+import { TransferTree } from "./TransferTree"
 
 const scopes = [
   { value: "", label: "Cofre inteiro", roots: [""] }, { value: "Notas", label: "Notas", roots: ["Notas"] },
@@ -22,6 +24,9 @@ const sizeLabel = (bytes: number) => bytes >= 1073741824 ? `${(bytes / 107374182
 const safeName = (name: string) => name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-").slice(0, 80) || "Cofre"
 const failure = (error: unknown) => error instanceof Error ? error.message : String(error)
 interface Preview { archive: TransferArchive; existing: TransferEntry[] }
+/** U52: por itens (wikis, livros, mesas…) abre primeiro; por notas é a escolha em árvore (U51). */
+type Choice = "itens" | "notas"
+const count = (n: number, one: string, many: string) => `${n.toLocaleString("pt-BR")} ${n === 1 ? one : many}`
 
 /** TRF-1: primeiro o que a pessoa quer fazer; depois só o formulário disso. */
 type Goal = "aparelho" | "documento" | "obsidian"
@@ -47,7 +52,12 @@ export function TransferWorkspace() {
   }
   const [scope, setScope] = useState("")
   const [kind, setKind] = useState<"runas" | "markdown">(() => (savedGoal() === "obsidian" ? "markdown" : "runas"))
-  const [linked, setLinked] = useState(true)
+  const [choice, setChoiceState] = useState<Choice>("itens")
+  const [chosenItems, setChosenItems] = useState<Set<string>>(new Set())
+  const [worldList, setWorldList] = useState<TransferWorld[]>([])
+  // Por itens, “Incluir notas ligadas” começa desligado (um link para outra wiki não a puxa inteira); por notas, ligado.
+  const [linked, setLinked] = useState(false)
+  const setChoice = (next: Choice) => { setChoiceState(next); setLinked(next === "notas") }
   const [worlds, setWorlds] = useState(true)
   const [entries, setEntries] = useState<TransferEntry[]>([])
   const [selected, setSelected] = useState<Set<string> | null>(null)
@@ -63,18 +73,44 @@ export function TransferWorkspace() {
   // U50 (ADR 0037): o desktop grava em pedaços; o Android mantém os limites antigos até o PR A2.
   const limits = vault.platform.kind === "capacitor" ? ANDROID_TRANSFER_LIMITS : TRANSFER_LIMITS
   const [notice, setNotice] = useState("")
-  const listFiles = () => vault.platform.listTransferFiles?.(worlds || scope === "Mesas") ?? vault.platform.listVault()
+  const listFiles = () => vault.platform.listTransferFiles?.(choice === "itens" || worlds || scope === "Mesas") ?? vault.platform.listVault()
+  /** As mesas do cofre, lidas do `mesa.json` de cada uma (nome, id e capa). */
+  async function readWorlds(files: TransferEntry[]): Promise<TransferWorld[]> {
+    const found: TransferWorld[] = []
+    for (const entry of files.filter(entry => managedWorldPath(entry.path) && /^\.runas\/mesas\/[^/]+\/mesa\.json$/.test(entry.path))) {
+      try {
+        const manifest = parseWorldManifest(JSON.parse(new TextDecoder().decode(await vault.platform.readBinary(entry.path))))
+        found.push({ root: entry.path.slice(0, -"/mesa.json".length), id: manifest.id, title: manifest.title, ...(manifest.cover ? { cover: manifest.cover } : {}) })
+      } catch { /* mesa com manifesto quebrado: os arquivos dela ainda aparecem em “Outros” */ }
+    }
+    return found
+  }
 
   useEffect(() => {
     let active = true
     setPreview(null); setSelected(null)
     if (!vault.info) { setEntries([]); return }
-    void listFiles().then(files => { if (active) setEntries(files) }, error => { if (active) setError(failure(error)) })
+    void listFiles().then(async files => {
+      const found = await readWorlds(files)
+      if (active) { setEntries(files); setWorldList(found) }
+    }, error => { if (active) setError(failure(error)) })
     return () => { active = false }
-  }, [vault.info?.path, worlds, scope])
+  }, [vault.info?.path, worlds, scope, choice])
 
   const scoped = entries.filter(entry => (scopes.find(item => item.value === scope)?.roots ?? [""]).some(root => !root || entry.path.startsWith(root + "/")))
   const visible = scoped.filter(entry => entry.path.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")))
+  const items = useMemo(() => vault.index ? listTransferItems(vault.index, entries, worldList) : [], [vault.index, entries, worldList])
+  const worldRoots = useMemo(() => new Map(worldList.map(world => [world.id, world.root])), [worldList])
+  // Tamanho de cada item sozinho, sem notas ligadas (o que aparece ao lado do nome).
+  const itemSizes = useMemo(() => new Map(items.map(item => [item.id, transferStats(entries, expandTransferItems(vault.index!, entries, [item], false, worldRoots))])), [items, entries, worldRoots])
+  const notesRoots = selected === null ? scopes.find(item => item.value === scope)!.roots : [...selected]
+  const notesWorlds = worlds && !scope || scope === "Mesas"
+  /** O que vai sair, contado antes de salvar (U51). */
+  const planned = useMemo(() => {
+    if (!vault.index) return transferStats(entries, [])
+    if (choice === "itens") return transferStats(entries, expandTransferItems(vault.index, entries, items.filter(item => chosenItems.has(item.id)), linked, worldRoots))
+    return transferStats(entries, notesRoots.length ? selectTransferPaths(vault.index, entries, notesRoots, linked, notesWorlds, worldRoots) : [])
+  }, [vault.index, entries, choice, items, chosenItems, linked, worldRoots, selected, scope, notesWorlds])
   const calculated = useMemo<{ plan: ImportPlan | null; problem: string }>(() => {
     if (!preview) return { plan: null, problem: "" }
     try { return { plan: buildImportPlan({ ...preview.archive, files: preview.archive.files.filter(file => incoming.has(file.path)) }, preview.existing, strategy), problem: "" } }
@@ -101,16 +137,22 @@ export function TransferWorkspace() {
   async function exportFiles() {
     await flushOpenNotes()
     const known = await listFiles()
-    const roots = selected === null ? scopes.find(item => item.value === scope)!.roots : [...selected]
-    const worldRoots = new Map<string, string>()
-    if (linked && roots.some(path => path === "Campanhas" || path.startsWith("Campanhas/"))) {
-      for (const entry of known.filter(entry => managedWorldPath(entry.path) && entry.path.endsWith("/mesa.json"))) {
-        const manifest = parseWorldManifest(JSON.parse(new TextDecoder().decode(await vault.platform.readBinary(entry.path))))
-        worldRoots.set(manifest.id, entry.path.slice(0, -"/mesa.json".length))
-      }
+    // Relê as mesas e refaz a escolha com a lista nova: o que mudou desde a tela entra como está agora.
+    const freshWorlds = await readWorlds(known)
+    const roots = new Map(freshWorlds.map(world => [world.id, world.root]))
+    let paths: string[], chosenNotes: string[], label: string
+    if (choice === "itens") {
+      const marked: TransferItem[] = listTransferItems(vault.index!, known, freshWorlds).filter(item => chosenItems.has(item.id))
+      if (!marked.length) throw new Error("Marque pelo menos um item para exportar.")
+      paths = expandTransferItems(vault.index!, known, marked, linked, roots)
+      chosenNotes = known.map(entry => entry.path).filter(path => marked.some(item => item.roots.some(root => path === root || path.startsWith(root + "/"))))
+      label = marked.length === 1 ? marked[0]!.name : `${marked.length} itens`
+    } else {
+      paths = selectTransferPaths(vault.index!, known, notesRoots, linked, notesWorlds, roots)
+      chosenNotes = known.map(entry => entry.path).filter(path => notesRoots.some(root => !root || path === root || path.startsWith(root + "/")))
+      label = scope
     }
-    const paths = selectTransferPaths(vault.index!, known, roots, linked, worlds && !scope || scope === "Mesas", worldRoots)
-    const name = `${safeName(vault.info!.name)}${scope ? " - " + scope : ""}.${kind === "runas" ? "runas" : "zip"}`, mime = kind === "runas" ? "application/octet-stream" : "application/zip"
+    const name = `${safeName(vault.info!.name)}${label ? " - " + safeName(label) : ""}.${kind === "runas" ? "runas" : "zip"}`, mime = kind === "runas" ? "application/octet-stream" : "application/zip"
     if (!vault.platform.openSave) {
       // Android até o PR A2: o pacote ainda é montado inteiro e passa de uma vez pela ponte.
       const files = await collect(paths, known, "exportação")
@@ -128,18 +170,23 @@ export function TransferWorkspace() {
     if (!target) { setStatus("Exportação cancelada."); return }
     try {
       const sink = bufferedSink(bytes => target.write(bytes))
+      const packed: string[] = []
       const size = await writeTransferArchive({
         title: vault.info!.name, paths, kind, limits, sink,
-        read: path => vault.platform.readBinary(path),
+        read: async path => { const bytes = await vault.platform.readBinary(path); packed.push(path); return bytes },
         onProgress: (done, total, path) => setStatus(`Gravando ${done + 1} de ${total}: ${path}`),
       })
       await sink.flush()
+      // Conferência no fim (U51): toda nota escolhida entrou no pacote.
+      const missing = missingFromPackage(chosenNotes, packed)
+      if (missing.length) throw new Error(`${missing.length} nota(s) escolhida(s) ficaram de fora do pacote: ${missing.slice(0, 3).join(", ")}. Nada foi salvo.`)
       if ((await vault.platform.vault())?.path !== identity) throw new Error("O cofre mudou durante a exportação.")
       const current = await (vault.platform.listTransferFiles?.(paths.some(path => managedWorldPath(path)) || worlds || scope === "Mesas") ?? vault.platform.listVault())
       for (const path of paths) if (!sameTransferVersion(current.find(entry => entry.path === path), known.find(entry => entry.path === path)!)) throw new Error(`“${path}” mudou durante a exportação. Tente novamente.`)
       const saved = await target.close()
       setStatus(`${paths.length} arquivo(s) exportados: ${saved}`)
-      setNotice(`Pacote de ${sizeLabel(size)}.${size > LEGACY_ARCHIVE_LIMIT ? " Ele passa de 128 MB: só abre no Runas-Codex 1.4 ou mais novo." : ""}`)
+      const notes = chosenNotes.filter(path => /\.md$/i.test(path)).length
+      setNotice(`Pacote de ${sizeLabel(size)}. Conferido: ${count(notes, "nota escolhida está", "notas escolhidas estão")} no pacote.${size > LEGACY_ARCHIVE_LIMIT ? " Ele passa de 128 MB: só abre no Runas-Codex 1.4 ou mais novo." : ""}`)
     } catch (error) {
       await target.abort().catch(() => undefined)
       throw error
@@ -199,6 +246,12 @@ export function TransferWorkspace() {
     const count = await vault.importTransfer(plan.writes)
     setPreview(null); setEntries(await listFiles()); setStatus(`${count} arquivo(s) importados. ${plan.skipped.length} existente(s) preservados.`)
   }
+  /** Marca ou desmarca vários de uma vez (pasta da árvore, “Selecionar os filtrados”). */
+  function setPaths(paths: string[], on: boolean) {
+    const next = new Set(selected ?? scoped.map(entry => entry.path))
+    for (const path of paths) if (on) next.add(path); else next.delete(path)
+    setSelected(next)
+  }
   function toggle(set: Set<string>, path: string): Set<string> { const next = new Set(set); if (next.has(path)) next.delete(path); else next.add(path); return next }
   const canImport = Boolean(vault.info && !vault.info.readOnly && vault.index && !vault.loading)
 
@@ -217,23 +270,54 @@ export function TransferWorkspace() {
             <item.icon size={20} aria-hidden="true" /><span><strong>{item.title}</strong><small>{item.hint}</small></span>
           </label>)}
         </fieldset>
-        <div className="transfer-fields">
-          <label className="field"><span>O que exportar</span><select className="select" aria-label="O que exportar" value={scope} disabled={busy} onChange={event => { setScope(event.target.value); setSelected(null); setShown(100) }}>{scopes.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-          {goal !== "documento" && <label className="field"><span>Formato</span><select className="select" aria-label="Formato do pacote" value={kind} disabled={busy} onChange={event => setKind(event.target.value as typeof kind)}><option value="runas">Pacote Runas (.runas)</option><option value="markdown">ZIP Markdown (Obsidian)</option></select></label>}
-        </div>
-        <details><summary>Escolher arquivos ({selected === null ? scoped.length : selected.size})</summary><div className="stack">
-          <input className="input" aria-label="Filtrar arquivos para exportar" placeholder="Filtrar por caminho…" value={search} onChange={event => { setSearch(event.target.value); setShown(100) }} />
-          <div className="row-wrap"><button className="btn sm" disabled={busy} onClick={() => setSelected(null)}>Todos deste espaço</button><button className="btn sm" disabled={busy} onClick={() => setSelected(new Set())}>Limpar seleção</button></div>
-          <div className="transfer-files">{visible.slice(0, shown).map(entry => <label className="check" key={entry.path}><input type="checkbox" disabled={busy} checked={selected === null || selected.has(entry.path)} onChange={() => setSelected(toggle(selected ?? new Set(scoped.map(entry => entry.path)), entry.path))} /><span>{entry.path}</span><small>{sizeLabel(entry.size)}</small></label>)}</div>
-          {visible.length > shown && <button className="btn sm" onClick={() => setShown(shown + 100)}>Mostrar mais</button>}
-        </div></details>
+        <Segmented label="Escolher por" value={choice} onChange={next => { setChoice(next); setShown(100) }} options={[{ value: "itens", label: "Por itens", icon: <ListChecks size={14} /> }, { value: "notas", label: "Por notas", icon: <FolderTree size={14} /> }]} />
+        {goal !== "documento" && <div className="transfer-fields">
+          <label className="field"><span>Formato</span><select className="select" aria-label="Formato do pacote" value={kind} disabled={busy} onChange={event => setKind(event.target.value as typeof kind)}><option value="runas">Pacote Runas (.runas)</option><option value="markdown">ZIP Markdown (Obsidian)</option></select></label>
+        </div>}
+        {choice === "itens" ? <div className="stack" data-transfer-items>
+          <div className="row-wrap"><button className="btn sm" disabled={busy || !items.length} onClick={() => setChosenItems(new Set(items.map(item => item.id)))}>Marcar todos</button><button className="btn sm" disabled={busy || !chosenItems.size} onClick={() => setChosenItems(new Set())}>Limpar seleção</button></div>
+          {!items.length && <p className="small muted">{vault.index ? "O cofre está vazio." : "Lendo o cofre…"}</p>}
+          {TRANSFER_ITEM_GROUPS.map(group => {
+            const list = items.filter(item => item.kind === group.kind)
+            if (!list.length) return null
+            return <fieldset key={group.kind} className="transfer-item-group">
+              <legend>{group.label}</legend>
+              {list.map(item => {
+                const stats = itemSizes.get(item.id)
+                return <label key={item.id} className="check transfer-item"><input type="checkbox" disabled={busy} checked={chosenItems.has(item.id)} onChange={() => setChosenItems(toggle(chosenItems, item.id))} />
+                  <span>{item.name}</span>
+                  {stats && <small>{[stats.notes ? count(stats.notes, "nota", "notas") : "", stats.attachments ? count(stats.attachments, "arquivo", "arquivos") : ""].filter(Boolean).join(", ")} · {sizeLabel(stats.size)}</small>}
+                </label>
+              })}
+            </fieldset>
+          })}
+          <p className="small muted">Cada item leva a pasta dele e as imagens e anexos que as notas usam, onde estiverem. O livro leva os capítulos de fora da pasta; a campanha, os eventos da Agenda e a mesa ligada.</p>
+        </div> : <>
+          <div className="transfer-fields">
+            <label className="field"><span>O que exportar</span><select className="select" aria-label="O que exportar" value={scope} disabled={busy} onChange={event => { setScope(event.target.value); setSelected(null); setShown(100) }}>{scopes.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+          </div>
+          <details><summary>Escolher arquivos ({selected === null ? scoped.length : selected.size})</summary><div className="stack">
+            <input className="input" aria-label="Filtrar arquivos para exportar" placeholder="Filtrar por caminho…" value={search} onChange={event => { setSearch(event.target.value); setShown(100) }} />
+            <div className="row-wrap">
+              <button className="btn sm" disabled={busy} onClick={() => setSelected(null)}>Todos deste espaço</button>
+              <button className="btn sm" disabled={busy} onClick={() => setSelected(new Set())}>Limpar seleção</button>
+              {search && <button className="btn sm" disabled={busy || !visible.length} onClick={() => setPaths(visible.map(entry => entry.path), true)}>Selecionar os filtrados ({visible.length})</button>}
+              {search && <button className="btn sm" disabled={busy || !visible.length} onClick={() => setPaths(visible.map(entry => entry.path), false)}>Desmarcar os filtrados</button>}
+            </div>
+            {search ? <>
+              <div className="transfer-files">{visible.slice(0, shown).map(entry => <label className="check" key={entry.path}><input type="checkbox" disabled={busy} checked={selected === null || selected.has(entry.path)} onChange={() => setSelected(toggle(selected ?? new Set(scoped.map(entry => entry.path)), entry.path))} /><span>{entry.path}</span><small>{sizeLabel(entry.size)}</small></label>)}</div>
+              {visible.length > shown && <button className="btn sm" onClick={() => setShown(shown + 100)}>Mostrar mais</button>}
+              {!visible.length && <p className="small muted">Nenhum arquivo com “{search}” no caminho.</p>}
+            </> : <TransferTree key={scope} entries={scoped} selected={selected ?? new Set(scoped.map(entry => entry.path))} disabled={busy} sizeLabel={sizeLabel} onSet={setPaths} />}
+          </div></details>
+        </>}
         {goal !== "documento" && <>
           <label className="check"><input type="checkbox" checked={linked} disabled={busy} onChange={event => setLinked(event.target.checked)} /> Incluir notas ligadas; os anexos acompanham a seleção</label>
-          {!scope && <label className="check"><input type="checkbox" checked={worlds} disabled={busy} onChange={event => setWorlds(event.target.checked)} /> Incluir mesas do VTT</label>}
+          {choice === "notas" && !scope && <label className="check"><input type="checkbox" checked={worlds} disabled={busy} onChange={event => setWorlds(event.target.checked)} /> Incluir mesas do VTT</label>}
           <p className="small muted">Mantém as notas e anexos originais, inclusive os segredos do mestre. Preferências deste aparelho e configurações de plugins não entram no pacote.</p>
           <div className="transfer-actions">
-            <p className="small transfer-summary" role="status">Vai salvar {selected === null ? scoped.length : selected.size} arquivo(s) de {scopes.find(item => item.value === scope)?.label.toLocaleLowerCase("pt-BR")}{linked ? ", mais as notas ligadas e os anexos" : ""}{!scope && worlds ? ", com as mesas," : ""} num {kind === "runas" ? "pacote .runas" : "ZIP Markdown"}.</p>
-            <button className="btn primary" disabled={busy || !vault.index || vault.loading || !scoped.length || selected?.size === 0} onClick={() => void act(exportFiles)}><ArrowUpFromLine size={16} /> {busy ? "Preparando…" : "Escolher onde salvar"}</button>
+            <p className="small transfer-summary" role="status" data-transfer-planned>Vai salvar {count(planned.notes, "nota", "notas")} e {count(planned.attachments, "outro arquivo", "outros arquivos")} ({sizeLabel(planned.size)}){choice === "itens" ? ` de ${count(chosenItems.size, "item", "itens")}` : ` de ${scopes.find(item => item.value === scope)?.label.toLocaleLowerCase("pt-BR")}`}{linked ? ", com as notas ligadas" : ""} num {kind === "runas" ? "pacote .runas" : "ZIP Markdown"}.</p>
+            <button className="btn primary" disabled={busy || !vault.index || vault.loading || !planned.paths.length} onClick={() => void act(exportFiles)}><ArrowUpFromLine size={16} /> {busy ? "Preparando…" : "Escolher onde salvar"}</button>
           </div>
         </>}
       </> : <>
@@ -255,7 +339,7 @@ export function TransferWorkspace() {
       <p className="small muted">Limites: {sizeLabel(limits.archive)} por pacote, {sizeLabel(limits.expanded)} de conteúdo ao importar e {sizeLabel(limits.file)} por arquivo.</p>
       {status && <p role="status" className="small transfer-status">{status}</p>}{notice && <p className="small transfer-notice">{notice}</p>}{error && <p role="alert" className="transfer-error">{error}</p>}
     </section>}
-    {direction === "exportar" && goal === "documento" && vault.info && <DocumentExport paths={selected === null ? scoped.map(entry => entry.path) : [...selected]} />}
+    {direction === "exportar" && goal === "documento" && vault.info && <DocumentExport paths={choice === "itens" ? planned.paths : selected === null ? scoped.map(entry => entry.path) : [...selected]} />}
     <div className="transfer-grid">
       <section className="card stack transfer-card"><h2 className="section-title"><BookOpen size={18} /> Livros</h2><p className="small">Importe DOCX, Homebrewery ou GM Binder. Na prévia do livro, exporte PDF, EPUB, DOCX, HTML, RTF, Markdown ou ZIP.</p><button className="btn" onClick={() => navigate("/livros")}>Abrir Livros</button></section>
       <section className="card stack transfer-card"><h2 className="section-title"><CalendarDays size={18} /> Agenda</h2><p className="small">Importe e exporte calendários iCalendar (.ics) pela Agenda.</p><button className="btn" onClick={() => navigate("/agenda")}>Abrir Agenda</button></section>
