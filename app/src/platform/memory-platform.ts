@@ -189,6 +189,25 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
       memoryBackupSchedule = normalizeBackupSchedule({ ...memoryBackupSchedule, ...schedule })
       return memoryBackupSchedule
     },
+    // U50: no navegador o arquivo só existe no fim (download); os pedaços ficam na memória até lá.
+    async openSave(name, mime) {
+      let parts: Uint8Array[] | null = []
+      return {
+        write: async (bytes) => { if (!parts) throw new Error("A exportação foi encerrada."); parts.push(bytes.slice()) },
+        close: async () => {
+          if (!parts) throw new Error("A exportação foi encerrada.")
+          const url = URL.createObjectURL(new Blob(parts as BlobPart[], { type: mime }))
+          parts = null
+          const link = document.createElement("a")
+          link.href = url
+          link.download = name
+          link.click()
+          setTimeout(() => URL.revokeObjectURL(url), 1000)
+          return name
+        },
+        abort: async () => { parts = null },
+      }
+    },
   }
 }
 

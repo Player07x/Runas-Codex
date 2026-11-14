@@ -148,3 +148,21 @@ body.book-focus-active .main { padding-bottom: env(safe-area-inset-bottom); }
   .book-bar { gap: 4px; padding-inline: 6px; }
   .book-bar .kit-save:not(.erro) { gap: 0; font-size: 0; }
 }
+
+/* ---------- Celular (U63): sumário e apoio em folha inteira; barra com Sumário, Ler e um ⋯ ---------- */
+.book-sheet-label { display: none; }
+@media (max-width: 640px) {
+  /* Folha da largura toda: nada do texto fica aparecendo ao lado. Escolher um capítulo fecha o sumário. */
+  .books-binder:not([data-panel-collapsed=true]), .book-tools-panel:not([data-panel-collapsed=true]) { right: 0; left: 0; width: 100%; box-shadow: none; }
+  /* O botão do Apoio só aparece com o apoio aberto (para fechar); abrir fica no ⋯. */
+  .book-bar .book-support-slot:not(.is-open) { display: none; }
+  .book-bar > .book-slot .panel-collapse span, .book-sheet-label { display: inline; }
+  .book-sheet-btn { gap: 6px; min-width: 44px; min-height: 44px; }
+  /* Ordem: ponto de Salvo · Ler · (Apoio aberto) · ⋯ por último. */
+  .book-bar .doc-end > .book-slot:first-child { display: contents; }
+  .book-bar .doc-end .book-sheet-btn, .book-bar .doc-end .book-support-slot { order: 1; }
+  .book-bar .doc-end .kit-menu-wrap { order: 2; }
+}
+@media (max-width: 359px) {
+  .book-bar > .book-slot .panel-collapse span, .book-sheet-label { display: none; }
+}

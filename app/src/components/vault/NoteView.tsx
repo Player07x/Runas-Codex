@@ -41,7 +41,7 @@ import { Notice, SaveStatus } from "../kit/Layout"
 import { FormatGallery } from "../editor/FormatGallery"
 import { SelectionBar, type SelectionAction } from "../editor/SelectionBar"
 import { KeyboardBar } from "../editor/KeyboardBar"
-import { useNarrow } from "../editor/use-narrow"
+import { useNarrow, usePhone } from "../editor/use-narrow"
 import { isBlockSyntax, type FormatterEntry } from "../../core/formatters"
 import { textStats } from "../../core/note-tools"
 import { countWords } from "../../core/books"
@@ -57,9 +57,10 @@ const MODE_KEY = "runas-codex:modo-nota"
 /** O modo fica lembrado por espaço (quem consulta a Wiki costuma ficar em Leitura); o valor antigo, de todo o app, vale até a primeira troca. */
 const modeKey = (path: string) => `${MODE_KEY}:${scopeOf(path).space ?? "outros"}`
 
-function savedMode(path: string): ViewMode {
+/** O modo escolhido neste espaço (a troca fica lembrada no aparelho); sem ele, o `fallback` da tela (U62: artigo da wiki no celular) ou o geral. */
+function savedMode(path: string, fallback?: ViewMode): ViewMode {
   try {
-    const value = localStorage.getItem(modeKey(path)) ?? localStorage.getItem(MODE_KEY)
+    const value = localStorage.getItem(modeKey(path)) ?? fallback ?? localStorage.getItem(MODE_KEY)
     return value === "leitura" || value === "fonte" ? value : "live"
   } catch {
     return "live"
@@ -93,8 +94,12 @@ interface Props {
   focusHeader?: HTMLElement | null
   /** Livros: o modo é Visual ⇄ Código, na barra de status; Leitura é a própria Prévia do livro. */
   variant?: "livro"
+  /** Modo de quem ainda não escolheu um nesta nota (o artigo da wiki abre em Leitura no celular). */
+  defaultMode?: ViewMode
   /** Itens a mais na barra de status (Livros: palavras do livro, máquina de escrever). */
   statusExtra?: ReactNode
+  /** Livros no celular (U63): as ações do livro entram no ⋯ do capítulo, para a barra ter um ⋯ só. */
+  extraMenu?: { label: string; items: MenuEntry[] }
   hideBackControl?: boolean
   formatSelection?: boolean
   typewriter?: boolean
@@ -131,7 +136,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra }: Props) {
+export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode, extraMenu }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -142,7 +147,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const note = index.note(path)!
   const readOnly = vault.info?.readOnly ?? true
   const book = variant === "livro"
-  const [mode, setModeState] = useState<ViewMode>(() => (readOnly ? "leitura" : book && savedMode(path) === "leitura" ? "live" : savedMode(path)))
+  const [mode, setModeState] = useState<ViewMode>(() => (readOnly ? "leitura" : book && savedMode(path) === "leitura" ? "live" : savedMode(path, defaultMode)))
   // Ctrl+Shift+E sai do Código para o modo de antes.
   const beforeCode = useRef<ViewMode>("live")
   const setMode = (next: ViewMode) => {
@@ -170,6 +175,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [editorFocused, setEditorFocused] = useState(false)
   const [linkLabel, setLinkLabel] = useState("")
   const narrow = useNarrow()
+  const phone = usePhone()
   const appearance = useAppearance()
   const shortcuts = usePreferences().shortcuts
   const keyHint = (action: ShortcutAction) => (vault.platform.kind === "capacitor" ? undefined : shortcutText(shortcutLabel(action, shortcuts)))
@@ -595,7 +601,20 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
       ]}
     />
   )
-  const actionsMenu = <OverflowMenu label={book ? "Ações do capítulo" : "Ações da nota"} items={menu} />
+  // No celular, um botão só alterna Ler/Editar e o código vai para o ⋯ (U61): a barra da nota cabe numa faixa.
+  const reading = mode === "leitura"
+  const editMode: ViewMode = readOnly ? "fonte" : "live"
+  const modeToggle = (
+    <button className="icon-btn doc-mode-toggle" onClick={() => setMode(reading ? editMode : "leitura")} aria-label={reading ? (readOnly ? "Ver o código" : "Editar") : "Ler"} title={reading ? (readOnly ? "Ver o código" : "Editar") : "Ler"}>
+      {reading ? (readOnly ? <Code2 size={18} /> : <PenLine size={18} />) : <BookOpenText size={18} />}
+    </button>
+  )
+  const compactBar = phone && !focusHeader
+  const menuItems: MenuEntry[] = compactBar && !readOnly ? [
+    mode === "fonte" ? { label: "Editar com prévia", icon: <Type size={16} />, onSelect: () => setMode("live") } : { label: "Ver o código Markdown", icon: <Code2 size={16} />, onSelect: () => setMode("fonte") },
+    sep, ...menu,
+  ] : menu
+  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
   const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
   const folder = dirname(path).split("/").pop() ?? ""
 
@@ -636,9 +655,10 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           </span>
           {/* O nome é o h1 da tela (nota aberta, artigo da Wiki): leitores de tela navegam pelos títulos. */}
           <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<h1>{note.name}</h1></div>
-          {modes}
+          {!compactBar && modes}
           <div className="doc-end">
             <SaveStatus state={saveState} />
+            {compactBar && modeToggle}
             <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" aria-expanded={panelOpen} title={panelHint}><PanelRight size={17} /><span>Painel</span></button>
             {actionsMenu}
           </div>

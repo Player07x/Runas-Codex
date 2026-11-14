@@ -2,9 +2,10 @@ import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useRef, useState } from "react"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Plus, Wrench } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Plus, Wrench, Package } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
+import { wikiItem, requestExport } from "../../lib/transfer-request"
 import { Empty, useToast } from "../../components/ui"
 import { NameDialog } from "../../components/vault/dialogs"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
@@ -142,11 +143,13 @@ function WikiHeader({ current }: { current: string }) {
           trigger={<>{moreCurrent?.icon}{moreCurrent ? moreCurrent.label : "Mais"}<ChevronDown size={14} /></>}
           items={more.map((tab) => ({ label: tab.label, icon: tab.icon, onSelect: () => navigate(`/wiki${tab.id ? `/${tab.id}` : ""}`) }))} />}
       </nav>
-      <button className={`btn sm ${players ? "primary" : "ghost"} wiki-players`} onClick={() => setPlayers(!players)} title="Esconde os segredos do mestre (callouts [!segredo], pinos secretos)" aria-pressed={players}>
-        {players ? <EyeOff size={14} /> : <Eye size={14} />} {players ? "Versão dos jogadores" : "Visão do mestre"}
+      <button className={`btn sm ${players ? "primary" : "ghost"} wiki-players`} aria-label={players ? "Versão dos jogadores" : "Visão do mestre"} onClick={() => setPlayers(!players)} title="Esconde os segredos do mestre (callouts [!segredo], pinos secretos)" aria-pressed={players}>
+        {players ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />} <span className="wiki-players-label">{players ? "Versão dos jogadores" : "Visão do mestre"}</span>
       </button>
       <OverflowMenu label="Ações da wiki" items={[
         { label: "Exportar wiki…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players }) },
+        // U54: o pacote (.runas ou Obsidian) com a wiki marcada, as imagens que ela usa e nada mais.
+        { label: "Exportar wiki como pacote…", icon: <Package size={15} />, onSelect: () => requestExport({ items: [wikiItem(wiki!.name)] }) },
         { label: "Nova wiki…", icon: <Plus size={15} />, onSelect: newWiki },
       ]} />
       {creating && <NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />}

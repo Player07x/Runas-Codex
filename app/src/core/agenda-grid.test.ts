@@ -1,4 +1,4 @@
-import { addMonths, dayLabel, layoutDay, moveDay } from "./agenda-grid"
+import { addMonths, dayLabel, isRoutine, layoutDay, monthMarks, moveDay } from "./agenda-grid"
 import { isoDate, type AgendaEvent, type Occurrence } from "./agenda"
 
 const d = (iso: string) => new Date(`${iso}T00:00`)
@@ -61,5 +61,38 @@ describe("eventos sobrepostos na semana e no dia", () => {
     const longo: Occurrence = { ...occ("Viagem", "22:00", "23:00"), end: new Date("2026-10-23T02:00") }
     const { placed } = layoutDay([longo], d("2026-10-22"), 44)
     expect(placed[0]).toMatchObject({ top: 22 * 44, height: 2 * 44 - 2 })
+  })
+})
+
+describe("pontos do mês no celular (U57)", () => {
+  const event = (title: string, extra: Partial<AgendaEvent> = {}): AgendaEvent => ({ path: `Agenda/${title}.md`, title, allDay: false, date: "2026-11-01", repeat: { kind: "none" }, skipDates: [], reminders: [], countdown: false, notes: "", ...extra } as unknown as AgendaEvent)
+  const at = (e: AgendaEvent, hour: number): Occurrence => ({ key: `${e.title}@${hour}`, event: e, start: new Date(2026, 10, 16, hour), end: new Date(2026, 10, 16, hour, 30) } as Occurrence)
+  const daily = (title: string) => event(title, { repeat: { kind: "weekly", days: [0, 1, 2, 3, 4, 5, 6] } })
+
+  it("rotina é o que repete três dias ou mais por semana e não é sessão", () => {
+    expect(isRoutine(daily("Leitura"))).toBe(true)
+    expect(isRoutine(event("Estudo", { repeat: { kind: "rrule", rule: "FREQ=DAILY" } }))).toBe(true)
+    expect(isRoutine(event("Academia", { repeat: { kind: "rrule", rule: "FREQ=WEEKLY;BYDAY=MO,WE,FR" } }))).toBe(true)
+    expect(isRoutine(event("Quinzenal", { repeat: { kind: "rrule", rule: "FREQ=DAILY;INTERVAL=2" } }))).toBe(false)
+    expect(isRoutine(event("Mesa de sábado", { repeat: { kind: "weekly", days: [6] } }))).toBe(false)
+    expect(isRoutine(event("Aniversário", { repeat: { kind: "rrule", rule: "FREQ=YEARLY" } }))).toBe(false)
+    expect(isRoutine(event("Sessão", { category: "Sessão", repeat: { kind: "weekly", days: [1, 3, 5] } }))).toBe(false)
+  })
+
+  it("seis rotinas não escondem a sessão das 20 h nem a prova", () => {
+    const routines = ["A", "B", "C", "D", "E", "F"].map((t, i) => at(daily(t), 7 + i))
+    const day = [...routines, at(event("Prova"), 18), at(event("Sessão 12", { category: "Sessão" }), 20)]
+    expect(monthMarks(day, false)).toEqual({ dots: day.slice(6), more: 0, routines: 6 })
+    // Com as rotinas à mostra: os únicos primeiro, três pontos e o resto em “+N”.
+    const all = monthMarks(day, true)
+    expect(all.dots.map((o) => o.event.title)).toEqual(["Prova", "Sessão 12", "A"])
+    expect(all).toMatchObject({ more: 5, routines: 0 })
+  })
+
+  it("único primeiro, depois o que repete pouco, na ordem da hora", () => {
+    const weekly = at(event("Mesa", { repeat: { kind: "weekly", days: [1] } }), 9)
+    const marks = monthMarks([weekly, at(event("Consulta"), 15), at(event("Jantar"), 19), at(event("Cinema"), 21)], false)
+    expect(marks.dots.map((o) => o.event.title)).toEqual(["Consulta", "Jantar", "Cinema"])
+    expect(marks.more).toBe(1)
   })
 })

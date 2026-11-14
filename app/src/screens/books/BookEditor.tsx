@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { BookOpen, ChevronLeft, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PanelRight, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type, Package } from "lucide-react"
 import { fichaEnd, toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, readBook, type BookItem } from "../../core/books"
@@ -7,11 +7,12 @@ import { dirname } from "../../core/text"
 import type { IndexedNote } from "../../core/vault-index"
 import { NoteView, type NoteEditorApi } from "../../components/vault/NoteView"
 import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
-import { useNarrow } from "../../components/editor/use-narrow"
+import { useNarrow, usePhone } from "../../components/editor/use-narrow"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
 import { Notice } from "../../components/kit/Layout"
 import { Modal, Segmented } from "../../components/ui"
 import { navigate } from "../../lib/router"
+import { bookItem, requestExport } from "../../lib/transfer-request"
 import { flushOpenNotes, vaultRoute } from "../../lib/vault-notes"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { useVault } from "../../platform/VaultProvider"
@@ -68,6 +69,8 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const [deleting, setDeleting] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const narrow = useNarrow()
+  const phone = usePhone()
+  const [toolsOpen, setToolsOpen] = useState(false)
   // Prévia ao lado (L1): o cursor vai para um repositório próprio, para só a prévia redesenhar a cada movimento.
   const cursor = useMemo(createCursorStore, [])
   const onCursorLine = useCallback((line: number) => { if (selected) cursor.set({ path: selected, line }) }, [selected, cursor])
@@ -92,6 +95,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const toolsChanged = useCallback((collapsed: boolean) => {
     const opening = !collapsed && toolsWas.current === false
     toolsWas.current = !collapsed
+    setToolsOpen(!collapsed)
     if (opening && window.innerWidth < 1400) setPanelCollapsed("book-preview", true)
   }, [])
   const openAt = (path: string, line: number) => {
@@ -158,6 +162,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     { label: "Novo capítulo…", icon: <Plus size={16} />, disabled: locked, onSelect: newChapter },
     { label: "Metadados do livro…", icon: <SlidersHorizontal size={16} />, onSelect: () => navigate(vaultRoute(book.path)) },
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => setView("previa") },
+    { label: "Exportar livro como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ items: [bookItem(book.path)] }) },
     { label: "Revisar o livro…", icon: <FileSearch size={16} />, onSelect: () => setReviewing(true) },
     // No celular, Foco sai da barra (o lugar fica para “Ver a página”) e mora aqui.
     ...(narrow && view === "escrever" ? [{ label: "Foco (só a página)", icon: <Maximize2 size={16} />, onSelect: () => setFocus(true) }] : []),
@@ -173,6 +178,14 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const toTrash = chapters.filter((path) => path.startsWith(folder) && !otherBooks.has(path))
   const kept = chapters.filter((path) => !toTrash.includes(path))
   bookMenu.push("separator", { label: "Excluir livro…", icon: <Trash2 size={16} />, danger: true, disabled: locked, onSelect: () => setDeleting(true) })
+  // Celular (U63): um ⋯ só na barra. As ações do livro entram no ⋯ do capítulo, com o Apoio (que sai da barra) e sem
+  // repetir o que o capítulo já tem (histórico).
+  const oneMenu = phone && view === "escrever" && Boolean(current) && !focus
+  const phoneBookMenu: MenuEntry[] = [
+    { label: "Apoio (referências, revisão, capítulo)…", icon: <PanelRight size={16} />, onSelect: () => showSupport(supportTab) },
+    "separator",
+    ...bookMenu.filter((item) => item === "separator" || item.label !== "Snapshots do capítulo").map((item) => item !== "separator" && item.label === "Exportar…" ? { ...item, label: "Exportar o livro…" } : item),
+  ]
   // Organizar saiu: o sumário em árvore move, recua, duplica e remove (BookBinder).
   const views = [{ value: "escrever" as const, label: "Escrever", icon: <PenLine size={14} /> }, { value: "previa" as const, label: "Diagramar", icon: <LayoutTemplate size={14} /> }]
 
@@ -193,10 +206,10 @@ export function BookEditor({ book }: { book: IndexedNote }) {
         <div className="doc-end">
           {view === "escrever" && <div className="book-slot" ref={setChapterSlot} />}
           {view === "escrever" && !narrow && <div className="book-slot book-preview-slot" ref={setPreviewSlot} />}
-          {view === "escrever" && narrow && current && <button ref={sheetButton} type="button" className="btn sm ghost" onClick={() => setSheet(true)} aria-label="Ver a página" title="Ver a página do cursor"><BookOpen size={16} /></button>}
+          {view === "escrever" && narrow && current && <button ref={sheetButton} type="button" className="btn sm ghost book-sheet-btn" onClick={() => setSheet(true)} aria-label="Ler: ver a página" title="Ver a página do cursor"><BookOpen size={16} /><span className="book-sheet-label">Ler</span></button>}
           {view === "escrever" && !narrow && <button type="button" className="btn sm ghost book-focus-toggle" onClick={() => setFocus(true)} title="Só a página (Esc sai)"><Maximize2 size={16} /><span>Foco</span></button>}
-          {view === "escrever" && <div className="book-slot" ref={setSupportSlot} />}
-          <OverflowMenu label="Ações do livro" items={bookMenu} />
+          {view === "escrever" && <div className={`book-slot book-support-slot${toolsOpen ? " is-open" : ""}`} ref={setSupportSlot} />}
+          {!oneMenu && <OverflowMenu label="Ações do livro" items={bookMenu} />}
         </div>
       </header>
     )}
@@ -278,6 +291,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
                   <BookSupport book={book} chapter={current} editor={editor} tab={supportTab} onTab={setSupportTab} query={refQuery} onQuery={setRefQuery} />
                 </ResizablePanel>
               )}
+              extraMenu={oneMenu ? { label: "Ações do capítulo e do livro", items: phoneBookMenu } : undefined}
               statusExtra={<>
                 <span>Livro · {words(structure.words)}</span>
                 <button type="button" className="statusbar-toggle book-typewriter-toggle" aria-pressed={typewriter} onClick={() => setTypewriter(!typewriter)}>Máquina de escrever: {typewriter ? "ligada" : "desligada"}</button>

@@ -1,7 +1,7 @@
 import { useTasksVault } from "../../lib/tasks"
 import { useState, type ReactNode } from "react"
-import { CircleX, FileText, Pencil, SkipForward } from "lucide-react"
-import { canFail, isFailed, recurrenceLabel, statusLabel } from "../../core/tasks/agenda"
+import { CircleX, FileText, ListTodo, Pencil, Repeat, SkipForward } from "lucide-react"
+import { canFail, isDaily, isFailed, recurrenceLabel, statusLabel } from "../../core/tasks/agenda"
 import { isValidDate } from "../../core/tasks/dates"
 import { postponeField } from "../../core/tasks/edit"
 import type { QueryElement, TaskElement } from "../../core/tasks/query"
@@ -11,6 +11,7 @@ import { urgency, type Task } from "../../core/tasks/task"
 import { noteName } from "../../core/text"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
+import { OverflowMenu, type MenuEntry } from "../kit/OverflowMenu"
 import { TaskEditDialog } from "./TaskEditDialog"
 import type { TaskActions } from "./useTaskActions"
 
@@ -59,6 +60,11 @@ export interface TaskRowOptions {
   hidden?: ReadonlySet<TaskElement | QueryElement>
   shortMode?: boolean
   today: string
+  /**
+   * Linha compacta da Agenda (U58): prioridade em texto, a nota de origem como texto e, na lista estreita, as ações
+   * num ⋯ (com “Abrir a nota”); tocar no texto abre Editar tarefa.
+   */
+  compact?: boolean
 }
 
 /** Uma tarefa numa lista (consultas, Agenda, checklist), com as ações sobre a original. */
@@ -72,10 +78,21 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
   const canPostpone = !actions.readOnly && show("postpone button") && task.status.type !== "DONE" && task.status.type !== "CANCELLED" && task.status.type !== "NON_TASK" && postponeField(task, actions.settings.postponeDateField) !== null && DATE_FIELDS.every((d) => !task[d.field] || isValidDate(task[d.field]!))
   const failable = !actions.readOnly && canFail(task, options.today)
   const late = task.dueDate && isValidDate(task.dueDate) && task.dueDate < options.today && task.status.type !== "DONE" && task.status.type !== "CANCELLED"
+  const editable = !actions.readOnly && show("edit button")
+  const habitable = !actions.readOnly && isDaily(task) && task.onCompletion !== "delete" && task.status.type !== "DONE" && task.status.type !== "CANCELLED"
+  const openNote = () => navigate(vaultRoute(task.path))
+  const menuItems: MenuEntry[] = [
+    ...(editable ? [{ label: "Editar tarefa", icon: <Pencil size={16} />, onSelect: () => setEditing(true) }] : []),
+    ...(canPostpone ? [{ label: "Adiar um dia", icon: <SkipForward size={16} />, onSelect: () => void actions.postpone(task, 1) }] : []),
+    ...(failable ? [{ label: "Marcar como falhou", icon: <CircleX size={16} />, onSelect: () => void actions.fail(task) }] : []),
+    ...(habitable ? [{ label: "Transformar em hábito", hint: "não guarda as feitas", icon: <Repeat size={16} />, onSelect: () => void actions.update(task, { onCompletion: "delete" }) }] : []),
+    ...(!actions.readOnly ? [{ label: "Outros estados e datas…", icon: <ListTodo size={16} />, onSelect: () => setMenu(true) }] : []),
+    ...(show("backlink") ? ["separator" as const, { label: "Abrir a nota", hint: noteName(task.path), icon: <FileText size={16} />, onSelect: openNote }] : []),
+  ]
   const field = (icon: string, label: string, value: string) => (options.shortMode ? <span className="task-field" title={`${label}: ${value}`}>{icon}</span> : <span className="task-field" title={label}>{icon} {value}</span>)
   return (
     <li
-      className={`task-row ${task.status.type === "DONE" || task.status.type === "CANCELLED" ? "is-done" : ""}`}
+      className={`task-row ${task.status.type === "DONE" || task.status.type === "CANCELLED" ? "is-done" : ""} ${options.compact ? "compact" : ""}`}
       data-task={task.status.symbol}
       data-status-type={task.status.type}
       draggable={draggable}
@@ -98,13 +115,18 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
             }}
           />
         </label>
-        <span className="task-body">
+        <span
+          className="task-body"
+          onClick={options.compact && editable ? (e) => { if (!(e.target as HTMLElement).closest("a, button, .task-meta")) setEditing(true) } : undefined}
+        >
           <TaskText task={task} hideTags={!show("tags")} globalFilter={actions.settings.removeGlobalFilter ? actions.settings.globalFilter : undefined} />
+          {/* Fora do modo compacto, `display: contents`: os campos seguem o texto como sempre. */}
+          <span className="task-meta">
           {isFailed(task) && <span className="task-badge failed">Falhou</span>}
           {late && <span className="task-badge late">Atrasada</span>}
           {show("id") && task.id && field("🆔", "Id", task.id)}
           {show("depends on") && task.dependsOn.length > 0 && field("⛔", "Depende de", task.dependsOn.join(", "))}
-          {show("priority") && PRIORITY_ICON[task.priority] && <span className="task-field" title={`Prioridade ${PRIORITY_LABEL[task.priority]}`}>{PRIORITY_ICON[task.priority]}</span>}
+          {show("priority") && PRIORITY_ICON[task.priority] && <span className="task-field" title={`Prioridade ${PRIORITY_LABEL[task.priority]}`}>{PRIORITY_ICON[task.priority]}{options.compact ? ` ${PRIORITY_LABEL[task.priority]}` : null}</span>}
           {show("recurrence rule") && task.recurrenceText && field("🔁", "Repete", recurrenceLabel(task.recurrence?.text ?? task.recurrenceText))}
           {show("on completion") && task.onCompletion && field("🏁", "Ao concluir", task.onCompletion === "delete" ? "apaga a feita" : "mantém")}
           {DATE_FIELDS.map((d) => {
@@ -120,12 +142,24 @@ export function TaskRow({ task, actions, options, children, draggable }: { task:
           {show("urgency") && <span className="task-field faint" title="Urgência">{urgency(task, options.today).toFixed(2)}</span>}
           {/* A nota de origem fica com as datas, não com os botões: ao lado deles ela espremia o texto da tarefa. */}
           {show("backlink") && (
-            <a href="#" className="task-backlink tiny" onClick={(e) => (e.preventDefault(), navigate(vaultRoute(task.path)))} title={task.path}>
+            <a href="#" className="task-backlink tiny" onClick={(e) => (e.preventDefault(), openNote())} title={task.path}>
               <FileText size={12} /> {noteName(task.path)}
               {task.heading ? ` › ${task.heading}` : ""}
             </a>
           )}
+          {/* Na linha compacta estreita, o nome da nota é só texto; abrir fica no ⋯ (alvo de 44 px). */}
+          {options.compact && show("backlink") && (
+            <span className="task-note tiny" title={task.path}>
+              <FileText size={12} aria-hidden="true" /> {noteName(task.path)}
+            </span>
+          )}
+          </span>
         </span>
+        {options.compact && menuItems.length > 0 && (
+          <span className="task-actions-menu">
+            <OverflowMenu label={`Ações da tarefa: ${task.description}`} items={menuItems} triggerClassName="icon-btn task-btn" />
+          </span>
+        )}
         <span className="task-actions">
           {canPostpone && (
             <button className="icon-btn task-btn" title="Adiar um dia (botão direito: mais opções)" aria-label="Adiar um dia" onClick={() => void actions.postpone(task, 1)} onContextMenu={(e) => (e.preventDefault(), setMenu(true))}>

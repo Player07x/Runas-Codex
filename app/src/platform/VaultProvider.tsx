@@ -16,7 +16,7 @@ import { VaultIndex, type IndexedNote } from "../core/vault-index"
 import { platform } from "./index"
 import type { Platform, VaultChange, VaultEntry, VaultInfo } from "./platform"
 import { decodeTransferText, sameTransferVersion, type TransferWrite } from "../core/transfer/plan"
-import { managedWorldPath, transferPath } from "../core/transfer/archive"
+import { managedWorldPath, transferBytes, transferPath, transferSize } from "../core/transfer/archive"
 
 const BATCH = 200
 
@@ -59,7 +59,8 @@ export interface VaultState {
    */
   addAttachment(fileName: string, bytes: Uint8Array, nearNote?: string, folder?: string): Promise<string>
   /** Executa a prévia confirmada, sempre com a versão capturada nela; todas as gravações ficam no useVault. */
-  importTransfer(writes: TransferWrite[]): Promise<number>
+  /** `onProgress` (U53): arquivos e bytes gravados até agora, para “Gravando 120 de 466 · 118 MB de 253 MB”. */
+  importTransfer(writes: TransferWrite[], onProgress?: (done: number, total: number, bytes: number, totalBytes: number) => void): Promise<number>
 }
 
 const VaultContext = createContext<VaultState | null>(null)
@@ -316,7 +317,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const create = useCallback(async () => { await importing.current; await flushOpenNotes(); const next = await platform.createVault(); if (next && !next.readOnly) await platform.createFolder(DEFAULT_IMAGE_FOLDER); await open(next) }, [open])
   const setWritable = useCallback(async (writable: boolean) => { await importing.current; setInfo(await platform.setWritable(writable)) }, [])
   const reload = useCallback(async () => { await importing.current; await open(await platform.vault()) }, [open])
-  const importTransfer = useCallback((writes: TransferWrite[]): Promise<number> => {
+  const importTransfer = useCallback((writes: TransferWrite[], onProgress?: (done: number, total: number, bytes: number, totalBytes: number) => void): Promise<number> => {
     if (importing.current) return Promise.reject(new Error("Já há uma importação em andamento."))
     const task = (async () => {
       requireIndex()
@@ -328,19 +329,23 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         if (!sameTransferVersion(entries.find(entry => foldName(entry.path) === foldName(write.path)), write.expected)) throw new Error(`“${write.path}” mudou desde a prévia. Prepare a importação novamente.`)
       }
       await platform.backup()
-      let completed = 0
+      let completed = 0, bytes = 0
+      const totalBytes = writes.reduce((total, write) => total + transferSize(write), 0)
       try {
         for (const write of writes) {
+          onProgress?.(completed, writes.length, bytes, totalBytes)
           if ((await platform.vault())?.path !== identity) throw new Error("O cofre mudou durante a importação.")
+          // Sob demanda (C2): só este arquivo fica na memória enquanto é gravado.
+          const data = await transferBytes(write)
           if (managedWorldPath(write.path)) {
             if (!platform.writeManagedTransfer) throw new Error("Esta versão do app não oferece importação dos dados internos das mesas.")
-            await platform.writeManagedTransfer(write.path, write.bytes, write.expected)
+            await platform.writeManagedTransfer(write.path, data, write.expected)
           } else if (/\.(md|canvas|base)$/i.test(write.path)) {
-            const before = indexRef.current?.note(write.path)?.text, text = decodeTransferText(write.bytes)
+            const before = indexRef.current?.note(write.path)?.text, text = decodeTransferText(data)
             if (before !== undefined && before !== text) await recordVersion(identity, write.path, before)
             await platform.writeText(write.path, text, write.expected)
-          } else await platform.writeBinary(write.path, write.bytes, write.expected)
-          completed++
+          } else await platform.writeBinary(write.path, data, write.expected)
+          completed++; bytes += data.length
         }
         return completed
       } catch (error) {

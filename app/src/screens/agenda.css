@@ -24,6 +24,7 @@
 }
 
 /* Agenda (rework F4d): navegação numa linha, mês navegável, painel em abas. */
+.agenda-nav.is-tasks .agenda-arrows { visibility: hidden; }
 .agenda-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: var(--space-group); }
 .agenda-period { flex: 1 1 auto; min-width: 0; margin: 0; font-size: calc(18px * var(--font-scale, 1)); font-weight: 650; }
 .agenda-period::first-letter { text-transform: uppercase; }
@@ -84,7 +85,10 @@ button.event-pill { display: flex; justify-content: space-between; gap: 4px; wid
   .agenda-side:not([data-panel-collapsed=true]) { position: fixed; z-index: 60; left: 0; right: 0; bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); max-height: min(72vh, 620px); overflow-y: auto; padding-bottom: 12px; border-top: 1px solid var(--line-strong); border-radius: 18px 18px 0 0; background: var(--panel); box-shadow: 0 -16px 40px rgb(0 0 0 / 30%); }
   .agenda-fab { position: fixed; z-index: 45; right: 16px; bottom: calc(var(--bottomnav-height) + 16px + env(safe-area-inset-bottom)); display: grid; place-items: center; width: 52px; height: 52px; border: 0; border-radius: 16px; background: var(--cyan); color: var(--on-accent); box-shadow: var(--shadow-sm); }
   .agenda:has(.agenda-side:not([data-panel-collapsed=true])) .agenda-fab { display: none; }
-  .agenda-main { padding-bottom: 72px; }
+  /* U57/U59: a folga do botão flutuante fica no fim da página, não dentro do cartão; nada some embaixo dele. */
+  .agenda { padding-bottom: calc(52px + 32px); }
+  /* U59: o flutuante já cria; o “Evento” do cabeçalho repetia o mesmo botão. */
+  .agenda .agenda-new-event { display: none; }
   .agenda-day-item { min-height: 44px; }
 }
 .event-form .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-group); align-items: start; }
@@ -128,3 +132,40 @@ details.event-section:not([open]) { gap: 0; }
   .month-cell .cell-free { display: none; }
 }
 .task-due-date { flex:0 0 auto; min-width:5ch; white-space:nowrap; font-variant-numeric:tabular-nums; text-align:right; }
+
+/* U56: no celular, o período e as setas numa linha e as cinco visões numa linha de ícones com rótulo curto. */
+.cell-dots-more, .cell-routines { display: none; }
+@media (max-width: 640px) {
+  /* O título “Agenda” já está na barra do topo: fica só para o leitor de tela, e o ⋯ vai para a linha do período. */
+  .agenda { position: relative; }
+  .agenda > .kit-page-head { position: absolute; z-index: 2; top: var(--space-section); right: var(--space-section); gap: 0; margin: 0; }
+  .agenda > .kit-page-head .page-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .agenda-nav .agenda-arrows { margin-right: 52px; }
+  .agenda-nav.is-tasks .segmented { width: calc(100% - 52px); }
+  .agenda-nav { gap: 6px 8px; margin-bottom: 0; }
+  .agenda-nav .agenda-arrows { order: 1; }
+  /* Nunca por baixo do ⋯: em 320 px as setas descem para a linha seguinte e o período fica sozinho. */
+  .agenda-period { order: 0; max-width: calc(100% - 52px); font-size: calc(15px * var(--font-scale, 1)); }
+  .agenda-nav .agenda-arrows { margin-left: auto; }
+  .agenda-today { min-width: 44px; justify-content: center; }
+  .agenda-today .agenda-today-label { display: none; }
+  .agenda-nav .segmented { order: 3; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; }
+  .agenda-nav .segmented > button { flex-direction: column; justify-content: center; gap: 2px; min-width: 0; min-height: 48px; padding: 4px 0; font-size: calc(11px * var(--font-scale, 1)); overflow-wrap: normal; }
+  /* Na visão Tarefas, a linha de navegação não ocupa espaço e o título não repete “Tarefas”. */
+  .agenda-nav.is-tasks .agenda-arrows { display: none; }
+  .agenda-nav.is-tasks .agenda-period { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .agenda-main { padding: 6px; }
+  .agenda-main:has(.agenda-tasks) { padding: 0; }
+  .month-cell { position: relative; min-height: 50px; }
+  .cell-dots { align-items: center; }
+  .cell-dots-more { display: inline; color: var(--muted); font-size: calc(10.5px * var(--font-scale, 1)); font-weight: 700; line-height: 1; }
+  /* As rotinas escondidas: uma marca fina na base da célula. */
+  .cell-routines { position: absolute; left: 25%; right: 25%; bottom: 4px; display: block; height: 2px; border-radius: 2px; background: var(--line-strong); }
+  .month-cell.outside .day-number { color: var(--faint); font-weight: 500; }
+  .month-cell.outside .cell-dots, .month-cell.outside .cell-routines { opacity: 0.5; }
+}
+@media (max-width: 360px) {
+  /* A grade do mês usa a largura toda (accessibility.css); a navegação não encosta na borda. */
+  .agenda:has(.month) .agenda-nav { padding-inline: 8px; }
+  .agenda:has(.month) > .kit-page-head { right: 8px; }
+}

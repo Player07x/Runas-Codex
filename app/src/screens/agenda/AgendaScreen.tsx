@@ -2,7 +2,7 @@ import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePan
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { toneStyle, type Tone } from "../../core/tones"
-import { Bell, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, Hourglass, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload, Vote, ListChecks } from "lucide-react"
+import { Bell, CalendarCheck, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, Columns3, Download, FileText, Hourglass, List, MapPin, Pencil, Plus, Repeat, ScrollText, SkipForward, Trash2, Upload, Vote, ListChecks } from "lucide-react"
 import { AGENDA_ROOT, eventFileName, eventNote, eventNotes, expandEvents, exportIcs, importIcs, isoDate, updateEventNote, type AgendaEvent, type EventInput, type Occurrence } from "../../core/agenda"
 import { listCampaigns, listSessions, SESSION_STATUS, sessionInfo } from "../../core/campaigns"
 import { isDone, parseContext, parseTaskLine, type Task } from "../../core/tasks/task"
@@ -39,6 +39,8 @@ type View = "mes" | "semana" | "dia" | "lista" | "tarefas"
 type Tab = "dia" | "evento" | "tarefas"
 const VIEW_KEY = "runas-codex:agenda-visao"
 const TAB_KEY = "runas-codex:agenda-aba"
+/** U57: as rotinas aparecem como pontos no mês do celular (por aparelho; o padrão é uma marca fina só). */
+const ROUTINES_KEY = "runas-codex:agenda-rotinas-no-mes"
 const LIST_DAYS = 60
 
 function savedView(): View {
@@ -57,6 +59,17 @@ function savedTab(): Tab {
     return "dia"
   }
 }
+
+function savedRoutines(): boolean {
+  try {
+    return localStorage.getItem(ROUTINES_KEY) === "sim"
+  } catch {
+    return false
+  }
+}
+
+/** Tela de celular: o mês mostra pontos em vez dos nomes dos eventos (`agenda.css`, até 640 px). */
+const phone = () => typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)").matches === true
 
 /** No celular (AGE-10), o painel abre por cima do calendário ao escolher um dia; no computador, fica ao lado. */
 const narrow = () => typeof window !== "undefined" && window.matchMedia?.("(max-width: 860px)").matches === true
@@ -95,6 +108,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const [view, setViewState] = useState<View>(savedView)
   const [tab, setTabState] = useState<Tab>(savedTab)
   const [listDays, setListDays] = useState(LIST_DAYS)
+  const [showRoutines, setShowRoutinesState] = useState(savedRoutines)
+  const newTask = useRef<HTMLInputElement>(null)
   // Anda de minuto em minuto: o "livre restante" e a virada do dia (hoje muda à meia-noite).
   const now = useNow()
   const todayKey = isoDate(new Date(now))
@@ -112,6 +127,14 @@ function AgendaView({ index }: { index: VaultIndex }) {
     setViewState(next)
     try {
       localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      /* só não é lembrado */
+    }
+  }
+  const setShowRoutines = (next: boolean) => {
+    setShowRoutinesState(next)
+    try {
+      localStorage.setItem(ROUTINES_KEY, next ? "sim" : "nao")
     } catch {
       /* só não é lembrado */
     }
@@ -347,6 +370,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   useCreateRequest("evento", () => { if (!readOnly) create(selectedDay) })
 
   const menu = [
+    ...(phone() && view === "mes" ? [{ label: showRoutines ? "Esconder as rotinas no mês" : "Mostrar as rotinas no mês", icon: <Repeat size={16} />, onSelect: () => setShowRoutines(!showRoutines) }, "separator" as const] : []),
     { label: "Enquete de data…", icon: <Vote size={16} />, onSelect: () => runAction("enquete") },
     { label: "Tempo livre…", icon: <Hourglass size={16} />, onSelect: () => runAction("tempo-livre") },
     "separator" as const,
@@ -363,19 +387,20 @@ function AgendaView({ index }: { index: VaultIndex }) {
       <PageHeader
         title="Agenda"
         primary={
-          <button className="btn primary" onClick={() => create(selectedDay)} disabled={readOnly} title={readOnly ? "Cofre em somente leitura" : "Novo evento no dia escolhido"} aria-label="Novo evento">
+          <button className="btn primary agenda-new-event" onClick={() => create(selectedDay)} disabled={readOnly} title={readOnly ? "Cofre em somente leitura" : "Novo evento no dia escolhido"} aria-label="Novo evento">
             <Plus size={16} /> Evento
           </button>
         }
         menu={<OverflowMenu label="Mais ações da agenda" items={menu} />}
       />
-      <div className="agenda-nav" role="group" aria-label="Período">
-        <div className="row" style={{ gap: 4, visibility: view === "tarefas" ? "hidden" : undefined }}>
+      <div className={`agenda-nav ${view === "tarefas" ? "is-tasks" : ""}`} role="group" aria-label="Período">
+        <div className="row agenda-arrows" style={{ gap: 4 }}>
           <button className="icon-btn" aria-label={`${unit === "semana" ? "Semana anterior" : unit === "mês" ? "Mês anterior" : unit === "dia" ? "Dia anterior" : "Período anterior"}`} onClick={() => move(-1)}>
             <ChevronLeft size={18} />
           </button>
-          <button className="btn sm" onClick={() => (setCursor(view === "mes" ? new Date(today.getFullYear(), today.getMonth(), 1) : today), pickDay(today))}>
-            Hoje
+          <button className="btn sm agenda-today" aria-label="Hoje" title="Voltar para hoje" onClick={() => (setCursor(view === "mes" ? new Date(today.getFullYear(), today.getMonth(), 1) : today), pickDay(today))}>
+            <CalendarCheck size={16} aria-hidden="true" />
+            <span className="agenda-today-label">Hoje</span>
           </button>
           <button className="icon-btn" aria-label={`${unit === "semana" ? "Próxima semana" : unit === "mês" ? "Próximo mês" : unit === "dia" ? "Próximo dia" : "Próximo período"}`} onClick={() => move(1)}>
             <ChevronRight size={18} />
@@ -398,7 +423,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          {view === "mes" && <MonthView month={cursor} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
+          {view === "mes" && <MonthView month={cursor} showRoutines={showRoutines} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
           {(view === "semana" || view === "dia") && (
             <TimeGrid
               key={`${view}-${isoDate(range.start)}`}
@@ -414,7 +439,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
               freeLabel={freeLabel}
             />
           )}
-          {view === "tarefas" && <AgendaTasks tasks={allTasks} actions={actions} today={todayIso} />}
+          {view === "tarefas" && <AgendaTasks tasks={allTasks} actions={actions} today={todayIso} inputRef={newTask} />}
           {view === "lista" && <ListView from={cursor} days={listDays} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} onMore={() => setListDays((d) => d + LIST_DAYS)} />}
         </div>
 
@@ -488,7 +513,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
                 <ul className="task-list">
                   {tasks.length === 0 && <li className="muted small">Nenhuma tarefa por fazer com 📅 nas notas.</li>}
                   {tasks.slice(0, 12).map((t) => (
-                    <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today: todayIso, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />
+                    <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today: todayIso, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on", "on completion"]), compact: true }} />
                   ))}
                 </ul>
                 {tasks.length > 12 && <span className="small muted">E mais {tasks.length - 12}. Use um bloco ```tasks numa nota para ver todas.</span>}
@@ -509,8 +534,18 @@ function AgendaView({ index }: { index: VaultIndex }) {
           if (file) void importFile(file).catch(fail)
         }}
       />
+      {/* U59: o botão segue a visão; em Tarefas, leva ao campo de nova tarefa em vez de criar um evento. */}
       {!readOnly && (
-        <button className="agenda-fab" onClick={() => create(selectedDay)} aria-label="Novo evento no dia escolhido (atalho)">
+        <button
+          className="agenda-fab"
+          onClick={() => {
+            if (view !== "tarefas") return create(selectedDay)
+            newTask.current?.scrollIntoView({ block: "center" })
+            newTask.current?.focus({ preventScroll: true })
+          }}
+          aria-label={view === "tarefas" ? "Nova tarefa" : "Novo evento no dia escolhido"}
+          title={view === "tarefas" ? "Nova tarefa" : "Novo evento no dia escolhido"}
+        >
           <Plus size={22} />
         </button>
       )}
@@ -687,7 +722,7 @@ function DayTasks({ tasks, day, actions, today }: { tasks: Task[]; day: string; 
       <span className="eyebrow">Tarefas do dia · {list.length}</span>
       <ul className="task-list">
         {list.slice(0, 20).map((t) => (
-          <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on"]) }} />
+          <TaskRow key={`${t.path}:${t.line}`} task={t} actions={actions} options={{ today, hidden: new Set(["urgency", "created date", "done date", "cancelled date", "id", "depends on", "on completion"]), compact: true }} />
         ))}
       </ul>
     </div>

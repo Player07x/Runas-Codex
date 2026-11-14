@@ -79,3 +79,11 @@
 .relations-stepper > span { margin-right: 4px; }
 .relations-stepper .input { width: 4.5em; text-align: center; }
 @media (max-width: 860px), (pointer: coarse) { .relations-stepper .icon-btn { min-width: 44px; min-height: 44px; } }
+/* U72: encontrar uma pessoa, arrastar o fundo para mover a vista. */
+.relations-graph-tools { flex-wrap: wrap; justify-content: space-between; }
+.relations-find { display: flex; flex: 1 1 200px; align-items: center; gap: 6px; min-width: 0; max-width: 320px; color: var(--muted); }
+.relations-find .input { min-width: 0; }
+.relations-zoom-tools { gap: 6px; }
+.relations-graph-region { cursor: grab; }
+.relations-graph-region.dragging { cursor: grabbing; user-select: none; }
+.relations-graph-region .org-card { cursor: default; }

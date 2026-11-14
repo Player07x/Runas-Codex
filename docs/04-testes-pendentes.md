@@ -1732,3 +1732,209 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
 - [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
   propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.4.0 — PR A (pacotes em pedaços, U50)
+
+- [ ] No desktop, em Importar / Exportar › Levar para outro aparelho, exportar o **cofre inteiro** (562 MB no seu) e a
+  **wiki Cronos** com as imagens: o diálogo de salvar abre antes, o andamento aparece arquivo por arquivo, e no fim a
+  tela diz o tamanho do pacote e avisa que ele só abre na 1.4 ou mais nova.
+- [ ] Cancelar o diálogo não cria arquivo; fechar o app no meio da exportação não deixa um `.parcial` na pasta.
+- [ ] Importar esse pacote noutro cofre (ou numa cópia): a prévia aparece, e as notas e imagens chegam iguais.
+- [ ] Um pacote pequeno exportado pela 1.4 continua abrindo na 1.3 (por exemplo, no celular ainda não atualizado).
+- [ ] No Android nada muda neste PR: os limites antigos continuam até o PR A2.
+
+## Atualização 1.4.0 — PR A2 (pacotes em pedaços no Android, U50)
+
+- [ ] No celular, em Importar / Exportar › Levar para outro aparelho, exportar uma **wiki com imagens** (por exemplo,
+  a Cronos, ~253 MB) ou o cofre inteiro: o seletor de onde salvar abre antes, o andamento aparece arquivo por
+  arquivo, o app não fecha sozinho, e no fim a tela diz o tamanho e o aviso de “só abre na 1.4 ou mais nova”.
+- [ ] Abrir esse pacote no computador (com o PR A): a prévia aparece, e as notas e imagens chegam iguais.
+- [ ] Cancelar o seletor não cria arquivo. Sair do app (fechar pela lista de recentes) no meio de uma exportação
+  grande: o arquivo incompleto some da pasta escolhida (alguns provedores, como o Google Drive, podem não deixar
+  apagar; diga se sobrar algum).
+- [ ] Um arquivo de mais de 64 MB no cofre aparece como “passa do limite por arquivo” e não trava a exportação.
+
+## Atualização 1.4.0 — PR B (exportar por itens, U51/U52)
+
+- [ ] Em Importar / Exportar › Exportar, a aba **Por itens** abre primeiro: aparecem suas wikis (Cronos, Valknut, Ordem
+  x Caos…), livros, mesas do VTT, a biblioteca da mesa, campanhas, a Agenda e as outras pastas, cada um com notas,
+  arquivos e tamanho.
+- [ ] Marcar só a **wiki Cronos** e exportar: o resumo antes do botão diz quantas notas e quanto vai sair; no fim
+  aparece “Conferido: N notas escolhidas estão no pacote”. Abrir o pacote noutro cofre (ou no Obsidian, se for ZIP):
+  as notas da Cronos e as imagens de `Anexos/Imagens` que ela usa estão lá, e a Valknut não (com “Incluir notas
+  ligadas” desligado).
+- [ ] Marcar um **livro** com capítulo fora da pasta dele: o capítulo e a capa entram. Marcar uma **mesa**: a capa
+  entra e a campanha não.
+- [ ] Aba **Por notas**: a árvore abre e fecha pastas pelo teclado (Tab até a seta, Enter); marcar uma nota deixa a
+  pasta com o traço (meio marcada); o leitor de tela lê “Pasta X: 3 de 10 marcados”. Digitar no filtro mostra os
+  caminhos inteiros e os botões “Selecionar os filtrados” / “Desmarcar os filtrados”.
+- [ ] No celular (ou a 320 px), as duas abas cabem sem rolar para os lados, e cada linha tem altura de toque.
+
+## Atualização 1.4.0 — PR C (importar por itens, U53)
+
+- [ ] Exportar a **wiki Cronos** por itens (PR B) e importar o pacote noutro cofre (ou neste): a prévia abre em
+  **Por itens** e mostra “Cronos” com notas, arquivos e tamanho, e “Não está no cofre” ou “Já está no cofre”.
+- [ ] Importar de novo o mesmo pacote no mesmo cofre: o item diz “N iguais”; com “Adicionar só o que falta”, o botão
+  fica em 0 arquivo(s). Editar uma nota da Cronos no cofre e importar de novo: aparece “1 diferente”; “Substituir o
+  diferente” pede para salvar o pacote de segurança antes e só troca essa nota.
+- [ ] “Importar como cópia” com o nome “Cronos 2”: a wiki **Cronos 2** aparece na Wiki, com página inicial, links
+  entre os artigos funcionando e as imagens (as mesmas de `Anexos/Imagens`, sem cópia).
+- [ ] Um pacote da **1.3** (ou um ZIP do Obsidian) também aparece por itens, deduzidos pelas pastas. A aba
+  **Por arquivos** continua como antes (“Quando já existe” e a lista de arquivos).
+- [ ] Mesa: importar a cópia de uma mesa com outro nome; ela aparece no VTT com o nome novo, e a original não muda.
+- [ ] Durante a gravação, a linha de estado mostra “Gravando X de Y · A MB de B MB”.
+- [ ] No celular (ou a 320 px), a prévia por itens cabe sem rolar para os lados, e a ação e o nome da cópia ficam
+  embaixo do item.
+
+## Atualização 1.4.0 · Importar sob demanda (PR C2)
+
+- [ ] No Android, importar um `.runas` maior que 96 MB (por exemplo a wiki Cronos, ~253 MB, exportada pela 1.4): a
+  prévia abre, a importação grava todos os arquivos com o progresso em MB e o app não fecha por falta de memória.
+- [ ] No Android, um pacote com um arquivo maior que 64 MB (o mesmo teto da exportação no celular): a prévia recusa
+  com uma mensagem, e nada é gravado. Um arquivo de 58 MB (um `.kra`) entra.
+- [ ] No desktop, importar um pacote grande (≥ 500 MB): o uso de memória do app (Monitor do sistema) fica bem abaixo
+  do tamanho do pacote durante a prévia e a gravação.
+- [ ] Um `.runas` com uma imagem adulterada (trocar um byte dentro do ZIP): a prévia recusa (“A integridade … não
+  confere”). Um ZIP do Obsidian com uma imagem estragada: a gravação para nessa imagem e diz quantos arquivos entraram.
+
+## Atualização 1.4.0 · Atalhos e seleção de várias notas (PR D: U54, U55)
+
+- [ ] Wiki › ⋯ › “Exportar wiki como pacote…”: abre Importar / Exportar › Exportar › Por itens com a wiki marcada.
+  O mesmo com Livros › ⋯ do livro › “Exportar livro como pacote…”, Campanhas › ⋯ do cartão › “Exportar campanha…” e
+  VTT › Criar Sala › ⋯ da mesa › “Exportar mesa…”.
+- [ ] Notas › ⋯ de uma nota › “Exportar como pacote…” e ⋯ de uma pasta › “Exportar pasta como pacote…”: abre Por notas
+  com a nota ou a pasta marcada, e o resumo diz “de 1 nota ou pasta marcada”.
+- [ ] Notas no computador: Shift + clique em duas notas mostra a barra “2 notas selecionadas”; clicar em outras marca e
+  desmarca; Esc cancela; “Exportar seleção…” leva as notas marcadas. Ctrl + clique continua abrindo em aba nova.
+- [ ] Notas no celular: segurar uma nota › “Selecionar várias”, depois tocar nas outras; a barra tem botões de 44 px.
+- [ ] Leitor de tela no modo de seleção: cada nota é lida como caixa de marcar (“marcada” / “não marcada”), e Espaço
+  marca.
+
+## Atualização 1.4.0 · Agenda no celular (PR E: U56–U59)
+
+- [ ] No celular (ou numa janela de 360 px), Agenda › Mês: o período, as setas, o “Hoje” (ícone) e o ⋯ cabem numa
+  linha; as cinco visões numa linha de ícones com rótulo; a grade começa logo abaixo, sem o título “Agenda” repetido.
+- [ ] Com as suas rotinas diárias: o dia mostra só os eventos únicos (sessão, prova, consulta) como pontos, até 3 e
+  “+N”; as rotinas viram uma linha fina na base da célula. No ⋯, “Mostrar as rotinas no mês” volta a pôr as rotinas
+  como pontos (depois dos únicos) e o app lembra a escolha neste aparelho.
+- [ ] Dias de outro mês com o número apagado; no computador o mês continua com os nomes dos eventos, como antes.
+- [ ] Agenda › Tarefas no celular: cada tarefa numa linha (caixa, texto e ⋯) com prazo, repetição, prioridade em texto
+  (“Alta”) e a nota embaixo; não aparece mais “🏁 mantém”. No ⋯: Editar, Adiar um dia, Marcar como falhou (vencidas),
+  Transformar em hábito (só nas diárias que guardam as feitas), Outros estados e datas, Abrir a nota. Tocar no texto
+  abre Editar tarefa.
+- [ ] “Transformar em hábito” numa tarefa diária com `🏁 keep`: a linha passa a `🏁 delete` (no Obsidian também) e,
+  ao concluir, só a próxima fica.
+- [ ] Nova tarefa no celular: o campo e o “+” numa linha; a data e “Todo dia” aparecem ao tocar no campo.
+- [ ] O botão flutuante: no Mês, Semana, Dia e Lista cria um evento; em Tarefas, leva ao campo de nova tarefa. O botão
+  “Evento” do cabeçalho some no celular. Rolando até o fim, nada fica embaixo do flutuante (nem o “Painel da agenda”).
+- [ ] Leitor de tela (TalkBack ou Orca) no ⋯ da tarefa: “Ações da tarefa: ‹texto›”, e os itens são lidos como menu.
+- [ ] Tema claro: a linha fina das rotinas, o “+N” e os números apagados continuam legíveis.
+
+## Atualização 1.4.0 · Telas no celular (PR F: U61, U62, U64–U68)
+
+- [ ] No celular (ou numa janela de 360 px), artigo da wiki: abaixo da barra do topo vem **uma** faixa (wiki ▾, tela ▾,
+  olho da Visão do mestre e ⋯) e o cabeçalho do artigo (voltar, título, ponto de Salvo, Ler/Editar, Painel e ⋯); o
+  título do texto aparece a uns 200 px do topo. A 320 px nada sai para os lados.
+- [ ] O artigo da wiki abre em **Leitura** no celular. Tocar no lápis passa para Editar; o app lembra a troca neste
+  aparelho e os próximos artigos abrem como você deixou. No computador nada muda (abas Leitura/Editar/Código).
+- [ ] No ⋯ da nota, no celular: “Ver o código Markdown” (e, no código, “Editar com prévia”). Notas e sessões de
+  campanha com a mesma barra de uma faixa.
+- [ ] Sessão de campanha no celular: campanha ▾, tela ▾ e o ícone da Tela do Mestre numa faixa só.
+- [ ] A barra do topo no celular mostra só a página atual (“Sessão 3”, “Festa da Aurora”); com leitor de tela a trilha
+  inteira continua sendo lida.
+- [ ] Início da wiki: o cartão tem “Novo artigo” e um ⋯ com “Nova categoria…” e “Personalizar…”; o rótulo diz só
+  “Wiki” (sem a pasta). Campanhas: o rótulo diz “Espaço Campanhas”.
+- [ ] Buscas das Notas e da wiki: o campo diz “Buscar notas” / “Buscar na wiki”; o “?” ao lado explica `tag:`,
+  `path:` etc. e fecha com Esc ou tocando fora. A sintaxe continua funcionando igual.
+- [ ] Alvos de 44 px no celular: grupos da barra das Notas (Favoritos, Bases, Tags, A escrever), “Hoje no mundo” no
+  início da wiki, o link “Agenda” do Início e os títulos dos cartões de Campanhas.
+- [ ] Notas no celular: some a faixa “Lista de notas”; fica só “Notas” com o ⋯. A dica “Segure uma nota…” some sozinha
+  depois do primeiro toque longo (ou no “Entendi”). A lista tem folga no fim para o “+” não cobrir a última nota; com
+  uma nota aberta o “+” flutuante não aparece (o + da barra do topo continua criando).
+
+## Atualização 1.4.0 · Livro no celular (PR G: U63)
+
+- [ ] No celular (ou numa janela de 360 px), abrir um livro: a barra tem voltar, “Sumário”, o ponto de Salvo, “Ler” e
+  **um** ⋯ só. A 320 px “Sumário” e “Ler” ficam só com o ícone e nada sai para os lados.
+- [ ] O sumário abre como folha da largura toda (nenhum pedaço do texto aparecendo ao lado) e fecha ao escolher um
+  capítulo.
+- [ ] O ⋯ junta as ações do capítulo (Formatar, Inserir…, Histórico, Exportar…) e as do livro (Apoio, Novo capítulo,
+  Metadados, Exportar o livro, Revisar, Foco, máquina de escrever, Excluir livro). O leitor de tela diz “Ações do
+  capítulo e do livro”.
+- [ ] “Apoio…” no ⋯ abre o apoio em folha inteira; o botão do Apoio aparece na barra só enquanto ele está aberto, para
+  fechar.
+- [ ] “Ler” abre a página do cursor, como antes. Entre 641 e 860 px (tablet) a barra continua como na 1.3.
+
+## Notas: ⋯ e pastas lembradas (1.4.0, PR H)
+
+- [ ] Tema escuro e claro, com mouse: passar sobre uma nota e sobre uma pasta da árvore. O ⋯ fica dentro da linha, na
+      cor dela, sem caixa saindo para cima ou para baixo; o fim do nome some num degradê curto.
+- [ ] Abrir o ⋯ pelo teclado (Tab até a nota, depois Tab até o ⋯): a linha fica na mesma cor do degradê.
+- [ ] Fechar duas pastas e abrir uma subpasta; fechar e abrir o app: as pastas voltam como estavam. Trocar para
+      “Cofre inteiro” e voltar: cada escopo lembra as suas.
+- [ ] Abrir uma nota de dentro de uma pasta fechada (pela busca ou por um link): a pasta abre para mostrar a nota, mas
+      ao reabrir o app ela volta fechada.
+- [ ] “Recolher tudo” e reabrir o app: tudo continua recolhido.
+- [ ] Renomear uma pasta fechada (e arrastar outra para dentro de uma pasta): a escolha de aberta ou fechada vai junto.
+
+## Wiki: categoria em páginas (1.4.0, PR I)
+
+- [ ] Numa categoria grande (a de Personagens da Cronos), a grade mostra fileiras inteiras (48 com 8 colunas) e a
+      navegação aparece em cima e embaixo: “‹ Anterior · 1 2 … 9 · Próxima ›” e “Página 1 de 9 · 1–48 de N artigos”.
+- [ ] Clicar em “Próxima” embaixo: a tela sobe para o começo da lista e o Tab seguinte sai do primeiro artigo da
+      página nova. Com leitor de tela, a mudança de página é anunciada uma vez.
+- [ ] Sair da categoria e voltar (e fechar e abrir o app): volta na mesma página. Buscar, trocar a ordem ou ligar um
+      filtro volta para a página 1.
+- [ ] Alargar e estreitar a janela: o número por página muda para fechar as fileiras, sem cair numa página vazia.
+- [ ] No celular (A21) a 320–360 px: a navegação quebra em duas linhas se precisar, sem rolagem para os lados, com
+      alvos de 44 px; trocar de página fica leve (no máximo 60 capas na tela).
+
+## Relações cruzadas e dos dois lados (1.4.0, PR J)
+
+- [ ] Numa organização, Relações › Adicionar › “Membros” e um personagem: a frase diz “X é membro de Organização”;
+      com “Gravar também em X” ligado, o personagem passa a mostrar “Membro de: Organização”, e o organograma da
+      organização mostra o membro (antes, declarar na organização não aparecia).
+- [ ] Mentor: no personagem B, “Mentor” = A. Com a caixa ligada, A ganha “Discípulos: B”. Desligar a caixa, fechar e
+      abrir o app: ela continua desligada.
+- [ ] Remover (o × ao passar o mouse, ou pelo Tab): numa relação escrita nas duas notas, o diálogo pergunta se remove
+      também da outra; numa escrita só do outro lado (↩), avisa que sai de lá.
+- [ ] Editar a outra nota no Obsidian com o app aberto e depois adicionar uma relação com ela: o app recusa a gravação
+      desatualizada e avisa, sem perder o texto do Obsidian.
+- [ ] Wiki › Ferramentas › Conferir relações: “Relações de um lado só” lista o que falta, desmarcar um item e gravar
+      o resto; “Relações invertidas” acha uma organização com “Membro de” um personagem e inverte para “Membros”.
+      Conferir no Obsidian que as propriedades (`membros`, `discipulos`…) aparecem como listas de links.
+
+## Organograma com muitos membros (1.4.0, PR K)
+
+- [ ] Uma organização com 10 ou mais membros: em Relações › Organograma, os membros sem subordinados ficam em colunas
+      de até 4 (líder primeiro, depois os membros, por último os antigos), e não numa fila só de lado a lado.
+- [ ] O zoom começa enquadrado quando cabe a 60 % ou mais; se não couber, começa a 100 % no topo. “Enquadrar” e as
+      teclas + − 0 continuam funcionando.
+- [ ] Arrastar o fundo do organograma com o mouse move a vista; Ctrl + roda do mouse aproxima no ponto do cursor;
+      duplo clique no fundo aproxima. Clicar num cartão continua abrindo os detalhes.
+- [ ] “Encontrar no organograma”: digitar o nome de um membro e Enter seleciona o cartão, rola até ele e mostra os
+      detalhes. No celular (360 px), o campo e os botões de zoom cabem sem rolagem para os lados.
+
+## Propriedades recolhidas no modo Editar (1.4.0, PR L: U77)
+
+- [ ] Abrir uma nota com propriedades no modo Editar (PC e celular): no topo aparece só a barra “Propriedades · n”.
+      Tocar nela abre a tabela; tocar de novo recolhe. O cursor não entra no YAML.
+- [ ] Com o cursor no começo da primeira linha do corpo, Backspace não junta o `---` com o texto; seta para cima e
+      Ctrl Home não levam o cursor para dentro das propriedades. Colar no topo da nota cola no corpo.
+- [ ] “Editar como texto” (dentro da tabela aberta) mostra o YAML; editar um valor, clicar no corpo: volta a barra
+      com o valor novo, e o Obsidian abre a nota igual.
+- [ ] Configurações › Editor e atalhos › Propriedades no documento: “Abertas” abre a tabela já aberta, “Escondidas”
+      não mostra nada no topo (as propriedades continuam no painel Propriedades). Vale para a próxima nota aberta e
+      é por aparelho.
+- [ ] Ctrl A e Delete numa nota com propriedades ainda apaga tudo (inclusive o frontmatter), como antes.
+
+## Versão 1.4.0
+
+- [ ] Atualizar da 1.3.0 para a 1.4.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.4.0.
+- [ ] As seções acima, de “PR A (pacotes em pedaços)” até “Propriedades recolhidas no modo Editar (PR L)”, entraram
+  nesta versão.
+- [ ] Exportar um pacote `.runas` maior que 128 MB na 1.4.0 e abrir na própria 1.4.0 (a 1.3.0 recusa pacotes desse
+  tamanho, de propósito).
+- [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
+  propriedades aparecem como listas de links e nada quebra.

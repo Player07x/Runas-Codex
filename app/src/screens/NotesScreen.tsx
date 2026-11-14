@@ -1,8 +1,9 @@
 import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
 import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
+import { SearchHelp } from "../components/kit/SearchHelp"
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
-import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
+import { Archive, FileDown, ListChecks, Package, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
@@ -20,8 +21,11 @@ import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorksp
 import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
 import { basename, dirname, joinPath, noteName } from "../core/text"
+import { collapseFolders, moveFolderMemory, parseFolderMemory, rememberFolder } from "../core/folder-memory"
+import { useRemembered } from "../lib/remembered"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
+import { requestExport } from "../lib/transfer-request"
 import { copyLinkTarget, flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
 import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
 import { fillTemplate, formatDate } from "../core/templates"
@@ -151,10 +155,26 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [showRight, setShowRight] = useState(false)
   const [dialog, setDialog] = useState<Dialog | null>(null)
   const [menu, setMenu] = useState<{ at: ContextPoint; kind: "note" | "folder"; path: string } | null>(null)
+  // U55: seleção de várias notas (Shift + clique, ou “Selecionar várias” no menu, que no celular vira toque).
+  const [picked, setPicked] = useState<Set<string> | null>(null)
+  const pick = (path: string) => setPicked((current) => {
+    const next = new Set(current ?? [])
+    if (next.has(path)) next.delete(path)
+    else next.add(path)
+    return next
+  })
+  useEffect(() => {
+    if (!picked) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setPicked(null) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [picked])
   const [hint, setHint] = useState(() => {
     try { return window.matchMedia("(hover: none)").matches && !localStorage.getItem(HINT_KEY) } catch { return false }
   })
   const closeHint = () => { setHint(false); try { localStorage.setItem(HINT_KEY, "1") } catch { /* sem armazenamento: só esconde */ } }
+  // U68: quem já segurou uma nota aprendeu; a dica some sozinha no primeiro toque longo.
+  useEffect(() => { if (menu && hint) closeHint() }, [menu]) // eslint-disable-line react-hooks/exhaustive-deps
   const [heading, setHeading] = useState<{ line: number; at: number }>()
   const [createdFolders, setCreatedFolders] = useState<string[]>([])
   const [replacing, setReplacing] = useState(false)
@@ -290,6 +310,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     try {
       await flushOpenNotes()
       const plan = await vault.rename(from, result.to)
+      if (isFolder) setOpenFolders((memory) => moveFolderMemory(memory, from, result.to))
       const changed = plan.edits.length ? ` Links atualizados em ${plan.edits.length} arquivo(s).` : ""
       toast(`${isFolder ? "Pasta movida" : "Nota movida"} para ${folder || "a raiz do cofre"}.${changed}`)
       // A nota aberta foi junto: a rota acompanha o caminho novo.
@@ -393,13 +414,24 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     <a
       href={href(vaultRoute(n.path))}
       {...contextMenuProps((at) => setMenu({ at, kind: "note", path: n.path }))}
+      // No modo de seleção, o item vira caixa de marcar: Espaço (ou Enter, ou toque) marca e desmarca.
+      onKeyDown={(event) => {
+        if (picked && event.key === " ") return (event.preventDefault(), pick(n.path))
+        contextMenuProps((at) => setMenu({ at, kind: "note", path: n.path })).onKeyDown(event)
+      }}
       data-note-path={n.path}
       {...dragSource(n.path)}
-      // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian).
-      onClick={(event) => (event.ctrlKey || event.metaKey) && (event.preventDefault(), openNote(n.path, "aba"))}
+      // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian); Shift+clique ou o modo de seleção marcam.
+      onClick={(event) => {
+        if (picked || event.shiftKey) return (event.preventDefault(), pick(n.path))
+        if (event.ctrlKey || event.metaKey) (event.preventDefault(), openNote(n.path, "aba"))
+      }}
+      role={picked ? "checkbox" : undefined}
+      aria-checked={picked ? picked.has(n.path) : undefined}
       onAuxClick={(event) => event.button === 1 && (event.preventDefault(), openNote(n.path, "aba"))}
       title={extra === undefined ? preview(n) || undefined : undefined}
-      className={`list-item note-item ${extra === undefined ? "compact" : ""} ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
+      className={`list-item note-item ${extra === undefined ? "compact" : ""} ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""} ${picked?.has(n.path) ? "picked" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
+      {picked && <span className={`note-pick-box ${picked.has(n.path) ? "on" : ""}`} aria-hidden="true">{picked.has(n.path) && <Check size={13} />}</span>}
       <span className="grow" style={{ minWidth: 0 }}>
         <span className="truncate note-item-name" style={{ display: "block", fontWeight: 600 }}>
           {flags.pinned && <Pin size={12} className="note-pin" aria-label="fixada" />}
@@ -429,6 +461,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       favoriteEntry({ type: "file", path: target }),
       { label: "Copiar link da nota", icon: <Copy size={16} />, onSelect: () => run(async () => { await navigator.clipboard.writeText(`[[${copyLinkTarget(index, target)}]]`); toast("Link copiado") }) },
       { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: [target], title: name }) },
+      { label: "Exportar como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ paths: [target] }) },
+      { label: "Selecionar várias", icon: <ListChecks size={16} />, onSelect: () => setPicked(new Set([target])) },
       ...(!readOnly ? [
         sep,
         { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => run(async () => { await flushOpenNotes(); setDialog({ kind: "rename-note", path: target }) }) },
@@ -449,6 +483,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       favoriteEntry({ type: "folder", path: folder }),
       { label: "Ícone e cor…", icon: <Sparkles size={16} />, onSelect: () => setDialog({ kind: "appearance", path: folder }) },
       { label: "Exportar pasta…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(folder + "/").map((note) => note.path), title: name }) },
+      { label: "Exportar pasta como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ paths: [folder] }) },
       ...(!readOnly ? [
         sep,
         { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => setDialog({ kind: "rename-folder", path: folder }) },
@@ -458,6 +493,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   }
 
   const [collapseAll, setCollapseAll] = useState(0)
+  // Pastas abertas e fechadas, por aparelho, cofre e escopo (U70). A pasta da nota aberta abre sozinha sem virar escolha.
+  const [openFolders, setOpenFolders] = useRemembered(`runas-codex:pastas-abertas:${vault.info?.path ?? ""}:${wholeVault ? "cofre" : "notas"}`, parseFolderMemory)
   // Contagem por extenso da pasta: dica e nome acessível da bolinha (U42).
   const folderCount = (folder: TreeFolder) => {
     const parts = [folder.notes.length === 1 ? "1 nota" : `${folder.notes.length} notas`]
@@ -474,7 +511,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     const content = (
       <>
         {subfolders.map((sub) => (
-          <LazyFolder key={sub.path} collapse={collapseAll} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
+          <LazyFolder key={sub.path} collapse={collapseAll} lazy={notes.length > LARGE_VAULT} initialOpen={openFolders[sub.path] ?? (depth < 1 && !isArchive(sub))} onRemember={(open) => setOpenFolders((memory) => rememberFolder(memory, sub.path, open))} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
             <summary className="row folder-summary" {...dragSource(sub.path)} {...contextMenuProps((at) => setMenu({ at, kind: "folder", path: sub.path }))}>
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={14} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />}
@@ -499,7 +536,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     ] : []),
     { label: "Nota aleatória", icon: <Shuffle size={16} />, onSelect: () => { const picked = pickRandom(); if (picked) navigate(vaultRoute(picked)); else toast("Não há notas para sortear.") } },
     { label: "Gráfico", icon: <Network size={16} />, onSelect: () => navigate("/notas/grafico") },
-    { label: "Recolher tudo", icon: <ChevronsDownUp size={16} />, onSelect: () => setCollapseAll((n) => n + 1) },
+    { label: "Recolher tudo", icon: <ChevronsDownUp size={16} />, onSelect: () => { setCollapseAll((n) => n + 1); setOpenFolders((memory) => collapseFolders(memory, folders)) } },
     sep,
     ...(!readOnly ? [{ label: "Buscar e substituir…", icon: <Replace size={16} />, onSelect: () => void flushOpenNotes().then(() => setReplacing(true)) }] : []),
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(currentFolder ? currentFolder + "/" : root).map((note) => note.path), title: currentFolder || root || vault.info?.name || "Notas" }) },
@@ -522,8 +559,9 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           <div className="row notes-filter">
             <label className="search grow">
               <Search size={15} />
-              <input className="input" placeholder="Buscar (tag:, path:, line:, [prop:valor], /regex/)" title="Termos, “frase”, -excluir, OR, path:, file:, tag:, content:, line:(…), section:(…), [propriedade], [propriedade:valor] e /regex/" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
+              <input className="input" placeholder="Buscar notas" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
             </label>
+            <SearchHelp>Termos soltos, <code>“frase exata”</code>, <code>-excluir</code> e <code>OR</code>; <code>tag:</code>, <code>path:</code>, <code>file:</code>, <code>content:</code>, <code>line:(…)</code>, <code>section:(…)</code>, <code>[propriedade]</code>, <code>[propriedade:valor]</code> e <code>/regex/</code>.</SearchHelp>
             <button className="icon-btn sm" title={`Ordem: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-label={`Ordem das notas: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-expanded={orderMenu} onClick={() => setOrderMenu(!orderMenu)}>
               <ArrowUpDown size={16} />
             </button>
@@ -554,6 +592,15 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           )}
         </div>
         <div className={`pane-body ${dropTarget === root.replace(/\/$/, "") ? "drop-root" : ""}`} data-vault-tree style={{ gap: 12 }} {...dropZone(root.replace(/\/$/, ""))}>
+          {picked && (
+            <div className="notes-pick-bar" role="toolbar" aria-label="Notas selecionadas">
+              <span className="grow small" role="status">{picked.size === 1 ? "1 nota selecionada" : `${picked.size} notas selecionadas`}</span>
+              <button type="button" className="btn sm primary" disabled={!picked.size} onClick={() => (requestExport({ paths: [...picked] }), setPicked(null))}>
+                <Package size={14} /> Exportar seleção…
+              </button>
+              <button type="button" className="btn sm ghost" onClick={() => setPicked(null)}>Cancelar</button>
+            </div>
+          )}
           {hint && (
             <p className="proto-note notes-hint" role="note">
               <span className="grow">Segure uma nota ou pasta para ver as ações (renomear, favoritar, lixeira…).</span>
@@ -680,7 +727,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} onSaveNote={vault.save} />}
       </ResizablePanel>
 
-      {!readOnly && (
+      {/* U64: com uma nota aberta o flutuante sai de cima do texto; o + da barra do topo continua criando. */}
+      {!readOnly && !note && (
         <button className="fab" onClick={() => setDialog({ kind: "note", folder: currentFolder })} aria-label="Nova nota (atalho)">
           <Plus size={22} />
         </button>
@@ -732,6 +780,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           onRename={async (to) => {
             const plan = await vault.rename(dialog.path, to)
             setCreatedFolders((list) => list.map((f) => (f === dialog.path ? to : f)))
+            setOpenFolders((memory) => moveFolderMemory(memory, dialog.path, to))
             toast(plan.edits.length ? `Pasta renomeada; links atualizados em ${plan.edits.length} arquivo(s)` : "Pasta renomeada")
             if (note && note.path.startsWith(dialog.path + "/")) navigate(vaultRoute(to + note.path.slice(dialog.path.length)))
           }}
@@ -786,7 +835,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
  * fechadas desenhavam tudo escondido. Em cofre pequeno continua tudo no DOM, como antes (a busca do navegador e o
  * smoke do Electron contam com isso). Abre sozinha quando a nota aberta está dentro dela.
  */
-function LazyFolder({ collapse, lazy, initialOpen, forceOpen, className, zone, summary, actions, children }: { collapse: number; lazy: boolean; initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
+function LazyFolder({ collapse, lazy, initialOpen, onRemember, forceOpen, className, zone, summary, actions, children }: { collapse: number; lazy: boolean; initialOpen: boolean; onRemember(open: boolean): void; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
   const [open, setOpen] = useState(initialOpen || forceOpen)
   useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
   // "Recolher tudo" (U42): cada pedido fecha a pasta, menos a que tem a nota aberta.
@@ -794,7 +843,8 @@ function LazyFolder({ collapse, lazy, initialOpen, forceOpen, className, zone, s
   // Os botões da pasta ficam fora do <summary> (T7: controle dentro de controle confunde teclado e leitor de tela).
   return (
     <div className="vault-folder-wrap">
-      <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className={className} {...zone}>
+      {/* O toggle que o próprio app causou (abrir a pasta da nota) chega igual ao estado; só o da pessoa é lembrado. */}
+      <details open={open} onToggle={(event) => { const next = event.currentTarget.open; if (next !== open) onRemember(next); setOpen(next) }} className={className} {...zone}>
         {summary}
         {(open || !lazy) && children()}
       </details>

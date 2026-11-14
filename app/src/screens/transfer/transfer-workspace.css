@@ -30,3 +30,32 @@
 @media (max-width: 640px) {
   .transfer-actions .btn { flex: 1 1 100%; justify-content: center; }
 }
+
+/* U51/U52 (atualização 1.4): itens com tamanho e árvore de pastas com caixas de três estados. */
+.transfer-item-group { display: grid; gap: 0; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.transfer-item-group > legend { float: left; width: 100%; padding: 8px 10px; background: var(--panel-2); border-bottom: 1px solid var(--line); font-weight: 650; }
+.transfer-item-group > legend + * { clear: both; }
+.transfer-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 44px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.transfer-item:last-child { border-bottom: 0; }
+.transfer-item > span { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+.transfer-item > small { color: var(--muted); }
+.transfer-tree-list { list-style: none; margin: 0; padding: 0; }
+.transfer-tree-row { display: flex; align-items: center; gap: 4px; min-height: 44px; border-bottom: 1px solid var(--line); }
+.transfer-tree-toggle { flex: none; width: 44px; height: 44px; }
+.transfer-tree-label { display: flex; flex: 1; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-width: 0; min-height: 44px; padding-inline-end: 8px; cursor: pointer; }
+.transfer-tree-label > svg { flex: none; color: var(--gold); }
+.transfer-tree-label > span { flex: 1 1 6em; min-width: 0; overflow-wrap: break-word; }
+.transfer-tree-label > small { flex-shrink: 0; margin-inline-start: auto; color: var(--muted); }
+
+/* U53 (atualização 1.4): na importação, cada item do pacote com o estado no cofre e a sua ação. */
+.transfer-import-item { border-bottom: 1px solid var(--line); }
+.transfer-import-item:last-child { border-bottom: 0; }
+.transfer-import-item > .transfer-item { border-bottom: 0; }
+.transfer-import-item .chip { white-space: normal; }
+.transfer-item-state { margin: -4px 10px 8px 40px; }
+.transfer-item-action { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 8px; padding: 0 10px 10px 40px; }
+.transfer-item-action > p { grid-column: 1 / -1; margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .transfer-item-state { margin-inline-start: 10px; }
+  .transfer-item-action { padding-inline-start: 10px; }
+}

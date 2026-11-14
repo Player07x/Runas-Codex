@@ -174,6 +174,13 @@ const bridge: RunasCodexBridge = {
   },
 }
 
+bridge.saveStream = {
+  start: name => invoke(IPC.saveStreamStart, name),
+  write: (id, bytes) => invoke(IPC.saveStreamWrite, id, bytes),
+  finish: id => invoke(IPC.saveStreamFinish, id),
+  abort: id => invoke(IPC.saveStreamAbort, id),
+}
+
 bridge.vtt.collaboration = {state:()=>invoke(VTT.collaborationState),command:command=>invoke(VTT.collaborationCommand,command)}
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

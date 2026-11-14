@@ -75,9 +75,14 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
 .agenda-tasks-section.late > h3 { color: var(--gold); }
 .agenda-tasks-section .task-list { margin: 0; }
 @media (max-width: 860px) {
-  .agenda-tasks { padding: 12px; }
+  .agenda-tasks { padding: 12px; gap: 14px; }
+  /* U58: uma linha (campo + “+”); a data e “Todo dia” aparecem com o foco ou com algo escrito. */
   .agenda-tasks-add { grid-template-columns: minmax(0, 1fr) auto; }
-  .agenda-tasks-add > .input:first-child { grid-column: 1 / -1; }
+  .agenda-tasks-add .agenda-tasks-text { grid-column: 1; grid-row: 1; min-height: 44px; }
+  .agenda-tasks-add .agenda-tasks-submit { grid-column: 2; grid-row: 1; min-width: 44px; min-height: 44px; justify-content: center; }
+  .agenda-tasks-add .agenda-tasks-submit-label { display: none; }
+  .agenda-tasks-add label.check { min-height: 44px; }
+  .agenda-tasks-add:not(:focus-within):not(.filled) .agenda-tasks-extra { display: none; }
 }
 
 /* U38: Editar tarefa compacto. */
@@ -92,3 +97,25 @@ h6.task-group-title { font-size: calc(12px * var(--font-scale, 1)); }
 .task-edit-more > summary::before, .agenda-tasks details.agenda-tasks-section > summary::before { content: "▸"; margin-right: 6px; color: var(--faint); }
 .task-edit-more[open] > summary::before, .agenda-tasks details.agenda-tasks-section[open] > summary::before { content: "▾"; }
 @media (prefers-reduced-motion: no-preference) { .task-edit-more > summary, .agenda-tasks details > summary { transition: color .15s; } }
+
+/* U58: linha compacta da Agenda. Fora dela, os campos seguem o texto como antes (`display: contents`). */
+.task-meta { display: contents; }
+.task-note, .task-actions-menu { display: none; }
+.task-row.compact .task-body { cursor: pointer; }
+@container (max-width: 560px) {
+  .task-row.compact > .task-main { flex-wrap: nowrap; align-items: center; min-height: 44px; padding: 2px 0; }
+  .task-row.compact .task-body { display: grid; gap: 1px; }
+  .task-row.compact .task-text { line-height: 1.35; }
+  /* Uma linha só embaixo: prazo, repetição, prioridade e a nota de origem, que encurta com reticências. */
+  /* Quando não cabe, quebra entre os campos (nunca corta uma data no meio); a nota encurta antes. */
+  .task-row.compact .task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-width: 0; white-space: nowrap; }
+  .task-row.compact .task-meta > * { flex: none; }
+  .task-row.compact .task-backlink { display: none; }
+  .task-row.compact .task-note { display: inline-block; flex: 1 1 0; min-width: 5em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .task-row.compact .task-note svg { vertical-align: -2px; margin-right: 3px; }
+  .task-row.compact .task-actions { display: none; }
+  .task-row.compact .task-actions-menu { display: flex; flex: none; }
+}
+@media (max-width: 700px) {
+  .task-row.compact .task-actions-menu .task-btn { width: 44px; height: 44px; }
+}

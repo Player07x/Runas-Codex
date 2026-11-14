@@ -2,7 +2,7 @@ import { CampaignTools } from "./CampaignTools"
 import { useMemo, useRef, useState } from "react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, CircleDot, ExternalLink, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Trash2, Users, Wrench } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, CircleDot, ExternalLink, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Trash2, Users, Wrench, Package } from "lucide-react"
 import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
 import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
 import { campaignHomePath, campaignLook } from "../../core/personalization"
@@ -10,6 +10,7 @@ import { toneStyle } from "../../core/tones"
 import { CAMPAIGN_STATUS, campaignContents, listCampaigns, listPlayers, listSessions, upcomingSession, type CampaignInfo } from "../../core/campaigns"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { href, navigate } from "../../lib/router"
+import { campaignItem, requestExport } from "../../lib/transfer-request"
 import { Empty, Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewCampaignDialog } from "./campaign-dialogs"
@@ -117,8 +118,8 @@ function CampaignHeader({ name, current, onScreen, onPersonalize, onDelete, embl
           trigger={<>{moreCurrent?.icon}{moreCurrent ? moreCurrent.label : "Mais"}<ChevronDown size={14} /></>}
           items={more.map((tab) => ({ label: tab.label, icon: tab.icon, onSelect: () => navigate(campaignRoute(name, tab.id)) }))} />}
       </nav>
-      <button className="btn sm ghost campaign-screen-btn" onClick={onScreen} title="Notas fixadas, preparação, NPCs e relógios num lugar só">
-        <MonitorPlay size={15} /> Tela do Mestre
+      <button className="btn sm ghost campaign-screen-btn" onClick={onScreen} aria-label="Tela do Mestre" title="Notas fixadas, preparação, NPCs e relógios num lugar só">
+        <MonitorPlay size={15} aria-hidden="true" /> <span className="campaign-screen-label">Tela do Mestre</span>
       </button>
     </div>
   )
@@ -154,7 +155,7 @@ function CampaignList() {
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Espaço Campanhas · Campanhas/</span>
+          <span className="eyebrow" title="Pasta Campanhas/">Espaço Campanhas</span>
           <h1 className="page-title">Campanhas</h1>
         </div>
         <button className="btn primary" onClick={create}>
@@ -210,6 +211,7 @@ function CampaignCard({ campaign: c, readOnly, onPersonalize, onDelete }: { camp
         <OverflowMenu label={`Ações da campanha ${c.name}`} triggerClassName="icon-btn campaign-card-menu" items={[
           { label: "Abrir", icon: <ExternalLink size={15} />, onSelect: () => navigate(campaignRoute(c.name)) },
           { label: "Personalizar…", icon: <Palette size={15} />, onSelect: onPersonalize, disabled: readOnly },
+          { label: "Exportar campanha…", icon: <Package size={15} />, onSelect: () => requestExport({ items: [campaignItem(c.name)] }) },
           "separator" as const,
           ...CAMPAIGN_STATUS.filter((s) => s.id !== c.status).map((s) => ({ label: `Marcar como ${s.label.toLowerCase()}`, icon: <CircleDot size={15} />, onSelect: () => setStatus(s.id, s.label), disabled: readOnly || !c.home })),
           "separator" as const,

@@ -88,3 +88,33 @@ describe("organograma: desenho", () => {
     expect(near.get("W/A2.md")).toEqual({ up: "W/A.md", left: "W/A1.md", right: "W/A3.md" })
   })
 })
+
+describe("organograma com muitos membros (U72)", () => {
+  const people = (n: number) => Array.from({ length: n }, (_, i) => edge(`W/P${String(i).padStart(2, "0")}.md`, "membro_de", ORG, i === 0 ? "tesoureira" : i === n - 1 ? "ex-membro" : undefined))
+  it("põe 11 membros em 3 colunas de 4, sem cartão por cima de outro", () => {
+    const layout = layoutOrg(orgStructure(people(11), ORG))
+    const stacked = layout.nodes.filter((n) => n.stack)
+    expect(stacked).toHaveLength(11)
+    expect(new Set(stacked.map((n) => n.stack!.col)).size).toBe(3)
+    expect(Math.max(...stacked.map((n) => n.stack!.row))).toBe(3)
+    // Quem tem cargo vem primeiro; o antigo membro por último.
+    expect(stacked.find((n) => n.stack!.col === 0 && n.stack!.row === 0)?.person?.role).toBe("tesoureira")
+    expect(stacked.at(-1)?.person?.former).toBe(true)
+    for (const a of layout.nodes) for (const b of layout.nodes) {
+      if (a === b) continue
+      expect(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y).toBe(true)
+    }
+    // Bem mais estreito que a fileira única (11 × 196 + 10 × 20).
+    expect(layout.width).toBeLessThan(700)
+  })
+  it("com poucos membros continua lado a lado", () => {
+    expect(layoutOrg(orgStructure(people(4), ORG)).nodes.some((n) => n.stack)).toBe(false)
+  })
+  it("as setas andam por fileira e coluna dentro da pilha", () => {
+    const layout = layoutOrg(orgStructure(people(11), ORG)), near = layoutNeighbors(layout)
+    const at = (col: number, row: number) => layout.nodes.find((n) => n.stack?.col === col && n.stack.row === row)!.path
+    expect(near.get(at(0, 0))).toEqual({ up: ORG, down: at(0, 1), right: at(1, 0) })
+    expect(near.get(at(1, 1))).toMatchObject({ up: at(1, 0), left: at(0, 1), right: at(2, 1) })
+  })
+})
+
