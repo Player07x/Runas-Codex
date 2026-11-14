@@ -12,10 +12,24 @@ import { crc32, readZipDirectory, readZipEntry, ZipWriter, type ZipSink, type Zi
 export const TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 1024 * 1024 * 1024, file: 512 * 1024 * 1024, files: 10000 } as const
 /** Android até o PR A2: o pacote ainda passa inteiro pela ponte do Capacitor. */
 export const ANDROID_TRANSFER_LIMITS = { archive: 64 * 1024 * 1024, expanded: 96 * 1024 * 1024, file: 32 * 1024 * 1024, files: 10000 } as const
+/**
+ * Importar um pacote sob demanda (C2): só os textos ficam na memória e cada binário é lido na hora de gravar, então
+ * o tamanho total só tem o teto do ZIP sem ZIP64. Por arquivo, o Android segue com 32 MB (passa inteiro pela ponte).
+ */
+export const IMPORT_LIMITS = { archive: 0xffffffff - 1, expanded: 0xffffffff - 1, file: 512 * 1024 * 1024, files: 10000 } as const
+export const ANDROID_IMPORT_LIMITS = { ...IMPORT_LIMITS, file: 32 * 1024 * 1024 } as const
 /** O que a 1.3 abre (ADR 0020): pacotes maiores só abrem na 1.4 ou mais nova. */
 export const LEGACY_ARCHIVE_LIMIT = 128 * 1024 * 1024
 export const PACKAGE_MANIFEST = ".runas-pacote.json"
-export interface TransferFile { path: string; bytes: Uint8Array }
+/**
+ * Um arquivo do pacote. Os binários de um pacote lido sob demanda (C2, ADR 0037) chegam sem os bytes: `bytes` vazio,
+ * `size` com o tamanho e `load()` lê do pacote na hora de gravar. Use `transferSize` e `transferBytes`.
+ */
+export interface TransferFile { path: string; bytes: Uint8Array; size?: number; load?: () => Promise<Uint8Array> }
+export const transferSize = (file: TransferFile): number => (file.load ? file.size ?? 0 : file.bytes.length)
+export const transferBytes = (file: TransferFile): Promise<Uint8Array> => (file.load ? file.load() : Promise.resolve(file.bytes))
+/** O que fica na memória mesmo sob demanda: a prévia lê, reescreve links e confere mesas nesses arquivos. */
+export const keptInMemory = (path: string) => /\.(md|canvas|base|json|css|txt|ics|csv|html|rtf)$/i.test(path)
 /** Campo opcional `itens` do manifesto (U53, ADR 0037): o que cada item exportado levou. A 1.3 ignora. */
 export interface PackageItemSpec { tipo: TransferItemKind; nome: string; raizes: string[]; caminhos: string[] }
 export interface TransferArchive { title: string; kind: "runas" | "markdown"; files: TransferFile[]; ignored: string[]; items?: PackageItemSpec[] }
@@ -135,27 +149,38 @@ export async function sha256(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("")
 }
 
+const EMPTY = new Uint8Array(0)
 function record(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === "object" && !Array.isArray(value) }
 
 export async function readTransferArchive(bytes: Uint8Array, title = "Cofre importado", limits: TransferLimits = TRANSFER_LIMITS): Promise<TransferArchive> {
-  return archiveFromZip(unzipBounded(bytes, limits), title, limits)
+  const zip = new Map([...unzipBounded(bytes, limits)].map(([name, data]) => [name, { size: data.length, read: async () => data }]))
+  return archiveFromZip(zip, title, limits, () => true)
 }
+
+/** Uma entrada do ZIP: o tamanho e como ler (da memória ou do pacote, por partes). */
+interface ZipItem { size: number; read(): Promise<Uint8Array> }
 
 /**
  * U50 (ADR 0037): lê o pacote por partes (`File.slice` na tela), um arquivo por vez, sem o teto de tamanho
- * compactado. O conteúdo descompactado continua na memória e respeita `limits.expanded`.
+ * compactado. Com `lazy` (C2), só os textos ficam na memória; os binários são conferidos (SHA-256 do manifesto) e
+ * soltos, e voltam a ser lidos do pacote, com o CRC conferido de novo, na hora de gravar.
  */
-export async function readTransferArchiveFrom(source: ZipSource, title = "Cofre importado", limits: TransferLimits = TRANSFER_LIMITS, onProgress?: (done: number, total: number) => void): Promise<TransferArchive> {
-  const entries = await readZipDirectory(source, limits), zip = new Map<string, Uint8Array>()
-  for (const [index, entry] of entries.entries()) {
+export async function readTransferArchiveFrom(source: ZipSource, title = "Cofre importado", limits: TransferLimits = TRANSFER_LIMITS, onProgress?: (done: number, total: number) => void, lazy = false): Promise<TransferArchive> {
+  const entries = await readZipDirectory(source, limits), zip = new Map<string, ZipItem>()
+  for (const entry of entries) zip.set(entry.name, { size: entry.size, read: () => readZipEntry(source, entry) })
+  // Sem `lazy`, tudo é lido agora (como antes); com ele, a leitura acontece em `archiveFromZip`, um por vez.
+  if (!lazy) for (const [index, entry] of entries.entries()) {
     onProgress?.(index, entries.length)
-    zip.set(entry.name, await readZipEntry(source, entry))
+    const data = await readZipEntry(source, entry)
+    zip.set(entry.name, { size: data.length, read: async () => data })
   }
-  return archiveFromZip(zip, title, limits)
+  return archiveFromZip(zip, title, limits, lazy ? path => keptInMemory(path) : () => true, lazy ? onProgress : undefined)
 }
 
-async function archiveFromZip(zip: Map<string, Uint8Array>, title: string, limits: TransferLimits): Promise<TransferArchive> {
-  const manifestBytes = zip.get(PACKAGE_MANIFEST)
+async function archiveFromZip(zip: Map<string, ZipItem>, title: string, limits: TransferLimits, keep: (path: string) => boolean, onProgress?: (done: number, total: number) => void): Promise<TransferArchive> {
+  const manifestBytes = await zip.get(PACKAGE_MANIFEST)?.read()
+  const total = zip.size
+  let done = 0
   const files: TransferFile[] = [], ignored: string[] = []
   let items: PackageItemSpec[] | undefined
   if (manifestBytes) {
@@ -166,9 +191,11 @@ async function archiveFromZip(zip: Map<string, Uint8Array>, title: string, limit
     const used = new Set([PACKAGE_MANIFEST])
     for (const entry of manifest.files) {
       if (!record(entry) || typeof entry.path !== "string" || typeof entry.size !== "number" || typeof entry.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(entry.sha256)) throw new Error("Entrada inválida no manifesto do pacote.")
-      const path = transferPath(entry.path), name = "cofre/" + path, data = zip.get(name)
-      if (used.has(name) || !data || data.length !== entry.size || await sha256(data) !== entry.sha256) throw new Error(`A integridade de “${path}” não confere com o manifesto.`)
-      used.add(name); files.push({ path, bytes: data })
+      const path = transferPath(entry.path), name = "cofre/" + path, item = zip.get(name)
+      onProgress?.(done++, total)
+      const data = item && !used.has(name) ? await item.read() : null
+      if (!item || !data || data.length !== entry.size || await sha256(data) !== entry.sha256) throw new Error(`A integridade de “${path}” não confere com o manifesto.`)
+      used.add(name); files.push(keep(path) ? { path, bytes: data } : { path, bytes: EMPTY, size: data.length, load: item.read })
     }
     if ([...zip.keys()].some(name => !name.endsWith("/") && !used.has(name))) throw new Error("O pacote contém arquivos fora do manifesto.")
   } else {
@@ -176,14 +203,16 @@ async function archiveFromZip(zip: Map<string, Uint8Array>, title: string, limit
     const first = names[0]?.split("/")[0]
     const knownRoots = new Set(["Notas", "Agenda", "Wikis", "Campanhas", "Livros", "Mesas", "Anexos", "Templates", "Modelos", ".runas", ".obsidian", ".git", "__MACOSX"])
     const wrapper = first && !nameProblem(first) && !knownRoots.has(first) && names.every(name => name.startsWith(first + "/")) ? first + "/" : ""
-    for (const [raw, data] of zip) {
+    for (const [raw, item] of zip) {
       let path = raw.endsWith("/") ? raw.slice(0, -1) : raw
       // Mesmo o que será ignorado não pode conter escapes; arquivos de configuração não são importados.
       if (!path || path.startsWith("/") || path.includes("\\") || path.split("/").some(part => part === ".." || part === ".") || /^[a-z]:/i.test(path)) throw new Error(`Caminho fora do cofre no ZIP: ${raw}`)
       if (raw.endsWith("/")) continue
       if (wrapper) path = path.slice(wrapper.length)
       if ((path.split("/").some(part => part.startsWith(".")) && !managedWorldPath(path)) || path.startsWith("__MACOSX/") || path === "Thumbs.db") { ignored.push(raw); continue }
-      files.push({ path: transferPath(path), bytes: data })
+      // Sem manifesto não há SHA para conferir agora: o binário é lido (e o CRC conferido) só na hora de gravar.
+      if (keep(path)) { onProgress?.(done++, total); files.push({ path: transferPath(path), bytes: await item.read() }) }
+      else files.push({ path: transferPath(path), bytes: EMPTY, size: item.size, load: item.read })
     }
   }
   if (!files.length) throw new Error("O arquivo não contém notas ou anexos importáveis.")

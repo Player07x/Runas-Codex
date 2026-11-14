@@ -1774,3 +1774,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Durante a gravação, a linha de estado mostra “Gravando X de Y · A MB de B MB”.
 - [ ] No celular (ou a 320 px), a prévia por itens cabe sem rolar para os lados, e a ação e o nome da cópia ficam
   embaixo do item.
+
+## Atualização 1.4.0 · Importar sob demanda (PR C2)
+
+- [ ] No Android, importar um `.runas` maior que 96 MB (por exemplo a wiki Cronos, ~253 MB, exportada pela 1.4): a
+  prévia abre, a importação grava todos os arquivos com o progresso em MB e o app não fecha por falta de memória.
+- [ ] No Android, um pacote com um arquivo maior que 32 MB (um `.kra` de 58 MB): a prévia recusa com uma mensagem, e
+  nada é gravado.
+- [ ] No desktop, importar um pacote grande (≥ 500 MB): o uso de memória do app (Monitor do sistema) fica bem abaixo
+  do tamanho do pacote durante a prévia e a gravação.
+- [ ] Um `.runas` com uma imagem adulterada (trocar um byte dentro do ZIP): a prévia recusa (“A integridade … não
+  confere”). Um ZIP do Obsidian com uma imagem estragada: a gravação para nessa imagem e diz quantos arquivos entraram.
