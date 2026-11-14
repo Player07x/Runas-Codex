@@ -1732,3 +1732,23 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
 - [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
   propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.4.0 · Agenda no celular (PR E: U56–U59)
+
+- [ ] No celular (ou numa janela de 360 px), Agenda › Mês: o período, as setas, o “Hoje” (ícone) e o ⋯ cabem numa
+  linha; as cinco visões numa linha de ícones com rótulo; a grade começa logo abaixo, sem o título “Agenda” repetido.
+- [ ] Com as suas rotinas diárias: o dia mostra só os eventos únicos (sessão, prova, consulta) como pontos, até 3 e
+  “+N”; as rotinas viram uma linha fina na base da célula. No ⋯, “Mostrar as rotinas no mês” volta a pôr as rotinas
+  como pontos (depois dos únicos) e o app lembra a escolha neste aparelho.
+- [ ] Dias de outro mês com o número apagado; no computador o mês continua com os nomes dos eventos, como antes.
+- [ ] Agenda › Tarefas no celular: cada tarefa numa linha (caixa, texto e ⋯) com prazo, repetição, prioridade em texto
+  (“Alta”) e a nota embaixo; não aparece mais “🏁 mantém”. No ⋯: Editar, Adiar um dia, Marcar como falhou (vencidas),
+  Transformar em hábito (só nas diárias que guardam as feitas), Outros estados e datas, Abrir a nota. Tocar no texto
+  abre Editar tarefa.
+- [ ] “Transformar em hábito” numa tarefa diária com `🏁 keep`: a linha passa a `🏁 delete` (no Obsidian também) e,
+  ao concluir, só a próxima fica.
+- [ ] Nova tarefa no celular: o campo e o “+” numa linha; a data e “Todo dia” aparecem ao tocar no campo.
+- [ ] O botão flutuante: no Mês, Semana, Dia e Lista cria um evento; em Tarefas, leva ao campo de nova tarefa. O botão
+  “Evento” do cabeçalho some no celular. Rolando até o fim, nada fica embaixo do flutuante (nem o “Painel da agenda”).
+- [ ] Leitor de tela (TalkBack ou Orca) no ⋯ da tarefa: “Ações da tarefa: ‹texto›”, e os itens são lidos como menu.
+- [ ] Tema claro: a linha fina das rotinas, o “+N” e os números apagados continuam legíveis.
