@@ -384,3 +384,17 @@
 .infobox-saved-tokens { list-style: none; margin: 0; padding: 0; gap: 4px; }
 .infobox-saved-token { gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .infobox-saved-token:last-child { border-bottom: 0; }
+/* U73/U74: frase que confere a relação e a caixa dos dois lados; o × de cada relação. */
+.add-relation-sentence { margin: 0; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--cyan) 12%, transparent); }
+.add-relation-both { gap: 8px; align-items: center; min-height: 32px; }
+.wiki-relation-remove { margin-left: auto; color: var(--muted); }
+@media (pointer: fine) { .wiki-relations .small.row:not(:hover, :focus-within) > .wiki-relation-remove { opacity: 0; } }
+@media (pointer: fine) { .wiki-relations .wiki-relation-remove.icon-btn.sm { width: 26px; height: 26px; min-width: 26px; min-height: 26px; } }
+/* U75: conferir relações nas Ferramentas. */
+.relation-fixes { margin-block: var(--space-section); }
+.relation-fixes-list ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; max-height: 360px; overflow: auto; }
+.relation-fixes-list label { align-items: flex-start; gap: 8px; min-height: 32px; }
+.relation-fixes-list code { overflow-wrap: anywhere; }
+.relation-fixes-list del { color: var(--red); }
+.relation-fixes-list ins { color: var(--green); text-decoration: none; }
+@media (pointer: coarse) { .relation-fixes-list label { min-height: 44px; } }

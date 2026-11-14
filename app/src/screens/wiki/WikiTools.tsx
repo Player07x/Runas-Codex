@@ -13,6 +13,7 @@ import { PageHeader } from "../../components/kit/Layout"
 import { href } from "../../lib/router"
 import { NewArticleDialog } from "./NewArticleDialog"
 import { articleKind } from "../../core/wiki"
+import { RelationFixes } from "./RelationFixes"
 
 export function RollTableBlock({code}:{code:string}) {
  const set=useNoteSet(),[result,setResult]=useState<string[]>([]),[error,setError]=useState("")
@@ -170,6 +171,7 @@ export function WikiTools() {
    const article = tool.kind === "gerador" ? articleFromResult(tool.id, draft.trim()) : null
    return <NewArticleDialog initialName={name.trim()} {...(article ? { initialKind: article.kind, initialValues: article.values } : {})} initialBody={article ? article.body : draft.trim()} onClose={() => setArticleOpen(false)} />
   })()}
+  <RelationFixes root={root} />
   <p className="tiny muted">Tabelas roláveis, dicionários de idiomas e galerias entram nos artigos pelo menu / do editor. <a href={href("/config/ajuda/wiki")}>Como usar na Ajuda</a>.</p>
  </div>
 }

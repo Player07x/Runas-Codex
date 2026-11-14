@@ -1,9 +1,12 @@
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { ShowArticle } from "./ShowArticle"
 import { useCallback, useMemo, useState } from "react"
-import { GitFork, Link2, Network, Plus } from "lucide-react"
+import { GitFork, Link2, Network, Plus, X } from "lucide-react"
 import { dirname, noteName } from "../../core/text"
-import { calendarFor, RELATION_TYPES, relationsOf, type Relation } from "../../core/wiki"
+import { calendarFor, RELATION_TYPES, relationsOf, resolveTarget, type Relation } from "../../core/wiki"
+import { addRelationWrites, relationSentence, relationSides, removeRelationWrites, type PropertyWrite } from "../../core/relation-sides"
+import { ConfirmDialog } from "../../components/vault/dialogs"
+import { useRemembered } from "../../lib/remembered"
 import { NoteSetContext } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
 import { noteRoute, vaultNoteSet } from "../../lib/vault-notes"
@@ -104,12 +107,12 @@ export function Relations({ path, root, readOnly, shortcuts = true }: { path: st
   const vault = useVault()
   const toast = useToast()
   const index = vault.index!
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState(false), [removing, setRemoving] = useState<Relation | null>(null)
   const relations = useMemo(() => relationsOf(index, path, root), [index, path, root, vault.version])
   const groups = new Map<string, Relation[]>()
   for (const r of relations) groups.set(r.type.label, [...(groups.get(r.type.label) ?? []), r])
   const family = relations.some((r) => r.type.group === "familia")
-  const org = relations.some((r) => r.type.key === "membro_de" && r.inverse) || relations.some((r) => r.type.key === "lider_de" && r.inverse)
+  const org = relations.some((r) => r.type.key === "membros" || r.type.key === "liderado_por")
   return (
     <section className="card wiki-relations">
       <div className="row between">
@@ -138,10 +141,12 @@ export function Relations({ path, root, readOnly, shortcuts = true }: { path: st
               )}
               {r.note && <span className="chip">{r.note}</span>}
               {r.inverse && <span className="tiny faint" title="Escrito na outra nota">↩</span>}
+              {!readOnly && r.other && <button type="button" className="icon-btn sm wiki-relation-remove" aria-label={`Remover a relação ${r.type.label} com ${noteName(r.other)}`} title="Remover" onClick={() => setRemoving(r)}><X size={14} aria-hidden="true" /></button>}
             </span>
           ))}
         </div>
       ))}
+      {removing?.other && <RemoveRelation path={path} relation={removing} onClose={() => setRemoving(null)} />}
       {shortcuts && (family || org) && (
         <div className="row-wrap">
           {family && (
@@ -160,7 +165,23 @@ export function Relations({ path, root, readOnly, shortcuts = true }: { path: st
   )
 }
 
-/** Nova relação (D12): tipo, a nota pelo `NoteCombobox` e a atitude opcional, gravadas pelo `setProperty`. */
+/** Grava as propriedades, uma por vez, pelo `setProperty` (versão lida); devolve o que não deu para gravar. */
+async function applyWrites(setProperty: (path: string, key: string, value: string[] | undefined) => Promise<void>, writes: PropertyWrite[]): Promise<string[]> {
+  const failed: string[] = []
+  for (const write of writes) {
+    try { await setProperty(write.path, write.key, write.value.length ? write.value : undefined) }
+    catch (err) { failed.push(`${noteName(write.path)}: ${err instanceof Error ? err.message : String(err)}`) }
+  }
+  return failed
+}
+
+const GROUPS: [Relation["type"]["group"], string][] = [["familia", "Família"], ["organizacao", "Organização"], ["diplomacia", "Diplomacia"], ["outras", "Outras"]]
+const parseBoth = (raw: unknown) => raw !== false
+
+/**
+ * Nova relação (D12, U73, U74): tipo nos dois sentidos, a nota pelo `NoteCombobox` e a atitude opcional. Uma frase
+ * confere quem é o quê; “Gravar também em…” (lembrado no aparelho) grava a ligação de volta na outra nota.
+ */
 function AddRelation({ path, root, onDone, onError }: { path: string; root: string; onDone(): void; onError(message: string): void }) {
   const vault = useVault()
   const index = vault.index!
@@ -168,25 +189,27 @@ function AddRelation({ path, root, onDone, onError }: { path: string; root: stri
   const [target, setTarget] = useState("")
   const [attitude, setAttitude] = useState("")
   const [error, setError] = useState("")
+  const [both, setBoth] = useRemembered("runas-codex:relacao-dois-lados", parseBoth)
+  const clean = target.trim().replace(/^\[\[|\]\]$/g, "")
+  const other = clean ? resolveTarget(index, clean, path) : null
+  const otherName = other ? noteName(other) : clean
   const save = async () => {
-    const clean = target.trim().replace(/^\[\[|\]\]$/g, "")
     if (!clean) return setError("Escolha a nota.")
-    const link = `[[${clean}]]${attitude.trim() ? ` (${attitude.trim()})` : ""}`
-    const current = index.note(path)?.meta.frontmatter?.data?.[type]
-    const list = Array.isArray(current) ? current.map(String) : typeof current === "string" && current.trim() ? [current] : []
-    try {
-      await vault.setProperty(path, type, [...list, link])
-      onDone()
-    } catch (err) {
-      onError(err instanceof Error ? err.message : String(err))
-    }
+    const writes = other
+      ? addRelationWrites(index, path, type, other, { note: attitude, both })
+      : addRelationWrites(index, path, type, path, { note: attitude, both: false, link: `[[${clean}]]` })
+    const failed = await applyWrites(vault.setProperty, writes)
+    if (failed.length) return onError(`Não deu para gravar: ${failed.join("; ")}`)
+    onDone()
   }
   return (
     <form className="stack add-relation" onSubmit={(e) => { e.preventDefault(); void save() }}>
       <FormGrid columns={1}>
         <FormField label="Tipo da relação">
           {(control) => <select id={control.id} className="select" value={type} onChange={(e) => setType(e.target.value)}>
-            {RELATION_TYPES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+            {GROUPS.map(([group, label]) => <optgroup key={group} label={label}>
+              {RELATION_TYPES.filter((r) => r.group === group).map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+            </optgroup>)}
           </select>}
         </FormField>
         <FormField label="Com quem" error={error} hint="Um artigo da wiki">
@@ -196,11 +219,35 @@ function AddRelation({ path, root, onDone, onError }: { path: string; root: stri
           {(control) => <input id={control.id} className="input" value={attitude} onChange={(e) => setAttitude(e.target.value)} aria-describedby={control.describedBy} />}
         </FormField>
       </FormGrid>
+      {clean && <p className="small add-relation-sentence" aria-live="polite">{relationSentence(type, noteName(path), otherName)}.</p>}
+      <label className="row add-relation-both">
+        <input type="checkbox" checked={both && Boolean(other)} disabled={!other} onChange={(e) => setBoth(e.target.checked)} />
+        <span className="small">{other ? `Gravar também em ${otherName}` : "Gravar também na outra nota (escolha um artigo que já existe)"}</span>
+      </label>
       <div className="row" style={{ gap: 6 }}>
         <button className="btn sm primary" type="submit">Adicionar</button>
         <button className="btn sm ghost" type="button" onClick={onDone}>Cancelar</button>
       </div>
     </form>
+  )
+}
+
+/** Remover uma relação: sai da nota onde está escrita e, se estiver nas duas, pergunta se sai da outra também. */
+function RemoveRelation({ path, relation, onClose }: { path: string; relation: Relation; onClose(): void }) {
+  const vault = useVault(), toast = useToast()
+  const other = relation.other!, name = noteName(other)
+  const sides = relationSides(vault.index!, path, relation.type.key, other)
+  const [alsoThere, setAlsoThere] = useState(true)
+  return (
+    <ConfirmDialog title={`Remover “${relation.type.label}: ${name}”?`} confirmLabel="Remover" danger onClose={onClose} onConfirm={async () => {
+      const writes = removeRelationWrites(vault.index!, path, relation.type.key, other, { here: sides.here, there: sides.there && (alsoThere || !sides.here) })
+      const failed = await applyWrites(vault.setProperty, writes)
+      if (failed.length) toast(`Não deu para remover: ${failed.join("; ")}`)
+    }}>
+      {sides.here && sides.there
+        ? <label className="row"><input type="checkbox" checked={alsoThere} onChange={(e) => setAlsoThere(e.target.checked)} /> <span>Remover também em {name}</span></label>
+        : sides.there ? <>Esta relação está escrita em {name}; ela sai de lá.</> : <>A relação sai desta nota.</>}
+    </ConfirmDialog>
   )
 }
 

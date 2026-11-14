@@ -423,16 +423,24 @@ export const RELATION_TYPES: RelationType[] = [
   { key: "conjuges", label: "Cônjuges", inverse: "Cônjuges", symmetric: true, group: "familia" },
   { key: "irmaos", label: "Irmãos", inverse: "Irmãos", symmetric: true, group: "familia" },
   { key: "mentor", label: "Mentor", inverse: "Discípulos", group: "outras" },
+  // Cada relação com sentido tem a chave do outro lado (U73): `membros: [[Aurora]]` na organização é a mesma ligação
+  // que `membro_de: [[Organização]]` em Aurora, como `pais` e `filhos` já eram.
+  { key: "discipulos", label: "Discípulos", inverse: "Mentor", group: "outras" },
   { key: "membro_de", label: "Membro de", inverse: "Membros", group: "organizacao" },
+  { key: "membros", label: "Membros", inverse: "Membro de", group: "organizacao" },
   { key: "lider_de", label: "Líder de", inverse: "Liderado por", group: "organizacao" },
+  { key: "liderado_por", label: "Liderado por", inverse: "Líder de", group: "organizacao" },
   { key: "subordinado_a", label: "Subordinado a", inverse: "Subordinados", group: "organizacao" },
+  { key: "subordinados", label: "Subordinados", inverse: "Subordinado a", group: "organizacao" },
   { key: "aliados", label: "Aliados", inverse: "Aliados", symmetric: true, group: "diplomacia" },
   { key: "inimigos", label: "Inimigos", inverse: "Inimigos", symmetric: true, group: "diplomacia" },
   { key: "rivais", label: "Rivais", inverse: "Rivais", symmetric: true, group: "diplomacia" },
   { key: "em_guerra_com", label: "Em guerra com", inverse: "Em guerra com", symmetric: true, group: "diplomacia" },
   { key: "paz_tensa_com", label: "Paz tensa com", inverse: "Paz tensa com", symmetric: true, group: "diplomacia" },
   { key: "vassalo_de", label: "Vassalo de", inverse: "Vassalos", group: "diplomacia" },
+  { key: "vassalos", label: "Vassalos", inverse: "Vassalo de", group: "diplomacia" },
   { key: "localizado_em", label: "Fica em", inverse: "Contém", group: "outras" },
+  { key: "contem", label: "Contém", inverse: "Fica em", group: "outras" },
   { key: "relacoes", label: "Outras relações", inverse: "Outras relações", symmetric: true, group: "outras" },
 ]
 
@@ -483,7 +491,33 @@ export interface RelationEdge {
  * em vez de varrer o cofre para cada pessoa, como `relationsOf` faz.
  */
 export function relationEdges(index: VaultIndex, scope = ""): RelationEdge[] {
-  return index.notesIn(scope).flatMap((note) => declaredRelations(index, note).flatMap((r) => (r.other ? [{ from: note.path, to: r.other, type: r.type, ...(r.note ? { note: r.note } : {}) }] : [])))
+  const seen = new Set<string>(), edges: RelationEdge[] = []
+  for (const note of index.notesIn(scope)) for (const r of declaredRelations(index, note)) {
+    if (!r.other) continue
+    // `membros: [[Aurora]]` na organização vira a ligação de sempre (Aurora → membro de → organização); escrita dos
+    // dois lados, conta uma vez.
+    const canonical = MIRROR_OF[r.type.key] ? RELATION_BY_KEY.get(MIRROR_OF[r.type.key]!)! : r.type
+    const [from, to] = canonical === r.type ? [note.path, r.other] : [r.other, note.path]
+    const key = `${from}|${to}|${canonical.key}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    edges.push({ from, to, type: canonical, ...(r.note ? { note: r.note } : {}) })
+  }
+  return edges
+}
+
+/** A chave do outro lado de cada relação com sentido (as simétricas são o próprio tipo). */
+export const INVERSE_KEY: Readonly<Record<string, string>> = {
+  pais: "filhos", filhos: "pais", mentor: "discipulos", discipulos: "mentor", membro_de: "membros", membros: "membro_de",
+  lider_de: "liderado_por", liderado_por: "lider_de", subordinado_a: "subordinados", subordinados: "subordinado_a",
+  vassalo_de: "vassalos", vassalos: "vassalo_de", localizado_em: "contem", contem: "localizado_em",
+}
+/** As chaves novas do outro lado (U73) e a chave de sempre de cada uma; `pais`/`filhos` já eram as duas de sempre. */
+const MIRROR_OF: Readonly<Record<string, string>> = { discipulos: "mentor", membros: "membro_de", liderado_por: "lider_de", subordinados: "subordinado_a", vassalos: "vassalo_de", contem: "localizado_em" }
+
+/** A chave que a outra nota usaria para a mesma ligação. */
+export function inverseKeyOf(key: string): string {
+  return RELATION_BY_KEY.get(key)?.symmetric ? key : INVERSE_KEY[key] ?? key
 }
 
 /** As relações de uma nota: as que ela declara e as que outras notas declaram com ela (no sentido inverso). */
@@ -491,14 +525,14 @@ export function relationsOf(index: VaultIndex, path: string, scope = ""): Relati
   const note = index.note(path)
   if (!note) return []
   const own: Relation[] = declaredRelations(index, note).map((r) => ({ ...r, inverse: false }))
-  const seen = new Set(own.map((r) => `${r.type.symmetric ? r.type.key : r.type.key}|${r.other}`))
+  const seen = new Set(own.map((r) => `${r.type.key}|${r.other}`))
   const incoming: Relation[] = []
   for (const other of index.notesIn(scope)) {
     if (other.path === path || !other.text.includes("[[")) continue
     for (const r of declaredRelations(index, other)) {
       if (r.other !== path) continue
       // Do lado de cá, `pais` escrito no filho vira "Filhos"; as simétricas continuam do mesmo tipo.
-      const type = r.type.symmetric ? r.type : (RELATION_TYPES.find((t) => t.key === INVERSE_KEY[r.type.key]) ?? { ...r.type, label: r.type.inverse })
+      const type = r.type.symmetric ? r.type : (RELATION_BY_KEY.get(INVERSE_KEY[r.type.key] ?? "") ?? { ...r.type, label: r.type.inverse })
       const key = `${type.key}|${other.path}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -508,7 +542,6 @@ export function relationsOf(index: VaultIndex, path: string, scope = ""): Relati
   return [...own, ...incoming]
 }
 
-const INVERSE_KEY: Record<string, string> = { pais: "filhos", filhos: "pais" }
 
 // ---------- Árvore genealógica, organograma e diplomacia ----------
 
@@ -574,9 +607,10 @@ export function orgChart(index: VaultIndex, org: string, scope = ""): OrgNode {
   const leaders = new Set<string>()
   // Só o que os membros declaram (`membro_de`/`lider_de` apontando para a organização).
   for (const r of relationsOf(index, org, scope)) {
-    if (!r.other || !r.inverse) continue
-    if (r.type.key === "membro_de") members.add(r.other)
-    if (r.type.key === "lider_de") leaders.add(r.other)
+    // Do lado da organização, quem é membro aparece como `membros` (escrito lá ou no membro).
+    if (!r.other) continue
+    if (r.type.key === "membros") members.add(r.other)
+    if (r.type.key === "liderado_por") leaders.add(r.other)
   }
   const leaderField = index.note(org)?.meta.frontmatter?.data?.lider
   for (const value of values(leaderField)) {
@@ -586,7 +620,7 @@ export function orgChart(index: VaultIndex, org: string, scope = ""): OrgNode {
   const everyone = new Set([...members, ...leaders])
   const bossOf = new Map<string, string>()
   for (const person of everyone) {
-    const boss = relationsOf(index, person, scope).find((r) => r.type.key === "subordinado_a" && !r.inverse && r.other && everyone.has(r.other))
+    const boss = relationsOf(index, person, scope).find((r) => r.type.key === "subordinado_a" && r.other && everyone.has(r.other))
     if (boss) bossOf.set(person, boss.other!)
   }
   const build = (path: string, seen: Set<string>): OrgNode => ({
@@ -779,3 +813,6 @@ export function listMaps(index: VaultIndex, root: string): IndexedNote[] {
 export function isMapNote(index: VaultIndex, path: string | null): boolean {
   return Boolean(path && index.note(path) && findCodeBlocks(index.note(path)!.text, "runas-mapa").length)
 }
+
+// Usados pelas relações dos dois lados (`relation-sides.ts`).
+export { linkTargetOf, resolveTarget, values as propertyValues }

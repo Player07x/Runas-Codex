@@ -1732,3 +1732,18 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
 - [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
   propriedades aparecem como texto e nada quebra.
+
+## Relações cruzadas e dos dois lados (1.4.0, PR J)
+
+- [ ] Numa organização, Relações › Adicionar › “Membros” e um personagem: a frase diz “X é membro de Organização”;
+      com “Gravar também em X” ligado, o personagem passa a mostrar “Membro de: Organização”, e o organograma da
+      organização mostra o membro (antes, declarar na organização não aparecia).
+- [ ] Mentor: no personagem B, “Mentor” = A. Com a caixa ligada, A ganha “Discípulos: B”. Desligar a caixa, fechar e
+      abrir o app: ela continua desligada.
+- [ ] Remover (o × ao passar o mouse, ou pelo Tab): numa relação escrita nas duas notas, o diálogo pergunta se remove
+      também da outra; numa escrita só do outro lado (↩), avisa que sai de lá.
+- [ ] Editar a outra nota no Obsidian com o app aberto e depois adicionar uma relação com ela: o app recusa a gravação
+      desatualizada e avisa, sem perder o texto do Obsidian.
+- [ ] Wiki › Ferramentas › Conferir relações: “Relações de um lado só” lista o que falta, desmarcar um item e gravar
+      o resto; “Relações invertidas” acha uma organização com “Membro de” um personagem e inverte para “Membros”.
+      Conferir no Obsidian que as propriedades (`membros`, `discipulos`…) aparecem como listas de links.
