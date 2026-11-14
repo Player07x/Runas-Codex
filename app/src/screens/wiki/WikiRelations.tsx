@@ -1,6 +1,6 @@
 import "./relations.css"
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minus, Plus, ZoomIn, ZoomOut } from "lucide-react"
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react"
+import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minus, Plus, Search, ZoomIn, ZoomOut } from "lucide-react"
 import type { GraphData } from "../../core/graph-data"
 import { layoutNeighbors, layoutOrg, orgStructureOf, type LayoutNode, type OrgPerson, type OrgStructure } from "../../core/relation-layout"
 import { familyGraph, generationLabel, layoutFamily } from "../../core/family-layout"
@@ -229,7 +229,25 @@ function useZoom(region: RefObject<HTMLDivElement | null>, width: number, height
     setScale(clamp(Math.min(1, (el.clientWidth - 8) / width, (el.clientHeight - 8) / height)))
     el.scrollTo({ left: 0, top: 0 })
   }
-  return { scale, zoomIn: () => setScale((s) => clamp(s * 1.25)), zoomOut: () => setScale((s) => clamp(s / 1.25)), fit }
+  /** Muda o zoom mantendo parado o ponto (x, y) da região, como num mapa. */
+  const zoomAt = (factor: number, x?: number, y?: number) => setScale((old) => {
+    const next = clamp(old * factor), el = region.current
+    if (el && next !== old) {
+      const px = x ?? el.clientWidth / 2, py = y ?? el.clientHeight / 2
+      requestAnimationFrame(() => el.scrollTo({ left: (el.scrollLeft + px) * (next / old) - px, top: (el.scrollTop + py) * (next / old) - py }))
+    }
+    return next
+  })
+  /** Ao abrir: enquadra, mas se tudo só couber abaixo de 60 %, abre a 100 % com o topo (a organização) no meio (U72). */
+  const initial = () => {
+    const el = region.current
+    if (!el) return
+    const fits = Math.min(1, (el.clientWidth - 8) / width, (el.clientHeight - 8) / height)
+    if (fits >= 0.6) return fit()
+    setScale(1)
+    requestAnimationFrame(() => el.scrollTo({ left: Math.max(0, (width - el.clientWidth) / 2), top: 0 }))
+  }
+  return { scale, zoomIn: () => zoomAt(1.25), zoomOut: () => zoomAt(1 / 1.25), zoomAt, fit, initial }
 }
 
 const ARROWS: Record<string, "up" | "down" | "left" | "right" | undefined> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" }
@@ -259,7 +277,50 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
   const activeNode = near.has(active) ? active : structure.org
   // Enquadra ao abrir a organização (o componente nasce de novo a cada organização).
   const fitted = useRef(false)
-  useEffect(() => { if (!fitted.current) { fitted.current = true; zoom.fit() } })
+  useEffect(() => { if (!fitted.current) { fitted.current = true; zoom.initial() } })
+  // Ctrl + roda (e a pinça do touchpad, que chega igual) aproxima no ponto do ponteiro; precisa de ouvinte não passivo.
+  useEffect(() => {
+    const el = region.current
+    if (!el) return
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      const box = el.getBoundingClientRect()
+      zoom.zoomAt(event.deltaY < 0 ? 1.15 : 1 / 1.15, event.clientX - box.left, event.clientY - box.top)
+    }
+    el.addEventListener("wheel", onWheel, { passive: false })
+    return () => el.removeEventListener("wheel", onWheel)
+  })
+  // Arrastar o fundo com o mouse move a vista (no toque, o dedo já rola).
+  const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch" || event.button !== 0 || (event.target as HTMLElement).closest(".org-card, button, a, input")) return
+    const el = region.current!
+    drag.current = { x: event.clientX, y: event.clientY, left: el.scrollLeft, top: el.scrollTop }
+    el.setPointerCapture(event.pointerId)
+    el.classList.add("dragging")
+  }
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = drag.current, el = region.current
+    if (!start || !el) return
+    el.scrollTo({ left: start.left - (event.clientX - start.x), top: start.top - (event.clientY - start.y) })
+  }
+  const endDrag = () => { drag.current = null; region.current?.classList.remove("dragging") }
+  const onDoubleClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest(".org-card, button, a, input")) return
+    const box = region.current!.getBoundingClientRect()
+    zoom.zoomAt(1.5, event.clientX - box.left, event.clientY - box.top)
+  }
+  // “Encontrar no organograma”: o nome escolhido vira o nó ativo, no meio da vista.
+  const [finding, setFinding] = useState("")
+  const names = useMemo(() => layout.nodes.filter((n) => n.kind === "person").map((n) => ({ path: n.path, name: noteName(n.path) })), [layout])
+  const find = (text: string) => {
+    setFinding(text)
+    const hit = names.find((n) => n.name.toLocaleLowerCase("pt-BR") === text.trim().toLocaleLowerCase("pt-BR"))
+    if (!hit) return
+    setActive(hit.path); onSelect(hit.path)
+    requestAnimationFrame(() => region.current?.querySelector<HTMLElement>(`[data-node="${CSS.escape(hit.path)}"]`)?.scrollIntoView({ block: "center", inline: "center" }))
+  }
   useEffect(() => {
     if (!focusNext.current) return
     focusNext.current = false
@@ -285,13 +346,19 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
   }
 
   return <div className="relations-graph">
-    <div className="relations-graph-tools" role="toolbar" aria-label="Zoom do organograma">
+    <div className="relations-graph-tools">
+    <label className="relations-find"><Search size={15} aria-hidden="true" /><span className="sr-only">Encontrar no organograma</span>
+      <input className="input" type="search" list={`${help}-nomes`} placeholder="Encontrar no organograma" value={finding} onChange={(e) => find(e.target.value)} />
+      <datalist id={`${help}-nomes`}>{names.map((n) => <option key={n.path} value={n.name} />)}</datalist>
+    </label>
+    <div className="row relations-zoom-tools" role="toolbar" aria-label="Zoom do organograma">
       <button type="button" className="icon-btn" aria-label="Afastar" title="Afastar (−)" onClick={zoom.zoomOut}><ZoomOut size={17} /></button>
       <span className="small muted relations-zoom">{Math.round(zoom.scale * 100)} %</span>
       <button type="button" className="icon-btn" aria-label="Aproximar" title="Aproximar (+)" onClick={zoom.zoomIn}><ZoomIn size={17} /></button>
       <button type="button" className="btn sm ghost" title="Enquadrar (0)" onClick={zoom.fit}><Maximize2 size={15} aria-hidden="true" /> Enquadrar</button>
     </div>
-    <div ref={region} className="relations-graph-region" role="region" aria-label={`Organograma de ${noteName(structure.org)}`} aria-describedby={help} onKeyDown={onKey}>
+    </div>
+    <div ref={region} className="relations-graph-region" role="region" aria-label={`Organograma de ${noteName(structure.org)}`} aria-describedby={help} onKeyDown={onKey} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onDoubleClick={onDoubleClick}>
       <div className="relations-graph-size" style={{ width: layout.width * zoom.scale, height: layout.height * zoom.scale }}>
         <div className="relations-graph-canvas" style={{ width: layout.width, height: layout.height, transform: `scale(${zoom.scale})` }}>
           <svg className="relations-graph-lines" width={layout.width} height={layout.height} aria-hidden="true">
