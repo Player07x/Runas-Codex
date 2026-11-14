@@ -1768,3 +1768,19 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   pasta com o traço (meio marcada); o leitor de tela lê “Pasta X: 3 de 10 marcados”. Digitar no filtro mostra os
   caminhos inteiros e os botões “Selecionar os filtrados” / “Desmarcar os filtrados”.
 - [ ] No celular (ou a 320 px), as duas abas cabem sem rolar para os lados, e cada linha tem altura de toque.
+
+## Atualização 1.4.0 — PR C (importar por itens, U53)
+
+- [ ] Exportar a **wiki Cronos** por itens (PR B) e importar o pacote noutro cofre (ou neste): a prévia abre em
+  **Por itens** e mostra “Cronos” com notas, arquivos e tamanho, e “Não está no cofre” ou “Já está no cofre”.
+- [ ] Importar de novo o mesmo pacote no mesmo cofre: o item diz “N iguais”; com “Adicionar só o que falta”, o botão
+  fica em 0 arquivo(s). Editar uma nota da Cronos no cofre e importar de novo: aparece “1 diferente”; “Substituir o
+  diferente” pede para salvar o pacote de segurança antes e só troca essa nota.
+- [ ] “Importar como cópia” com o nome “Cronos 2”: a wiki **Cronos 2** aparece na Wiki, com página inicial, links
+  entre os artigos funcionando e as imagens (as mesmas de `Anexos/Imagens`, sem cópia).
+- [ ] Um pacote da **1.3** (ou um ZIP do Obsidian) também aparece por itens, deduzidos pelas pastas. A aba
+  **Por arquivos** continua como antes (“Quando já existe” e a lista de arquivos).
+- [ ] Mesa: importar a cópia de uma mesa com outro nome; ela aparece no VTT com o nome novo, e a original não muda.
+- [ ] Durante a gravação, a linha de estado mostra “Gravando X de Y · A MB de B MB”.
+- [ ] No celular (ou a 320 px), a prévia por itens cabe sem rolar para os lados, e a ação e o nome da cópia ficam
+  embaixo do item.

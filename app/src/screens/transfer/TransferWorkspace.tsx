@@ -5,7 +5,7 @@ import { Segmented } from "../../components/ui"
 import { navigate, useRoute } from "../../lib/router"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { buildImportPlan, sameTransferVersion, selectTransferPaths, type ImportPlan, type ImportStrategy, type TransferEntry } from "../../core/transfer/plan"
-import { ANDROID_TRANSFER_LIMITS, createTransferArchive, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
+import { ANDROID_TRANSFER_LIMITS, createTransferArchive, type PackageItemSpec, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
 import { blobSource, bufferedSink } from "../../core/transfer/zip-stream"
 import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core/transfer/notion"
 import "./transfer-workspace.css"
@@ -13,6 +13,7 @@ import { parseWorldManifest } from "../../vtt/shared/world"
 import { DocumentExport } from "./DocumentExport"
 import { expandTransferItems, listTransferItems, missingFromPackage, TRANSFER_ITEM_GROUPS, transferStats, type TransferItem, type TransferWorld } from "../../core/transfer/items"
 import { TransferTree } from "./TransferTree"
+import { buildItemsImportPlan, canCopy, defaultCopyName, findIdentical, itemState, packageItems, type ItemChoice, type PackageItem } from "../../core/transfer/import-items"
 
 const scopes = [
   { value: "", label: "Cofre inteiro", roots: [""] }, { value: "Notas", label: "Notas", roots: ["Notas"] },
@@ -23,7 +24,9 @@ const scopes = [
 const sizeLabel = (bytes: number) => bytes >= 1073741824 ? `${(bytes / 1073741824).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} GB` : bytes >= 1048576 ? `${(bytes / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB` : `${Math.ceil(bytes / 1024)} KB`
 const safeName = (name: string) => name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-").slice(0, 80) || "Cofre"
 const failure = (error: unknown) => error instanceof Error ? error.message : String(error)
-interface Preview { archive: TransferArchive; existing: TransferEntry[] }
+/** `items` e `identical` (U53): os itens que vieram no pacote e os arquivos iguais aos do cofre. */
+interface Preview { archive: TransferArchive; existing: TransferEntry[]; items: PackageItem[]; identical: Set<string> }
+type ImportResult = ImportPlan & { identical?: string[]; destinations?: Record<string, string> }
 /** U52: por itens (wikis, livros, mesas…) abre primeiro; por notas é a escolha em árvore (U51). */
 type Choice = "itens" | "notas"
 const count = (n: number, one: string, many: string) => `${n.toLocaleString("pt-BR")} ${n === 1 ? one : many}`
@@ -69,6 +72,9 @@ export function TransferWorkspace() {
   const [preview, setPreview] = useState<Preview | null>(null)
   const [incoming, setIncoming] = useState<Set<string>>(new Set())
   const [strategy, setStrategy] = useState<ImportStrategy>("merge")
+  // U53: a prévia abre por itens; “Por arquivos” é a escolha de sempre, arquivo por arquivo.
+  const [importChoice, setImportChoice] = useState<"itens" | "arquivos">("itens")
+  const [itemChoices, setItemChoices] = useState<Map<string, ItemChoice>>(new Map())
   const [destination, setDestination] = useState("Notas/Importados")
   // U50 (ADR 0037): os dois gravam em pedaços; no Android cada arquivo e a importação têm tetos menores (memória da ponte).
   const limits = vault.platform.kind === "capacitor" ? ANDROID_TRANSFER_LIMITS : TRANSFER_LIMITS
@@ -111,11 +117,15 @@ export function TransferWorkspace() {
     if (choice === "itens") return transferStats(entries, expandTransferItems(vault.index, entries, items.filter(item => chosenItems.has(item.id)), linked, worldRoots))
     return transferStats(entries, notesRoots.length ? selectTransferPaths(vault.index, entries, notesRoots, linked, notesWorlds, worldRoots) : [])
   }, [vault.index, entries, choice, items, chosenItems, linked, worldRoots, selected, scope, notesWorlds])
-  const calculated = useMemo<{ plan: ImportPlan | null; problem: string }>(() => {
+  const calculated = useMemo<{ plan: ImportResult | null; problem: string }>(() => {
     if (!preview) return { plan: null, problem: "" }
-    try { return { plan: buildImportPlan({ ...preview.archive, files: preview.archive.files.filter(file => incoming.has(file.path)) }, preview.existing, strategy), problem: "" } }
-    catch (error) { return { plan: null, problem: failure(error) } }
-  }, [preview, incoming, strategy])
+    try {
+      if (importChoice === "itens") return { plan: buildItemsImportPlan(preview.archive, preview.existing, preview.items, itemChoices, preview.identical), problem: "" }
+      return { plan: buildImportPlan({ ...preview.archive, files: preview.archive.files.filter(file => incoming.has(file.path)) }, preview.existing, strategy), problem: "" }
+    } catch (error) { return { plan: null, problem: failure(error) } }
+  }, [preview, incoming, strategy, importChoice, itemChoices])
+  const packageSizes = useMemo(() => new Map(preview?.archive.files.map(file => [file.path, file.bytes.length]) ?? []), [preview])
+  const itemStates = useMemo(() => new Map(preview?.items.map(item => [item.id, itemState(item, preview.existing, preview.identical)]) ?? []), [preview])
 
   async function act(operation: () => Promise<void>) {
     setBusy(true); setError(""); setStatus(""); setNotice("")
@@ -140,24 +150,27 @@ export function TransferWorkspace() {
     // Relê as mesas e refaz a escolha com a lista nova: o que mudou desde a tela entra como está agora.
     const freshWorlds = await readWorlds(known)
     const roots = new Map(freshWorlds.map(world => [world.id, world.root]))
-    let paths: string[], chosenNotes: string[], label: string
+    let paths: string[], chosenNotes: string[], label: string, specs: PackageItemSpec[] | undefined
     if (choice === "itens") {
       const marked: TransferItem[] = listTransferItems(vault.index!, known, freshWorlds).filter(item => chosenItems.has(item.id))
       if (!marked.length) throw new Error("Marque pelo menos um item para exportar.")
       paths = expandTransferItems(vault.index!, known, marked, linked, roots)
       chosenNotes = known.map(entry => entry.path).filter(path => marked.some(item => item.roots.some(root => path === root || path.startsWith(root + "/"))))
       label = marked.length === 1 ? marked[0]!.name : `${marked.length} itens`
+      // U53: o manifesto diz o que cada item levou, para a importação mostrar os mesmos itens.
+      specs = marked.map(item => ({ tipo: item.kind, nome: item.name, raizes: item.roots, caminhos: expandTransferItems(vault.index!, known, [item], linked, roots) }))
     } else {
       paths = selectTransferPaths(vault.index!, known, notesRoots, linked, notesWorlds, roots)
       chosenNotes = known.map(entry => entry.path).filter(path => notesRoots.some(root => !root || path === root || path.startsWith(root + "/")))
       label = scope
     }
+    if (kind !== "runas") specs = undefined
     const name = `${safeName(vault.info!.name)}${label ? " - " + safeName(label) : ""}.${kind === "runas" ? "runas" : "zip"}`, mime = kind === "runas" ? "application/octet-stream" : "application/zip"
     if (!vault.platform.openSave) {
       // Android até o PR A2: o pacote ainda é montado inteiro e passa de uma vez pela ponte.
       const files = await collect(paths, known, "exportação")
       setStatus("Montando o arquivo…")
-      const bytes = await createTransferArchive(vault.info!.name, files, kind, limits)
+      const bytes = await createTransferArchive(vault.info!.name, files, kind, limits, specs)
       const saved = await vault.platform.saveBytes(name, bytes, mime)
       setStatus(saved ? `${files.length} arquivo(s) exportados: ${saved}` : "Exportação cancelada.")
       return
@@ -172,7 +185,7 @@ export function TransferWorkspace() {
       const sink = bufferedSink(bytes => target.write(bytes))
       const packed: string[] = []
       const size = await writeTransferArchive({
-        title: vault.info!.name, paths, kind, limits, sink,
+        title: vault.info!.name, paths, kind, limits, sink, ...(specs ? { items: specs } : {}),
         read: async path => { const bytes = await vault.platform.readBinary(path); packed.push(path); return bytes },
         onProgress: (done, total, path) => setStatus(`Gravando ${done + 1} de ${total}: ${path}`),
       })
@@ -227,7 +240,11 @@ export function TransferWorkspace() {
       }
       const existing = await (vault.platform.listTransferFiles?.(true) ?? vault.platform.listVault())
       buildImportPlan(archive, existing, "merge")
-      setPreview({ archive, existing }); setIncoming(new Set(archive.files.map(file => file.path))); setStrategy("merge")
+      // U53: compara com o cofre só os arquivos de mesmo caminho e tamanho, para dizer o que é igual e o que mudou.
+      const identical = await findIdentical(archive, existing, path => vault.platform.readBinary(path), (done, total) => setStatus(`Comparando com o cofre: ${done + 1} de ${total}`))
+      const items = packageItems(archive)
+      setPreview({ archive, existing, items, identical }); setIncoming(new Set(archive.files.map(file => file.path))); setStrategy("merge")
+      setItemChoices(new Map(items.map(item => [item.id, { strategy: "merge" }]))); setImportChoice("itens")
       setStatus(`${notionNote}Prévia pronta. Confira a seleção e os conflitos antes de importar.`)
     })
   }
@@ -243,8 +260,13 @@ export function TransferWorkspace() {
       if (!saved) { setStatus("Importação cancelada; nenhum arquivo foi substituído."); return }
     }
     setStatus("Importando os arquivos confirmados…")
-    const count = await vault.importTransfer(plan.writes)
-    setPreview(null); setEntries(await listFiles()); setStatus(`${count} arquivo(s) importados. ${plan.skipped.length} existente(s) preservados.`)
+    const written = await vault.importTransfer(plan.writes, (done, total, bytes, totalBytes) => setStatus(`Gravando ${(done + 1).toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} · ${sizeLabel(bytes)} de ${sizeLabel(totalBytes)}`))
+    const copies = Object.entries(plan.destinations ?? {}).map(([id, target]) => {
+      const item = preview?.items.find(candidate => candidate.id === id)
+      return item?.kind === "mesa" ? `mesa “${itemChoices.get(id)?.name?.trim() || defaultCopyName(item)}”` : target
+    })
+    setPreview(null); setEntries(await listFiles())
+    setStatus(`${written} arquivo(s) importados. ${plan.skipped.length} existente(s) preservados.${copies.length ? ` Cópia em ${copies.join(", ")}.` : ""}`)
   }
   /** Marca ou desmarca vários de uma vez (pasta da árvore, “Selecionar os filtrados”). */
   function setPaths(paths: string[], on: boolean) {
@@ -327,13 +349,49 @@ export function TransferWorkspace() {
         <p className="small muted">Pacotes e ZIPs conservam seus caminhos internos, inclusive as mesas do VTT. Arquivos avulsos entram na pasta acima.</p>
         <p className="small muted">Do Notion: use Exportar (no menu ⋯ da página ou nas configurações do espaço de trabalho), escolha “Markdown &amp; CSV” com as subpáginas e importe o .zip aqui. As páginas entram na pasta {NOTION_FOLDER}/, sem os códigos nos nomes, e as colunas dos bancos de dados viram propriedades.</p>
         {preview && <div className="stack" data-transfer-preview>
-          <h3>{preview.archive.title}</h3><p className="small">{preview.archive.files.length} arquivo(s) disponíveis; {calculated.plan?.conflicts.length ?? 0} conflito(s) na seleção.{preview.archive.ignored.length > 0 && ` ${preview.archive.ignored.length} arquivo(s) de configuração ou controle foram ignorados.`}</p>
-          <label className="field"><span>Quando já existe</span><select className="select" aria-label="Quando já existe" value={strategy} disabled={busy} onChange={event => setStrategy(event.target.value as ImportStrategy)}><option value="merge">Mesclar: adicionar novos e manter os existentes</option><option value="replace">Substituir os conflitos, salvando um pacote de segurança antes</option><option value="duplicate">Duplicar com novos caminhos e links ajustados</option></select></label>
-          <div className="row-wrap"><button className="btn sm" disabled={busy} onClick={() => setIncoming(new Set(preview.archive.files.map(file => file.path)))}>Selecionar todos</button><button className="btn sm" disabled={busy} onClick={() => setIncoming(new Set())}>Limpar seleção</button></div>
-          <div className="transfer-files">{preview.archive.files.slice(0, shown).map(file => <label className="check" key={file.path}><input type="checkbox" disabled={busy} checked={incoming.has(file.path)} onChange={() => setIncoming(toggle(incoming, file.path))} /><span>{file.path}</span><small>{sizeLabel(file.bytes.length)}</small></label>)}</div>
-          {preview.archive.files.length > shown && <button className="btn sm" onClick={() => setShown(shown + 100)}>Mostrar mais</button>}
+          <h3>{preview.archive.title}</h3><p className="small">{count(preview.items.length, "item", "itens")} · {preview.archive.files.length} arquivo(s) disponíveis · {sizeLabel([...packageSizes.values()].reduce((total, size) => total + size, 0))}; {calculated.plan?.conflicts.length ?? 0} conflito(s) na seleção.{preview.archive.ignored.length > 0 && ` ${preview.archive.ignored.length} arquivo(s) de configuração ou controle foram ignorados.`}</p>
+          <Segmented label="Importar por" value={importChoice} onChange={next => { setImportChoice(next); setShown(100) }} options={[{ value: "itens", label: "Por itens", icon: <ListChecks size={14} /> }, { value: "arquivos", label: "Por arquivos", icon: <FolderTree size={14} /> }]} />
+          {importChoice === "itens" ? <div className="stack" data-transfer-import-items>
+            <div className="row-wrap"><button className="btn sm" disabled={busy} onClick={() => setItemChoices(new Map(preview.items.map(item => [item.id, itemChoices.get(item.id) ?? { strategy: "merge" }])))}>Marcar todos</button><button className="btn sm" disabled={busy || !itemChoices.size} onClick={() => setItemChoices(new Map())}>Limpar seleção</button></div>
+            {TRANSFER_ITEM_GROUPS.map(group => {
+              const list = preview.items.filter(item => item.kind === group.kind)
+              if (!list.length) return null
+              return <fieldset key={group.kind} className="transfer-item-group">
+                <legend>{group.label}</legend>
+                {list.map(item => {
+                  const state = itemStates.get(item.id)!, picked = itemChoices.get(item.id), all = [...item.own, ...item.uses]
+                  const notes = all.filter(path => /\.md$/i.test(path)).length, size = all.reduce((total, path) => total + (packageSizes.get(path) ?? 0), 0)
+                  const set = (next: ItemChoice | null) => setItemChoices(current => { const map = new Map(current); if (next) map.set(item.id, next); else map.delete(item.id); return map })
+                  return <div key={item.id} className="transfer-import-item" data-import-item={item.name}>
+                    <label className="check transfer-item"><input type="checkbox" disabled={busy} checked={Boolean(picked)} onChange={event => set(event.target.checked ? { strategy: "merge" } : null)} />
+                      <span>{item.name}</span>
+                      <small>{[notes ? count(notes, "nota", "notas") : "", all.length - notes ? count(all.length - notes, "arquivo", "arquivos") : ""].filter(Boolean).join(", ")} · {sizeLabel(size)}</small>
+                      <span className={`chip ${state.exists ? "gold" : "cyan"}`}>{state.exists ? "Já está no cofre" : "Não está no cofre"}</span>
+                    </label>
+                    {state.exists && <p className="small muted transfer-item-state">{[state.same ? count(state.same, "igual", "iguais") : "", state.changed ? count(state.changed, "diferente", "diferentes") : "", state.fresh ? count(state.fresh, "novo", "novos") : ""].filter(Boolean).join(", ") || "Mesa com a mesma pasta"}</p>}
+                    {picked && state.exists && <div className="transfer-item-action">
+                      <label className="field"><span>O que fazer</span><select className="select" aria-label={`O que fazer com ${item.name}`} value={picked.strategy} disabled={busy} onChange={event => { const next = event.target.value as ImportStrategy; set({ strategy: next, name: picked.name ?? (next === "duplicate" ? defaultCopyName(item) : undefined) }) }}>
+                        <option value="merge">Adicionar só o que falta</option>
+                        <option value="replace">{state.changed === 1 ? "Substituir o diferente" : state.changed ? `Substituir os ${state.changed.toLocaleString("pt-BR")} diferentes` : "Substituir (nada diferente)"}, com pacote de segurança antes</option>
+                        {canCopy(item) && <option value="duplicate">Importar como cópia</option>}
+                      </select></label>
+                      {picked.strategy === "duplicate" && <label className="field"><span>Nome da cópia</span><input className="input" aria-label={`Nome da cópia de ${item.name}`} value={picked.name ?? ""} disabled={busy} onChange={event => set({ ...picked, name: event.target.value })} /></label>}
+                      {picked.strategy === "duplicate" && calculated.plan?.destinations?.[item.id] && <p className="small muted">Vai para {item.kind === "mesa" ? `a mesa “${picked.name?.trim() || defaultCopyName(item)}”` : calculated.plan.destinations[item.id]}, com os links ajustados.</p>}
+                    </div>}
+                  </div>
+                })}
+              </fieldset>
+            })}
+            <p className="small muted">Imagens e anexos de fora da pasta entram se algum item marcado usa e ainda não estão no cofre; nunca são substituídos nem copiados. Arquivos iguais aos do cofre ficam como estão.</p>
+          </div> : <>
+            <label className="field"><span>Quando já existe</span><select className="select" aria-label="Quando já existe" value={strategy} disabled={busy} onChange={event => setStrategy(event.target.value as ImportStrategy)}><option value="merge">Mesclar: adicionar novos e manter os existentes</option><option value="replace">Substituir os conflitos, salvando um pacote de segurança antes</option><option value="duplicate">Duplicar com novos caminhos e links ajustados</option></select></label>
+            <div className="row-wrap"><button className="btn sm" disabled={busy} onClick={() => setIncoming(new Set(preview.archive.files.map(file => file.path)))}>Selecionar todos</button><button className="btn sm" disabled={busy} onClick={() => setIncoming(new Set())}>Limpar seleção</button></div>
+            <div className="transfer-files">{preview.archive.files.slice(0, shown).map(file => <label className="check" key={file.path}><input type="checkbox" disabled={busy} checked={incoming.has(file.path)} onChange={() => setIncoming(toggle(incoming, file.path))} /><span>{file.path}</span><small>{sizeLabel(file.bytes.length)}</small></label>)}</div>
+            {preview.archive.files.length > shown && <button className="btn sm" onClick={() => setShown(shown + 100)}>Mostrar mais</button>}
+          </>}
           {calculated.problem && <p role="alert" className="transfer-error">{calculated.problem}</p>}
-          <div className="transfer-actions"><button className="btn" disabled={busy} onClick={() => { setPreview(null); setStatus("") }}>Cancelar prévia</button><button className="btn primary" disabled={busy || !canImport || !calculated.plan?.writes.length || Boolean(calculated.problem)} onClick={() => void act(importFiles)}><ArrowDownToLine size={16} /> Importar {calculated.plan?.writes.length ?? 0} arquivo(s)</button></div>
+          {calculated.plan && <p className="small transfer-summary" role="status" data-import-planned>Vai gravar {count(calculated.plan.writes.length, "arquivo", "arquivos")} ({sizeLabel(calculated.plan.writes.reduce((total, write) => total + write.bytes.length, 0))}){calculated.plan.replacements.length ? `, ${calculated.plan.replacements.length} substituindo os do cofre` : ""}. {calculated.plan.skipped.length ? `${count(calculated.plan.skipped.length, "arquivo do cofre fica", "arquivos do cofre ficam")} como está. ` : ""}Antes de gravar: backup de texto do cofre{calculated.plan.replacements.length ? " e pacote de segurança do que for substituído" : ""}.</p>}
+          <div className="transfer-actions"><button className="btn" disabled={busy} onClick={() => { setPreview(null); setStatus("") }}>Cancelar prévia</button><button className="btn primary" disabled={busy || !canImport || !calculated.plan?.writes.length || Boolean(calculated.problem)} onClick={() => void act(importFiles)}><ArrowDownToLine size={16} /> {importChoice === "itens" ? `Importar ${count(itemChoices.size, "item", "itens")} (${calculated.plan?.writes.length ?? 0} arquivo(s))` : `Importar ${calculated.plan?.writes.length ?? 0} arquivo(s)`}</button></div>
         </div>}
       </>}
       <p className="small muted">Limites: {sizeLabel(limits.archive)} por pacote, {sizeLabel(limits.expanded)} de conteúdo ao importar e {sizeLabel(limits.file)} por arquivo.</p>

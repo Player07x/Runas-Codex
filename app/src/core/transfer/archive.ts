@@ -1,12 +1,13 @@
 import { strFromU8, strToU8, Unzip, UnzipInflate, zipSync, type Zippable } from "fflate"
 import { nameProblem } from "../names"
 import { foldName } from "../text"
+import type { TransferItemKind } from "./items"
 import { crc32, readZipDirectory, readZipEntry, ZipWriter, type ZipSink, type ZipSource } from "./zip-stream"
 
 /**
  * Limites do desktop (ADR 0037, antes ADR 0020). Na exportação o pacote é escrito em pedaços: o teto é o do ZIP sem
- * ZIP64. Na importação, o conteúdo descompactado ainda fica na memória até a gravação (1 GB); o PR C troca isso por
- * leitura sob demanda.
+ * ZIP64. Na importação, o conteúdo descompactado ainda fica na memória até a gravação (1 GB); a leitura sob demanda
+ * fica para um PR próprio (ADR 0037, ponto 2).
  */
 export const TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 1024 * 1024 * 1024, file: 512 * 1024 * 1024, files: 10000 } as const
 /**
@@ -18,7 +19,17 @@ export const ANDROID_TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 96 *
 export const LEGACY_ARCHIVE_LIMIT = 128 * 1024 * 1024
 export const PACKAGE_MANIFEST = ".runas-pacote.json"
 export interface TransferFile { path: string; bytes: Uint8Array }
-export interface TransferArchive { title: string; kind: "runas" | "markdown"; files: TransferFile[]; ignored: string[] }
+/** Campo opcional `itens` do manifesto (U53, ADR 0037): o que cada item exportado levou. A 1.3 ignora. */
+export interface PackageItemSpec { tipo: TransferItemKind; nome: string; raizes: string[]; caminhos: string[] }
+export interface TransferArchive { title: string; kind: "runas" | "markdown"; files: TransferFile[]; ignored: string[]; items?: PackageItemSpec[] }
+const ITEM_KINDS = new Set(["wiki", "livro", "mesa", "biblioteca", "campanha", "agenda", "pasta", "outros"])
+const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string")
+/** Itens malformados não impedem a importação: a prévia volta a deduzir os itens pelas pastas. */
+function manifestItems(value: unknown): PackageItemSpec[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const items = value.filter((item): item is PackageItemSpec => record(item) && typeof item.tipo === "string" && ITEM_KINDS.has(item.tipo) && typeof item.nome === "string" && strings(item.raizes) && strings(item.caminhos))
+  return items.length === value.length ? items.map(item => ({ tipo: item.tipo, nome: item.nome.slice(0, 160), raizes: item.raizes, caminhos: item.caminhos })) : undefined
+}
 export interface TransferLimits { archive: number; expanded: number; file: number; files: number }
 
 /** Só a área de mesas gerenciada pelo programa tem permissão de transporte entre pastas ocultas. */
@@ -149,10 +160,12 @@ export async function readTransferArchiveFrom(source: ZipSource, title = "Cofre 
 async function archiveFromZip(zip: Map<string, Uint8Array>, title: string, limits: TransferLimits): Promise<TransferArchive> {
   const manifestBytes = zip.get(PACKAGE_MANIFEST)
   const files: TransferFile[] = [], ignored: string[] = []
+  let items: PackageItemSpec[] | undefined
   if (manifestBytes) {
     const manifest: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(manifestBytes))
     if (!record(manifest) || manifest.format !== "runas-codex" || manifest.version !== 1 || !Array.isArray(manifest.files) || typeof manifest.title !== "string") throw new Error("Pacote Runas inválido ou de uma versão de formato não suportada.")
     title = manifest.title.slice(0, 160)
+    items = manifestItems(manifest.itens)
     const used = new Set([PACKAGE_MANIFEST])
     for (const entry of manifest.files) {
       if (!record(entry) || typeof entry.path !== "string" || typeof entry.size !== "number" || typeof entry.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(entry.sha256)) throw new Error("Entrada inválida no manifesto do pacote.")
@@ -179,10 +192,10 @@ async function archiveFromZip(zip: Map<string, Uint8Array>, title: string, limit
   if (!files.length) throw new Error("O arquivo não contém notas ou anexos importáveis.")
   if (files.length > limits.files) throw new Error("O pacote excede a quantidade permitida de arquivos.")
   validateTransferPaths(files)
-  return { title, kind: manifestBytes ? "runas" : "markdown", files, ignored }
+  return { title, kind: manifestBytes ? "runas" : "markdown", files, ignored, ...(items ? { items } : {}) }
 }
 
-export async function createTransferArchive(title: string, files: TransferFile[], kind: "runas" | "markdown" = "runas", limits: TransferLimits = TRANSFER_LIMITS): Promise<Uint8Array> {
+export async function createTransferArchive(title: string, files: TransferFile[], kind: "runas" | "markdown" = "runas", limits: TransferLimits = TRANSFER_LIMITS, items?: PackageItemSpec[]): Promise<Uint8Array> {
   if (!files.length || files.length > limits.files) throw new Error("Selecione arquivos para exportar, dentro do limite de quantidade.")
   validateTransferPaths(files)
   let total = 0
@@ -193,7 +206,7 @@ export async function createTransferArchive(title: string, files: TransferFile[]
     zip[(kind === "runas" ? "cofre/" : "") + file.path] = file.bytes
     if (kind === "runas") entries.push({ path: file.path, size: file.bytes.length, sha256: await sha256(file.bytes) })
   }
-  if (kind === "runas") zip[PACKAGE_MANIFEST] = strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries }, null, 2))
+  if (kind === "runas") zip[PACKAGE_MANIFEST] = strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries, ...(items?.length ? { itens: items } : {}) }, null, 2))
   const bytes = zipSync(zip, { level: 6 })
   if (bytes.length > limits.archive) throw new Error("O pacote compactado excede o limite permitido.")
   return bytes
@@ -210,9 +223,11 @@ export async function writeTransferArchive(options: {
   kind: "runas" | "markdown"
   limits: TransferLimits
   sink: ZipSink
+  /** Os itens escolhidos na exportação (U53); vão no manifesto do `.runas`. */
+  items?: PackageItemSpec[]
   onProgress?: (done: number, total: number, path: string) => void
 }): Promise<number> {
-  const { title, paths, read, kind, limits, sink, onProgress } = options
+  const { title, paths, read, kind, limits, sink, items, onProgress } = options
   if (!paths.length || paths.length > limits.files) throw new Error("Selecione arquivos para exportar, dentro do limite de quantidade.")
   validateTransferPaths(paths.map(path => ({ path, bytes: new Uint8Array() })))
   const writer = new ZipWriter(sink), entries: { path: string; size: number; sha256: string }[] = []
@@ -224,6 +239,6 @@ export async function writeTransferArchive(options: {
     if (kind === "runas") entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
     if (writer.written > limits.archive) throw new Error("O pacote passou do limite permitido.")
   }
-  if (kind === "runas") await writer.add(PACKAGE_MANIFEST, strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries }, null, 2)))
+  if (kind === "runas") await writer.add(PACKAGE_MANIFEST, strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries, ...(items?.length ? { itens: items } : {}) }, null, 2)))
   return writer.finish()
 }
