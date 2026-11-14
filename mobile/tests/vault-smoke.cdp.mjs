@@ -186,8 +186,11 @@ try {
   await until(`document.querySelector('[data-note-path="Notas/Teclado.md"]')`, 150)
   await run(`document.querySelector('[data-note-path="Notas/Teclado.md"]').click(); true`)
   await until(`document.querySelector('.editor-status')?.getAttribute('title') === 'Notas/Teclado.md'`, 150)
-  await until(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent))`, 150)
-  await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
+  // No celular (1.4, U61/U62) não há mais as abas Leitura/Editar/Código: a nota abre já editando ou com o lápis
+  // “Editar” na barra. Nas telas largas as abas continuam.
+  const editar = `[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)) || document.querySelector('.doc-mode-toggle[aria-label="Editar"]')`
+  await until(`document.querySelector('.cm-content') || ${editar}`, 150)
+  await run(`if (!document.querySelector('.cm-content')) (${editar}).click(); true`)
   await until(`document.querySelector('.cm-content')`, 150)
   // Um toque confiável liga também a InputConnection nativa do WebView; foco DOM sozinho não garante isso.
   const editorPoint = await run(`(()=>{const r=document.querySelector('.cm-content').getBoundingClientRect();return {x:r.x+Math.min(40,r.width/2),y:r.y+Math.min(15,r.height/2)}})()`)
@@ -241,7 +244,8 @@ try {
   await run(`(()=>{const input=document.querySelector('[aria-label="Arquivo para importar"]'), files=new DataTransfer(); files.items.add(new File(['# Transferência Android\\n'], 'Transferencia-Android.md')); input.files=files.files; input.dispatchEvent(new Event('change',{bubbles:true})); return true})()`)
   await until(`document.querySelector('[data-transfer-preview]')?.textContent.includes('1 arquivo(s)')`)
   check('prévia de importação sem gravar', !adb('shell', 'ls', deviceVault + '/Notas').includes('Transferencia-Android.md'))
-  await run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Importar 1 arquivo(s)').click(); true`)
+  // Na 1.4 (U53) a prévia abre por itens e o botão diz “Importar 1 item (1 arquivo(s))”; por arquivos, “Importar 1 arquivo(s)”.
+  await run(`[...document.querySelectorAll('.transfer-actions button')].find(b=>/^Importar .*1 arquivo\\(s\\)/.test(b.textContent.trim())).click(); true`)
   await until(`document.querySelector('.transfer-status')?.textContent.includes('1 arquivo(s) importados')`)
   check('interface importa através do cofre real', adb('shell', 'cat', deviceVault + '/Notas/Importados/Transferencia-Android.md').includes('Transferência Android'))
   const worldPath = '.runas/mesas/transfer-smoke/mesa.json'
