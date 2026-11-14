@@ -1774,3 +1774,16 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Notas no celular: some a faixa “Lista de notas”; fica só “Notas” com o ⋯. A dica “Segure uma nota…” some sozinha
   depois do primeiro toque longo (ou no “Entendi”). A lista tem folga no fim para o “+” não cobrir a última nota; com
   uma nota aberta o “+” flutuante não aparece (o + da barra do topo continua criando).
+
+## Atualização 1.4.0 · Livro no celular (PR G: U63)
+
+- [ ] No celular (ou numa janela de 360 px), abrir um livro: a barra tem voltar, “Sumário”, o ponto de Salvo, “Ler” e
+  **um** ⋯ só. A 320 px “Sumário” e “Ler” ficam só com o ícone e nada sai para os lados.
+- [ ] O sumário abre como folha da largura toda (nenhum pedaço do texto aparecendo ao lado) e fecha ao escolher um
+  capítulo.
+- [ ] O ⋯ junta as ações do capítulo (Formatar, Inserir…, Histórico, Exportar…) e as do livro (Apoio, Novo capítulo,
+  Metadados, Exportar o livro, Revisar, Foco, máquina de escrever, Excluir livro). O leitor de tela diz “Ações do
+  capítulo e do livro”.
+- [ ] “Apoio…” no ⋯ abre o apoio em folha inteira; o botão do Apoio aparece na barra só enquanto ele está aberto, para
+  fechar.
+- [ ] “Ler” abre a página do cursor, como antes. Entre 641 e 860 px (tablet) a barra continua como na 1.3.
