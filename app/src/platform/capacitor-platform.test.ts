@@ -3,6 +3,7 @@ import type { VaultChange } from "./platform"
 
 const native = vi.hoisted(() => ({
   current: vi.fn(), list: vi.fn(), writeBinary: vi.fn(), trash: vi.fn(), addListener: vi.fn(),
+  saveStreamStart: vi.fn(), saveStreamWrite: vi.fn(), saveStreamFinish: vi.fn(), saveStreamAbort: vi.fn(),
 }))
 vi.mock("@capacitor/core", () => ({
   registerPlugin: () => native,
@@ -65,5 +66,35 @@ describe("anexos do cofre Android", () => {
     const platform = createCapacitorPlatform()
     await platform.vault()
     expect(platform.fileUrl("a.png")).toBe("https://localhost/_capacitor_file_/storage/emulated/0/Cofre/a.png")
+  })
+})
+
+describe("exportação em pedaços no Android (U50, PR A2)", () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it("manda o pacote em pedaços de até 2 MB, na ordem, e devolve o nome escolhido", async () => {
+    native.saveStreamStart.mockResolvedValue({ id: 7, name: "Cofre.runas" })
+    native.saveStreamFinish.mockResolvedValue({ name: "Cofre.runas" })
+    const parts: Uint8Array[] = []
+    native.saveStreamWrite.mockImplementation(async ({ base64 }: { base64: string }) => { parts.push(new Uint8Array(Buffer.from(base64, "base64"))) })
+    const target = await createCapacitorPlatform().openSave!("Cofre.runas", "application/zip")
+    const bytes = new Uint8Array(5 * 1024 * 1024 + 3)
+    for (let i = 0; i < bytes.length; i++) bytes[i] = i % 251
+    await target!.write(bytes)
+    expect(await target!.close()).toBe("Cofre.runas")
+    expect(native.saveStreamStart).toHaveBeenCalledWith({ name: "Cofre.runas", mime: "application/zip" })
+    expect(parts.map(part => part.length)).toEqual([2 * 1024 * 1024, 2 * 1024 * 1024, 1024 * 1024 + 3])
+    expect(native.saveStreamWrite.mock.calls.every(([options]) => options.id === 7)).toBe(true)
+    expect(Buffer.concat(parts).equals(Buffer.from(bytes))).toBe(true)
+    expect(native.saveStreamFinish).toHaveBeenCalledWith({ id: 7 })
+  })
+
+  it("devolve nada quando o usuário cancela o seletor e repassa o cancelamento", async () => {
+    native.saveStreamStart.mockResolvedValueOnce({ id: null })
+    const platform = createCapacitorPlatform()
+    expect(await platform.openSave!("x.zip", "application/zip")).toBeNull()
+    native.saveStreamStart.mockResolvedValueOnce({ id: 3, name: "x.zip" })
+    await (await platform.openSave!("x.zip", "application/zip"))!.abort()
+    expect(native.saveStreamAbort).toHaveBeenCalledWith({ id: 3 })
   })
 })

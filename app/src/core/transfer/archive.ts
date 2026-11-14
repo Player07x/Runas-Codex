@@ -9,8 +9,11 @@ import { crc32, readZipDirectory, readZipEntry, ZipWriter, type ZipSink, type Zi
  * leitura sob demanda.
  */
 export const TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 1024 * 1024 * 1024, file: 512 * 1024 * 1024, files: 10000 } as const
-/** Android até o PR A2: o pacote ainda passa inteiro pela ponte do Capacitor. */
-export const ANDROID_TRANSFER_LIMITS = { archive: 64 * 1024 * 1024, expanded: 96 * 1024 * 1024, file: 32 * 1024 * 1024, files: 10000 } as const
+/**
+ * Android (PR A2): a exportação sai em pedaços, então o pacote vai até o máximo do ZIP; cada arquivo ainda passa
+ * inteiro em base64 pela ponte (64 MB). A importação continua com o conteúdo na memória (96 MB) até o PR C.
+ */
+export const ANDROID_TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 96 * 1024 * 1024, file: 64 * 1024 * 1024, files: 10000 } as const
 /** O que a 1.3 abre (ADR 0020): pacotes maiores só abrem na 1.4 ou mais nova. */
 export const LEGACY_ARCHIVE_LIMIT = 128 * 1024 * 1024
 export const PACKAGE_MANIFEST = ".runas-pacote.json"

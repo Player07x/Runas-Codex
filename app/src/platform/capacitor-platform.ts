@@ -45,6 +45,10 @@ interface RunasVaultPlugin {
   backupsPath(): Promise<{ path: string }>
   openFile(options: { path: string }): Promise<void>
   saveAs(options: { name: string; mime: string; base64: string }): Promise<{ name: string | null }>
+  saveStreamStart(options: { name: string; mime: string }): Promise<{ id: number | null; name?: string }>
+  saveStreamWrite(options: { id: number; base64: string }): Promise<void>
+  saveStreamFinish(options: { id: number }): Promise<{ name: string }>
+  saveStreamAbort(options: { id: number }): Promise<void>
   appVersion(): Promise<{ version: string }>
   printDocument(options: { name: string }): Promise<void>
   setAgendaWidget(options: { items: { when: string; title: string }[] }): Promise<void>
@@ -54,6 +58,8 @@ interface RunasVaultPlugin {
 }
 
 export const RunasVault = registerPlugin<RunasVaultPlugin>("RunasVault")
+/** Tamanho de cada pedaço da exportação em pedaços pela ponte do Capacitor (vira ~2,7 MB de base64). */
+const SAVE_CHUNK = 2 * 1024 * 1024
 
 export function toBase64(bytes: Uint8Array): string {
   let binary = ""
@@ -159,6 +165,18 @@ export function createCapacitorPlatform(): Platform {
     listTransferFiles: async (includeWorlds = true) => (await RunasVault.listTransferFiles({ includeWorlds })).entries.map(rememberEntry),
     writeManagedTransfer: async (path, bytes, expected) => rememberEntry(await RunasVault.writeManagedTransfer({ path, base64: toBase64(bytes), expected })),
     printDocument: (name = "Runas-Codex") => RunasVault.printDocument({ name }),
+    async openSave(name, mime) {
+      // U50 (ADR 0037): o pacote vai em pedaços de 2 MB; um base64 do tamanho do pacote não cabe na ponte.
+      const { id } = await RunasVault.saveStreamStart({ name, mime })
+      if (id == null) return null
+      return {
+        async write(bytes) {
+          for (let at = 0; at < bytes.length; at += SAVE_CHUNK) await RunasVault.saveStreamWrite({ id, base64: toBase64(bytes.subarray(at, at + SAVE_CHUNK)) })
+        },
+        close: async () => (await RunasVault.saveStreamFinish({ id })).name,
+        abort: () => RunasVault.saveStreamAbort({ id }),
+      }
+    },
   }
   result.vtt = createAndroidVttApi(result)
   return result
