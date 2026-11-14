@@ -100,11 +100,18 @@
  */
 .note-row { position: relative; }
 .note-row > .list-item.note-item { -webkit-touch-callout: none; }
-.row-menu { position: absolute; top: 50%; right: 4px; display: none; transform: translateY(-50%); border-radius: 8px; background: var(--panel-2); }
-.vault-folder-wrap > .row-menu { top: 22px; }
+/* U69: o “⋯” não tem caixa própria. Ocupa a altura da linha, na cor dela (todas usam --panel-2 no hover e na
+   selecionada), e um degradê curto encobre o fim do nome. Com mouse o botão segue a linha de 32 px; no toque ele some. */
+.row-menu { position: absolute; top: 1px; bottom: 1px; right: 1px; display: none; align-items: center; padding: 0 3px 0 18px; border-radius: 0 8px 8px 0; background: linear-gradient(to right, transparent, var(--panel-2) 18px); }
+.row-menu .kit-menu-wrap { height: 100%; align-items: center; }
+.row-menu .icon-btn.sm { width: 30px; min-width: 30px; height: min(30px, 100%); min-height: 0; }
+.row-menu .icon-btn.sm:hover, .row-menu .icon-btn.sm[aria-expanded="true"] { background: var(--panel-hover); }
+.vault-folder-wrap > .row-menu { top: 1px; bottom: auto; height: 42px; }
 .note-row:is(:hover, :focus-within) > .row-menu, .vault-folder-wrap:has(> details > summary:hover) > .row-menu, .vault-folder-wrap:has(> details > summary:focus-visible) > .row-menu, .vault-folder-wrap > .row-menu:is(:hover, :focus-within) { display: inline-flex; }
-.note-row:is(:hover, :focus-within) > .list-item, .vault-folder-wrap:has(> .row-menu:is(:hover, :focus-within)) > details > summary, .vault-folder-wrap > details > summary:is(:hover, :focus-visible) { padding-right: 44px; }
+.note-row:is(:hover, :focus-within) > .list-item, .vault-folder-wrap:has(> .row-menu:is(:hover, :focus-within)) > details > summary, .vault-folder-wrap > details > summary:is(:hover, :focus-visible) { padding-right: 52px; }
 .row-menu:has([aria-expanded="true"]) { display: inline-flex; }
+/* Com o ⋯ à vista (foco pelo teclado ou menu aberto), a linha toma a mesma cor do degradê. */
+.note-row:is(:hover, :focus-within, :has(.row-menu [aria-expanded="true"])) > .list-item, .vault-folder-wrap:has(> .row-menu:is(:hover, :focus-within, :has([aria-expanded="true"]))) > details > summary, .vault-folder-wrap > details > summary:focus-visible { background: var(--panel-2); }
 @media (hover: none) { .row-menu, .note-row:is(:hover, :focus-within) > .row-menu, .vault-folder-wrap > .row-menu:is(:hover, :focus-within) { display: none; } }
 .notes-hint { display: flex; align-items: center; gap: 8px; margin: 0; }
 
@@ -112,13 +119,13 @@
    contagem numa bolinha à direita e 16 px de recuo por nível com uma linha-guia. */
 .list-item.note-item.compact { align-items: center; min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
 .vault-folder > summary.folder-summary { min-height: 32px; padding: 4px 10px; }
-.vault-folder-wrap > .row-menu { top: 16px; }
+.vault-folder-wrap > .row-menu { height: 30px; }
 .folder-badge { flex: none; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font: 600 calc(11.5px * var(--font-scale, 1)) / 18px var(--font-mono); text-align: center; font-variant-numeric: tabular-nums; }
 .vault-folder-children { position: relative; margin-left: 15px; padding-left: 8px; border-left: 1px solid var(--line); }
 .vault-folder-children:hover { border-left-color: var(--line-strong); }
 @media (pointer: coarse) {
   .list-item.note-item.compact, .vault-folder > summary.folder-summary { min-height: 44px; }
-  .vault-folder-wrap > .row-menu { top: 22px; }
+  .vault-folder-wrap > .row-menu { height: 42px; }
 }
 :root[data-tablet="true"] .list-item.note-item.compact, :root[data-tablet="true"] .vault-folder > summary.folder-summary { min-height: 44px; }
-:root[data-tablet="true"] .vault-folder-wrap > .row-menu { top: 22px; }
+:root[data-tablet="true"] .vault-folder-wrap > .row-menu { height: 42px; }

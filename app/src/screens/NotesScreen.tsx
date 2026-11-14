@@ -20,6 +20,8 @@ import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorksp
 import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
 import { basename, dirname, joinPath, noteName } from "../core/text"
+import { collapseFolders, moveFolderMemory, parseFolderMemory, rememberFolder } from "../core/folder-memory"
+import { useRemembered } from "../lib/remembered"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
 import { copyLinkTarget, flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
@@ -290,6 +292,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     try {
       await flushOpenNotes()
       const plan = await vault.rename(from, result.to)
+      if (isFolder) setOpenFolders((memory) => moveFolderMemory(memory, from, result.to))
       const changed = plan.edits.length ? ` Links atualizados em ${plan.edits.length} arquivo(s).` : ""
       toast(`${isFolder ? "Pasta movida" : "Nota movida"} para ${folder || "a raiz do cofre"}.${changed}`)
       // A nota aberta foi junto: a rota acompanha o caminho novo.
@@ -458,6 +461,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   }
 
   const [collapseAll, setCollapseAll] = useState(0)
+  // Pastas abertas e fechadas, por aparelho, cofre e escopo (U70). A pasta da nota aberta abre sozinha sem virar escolha.
+  const [openFolders, setOpenFolders] = useRemembered(`runas-codex:pastas-abertas:${vault.info?.path ?? ""}:${wholeVault ? "cofre" : "notas"}`, parseFolderMemory)
   // Contagem por extenso da pasta: dica e nome acessível da bolinha (U42).
   const folderCount = (folder: TreeFolder) => {
     const parts = [folder.notes.length === 1 ? "1 nota" : `${folder.notes.length} notas`]
@@ -474,7 +479,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     const content = (
       <>
         {subfolders.map((sub) => (
-          <LazyFolder key={sub.path} collapse={collapseAll} lazy={notes.length > LARGE_VAULT} initialOpen={depth < 1 && !isArchive(sub)} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
+          <LazyFolder key={sub.path} collapse={collapseAll} lazy={notes.length > LARGE_VAULT} initialOpen={openFolders[sub.path] ?? (depth < 1 && !isArchive(sub))} onRemember={(open) => setOpenFolders((memory) => rememberFolder(memory, sub.path, open))} forceOpen={Boolean(note?.path.startsWith(sub.path + "/"))} className={`vault-folder ${dropTarget === sub.path ? "drop-target" : ""}`} zone={dropZone(sub.path)} summary={
             <summary className="row folder-summary" {...dragSource(sub.path)} {...contextMenuProps((at) => setMenu({ at, kind: "folder", path: sub.path }))}>
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={14} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />}
@@ -499,7 +504,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     ] : []),
     { label: "Nota aleatória", icon: <Shuffle size={16} />, onSelect: () => { const picked = pickRandom(); if (picked) navigate(vaultRoute(picked)); else toast("Não há notas para sortear.") } },
     { label: "Gráfico", icon: <Network size={16} />, onSelect: () => navigate("/notas/grafico") },
-    { label: "Recolher tudo", icon: <ChevronsDownUp size={16} />, onSelect: () => setCollapseAll((n) => n + 1) },
+    { label: "Recolher tudo", icon: <ChevronsDownUp size={16} />, onSelect: () => { setCollapseAll((n) => n + 1); setOpenFolders((memory) => collapseFolders(memory, folders)) } },
     sep,
     ...(!readOnly ? [{ label: "Buscar e substituir…", icon: <Replace size={16} />, onSelect: () => void flushOpenNotes().then(() => setReplacing(true)) }] : []),
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(currentFolder ? currentFolder + "/" : root).map((note) => note.path), title: currentFolder || root || vault.info?.name || "Notas" }) },
@@ -732,6 +737,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           onRename={async (to) => {
             const plan = await vault.rename(dialog.path, to)
             setCreatedFolders((list) => list.map((f) => (f === dialog.path ? to : f)))
+            setOpenFolders((memory) => moveFolderMemory(memory, dialog.path, to))
             toast(plan.edits.length ? `Pasta renomeada; links atualizados em ${plan.edits.length} arquivo(s)` : "Pasta renomeada")
             if (note && note.path.startsWith(dialog.path + "/")) navigate(vaultRoute(to + note.path.slice(dialog.path.length)))
           }}
@@ -786,7 +792,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
  * fechadas desenhavam tudo escondido. Em cofre pequeno continua tudo no DOM, como antes (a busca do navegador e o
  * smoke do Electron contam com isso). Abre sozinha quando a nota aberta está dentro dela.
  */
-function LazyFolder({ collapse, lazy, initialOpen, forceOpen, className, zone, summary, actions, children }: { collapse: number; lazy: boolean; initialOpen: boolean; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
+function LazyFolder({ collapse, lazy, initialOpen, onRemember, forceOpen, className, zone, summary, actions, children }: { collapse: number; lazy: boolean; initialOpen: boolean; onRemember(open: boolean): void; forceOpen: boolean; className: string; zone: HTMLAttributes<HTMLElement>; summary: ReactNode; actions: ReactNode; children: () => ReactNode }) {
   const [open, setOpen] = useState(initialOpen || forceOpen)
   useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
   // "Recolher tudo" (U42): cada pedido fecha a pasta, menos a que tem a nota aberta.
@@ -794,7 +800,8 @@ function LazyFolder({ collapse, lazy, initialOpen, forceOpen, className, zone, s
   // Os botões da pasta ficam fora do <summary> (T7: controle dentro de controle confunde teclado e leitor de tela).
   return (
     <div className="vault-folder-wrap">
-      <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className={className} {...zone}>
+      {/* O toggle que o próprio app causou (abrir a pasta da nota) chega igual ao estado; só o da pessoa é lembrado. */}
+      <details open={open} onToggle={(event) => { const next = event.currentTarget.open; if (next !== open) onRemember(next); setOpen(next) }} className={className} {...zone}>
         {summary}
         {(open || !lazy) && children()}
       </details>
