@@ -1862,3 +1862,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] “Apoio…” no ⋯ abre o apoio em folha inteira; o botão do Apoio aparece na barra só enquanto ele está aberto, para
   fechar.
 - [ ] “Ler” abre a página do cursor, como antes. Entre 641 e 860 px (tablet) a barra continua como na 1.3.
+## Notas: ⋯ e pastas lembradas (1.4.0, PR H)
+
+- [ ] Tema escuro e claro, com mouse: passar sobre uma nota e sobre uma pasta da árvore. O ⋯ fica dentro da linha, na
+      cor dela, sem caixa saindo para cima ou para baixo; o fim do nome some num degradê curto.
+- [ ] Abrir o ⋯ pelo teclado (Tab até a nota, depois Tab até o ⋯): a linha fica na mesma cor do degradê.
+- [ ] Fechar duas pastas e abrir uma subpasta; fechar e abrir o app: as pastas voltam como estavam. Trocar para
+      “Cofre inteiro” e voltar: cada escopo lembra as suas.
+- [ ] Abrir uma nota de dentro de uma pasta fechada (pela busca ou por um link): a pasta abre para mostrar a nota, mas
+      ao reabrir o app ela volta fechada.
+- [ ] “Recolher tudo” e reabrir o app: tudo continua recolhido.
+- [ ] Renomear uma pasta fechada (e arrastar outra para dentro de uma pasta): a escolha de aberta ou fechada vai junto.
