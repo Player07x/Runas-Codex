@@ -65,5 +65,12 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
       if (!vault.writeManagedTransfer) throw new Error("Atualize o app para importar os dados internos da mesa.")
       return vault.writeManagedTransfer(path, bytes, expected)
     },
+    // U50: sem `saveStream` (preload antigo), a tela cai no `saveBytes`.
+    openSave: bridge.saveStream ? async name => {
+      const stream = bridge.saveStream!
+      const opened = await stream.start(name)
+      if (!opened) return null
+      return { write: bytes => stream.write(opened.id, bytes), close: () => stream.finish(opened.id), abort: () => stream.abort(opened.id) }
+    } : undefined,
   }
 }

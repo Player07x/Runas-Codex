@@ -5,7 +5,8 @@ import { Segmented } from "../../components/ui"
 import { navigate, useRoute } from "../../lib/router"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { buildImportPlan, sameTransferVersion, selectTransferPaths, type ImportPlan, type ImportStrategy, type TransferEntry } from "../../core/transfer/plan"
-import { createTransferArchive, managedWorldPath, readTransferArchive, transferPath, TRANSFER_LIMITS, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
+import { ANDROID_TRANSFER_LIMITS, createTransferArchive, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
+import { blobSource, bufferedSink } from "../../core/transfer/zip-stream"
 import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core/transfer/notion"
 import "./transfer-workspace.css"
 import { parseWorldManifest } from "../../vtt/shared/world"
@@ -17,7 +18,7 @@ const scopes = [
   { value: "Livros", label: "Livros", roots: ["Livros"] }, { value: "Agenda", label: "Agenda", roots: ["Agenda"] },
   { value: "Mesas", label: "Mesas e dados do VTT", roots: ["Mesas", ".runas/mesas"] },
 ]
-const sizeLabel = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`
+const sizeLabel = (bytes: number) => bytes >= 1073741824 ? `${(bytes / 1073741824).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} GB` : bytes >= 1048576 ? `${(bytes / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB` : `${Math.ceil(bytes / 1024)} KB`
 const safeName = (name: string) => name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-").slice(0, 80) || "Cofre"
 const failure = (error: unknown) => error instanceof Error ? error.message : String(error)
 interface Preview { archive: TransferArchive; existing: TransferEntry[] }
@@ -59,7 +60,9 @@ export function TransferWorkspace() {
   const [incoming, setIncoming] = useState<Set<string>>(new Set())
   const [strategy, setStrategy] = useState<ImportStrategy>("merge")
   const [destination, setDestination] = useState("Notas/Importados")
-  const limits = vault.platform.kind === "capacitor" ? { ...TRANSFER_LIMITS, archive: 64 * 1048576, expanded: 96 * 1048576, file: 32 * 1048576 } : TRANSFER_LIMITS
+  // U50 (ADR 0037): o desktop grava em pedaços; o Android mantém os limites antigos até o PR A2.
+  const limits = vault.platform.kind === "capacitor" ? ANDROID_TRANSFER_LIMITS : TRANSFER_LIMITS
+  const [notice, setNotice] = useState("")
   const listFiles = () => vault.platform.listTransferFiles?.(worlds || scope === "Mesas") ?? vault.platform.listVault()
 
   useEffect(() => {
@@ -79,7 +82,7 @@ export function TransferWorkspace() {
   }, [preview, incoming, strategy])
 
   async function act(operation: () => Promise<void>) {
-    setBusy(true); setError(""); setStatus("")
+    setBusy(true); setError(""); setStatus(""); setNotice("")
     try { await operation() } catch (error) { setError(failure(error)) } finally { setBusy(false) }
   }
   async function collect(paths: string[], known: TransferEntry[], title: string): Promise<TransferFile[]> {
@@ -107,12 +110,40 @@ export function TransferWorkspace() {
       }
     }
     const paths = selectTransferPaths(vault.index!, known, roots, linked, worlds && !scope || scope === "Mesas", worldRoots)
-    const files = await collect(paths, known, "exportação")
-    setStatus("Montando o arquivo…")
-    const bytes = await createTransferArchive(vault.info!.name, files, kind, limits)
-    const name = `${safeName(vault.info!.name)}${scope ? " - " + scope : ""}.${kind === "runas" ? "runas" : "zip"}`
-    const saved = await vault.platform.saveBytes(name, bytes, kind === "runas" ? "application/octet-stream" : "application/zip")
-    setStatus(saved ? `${files.length} arquivo(s) exportados: ${saved}` : "Exportação cancelada.")
+    const name = `${safeName(vault.info!.name)}${scope ? " - " + scope : ""}.${kind === "runas" ? "runas" : "zip"}`, mime = kind === "runas" ? "application/octet-stream" : "application/zip"
+    if (!vault.platform.openSave) {
+      // Android até o PR A2: o pacote ainda é montado inteiro e passa de uma vez pela ponte.
+      const files = await collect(paths, known, "exportação")
+      setStatus("Montando o arquivo…")
+      const bytes = await createTransferArchive(vault.info!.name, files, kind, limits)
+      const saved = await vault.platform.saveBytes(name, bytes, mime)
+      setStatus(saved ? `${files.length} arquivo(s) exportados: ${saved}` : "Exportação cancelada.")
+      return
+    }
+    // U50 (ADR 0037): confere os tamanhos antes do diálogo; depois lê e grava um arquivo por vez.
+    const big = paths.filter(path => (known.find(entry => entry.path === path)?.size ?? Infinity) > limits.file)
+    if (big.length) throw new Error(`${big.length} arquivo(s) passam de ${sizeLabel(limits.file)} ou sumiram: ${big.slice(0, 3).join(", ")}${big.length > 3 ? "…" : ""}`)
+    const identity = vault.info?.path
+    const target = await vault.platform.openSave(name, mime)
+    if (!target) { setStatus("Exportação cancelada."); return }
+    try {
+      const sink = bufferedSink(bytes => target.write(bytes))
+      const size = await writeTransferArchive({
+        title: vault.info!.name, paths, kind, limits, sink,
+        read: path => vault.platform.readBinary(path),
+        onProgress: (done, total, path) => setStatus(`Gravando ${done + 1} de ${total}: ${path}`),
+      })
+      await sink.flush()
+      if ((await vault.platform.vault())?.path !== identity) throw new Error("O cofre mudou durante a exportação.")
+      const current = await (vault.platform.listTransferFiles?.(paths.some(path => managedWorldPath(path)) || worlds || scope === "Mesas") ?? vault.platform.listVault())
+      for (const path of paths) if (!sameTransferVersion(current.find(entry => entry.path === path), known.find(entry => entry.path === path)!)) throw new Error(`“${path}” mudou durante a exportação. Tente novamente.`)
+      const saved = await target.close()
+      setStatus(`${paths.length} arquivo(s) exportados: ${saved}`)
+      setNotice(`Pacote de ${sizeLabel(size)}.${size > LEGACY_ARCHIVE_LIMIT ? " Ele passa de 128 MB: só abre no Runas-Codex 1.4 ou mais novo." : ""}`)
+    } catch (error) {
+      await target.abort().catch(() => undefined)
+      throw error
+    }
   }
   async function prepareImport(files: FileList | null) {
     if (!files?.length) return
@@ -125,7 +156,8 @@ export function TransferWorkspace() {
       if (chosen.length === 1 && /\.(zip|runas)$/i.test(chosen[0]!.name)) {
         if (chosen[0]!.size > limits.archive) throw new Error(`O arquivo excede ${sizeLabel(limits.archive)} compactados.`)
         setStatus("Lendo e conferindo o pacote…")
-        archive = await readTransferArchive(new Uint8Array(await chosen[0]!.arrayBuffer()), chosen[0]!.name.replace(/\.[^.]+$/, ""), limits)
+        // U50: lê o pacote por partes, um arquivo por vez, em vez de carregar o arquivo inteiro.
+        archive = await readTransferArchiveFrom(blobSource(chosen[0]!), chosen[0]!.name.replace(/\.[^.]+$/, ""), limits, (done, total) => setStatus(`Lendo e conferindo o pacote: ${done + 1} de ${total}`))
         if (/\.runas$/i.test(chosen[0]!.name) && archive.kind !== "runas") throw new Error("O arquivo .runas está sem seu manifesto. Use um pacote exportado pelo programa.")
         // Exportação do Notion (Markdown & CSV): nomes sem o id, links do Obsidian e bancos de dados como propriedades.
         archive = await unwrapNestedZips(archive, limits)
@@ -220,8 +252,8 @@ export function TransferWorkspace() {
           <div className="transfer-actions"><button className="btn" disabled={busy} onClick={() => { setPreview(null); setStatus("") }}>Cancelar prévia</button><button className="btn primary" disabled={busy || !canImport || !calculated.plan?.writes.length || Boolean(calculated.problem)} onClick={() => void act(importFiles)}><ArrowDownToLine size={16} /> Importar {calculated.plan?.writes.length ?? 0} arquivo(s)</button></div>
         </div>}
       </>}
-      <p className="small muted">Limites: {sizeLabel(limits.archive)} compactados, {sizeLabel(limits.expanded)} no conteúdo e {sizeLabel(limits.file)} por arquivo.</p>
-      {status && <p role="status" className="small transfer-status">{status}</p>}{error && <p role="alert" className="transfer-error">{error}</p>}
+      <p className="small muted">Limites: {sizeLabel(limits.archive)} por pacote, {sizeLabel(limits.expanded)} de conteúdo ao importar e {sizeLabel(limits.file)} por arquivo.</p>
+      {status && <p role="status" className="small transfer-status">{status}</p>}{notice && <p className="small transfer-notice">{notice}</p>}{error && <p role="alert" className="transfer-error">{error}</p>}
     </section>}
     {direction === "exportar" && goal === "documento" && vault.info && <DocumentExport paths={selected === null ? scoped.map(entry => entry.path) : [...selected]} />}
     <div className="transfer-grid">

@@ -75,4 +75,11 @@ export interface RunasCodexBridge {
     create(): Promise<SystemShortcutStatus>
     remove(): Promise<SystemShortcutStatus>
   }
+  /** U50 (ADR 0037): exportação em pedaços. `start` abre o diálogo; o arquivo só ganha o nome final no `finish`. */
+  saveStream?: {
+    start(name: string): Promise<{ id: number; path: string } | null>
+    write(id: number, bytes: Uint8Array): Promise<void>
+    finish(id: number): Promise<string>
+    abort(id: number): Promise<void>
+  }
 }

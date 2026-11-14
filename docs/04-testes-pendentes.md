@@ -1732,3 +1732,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
 - [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
   propriedades aparecem como texto e nada quebra.
+
+## Atualização 1.4.0 — PR A (pacotes em pedaços, U50)
+
+- [ ] No desktop, em Importar / Exportar › Levar para outro aparelho, exportar o **cofre inteiro** (562 MB no seu) e a
+  **wiki Cronos** com as imagens: o diálogo de salvar abre antes, o andamento aparece arquivo por arquivo, e no fim a
+  tela diz o tamanho do pacote e avisa que ele só abre na 1.4 ou mais nova.
+- [ ] Cancelar o diálogo não cria arquivo; fechar o app no meio da exportação não deixa um `.parcial` na pasta.
+- [ ] Importar esse pacote noutro cofre (ou numa cópia): a prévia aparece, e as notas e imagens chegam iguais.
+- [ ] Um pacote pequeno exportado pela 1.4 continua abrindo na 1.3 (por exemplo, no celular ainda não atualizado).
+- [ ] No Android nada muda neste PR: os limites antigos continuam até o PR A2.

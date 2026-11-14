@@ -1,7 +1,7 @@
 import { strFromU8, unzipSync } from "fflate"
 import type { BrowserWindow } from "electron"
-import { readFile } from "node:fs/promises"
-import { readTransferArchive } from "../../../app/src/core/transfer/archive"
+import { open, readFile } from "node:fs/promises"
+import { readTransferArchive, readTransferArchiveFrom } from "../../../app/src/core/transfer/archive"
 import { checkPdf } from "./smoke"
 
 /** Importa e exporta pela tela real; as gravações usam o cofre temporário do smoke. */
@@ -78,12 +78,32 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     button("Escolher onde salvar").click()
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes(".zip"))
     const zip=document.querySelector(".transfer-status").textContent.split("exportados: ")[1]
+    // U50 (ADR 0037): um pacote acima do limite antigo de 128 MB, gravado em pedaços pela tela.
+    // O cofre recusa um arquivo único acima de 100 MB; dois de 70 MB passam de 128 MB juntos.
+    const bigPaths=["Notas/Pacote-grande-smoke-1.png","Notas/Pacote-grande-smoke-2.png"], big=new Uint8Array(70*1048576)
+    for(let i=0;i<big.length;i+=4096)big[i]=(i*2654435761)>>>24
+    for(const bigPath of bigPaths)await api.vault.writeBinary(bigPath,big,null)
+    select("Formato do pacote","runas")
+    select("O que exportar","Agenda")
+    await wait(300)
+    select("O que exportar","Notas")
+    const details=await until(()=>document.querySelector("details"))
+    if(!details.open)details.querySelector("summary").click()
+    await until(()=>bigPaths.every(bigPath=>[...document.querySelectorAll(".transfer-files label")].some(el=>el.textContent.startsWith(bigPath))))
+    button("Limpar seleção").click()
+    await until(()=>document.querySelector("summary")?.textContent.includes("(0)"))
+    for(const bigPath of bigPaths)[...document.querySelectorAll(".transfer-files label")].find(el=>el.textContent.startsWith(bigPath)).querySelector("input").click()
+    await until(()=>document.querySelector("summary")?.textContent.includes("(2)") && !button("Escolher onde salvar")?.disabled)
+    button("Escolher onde salvar").click()
+    const bigStatus=await until(()=>{const text=document.querySelector(".transfer-status")?.textContent; return text?.includes("exportados:") && !text.includes(zip) && document.querySelector(".transfer-notice") && text})
+    const large=bigStatus.split("exportados: ")[1]
+    checks.largeNotice=document.querySelector(".transfer-notice").textContent.includes("1.4 ou mais novo")
     const managed=".runas/mesas/transfer-smoke/mesa.json", manifest=new TextEncoder().encode(JSON.stringify({formatVersion:1,id:"transfer-smoke",title:"Transferência",createdAt:1,updatedAt:1}))
     await api.vault.writeManagedTransfer(managed,manifest,null)
     checks.world=(await api.vault.listTransferFiles(true)).some(entry=>entry.path===managed) && !(await api.vault.listTransferFiles(false)).some(entry=>entry.path===managed)
     checks.hidden=await api.vault.writeManagedTransfer(".obsidian/teste.json",manifest,null).then(()=>false,()=>true)
-    return {checks,exported,zip,html,pdf,site}
-  })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string; site: string }
+    return {checks,exported,zip,html,pdf,site,large}
+  })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string; site: string; large: string }
   const native = await readTransferArchive(new Uint8Array(await readFile(result.exported)))
   const markdown = await readTransferArchive(new Uint8Array(await readFile(result.zip)))
   const html = await readFile(result.html, "utf8")
@@ -95,5 +115,14 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
   result.checks.site = Boolean(site["index.html"] && site["book.css"]) && first.includes("Transferência") && first.includes('src="../assets/') && !first.includes("X4_SEGREDO_NAO_EXPORTAR") && !first.includes("<script")
   const pdf = await checkPdf(result.pdf)
   result.checks.pdf = Boolean(pdf && typeof pdf === "object" && "pages" in pdf && Number(pdf.pages) > 0)
+  // O pacote grande é lido por partes, como a tela faz com o arquivo escolhido.
+  const handle = await open(result.large)
+  try {
+    const size = (await handle.stat()).size
+    const source = { size, read: async (offset: number, length: number) => { const buffer = new Uint8Array(length); const { bytesRead } = await handle.read(buffer, 0, length, offset); return buffer.subarray(0, bytesRead) } }
+    const large = await readTransferArchiveFrom(source)
+    const files = large.files.filter(item => item.path.startsWith("Notas/Pacote-grande-smoke-"))
+    result.checks.largeArchive = size > 128 * 1048576 && large.kind === "runas" && files.length === 2 && files.every(file => file.bytes.length === 70 * 1048576 && file.bytes[4096] === ((4096 * 2654435761) >>> 24 & 255))
+  } finally { await handle.close() }
   return { ...result, nativePaths: native.files.map(file=>file.path), markdownPaths: markdown.files.map(file=>file.path), pdfCheck: pdf, ok: Object.values(result.checks).every(Boolean) }
 }

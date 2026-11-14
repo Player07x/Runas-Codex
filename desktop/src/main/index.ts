@@ -21,6 +21,7 @@ import type { UpdateInfo } from "../../../app/src/core/updates"
 import { NoteWindows } from "./windows"
 import { checkNoteWindows } from "./notes-windows-smoke"
 import { NetworkGuard } from "./network-guard"
+import { SaveStreams } from "./save-stream"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -40,6 +41,8 @@ protocol.registerSchemesAsPrivileged([assetSchemePrivilege(), vaultFilePrivilege
  * imprime o resultado e sai. Com `--write`, trabalha numa cópia temporária do cofre e testa as gravações.
  */
 const smoke = process.argv.includes("--smoke")
+const saveStreams = new SaveStreams()
+app.on("will-quit", () => { void saveStreams.abortAll() })
 const networkGuard = smoke ? new NetworkGuard() : null
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
@@ -182,6 +185,21 @@ function registerIpc(): void {
   handle(IPC.openWindow, (_event, route) => noteWindows.open(text(route, "rota")))
   handle(IPC.vaultListTrash, () => vault.listTrash())
   handle(IPC.vaultRestoreTrash, (_event, path, target) => vault.restoreTrash(text(path, "lixeira"), text(target, "destino")))
+  // U50 (ADR 0037): exportação em pedaços; o diálogo vem antes, os bytes depois, e o parcial some se der errado.
+  handle(IPC.saveStreamStart, async (_event, name) => {
+    const fileName = text(name, "nome").replace(/[\\/:*?"<>|]/g, "-").slice(0, 120)
+    const result = smoke && process.argv.includes("--write")
+      ? { canceled: false, filePath: join(await mkdtemp(join(tmpdir(), "runas-export-")), fileName) }
+      : await dialog.showSaveDialog(mainWindow!, { defaultPath: join(app.getPath("documents"), fileName) })
+    if (result.canceled || !result.filePath) return null
+    return { id: await saveStreams.start(result.filePath), path: result.filePath }
+  })
+  handle(IPC.saveStreamWrite, (_event, id, bytes) => {
+    if (typeof id !== "number" || !(bytes instanceof Uint8Array)) throw new Error("Parâmetro inválido: pedaço da exportação.")
+    return saveStreams.write(id, bytes)
+  })
+  handle(IPC.saveStreamFinish, (_event, id) => { if (typeof id !== "number") throw new Error("Parâmetro inválido."); return saveStreams.finish(id) })
+  handle(IPC.saveStreamAbort, (_event, id) => { if (typeof id !== "number") throw new Error("Parâmetro inválido."); return saveStreams.abort(id) })
 }
 
 /** Versão que a interface leu (`null` = só criar; ausente = sem conferência). */
