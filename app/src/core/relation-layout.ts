@@ -91,6 +91,8 @@ export interface LayoutNode {
   /** Quantas pessoas abaixo (o ramo pode fechar). */
   childCount: number
   collapsed: boolean
+  /** Coluna e fileira quando o cartão está numa pilha de membros (U72). */
+  stack?: { col: number; row: number }
 }
 
 export interface OrgLayout {
@@ -101,44 +103,76 @@ export interface OrgLayout {
   height: number
 }
 
-export const ORG_NODE = { w: 196, h: 64, gapX: 20, gapY: 60, margin: 16 }
+export const ORG_NODE = { w: 196, h: 64, gapX: 20, gapY: 60, margin: 16, stackGap: 12 }
+
+/** A partir de quantos membros sem subordinados eles vão em colunas (U72), e quantas colunas no máximo. */
+export const STACK_FROM = 5, STACK_COLUMNS = 4
+export const stackColumns = (count: number) => Math.min(STACK_COLUMNS, Math.ceil(count / 4))
 
 /**
  * Árvore arrumada: cada ramo ocupa a largura dos filhos lado a lado e o chefe fica centrado sobre eles, então nenhum
- * cartão cobre outro. Ramos em `collapsed` não desenham os filhos.
+ * cartão cobre outro. Ramos em `collapsed` não desenham os filhos. Com 5 ou mais membros sem subordinados, eles vão
+ * em colunas empilhadas (até 4) debaixo do chefe, em vez de uma fileira só (U72): 11 membros = 3 colunas de 4.
+ * Na pilha, os que têm cargo vêm antes, depois os membros, e os antigos por último.
  */
-export function layoutOrg(structure: OrgStructure, collapsed: ReadonlySet<string> = new Set(), size = ORG_NODE): OrgLayout {
+export function layoutOrg(structure: OrgStructure, collapsed: ReadonlySet<string> = new Set(), size: Partial<typeof ORG_NODE> = ORG_NODE): OrgLayout {
+  const g = { ...ORG_NODE, ...size }
   type Item = { path: string; kind: "org" | "person"; person?: OrgPerson; children: Item[]; all: number }
   const count = (p: OrgPerson): number => p.children.reduce((n, c) => n + 1 + count(c), 0)
   const item = (p: OrgPerson): Item => ({ path: p.path, kind: "person", person: p, children: collapsed.has(p.path) ? [] : p.children.map(item), all: count(p) })
   const root: Item = { path: structure.org, kind: "org", children: collapsed.has(structure.org) ? [] : structure.people.map(item), all: structure.members }
+  const rank = (it: Item) => (it.person?.former ? 2 : it.person?.role || it.person?.leader ? 0 : 1)
+  // Separa os filhos em pilha (folhas, quando são muitas) e ramos (com subordinados ou poucos).
+  const split = (it: Item) => {
+    const leaves = it.children.filter((c) => c.children.length === 0)
+    if (leaves.length < STACK_FROM) return { stack: [] as Item[], branches: it.children }
+    const stack = [...leaves].sort((a, b) => rank(a) - rank(b))
+    return { stack, branches: it.children.filter((c) => c.children.length > 0) }
+  }
+  const stackWidth = (n: number) => { const cols = stackColumns(n); return cols * g.w + (cols - 1) * g.gapX }
   const widthOf = new Map<Item, number>()
   const measure = (it: Item): number => {
-    const inner = it.children.reduce((sum, c) => sum + measure(c), 0) + size.gapX * Math.max(0, it.children.length - 1)
-    const w = Math.max(size.w, inner)
+    const { stack, branches } = split(it)
+    const parts = [...(stack.length ? [stackWidth(stack.length)] : []), ...branches.map(measure)]
+    const inner = parts.reduce((sum, w) => sum + w, 0) + g.gapX * Math.max(0, parts.length - 1)
+    const w = Math.max(g.w, inner)
     widthOf.set(it, w)
     return w
   }
   measure(root)
   const nodes: LayoutNode[] = []
   const edges: OrgLayout["edges"] = []
-  const place = (it: Item, left: number, depth: number, parent?: LayoutNode) => {
-    const span = widthOf.get(it)!
+  const rowY = (depth: number) => g.margin + depth * (g.h + g.gapY)
+  const place = (it: Item, left: number, depth: number, parent?: LayoutNode, y = rowY(depth), stack?: LayoutNode["stack"]) => {
+    const span = widthOf.get(it) ?? g.w
     const node: LayoutNode = {
-      path: it.path, kind: it.kind, ...(it.person ? { person: it.person } : {}), x: left + (span - size.w) / 2, y: size.margin + depth * (size.h + size.gapY),
-      w: size.w, h: size.h, depth, ...(parent ? { parent: parent.path } : {}), childCount: it.all, collapsed: collapsed.has(it.path) && it.all > 0,
+      path: it.path, kind: it.kind, ...(it.person ? { person: it.person } : {}), x: stack ? left : left + (span - g.w) / 2, y,
+      w: g.w, h: g.h, depth, ...(parent ? { parent: parent.path } : {}), childCount: it.all, collapsed: collapsed.has(it.path) && it.all > 0, ...(stack ? { stack } : {}),
     }
     nodes.push(node)
     if (parent) {
-      const x1 = parent.x + parent.w / 2, y1 = parent.y + parent.h, x2 = node.x + node.w / 2, y2 = node.y, mid = y1 + size.gapY / 2
-      edges.push({ from: parent.path, to: node.path, d: `M${x1} ${y1}V${mid}H${x2}V${y2}` })
+      const x1 = parent.x + parent.w / 2, y1 = parent.y + parent.h, mid = y1 + g.gapY / 2
+      // Na pilha, a linha desce por um trilho à esquerda de cada coluna e entra no cartão pelo lado.
+      if (stack) { const rail = node.x - g.gapX / 2, cy = node.y + node.h / 2; edges.push({ from: parent.path, to: node.path, d: `M${x1} ${y1}V${mid}H${rail}V${cy}H${node.x}` }) }
+      else { const x2 = node.x + node.w / 2; edges.push({ from: parent.path, to: node.path, d: `M${x1} ${y1}V${mid}H${x2}V${node.y}` }) }
     }
-    let cursor = left + (span - (it.children.reduce((sum, c) => sum + widthOf.get(c)!, 0) + size.gapX * Math.max(0, it.children.length - 1))) / 2
-    for (const child of it.children) { place(child, cursor, depth + 1, node); cursor += widthOf.get(child)! + size.gapX }
+    const { stack: pile, branches } = split(it)
+    const parts = [...(pile.length ? [stackWidth(pile.length)] : []), ...branches.map((c) => widthOf.get(c)!)]
+    let cursor = left + (span - (parts.reduce((sum, w) => sum + w, 0) + g.gapX * Math.max(0, parts.length - 1))) / 2
+    if (pile.length) {
+      const cols = stackColumns(pile.length), rows = Math.ceil(pile.length / cols)
+      // Coluna por coluna (de cima para baixo), como se lê uma lista.
+      pile.forEach((child, i) => {
+        const col = Math.floor(i / rows), row = i % rows
+        place(child, cursor + col * (g.w + g.gapX), depth + 1, node, rowY(depth + 1) + row * (g.h + g.stackGap), { col, row })
+      })
+      cursor += stackWidth(pile.length) + g.gapX
+    }
+    for (const child of branches) { place(child, cursor, depth + 1, node); cursor += widthOf.get(child)! + g.gapX }
   }
-  place(root, size.margin, 0)
-  const width = widthOf.get(root)! + size.margin * 2
-  const height = Math.max(...nodes.map((n) => n.y + n.h)) + size.margin
+  place(root, g.margin, 0)
+  const width = widthOf.get(root)! + g.margin * 2
+  const height = Math.max(...nodes.map((n) => n.y + n.h)) + g.margin
   return { nodes, edges, width, height }
 }
 
@@ -148,6 +182,14 @@ export function layoutNeighbors(layout: OrgLayout): Map<string, { up?: string; d
   const children = new Map<string, LayoutNode[]>()
   for (const node of layout.nodes) if (node.parent) children.set(node.parent, [...(children.get(node.parent) ?? []), node])
   for (const node of layout.nodes) {
+    if (node.stack) {
+      const pile = children.get(node.parent!)!.filter((n) => n.stack)
+      const at = (col: number, row: number) => pile.find((n) => n.stack!.col === col && n.stack!.row === row)?.path
+      const { col, row } = node.stack
+      const up = row > 0 ? at(col, row - 1) : node.parent, down = at(col, row + 1), left = at(col - 1, row), right = at(col + 1, row)
+      map.set(node.path, { ...(up ? { up } : {}), ...(down ? { down } : {}), ...(left ? { left } : {}), ...(right ? { right } : {}) })
+      continue
+    }
     const siblings = node.parent ? children.get(node.parent)! : [node]
     const at = siblings.indexOf(node)
     map.set(node.path, {

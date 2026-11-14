@@ -1898,3 +1898,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Wiki › Ferramentas › Conferir relações: “Relações de um lado só” lista o que falta, desmarcar um item e gravar
       o resto; “Relações invertidas” acha uma organização com “Membro de” um personagem e inverte para “Membros”.
       Conferir no Obsidian que as propriedades (`membros`, `discipulos`…) aparecem como listas de links.
+
+## Organograma com muitos membros (1.4.0, PR K)
+
+- [ ] Uma organização com 10 ou mais membros: em Relações › Organograma, os membros sem subordinados ficam em colunas
+      de até 4 (líder primeiro, depois os membros, por último os antigos), e não numa fila só de lado a lado.
+- [ ] O zoom começa enquadrado quando cabe a 60 % ou mais; se não couber, começa a 100 % no topo. “Enquadrar” e as
+      teclas + − 0 continuam funcionando.
+- [ ] Arrastar o fundo do organograma com o mouse move a vista; Ctrl + roda do mouse aproxima no ponto do cursor;
+      duplo clique no fundo aproxima. Clicar num cartão continua abrindo os detalhes.
+- [ ] “Encontrar no organograma”: digitar o nome de um membro e Enter seleciona o cartão, rola até ele e mostra os
+      detalhes. No celular (360 px), o campo e os botões de zoom cabem sem rolagem para os lados.
