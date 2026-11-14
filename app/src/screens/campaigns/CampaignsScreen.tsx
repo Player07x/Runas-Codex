@@ -2,7 +2,7 @@ import { CampaignTools } from "./CampaignTools"
 import { useMemo, useRef, useState } from "react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, CircleDot, ExternalLink, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Trash2, Users, Wrench } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, CircleDot, ExternalLink, LayoutDashboard, ListTodo, MonitorPlay, Palette, Plus, ScrollText, Shapes, Trash2, Users, Wrench, Package } from "lucide-react"
 import { CoverBand, Crest, emblemIcon } from "../../components/kit/Emblem"
 import { PersonalizeDialog } from "../../components/kit/PersonalizeDialog"
 import { campaignHomePath, campaignLook } from "../../core/personalization"
@@ -10,6 +10,7 @@ import { toneStyle } from "../../core/tones"
 import { CAMPAIGN_STATUS, campaignContents, listCampaigns, listPlayers, listSessions, upcomingSession, type CampaignInfo } from "../../core/campaigns"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { href, navigate } from "../../lib/router"
+import { campaignItem, requestExport } from "../../lib/transfer-request"
 import { Empty, Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewCampaignDialog } from "./campaign-dialogs"
@@ -210,6 +211,7 @@ function CampaignCard({ campaign: c, readOnly, onPersonalize, onDelete }: { camp
         <OverflowMenu label={`Ações da campanha ${c.name}`} triggerClassName="icon-btn campaign-card-menu" items={[
           { label: "Abrir", icon: <ExternalLink size={15} />, onSelect: () => navigate(campaignRoute(c.name)) },
           { label: "Personalizar…", icon: <Palette size={15} />, onSelect: onPersonalize, disabled: readOnly },
+          { label: "Exportar campanha…", icon: <Package size={15} />, onSelect: () => requestExport({ items: [campaignItem(c.name)] }) },
           "separator" as const,
           ...CAMPAIGN_STATUS.filter((s) => s.id !== c.status).map((s) => ({ label: `Marcar como ${s.label.toLowerCase()}`, icon: <CircleDot size={15} />, onSelect: () => setStatus(s.id, s.label), disabled: readOnly || !c.home })),
           "separator" as const,

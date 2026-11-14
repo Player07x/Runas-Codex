@@ -136,6 +136,18 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     await api.vault.writeManagedTransfer(managed,manifest,null)
     checks.world=(await api.vault.listTransferFiles(true)).some(entry=>entry.path===managed) && !(await api.vault.listTransferFiles(false)).some(entry=>entry.path===managed)
     checks.hidden=await api.vault.writeManagedTransfer(".obsidian/teste.json",manifest,null).then(()=>false,()=>true)
+    // U54: os atalhos dos módulos abrem a tela com o item marcado (a wiki do exemplo e a mesa gravada acima).
+    const shortcut=async (route, menu, entry, name) => {
+      try {
+        location.hash=route
+        ;(await until(()=>document.querySelector('[aria-label="'+menu+'"]'))).click()
+        ;(await until(()=>[...document.querySelectorAll("[role=menuitem]")].find(el=>el.textContent.includes(entry)))).click()
+        await until(()=>location.hash==="#/transferir/exportar" && document.querySelector("[data-transfer-items]"))
+        return Boolean(await until(()=>[...document.querySelectorAll("[data-transfer-items] label")].find(el=>el.textContent.startsWith(name) && el.querySelector("input")?.checked)))
+      } catch { return false }
+    }
+    checks.shortcutWiki=await shortcut("/wiki","Ações da wiki","Exportar wiki como pacote","Ordem x Caos")
+    checks.shortcutWorld=await shortcut("/vtt/criar","Ações da mesa Transferência","Exportar mesa","Transferência")
     return {checks,exported,zip,html,pdf,site,large,byItem,wikiNotes}
   })()` ) as { checks: Record<string, boolean>; exported: string; zip: string; html: string; pdf: string; site: string; large: string; byItem: string; wikiNotes: string[] }
   const native = await readTransferArchive(new Uint8Array(await readFile(result.exported)))

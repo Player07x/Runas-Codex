@@ -1,10 +1,11 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash } from "lucide-react"
+import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package } from "lucide-react"
 import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { href, navigate } from "../../lib/router"
+import { worldItem, requestExport } from "../../lib/transfer-request"
 import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal } from "../../components/ui"
 import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
@@ -136,6 +137,8 @@ function CreateRoom() {
                 <OverflowMenu label={`Ações da mesa ${mesa.title}`} items={[
                   { label: "Capa…", icon: <ImagePlus size={16} />, onSelect: () => setEditing({ kind: "cover", mesa }) },
                   { label: "Renomear…", icon: <PenLine size={16} />, onSelect: () => setEditing({ kind: "rename", mesa }) },
+                  // U54: a pasta da mesa no cofre é a última parte do caminho dela.
+                  { label: "Exportar mesa…", icon: <Package size={16} />, onSelect: () => requestExport({ items: [worldItem(`.runas/mesas/${mesa.path.split(/[\\/]/).filter(Boolean).pop()}`)] }) },
                   "separator",
                   { label: "Excluir…", icon: <Trash2 size={16} />, danger: true, onSelect: () => setEditing({ kind: "delete", mesa }) },
                 ]} />

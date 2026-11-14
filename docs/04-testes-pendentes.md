@@ -1795,3 +1795,16 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   do tamanho do pacote durante a prévia e a gravação.
 - [ ] Um `.runas` com uma imagem adulterada (trocar um byte dentro do ZIP): a prévia recusa (“A integridade … não
   confere”). Um ZIP do Obsidian com uma imagem estragada: a gravação para nessa imagem e diz quantos arquivos entraram.
+
+## Atualização 1.4.0 · Atalhos e seleção de várias notas (PR D: U54, U55)
+
+- [ ] Wiki › ⋯ › “Exportar wiki como pacote…”: abre Importar / Exportar › Exportar › Por itens com a wiki marcada.
+  O mesmo com Livros › ⋯ do livro › “Exportar livro como pacote…”, Campanhas › ⋯ do cartão › “Exportar campanha…” e
+  VTT › Criar Sala › ⋯ da mesa › “Exportar mesa…”.
+- [ ] Notas › ⋯ de uma nota › “Exportar como pacote…” e ⋯ de uma pasta › “Exportar pasta como pacote…”: abre Por notas
+  com a nota ou a pasta marcada, e o resumo diz “de 1 nota ou pasta marcada”.
+- [ ] Notas no computador: Shift + clique em duas notas mostra a barra “2 notas selecionadas”; clicar em outras marca e
+  desmarca; Esc cancela; “Exportar seleção…” leva as notas marcadas. Ctrl + clique continua abrindo em aba nova.
+- [ ] Notas no celular: segurar uma nota › “Selecionar várias”, depois tocar nas outras; a barra tem botões de 44 px.
+- [ ] Leitor de tela no modo de seleção: cada nota é lida como caixa de marcar (“marcada” / “não marcada”), e Espaço
+  marca.
