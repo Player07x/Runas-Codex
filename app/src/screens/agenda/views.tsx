@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react"
 import { toneStyle, type Tone } from "../../core/tones"
 import { isoDate, type AgendaEvent, type Occurrence } from "../../core/agenda"
-import { addDays, dayLabel, layoutDay, moveDay, startOfDay } from "../../core/agenda-grid"
+import { addDays, dayLabel, layoutDay, monthMarks, moveDay, startOfDay } from "../../core/agenda-grid"
 import { ListRow } from "../../components/kit/Layout"
 
 export { addDays, startOfDay }
@@ -62,7 +62,7 @@ interface ViewProps {
  * escolhem o dia (core/agenda-grid.ts); Enter abre o dia no painel. Os eventos ficam fora do Tab: o painel Dia lista
  * os mesmos como botões.
  */
-export function MonthView({ month, occurrences, today, selectedDay, selectedKey, onPickDay, onPick, onCreate, freeLabel, onOpenDay }: ViewProps & { month: Date; onOpenDay(day: Date): void }) {
+export function MonthView({ month, occurrences, today, selectedDay, selectedKey, onPickDay, onPick, onCreate, freeLabel, onOpenDay, showRoutines = false }: ViewProps & { month: Date; onOpenDay(day: Date): void; showRoutines?: boolean }) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1)
   const start = addDays(first, -first.getDay())
   const weeks = Array.from({ length: 6 }, (_, w) => Array.from({ length: 7 }, (_, i) => addDays(start, w * 7 + i)))
@@ -107,6 +107,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
           {week.map((day) => {
             const iso = isoDate(day)
             const items = onDay(occurrences, day)
+            const marks = monthMarks(items, showRoutines)
             const free = freeLabel?.(day) ?? null
             const picked = iso === selectedIso
             return (
@@ -150,11 +151,14 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
                     </button>
                   )}
                 </span>
+                {/* Celular (U57): eventos únicos primeiro, até 3 pontos e “+N”; as rotinas viram uma marca fina na base. */}
                 <span className="cell-dots" aria-hidden="true">
-                  {items.slice(0, 4).map((o) => (
+                  {marks.dots.map((o) => (
                     <span key={o.key} className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />
                   ))}
+                  {marks.more > 0 && <span className="cell-dots-more">+{marks.more}</span>}
                 </span>
+                {marks.routines > 0 && <span className="cell-routines" aria-hidden="true" />}
               </div>
             )
           })}

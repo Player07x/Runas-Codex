@@ -1,4 +1,4 @@
-import type { Occurrence } from "./agenda"
+import type { AgendaEvent, Occurrence } from "./agenda"
 
 /**
  * Contas das grades da Agenda (rework F4d, ADR 0026): para onde cada tecla leva no mês, o nome de cada dia para o
@@ -101,4 +101,32 @@ export function layoutDay(list: Occurrence[], day: Date, hourPx: number, maxColu
   }
   close()
   return { placed, overflow }
+}
+
+/**
+ * Rotina (U57): evento que não é sessão e repete três dias ou mais por semana (ou todo dia). No mês do celular, as
+ * rotinas tomavam os pontos de todo dia e escondiam a sessão e a prova.
+ */
+export function isRoutine(event: AgendaEvent): boolean {
+  if (event.session || /^sess/i.test(event.category ?? "")) return false
+  const { repeat } = event
+  if (repeat.kind === "weekly") return repeat.days.length >= 3
+  if (repeat.kind !== "rrule") return false
+  const parts = new Map(repeat.rule.toUpperCase().split(";").map((part) => part.split("=") as [string, string]))
+  const interval = Number(parts.get("INTERVAL") ?? 1)
+  if (parts.get("FREQ") === "DAILY") return interval === 1
+  return parts.get("FREQ") === "WEEKLY" && interval === 1 && (parts.get("BYDAY")?.split(",").length ?? 0) >= 3
+}
+
+export interface MonthMarks { dots: Occurrence[]; more: number; routines: number }
+
+/**
+ * Os pontos de um dia no mês do celular: primeiro os eventos únicos, depois os que repetem de vez em quando e, só se
+ * pedido, as rotinas; no máximo `max` pontos e o resto em “+N”. Rotinas escondidas viram uma marca só (`routines`).
+ */
+export function monthMarks(items: readonly Occurrence[], showRoutines: boolean, max = 3): MonthMarks {
+  const rank = (o: Occurrence) => (isRoutine(o.event) ? 2 : o.event.repeat.kind === "none" ? 0 : 1)
+  const shown = items.filter((o) => showRoutines || !isRoutine(o.event))
+  const ordered = shown.map((o, i) => ({ o, i })).sort((a, b) => rank(a.o) - rank(b.o) || a.i - b.i).map(({ o }) => o)
+  return { dots: ordered.slice(0, max), more: Math.max(0, ordered.length - max), routines: items.length - shown.length }
 }
