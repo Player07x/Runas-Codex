@@ -142,8 +142,8 @@ function WikiHeader({ current }: { current: string }) {
           trigger={<>{moreCurrent?.icon}{moreCurrent ? moreCurrent.label : "Mais"}<ChevronDown size={14} /></>}
           items={more.map((tab) => ({ label: tab.label, icon: tab.icon, onSelect: () => navigate(`/wiki${tab.id ? `/${tab.id}` : ""}`) }))} />}
       </nav>
-      <button className={`btn sm ${players ? "primary" : "ghost"} wiki-players`} onClick={() => setPlayers(!players)} title="Esconde os segredos do mestre (callouts [!segredo], pinos secretos)" aria-pressed={players}>
-        {players ? <EyeOff size={14} /> : <Eye size={14} />} {players ? "Versão dos jogadores" : "Visão do mestre"}
+      <button className={`btn sm ${players ? "primary" : "ghost"} wiki-players`} aria-label={players ? "Versão dos jogadores" : "Visão do mestre"} onClick={() => setPlayers(!players)} title="Esconde os segredos do mestre (callouts [!segredo], pinos secretos)" aria-pressed={players}>
+        {players ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />} <span className="wiki-players-label">{players ? "Versão dos jogadores" : "Visão do mestre"}</span>
       </button>
       <OverflowMenu label="Ações da wiki" items={[
         { label: "Exportar wiki…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players }) },

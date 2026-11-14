@@ -78,3 +78,8 @@
   .home-spaces > a { padding: 12px; min-height: 44px; }
   .session-buttons .btn { flex: 1 1 auto; justify-content: center; }
 }
+
+/* U67: o link “Agenda” ao lado de “No horizonte” com 44 px no celular e no toque. */
+@media (max-width: 640px), (pointer: coarse) {
+  .home-section-head a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+}

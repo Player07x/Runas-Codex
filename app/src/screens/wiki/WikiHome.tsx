@@ -20,6 +20,8 @@ import { vaultNoteSet } from "../../lib/vault-notes"
 import { Markdown } from "../../components/Markdown"
 import { useToast } from "../../components/ui"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
+import { OverflowMenu } from "../../components/kit/OverflowMenu"
+import { SearchHelp } from "../../components/kit/SearchHelp"
 import { useRemembered } from "../../lib/remembered"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, iconByName, KindIcon, takeWikiSearch, useWiki } from "./wiki-state"
@@ -93,7 +95,7 @@ export function WikiHome() {
       <section className={`wiki-cover card${look.cover ? " with-cover" : ""}`}>
         {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={homePath} height={140} className="wiki-cover-band" />}
         <div className="stack" style={{ gap: 6, minWidth: 0 }}>
-          <span className="eyebrow" style={{ color: look.tone ? "var(--tone)" : "var(--violet)" }}>Wiki · {root}</span>
+          <span className="eyebrow" style={{ color: look.tone ? "var(--tone)" : "var(--violet)" }} title={root}>Wiki</span>
           <h1 className="page-title wiki-title">{(look.tone || look.emblem) && <Crest tone={look.tone} emblem={look.emblem} name={wiki!.name} size={36} />}{wiki!.name}</h1>
           {home && noteBody(home.text).replace(/^#[^\n]*\n/, "").trim() && (
             <NoteSetContext.Provider value={noteSet}>
@@ -116,23 +118,23 @@ export function WikiHome() {
               <PenLine size={15} /> Página inicial
             </a>
           )}
-          <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para personalizar.") : setPersonalizing(true))}>
-            <Palette size={16} /> Personalizar
-          </button>
-          <button className="btn" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar categorias.") : setNewCategory(true))}>
-            <FolderPlus size={16} /> Nova categoria
-          </button>
           <button className="btn primary" onClick={() => (readOnly ? toast("Libere a gravação em Configurações para criar artigos.") : setCreating(true))} aria-label="Novo artigo">
             <Plus size={16} /> Novo artigo
           </button>
+          {/* U66: Personalizar e Nova categoria no ⋯, para o cartão não virar três botões empilhados no celular. */}
+          <OverflowMenu label="Mais ações do início da wiki" items={[
+            { label: "Nova categoria…", icon: <FolderPlus size={15} />, onSelect: () => (readOnly ? toast("Libere a gravação em Configurações para criar categorias.") : setNewCategory(true)) },
+            { label: "Personalizar…", icon: <Palette size={15} />, onSelect: () => (readOnly ? toast("Libere a gravação em Configurações para personalizar.") : setPersonalizing(true)) },
+          ]} />
         </div>
       </section>
 
       <div className="wiki-home-toolbar">
         <label className="search wiki-search">
           <Search size={15} />
-          <input className="input" placeholder={`Buscar em ${wiki!.name} (tag:, path:, file:, “frase”)`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar na wiki" />
+          <input className="input" placeholder="Buscar na wiki" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar na wiki" />
         </label>
+        <SearchHelp>Busca só nos artigos de {wiki!.name}. Aceita <code>tag:</code>, <code>path:</code>, <code>file:</code>, <code>“frase exata”</code> e <code>-excluir</code>.</SearchHelp>
         {!results && <ChoiceGroup label="Mostrar no início" value={homeView} onChange={setHomeView} options={[{ value: "artigos", label: "Categorias e artigos" }, { value: "categorias", label: "Só categorias" }]} />}
       </div>
 

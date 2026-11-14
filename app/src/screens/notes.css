@@ -122,3 +122,17 @@
 }
 :root[data-tablet="true"] .list-item.note-item.compact, :root[data-tablet="true"] .vault-folder > summary.folder-summary { min-height: 44px; }
 :root[data-tablet="true"] .vault-folder-wrap > .row-menu { top: 22px; }
+
+/* U67: no celular e no toque, os grupos da barra (Favoritos, Bases, Tags, A escrever) têm 44 px de altura. */
+@media (max-width: 640px), (pointer: coarse) {
+  .vault-folder > summary { min-height: 44px; }
+}
+
+/* U64: folga no fim da lista para o “+” flutuante não cobrir a última nota. */
+@media (max-width: 860px) {
+  .pane-left > .pane-body { padding-bottom: 84px; }
+}
+/* U68: no celular a lista é a tela inteira; a faixa “Lista de notas” (recolher) sai e fica só o cabeçalho “Notas”. */
+@media (max-width: 640px) {
+  [data-panel-id="notes-left"][data-panel-collapsed="false"] > .panel-controls { display: none; }
+}
