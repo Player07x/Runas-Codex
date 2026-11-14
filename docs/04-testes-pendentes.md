@@ -1732,3 +1732,15 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] As seções acima, de “Constância e correções (PR A)” até “Limpeza do repositório (PR K)”, entraram nesta versão.
 - [ ] Abrir no Obsidian uma campanha com tempo próprio (`data_mundo`) e um capítulo com `nova_pagina:`: as
   propriedades aparecem como texto e nada quebra.
+
+## Wiki: categoria em páginas (1.4.0, PR I)
+
+- [ ] Numa categoria grande (a de Personagens da Cronos), a grade mostra fileiras inteiras (48 com 8 colunas) e a
+      navegação aparece em cima e embaixo: “‹ Anterior · 1 2 … 9 · Próxima ›” e “Página 1 de 9 · 1–48 de N artigos”.
+- [ ] Clicar em “Próxima” embaixo: a tela sobe para o começo da lista e o Tab seguinte sai do primeiro artigo da
+      página nova. Com leitor de tela, a mudança de página é anunciada uma vez.
+- [ ] Sair da categoria e voltar (e fechar e abrir o app): volta na mesma página. Buscar, trocar a ordem ou ligar um
+      filtro volta para a página 1.
+- [ ] Alargar e estreitar a janela: o número por página muda para fechar as fileiras, sem cair numa página vazia.
+- [ ] No celular (A21) a 320–360 px: a navegação quebra em duas linhas se precisar, sem rolagem para os lados, com
+      alvos de 44 px; trocar de página fica leve (no máximo 60 capas na tela).

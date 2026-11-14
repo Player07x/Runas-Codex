@@ -199,7 +199,7 @@
 .wiki-category-results.list { display:grid;gap:6px; }
 .wiki-category-results.list .wiki-category-article { flex-direction:row;align-items:center;gap:12px;padding:8px; }
 .wiki-category-results.list .wiki-category-copy { flex:1;padding:0; }
-.wiki-category-more { justify-self:center;min-height:44px; }
+.wiki-category-pager { scroll-margin-top:12px; }
 @media(max-width:560px) {
  .wiki-category-results.grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }
  .wiki-category-copy { padding:9px; }

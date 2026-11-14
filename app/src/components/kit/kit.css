@@ -147,3 +147,17 @@ select.kit-date-abbr { width: auto; }
 @media (max-width: 860px), (pointer: coarse) {
   .kit-token-size-chip { min-width: 44px; min-height: 44px; }
 }
+
+/* Navegação entre páginas (U71): contagem e números numa linha que quebra; no celular só as setas perdem a palavra. */
+.kit-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; }
+.kit-pagination-summary { font-variant-numeric: tabular-nums; }
+.kit-pagination-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.kit-pagination-number { min-width: 36px; justify-content: center; font-variant-numeric: tabular-nums; }
+.kit-pagination-gap { padding: 0 4px; color: var(--faint); }
+@media (max-width: 560px) {
+  .kit-pagination { justify-content: center; }
+  .kit-pagination-word { display: none; }
+}
+@media (max-width: 860px), (pointer: coarse) {
+  .kit-pagination-pages .btn { min-width: 44px; min-height: 44px; }
+}
