@@ -144,6 +144,22 @@ select, .input { font: inherit; font-size: 14px; color: var(--text); background:
 .flip del { color: var(--red); text-decoration-thickness: 1px; }
 .flip ins { color: var(--green); text-decoration: none; }
 
+/* U77 — propriedades recolhidas. */
+.doc { background: var(--panel); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; font-size: 14px; }
+.doc h4 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+.yaml { font: 12px/1.6 var(--mono); color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; white-space: pre; overflow-x: auto; }
+.caret { display: inline-block; width: 2px; height: 1.1em; background: var(--cyan); vertical-align: -2px; }
+.props-toggle { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; text-align: left; font-size: 13px; color: var(--muted); }
+.props-toggle b { color: var(--faint); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.props-toggle .arrow { margin-left: auto; transition: transform .15s; }
+.props-toggle[aria-expanded="true"] .arrow { transform: rotate(90deg); }
+.props-table { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; margin-top: -10px; padding: 12px 12px 10px; background: var(--bg); font-size: 13px; }
+.props-table span:nth-child(odd) { color: var(--faint); }
+.props-table .btn { grid-column: 1 / -1; justify-self: start; margin-top: 4px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg span { padding: 6px 12px; font-size: 13px; }
+.seg span[aria-current] { background: var(--cyan); color: var(--on-accent); font-weight: 600; }
+
 /* Decisões e PRs. */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
@@ -163,17 +179,17 @@ tr:last-child td { border-bottom: 0; }
   <header class="hero">
     <span class="eyebrow">Runas-Codex · Atualização 1.4.0 · pedido de 14/11/2026</span>
     <h1>Correções de Notas, Wiki e Relações</h1>
-    <p>Sete consertos pedidos com a 1.3.0 em uso, cada um com a causa achada no código, e o que fica para a 1.5. Nada
+    <p>Oito consertos pedidos com a 1.3.0 em uso, cada um com a causa achada no código, e o que fica para a 1.5. Nada
       disto foi implementado ainda: as decisões no fim definem o que entra.</p>
     <div class="facts">
-      <span class="fact"><b>7</b> itens (U69–U75)</span>
-      <span class="fact"><b>4</b> PRs (H, I, J, K)</span>
-      <span class="fact"><b>4</b> decisões</span>
+      <span class="fact"><b>8</b> itens (U69–U75, U77)</span>
+      <span class="fact"><b>5</b> PRs (H a L)</span>
+      <span class="fact"><b>5</b> decisões</span>
       <span class="fact">otimização: <b>1.5</b></span>
     </div>
     <nav class="toc" aria-label="Seções">
       <a href="#notas">Notas</a><a href="#paginas">Páginas da categoria</a><a href="#organograma">Organograma</a>
-      <a href="#cruzadas">Relações cruzadas</a><a href="#consertar">Consertar o que existe</a><a href="#desempenho">Desempenho</a><a href="#decisoes">Decisões</a>
+      <a href="#cruzadas">Relações cruzadas</a><a href="#consertar">Consertar o que existe</a><a href="#propriedades">Propriedades no Editar</a><a href="#desempenho">Desempenho</a><a href="#decisoes">Decisões</a>
     </nav>
   </header>
 
@@ -355,6 +371,52 @@ tr:last-child td { border-bottom: 0; }
     </div>
   </section>
 
+  <section class="req" id="propriedades">
+    <div class="req-head"><span class="eyebrow"><span class="pr">L</span> U77</span><h2>Propriedades recolhidas no Editar</h2></div>
+    <div class="req-body">
+      <div class="notes">
+        <div class="callout cause"><span class="label">Causa</span>
+          <p class="small">No Editar, um clique no quadro de propriedades põe o cursor dentro do YAML, e a seta para cima na primeira linha também entra nele. O texto cru aparece, e qualquer tecla muda os dados.</p></div>
+        <ul class="small">
+          <li>O quadro começa recolhido numa faixa de uma linha, “Propriedades · 4”, que abre ao clicar (PC e celular).</li>
+          <li>Aberto, ele só mostra. Para mudar os dados há o painel Propriedades, o botão “Editar como texto” e o modo Código.</li>
+          <li>O cursor passa por cima do bloco: digitar no começo da nota não cai mais no YAML.</li>
+          <li>Em Configurações › Editor: Recolhidas (padrão), Abertas ou Escondidas, por aparelho. O arquivo não muda; no Obsidian a nota abre igual.</li>
+          <li>Mexe no live preview, então vai num PR pequeno só com isso, como pede a regra 7. No celular, também tira uma faixa antes do texto.</li>
+        </ul>
+      </div>
+      <div class="pair">
+        <div class="mock" aria-label="Antes: um clique mostra o YAML cru">
+          <div class="mock-bar">Editar · depois de um clique<span class="tag before">Antes</span></div>
+          <div class="mock-body"><div class="doc">
+            <div class="yaml">---
+tipo: personagem
+especie: "[[Humanos]]"<span class="caret"></span>
+status: Vivo
+membro_de:
+  - "[[Guilda do Porto]]"
+---</div>
+            <h4>Aurora</h4><p class="small muted">Tesoureira da guilda desde o inverno…</p>
+          </div></div>
+        </div>
+        <div class="mock" aria-label="Depois: faixa recolhida que abre ao clicar">
+          <div class="mock-bar">Editar<span class="tag after">Depois · experimente</span></div>
+          <div class="mock-body"><div class="doc">
+            <button type="button" class="props-toggle" id="props-toggle" aria-expanded="false" aria-controls="props-table"><b>Propriedades</b><span class="num">· 4</span><span class="arrow" aria-hidden="true">▸</span></button>
+            <div class="props-table" id="props-table" hidden>
+              <span>tipo</span><span>personagem</span><span>especie</span><span>Humanos</span><span>status</span><span>Vivo</span><span>membro_de</span><span>Guilda do Porto</span>
+              <button type="button" class="btn">Editar como texto</button>
+            </div>
+            <h4>Aurora</h4><p class="small muted">Tesoureira da guilda desde o inverno…</p>
+          </div>
+          <p class="small muted">Configurações › Editor › Propriedades no documento</p>
+          <span class="seg" role="group" aria-label="Propriedades no documento (exemplo)"><span aria-current="true">Recolhidas</span><span>Abertas</span><span>Escondidas</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="req" id="desempenho">
     <div class="req-head"><span class="eyebrow">U76 · fica para a 1.5</span><h2>Desempenho</h2></div>
     <div class="req-body">
@@ -382,6 +444,7 @@ tr:last-child td { border-bottom: 0; }
         <tr><td><span class="pr">I</span></td><td><code>wiki/1.4-paginas</code></td><td>U71</td><td>main</td><td class="num">5–7 %</td></tr>
         <tr><td><span class="pr">J</span></td><td><code>relacoes/1.4-dois-lados</code></td><td>U73, U74, U75</td><td>main</td><td class="num">12–16 %</td></tr>
         <tr><td><span class="pr">K</span></td><td><code>relacoes/1.4-organograma</code></td><td>U72</td><td>J</td><td class="num">8–12 %</td></tr>
+        <tr><td><span class="pr">L</span></td><td><code>editor/1.4-propriedades-recolhidas</code></td><td>U77</td><td>main</td><td class="num">4–6 %</td></tr>
       </tbody>
     </table></div>
     <div class="decisions">
@@ -389,6 +452,7 @@ tr:last-child td { border-bottom: 0; }
       <div class="decision"><b>“Gravar também na outra nota” vem ligado?</b><span class="rec"><em>Recomendo sim</em>. Dá para desligar, e o aparelho lembra.</span></div>
       <div class="decision"><b>“Discípulos” ou “Aprendizes”?</b><span class="rec"><em>Recomendo manter “Discípulos”</em> e aceitar as duas chaves. Troco se você preferir.</span></div>
       <div class="decision"><b>As ferramentas de conserto olham a wiki aberta ou o cofre inteiro?</b><span class="rec"><em>Recomendo a wiki aberta</em>: a prévia fica curta e mexe em menos notas por vez.</span></div>
+      <div class="decision"><b>Propriedades recolhidas por padrão para todos?</b><span class="rec"><em>Recomendo sim</em>, com Abertas e Escondidas em Configurações. Escondidas tira o quadro do texto; os dados seguem no painel.</span></div>
     </div>
   </section>
 </main>
@@ -468,5 +532,13 @@ tr:last-child td { border-bottom: 0; }
   };
   for (const el of [type, who, both]) el.addEventListener("change", update);
   update();
+
+  // Propriedades recolhidas: a faixa abre e fecha a tabela.
+  const toggle = document.getElementById("props-toggle"), table = document.getElementById("props-table");
+  toggle.addEventListener("click", () => {
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(open));
+    table.hidden = !open;
+  });
 })();
 </script>

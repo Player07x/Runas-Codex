@@ -75,6 +75,7 @@ conhece pastas de primeiro nível (`:14`).
 | U73 | **Relações cruzadas**: cada relação tem os dois sentidos no “Adicionar” (“Membro de” e “Tem como membro”…); declarar o membro na organização passa a aparecer no organograma | J |
 | U74 | **Gravar nos dois lados**: ao dizer que A é mentor de B, o app grava também em A que B é discípulo (opção ligada por padrão); remover pergunta se remove dos dois | J |
 | U75 | **Consertar o que já está escrito**: nas Ferramentas da wiki, “Relações de um lado só” (completar) e “Relações invertidas” (organização “membro de” personagem), com prévia antes de gravar | J |
+| U77 | **Editar: propriedades recolhidas**: no modo Editar (PC e celular) o quadro de propriedades começa fechado, como a opção do Obsidian; abre ao clicar, e o YAML só aparece com um pedido explícito | L |
 
 ## Telas no celular (U56–U60)
 
@@ -200,7 +201,7 @@ Total: duas janelas e um pouco.
    como hoje, só que com prioridade para os eventos únicos? E oferecer “Transformar em hábito” para tarefas diárias
    com `🏁 keep`? *Recomendo sim nas duas.*
 
-## Correções de 14/11 (U69–U75)
+## Correções de 14/11 (U69–U75, U77)
 
 Pedido do João em 14/11/2026, com a 1.3.0 em uso (maquetes em [`atualizacao-1.4-correcoes.html`](atualizacao-1.4-correcoes.html)): o ⋯ das Notas estranho no tema escuro, pastas que não lembram se
 ficaram abertas, poucas notas por vez nas categorias da wiki, organograma difícil com muitos membros e relações que
@@ -215,8 +216,9 @@ precisam ser escritas dos dois lados à mão. Causas achadas no código da `main
 | U73 | `RELATION_TYPES` (`core/wiki.ts`) só tem um sentido por relação, e o “Adicionar” do artigo grava sempre na própria nota. Na organização, “Membro de: Aurora” vira “a organização é membro de Aurora”, e o organograma (`orgChart`, `orgStructure`) só conta quem declarou `membro_de` apontando para a organização | Cada par ganha a chave do outro lado: `membros`, `liderado_por`, `subordinados`, `discipulos`, `vassalos`, `contem` (como `pais`/`filhos` já fazem). O app lê as duas como a mesma ligação (`membros: ["[[Aurora]] (tesoureira)"]` na organização = `membro_de: ["[[Organização]] (tesoureira)"]` em Aurora), e o organograma, a árvore e a teia passam a ver as duas. No “Adicionar”, a lista mostra os dois sentidos por grupo e uma frase confere a escolha: “**Aurora** é membro de **Guilda do Porto**”. No Obsidian são propriedades de lista de links, como as de hoje |
 | U74 | Não existe gravação do outro lado | Caixa “Gravar também em Aurora” no “Adicionar”, ligada por padrão e lembrada no aparelho. As duas gravações passam pelo `setProperty` (versão lida; se a outra nota mudou fora do app, recusa e avisa). Se o outro lado já tem a ligação, não grava de novo. Cada relação ganha um “Remover”, que pergunta se remove também da outra nota |
 | U75 | Os dados que o João já escreveu ficam como estão | Duas ferramentas novas nas Ferramentas da wiki, com prévia nota por nota e nada gravado sem confirmar: **Relações de um lado só** (grava o lado que falta, em lote) e **Relações invertidas** (organização “membro de”, “líder de” ou “subordinada a” um personagem, pelo tipo do artigo; “Inverter” move para `membros` na própria organização) |
+| U77 | `PropertiesWidget` (`components/vault/live-preview.tsx`) desenha o frontmatter como tabela, mas um clique nela põe o cursor dentro do YAML (`selection: { anchor: 4 }`), e a seta para cima na primeira linha também entra nele: o texto cru aparece e qualquer tecla muda os dados | O quadro começa **recolhido** numa faixa de uma linha (“Propriedades · 4 ▸”), que é um botão (`aria-expanded`). Aberto, mostra a tabela, que só lê; clicar nela não leva mais o cursor para o YAML. Editar os dados fica no painel Propriedades (formulário de hoje) ou no botão “Editar como texto” dentro do quadro aberto (e no modo Código). O cursor passa por cima do bloco (`atomicRanges`). Configurações › Editor › “Propriedades no documento”: **Recolhidas** (padrão), Abertas ou Escondidas, por aparelho (`runas-codex:propriedades-no-documento`). Nada muda no arquivo; no Obsidian a nota abre igual |
 
-**Fora do escopo:** mudar como o leitor ou o live preview desenham (regra 7). As chaves novas aparecem no quadro de
+**Fora do escopo:** mudar como o leitor desenha (regra 7). O U77 mexe no live preview, por isso vai num PR pequeno só com isso (o L), como a regra 7 pede, e resolve o que ficou de fora do PR F (propriedades recolhidas no celular). As chaves novas aparecem no quadro de
 propriedades como as outras. O mapa de relações das Campanhas (`relation-map.ts`) passa a ver as chaves novas porque
 lê pelo mesmo `relationsOf`, sem mudar o desenho.
 
@@ -228,8 +230,9 @@ lê pelo mesmo `relationsOf`, sem mudar o desenho.
 | I | `wiki/1.4-paginas` | U71 | `main` | categoria com 420 artigos a 1920, 1366, 768 e 360 px: página cheia de fileiras inteiras; teclado nas setas e números; leitor de tela anuncia “Página 2 de 9”; memória do renderer com 60 capas × 24 de hoje |
 | J | `relacoes/1.4-dois-lados` | U73, U74, U75 | `main` | testes do núcleo (as duas chaves = uma ligação; nada aparece duas vezes; organograma com membro declarado na organização); gravação nos dois lados com a outra nota mudada fora do app; prévia das ferramentas; abrir no Obsidian |
 | K | `relacoes/1.4-organograma` | U72 | J (mexe nos mesmos `wiki.ts` e `relation-layout.ts`) | organização com 3, 11 e 60 membros; arrastar, roda, pinça e teclado; “Encontrar”; 320 px; Lista equivalente |
+| L | `editor/1.4-propriedades-recolhidas` | U77 | `main` (PR pequeno, só o live preview, regra 7) | nota com e sem frontmatter, nos três modos da opção; clique, teclado (Tab, Enter, Espaço, setas sem entrar no YAML) e leitor de tela no quadro; livro, artigo da wiki e Notas; 320 px; o arquivo não muda ao abrir e fechar; smoke `--write` com digitação na primeira linha |
 
-Estimativa, **opinião** pelos PRs da 1.4: H 4–6%, I 5–7%, J 12–16%, K 8–12% da janela de 5 h.
+Estimativa, **opinião** pelos PRs da 1.4: H 4–6%, I 5–7%, J 12–16%, K 8–12%, L 4–6% da janela de 5 h.
 
 ### O que o João decide (correções)
 
@@ -241,6 +244,8 @@ Estimativa, **opinião** pelos PRs da 1.4: H 4–6%, I 5–7%, J 12–16%, K 8�
    `discipulos` aceito também)? *Recomendo manter “Discípulos”* e aceitar as duas chaves; troca se o João preferir.
 10. **As ferramentas de conserto (U75) olham a wiki aberta ou o cofre inteiro?** *Recomendo a wiki aberta*: mexe em
     menos notas por vez e a prévia fica curta.
+11. **Propriedades no documento (U77)**: recolhidas por padrão para todos (*recomendado*), com Abertas e Escondidas
+    em Configurações? Escondidas tira o quadro do texto (como “hidden” no Obsidian); os dados seguem no painel.
 
 ## Fica para a 1.5: otimização (U76)
 
