@@ -98,6 +98,8 @@ interface Props {
   defaultMode?: ViewMode
   /** Itens a mais na barra de status (Livros: palavras do livro, máquina de escrever). */
   statusExtra?: ReactNode
+  /** Livros no celular (U63): as ações do livro entram no ⋯ do capítulo, para a barra ter um ⋯ só. */
+  extraMenu?: { label: string; items: MenuEntry[] }
   hideBackControl?: boolean
   formatSelection?: boolean
   typewriter?: boolean
@@ -134,7 +136,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode }: Props) {
+export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode, extraMenu }: Props) {
   const vault = useVault()
   const toast = useToast()
   const history = useNavHistory()
@@ -612,7 +614,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     mode === "fonte" ? { label: "Editar com prévia", icon: <Type size={16} />, onSelect: () => setMode("live") } : { label: "Ver o código Markdown", icon: <Code2 size={16} />, onSelect: () => setMode("fonte") },
     sep, ...menu,
   ] : menu
-  const actionsMenu = <OverflowMenu label={book ? "Ações do capítulo" : "Ações da nota"} items={menuItems} />
+  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
   const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
   const folder = dirname(path).split("/").pop() ?? ""
 
