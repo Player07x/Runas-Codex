@@ -4,7 +4,7 @@ import { nameProblem } from "../names"
 import { basename, extname, foldName } from "../text"
 import { VaultIndex } from "../vault-index"
 import { parseWorldManifest, worldFolderName } from "../../vtt/shared/world"
-import { managedWorldPath, transferPath, validateTransferPaths, type TransferArchive, type TransferFile } from "./archive"
+import { managedWorldPath, transferPath, transferSize, validateTransferPaths, type TransferArchive, type TransferFile } from "./archive"
 
 export interface TransferEntry { path: string; size: number; mtime: number }
 export type ImportStrategy = "merge" | "replace" | "duplicate"
@@ -153,7 +153,7 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
     const path = /^(Wikis|Campanhas|Livros)\/[^/]+$/.test(group) ? folderNote(file.path, group, target) : target + "/" + file.path.slice(group ? group.length + 1 : 0)
     paths.set(file.path, transferPath(path)); taken.push(path)
   }
-  const sourceIndex = new VaultIndex(archive.files.map(file => ({ path: file.path, size: file.bytes.length, mtime: 1 })), Object.fromEntries(archive.files.filter(file => extname(file.path) === ".md").map(file => [file.path, decodeTransferText(file.bytes)])))
+  const sourceIndex = new VaultIndex(archive.files.map(file => ({ path: file.path, size: transferSize(file), mtime: 1 })), Object.fromEntries(archive.files.filter(file => extname(file.path) === ".md").map(file => [file.path, decodeTransferText(file.bytes)])))
   function markdown(text: string, from: string): string {
     for (const link of parseNote(text).links.slice().reverse()) {
       const dest = sourceIndex.resolve(link, from).dest, next = dest && paths.get(dest)
@@ -166,6 +166,8 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
     return text
   }
   const files = archive.files.map(file => {
+    // Binário lido sob demanda (C2) passa adiante sem ser lido: só muda de caminho.
+    if (file.load) return { ...file, path: paths.get(file.path)! }
     let bytes = file.bytes
     if (isText(file.path)) {
       let body = decodeTransferText(bytes)
@@ -215,7 +217,7 @@ export function buildImportPlan(archive: TransferArchive, existing: TransferEntr
     if (conflict && strategy === "merge") { skipped.push(file.path); continue }
     if (/\.(md|canvas|base)$/i.test(path)) decodeTransferText(file.bytes)
     if (current) replacements.push({ ...current })
-    writes.push({ path, bytes: file.bytes, expected: current ? { ...current } : null })
+    writes.push({ ...file, path, expected: current ? { ...current } : null })
   }
   // O manifesto só aparece depois dos dados da mesa. Uma falha não publica uma mesa nova incompleta.
   writes.sort((a, b) => Number(a.path.endsWith("/mesa.json")) - Number(b.path.endsWith("/mesa.json")))

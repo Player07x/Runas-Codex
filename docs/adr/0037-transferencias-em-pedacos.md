@@ -17,9 +17,12 @@ quase não comprimem, então o tamanho compactado fica perto do real.
    (deflate do fflate); imagens, áudio, vídeo, PDF e outros já comprimidos vão guardados. O manifesto do `.runas`
    (`format: runas-codex`, `version: 1`, SHA-256 por arquivo) vai no fim. Sem ZIP64: até 4 GB e 65.534 arquivos.
 2. **Leitor por partes**: lê o diretório central e depois cada arquivo pelo deslocamento (`File.slice` na tela),
-   conferindo tamanho e CRC; pacotes antigos continuam abrindo. O conteúdo descompactado ainda fica na memória até a
-   gravação, com teto de 1 GB no desktop; a leitura sob demanda fica para um PR próprio (C2), separado da importação
-   por itens para os dois poderem ser revisados à parte.
+   conferindo tamanho e CRC; pacotes antigos continuam abrindo. **Sob demanda** (PR C2): ao importar um pacote, só
+   os textos (`.md`, `.json`, `.canvas`, `.base`, `.csv`…) ficam na memória, porque a prévia lê, reescreve links e
+   confere mesas neles. Cada binário é conferido ao abrir (SHA-256 do manifesto no `.runas`; num ZIP sem manifesto,
+   só o diretório), solto, e lido de novo do pacote, com o CRC conferido, na hora de gravar, um por vez. Assim o total
+   só tem o teto do ZIP (4 GB) também no Android; por arquivo, 512 MB no desktop e 32 MB no Android, que passa cada
+   arquivo inteiro pela ponte do Capacitor. Arquivos avulsos e ZIPs dentro do ZIP (Notion) continuam na memória.
 3. **Plataforma**: `openSave(nome, mime)` devolve um destino com `write`, `close` e `abort`. No desktop, o diálogo
    abre antes, os pedaços (juntados em blocos de 8 MB) vão por IPC para um arquivo `<destino>.parcial`, que só ganha
    o nome final no `close`; `abort` e o fechamento do app apagam o parcial. No navegador, os pedaços viram um

@@ -5,7 +5,7 @@ import { Segmented } from "../../components/ui"
 import { navigate, useRoute } from "../../lib/router"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { buildImportPlan, sameTransferVersion, selectTransferPaths, type ImportPlan, type ImportStrategy, type TransferEntry } from "../../core/transfer/plan"
-import { ANDROID_TRANSFER_LIMITS, createTransferArchive, type PackageItemSpec, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
+import { ANDROID_IMPORT_LIMITS, ANDROID_TRANSFER_LIMITS, createTransferArchive, IMPORT_LIMITS, transferSize, type PackageItemSpec, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
 import { blobSource, bufferedSink } from "../../core/transfer/zip-stream"
 import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core/transfer/notion"
 import "./transfer-workspace.css"
@@ -78,6 +78,8 @@ export function TransferWorkspace() {
   const [destination, setDestination] = useState("Notas/Importados")
   // U50 (ADR 0037): os dois gravam em pedaços; no Android cada arquivo e a importação têm tetos menores (memória da ponte).
   const limits = vault.platform.kind === "capacitor" ? ANDROID_TRANSFER_LIMITS : TRANSFER_LIMITS
+  // C2: o pacote importado é lido sob demanda; arquivos avulsos e ZIPs dentro do ZIP (Notion) seguem `limits`.
+  const importLimits = vault.platform.kind === "capacitor" ? ANDROID_IMPORT_LIMITS : IMPORT_LIMITS
   const [notice, setNotice] = useState("")
   const listFiles = () => vault.platform.listTransferFiles?.(choice === "itens" || worlds || scope === "Mesas") ?? vault.platform.listVault()
   /** As mesas do cofre, lidas do `mesa.json` de cada uma (nome, id e capa). */
@@ -124,7 +126,7 @@ export function TransferWorkspace() {
       return { plan: buildImportPlan({ ...preview.archive, files: preview.archive.files.filter(file => incoming.has(file.path)) }, preview.existing, strategy), problem: "" }
     } catch (error) { return { plan: null, problem: failure(error) } }
   }, [preview, incoming, strategy, importChoice, itemChoices])
-  const packageSizes = useMemo(() => new Map(preview?.archive.files.map(file => [file.path, file.bytes.length]) ?? []), [preview])
+  const packageSizes = useMemo(() => new Map(preview?.archive.files.map(file => [file.path, transferSize(file)]) ?? []), [preview])
   const itemStates = useMemo(() => new Map(preview?.items.map(item => [item.id, itemState(item, preview.existing, preview.identical)]) ?? []), [preview])
 
   async function act(operation: () => Promise<void>) {
@@ -214,10 +216,10 @@ export function TransferWorkspace() {
       let archive: TransferArchive
       let notionNote = ""
       if (chosen.length === 1 && /\.(zip|runas)$/i.test(chosen[0]!.name)) {
-        if (chosen[0]!.size > limits.archive) throw new Error(`O arquivo excede ${sizeLabel(limits.archive)} compactados.`)
+        if (chosen[0]!.size > importLimits.archive) throw new Error(`O arquivo excede ${sizeLabel(importLimits.archive)} compactados.`)
         setStatus("Lendo e conferindo o pacote…")
-        // U50: lê o pacote por partes, um arquivo por vez, em vez de carregar o arquivo inteiro.
-        archive = await readTransferArchiveFrom(blobSource(chosen[0]!), chosen[0]!.name.replace(/\.[^.]+$/, ""), limits, (done, total) => setStatus(`Lendo e conferindo o pacote: ${done + 1} de ${total}`))
+        // U50 + C2: lê o pacote por partes e guarda só os textos; imagens e outros binários são lidos ao gravar.
+        archive = await readTransferArchiveFrom(blobSource(chosen[0]!), chosen[0]!.name.replace(/\.[^.]+$/, ""), importLimits, (done, total) => setStatus(`Lendo e conferindo o pacote: ${done + 1} de ${total}`), true)
         if (/\.runas$/i.test(chosen[0]!.name) && archive.kind !== "runas") throw new Error("O arquivo .runas está sem seu manifesto. Use um pacote exportado pelo programa.")
         // Exportação do Notion (Markdown & CSV): nomes sem o id, links do Obsidian e bancos de dados como propriedades.
         archive = await unwrapNestedZips(archive, limits)
@@ -390,11 +392,11 @@ export function TransferWorkspace() {
             {preview.archive.files.length > shown && <button className="btn sm" onClick={() => setShown(shown + 100)}>Mostrar mais</button>}
           </>}
           {calculated.problem && <p role="alert" className="transfer-error">{calculated.problem}</p>}
-          {calculated.plan && <p className="small transfer-summary" role="status" data-import-planned>Vai gravar {count(calculated.plan.writes.length, "arquivo", "arquivos")} ({sizeLabel(calculated.plan.writes.reduce((total, write) => total + write.bytes.length, 0))}){calculated.plan.replacements.length ? `, ${calculated.plan.replacements.length} substituindo os do cofre` : ""}. {calculated.plan.skipped.length ? `${count(calculated.plan.skipped.length, "arquivo do cofre fica", "arquivos do cofre ficam")} como está. ` : ""}Antes de gravar: backup de texto do cofre{calculated.plan.replacements.length ? " e pacote de segurança do que for substituído" : ""}.</p>}
+          {calculated.plan && <p className="small transfer-summary" role="status" data-import-planned>Vai gravar {count(calculated.plan.writes.length, "arquivo", "arquivos")} ({sizeLabel(calculated.plan.writes.reduce((total, write) => total + transferSize(write), 0))}){calculated.plan.replacements.length ? `, ${calculated.plan.replacements.length} substituindo os do cofre` : ""}. {calculated.plan.skipped.length ? `${count(calculated.plan.skipped.length, "arquivo do cofre fica", "arquivos do cofre ficam")} como está. ` : ""}Antes de gravar: backup de texto do cofre{calculated.plan.replacements.length ? " e pacote de segurança do que for substituído" : ""}.</p>}
           <div className="transfer-actions"><button className="btn" disabled={busy} onClick={() => { setPreview(null); setStatus("") }}>Cancelar prévia</button><button className="btn primary" disabled={busy || !canImport || !calculated.plan?.writes.length || Boolean(calculated.problem)} onClick={() => void act(importFiles)}><ArrowDownToLine size={16} /> {importChoice === "itens" ? `Importar ${count(itemChoices.size, "item", "itens")} (${calculated.plan?.writes.length ?? 0} arquivo(s))` : `Importar ${calculated.plan?.writes.length ?? 0} arquivo(s)`}</button></div>
         </div>}
       </>}
-      <p className="small muted">Limites: {sizeLabel(limits.archive)} por pacote, {sizeLabel(limits.expanded)} de conteúdo ao importar e {sizeLabel(limits.file)} por arquivo.</p>
+      <p className="small muted">Limites: pacote de até {sizeLabel(importLimits.archive)}, com {sizeLabel(importLimits.file)} por arquivo (as imagens são lidas do pacote só na hora de gravar); notas e anexos avulsos, {sizeLabel(limits.expanded)} no total.</p>
       {status && <p role="status" className="small transfer-status">{status}</p>}{notice && <p className="small transfer-notice">{notice}</p>}{error && <p role="alert" className="transfer-error">{error}</p>}
     </section>}
     {direction === "exportar" && goal === "documento" && vault.info && <DocumentExport paths={choice === "itens" ? planned.paths : selected === null ? scoped.map(entry => entry.path) : [...selected]} />}

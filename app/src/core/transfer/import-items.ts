@@ -1,7 +1,7 @@
 import { basename, foldName } from "../text"
 import { VaultIndex } from "../vault-index"
 import { parseWorldManifest } from "../../vtt/shared/world"
-import type { TransferArchive } from "./archive"
+import { transferBytes, transferSize, type TransferArchive } from "./archive"
 import { expandTransferItems, listTransferItems, type TransferItemKind, type TransferWorld } from "./items"
 import { buildImportPlan, decodeTransferText, type ImportPlan, type ImportStrategy, type TransferEntry, type TransferWrite } from "./plan"
 
@@ -25,7 +25,7 @@ const WORLD_MANIFEST = /^\.runas\/mesas\/([^/]+)\/mesa\.json$/
 
 /** Os itens do pacote: os do manifesto (pacotes da 1.4) ou, sem ele, deduzidos pelas pastas, como na exportação. */
 export function packageItems(archive: TransferArchive): PackageItem[] {
-  const entries: TransferEntry[] = archive.files.map(file => ({ path: file.path, size: file.bytes.length, mtime: 1 }))
+  const entries: TransferEntry[] = archive.files.map(file => ({ path: file.path, size: transferSize(file), mtime: 1 }))
   const texts = Object.fromEntries(archive.files.filter(file => /\.md$/i.test(file.path)).map(file => [file.path, decodeTransferText(file.bytes)]))
   const index = new VaultIndex(entries.filter(entry => !entry.path.startsWith(".runas/")), texts)
   const worlds: TransferWorld[] = []
@@ -85,12 +85,14 @@ export function itemState(item: PackageItem, existing: readonly TransferEntry[],
  */
 export async function findIdentical(archive: TransferArchive, existing: readonly TransferEntry[], read: (path: string) => Promise<Uint8Array>, onProgress?: (done: number, total: number) => void): Promise<Set<string>> {
   const byName = new Map(existing.map(entry => [foldName(entry.path), entry]))
-  const candidates = archive.files.filter(file => byName.get(foldName(file.path))?.size === file.bytes.length)
+  const candidates = archive.files.filter(file => byName.get(foldName(file.path))?.size === transferSize(file))
   const same = new Set<string>()
   for (const [i, file] of candidates.entries()) {
     onProgress?.(i, candidates.length)
     const current = await read(byName.get(foldName(file.path))!.path)
-    if (current.length === file.bytes.length && current.every((byte, j) => byte === file.bytes[j])) same.add(file.path)
+    // Sob demanda (C2), o binário do pacote é lido aqui, comparado e solto.
+    const bytes = await transferBytes(file)
+    if (current.length === bytes.length && current.every((byte, j) => byte === bytes[j])) same.add(file.path)
   }
   return same
 }
@@ -122,7 +124,7 @@ export function buildItemsImportPlan(archive: TransferArchive, existing: Transfe
   const destinations: Record<string, string> = {}
   for (const [id, paths] of copies) {
     const item = items.find(candidate => candidate.id === id)!, name = choices.get(id)!.name?.trim()
-    const taken = [...existing, ...plans.flatMap(plan => plan.writes.map(write => ({ path: write.path, size: write.bytes.length, mtime: 0 })))]
+    const taken = [...existing, ...plans.flatMap(plan => plan.writes.map(write => ({ path: write.path, size: transferSize(write), mtime: 0 })))]
     const plan = buildImportPlan(sub(paths), taken, "duplicate", newId, canCopy(item) && name ? { root: item.roots[0]!, name } : undefined)
     plans.push(plan)
     const root = item.roots[0], target = root ? plan.copies?.[root] : undefined

@@ -1,6 +1,6 @@
 import { strToU8 } from "fflate"
 import { foldName } from "../text"
-import { readTransferArchive, transferPath, validateTransferPaths, type TransferArchive, type TransferFile, type TransferLimits } from "./archive"
+import { readTransferArchive, transferBytes, transferPath, validateTransferPaths, type TransferArchive, type TransferFile, type TransferLimits } from "./archive"
 import { decodeTransferText } from "./plan"
 
 /**
@@ -171,7 +171,7 @@ export function convertNotionExport(input: readonly TransferFile[], root = NOTIO
   for (const file of files) {
     if (/\.csv$/i.test(file.path)) continue
     const path = moved.get(file.path)!
-    if (!/\.md$/i.test(file.path)) { out.push({ path, bytes: file.bytes }); continue }
+    if (!/\.md$/i.test(file.path)) { out.push({ ...file, path }); continue }
     pages++
     let text = rewriteLinks(decodeTransferText(file.bytes), dirOf(file.path), moved)
     const row = props.get(file.path)
@@ -187,7 +187,7 @@ export function convertNotionExport(input: readonly TransferFile[], root = NOTIO
     }
     out.push({ path, bytes: strToU8(text) })
   }
-  const result = [...out, ...created].map((file) => ({ path: transferPath(file.path), bytes: file.bytes }))
+  const result = [...out, ...created].map((file) => ({ ...file, path: transferPath(file.path) }))
   validateTransferPaths(result)
   return { files: result, pages: pages + created.length - databases, databases, ignored }
 }
@@ -216,7 +216,7 @@ export async function unwrapNestedZips(archive: TransferArchive, limits: Transfe
   if (!archive.files.length || !archive.files.every((file) => /\.zip$/i.test(file.path))) return archive
   const files: TransferFile[] = [], ignored = [...archive.ignored]
   for (const inner of archive.files) {
-    const part = await readTransferArchive(inner.bytes, archive.title, limits)
+    const part = await readTransferArchive(await transferBytes(inner), archive.title, limits)
     files.push(...part.files); ignored.push(...part.ignored)
   }
   if (files.length > limits.files) throw new Error("O pacote excede a quantidade permitida de arquivos.")
