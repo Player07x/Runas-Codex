@@ -153,3 +153,17 @@ select.kit-date-abbr { width: auto; }
 .kit-search-help-pop { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: min(320px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow, 0 8px 24px rgb(0 0 0 / .25)); color: var(--text); font-size: calc(13px * var(--font-scale, 1)); line-height: 1.5; }
 .kit-search-help-pop[hidden] { display: none; }
 .kit-search-help-pop code { font-size: .95em; }
+
+/* Navegação entre páginas (U71): contagem e números numa linha que quebra; no celular só as setas perdem a palavra. */
+.kit-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; }
+.kit-pagination-summary { font-variant-numeric: tabular-nums; }
+.kit-pagination-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.kit-pagination-number { min-width: 36px; justify-content: center; font-variant-numeric: tabular-nums; }
+.kit-pagination-gap { padding: 0 4px; color: var(--faint); }
+@media (max-width: 560px) {
+  .kit-pagination { justify-content: center; }
+  .kit-pagination-word { display: none; }
+}
+@media (max-width: 860px), (pointer: coarse) {
+  .kit-pagination-pages .btn { min-width: 44px; min-height: 44px; }
+}
