@@ -244,7 +244,8 @@ try {
   await run(`(()=>{const input=document.querySelector('[aria-label="Arquivo para importar"]'), files=new DataTransfer(); files.items.add(new File(['# Transferência Android\\n'], 'Transferencia-Android.md')); input.files=files.files; input.dispatchEvent(new Event('change',{bubbles:true})); return true})()`)
   await until(`document.querySelector('[data-transfer-preview]')?.textContent.includes('1 arquivo(s)')`)
   check('prévia de importação sem gravar', !adb('shell', 'ls', deviceVault + '/Notas').includes('Transferencia-Android.md'))
-  await run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Importar 1 arquivo(s)').click(); true`)
+  // Na 1.4 (U53) a prévia abre por itens e o botão diz “Importar 1 item (1 arquivo(s))”; por arquivos, “Importar 1 arquivo(s)”.
+  await run(`[...document.querySelectorAll('.transfer-actions button')].find(b=>/^Importar .*1 arquivo\\(s\\)/.test(b.textContent.trim())).click(); true`)
   await until(`document.querySelector('.transfer-status')?.textContent.includes('1 arquivo(s) importados')`)
   check('interface importa através do cofre real', adb('shell', 'cat', deviceVault + '/Notas/Importados/Transferencia-Android.md').includes('Transferência Android'))
   const worldPath = '.runas/mesas/transfer-smoke/mesa.json'
