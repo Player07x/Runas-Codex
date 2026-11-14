@@ -68,6 +68,13 @@ conhece pastas de primeiro nível (`:14`).
 | U66 | **Início da wiki e buscas**: três botões empilhados no cartão; dicas de sintaxe cortadas no campo de busca | F |
 | U67 | **Alvos de toque abaixo de 44 px** em quatro lugares | F |
 | U68 | **Notas**: cabeçalho duplo (“Lista de notas” e “Notas”) e dica fixa | F |
+| U69 | **Notas**: o ⋯ da linha aparece como uma caixa própria, mais alta e de outra cor que a linha (tema escuro) | H |
+| U70 | **Notas**: o app esquece quais pastas ficaram abertas ou fechadas; sempre reabre tudo aberto | H |
+| U71 | **Wiki, categoria**: só 24 artigos antes do “Mostrar mais”; páginas que enchem a tela (40–60 artigos) e navegação no começo e no fim | I |
+| U72 | **Wiki, Relações › Organograma**: com muitos membros fica tudo numa fileira só (a 32 %), navegável só pelas barras | K |
+| U73 | **Relações cruzadas**: cada relação tem os dois sentidos no “Adicionar” (“Membro de” e “Tem como membro”…); declarar o membro na organização passa a aparecer no organograma | J |
+| U74 | **Gravar nos dois lados**: ao dizer que A é mentor de B, o app grava também em A que B é discípulo (opção ligada por padrão); remover pergunta se remove dos dois | J |
+| U75 | **Consertar o que já está escrito**: nas Ferramentas da wiki, “Relações de um lado só” (completar) e “Relações invertidas” (organização “membro de” personagem), com prévia antes de gravar | J |
 
 ## Telas no celular (U56–U60)
 
@@ -156,7 +163,7 @@ Todas as correções são de layout no celular (até 640–700 px): o desktop n�
 | E | `agenda/1.4-celular` | U56–U59 | `main` (independe de A–D; pode correr em paralelo) | medidas a 320, 375 e 420 px antes/depois (grade ≤ 190 px do topo, tarefa ≤ 72 px); cofre com 6 rotinas diárias e uma sessão às 20 h aparece no ponto; teclado e leitor de tela no ⋯ da tarefa; temas claro e escuro |
 | F | `celular/1.4-telas` | U61, U62, U64–U68 | E (reaproveita a regra do flutuante e a faixa compacta) | as mesmas 15 capturas antes/depois a 320 e 360 px; título do artigo ≤ 260 px do topo; teste dos alvos de 44 px; teclado e leitor de tela |
 | G | `livros/1.4-celular` | U63 | `main` | livro aberto a 320 e 360 px; painel abre e fecha por toque e teclado; nada do texto coberto |
-| Versão | `versao/1.4.0` | — | A–G mesclados | ADR 0025: notas, `docs/04-testes-pendentes.md` |
+| Versão | `versao/1.4.0` | — | A–G mesclados (e H–K, se aprovados; ver “Correções de 14/11”) | ADR 0025: notas, `docs/04-testes-pendentes.md` |
 
 ADR nova: **0037 — Transferências em fluxo e por itens** (no PR A; o PR B acrescenta a parte dos itens), atualizando os
 limites da ADR 0020.
@@ -192,3 +199,61 @@ Total: duas janelas e um pouco.
 6. **Rotinas no mês**: escondidas por padrão no celular, com a opção de mostrar (*recomendado*), ou sempre visíveis
    como hoje, só que com prioridade para os eventos únicos? E oferecer “Transformar em hábito” para tarefas diárias
    com `🏁 keep`? *Recomendo sim nas duas.*
+
+## Correções de 14/11 (U69–U75)
+
+Pedido do João em 14/11/2026, com a 1.3.0 em uso (maquetes em [`atualizacao-1.4-correcoes.html`](atualizacao-1.4-correcoes.html)): o ⋯ das Notas estranho no tema escuro, pastas que não lembram se
+ficaram abertas, poucas notas por vez nas categorias da wiki, organograma difícil com muitos membros e relações que
+precisam ser escritas dos dois lados à mão. Causas achadas no código da `main` (`98435be`):
+
+| Item | Causa | Conserto proposto |
+|---|---|---|
+| U69 | `.row-menu` (`screens/notes.css`) tem fundo próprio (`--panel-2`) e cantos de 8 px, por cima de uma linha que, ao passar o mouse, usa outra cor; o botão não acompanha a altura da linha | O ⋯ fica sem caixa: herda a cor da linha (normal, passando o mouse e selecionada), tem a altura da linha e só o ícone muda de cor; um degradê curto encobre o fim do nome. Conferido nos dois temas, com foco visível |
+| U70 | `LazyFolder` (`NotesScreen.tsx`) começa com `initialOpen={depth < 1}` e guarda o aberto só no estado da tela | O aparelho lembra as pastas abertas por cofre e por escopo (Espaço Notas / Cofre inteiro), em `localStorage` (`runas-codex:pastas-abertas`, regra 5). “Recolher tudo” também fica lembrado. A pasta da nota aberta continua abrindo sozinha, mas isso não conta como escolha. Pasta renomeada leva a escolha junto; pasta que sumiu sai da lista |
+| U71 | `WikiCategory.tsx` começa com `limit = 24` e o “Mostrar mais” soma 24 por vez (3 fileiras numa tela de 8 colunas) | **Páginas numeradas** (recomendado): cada página tem fileiras inteiras que enchem duas telas, entre 40 e 60 artigos (8 colunas → 48; 7 → 49; 2 no celular → 40). Navegação em cima e embaixo: “‹ Anterior · 1 2 3 … 9 · Próxima ›” e “Página 2 de 9 · 49–96 de 420”. A página fica lembrada por categoria e volta à 1 quando a busca ou um filtro muda. Ao trocar de página, a tela sobe e o foco vai para o primeiro cartão |
+| U72 | `layoutOrg` (`core/relation-layout.ts`) põe todos os filhos de um nó lado a lado; o “Enquadrar” inicial reduz a 32 % para caber; não há arrastar nem zoom pela roda | Membros sem subordinados ficam em **colunas empilhadas** debaixo do chefe (até 4 colunas; 11 membros = 3 × 4), agrupados por cargo: líderes, cargos, membros e “Antigos (n)” recolhido. Arrastar o fundo move; Ctrl + roda e pinça aproximam no ponto do ponteiro; duplo clique aproxima. Um campo “Encontrar no organograma” centraliza e seleciona a pessoa. Abre a 100 % no topo quando o enquadramento ficaria abaixo de 60 %. A visão Lista continua como alternativa acessível |
+| U73 | `RELATION_TYPES` (`core/wiki.ts`) só tem um sentido por relação, e o “Adicionar” do artigo grava sempre na própria nota. Na organização, “Membro de: Aurora” vira “a organização é membro de Aurora”, e o organograma (`orgChart`, `orgStructure`) só conta quem declarou `membro_de` apontando para a organização | Cada par ganha a chave do outro lado: `membros`, `liderado_por`, `subordinados`, `discipulos`, `vassalos`, `contem` (como `pais`/`filhos` já fazem). O app lê as duas como a mesma ligação (`membros: ["[[Aurora]] (tesoureira)"]` na organização = `membro_de: ["[[Organização]] (tesoureira)"]` em Aurora), e o organograma, a árvore e a teia passam a ver as duas. No “Adicionar”, a lista mostra os dois sentidos por grupo e uma frase confere a escolha: “**Aurora** é membro de **Guilda do Porto**”. No Obsidian são propriedades de lista de links, como as de hoje |
+| U74 | Não existe gravação do outro lado | Caixa “Gravar também em Aurora” no “Adicionar”, ligada por padrão e lembrada no aparelho. As duas gravações passam pelo `setProperty` (versão lida; se a outra nota mudou fora do app, recusa e avisa). Se o outro lado já tem a ligação, não grava de novo. Cada relação ganha um “Remover”, que pergunta se remove também da outra nota |
+| U75 | Os dados que o João já escreveu ficam como estão | Duas ferramentas novas nas Ferramentas da wiki, com prévia nota por nota e nada gravado sem confirmar: **Relações de um lado só** (grava o lado que falta, em lote) e **Relações invertidas** (organização “membro de”, “líder de” ou “subordinada a” um personagem, pelo tipo do artigo; “Inverter” move para `membros` na própria organização) |
+
+**Fora do escopo:** mudar como o leitor ou o live preview desenham (regra 7). As chaves novas aparecem no quadro de
+propriedades como as outras. O mapa de relações das Campanhas (`relation-map.ts`) passa a ver as chaves novas porque
+lê pelo mesmo `relationsOf`, sem mudar o desenho.
+
+### PRs das correções
+
+| PR | Branch | Itens | Depende de | Verificação principal |
+|---|---|---|---|---|
+| H | `notas/1.4-pastas` | U69, U70 | `main` | ⋯ nos dois temas (normal, passando o mouse, selecionada, foco); pastas abertas sobrevivem a fechar e abrir o app (smoke `--write`); escopo Notas × Cofre inteiro; renomear pasta |
+| I | `wiki/1.4-paginas` | U71 | `main` | categoria com 420 artigos a 1920, 1366, 768 e 360 px: página cheia de fileiras inteiras; teclado nas setas e números; leitor de tela anuncia “Página 2 de 9”; memória do renderer com 60 capas × 24 de hoje |
+| J | `relacoes/1.4-dois-lados` | U73, U74, U75 | `main` | testes do núcleo (as duas chaves = uma ligação; nada aparece duas vezes; organograma com membro declarado na organização); gravação nos dois lados com a outra nota mudada fora do app; prévia das ferramentas; abrir no Obsidian |
+| K | `relacoes/1.4-organograma` | U72 | J (mexe nos mesmos `wiki.ts` e `relation-layout.ts`) | organização com 3, 11 e 60 membros; arrastar, roda, pinça e teclado; “Encontrar”; 320 px; Lista equivalente |
+
+Estimativa, **opinião** pelos PRs da 1.4: H 4–6%, I 5–7%, J 12–16%, K 8–12% da janela de 5 h.
+
+### O que o João decide (correções)
+
+7. **Categoria da wiki: páginas numeradas ou carregamento automático?** *Recomendo páginas*, porque no A21 importa
+   mais: no máximo 60 capas na memória e no DOM, o teclado chega à navegação e a posição na lista não se perde.
+   O carregamento automático economiza cliques, mas cada capa vista fica carregada até sair da categoria.
+8. **“Gravar também na outra nota” ligado por padrão?** *Recomendo sim* (dá para desligar, e o app lembra).
+9. **Nomes do outro lado**: o rótulo de hoje é “Discípulos”; trocar por **“Aprendizes”** (chave `aprendizes`, com
+   `discipulos` aceito também)? *Recomendo manter “Discípulos”* e aceitar as duas chaves; troca se o João preferir.
+10. **As ferramentas de conserto (U75) olham a wiki aberta ou o cofre inteiro?** *Recomendo a wiki aberta*: mexe em
+    menos notas por vez e a prévia fica curta.
+
+## Fica para a 1.5: otimização (U76)
+
+Medido em 14/11 no notebook do João (i5-10300H, 16 GB): a lentidão vem de **memória esgotada** (RAM e swap cheios por
+outros programas) e de **temperatura alta** (90 °C no processador), não do Runas-Codex. O app instalado, aberto havia
+16 horas, ocupava ~0,5 GB (contando o swap) e **0 % de CPU parado**. No A21 ele roda bem. Por isso a otimização não
+entra na 1.4 e fica como **primeira tarefa da 1.5**, depois de todos os pedidos acima:
+
+- **Medir antes de mexer**: tempo para abrir com o cofre real (562 MB), memória do renderer depois de 1 h de uso
+  (Notas, Wiki com capas, Livro, Mesa), tempo do índice, tamanho dos pacotes JS e o custo de cada tela (Profiler do
+  React). O A21 é o aparelho de referência.
+- **Suspeitos a conferir** (opinião, sem medida ainda): capas e retratos decodificados em tamanho cheio nas grades;
+  `relationsOf` percorre todas as notas a cada chamada (o organograma e as Ferramentas chamam muitas vezes);
+  telas que não saem da memória ao trocar de módulo; listeners e timers que sobram.
+- **Orçamento** para não regredir: um teste de desempenho no CI com limites (abrir, trocar de tela, categoria com
+  420 artigos), como o `styles/tokens.test.ts` faz com o contraste.
