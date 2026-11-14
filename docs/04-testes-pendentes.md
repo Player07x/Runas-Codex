@@ -1884,3 +1884,17 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Alargar e estreitar a janela: o número por página muda para fechar as fileiras, sem cair numa página vazia.
 - [ ] No celular (A21) a 320–360 px: a navegação quebra em duas linhas se precisar, sem rolagem para os lados, com
       alvos de 44 px; trocar de página fica leve (no máximo 60 capas na tela).
+## Relações cruzadas e dos dois lados (1.4.0, PR J)
+
+- [ ] Numa organização, Relações › Adicionar › “Membros” e um personagem: a frase diz “X é membro de Organização”;
+      com “Gravar também em X” ligado, o personagem passa a mostrar “Membro de: Organização”, e o organograma da
+      organização mostra o membro (antes, declarar na organização não aparecia).
+- [ ] Mentor: no personagem B, “Mentor” = A. Com a caixa ligada, A ganha “Discípulos: B”. Desligar a caixa, fechar e
+      abrir o app: ela continua desligada.
+- [ ] Remover (o × ao passar o mouse, ou pelo Tab): numa relação escrita nas duas notas, o diálogo pergunta se remove
+      também da outra; numa escrita só do outro lado (↩), avisa que sai de lá.
+- [ ] Editar a outra nota no Obsidian com o app aberto e depois adicionar uma relação com ela: o app recusa a gravação
+      desatualizada e avisa, sem perder o texto do Obsidian.
+- [ ] Wiki › Ferramentas › Conferir relações: “Relações de um lado só” lista o que falta, desmarcar um item e gravar
+      o resto; “Relações invertidas” acha uma organização com “Membro de” um personagem e inverte para “Membros”.
+      Conferir no Obsidian que as propriedades (`membros`, `discipulos`…) aparecem como listas de links.
