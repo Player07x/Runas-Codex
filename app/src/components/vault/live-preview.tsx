@@ -1,11 +1,12 @@
 import { createRoot, type Root } from "react-dom/client"
 import { syntaxTree } from "@codemirror/language"
-import { Facet, StateEffect, StateField, type EditorState, type Extension, type Range, type Transaction } from "@codemirror/state"
+import { EditorState, Facet, StateEffect, StateField, type Extension, type Range, type Text, type Transaction } from "@codemirror/state"
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import type { SyntaxNodeRef } from "@lezer/common"
 import { changeEmbed } from "../../core/embeds"
 import { parseFrontmatter } from "../../core/parse"
 import type { NoteSet } from "../../lib/note-set"
+import type { PropertiesDisplay } from "../../lib/properties-display"
 import { Markdown } from "../Markdown"
 import { NoteSetContext } from "../../lib/note-set"
 import { Embed } from "../../markdown/Embed"
@@ -107,14 +108,18 @@ class RenderedBlock extends WidgetType {
   }
 }
 
-/** Frontmatter: as propriedades numa tabela compacta. */
+/**
+ * Frontmatter (U77): uma barra “Propriedades · n” que abre a tabela, como o “ocultar propriedades” do Obsidian. Clicar
+ * não põe mais o cursor no YAML (quem não conhece o formato estragava a nota sem querer); para mexer no texto, o botão
+ * “Editar como texto” dentro do bloco, o painel Propriedades ou o modo Código.
+ */
 class PropertiesWidget extends WidgetType {
-  constructor(readonly yaml: string) {
+  constructor(readonly yaml: string, readonly open: boolean) {
     super()
   }
 
   eq(other: PropertiesWidget): boolean {
-    return other.yaml === this.yaml
+    return other.yaml === this.yaml && other.open === this.open
   }
 
   toDOM(view: EditorView): HTMLElement {
@@ -124,29 +129,62 @@ class PropertiesWidget extends WidgetType {
     const wrap = document.createElement("div")
     wrap.className = "cm-lp-properties-wrap"
     const dom = document.createElement("div")
-    dom.className = "cm-lp-properties"
+    dom.className = `cm-lp-properties${this.open ? " open" : ""}`
     wrap.append(dom)
     const data = parseFrontmatter(this.yaml)?.data ?? {}
-    const title = document.createElement("div")
+    const keys = Object.keys(data)
+    const toggle = document.createElement("button")
+    toggle.type = "button"
+    toggle.className = "cm-lp-properties-toggle"
+    toggle.setAttribute("aria-expanded", String(this.open))
+    const chevron = document.createElement("span")
+    chevron.className = "cm-lp-properties-chevron"
+    chevron.setAttribute("aria-hidden", "true")
+    const title = document.createElement("span")
     title.className = "cm-lp-properties-title"
     title.textContent = "Propriedades"
-    dom.append(title)
-    for (const [key, value] of Object.entries(data)) {
-      const row = document.createElement("div")
-      row.className = "cm-lp-property"
-      const name = document.createElement("span")
-      name.textContent = key
-      const shown = document.createElement("span")
-      shown.textContent = Array.isArray(value) ? value.join(", ") : value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)
-      row.append(name, shown)
-      dom.append(row)
+    const count = document.createElement("span")
+    count.className = "cm-lp-properties-count"
+    count.textContent = `· ${keys.length}`
+    count.setAttribute("aria-label", `${keys.length} ${keys.length === 1 ? "propriedade" : "propriedades"}`)
+    toggle.append(chevron, title, count)
+    toggle.addEventListener("click", () => view.dispatch({ effects: setProperties.of({ open: !this.open }) }))
+    dom.append(toggle)
+    if (this.open) {
+      const body = document.createElement("div")
+      body.className = "cm-lp-properties-body"
+      for (const [key, value] of Object.entries(data)) {
+        const row = document.createElement("div")
+        row.className = "cm-lp-property"
+        const name = document.createElement("span")
+        name.textContent = key
+        const shown = document.createElement("span")
+        shown.textContent = Array.isArray(value) ? value.join(", ") : value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)
+        row.append(name, shown)
+        body.append(row)
+      }
+      const edit = document.createElement("button")
+      edit.type = "button"
+      edit.className = "cm-lp-properties-edit"
+      edit.textContent = "Editar como texto"
+      edit.addEventListener("click", () => {
+        // O cursor vai para o fim da primeira propriedade (ou para a linha depois do `---` de abertura).
+        const line = view.state.doc.lines > 2 ? view.state.doc.line(2) : view.state.doc.line(1)
+        view.dispatch({ effects: setProperties.of({ editing: true }), selection: { anchor: line.to }, scrollIntoView: true })
+        view.focus()
+      })
+      body.append(edit)
+      dom.append(body)
     }
+    // Clique no cartão fora dos botões: nada (o cursor não entra no YAML nem pula para a linha de baixo).
     wrap.addEventListener("mousedown", (event) => {
-      event.preventDefault()
-      view.dispatch({ selection: { anchor: 4 } })
-      view.focus()
+      if (!(event.target as Element).closest("button")) event.preventDefault()
     })
     return wrap
+  }
+
+  ignoreEvent(): boolean {
+    return true
   }
 }
 
@@ -259,10 +297,14 @@ const EMBED_ONLY = /^\s*(?:!\[\[[^\]\n]+\]\]|!\[[^\]\n]*\]\([^)\n]+\))(?:\s*(?:!
 const TOC_FENCES = new Set(["table-of-contents", "toc"])
 
 function frontmatterRange(state: EditorState): BlockRange | null {
-  const head = state.sliceDoc(0, Math.min(state.doc.length, 20_000))
+  return frontmatterIn(state.doc)
+}
+
+function frontmatterIn(doc: Text): BlockRange | null {
+  const head = doc.sliceString(0, Math.min(doc.length, 20_000))
   const frontmatter = parseFrontmatter(head)
   if (!frontmatter) return null
-  return { from: 0, to: state.doc.lineAt(Math.max(0, frontmatter.end - 1)).to }
+  return { from: 0, to: doc.lineAt(Math.max(0, frontmatter.end - 1)).to }
 }
 
 /** O cursor (ou uma seleção) toca as linhas de `from` a `to`? */
@@ -296,11 +338,72 @@ function renderableBlocks(state: EditorState): (BlockRange & { source: string; k
   return blocks
 }
 
+// ---------- Propriedades recolhidas (U77) ----------
+// O YAML só aparece como texto depois do “Editar como texto”; volta ao cartão quando o cursor sai dele. Enquanto é
+// cartão, o cursor não para dentro do frontmatter e digitar ou apagar não o atinge (o Backspace no começo do corpo
+// juntaria o `---` com a primeira linha). O painel Propriedades e o modo Código continuam editando como antes.
+
+/** Como o frontmatter aparece (Configurações › Editor e atalhos). */
+export const propertiesDisplay = Facet.define<PropertiesDisplay, PropertiesDisplay>({ combine: (values) => values[0] ?? "recolhidas" })
+
+interface PropertiesView { open: boolean; editing: boolean }
+const setProperties = StateEffect.define<Partial<PropertiesView>>()
+const propertiesState = StateField.define<PropertiesView>({
+  create: (state) => ({ open: state.facet(propertiesDisplay) === "abertas", editing: false }),
+  update(value, tr) {
+    let next = value
+    for (const effect of tr.effects) if (effect.is(setProperties)) next = { ...next, ...effect.value }
+    if (next.editing && tr.selection && !tr.effects.some((effect) => effect.is(setProperties))) {
+      const front = frontmatterRange(tr.state)
+      if (!front || !touches(tr.state, front.from, front.to)) next = { ...next, editing: false }
+    }
+    return next
+  },
+})
+
+function propertiesOf(state: EditorState): PropertiesView {
+  return state.field(propertiesState, false) ?? { open: state.facet(propertiesDisplay) === "abertas", editing: false }
+}
+
+/** Depois desta transação, o YAML está aberto como texto? */
+function editingAfter(tr: Transaction): boolean {
+  let editing = propertiesOf(tr.startState).editing
+  for (const effect of tr.effects) if (effect.is(setProperties) && effect.value.editing !== undefined) editing = effect.value.editing
+  return editing
+}
+
+const propertiesGuard = EditorState.transactionFilter.of((tr) => {
+  if (editingAfter(tr)) return tr
+  const before = frontmatterRange(tr.startState)
+  // Digitar, colar, apagar ou arrastar dentro do frontmatter fechado: nada acontece. Apagar uma seleção que cobre o
+  // frontmatter inteiro (Ctrl A, Delete) continua valendo.
+  if (before && tr.docChanged && (tr.isUserEvent("input") || tr.isUserEvent("delete") || tr.isUserEvent("move"))) {
+    const end = Math.min(before.to + 1, tr.startState.doc.length)
+    let hit = false
+    tr.changes.iterChangedRanges((from, to) => {
+      if (from === to ? from <= before.to : from < end && to > before.from && !(from <= before.from && to >= end)) hit = true
+    })
+    if (hit) return []
+  }
+  // O cursor que cairia dentro do cartão (Ctrl Home, seta para cima) vai para a primeira linha depois dele.
+  if (!tr.selection && !tr.docChanged) return tr
+  const front = frontmatterIn(tr.newDoc)
+  const main = tr.newSelection.main
+  if (!front || !main.empty || main.head > front.to || front.to + 1 > tr.newDoc.length) return tr
+  return [tr, { selection: { anchor: front.to + 1 }, sequential: true }]
+})
+
 function buildBlocks(state: EditorState): DecorationSet {
   const ranges: Range<Decoration>[] = []
   const front = frontmatterRange(state)
-  if (front && !touches(state, front.from, front.to)) {
-    ranges.push(Decoration.replace({ widget: new PropertiesWidget(state.sliceDoc(front.from, front.to) + "\n"), block: true }).range(front.from, front.to))
+  const view = propertiesOf(state)
+  // Nota que é só frontmatter, sem linha depois: não há onde pôr o cursor fora dele, então o texto aparece.
+  const stuck = front !== null && front.to >= state.doc.length && touches(state, front.from, front.to)
+  if (front && !view.editing && !stuck) {
+    const display = state.facet(propertiesDisplay)
+    ranges.push((display === "escondidas"
+      ? Decoration.replace({ block: true })
+      : Decoration.replace({ widget: new PropertiesWidget(state.sliceDoc(front.from, front.to) + "\n", view.open), block: true })).range(front.from, front.to))
   }
   const doc = state.doc.toString()
   for (const block of renderableBlocks(state)) {
@@ -362,7 +465,7 @@ const blockField = StateField.define<DecorationSet>({
   update(value, tr) {
     if (released(tr)) return buildBlocks(tr.state)
     if (waitsForRelease(tr)) return value
-    if (tr.docChanged || tr.selection || syntaxTree(tr.state) !== syntaxTree(tr.startState)) return buildBlocks(tr.state)
+    if (tr.docChanged || tr.selection || syntaxTree(tr.state) !== syntaxTree(tr.startState) || propertiesOf(tr.state) !== propertiesOf(tr.startState)) return buildBlocks(tr.state)
     return value
   },
   provide: (field) => EditorView.decorations.from(field),
@@ -580,16 +683,28 @@ const theme = EditorView.baseTheme({
   ".cm-lp-block:hover": { outline: "1px dashed var(--line)", outlineOffset: "4px", borderRadius: "6px" },
   ".cm-lp-inline-embed": { display: "inline-block", maxWidth: "100%", verticalAlign: "top", fontFamily: "var(--font-sans)", whiteSpace: "normal" },
   ".cm-lp-frontmatter, .cm-lp-frontmatter span": { fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: "400", color: "var(--muted)" },
-  ".cm-lp-properties-wrap": { padding: "4px 0 10px", cursor: "text" },
-  ".cm-lp-properties": { padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px", cursor: "text" },
-  ".cm-lp-properties-title": { marginBottom: "4px", color: "var(--faint)", fontSize: "11px", fontWeight: "700", letterSpacing: "0.06em", textTransform: "uppercase" },
-  ".cm-lp-property": { display: "grid", gridTemplateColumns: "minmax(90px, 30%) 1fr", gap: "10px", padding: "2px 0" },
+  ".cm-lp-properties-wrap": { padding: "4px 0 10px", cursor: "default" },
+  ".cm-lp-properties": { border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px" },
+  ".cm-lp-properties:not(.open)": { display: "inline-block", maxWidth: "100%" },
+  ".cm-lp-properties-toggle": { display: "flex", alignItems: "center", gap: "6px", width: "100%", minHeight: "32px", padding: "4px 12px", border: "0", borderRadius: "10px", background: "none", color: "var(--muted)", font: "inherit", cursor: "pointer", textAlign: "left" },
+  ".cm-lp-properties-toggle:hover": { color: "var(--text)", backgroundColor: "var(--panel-2)" },
+  ".cm-lp-properties-toggle:focus-visible, .cm-lp-properties-edit:focus-visible": { outline: "2px solid var(--cyan)", outlineOffset: "2px" },
+  ".cm-lp-properties-chevron": { width: "7px", height: "7px", marginRight: "2px", borderRight: "2px solid currentColor", borderBottom: "2px solid currentColor", transform: "rotate(-45deg)", transition: "transform 120ms ease" },
+  ".cm-lp-properties.open .cm-lp-properties-chevron": { transform: "rotate(45deg) translate(-2px, -1px)" },
+  ".cm-lp-properties-title": { fontSize: "11px", fontWeight: "700", letterSpacing: "0.06em", textTransform: "uppercase" },
+  ".cm-lp-properties-count": { color: "var(--muted)", fontSize: "12px" },
+  ".cm-lp-properties-body": { padding: "2px 12px 8px", borderTop: "1px solid var(--line)" },
+  ".cm-lp-property": { display: "grid", gridTemplateColumns: "minmax(90px, 30%) 1fr", gap: "10px", padding: "2px 0", overflowWrap: "anywhere" },
   ".cm-lp-property > span:first-child": { color: "var(--muted)" },
+  ".cm-lp-properties-edit": { marginTop: "6px", minHeight: "32px", padding: "4px 10px", border: "1px solid var(--line)", borderRadius: "8px", background: "var(--panel-2)", color: "var(--text)", font: "inherit", fontSize: "12px", cursor: "pointer" },
+  ".cm-lp-properties-edit:hover": { borderColor: "var(--cyan)" },
+  "@media (pointer: coarse)": { ".cm-lp-properties-toggle, .cm-lp-properties-edit": { minHeight: "44px" } },
+  "@media (prefers-reduced-motion: reduce)": { ".cm-lp-properties-chevron": { transition: "none" } },
 })
 
 /** O live preview inteiro: liga com `livePreviewHost.of(...)` para os links e blocos desenhados. */
-export function livePreview(): Extension {
-  return [pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
+export function livePreview(display: PropertiesDisplay = "recolhidas"): Extension {
+  return [propertiesDisplay.of(display), propertiesState, propertiesGuard, pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
 }
 
-export { frontmatterRange, renderableBlocks, blockField, pointerHeld, pointerHold }
+export { frontmatterRange, renderableBlocks, blockField, pointerHeld, pointerHold, propertiesState, propertiesGuard, setProperties }

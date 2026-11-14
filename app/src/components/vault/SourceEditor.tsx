@@ -15,6 +15,8 @@ import { suggestForTaskLine } from "../../core/tasks/suggest"
 import { currentParseContext, vaultTaskIds } from "../../lib/tasks"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import { livePreview as livePreviewExtension, livePreviewHost, type LivePreviewHost } from "./live-preview"
+import { readRemembered } from "../../lib/remembered"
+import { parsePropertiesDisplay, PROPERTIES_DISPLAY_KEY } from "../../lib/properties-display"
 
 export interface LinkSuggestion {
   label: string
@@ -179,7 +181,9 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     openUrl: (url) => callbacks.current.livePreview?.openUrl(url),
     openTag: (tag) => callbacks.current.livePreview?.openTag(tag),
   })
-  const previewExtensions = (on: boolean) => (on ? [livePreviewHost.of(previewHost.current), livePreviewExtension()] : [])
+  // O jeito de mostrar as propriedades (U77) é lido ao ligar o live preview: mudar nas Configurações vale na próxima
+  // nota aberta.
+  const previewExtensions = (on: boolean) => (on ? [livePreviewHost.of(previewHost.current), livePreviewExtension(readRemembered(PROPERTIES_DISPLAY_KEY, parsePropertiesDisplay))] : [])
 
   useEffect(() => {
     const linkSource = (context: CompletionContext): CompletionResult | null => {

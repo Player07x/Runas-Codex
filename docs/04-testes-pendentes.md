@@ -1909,3 +1909,15 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       duplo clique no fundo aproxima. Clicar num cartão continua abrindo os detalhes.
 - [ ] “Encontrar no organograma”: digitar o nome de um membro e Enter seleciona o cartão, rola até ele e mostra os
       detalhes. No celular (360 px), o campo e os botões de zoom cabem sem rolagem para os lados.
+## Propriedades recolhidas no modo Editar (1.4.0, PR L: U77)
+
+- [ ] Abrir uma nota com propriedades no modo Editar (PC e celular): no topo aparece só a barra “Propriedades · n”.
+      Tocar nela abre a tabela; tocar de novo recolhe. O cursor não entra no YAML.
+- [ ] Com o cursor no começo da primeira linha do corpo, Backspace não junta o `---` com o texto; seta para cima e
+      Ctrl Home não levam o cursor para dentro das propriedades. Colar no topo da nota cola no corpo.
+- [ ] “Editar como texto” (dentro da tabela aberta) mostra o YAML; editar um valor, clicar no corpo: volta a barra
+      com o valor novo, e o Obsidian abre a nota igual.
+- [ ] Configurações › Editor e atalhos › Propriedades no documento: “Abertas” abre a tabela já aberta, “Escondidas”
+      não mostra nada no topo (as propriedades continuam no painel Propriedades). Vale para a próxima nota aberta e
+      é por aparelho.
+- [ ] Ctrl A e Delete numa nota com propriedades ainda apaga tudo (inclusive o frontmatter), como antes.
