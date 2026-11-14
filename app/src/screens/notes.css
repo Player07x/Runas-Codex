@@ -122,3 +122,10 @@
 }
 :root[data-tablet="true"] .list-item.note-item.compact, :root[data-tablet="true"] .vault-folder > summary.folder-summary { min-height: 44px; }
 :root[data-tablet="true"] .vault-folder-wrap > .row-menu { top: 22px; }
+
+/* U55: seleção de várias notas para exportar. */
+.notes-pick-bar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel-2); }
+.note-pick-box { display: inline-grid; flex: none; place-items: center; width: 18px; height: 18px; margin: 2px 8px 0 0; border: 2px solid var(--line-strong); border-radius: 4px; color: var(--on-accent); }
+.note-pick-box.on { border-color: var(--cyan); background: var(--cyan); }
+.list-item.note-item.picked { background: color-mix(in srgb, var(--cyan) 12%, transparent); }
+@media (max-width: 860px), (pointer: coarse) { .notes-pick-bar .btn { min-height: 44px; } }

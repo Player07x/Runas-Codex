@@ -2,7 +2,7 @@ import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
 import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
-import { Archive, FileDown, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
+import { Archive, FileDown, ListChecks, Package, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
@@ -22,6 +22,7 @@ import { scopeOf } from "../core/spaces"
 import { basename, dirname, joinPath, noteName } from "../core/text"
 import type { IndexedNote, VaultIndex } from "../core/vault-index"
 import { href, navigate } from "../lib/router"
+import { requestExport } from "../lib/transfer-request"
 import { copyLinkTarget, flushOpenNotes, headingLinkText, noteRoute, vaultRoute } from "../lib/vault-notes"
 import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
 import { fillTemplate, formatDate } from "../core/templates"
@@ -151,6 +152,20 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [showRight, setShowRight] = useState(false)
   const [dialog, setDialog] = useState<Dialog | null>(null)
   const [menu, setMenu] = useState<{ at: ContextPoint; kind: "note" | "folder"; path: string } | null>(null)
+  // U55: seleção de várias notas (Shift + clique, ou “Selecionar várias” no menu, que no celular vira toque).
+  const [picked, setPicked] = useState<Set<string> | null>(null)
+  const pick = (path: string) => setPicked((current) => {
+    const next = new Set(current ?? [])
+    if (next.has(path)) next.delete(path)
+    else next.add(path)
+    return next
+  })
+  useEffect(() => {
+    if (!picked) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setPicked(null) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [picked])
   const [hint, setHint] = useState(() => {
     try { return window.matchMedia("(hover: none)").matches && !localStorage.getItem(HINT_KEY) } catch { return false }
   })
@@ -393,13 +408,24 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     <a
       href={href(vaultRoute(n.path))}
       {...contextMenuProps((at) => setMenu({ at, kind: "note", path: n.path }))}
+      // No modo de seleção, o item vira caixa de marcar: Espaço (ou Enter, ou toque) marca e desmarca.
+      onKeyDown={(event) => {
+        if (picked && event.key === " ") return (event.preventDefault(), pick(n.path))
+        contextMenuProps((at) => setMenu({ at, kind: "note", path: n.path })).onKeyDown(event)
+      }}
       data-note-path={n.path}
       {...dragSource(n.path)}
-      // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian).
-      onClick={(event) => (event.ctrlKey || event.metaKey) && (event.preventDefault(), openNote(n.path, "aba"))}
+      // Ctrl+clique e botão do meio abrem numa aba nova (como no Obsidian); Shift+clique ou o modo de seleção marcam.
+      onClick={(event) => {
+        if (picked || event.shiftKey) return (event.preventDefault(), pick(n.path))
+        if (event.ctrlKey || event.metaKey) (event.preventDefault(), openNote(n.path, "aba"))
+      }}
+      role={picked ? "checkbox" : undefined}
+      aria-checked={picked ? picked.has(n.path) : undefined}
       onAuxClick={(event) => event.button === 1 && (event.preventDefault(), openNote(n.path, "aba"))}
       title={extra === undefined ? preview(n) || undefined : undefined}
-      className={`list-item note-item ${extra === undefined ? "compact" : ""} ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
+      className={`list-item note-item ${extra === undefined ? "compact" : ""} ${flags.color ? "colored" : ""} ${note?.path === n.path ? "active" : ""} ${picked?.has(n.path) ? "picked" : ""}`} style={{ ["--note" as string]: flags.color ? NOTE_COLORS[flags.color] : "transparent" }}>
+      {picked && <span className={`note-pick-box ${picked.has(n.path) ? "on" : ""}`} aria-hidden="true">{picked.has(n.path) && <Check size={13} />}</span>}
       <span className="grow" style={{ minWidth: 0 }}>
         <span className="truncate note-item-name" style={{ display: "block", fontWeight: 600 }}>
           {flags.pinned && <Pin size={12} className="note-pin" aria-label="fixada" />}
@@ -429,6 +455,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       favoriteEntry({ type: "file", path: target }),
       { label: "Copiar link da nota", icon: <Copy size={16} />, onSelect: () => run(async () => { await navigator.clipboard.writeText(`[[${copyLinkTarget(index, target)}]]`); toast("Link copiado") }) },
       { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: [target], title: name }) },
+      { label: "Exportar como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ paths: [target] }) },
+      { label: "Selecionar várias", icon: <ListChecks size={16} />, onSelect: () => setPicked(new Set([target])) },
       ...(!readOnly ? [
         sep,
         { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => run(async () => { await flushOpenNotes(); setDialog({ kind: "rename-note", path: target }) }) },
@@ -449,6 +477,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
       favoriteEntry({ type: "folder", path: folder }),
       { label: "Ícone e cor…", icon: <Sparkles size={16} />, onSelect: () => setDialog({ kind: "appearance", path: folder }) },
       { label: "Exportar pasta…", icon: <FileDown size={16} />, onSelect: () => openDocumentExport({ paths: index.notesIn(folder + "/").map((note) => note.path), title: name }) },
+      { label: "Exportar pasta como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ paths: [folder] }) },
       ...(!readOnly ? [
         sep,
         { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => setDialog({ kind: "rename-folder", path: folder }) },
@@ -554,6 +583,15 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           )}
         </div>
         <div className={`pane-body ${dropTarget === root.replace(/\/$/, "") ? "drop-root" : ""}`} data-vault-tree style={{ gap: 12 }} {...dropZone(root.replace(/\/$/, ""))}>
+          {picked && (
+            <div className="notes-pick-bar" role="toolbar" aria-label="Notas selecionadas">
+              <span className="grow small" role="status">{picked.size === 1 ? "1 nota selecionada" : `${picked.size} notas selecionadas`}</span>
+              <button type="button" className="btn sm primary" disabled={!picked.size} onClick={() => (requestExport({ paths: [...picked] }), setPicked(null))}>
+                <Package size={14} /> Exportar seleção…
+              </button>
+              <button type="button" className="btn sm ghost" onClick={() => setPicked(null)}>Cancelar</button>
+            </div>
+          )}
           {hint && (
             <p className="proto-note notes-hint" role="note">
               <span className="grow">Segure uma nota ou pasta para ver as ações (renomear, favoritar, lixeira…).</span>

@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type } from "lucide-react"
+import { BookOpen, ChevronLeft, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type, Package } from "lucide-react"
 import { fichaEnd, toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, readBook, type BookItem } from "../../core/books"
@@ -12,6 +12,7 @@ import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
 import { Notice } from "../../components/kit/Layout"
 import { Modal, Segmented } from "../../components/ui"
 import { navigate } from "../../lib/router"
+import { bookItem, requestExport } from "../../lib/transfer-request"
 import { flushOpenNotes, vaultRoute } from "../../lib/vault-notes"
 import { ConfirmDialog } from "../../components/vault/dialogs"
 import { useVault } from "../../platform/VaultProvider"
@@ -158,6 +159,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     { label: "Novo capítulo…", icon: <Plus size={16} />, disabled: locked, onSelect: newChapter },
     { label: "Metadados do livro…", icon: <SlidersHorizontal size={16} />, onSelect: () => navigate(vaultRoute(book.path)) },
     { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => setView("previa") },
+    { label: "Exportar livro como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ items: [bookItem(book.path)] }) },
     { label: "Revisar o livro…", icon: <FileSearch size={16} />, onSelect: () => setReviewing(true) },
     // No celular, Foco sai da barra (o lugar fica para “Ver a página”) e mora aqui.
     ...(narrow && view === "escrever" ? [{ label: "Foco (só a página)", icon: <Maximize2 size={16} />, onSelect: () => setFocus(true) }] : []),

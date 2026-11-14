@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { onTransferRequest, takeTransferRequest, type TransferRequest } from "../../lib/transfer-request"
 import { Archive, ArrowDownToLine, ArrowUpFromLine, BookOpen, CalendarDays, Dices, FileText, FolderOpen, FolderOutput, FolderTree, History, Library, ListChecks, Package, ScrollText } from "lucide-react"
 import { useVault } from "../../platform/VaultProvider"
 import { Segmented } from "../../components/ui"
@@ -55,11 +56,14 @@ export function TransferWorkspace() {
   }
   const [scope, setScope] = useState("")
   const [kind, setKind] = useState<"runas" | "markdown">(() => (savedGoal() === "obsidian" ? "markdown" : "runas"))
-  const [choice, setChoiceState] = useState<Choice>("itens")
-  const [chosenItems, setChosenItems] = useState<Set<string>>(new Set())
+  // U54/U55: o atalho de um módulo (“Exportar esta wiki…”) ou a seleção das Notas chega já marcado.
+  const [request] = useState<TransferRequest | null>(takeTransferRequest)
+  const requestedPaths = useRef(request && "paths" in request ? request.paths : null)
+  const [choice, setChoiceState] = useState<Choice>(request && "paths" in request ? "notas" : "itens")
+  const [chosenItems, setChosenItems] = useState<Set<string>>(() => new Set(request && "items" in request ? request.items : []))
   const [worldList, setWorldList] = useState<TransferWorld[]>([])
   // Por itens, “Incluir notas ligadas” começa desligado (um link para outra wiki não a puxa inteira); por notas, ligado.
-  const [linked, setLinked] = useState(false)
+  const [linked, setLinked] = useState(Boolean(request && "paths" in request))
   const setChoice = (next: Choice) => { setChoiceState(next); setLinked(next === "notas") }
   const [worlds, setWorlds] = useState(true)
   const [entries, setEntries] = useState<TransferEntry[]>([])
@@ -96,14 +100,23 @@ export function TransferWorkspace() {
 
   useEffect(() => {
     let active = true
-    setPreview(null); setSelected(null)
+    setPreview(null); setSelected(requestedPaths.current ? new Set(requestedPaths.current) : null)
     if (!vault.info) { setEntries([]); return }
     void listFiles().then(async files => {
       const found = await readWorlds(files)
-      if (active) { setEntries(files); setWorldList(found) }
+      // O pedido do atalho só é dado por atendido quando a lista chega (o efeito pode rodar duas vezes).
+      if (active) { setEntries(files); setWorldList(found); requestedPaths.current = null }
     }, error => { if (active) setError(failure(error)) })
     return () => { active = false }
   }, [vault.info?.path, worlds, scope, choice])
+
+  // A tela já aberta recebe o atalho na hora.
+  useEffect(() => onTransferRequest(next => {
+    takeTransferRequest()
+    setDirection("exportar"); setPreview(null); setScope("")
+    if ("items" in next) { setChoice("itens"); setChosenItems(new Set(next.items)) }
+    else { requestedPaths.current = next.paths; setChoice("notas"); setSelected(new Set(next.paths)) }
+  }), [])
 
   const scoped = entries.filter(entry => (scopes.find(item => item.value === scope)?.roots ?? [""]).some(root => !root || entry.path.startsWith(root + "/")))
   const visible = scoped.filter(entry => entry.path.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")))
@@ -340,7 +353,7 @@ export function TransferWorkspace() {
           {choice === "notas" && !scope && <label className="check"><input type="checkbox" checked={worlds} disabled={busy} onChange={event => setWorlds(event.target.checked)} /> Incluir mesas do VTT</label>}
           <p className="small muted">Mantém as notas e anexos originais, inclusive os segredos do mestre. Preferências deste aparelho e configurações de plugins não entram no pacote.</p>
           <div className="transfer-actions">
-            <p className="small transfer-summary" role="status" data-transfer-planned>Vai salvar {count(planned.notes, "nota", "notas")} e {count(planned.attachments, "outro arquivo", "outros arquivos")} ({sizeLabel(planned.size)}){choice === "itens" ? ` de ${count(chosenItems.size, "item", "itens")}` : ` de ${scopes.find(item => item.value === scope)?.label.toLocaleLowerCase("pt-BR")}`}{linked ? ", com as notas ligadas" : ""} num {kind === "runas" ? "pacote .runas" : "ZIP Markdown"}.</p>
+            <p className="small transfer-summary" role="status" data-transfer-planned>Vai salvar {count(planned.notes, "nota", "notas")} e {count(planned.attachments, "outro arquivo", "outros arquivos")} ({sizeLabel(planned.size)}){choice === "itens" ? ` de ${count(chosenItems.size, "item", "itens")}` : selected !== null ? ` de ${count(selected.size, "nota ou pasta marcada", "notas e pastas marcadas")}` : ` de ${scopes.find(item => item.value === scope)?.label.toLocaleLowerCase("pt-BR")}`}{linked ? ", com as notas ligadas" : ""} num {kind === "runas" ? "pacote .runas" : "ZIP Markdown"}.</p>
             <button className="btn primary" disabled={busy || !vault.index || vault.loading || !planned.paths.length} onClick={() => void act(exportFiles)}><ArrowUpFromLine size={16} /> {busy ? "Preparando…" : "Escolher onde salvar"}</button>
           </div>
         </>}
