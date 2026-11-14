@@ -186,8 +186,11 @@ try {
   await until(`document.querySelector('[data-note-path="Notas/Teclado.md"]')`, 150)
   await run(`document.querySelector('[data-note-path="Notas/Teclado.md"]').click(); true`)
   await until(`document.querySelector('.editor-status')?.getAttribute('title') === 'Notas/Teclado.md'`, 150)
-  await until(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent))`, 150)
-  await run(`[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)).click(); true`)
+  // No celular (1.4, U61/U62) não há mais as abas Leitura/Editar/Código: a nota abre já editando ou com o lápis
+  // “Editar” na barra. Nas telas largas as abas continuam.
+  const editar = `[...document.querySelectorAll('[role=tab]')].find(t => /Editar/.test(t.textContent)) || document.querySelector('.doc-mode-toggle[aria-label="Editar"]')`
+  await until(`document.querySelector('.cm-content') || ${editar}`, 150)
+  await run(`if (!document.querySelector('.cm-content')) (${editar}).click(); true`)
   await until(`document.querySelector('.cm-content')`, 150)
   // Um toque confiável liga também a InputConnection nativa do WebView; foco DOM sozinho não garante isso.
   const editorPoint = await run(`(()=>{const r=document.querySelector('.cm-content').getBoundingClientRect();return {x:r.x+Math.min(40,r.width/2),y:r.y+Math.min(15,r.height/2)}})()`)
