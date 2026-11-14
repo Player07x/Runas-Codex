@@ -23,18 +23,33 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
     upload()
     await until(()=>document.querySelector('[data-transfer-preview]')?.textContent.includes("2 arquivo(s)"))
     checks.preview=true
-    button("Importar 2 arquivo(s)").click()
+    // U53: a prévia abre por itens; os dois arquivos avulsos são o item “Notas”.
+    button("Importar 1 item (2 arquivo(s))").click()
     await until(()=>document.querySelector(".transfer-status")?.textContent.includes("2 arquivo(s) importados"))
     const path="Notas/Importados/Transfer-smoke.md", asset="Notas/Importados/Anexos-transfer-smoke.png"
     checks.imported=(await api.vault.read([path]))[path] === "\ufeff# Transferência\r\n\r\n![[Anexos-transfer-smoke.png]]\r\n\r\n> [!segredo]\r\n> X4_SEGREDO_NAO_EXPORTAR\r\n" && (await api.vault.readBinary(asset)).length===70
     upload()
     await until(()=>document.querySelector('[data-transfer-preview]')?.textContent.includes("2 conflito(s)"))
-    checks.merge=button("Importar 0 arquivo(s)")?.disabled===true
+    checks.merge=button("Importar 1 item (0 arquivo(s))")?.disabled===true
+    checks.itemSame=document.querySelector('[data-import-item="Notas"]')?.textContent.includes("Já está no cofre") && document.querySelector('[data-import-item="Notas"]')?.textContent.includes("2 iguais")
+    // Importar como cópia, com o nome editado.
+    select("O que fazer com Notas","duplicate")
+    const copyName=await until(()=>document.querySelector('[aria-label="Nome da cópia de Notas"]'))
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(copyName,"Cópia do smoke"); copyName.dispatchEvent(new Event("input",{bubbles:true}))
+    await until(()=>document.querySelector('[data-import-item="Notas"]')?.textContent.includes("Vai para Cópia do smoke") && button("Importar 1 item (2 arquivo(s))"))
+    button("Importar 1 item (2 arquivo(s))").click()
+    await until(()=>document.querySelector(".transfer-status")?.textContent.includes("Cópia em Cópia do smoke"))
+    checks.itemCopy=(await api.vault.list()).some(entry=>entry.path==="Cópia do smoke/Importados/Transfer-smoke.md")
+    // Por arquivos, como antes: duplicar com novos caminhos.
+    upload()
+    await until(()=>document.querySelector('[data-transfer-preview]')?.textContent.includes("2 conflito(s)"))
+    choose("Por arquivos")
+    await until(()=>document.querySelector('[aria-label="Quando já existe"]'))
     select("Quando já existe","duplicate")
     await until(()=>button("Importar 2 arquivo(s)"))
     button("Importar 2 arquivo(s)").click()
     await until(()=>!document.querySelector('[data-transfer-preview]'))
-    checks.duplicate=(await api.vault.list()).filter(entry=>entry.path.endsWith("/Transfer-smoke.md")).length===2
+    checks.duplicate=(await api.vault.list()).filter(entry=>entry.path.endsWith("/Transfer-smoke.md")).length===3
     ;[...document.querySelectorAll('[role=tab]')].find(el=>el.textContent.includes("Exportar")).click()
     await until(()=>[...document.querySelectorAll('[role=tab]')].some(el=>el.textContent.includes("Por notas")))
     choose("Por notas")
@@ -146,6 +161,7 @@ export async function checkTransfers(window: BrowserWindow): Promise<Record<stri
   // O pacote por item tem todas as notas da wiki e nada de outra pasta de notas.
   const byItem = await readTransferArchive(new Uint8Array(await readFile(result.byItem)))
   const itemPaths = new Set(byItem.files.map(file => file.path))
+  result.checks.itemManifest = byItem.items?.length === 1 && byItem.items[0]!.nome === "Ordem x Caos" && result.wikiNotes.every(path => byItem.items![0]!.caminhos.includes(path))
   result.checks.itemArchive = byItem.kind === "runas" && result.wikiNotes.length > 0 && result.wikiNotes.every(path => itemPaths.has(path)) && !byItem.files.some(file => file.path.startsWith("Notas/Importados/"))
   return { ...result, nativePaths: native.files.map(file=>file.path), markdownPaths: markdown.files.map(file=>file.path), pdfCheck: pdf, ok: Object.values(result.checks).every(Boolean) }
 }

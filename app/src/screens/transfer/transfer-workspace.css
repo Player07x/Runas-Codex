@@ -46,3 +46,16 @@
 .transfer-tree-label > svg { flex: none; color: var(--gold); }
 .transfer-tree-label > span { flex: 1 1 6em; min-width: 0; overflow-wrap: break-word; }
 .transfer-tree-label > small { flex-shrink: 0; margin-inline-start: auto; color: var(--muted); }
+
+/* U53 (atualização 1.4): na importação, cada item do pacote com o estado no cofre e a sua ação. */
+.transfer-import-item { border-bottom: 1px solid var(--line); }
+.transfer-import-item:last-child { border-bottom: 0; }
+.transfer-import-item > .transfer-item { border-bottom: 0; }
+.transfer-import-item .chip { white-space: normal; }
+.transfer-item-state { margin: -4px 10px 8px 40px; }
+.transfer-item-action { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 8px; padding: 0 10px 10px 40px; }
+.transfer-item-action > p { grid-column: 1 / -1; margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .transfer-item-state { margin-inline-start: 10px; }
+  .transfer-item-action { padding-inline-start: 10px; }
+}

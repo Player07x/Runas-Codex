@@ -1,5 +1,6 @@
 import { strToU8 } from "fflate"
 import { parseNote } from "../parse"
+import { nameProblem } from "../names"
 import { basename, extname, foldName } from "../text"
 import { VaultIndex } from "../vault-index"
 import { parseWorldManifest, worldFolderName } from "../../vtt/shared/world"
@@ -8,7 +9,13 @@ import { managedWorldPath, transferPath, validateTransferPaths, type TransferArc
 export interface TransferEntry { path: string; size: number; mtime: number }
 export type ImportStrategy = "merge" | "replace" | "duplicate"
 export interface TransferWrite extends TransferFile { expected: TransferEntry | null }
-export interface ImportPlan { writes: TransferWrite[]; skipped: string[]; conflicts: string[]; replacements: TransferEntry[] }
+export interface ImportPlan {
+  writes: TransferWrite[]; skipped: string[]; conflicts: string[]; replacements: TransferEntry[]
+  /** Na cópia: para onde foi cada pasta (ou mesa) do pacote. */
+  copies?: Record<string, string>
+}
+/** Importar como cópia com nome escolhido (U53): a pasta (ou mesa) `root` do pacote vira `name`. */
+export interface CopyName { root: string; name: string }
 
 export function decodeTransferText(bytes: Uint8Array): string {
   try { return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes) }
@@ -101,8 +108,18 @@ function validateWorlds(files: TransferFile[]): void {
   }
 }
 
-function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], newId: () => string): TransferFile[] {
-  const taken = existing.map(entry => entry.path), groups = new Map<string, string>(), paths = new Map<string, string>(), ids = new Map<string, string>()
+/** Em Wikis/, Campanhas/ e Livros/, a nota com o nome da pasta (página inicial da wiki, nota da campanha) acompanha o novo nome. */
+function folderNote(path: string, group: string, target: string): string {
+  const name = basename(group)
+  return path === `${group}/${name}.md` ? `${target}/${basename(target)}.md` : target + "/" + path.slice(group.length + 1)
+}
+
+function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], newId: () => string, copy?: CopyName): { files: TransferFile[]; copies: Record<string, string> } {
+  const taken = existing.map(entry => entry.path), groups = new Map<string, string>(), paths = new Map<string, string>(), ids = new Map<string, string>(), titles = new Map<string, string>()
+  if (copy) {
+    const problem = nameProblem(copy.name)
+    if (problem) throw new Error(`Nome da cópia: ${problem}`)
+  }
   for (const file of archive.files) {
     if (isLibrary(file.path)) {
       const path = freeLibraryFile(file.path, taken)
@@ -116,11 +133,15 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
       if (!groups.has(group)) {
         const manifest = archive.files.find(item => item.path === root + "/mesa.json")!
         const world = parseWorldManifest(JSON.parse(decodeTransferText(manifest.bytes).replace(/^\ufeff/, "")))
-        const id = newId()
+        const id = newId(), title = copy?.root === root ? copy.name : world.title + " (cópia)"
         ids.set(world.id, id)
-        groups.set(group, freeFolder(".runas/mesas/" + worldFolderName(world.title + " (cópia)", id), taken))
+        groups.set(group, freeFolder(".runas/mesas/" + worldFolderName(title, id), taken))
+        if (copy?.root === root) titles.set(root + "/mesa.json", title)
       }
       target = groups.get(group)!
+    } else if (copy && file.path.startsWith(copy.root + "/")) {
+      group = copy.root
+      target = groups.get(group) ?? freeFolder((group.includes("/") ? group.slice(0, group.lastIndexOf("/") + 1) : "") + copy.name, taken)
     } else if (["Wikis", "Campanhas", "Livros"].includes(parts[0]!) && parts.length > 2) {
       group = parts.slice(0, 2).join("/")
       target = groups.get(group) ?? freeFolder(group + " (importado)", taken)
@@ -129,7 +150,7 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
       target = groups.get(group) ?? freeFolder((group ? group + "/" : "") + "Importado - " + cleanTitle(archive.title), taken)
     }
     if (!groups.has(group)) groups.set(group, target)
-    const path = target + "/" + file.path.slice(group ? group.length + 1 : 0)
+    const path = /^(Wikis|Campanhas|Livros)\/[^/]+$/.test(group) ? folderNote(file.path, group, target) : target + "/" + file.path.slice(group ? group.length + 1 : 0)
     paths.set(file.path, transferPath(path)); taken.push(path)
   }
   const sourceIndex = new VaultIndex(archive.files.map(file => ({ path: file.path, size: file.bytes.length, mtime: 1 })), Object.fromEntries(archive.files.filter(file => extname(file.path) === ".md").map(file => [file.path, decodeTransferText(file.bytes)])))
@@ -144,7 +165,7 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
     for (const [before, after] of ids) text = text.split(before).join(after)
     return text
   }
-  return archive.files.map(file => {
+  const files = archive.files.map(file => {
     let bytes = file.bytes
     if (isText(file.path)) {
       let body = decodeTransferText(bytes)
@@ -158,20 +179,27 @@ function duplicateFiles(archive: TransferArchive, existing: TransferEntry[], new
           if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, rewrite(item)]))
           return value
         }
-        try { body = bom + JSON.stringify(rewrite(JSON.parse(body.replace(/^\ufeff/, ""))), null, 2) + "\n" }
+        try {
+          const value = rewrite(JSON.parse(body.replace(/^\ufeff/, "")))
+          const title = titles.get(file.path)
+          if (title && value && typeof value === "object" && !Array.isArray(value)) (value as Record<string, unknown>).title = title
+          body = bom + JSON.stringify(value, null, 2) + "\n"
+        }
         catch { if (extname(file.path) !== ".base") throw new Error(`JSON inválido no pacote: ${file.path}`) }
       }
       bytes = strToU8(body)
     }
     return { path: paths.get(file.path)!, bytes }
   })
+  return { files, copies: Object.fromEntries(groups) }
 }
 
 /** A prévia fixa a versão dos arquivos existentes. O executor precisa usar exatamente essa versão para gravar. */
-export function buildImportPlan(archive: TransferArchive, existing: TransferEntry[], strategy: ImportStrategy, newId: () => string = () => crypto.randomUUID()): ImportPlan {
+export function buildImportPlan(archive: TransferArchive, existing: TransferEntry[], strategy: ImportStrategy, newId: () => string = () => crypto.randomUUID(), copy?: CopyName): ImportPlan {
   validateTransferPaths(archive.files)
   validateWorlds(archive.files)
-  const files = strategy === "duplicate" ? duplicateFiles(archive, existing, newId) : archive.files
+  const copied = strategy === "duplicate" ? duplicateFiles(archive, existing, newId, copy) : null
+  const files = copied ? copied.files : archive.files
   const byName = new Map(existing.map(entry => [foldName(entry.path), entry]))
   const folders = new Map<string, string>()
   for (const entry of existing) {
@@ -191,7 +219,7 @@ export function buildImportPlan(archive: TransferArchive, existing: TransferEntr
   }
   // O manifesto só aparece depois dos dados da mesa. Uma falha não publica uma mesa nova incompleta.
   writes.sort((a, b) => Number(a.path.endsWith("/mesa.json")) - Number(b.path.endsWith("/mesa.json")))
-  return { writes, skipped, conflicts, replacements }
+  return { writes, skipped, conflicts, replacements, ...(copied ? { copies: copied.copies } : {}) }
 }
 
 export function sameTransferVersion(current: TransferEntry | undefined, expected: TransferEntry | null): boolean {
