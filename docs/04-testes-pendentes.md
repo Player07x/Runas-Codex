@@ -1753,3 +1753,18 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   grande: o arquivo incompleto some da pasta escolhida (alguns provedores, como o Google Drive, podem não deixar
   apagar; diga se sobrar algum).
 - [ ] Um arquivo de mais de 64 MB no cofre aparece como “passa do limite por arquivo” e não trava a exportação.
+## Atualização 1.4.0 — PR B (exportar por itens, U51/U52)
+
+- [ ] Em Importar / Exportar › Exportar, a aba **Por itens** abre primeiro: aparecem suas wikis (Cronos, Valknut, Ordem
+  x Caos…), livros, mesas do VTT, a biblioteca da mesa, campanhas, a Agenda e as outras pastas, cada um com notas,
+  arquivos e tamanho.
+- [ ] Marcar só a **wiki Cronos** e exportar: o resumo antes do botão diz quantas notas e quanto vai sair; no fim
+  aparece “Conferido: N notas escolhidas estão no pacote”. Abrir o pacote noutro cofre (ou no Obsidian, se for ZIP):
+  as notas da Cronos e as imagens de `Anexos/Imagens` que ela usa estão lá, e a Valknut não (com “Incluir notas
+  ligadas” desligado).
+- [ ] Marcar um **livro** com capítulo fora da pasta dele: o capítulo e a capa entram. Marcar uma **mesa**: a capa
+  entra e a campanha não.
+- [ ] Aba **Por notas**: a árvore abre e fecha pastas pelo teclado (Tab até a seta, Enter); marcar uma nota deixa a
+  pasta com o traço (meio marcada); o leitor de tela lê “Pasta X: 3 de 10 marcados”. Digitar no filtro mostra os
+  caminhos inteiros e os botões “Selecionar os filtrados” / “Desmarcar os filtrados”.
+- [ ] No celular (ou a 320 px), as duas abas cabem sem rolar para os lados, e cada linha tem altura de toque.
