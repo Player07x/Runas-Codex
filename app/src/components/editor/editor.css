@@ -15,6 +15,14 @@
   .doc-bar .note-history, .doc-panel span { display: none; }
   .doc-bar .segmented { order: 10; flex: 1 1 100%; }
 }
+/* Celular (U61): uma faixa só — voltar · título · Salvo (ponto) · Ler/Editar · Painel · ⋯. O texto “Salvo” continua
+   para leitores de tela; o erro aparece por extenso. */
+@media (max-width: 640px) {
+  .doc-bar { flex-wrap: nowrap; gap: 2px; padding: 4px 6px; }
+  .doc-title { flex: 1 1 0; }
+  .doc-end { gap: 0; }
+  .doc-bar .kit-save:not(.erro) { gap: 0; padding-inline: 6px; font-size: 0; }
+}
 
 /* ---------- Barra da seleção ---------- */
 .editor-surface { position: relative; }

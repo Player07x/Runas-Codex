@@ -1827,3 +1827,25 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   “Evento” do cabeçalho some no celular. Rolando até o fim, nada fica embaixo do flutuante (nem o “Painel da agenda”).
 - [ ] Leitor de tela (TalkBack ou Orca) no ⋯ da tarefa: “Ações da tarefa: ‹texto›”, e os itens são lidos como menu.
 - [ ] Tema claro: a linha fina das rotinas, o “+N” e os números apagados continuam legíveis.
+
+## Atualização 1.4.0 · Telas no celular (PR F: U61, U62, U64–U68)
+
+- [ ] No celular (ou numa janela de 360 px), artigo da wiki: abaixo da barra do topo vem **uma** faixa (wiki ▾, tela ▾,
+  olho da Visão do mestre e ⋯) e o cabeçalho do artigo (voltar, título, ponto de Salvo, Ler/Editar, Painel e ⋯); o
+  título do texto aparece a uns 200 px do topo. A 320 px nada sai para os lados.
+- [ ] O artigo da wiki abre em **Leitura** no celular. Tocar no lápis passa para Editar; o app lembra a troca neste
+  aparelho e os próximos artigos abrem como você deixou. No computador nada muda (abas Leitura/Editar/Código).
+- [ ] No ⋯ da nota, no celular: “Ver o código Markdown” (e, no código, “Editar com prévia”). Notas e sessões de
+  campanha com a mesma barra de uma faixa.
+- [ ] Sessão de campanha no celular: campanha ▾, tela ▾ e o ícone da Tela do Mestre numa faixa só.
+- [ ] A barra do topo no celular mostra só a página atual (“Sessão 3”, “Festa da Aurora”); com leitor de tela a trilha
+  inteira continua sendo lida.
+- [ ] Início da wiki: o cartão tem “Novo artigo” e um ⋯ com “Nova categoria…” e “Personalizar…”; o rótulo diz só
+  “Wiki” (sem a pasta). Campanhas: o rótulo diz “Espaço Campanhas”.
+- [ ] Buscas das Notas e da wiki: o campo diz “Buscar notas” / “Buscar na wiki”; o “?” ao lado explica `tag:`,
+  `path:` etc. e fecha com Esc ou tocando fora. A sintaxe continua funcionando igual.
+- [ ] Alvos de 44 px no celular: grupos da barra das Notas (Favoritos, Bases, Tags, A escrever), “Hoje no mundo” no
+  início da wiki, o link “Agenda” do Início e os títulos dos cartões de Campanhas.
+- [ ] Notas no celular: some a faixa “Lista de notas”; fica só “Notas” com o ⋯. A dica “Segure uma nota…” some sozinha
+  depois do primeiro toque longo (ou no “Entendi”). A lista tem folga no fim para o “+” não cobrir a última nota; com
+  uma nota aberta o “+” flutuante não aparece (o + da barra do topo continua criando).

@@ -1,6 +1,7 @@
 import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
 import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
+import { SearchHelp } from "../components/kit/SearchHelp"
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
 import { Archive, FileDown, ListChecks, Package, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
@@ -170,6 +171,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     try { return window.matchMedia("(hover: none)").matches && !localStorage.getItem(HINT_KEY) } catch { return false }
   })
   const closeHint = () => { setHint(false); try { localStorage.setItem(HINT_KEY, "1") } catch { /* sem armazenamento: só esconde */ } }
+  // U68: quem já segurou uma nota aprendeu; a dica some sozinha no primeiro toque longo.
+  useEffect(() => { if (menu && hint) closeHint() }, [menu]) // eslint-disable-line react-hooks/exhaustive-deps
   const [heading, setHeading] = useState<{ line: number; at: number }>()
   const [createdFolders, setCreatedFolders] = useState<string[]>([])
   const [replacing, setReplacing] = useState(false)
@@ -551,8 +554,9 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
           <div className="row notes-filter">
             <label className="search grow">
               <Search size={15} />
-              <input className="input" placeholder="Buscar (tag:, path:, line:, [prop:valor], /regex/)" title="Termos, “frase”, -excluir, OR, path:, file:, tag:, content:, line:(…), section:(…), [propriedade], [propriedade:valor] e /regex/" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
+              <input className="input" placeholder="Buscar notas" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar notas" />
             </label>
+            <SearchHelp>Termos soltos, <code>“frase exata”</code>, <code>-excluir</code> e <code>OR</code>; <code>tag:</code>, <code>path:</code>, <code>file:</code>, <code>content:</code>, <code>line:(…)</code>, <code>section:(…)</code>, <code>[propriedade]</code>, <code>[propriedade:valor]</code> e <code>/regex/</code>.</SearchHelp>
             <button className="icon-btn sm" title={`Ordem: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-label={`Ordem das notas: ${NOTE_ORDERS.find((o) => o.order === order)!.label}`} aria-expanded={orderMenu} onClick={() => setOrderMenu(!orderMenu)}>
               <ArrowUpDown size={16} />
             </button>
@@ -718,7 +722,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} onSaveNote={vault.save} />}
       </ResizablePanel>
 
-      {!readOnly && (
+      {/* U64: com uma nota aberta o flutuante sai de cima do texto; o + da barra do topo continua criando. */}
+      {!readOnly && !note && (
         <button className="fab" onClick={() => setDialog({ kind: "note", folder: currentFolder })} aria-label="Nova nota (atalho)">
           <Plus size={22} />
         </button>

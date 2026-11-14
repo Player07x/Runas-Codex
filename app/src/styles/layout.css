@@ -127,8 +127,9 @@
   .mobile-switch { display: flex; }
 }
 
-/* Caminhos longos (campanha › seção › nota): no celular ficam só os dois últimos níveis. */
+/* No celular a barra mostra só a página atual (U65): a trilha cortada (“Campanhas › A …”) não dizia nada; voltar fica
+   com a seta da página e a faixa do módulo. Leitores de tela continuam ouvindo a trilha inteira. */
 @media (max-width: 640px) {
-  .crumbs > :not(:nth-last-child(-n + 2)) { display: none; }
-  .crumbs > :nth-last-child(2) svg { display: none; }
+  .crumbs > :not(:last-child) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .crumbs > :last-child svg { display: none; }
 }

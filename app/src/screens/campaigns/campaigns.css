@@ -411,3 +411,19 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 /* Cartão Pequeno do Elenco (U33): atitude em texto e o ⋯; o resto mora no menu. */
 .campaign-npc-card-compact { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
 .campaign-npc-card-tags { gap: 4px; min-width: 0; }
+
+/* U67: o título do cartão de campanha com 44 px de altura no celular e no toque. */
+@media (max-width: 640px), (pointer: coarse) {
+  .campaign-card-link { display: flex; align-items: center; min-height: 44px; }
+}
+
+/* U61: no celular, uma faixa só para a campanha: nome ▾, tela ▾ e Tela do Mestre (ícone). */
+@media (max-width: 640px) {
+  .campaign-header { flex-wrap: nowrap; gap: 4px; padding: 4px 8px; }
+  .campaign-header > .kit-menu-wrap:first-child { flex: 1 1 0; min-width: 0; }
+  .campaign-header > .kit-menu-wrap:first-child > button { width: 100%; min-width: 0; min-height: 44px; justify-content: flex-start; }
+  .campaign-header > .kit-menu-wrap:first-child strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .campaign-header .mobile-space-nav { flex: 0 1 auto; width: auto; max-width: 42%; min-width: 0; margin: 0; }
+  .campaign-header .campaign-screen-btn { flex: none; min-width: 44px; min-height: 44px; margin: 0; justify-content: center; }
+  .campaign-header .campaign-screen-label { display: none; }
+}

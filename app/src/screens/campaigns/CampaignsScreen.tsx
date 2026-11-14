@@ -118,8 +118,8 @@ function CampaignHeader({ name, current, onScreen, onPersonalize, onDelete, embl
           trigger={<>{moreCurrent?.icon}{moreCurrent ? moreCurrent.label : "Mais"}<ChevronDown size={14} /></>}
           items={more.map((tab) => ({ label: tab.label, icon: tab.icon, onSelect: () => navigate(campaignRoute(name, tab.id)) }))} />}
       </nav>
-      <button className="btn sm ghost campaign-screen-btn" onClick={onScreen} title="Notas fixadas, preparação, NPCs e relógios num lugar só">
-        <MonitorPlay size={15} /> Tela do Mestre
+      <button className="btn sm ghost campaign-screen-btn" onClick={onScreen} aria-label="Tela do Mestre" title="Notas fixadas, preparação, NPCs e relógios num lugar só">
+        <MonitorPlay size={15} aria-hidden="true" /> <span className="campaign-screen-label">Tela do Mestre</span>
       </button>
     </div>
   )
@@ -155,7 +155,7 @@ function CampaignList() {
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Espaço Campanhas · Campanhas/</span>
+          <span className="eyebrow" title="Pasta Campanhas/">Espaço Campanhas</span>
           <h1 className="page-title">Campanhas</h1>
         </div>
         <button className="btn primary" onClick={create}>
