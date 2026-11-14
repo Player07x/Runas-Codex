@@ -1753,6 +1753,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   grande: o arquivo incompleto some da pasta escolhida (alguns provedores, como o Google Drive, podem não deixar
   apagar; diga se sobrar algum).
 - [ ] Um arquivo de mais de 64 MB no cofre aparece como “passa do limite por arquivo” e não trava a exportação.
+
 ## Atualização 1.4.0 — PR B (exportar por itens, U51/U52)
 
 - [ ] Em Importar / Exportar › Exportar, a aba **Por itens** abre primeiro: aparecem suas wikis (Cronos, Valknut, Ordem
@@ -1789,8 +1790,8 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 
 - [ ] No Android, importar um `.runas` maior que 96 MB (por exemplo a wiki Cronos, ~253 MB, exportada pela 1.4): a
   prévia abre, a importação grava todos os arquivos com o progresso em MB e o app não fecha por falta de memória.
-- [ ] No Android, um pacote com um arquivo maior que 32 MB (um `.kra` de 58 MB): a prévia recusa com uma mensagem, e
-  nada é gravado.
+- [ ] No Android, um pacote com um arquivo maior que 64 MB (o mesmo teto da exportação no celular): a prévia recusa
+  com uma mensagem, e nada é gravado. Um arquivo de 58 MB (um `.kra`) entra.
 - [ ] No desktop, importar um pacote grande (≥ 500 MB): o uso de memória do app (Monitor do sistema) fica bem abaixo
   do tamanho do pacote durante a prévia e a gravação.
 - [ ] Um `.runas` com uma imagem adulterada (trocar um byte dentro do ZIP): a prévia recusa (“A integridade … não
@@ -1808,6 +1809,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Notas no celular: segurar uma nota › “Selecionar várias”, depois tocar nas outras; a barra tem botões de 44 px.
 - [ ] Leitor de tela no modo de seleção: cada nota é lida como caixa de marcar (“marcada” / “não marcada”), e Espaço
   marca.
+
 ## Atualização 1.4.0 · Agenda no celular (PR E: U56–U59)
 
 - [ ] No celular (ou numa janela de 360 px), Agenda › Mês: o período, as setas, o “Hoje” (ícone) e o ⋯ cabem numa
@@ -1862,6 +1864,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] “Apoio…” no ⋯ abre o apoio em folha inteira; o botão do Apoio aparece na barra só enquanto ele está aberto, para
   fechar.
 - [ ] “Ler” abre a página do cursor, como antes. Entre 641 e 860 px (tablet) a barra continua como na 1.3.
+
 ## Notas: ⋯ e pastas lembradas (1.4.0, PR H)
 
 - [ ] Tema escuro e claro, com mouse: passar sobre uma nota e sobre uma pasta da árvore. O ⋯ fica dentro da linha, na
@@ -1873,6 +1876,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       ao reabrir o app ela volta fechada.
 - [ ] “Recolher tudo” e reabrir o app: tudo continua recolhido.
 - [ ] Renomear uma pasta fechada (e arrastar outra para dentro de uma pasta): a escolha de aberta ou fechada vai junto.
+
 ## Wiki: categoria em páginas (1.4.0, PR I)
 
 - [ ] Numa categoria grande (a de Personagens da Cronos), a grade mostra fileiras inteiras (48 com 8 colunas) e a
@@ -1884,6 +1888,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Alargar e estreitar a janela: o número por página muda para fechar as fileiras, sem cair numa página vazia.
 - [ ] No celular (A21) a 320–360 px: a navegação quebra em duas linhas se precisar, sem rolagem para os lados, com
       alvos de 44 px; trocar de página fica leve (no máximo 60 capas na tela).
+
 ## Relações cruzadas e dos dois lados (1.4.0, PR J)
 
 - [ ] Numa organização, Relações › Adicionar › “Membros” e um personagem: a frase diz “X é membro de Organização”;
@@ -1909,6 +1914,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       duplo clique no fundo aproxima. Clicar num cartão continua abrindo os detalhes.
 - [ ] “Encontrar no organograma”: digitar o nome de um membro e Enter seleciona o cartão, rola até ele e mostra os
       detalhes. No celular (360 px), o campo e os botões de zoom cabem sem rolagem para os lados.
+
 ## Propriedades recolhidas no modo Editar (1.4.0, PR L: U77)
 
 - [ ] Abrir uma nota com propriedades no modo Editar (PC e celular): no topo aparece só a barra “Propriedades · n”.
@@ -1921,3 +1927,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       não mostra nada no topo (as propriedades continuam no painel Propriedades). Vale para a próxima nota aberta e
       é por aparelho.
 - [ ] Ctrl A e Delete numa nota com propriedades ainda apaga tudo (inclusive o frontmatter), como antes.
+
+## Versão 1.4.0
+
+- [ ] Atualizar da 1.3.0 para a 1.4.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.4.0.
+- [ ] As seções acima, de “PR A (pacotes em pedaços)” até “Propriedades recolhidas no modo Editar (PR L)”, entraram
+  nesta versão.
+- [ ] Exportar um pacote `.runas` maior que 128 MB na 1.4.0 e abrir na própria 1.4.0 (a 1.3.0 recusa pacotes desse
+  tamanho, de propósito).
+- [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
+  propriedades aparecem como listas de links e nada quebra.
