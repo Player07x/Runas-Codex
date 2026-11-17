@@ -138,3 +138,5 @@
   .crumbs > :not(:last-child) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .crumbs > :last-child svg { display: none; }
 }
+/* U107: aviso de erro com a cor de erro (borda e fundo), além do ícone. */
+.toast.toast-error { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); background: color-mix(in srgb, var(--red) 10%, var(--panel)); }

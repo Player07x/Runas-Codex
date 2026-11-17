@@ -1952,6 +1952,67 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
 - [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
       campanha continua “Próxima sessão · <campanha>”.
+## Painéis: botão na barra e celular (1.5.0, PR V2: U87, U97)
+
+- [ ] Computador, Agenda: recolher o “Painel da agenda”. A faixa estreita à direita some, o calendário ocupa a
+      largura toda e o botão “Painel” aparece no fim da barra do período (depois de Mês · Semana · Dia · Lista ·
+      Tarefas). Clicar nele abre o painel; o foco vai para o botão de recolher do painel, e de volta ao fechar.
+- [ ] Computador, Wiki › Calendário: o mesmo, com o botão “Detalhes” depois de “Configurar”.
+- [ ] Celular, Agenda: recolher o painel, tocar num dia com eventos; o painel do dia sobe com os eventos. As setas do
+      teclado só mudam o dia escolhido.
+- [ ] Celular, Livros: com o Sumário aberto, ⋯ › “Exportar o livro…”; o Sumário fecha e o formulário de exportação
+      aparece.
+
+## Abas da nota no celular (1.5.0, PR V3: U81, R2)
+
+- [ ] Celular (ou janela com até 640 px), Notas, com duas ou três notas em abas: a faixa de abas não aparece mais em
+      cima da nota. Na barra da nota há um quadradinho com o número de abas; tocar nele abre a folha “Abas abertas”.
+- [ ] Na folha: tocar no nome troca de aba e fecha a folha; ⋯ mostra Fixar, Abrir à direita, Abrir embaixo, Fechar as
+      outras e Fechar; × fecha a aba; “Empilhar as abas” e o botão de workspaces (no canto) continuam ali.
+- [ ] A barra da nota fica só com os botões (voltar, abas, salvo, leitura, painel, ⋯); o nome continua na barra do
+      app e a pasta aparece na folha. O texto começa mais alto do que na 1.4.
+- [ ] Com a nota dividida (Abrir à direita), a folha mostra “Painel ativo” e “Fechar este painel”.
+- [ ] Tablet ou janela entre 641 e 860 px, e o computador: a faixa de abas continua como antes.
+## Quadro e Tesouro no celular (1.5.0, PR V4: U96, U106)
+
+- [ ] Celular, Campanha › Quadro: a barra mostra Texto, Nota, Ligar e “Mais”, sem nomes por cima uns dos outros.
+      “Mais” tem Imagem do cofre, Link, Grupo, Selecionar vários, Ajustar altura, Apagar selecionado, o zoom e
+      Enquadrar tudo; com um cartão escolhido, também as cores (a atual marcada).
+- [ ] Computador, Quadro: a barra continua igual à da 1.4.
+- [ ] Celular, Campanha › Ferramentas › Tesouro do grupo: cada item é um cartão com quantidade (− e +), portador,
+      notas e os botões “Editar” e “Remover”. Uma recompensa de missão aparece como “Recompensa de <link>”, e o
+      link abre a missão na campanha.
+- [ ] Computador, Tesouro: a tabela continua, e a origem da recompensa também vira link na coluna Notas.
+## Wiki no celular e evento que cruza a meia-noite (1.5.0, PR V5: U101, U105)
+
+- [ ] Celular, Wiki (abertura em “Categorias e artigos”): logo abaixo da busca há o índice das categorias; tocar em
+      “Personagens” abre a categoria sem rolar pela prévia das outras. No computador, o índice não aparece.
+- [ ] Celular, Wiki › Novo artigo, nos dois passos: “Continuar” e “Criar artigo” ficam presos no rodapé da folha,
+      mesmo com a ficha longa. Outros diálogos longos (Novo evento) também ficam com o rodapé à vista.
+- [ ] Agenda: criar um evento das 23:00 às 07:30. No painel do dia em que começa: “23:00 até 07:30 de amanhã”; no dia
+      seguinte: “continua de ontem, até 07:30”. Na Lista, o mesmo texto no dia em que começa.
+
+## Avisos de erro (1.5.0, PR V6: U107)
+
+- [ ] Provocar um erro (por exemplo, Importar › Plugins de RPG do Obsidian › escolher como calendário um arquivo
+      `.json` quebrado): o aviso aparece com o ícone de alerta vermelho e a borda avermelhada, não com o ✓ verde, e
+      fica uns 6 s (para enquanto o ponteiro ou o foco estão nele).
+- [ ] Um aviso de sucesso (salvar algo, “Copiado.”) continua com o ✓ verde.
+- [ ] Com leitor de tela (NVDA ou TalkBack), o aviso de erro é lido na hora, começando por “Erro:”.
+
+## Token ligado a uma nota e nomes das barras (1.5.0, PR P: U94, U95)
+
+- [ ] No VTT do computador, criar um token, mudar o nome dele (ex.: “Sentinela”) e acrescentar uma barra; depois
+  “Ligar a uma nota…” com um personagem da Wiki que tenha retrato e `token_barras`. O nome e a barra que você pôs
+  ficam; a imagem vem da nota; o aviso diz “Da nota: imagem” e “Desfazer” volta o token sem nota.
+- [ ] Com um token novo (nome “Token”, sem imagem), ligar à mesma nota: nome, imagem, tamanho, disposição e barras
+  vêm todos da nota.
+- [ ] “Trocar nota…” para outro personagem: o que ainda era da nota anterior troca; o que você mudou fica.
+- [ ] “Importar de novo da nota…” pergunta antes; ao confirmar, troca tudo pelo da nota (o valor das barras de mesmo
+  nome fica) e o aviso tem “Desfazer”.
+- [ ] Com o leitor de tela (NVDA ou TalkBack), os campos de uma barra dizem “Nome da barra”, “PV atual” e
+  “PV máximo”; os nomes das faixas e playlists do painel Áudio também têm nome.
+- U94: ligar ou reimportar o token, mover o token e mudar o PV, e só então clicar em Desfazer no aviso: volta só o que veio da nota; a posição e o PV ficam. Remover o token e clicar em Desfazer: o token não volta e aparece "Nada para desfazer".
 
 ## Recompensa no painel da missão e NPC da wiki (1.5.0, PR Q: U93, U100)
 

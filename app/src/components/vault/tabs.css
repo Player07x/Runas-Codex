@@ -62,3 +62,27 @@ html[data-note-window] .workspace { grid-template-columns: minmax(0, 1fr) 280px;
 .tab-name { display: inline-flex; flex: 1 1 auto; align-items: center; gap: 6px; min-width: 0; height: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: inherit; }
 .tab-name:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; border-radius: 6px; }
 .tab-close, .tab-more { min-width: 24px; min-height: 24px; }
+
+/* U81: no celular (até 640 px) a faixa de abas vira o botão “n abas” na barra da nota, que abre a folha das abas. */
+.tab-count > span { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; border: 2px solid currentColor; border-radius: 6px; font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; line-height: 1; }
+.tab-sheet-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.tab-sheet-row { border: 1px solid transparent; border-radius: 10px; }
+.tab-sheet-row.active { border-color: var(--line); background: color-mix(in srgb, var(--cyan) 8%, transparent); }
+.tab-sheet-line { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.tab-sheet-name { flex: 1 1 auto; min-width: 0; min-height: 44px; }
+.tab-sheet-text { display: grid; flex: 1 1 auto; min-width: 0; text-align: start; }
+.tab-sheet-row.active .tab-sheet-text > :first-child { color: var(--cyan); font-weight: 600; }
+.tab-sheet-line > .icon-btn { flex: none; min-width: 44px; min-height: 44px; }
+.tab-sheet-actions { display: grid; gap: 2px; padding: 0 6px 6px 18px; }
+.tab-sheet-actions .list-item { min-height: 44px; }
+.tab-sheet-panes, .tab-sheet-foot { flex-wrap: wrap; gap: 8px; }
+.tab-sheet-panes .tab-pane-picker { max-width: none; }
+.tab-sheet-foot .btn.active { border-color: var(--cyan); color: var(--cyan); }
+.tab-sheet-foot .icon-btn { min-width: 44px; min-height: 44px; }
+
+/* R2: no celular o nome da nota já está na barra do app e a pasta aparece na folha das abas; a barra da nota fica só
+   com os botões (como a dos Livros), e o nome não se repete antes do texto. A pasta e o h1 continuam para leitores de
+   tela; a caixa vazia segura os botões à direita. */
+@media (max-width: 640px) {
+  .doc-bar.with-tabs .doc-title > * { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

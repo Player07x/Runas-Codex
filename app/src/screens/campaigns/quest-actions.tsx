@@ -11,13 +11,13 @@ import { TREASURY_TOOL, updateToolBlock } from "./tool-notes"
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
+/** Missões com recompensa a caminho do Tesouro: o segundo clique (botão + aviso) espera em vez de enviar de novo. */
+const sendingRewards = new Set<string>()
+
 /**
  * Manda a recompensa da missão para o Tesouro do grupo (o tesouro é criado se ainda não existe) e grava
  * `recompensa_enviada` na missão, para não mandar duas vezes (U93). Usado no aviso de concluir e no painel da missão.
  */
-/** Missões com recompensa a caminho do Tesouro: o segundo clique (botão + aviso) espera em vez de enviar de novo. */
-const sendingRewards = new Set<string>()
-
 export function useSendReward(data: CampaignData) {
   const vault = useVault()
   const toast = useToast()
@@ -39,7 +39,7 @@ export function useSendReward(data: CampaignData) {
       toast(`“${quest.reward}” está no Tesouro do grupo.`)
       return true
     } catch (err) {
-      toast(errorText(err))
+      toast.error(err)
       return false
     } finally {
       sendingRewards.delete(quest.path)
@@ -64,7 +64,7 @@ export function useQuestStatus(data: CampaignData) {
     try {
       await vault.setProperty(quest.path, "status", status)
     } catch (err) {
-      toast(errorText(err))
+      toast.error(err)
       return false
     }
     if (status === "concluida" && quest.reward && !quest.rewardSent) toast(`“${quest.title}” concluída.`, { label: "Mandar a recompensa para o Tesouro", run: async () => { await sendReward(quest) } })

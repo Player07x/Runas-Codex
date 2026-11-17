@@ -321,7 +321,7 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
   const canCreate = Boolean(vault.index && !vault.info?.readOnly && query.trim() && !notes.some((n) => n.label.toLocaleLowerCase("pt-BR") === q))
   const createNote = () => {
     const folder = vault.index?.allFiles().some((f) => f.path.startsWith("Notas/")) ? "Notas" : ""
-    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast.error(error))
   }
   const items = [
     ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas" })),

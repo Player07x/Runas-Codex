@@ -107,7 +107,7 @@ function QuestDetails({ data, quest }: { data: CampaignData; quest: QuestInfo })
   }
   const set = (key: string, value: string | string[] | undefined) => {
     if (ro) return toast("Cofre em somente leitura: libere a gravação em Configurações.")
-    vault.setProperty(quest.path, key, value).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+    vault.setProperty(quest.path, key, value).catch((err: unknown) => toast.error(err))
   }
   const link = (target: string) => `[[${vault.index!.linkTarget(target, quest.path)}]]`
   const others = data.quests.filter((q) => q.path !== quest.path)

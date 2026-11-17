@@ -54,7 +54,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   const run = (action: () => Promise<unknown>) => () => {
     setBusy(true)
     action()
-      .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      .catch((error: unknown) => toast.error(error))
       .finally(() => setBusy(false))
   }
   const vaultHint = vault.info

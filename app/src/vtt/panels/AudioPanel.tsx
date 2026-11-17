@@ -93,7 +93,7 @@ function PlaylistCard({ playlist, store, audio, playing, open, onToggle, run }: 
     <div className="playlist-head">
       <button className="icon-toggle" aria-label={open ? "Recolher" : "Expandir"} onClick={onToggle}>{open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
       <ListMusic size={15} className="muted" />
-      <CommitText value={data.name} onCommit={(name) => update({ name })} />
+      <CommitText label="Nome da playlist" value={data.name} onCommit={(name) => update({ name })} />
       <small className="muted">{CHANNEL_LABELS[data.channel]} · {tracks.length}</small>
       {!soundboard && (playing
         ? <button className="icon-toggle active" title="Parar" aria-label="Parar playlist" onClick={() => run(() => vtt.audio.stopPlaylist(playlist.id))}><Square size={13} /></button>
@@ -127,16 +127,16 @@ function TrackRow({ track, store, playing, soundboard, run }: { track: WorldDocu
     {playing && !soundboard
       ? <button className="icon-toggle active" title="Parar" aria-label="Parar faixa" onClick={() => run(() => vtt.audio.stopTrack(track.id))}><Square size={12} /></button>
       : <button className={`icon-toggle ${playing ? "active" : ""}`} title={soundboard ? "Tocar (clique de novo para sobrepor)" : "Tocar esta faixa"} aria-label="Tocar faixa" disabled={!data.audio} onClick={() => run(() => vtt.audio.playTrack(track.id))}><Play size={13} /></button>}
-    <CommitText value={data.name} onCommit={(name) => update({ name })} />
+    <CommitText label="Nome da faixa" value={data.name} onCommit={(name) => update({ name })} />
     <input className="track-volume" type="range" min={0} max={1} step={0.05} value={data.volume} title={`Volume: ${Math.round(data.volume * 100)}%`} aria-label="Volume da faixa" onChange={(event) => update({ volume: Number(event.target.value) })} />
     <button className={`icon-toggle ${data.loop ? "active" : ""}`} title={data.loop ? "Repete esta faixa" : "Repetir esta faixa"} aria-label="Repetir faixa" onClick={() => update({ loop: !data.loop })}><Repeat size={13} /></button>
     <button className="icon-toggle danger" title="Excluir faixa" aria-label="Excluir faixa" onClick={() => run(async () => { await vtt.audio.stopTrack(track.id); await store.remove(track.id) })}><Trash2 size={13} /></button>
   </li>
 }
 
-function CommitText({ value, onCommit }: { value: string; onCommit: (value: string) => void }) {
+function CommitText({ value, onCommit, label }: { value: string; onCommit: (value: string) => void; label: string }) {
   const [draft, setDraft] = useState(value)
   useEffect(() => setDraft(value), [value])
   const commit = () => { if (draft.trim() && draft !== value) onCommit(draft.trim()); else setDraft(value) }
-  return <input className="inline-name" value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") (event.target as HTMLInputElement).blur() }} />
+  return <input className="inline-name" aria-label={label} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") (event.target as HTMLInputElement).blur() }} />
 }

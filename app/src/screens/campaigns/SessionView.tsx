@@ -43,7 +43,7 @@ function SessionList({ data }: { data: CampaignData }) {
       const saved = await vault.platform.saveFile(`Diário — ${data.campaign.name}.md`, text, "text/markdown")
       if (saved) toast(`Diário exportado: ${saved}`)
     } catch (error) {
-      toast(error instanceof Error ? error.message : String(error))
+      toast.error(error)
     }
   }
   const [creating, setCreating] = useState(false)
@@ -323,7 +323,7 @@ function useSessionEdits(data: CampaignData, session: SessionInfo) {
       await action()
       return true
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
       return false
     }
   }
@@ -371,7 +371,7 @@ function SessionDetails({ data, session }: { data: CampaignData; session: Sessio
     setCampaignTime(data, date).then(() => {
       setAdvance(null)
       toast(`Hoje no mundo: ${worldDateLabel(data.calendar, worldDateText(date))}`)
-    }, (err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+    }, (err: unknown) => toast.error(err))
   }
   const pcLink = (path: string) => `[[${path.replace(/\.md$/, "")}]]`
   const togglePresent = (path: string) => {
