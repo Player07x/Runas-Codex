@@ -2105,3 +2105,17 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - O roteiro usa exclusivamente dados sintéticos: 10 mil notas, categoria com 420 artigos/capas e volume total
   de 1,3 GB. Não copiar o cofre real nem conteúdo pessoal para relatórios públicos.
 - A1 só mede e estabelece orçamento; as otimizações ficam para A2, depois dos outros PRs da 1.5.
+
+## Atualização 1.5 — O/U91: revisão de segurança
+
+- Conferir os smokes e artefatos dos instaladores Windows/Linux após a atualização do Electron.
+- No app instalado, copiar link/código e receber lembretes da Agenda; páginas não devem ganhar câmera, microfone,
+  localização ou notificações. As notificações explícitas do app usam a ponte nativa.
+- Conferir o relatório de `npm audit` no CI: altos/críticos impedem aceite; moderados ficam registrados.
+- João: revisar a proposta MIT e os direitos dos trechos reaproveitados em `docs/seguranca.md` antes de adotar
+  licença ou inscrever o projeto em assinatura gratuita. Nenhuma licença foi adotada neste PR.
+- João: se houver detecção real do instalador, usar o passo a passo de envio à Microsoft. Não enviar dados do cofre.
+
+Atualização da revisão O em 17/11: o João aprovou MIT para o código próprio. O PR inclui `LICENSE` e os campos
+de licença dos pacotes. A escolha de licença está resolvida; conferir direitos/avisos de terceiros e elegibilidade
+para a assinatura gratuita continua pendente antes da inscrição na Foundation.
