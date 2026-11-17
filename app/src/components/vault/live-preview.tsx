@@ -739,9 +739,33 @@ function propertiesPanel(parent: HTMLElement): Extension {
   })
 }
 
+/** Onde o cursor deve ficar quando ele está antes ou dentro das propriedades escondidas (`null`: já está bem). */
+export function cursorAfterProperties(state: EditorState): number | null {
+  const front = frontmatterRange(state), main = state.selection.main
+  if (!front || !main.empty || main.head > front.to || front.to + 1 > state.doc.length) return null
+  if (!state.field(propertiesState, false) || propertiesOf(state).editing) return null
+  return front.to + 1
+}
+
+/**
+ * Um estado novo começa com o cursor na posição 0, antes do cartão de propriedades, e nenhuma transação o tira de lá:
+ * o que entrasse ali sem ser digitado (imagem colada, link inserido pela barra) cairia antes do `---` e quebraria
+ * o YAML. Logo depois de montar, o cursor vai para a primeira linha depois das propriedades.
+ */
+const startAfterProperties = ViewPlugin.fromClass(class {
+  private alive = true
+  constructor(view: EditorView) {
+    queueMicrotask(() => {
+      const at = this.alive ? cursorAfterProperties(view.state) : null
+      if (at !== null) view.dispatch({ selection: { anchor: at } })
+    })
+  }
+  destroy() { this.alive = false }
+})
+
 /** O live preview inteiro: liga com `livePreviewHost.of(...)` para os links e blocos desenhados. */
 export function livePreview(display: PropertiesDisplay = "recolhidas", propertiesParent?: HTMLElement): Extension {
-  return [propertiesDisplay.of(display), propertiesState, propertiesGuard, ...(propertiesParent ? [propertiesPanel(propertiesParent)] : []), pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
+  return [propertiesDisplay.of(display), propertiesState, propertiesGuard, startAfterProperties, ...(propertiesParent ? [propertiesPanel(propertiesParent)] : []), pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
 }
 
 export { frontmatterRange, renderableBlocks, blockField, pointerHeld, pointerHold, propertiesState, propertiesGuard, setProperties }

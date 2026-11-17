@@ -4,7 +4,7 @@ import { EditorState, type Extension } from "@codemirror/state"
 import { GFM } from "@lezer/markdown"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import type { PropertiesDisplay } from "../../lib/properties-display"
-import { blockField, frontmatterRange, pointerHeld, pointerHold, propertiesDisplay, propertiesGuard, propertiesBar, propertiesState, renderableBlocks, setProperties } from "./live-preview"
+import { blockField, cursorAfterProperties, frontmatterRange, pointerHeld, pointerHold, propertiesDisplay, propertiesGuard, propertiesBar, propertiesState, renderableBlocks, setProperties } from "./live-preview"
 
 function state(doc: string) {
   const s = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM, obsidianSyntax] })] })
@@ -132,6 +132,13 @@ describe("propriedades recolhidas (U77)", () => {
     expect(s.doc.toString()).toBe(doc.slice(0, body) + "Oi " + doc.slice(body))
     s = s.update({ changes: { from: 0, to: s.doc.length }, userEvent: "delete.selection" }).state
     expect(s.doc.toString()).toBe("")
+  })
+
+  it("o cursor que começa antes das propriedades escondidas vai para depois delas, menos ao editar o YAML", () => {
+    expect(cursorAfterProperties(make("recolhidas", 0))).toBe(body)
+    expect(cursorAfterProperties(make("recolhidas", body))).toBeNull()
+    expect(cursorAfterProperties(make("recolhidas", 0).update({ effects: setProperties.of({ editing: true }) }).state)).toBeNull()
+    expect(cursorAfterProperties(parsed("# Sem propriedades\n", 0, [propertiesState, propertiesGuard]))).toBeNull()
   })
 
   it("o que se digita ou cola com o cursor antes do cartão vai para o começo do corpo, sem tocar no YAML", () => {

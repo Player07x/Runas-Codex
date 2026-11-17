@@ -33,3 +33,11 @@ Causa: o estado do editor começa com o cursor na posição 0, que fica antes do
 Conserto em `propertiesGuard`: uma inserção (digitar ou colar) exatamente antes do cartão vai para o começo do corpo; numa nota só com propriedades, entra numa linha nova depois delas. Inserções dentro do YAML fechado continuam recusadas, e apagar também. Dois testes novos em `live-preview.test.ts`.
 
 Verificação: tipos; suíte completa (1.045 do app, 5 pulados como antes, + 197 do desktop); builds web e Electron; smokes de leitura e de gravação (cofre de exemplo copiado, perfis novos) passaram, com `bookSideTyping: true` e nenhuma violação de rede.
+
+## Segundo conserto: imagem colada no Windows (Claude, 17/11)
+
+Depois do primeiro conserto, o smoke de gravação passou no Linux e continuou falhando no Windows do CI: a imagem colada (`insertBlock`) entrava antes do `---`, porque a colagem de imagem não é digitação e usa a seleção do estado, que começa em 0. O frontmatter deixava de ser frontmatter, e o cartão de propriedades sumia.
+
+Conserto: ao abrir o editor, se o cursor está antes das propriedades escondidas (e ninguém está editando o YAML), ele já começa no corpo, logo depois delas. Assim tudo o que usa a seleção (digitar, colar texto, colar ou soltar imagem, inserir bloco) parte do corpo. Teste novo em `live-preview.test.ts`.
+
+Verificação: tipos; suíte completa (1.046 do app, 5 pulados como antes, + 197 do desktop); builds web e Electron; smokes de leitura e de gravação passaram (cofre de exemplo copiado, perfis novos), com `bookSideTyping: true`, `bodyImage: true` e nenhuma violação de rede. O Windows fica conferido pelo CI deste commit.
