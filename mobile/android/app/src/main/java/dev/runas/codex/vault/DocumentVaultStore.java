@@ -235,11 +235,26 @@ final class DocumentVaultStore implements VaultFs {
         return result;
     }
 
+    public synchronized InputStream openBinary(String path) throws IOException {
+        Node file = find(path(path, false), true);
+        if (file.folder) throw new VaultError("Escolha um arquivo do cofre.");
+        return tree.read(file);
+    }
+
+    public synchronized Entry writeBinaryFromFile(String path, File source, Version expected, boolean createOnly) throws IOException {
+        if (source.length() > BinaryContent.MAX_SIZE) throw new VaultError("O arquivo passa de 512 MB.");
+        return write(path(path, true), BinaryContent.file(source), expected, createOnly);
+    }
+
     private Entry write(String path, byte[] content, Version expected, boolean createOnly) throws IOException {
+        return write(path, BinaryContent.bytes(content), expected, createOnly);
+    }
+
+    private Entry write(String path, BinaryContent content, Version expected, boolean createOnly) throws IOException {
         recover();
         Node current = optional(path, true);
         version(path, current, expected, createOnly);
-        if (current != null && current.size == content.length && Arrays.equals(bytes(current, Integer.MAX_VALUE), content)) return asEntry(path, current);
+        if (current != null && current.size == content.size() && content.same(tree.read(current))) return asEntry(path, current);
         Node dir = folder(parent(path));
         String token = UUID.randomUUID().toString();
         Node temp = tree.create(dir, ".runas-" + token + ".runas-tmp", false);
@@ -247,7 +262,7 @@ final class DocumentVaultStore implements VaultFs {
         boolean committed = false;
         try {
             if (journal != null) journal.begin("write", path, path, token);
-            tree.write(temp, content);
+            try (InputStream in = content.open()) { tree.write(temp, in, content.size()); }
             Node now = optional(path, true);
             version(path, now, expected, createOnly);
             // A leitura e a gravação do temporário podem ter demorado: confere de novo antes de mudar o original.
@@ -353,8 +368,11 @@ final class DocumentVaultStore implements VaultFs {
         String p = path(path, false), dest = path(target, true);
         if (!p.startsWith(".trash/")) throw new VaultError("Caminho de lixeira inválido.");
         Node source = find(p, true);
-        Entry restored = write(dest, bytes(source, VaultStore.MAX_BINARY_SIZE), null, true);
-        tree.delete(source);
+        if(source.size<0 || source.size>BinaryContent.MAX_SIZE)throw new VaultError("O arquivo passa do limite de 512 MB.");
+        Entry restored = write(dest, BinaryContent.source(source.size,()->tree.read(source)), null, true);
+        Node now=find(p,true);
+        if(!now.id.equals(source.id) || now.size!=source.size || now.mtime!=source.mtime)throw new VaultError("O arquivo na lixeira mudou. As duas cópias foram preservadas.");
+        tree.delete(now);
         return restored;
     }
 

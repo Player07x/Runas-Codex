@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { useSinglePane } from "../../lib/tabs"
 import { useRemembered } from "../../lib/remembered"
-import { BookOpen, CalendarDays, Check, CircleDot, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
+import { BookOpen, CalendarDays, Check, CircleDot, Library, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { NoteCrest } from "../../components/kit/Emblem"
@@ -175,7 +175,7 @@ function NpcRoster({ data }: { data: CampaignData }) {
         {!data.readOnly && data.campaign.home && (
           <div className="row-wrap">
             <button className="btn sm" onClick={() => setCreating(true)}><UserPlus size={14} /> Novo NPC</button>
-            <button className="btn sm" onClick={() => setPicking(true)}><Plus size={14} /> NPC da wiki</button>
+            <button className="btn sm" onClick={() => setPicking(true)}><Library size={14} /> NPC da wiki</button>
           </div>
         )}
       </div>
@@ -228,7 +228,7 @@ function NpcRoster({ data }: { data: CampaignData }) {
           {sorted.length > visibleLimit && <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={more}>Mostrar mais {Math.min(prefs.mode === "grid" && prefs.group === "nenhum" ? nextLimit(sorted.length, visibleLimit, columns, PAGE) - visibleLimit : PAGE, sorted.length - visibleLimit)} de {sorted.length - visibleLimit}</button>}
         </>
       )}
-      {picking && <WikiNotePicker title="Acompanhar NPC" root={root} exclude={exclude} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("npcs", withTrackedLink(data.data.npcs, -1, vault.index!.linkTarget(path, data.campaign.home!), "neutro")) }} />}
+      {picking && <WikiNotePicker title="Acompanhar NPC" root={root} exclude={exclude} kind={{ id: "personagem", label: "Personagens" }} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("npcs", withTrackedLink(data.data.npcs, -1, vault.index!.linkTarget(path, data.campaign.home!), "neutro")) }} />}
       {creating && <NewNpcDialog data={data} onClose={() => setCreating(false)} />}
     </section>
   )
@@ -255,7 +255,7 @@ function FactionSection({ data }: { data: CampaignData }) {
       <h2 id="elenco-faccoes" className="section-title">Facções · {factions.length}</h2>
       {!data.readOnly && data.campaign.home && <div className="row-wrap">
         <button className="btn sm" onClick={() => setCreating(true)}><UserPlus size={14} /> Nova facção</button>
-        <button className="btn sm" onClick={() => setPicking(true)}><Plus size={14} /> Facção da wiki</button>
+        <button className="btn sm" onClick={() => setPicking(true)}><Library size={14} /> Facção da wiki</button>
       </div>}
     </div>
     {factions.length === 0
@@ -287,7 +287,7 @@ function FactionSection({ data }: { data: CampaignData }) {
           </li>
         })}</ul>
       </>}
-    {picking && <WikiNotePicker title="Acompanhar facção" root={root} exclude={exclude} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("faccoes", withTrackedLink(data.data.faccoes, -1, vault.index!.linkTarget(path, data.campaign.home!), "0")) }} />}
+    {picking && <WikiNotePicker title="Acompanhar facção" root={root} exclude={exclude} kind={{ id: "organizacao", label: "Organizações" }} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("faccoes", withTrackedLink(data.data.faccoes, -1, vault.index!.linkTarget(path, data.campaign.home!), "0")) }} />}
     {creating && <NewNpcDialog data={data} initialKind="organizacao" onClose={() => setCreating(false)} />}
   </section>
 }

@@ -18,7 +18,7 @@ import { NotesLockScreen } from "../components/vault/NotesLock"
 import { ReplaceDialog } from "../components/vault/ReplaceDialog"
 import "../components/vault/note-actions.css"
 import { toggleFavorite, useFavorites } from "../lib/bookmarks"
-import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorkspace, setLayout, useSinglePane, useTabLayout, useWorkspaces, type OpenHow } from "../lib/tabs"
+import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorkspace, setLayout, TabSwitcherSlot, useSinglePane, useTabLayout, useWorkspaces, type OpenHow } from "../lib/tabs"
 import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
 import { basename, dirname, joinPath, noteName } from "../core/text"
@@ -64,7 +64,7 @@ export function NotesScreen({ noteId }: { noteId?: string }) {
 function NoVault() {
   const vault = useVault()
   const toast = useToast()
-  const run = (action: () => Promise<void>) => () => action().catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+  const run = (action: () => Promise<void>) => () => action().catch((error: unknown) => toast.error(error))
   return (
     <div className="page">
       <Empty title="Nenhum cofre aberto" action={<div className="row-wrap" style={{ justifyContent: "center" }}><button className="btn primary" onClick={run(vault.create)}><Plus size={16} /> Criar cofre novo</button><button className="btn" onClick={run(vault.choose)}><Vault size={16} /> Abrir pasta…</button></div>}>
@@ -189,7 +189,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   })
   const [orderMenu, setOrderMenu] = useState(false)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
-  const fail = useCallback((error: unknown) => toast(error instanceof Error ? error.message : String(error)), [toast])
+  const fail = useCallback((error: unknown) => toast.error(error), [toast])
 
   const graph = noteId === "grafico"
   const path = noteId && noteId !== "nova" && noteId !== "hoje" && noteId !== "aleatoria" && !graph ? noteId : undefined
@@ -307,7 +307,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     const isFolder = !index.hasFile(from)
     const result = moveDestination(from, folder, isFolder, (p) => index.hasFile(p) || folders.includes(p))
     if (!result) return
-    if ("error" in result) return toast(result.error)
+    if ("error" in result) return toast.error(result.error)
     try {
       await flushOpenNotes()
       const plan = await vault.rename(from, result.to)
@@ -450,7 +450,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
 
   const sep = "separator" as const
   // Menus de contexto da lista (botão direito, segurar o dedo, tecla Menu/Shift+F10 ou o ⋯ que aparece no item).
-  const run = (action: () => Promise<unknown>) => void action().catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+  const run = (action: () => Promise<unknown>) => void action().catch((error: unknown) => toast.error(error))
   const favoriteEntry = (b: Bookmark): MenuEntry => {
     const on = hasBookmark(favorites, b)
     return { label: on ? "Tirar dos favoritos" : "Favoritar", icon: on ? <StarOff size={16} /> : <Star size={16} />, onSelect: () => toggleFavorite(vaultId, b) }
@@ -712,6 +712,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
                 ) : (
                   <div className="page">
                     <p className="muted">“{basename(tabPath)}” não abre aqui.</p>
+                    <TabSwitcherSlot />
                   </div>
                 )
               }

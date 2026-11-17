@@ -84,6 +84,10 @@ final class SafDocuments implements DocumentTree {
     }
 
     public void write(Node file, byte[] bytes) throws IOException {
+        try (InputStream in = new java.io.ByteArrayInputStream(bytes)) { write(file, in, bytes.length); }
+    }
+
+    public void write(Node file, InputStream source, long size) throws IOException {
         supports(file, Document.FLAG_SUPPORTS_WRITE);
         supports(file, Document.FLAG_SUPPORTS_RENAME);
         supports(file, Document.FLAG_SUPPORTS_DELETE);
@@ -92,7 +96,7 @@ final class SafDocuments implements DocumentTree {
             ParcelFileDescriptor descriptor = resolver.openFileDescriptor(uri(file), "rwt");
             if (descriptor == null) throw new IOException("Não deu para abrir o temporário do cofre.");
             try (ParcelFileDescriptor.AutoCloseOutputStream out = new ParcelFileDescriptor.AutoCloseOutputStream(descriptor)) {
-                out.write(bytes);
+                BinaryContent.copy(source, out, size);
                 out.flush();
                 out.getFD().sync();
             }

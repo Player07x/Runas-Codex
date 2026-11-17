@@ -2,6 +2,7 @@ package dev.runas.codex.vault;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,8 @@ public interface VaultFs {
     VaultStore.Entry entry(String path) throws IOException;
     Map<String, String> readTexts(List<String> paths) throws IOException;
     byte[] readBinary(String path) throws IOException;
+    InputStream openBinary(String path) throws IOException;
+    VaultStore.Entry writeBinaryFromFile(String path, File source, VaultStore.Version expected, boolean createOnly) throws IOException;
     VaultStore.Entry writeText(String path, String content, VaultStore.Version expected, boolean createOnly) throws IOException;
     VaultStore.Entry writeBinary(String path, byte[] bytes, VaultStore.Version expected, boolean createOnly) throws IOException;
     void createFolder(String path) throws IOException;
