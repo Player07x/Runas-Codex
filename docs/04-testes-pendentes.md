@@ -2173,3 +2173,16 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - No painel Jogadores do mestre, o assento do jogador que saiu volta a “Disponível” ou “Ficha anexada”, sem precisar de “Limpar”.
 - Pôr o mesmo “Controlado por” em dois tokens: os dois se movem pelo jogador, e o painel mostra “controla 2 tokens: confira o ‘Controlado por’”.
 - Com o mestre remoto e na sala hospedada no Android: o mesmo sair e entrar.
+
+## Atualização 1.5 — G: aviso de atualização (U90, ADR 0038)
+
+- [ ] Com a 1.5 instalada e uma versão mais nova publicada: abrir o app e, uns 4 s depois, ver **Atualizar para 1.x**
+      em dourado no fim da barra lateral (Windows, AppImage, `.deb` e Android, no **Mais**, com um ponto no botão).
+- [ ] Clicar no item: as notas abertas gravam, o item mostra “Baixando N %” com a barra fina e a instalação segue como
+      no botão de Configurações (Windows abre o instalador; Linux reinicia; Android abre o instalador do sistema).
+- [ ] Fechar e abrir de novo no mesmo dia: o item continua, sem nova consulta. Depois de atualizar, o item some.
+- [ ] Configurações › Privacidade e atualizações › **Procurar atualizações sozinho** desligado: no dia seguinte, o app
+      não consulta e o item não aparece; “Verificar” continua funcionando.
+- [ ] Sem internet ao abrir: nenhum erro aparece; na próxima abertura com rede, a consulta acontece.
+- [ ] Barra lateral recolhida (Ctrl+\\): o item vira só o ícone, com o nome ao passar o mouse; leitor de tela lê
+      “Atualizar para a versão 1.x: baixa, confere e instala”.
