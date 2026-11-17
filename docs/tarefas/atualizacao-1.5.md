@@ -450,3 +450,25 @@ João pediu corrigir o contador das pastas e encerrar a sessão Codex para o Cla
 - Pedido novo/#164, notas/1.5-contagem-pastas, b269a23, sobre main: conta subpastas imediatas + arquivos diretos (inclusive anexos), sem somar descendentes. No exemplo Campanhas 0→3, Livros 0→3, Wikis 0→1, Notas 8→12. Quatro regressões e seis pares de capturas/teclado passaram. Validação local completa: tipos, 1.048 testes app + 197 desktop, builds web/Electron e smokes leitura/gravação exit 0; bookSideTyping=true, zero violações de rede, temporários próprios removidos. CI código 44130246261 verde; Release 44130246229, incluindo android-vault, ainda em andamento nesta consulta. Limite da listagem de diretórios vazios anteriores à sessão preservado e documentado.
 
 A passagem detalhada fica em arquivo local ignorado, com hashes, roteiros e pendências. Não contém dados do cofre pessoal. O plano/índice devem ser consultados junto com as descrições atuais dos PRs.
+
+## Registro do Claude — revisão e continuação (17/11, noite)
+
+Revisão do trabalho do Codex concluída. Cinco achados consertados nos branches de origem; cada PR traz a seção “Revisão do Claude”:
+
+- **#164** (contador das pastas), c5f15e2: a bolinha somava anexos que a árvore não mostra (Notas 12 com 11 linhas). Agora conta o que aparece ao abrir a pasta (subpastas + notas). Capturas refeitas.
+- **#162** (J1), 910ccbe: o nativo recusa a terceira transferência aberta. Mesa com 3+ cenas e DOCX/EPUB com 3+ imagens falhariam no Android. A ponte ganhou uma fila de duas vagas.
+- **#152** (P), 886d455: o Desfazer do token voltava o token inteiro (posição, PV) e recriava token removido. Agora volta só o que a nota mudou.
+- **#153** (Q), f6ed56e: a recompensa podia entrar duas vezes no Tesouro (aviso + botão, clique duplo, falha entre as gravações). Agora há marca atual, trava e id fixo por missão.
+- **#163** (E), 17ac331: o texto digitado com o cursor antes do cartão de propriedades era recusado. Acontecia no smoke e também com Tab vindo da barra. Agora vai para o começo do corpo. Smokes locais passaram; fica em rascunho até o CI.
+
+Jobs reexecutados por instabilidade de rede: android-revisao em #149, #150, #155 e #157, e android-room em #150.
+
+**M/U91 1–4 → PR #165** (`seguranca/1.5-gravacao-bloqueada`):
+- rascunho local e “Não gravado”;
+- motivo com passo a passo e botão da proteção do Windows;
+- “Testar gravação” em Configurações › Cofre e ao abrir o cofre;
+- espera de ~6 s, ritmo nos lotes e renomear sem resto.
+
+Tipos, suíte, builds e os dois smokes passaram. O Android do “Testar gravação” fica para o N.
+
+Próximas, na ordem: C → G → N (sobre M+G) → D → K → J2 → A2 → R → L → conferência final.
