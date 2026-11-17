@@ -1952,3 +1952,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
 - [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
       campanha continua “Próxima sessão · <campanha>”.
+
+## Recompensa no painel da missão e NPC da wiki (1.5.0, PR Q: U93, U100)
+
+- [ ] Concluir uma missão com recompensa e deixar o aviso sumir: no painel da missão (no celular, pelo botão do
+  painel na barra da nota) aparece “Mandar para o Tesouro”. Ao tocar, o item entra no Tesouro do grupo, a missão
+  ganha `recompensa_enviada: "AAAA-MM-DD"` e o botão vira “Já está no Tesouro (desde …)”.
+- [ ] Voltar a missão para “Ativa” e concluir de novo: o aviso não oferece mandar a recompensa outra vez.
+- [ ] Abrir a missão no Obsidian: `recompensa_enviada` aparece como propriedade de texto com a data entre aspas.
+- [ ] Elenco › “NPC da wiki”: a lista começa só com personagens; “Todos os tipos” mostra lugares, mitos e o resto.
+  Em Facções, a lista começa nas organizações.
+- [ ] “Novo NPC”: “Já apareceu na campanha” começa desmarcado.
