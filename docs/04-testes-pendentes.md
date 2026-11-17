@@ -1952,3 +1952,9 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
 - [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
       campanha continua “Próxima sessão · <campanha>”.
+
+
+## Início 1.5 — somente maquete U46 (17/11/2026)
+
+- Conferir a comparação antes/depois de `docs/tarefas/atualizacao-1.5-inicio-maquete.html`, em 1280 e 360 px, nos dois temas e três cenários. O cartão mobile foi compactado após o comentário do João.
+- Aprovar ou ajustar a proposta antes de implementar o Início. A maquete não grava nem abre notas reais; fluxos reais, Android físico e integração ficam para depois da aprovação.
