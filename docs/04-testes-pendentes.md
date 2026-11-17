@@ -1991,3 +1991,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       mesmo com a ficha longa. Outros diálogos longos (Novo evento) também ficam com o rodapé à vista.
 - [ ] Agenda: criar um evento das 23:00 às 07:30. No painel do dia em que começa: “23:00 até 07:30 de amanhã”; no dia
       seguinte: “continua de ontem, até 07:30”. Na Lista, o mesmo texto no dia em que começa.
+
+## Avisos de erro (1.5.0, PR V6: U107)
+
+- [ ] Provocar um erro (por exemplo, Importar › Plugins de RPG do Obsidian › escolher como calendário um arquivo
+      `.json` quebrado): o aviso aparece com o ícone de alerta vermelho e a borda avermelhada, não com o ✓ verde, e
+      fica uns 6 s (para enquanto o ponteiro ou o foco estão nele).
+- [ ] Um aviso de sucesso (salvar algo, “Copiado.”) continua com o ✓ verde.
+- [ ] Com leitor de tela (NVDA ou TalkBack), o aviso de erro é lido na hora, começando por “Erro:”.

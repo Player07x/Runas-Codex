@@ -112,7 +112,7 @@ function ChapterFields({ chapter }: { chapter: IndexedNote }) {
       await flushOpenNotes()
       for (const key of changed) await vault.setProperty(chapter.path, key, values[key] || undefined)
       toast("Capítulo atualizado.")
-    } catch (error) { toast(error instanceof Error ? error.message : String(error)) } finally { setBusy(false) }
+    } catch (error) { toast.error(error) } finally { setBusy(false) }
   }
   return <form className="stack" onSubmit={(event) => { event.preventDefault(); if (!busy && changed.length) void save() }}>
     <label className="field"><span>Tipo</span><select className="select" value={values.tipo} disabled={readOnly} onChange={(event) => setValues({ ...values, tipo: event.target.value })}>{options(KINDS, values.tipo).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

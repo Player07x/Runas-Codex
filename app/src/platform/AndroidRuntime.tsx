@@ -49,14 +49,14 @@ function AndroidRuntimeInner() {
     if (!vault.index || !queue.current.length) return
     const pending = queue.current.splice(0)
     void (async () => {
-      for (const item of pending) await saveShared(item).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+      for (const item of pending) await saveShared(item).catch((e: unknown) => toast.error(e))
     })()
   }, [vault.index])
 
   useEffect(() => {
     const share = RunasVault.addListener("share", (item) => {
       if (!latest.current.index) queue.current.push(item)
-      else void saveShared(item).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+      else void saveShared(item).catch((e: unknown) => toast.error(e))
     })
     const open = RunasVault.addListener("open", ({ route }) => navigate(route))
     return () => {

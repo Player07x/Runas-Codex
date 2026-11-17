@@ -222,7 +222,7 @@ function Sparks() {
   const { locked } = useNotesLock()
   const sparks = useMemo(() => (note && !locked ? parseSparks(note.text) : []), [note?.text, locked])
   const used = sparks.filter((s) => s.used).length
-  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+  const fail = (error: unknown) => toast.error(error)
 
   const write = async (next: string, undoLabel?: string) => {
     const before = vault.index?.note(SPARKS_PATH)?.text
