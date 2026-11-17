@@ -6,7 +6,7 @@ A bolinha mostrava só as notas diretamente na pasta: Campanhas, Livros e Wikis 
 
 Quatro testes do núcleo cobrem pastas sem notas próprias, arquivos de tipos diferentes, deduplicação/descendentes, pastas vazias e ocultas. Resultados gerais de tipos, suíte, builds, smokes e CI ficam na descrição do PR.
 
-Cofre de exemplo em memória, perfis novos do Electron offscreen; nenhuma captura do cofre pessoal. 320/390/1366 px × claro/escuro, antes e depois: seis pares sem rolagem lateral e sequência de Tab idêntica. No exemplo: Campanhas 0→3, Livros 0→3, Wikis 0→1, Notas 8→12 (8 notas + 1 imagem + 3 pastas). Dados completos em [antes](imagens/contagem-pastas-1.5/antes.json) e [depois](imagens/contagem-pastas-1.5/depois.json).
+Cofre de exemplo em memória, perfis novos do Electron offscreen; nenhuma captura do cofre pessoal. Pastas recolhidas para mostrar os contadores das cinco raízes. 320/390/1366 px × claro/escuro, antes e depois: seis pares sem rolagem lateral e mesma ordem dos controles no Tab. No exemplo: Campanhas 0→3, Livros 0→3, Wikis 0→1, Notas 8→12 (8 notas + 1 imagem + 3 pastas). Dados completos em [antes](imagens/contagem-pastas-1.5/antes.json) e [depois](imagens/contagem-pastas-1.5/depois.json).
 
 | Largura/tema | Antes | Depois |
 |---|---|---|

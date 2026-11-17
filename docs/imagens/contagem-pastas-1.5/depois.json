@@ -1012,20 +1012,20 @@
   ],
   "keyboard": [
     {
-      "tag": "A",
-      "label": "2026-10-03 Sessão 10 — As Cinzas de Valdris"
+      "tag": "BODY",
+      "label": "Pular para o conteúdoRunas-CodexCofre: Mesa do João (exemplo"
     },
     {
-      "tag": "BUTTON",
-      "label": "Ações da nota 2026-10-03 Sessão 10 — As Cinzas de Valdris"
+      "tag": "SUMMARY",
+      "label": "Campanhas3"
     },
     {
-      "tag": "A",
-      "label": "2026-10-10 Sessão 11 — As Cinzas de Valdris"
+      "tag": "BODY",
+      "label": "Pular para o conteúdoRunas-CodexCofre: Mesa do João (exemplo"
     },
     {
-      "tag": "BUTTON",
-      "label": "Ações da nota 2026-10-10 Sessão 11 — As Cinzas de Valdris"
+      "tag": "SUMMARY",
+      "label": "Livros3"
     }
   ]
 }
