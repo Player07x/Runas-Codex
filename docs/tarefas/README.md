@@ -19,3 +19,8 @@ O que o dono confere à mão está no fim de [`docs/04-testes-pendentes.md`](../
   o [`panorama.html`](concluidas/panorama.html) mostra o que foi feito por data.
 - [`docs/historico/`](../historico/): documentos que só contam como o projeto chegou aqui (o estudo inicial, a
   comparação dos protótipos e o inventário de responsáveis de 22/10, já desatualizado).
+
+## Aceite do Android na atualização 1.5 (U82)
+
+PR que mexe em tela do celular ou em transferência só se mescla com o job **`android-vault` verde** no CI.
+O dono confere esse resultado antes do merge.

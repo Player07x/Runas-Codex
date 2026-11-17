@@ -22,10 +22,17 @@ import { NoteWindows } from "./windows"
 import { checkNoteWindows } from "./notes-windows-smoke"
 import { NetworkGuard } from "./network-guard"
 import { SaveStreams } from "./save-stream"
+import { configureSmokeEnvironment, startSmokeCleanup } from "./smoke-environment"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
 if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(app.getPath("appData"), "runas-codex"))
+
+const smokeEnvironment = configureSmokeEnvironment(app)
+if (smokeEnvironment) {
+  startSmokeCleanup(smokeEnvironment)
+  console.log(JSON.stringify({ smokeEnvironment }))
+}
 
 // O dicionário do corretor vai para o perfil antes de o Chromium procurar (senão ele o baixaria do Google).
 installDictionary()
@@ -281,6 +288,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
   }
   vtt.closeWorld()
   vault.stop()
+  await saveStreams.abortAll()
   app.exit(ok ? 0 : 1)
 }
 
@@ -302,6 +310,12 @@ void app.whenReady().then(async () => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow()
   })
+})
+
+// Falha antes de abrir a janela também encerra o smoke e libera a limpeza dos temporários.
+if (smoke) process.on("unhandledRejection", (error) => {
+  console.error(error)
+  app.exit(1)
 })
 
 app.on("window-all-closed", () => {
