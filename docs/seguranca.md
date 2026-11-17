@@ -91,3 +91,12 @@ pacotes. Antes de mesclar/adotar, o João precisa confirmar a escolha, a titular
 Runas Suite/RunasVTT e as autorizações de outros autores. As licenças próprias de Electron, dependências, fontes,
 dicionário VERO e outros recursos continuam valendo e precisam acompanhar a distribuição. Depois da decisão,
 conferir as condições e solicitar o programa gratuito; não contratar certificado pago como alternativa automática.
+
+## Validação desta revisão (17/11)
+
+`npm ci`, `npm run typecheck`, `npm test`, `npm run build` e `npm run desktop:build` passaram. Foram
+1.053 testes do app e 199 do desktop; cinco testes anteriores do app continuam skipped. A auditoria completa
+retornou **0 altos, 0 críticos e 12 moderados**. No Electron 44.10.1, os smokes de leitura (28,7 s) e gravação
+(99,4 s) passaram com perfis novos e cofre de exemplo, confirmando as quatro permissões negadas e a escrita de
+texto na área de transferência permitida. Não houve violações de rede; temporários dos testes foram removidos.
+O CI de código/auditoria e os smokes Windows/Linux também passaram no commit de implementação.
