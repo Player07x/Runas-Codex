@@ -95,7 +95,12 @@ public class RunasVaultPlugin extends Plugin {
                 try {
                     if ("saf".equals(prefs().getString("mode", "direct"))) {
                         open(openSaf(Uri.parse(saved)));
-                    } else if (new File(saved).isDirectory() && hasAccess()) open(new VaultStore(new File(saved)));
+                    } else if (new File(saved).isDirectory() && hasAccess()) {
+                        open(new VaultStore(new File(saved)));
+                    } else if (!hasAccess()) {
+                        // U91: o acesso a todos os arquivos foi tirado nas configurações do Android.
+                        openError = "O Android tirou o acesso a todos os arquivos do Runas-Codex.";
+                    }
                 } catch (IOException | SecurityException e) {
                     // Permissão revogada ou pasta removida: a interface oferece escolher novamente.
                     store = null;
@@ -238,8 +243,16 @@ public class RunasVaultPlugin extends Plugin {
     }
 
     private void withAccess(PluginCall call) {
-        pickSaf = !hasAccess() && prefs().getBoolean("preferSaf", false);
-        if (pickSaf || hasAccess()) {
+        // U91 (item 5): o seletor de pastas do sistema é o padrão e não pede permissão nenhuma. O acesso a todos os
+        // arquivos fica para a opção avançada de Configurações › Cofre, que explica antes de pedir. Um cofre já aberto
+        // pelo acesso total continua assim até a pessoa trocar de pasta.
+        if (!Boolean.TRUE.equals(call.getBoolean("allFiles", false))) {
+            pickSaf = true;
+            pickFolder(call);
+            return;
+        }
+        pickSaf = false;
+        if (hasAccess()) {
             pickFolder(call);
             return;
         }
@@ -281,12 +294,28 @@ public class RunasVaultPlugin extends Plugin {
     }
 
     private void pickFolder(PluginCall call) {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
         boolean debug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         String initial = debug ? call.getString("initialUri", null) : null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && initial != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(initial));
+        pickFolder(call, initial != null ? Uri.parse(initial) : null);
+    }
+
+    private void pickFolder(PluginCall call, Uri initial) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && initial != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initial);
         startActivityForResult(call, intent, "folderResult");
+    }
+
+    /**
+     * U91: o Android tirou a permissão da pasta (app de limpeza, backup restaurado, outro aparelho). Em vez de falhar
+     * ao gravar, o app pede de novo: o seletor do sistema abre já na pasta do cofre, e basta confirmar.
+     */
+    @PluginMethod
+    public void regrant(PluginCall call) {
+        pickMode = "choose";
+        pickSaf = true;
+        String saved = prefs().getString("path", null);
+        pickFolder(call, saved != null && saved.startsWith("content://") ? Uri.parse(saved) : null);
     }
 
     @ActivityCallback

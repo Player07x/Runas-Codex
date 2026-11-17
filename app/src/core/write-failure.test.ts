@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { retryDelay, writeFailure } from "./write-failure"
+import { lostFolderPermission, retryDelay, writeFailure } from "./write-failure"
 
 describe("motivo da gravação que falhou (U91)", () => {
   it("no Windows, EPERM vindo do IPC vira bloqueio da segurança, com o botão da proteção", () => {
@@ -24,5 +24,22 @@ describe("motivo da gravação que falhou (U91)", () => {
 
   it("tenta de novo em 5 s, 15 s, 30 s e depois uma vez por minuto", () => {
     expect([0, 1, 2, 3, 9].map(retryDelay)).toEqual([5_000, 15_000, 30_000, 60_000, 60_000])
+  })
+})
+
+describe("permissão da pasta perdida no Android (U91, item 5)", () => {
+  it("reconhece as mensagens do seletor de pastas (SAF) e do acesso a todos os arquivos", () => {
+    for (const message of [
+      "Sem acesso à pasta do cofre. Escolha-a novamente pelo seletor.",
+      "O provedor não deixou criar o documento no cofre.",
+      "O Android tirou o acesso a todos os arquivos do Runas-Codex. Escolha novamente a pasta em Configurações.",
+    ]) expect(writeFailure(message, "android").kind).toBe("sem-permissao")
+  })
+
+  it("só oferece escolher a pasta de novo no Android e quando a causa é a permissão", () => {
+    expect(lostFolderPermission("Sem acesso à pasta do cofre. Escolha-a novamente pelo seletor.", "android")).toBe(true)
+    expect(lostFolderPermission("Sem acesso à pasta do cofre. Escolha-a novamente pelo seletor.", "windows")).toBe(false)
+    expect(lostFolderPermission("ENOSPC: no space left on device", "android")).toBe(false)
+    expect(lostFolderPermission(undefined, "android")).toBe(false)
   })
 })

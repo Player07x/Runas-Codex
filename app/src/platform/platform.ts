@@ -139,6 +139,10 @@ export interface Platform {
   checkWrite?(): Promise<WriteCheck>
   /** U91: abre a Proteção contra ransomware do Windows (endereço local do sistema, sem rede). */
   openSecuritySettings?(): Promise<void>
+  /** Android (U91): o sistema tirou a permissão da pasta; o seletor abre já na pasta do cofre para devolvê-la. */
+  regrantVault?(): Promise<VaultInfo | null>
+  /** Android (U91), opção avançada: abrir a pasta com “acesso a todos os arquivos” (mais rápido em cofres grandes). */
+  chooseVaultAllFiles?(): Promise<VaultInfo | null>
 }
 
 /** Destino de uma exportação em pedaços. `abort` apaga o que já foi escrito. */

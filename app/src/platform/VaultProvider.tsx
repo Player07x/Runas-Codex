@@ -26,6 +26,9 @@ const BATCH = 200
  * O cofre aberto, para as telas: o índice (notas, links, tags) e as ações de gravação. Toda gravação passa por aqui,
  * com a versão que o app leu (se o arquivo mudou fora, a gravação é recusada) e com o índice atualizado na hora.
  */
+
+/** Como abrir a pasta do cofre no Android (U91): o seletor de novo na mesma pasta ou com acesso a todos os arquivos. */
+export type VaultPick = "de-novo" | "todos-os-arquivos"
 export interface VaultState {
   platform: Platform
   info: VaultInfo | null
@@ -38,7 +41,8 @@ export interface VaultState {
   templates(): IndexedNote[]
   loading: boolean
   error?: string
-  choose(): Promise<void>
+  /** Abre outra pasta. No Android: `"de-novo"` devolve a permissão da mesma pasta; `"todos-os-arquivos"` é a opção avançada (U91). */
+  choose(how?: VaultPick): Promise<void>
   create(): Promise<void>
   setWritable(writable: boolean): Promise<void>
   reload(): Promise<void>
@@ -317,7 +321,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     current.set(entry, text); bump()
   }, [requireIndex, bump])
 
-  const choose = useCallback(async () => { await importing.current; await flushOpenNotes(); await open(await platform.chooseVault()) }, [open])
+  const choose = useCallback(async (how?: VaultPick) => {
+    await importing.current
+    await flushOpenNotes()
+    const pick = how === "de-novo" ? platform.regrantVault : how === "todos-os-arquivos" ? platform.chooseVaultAllFiles : undefined
+    await open(await (pick ?? platform.chooseVault)())
+  }, [open])
   const create = useCallback(async () => { await importing.current; await flushOpenNotes(); const next = await platform.createVault(); if (next && !next.readOnly) await platform.createFolder(DEFAULT_IMAGE_FOLDER); await open(next) }, [open])
   const setWritable = useCallback(async (writable: boolean) => { await importing.current; setInfo(await platform.setWritable(writable)) }, [])
   const reload = useCallback(async () => { await importing.current; await open(await platform.vault()) }, [open])
