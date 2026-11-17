@@ -1948,3 +1948,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - João: revisar a proposta MIT e os direitos dos trechos reaproveitados em `docs/seguranca.md` antes de adotar
   licença ou inscrever o projeto em assinatura gratuita. Nenhuma licença foi adotada neste PR.
 - João: se houver detecção real do instalador, usar o passo a passo de envio à Microsoft. Não enviar dados do cofre.
+
+Atualização da revisão O em 17/11: o João aprovou MIT para o código próprio. O PR inclui `LICENSE` e os campos
+de licença dos pacotes. A escolha de licença está resolvida; conferir direitos/avisos de terceiros e elegibilidade
+para a assinatura gratuita continua pendente antes da inscrição na Foundation.

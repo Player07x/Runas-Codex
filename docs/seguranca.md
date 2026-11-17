@@ -73,7 +73,7 @@ O [FAQ da Microsoft](https://learn.microsoft.com/en-us/defender-xdr/developer-fa
 SmartScreen e não oferece inclusão preventiva em uma lista de programas confiáveis. O envio é um caminho de
 revisão de falso positivo; não se recomenda desligar o antivírus nem excluir pastas inteiras.
 
-## Assinatura gratuita e proposta de licença — aguardando decisão do João
+## Assinatura gratuita e licença MIT aprovada pelo João
 
 A [SignPath Foundation](https://signpath.org/) oferece assinatura gratuita para projetos abertos elegíveis.
 Os [termos](https://signpath.org/terms), consultados em 17/11/2026, exigem licença aprovada pela OSI, componentes
@@ -82,15 +82,16 @@ responsáveis por revisão/aprovação e política pública de assinatura/privac
 humana. O certificado identifica a Foundation; a inscrição depende da avaliação e reputação do projeto.
 Não foi solicitada inscrição nem assinatura nesta revisão.
 
-**Recomendação para o código próprio: MIT**, [aprovada pela OSI](https://opensource.org/license/mit). É uma licença
-curta, permite redistribuição e uso comercial, preservando aviso de autoria/licença, e evita exigir abertura de
-modificações por terceiros. Se o João preferir exigir essa abertura, a escolha muda e deve ser discutida antes.
+**Licença aprovada em 17/11/2026 para o código próprio: MIT**, [aprovada pela OSI](https://opensource.org/license/mit). É uma licença
+curta, permite redistribuição e uso comercial, preservando aviso de autoria/licença, e não exige abertura de
+modificações por terceiros. O PR inclui o arquivo `LICENSE`, a identificação MIT nos quatro pacotes do projeto e `app/public/LICENCA-MIT.txt`,
+que acompanha os builds web, Electron e Android.
 
-**Esta é uma proposta, não a adoção de uma licença.** O PR não cria `LICENSE` nem muda o campo de licença dos
-pacotes. Antes de mesclar/adotar, o João precisa confirmar a escolha, a titularidade dos trechos reaproveitados da
-Runas Suite/RunasVTT e as autorizações de outros autores. As licenças próprias de Electron, dependências, fontes,
-dicionário VERO e outros recursos continuam valendo e precisam acompanhar a distribuição. Depois da decisão,
-conferir as condições e solicitar o programa gratuito; não contratar certificado pago como alternativa automática.
+A MIT cobre o código próprio; não substitui licenças de outros autores. Antes da inscrição no programa gratuito,
+conferir a origem e os direitos dos trechos reaproveitados da Runas Suite/RunasVTT e de contribuições externas.
+As licenças próprias de Electron, dependências, fontes, dicionário VERO e outros recursos continuam valendo e
+precisam acompanhar a distribuição. A escolha foi aprovada pelo João; a Foundation ainda precisa avaliar a
+elegibilidade e a inscrição. Não contratar certificado pago como alternativa automática.
 
 ## Validação desta revisão (17/11)
 

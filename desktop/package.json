@@ -124,5 +124,6 @@
       }
     ]
   },
-  "desktopName": "runas-codex.desktop"
+  "desktopName": "runas-codex.desktop",
+  "license": "MIT"
 }
