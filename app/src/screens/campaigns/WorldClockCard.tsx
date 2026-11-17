@@ -81,7 +81,7 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
       setSaid(text)
       return true
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
       return false
     }
   }
@@ -93,7 +93,7 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
       if (data.ownTime && today) await setCampaignTime(data, today, { ...rule, hora: clock.hora, periodo: rule.periodos.includes(clock.periodo) ? clock.periodo : rule.periodos[0]! })
       return true
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
       return false
     }
   }
@@ -115,7 +115,7 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
   const moreItems: MenuEntry[] = [
     { label: "Ajustar data e hora…", onSelect: () => setDialog("ajustar"), disabled: data.readOnly },
     { label: "Configurar o relógio…", onSelect: () => setDialog("configurar"), disabled: data.readOnly },
-    ...(data.ownTime ? [{ label: "Voltar a seguir a wiki", hint: "a data e a hora do calendário", onSelect: () => void followWiki(data).then(() => setSaid("A campanha segue a data da wiki")).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err))), disabled: data.readOnly }] : []),
+    ...(data.ownTime ? [{ label: "Voltar a seguir a wiki", hint: "a data e a hora do calendário", onSelect: () => void followWiki(data).then(() => setSaid("A campanha segue a data da wiki")).catch((err: unknown) => toast.error(err)), disabled: data.readOnly }] : []),
     "separator",
     { label: "Abrir o calendário", onSelect: () => navigate(calendarRoute(ref.path)) },
   ]

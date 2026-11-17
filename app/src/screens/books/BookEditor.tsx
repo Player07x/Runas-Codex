@@ -161,7 +161,8 @@ export function BookEditor({ book }: { book: IndexedNote }) {
   const bookMenu: MenuEntry[] = [
     { label: "Novo capítulo…", icon: <Plus size={16} />, disabled: locked, onSelect: newChapter },
     { label: "Metadados do livro…", icon: <SlidersHorizontal size={16} />, onSelect: () => navigate(vaultRoute(book.path)) },
-    { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => setView("previa") },
+    // U97: no celular o Sumário cobre a tela inteira; a exportação abria atrás dele.
+    { label: "Exportar…", icon: <FileDown size={16} />, onSelect: () => { setView("previa"); if (narrow) closePanel("book-binder") } },
     { label: "Exportar livro como pacote…", icon: <Package size={16} />, onSelect: () => requestExport({ items: [bookItem(book.path)] }) },
     { label: "Revisar o livro…", icon: <FileSearch size={16} />, onSelect: () => setReviewing(true) },
     // No celular, Foco sai da barra (o lugar fica para “Ver a página”) e mora aqui.

@@ -33,13 +33,13 @@ export function BackupSettings() {
   const change = (patch: Partial<BackupSchedule>) => {
     platform.setBackupSchedule?.(patch).then(
       (value) => { setSchedule(value); setKeep(String(value.keep)) },
-      (error: unknown) => toast(error instanceof Error ? error.message : String(error)),
+      (error: unknown) => toast.error(error),
     )
   }
   const commitKeep = () => {
     const value = Number(keep)
     if (!schedule || value === schedule.keep) return
-    if (!Number.isInteger(value) || value < 1 || value > 100) { setKeep(String(schedule.keep)); toast("Guarde de 1 a 100 backups."); return }
+    if (!Number.isInteger(value) || value < 1 || value > 100) { setKeep(String(schedule.keep)); toast.error("Guarde de 1 a 100 backups."); return }
     change({ keep: value })
   }
   const backupNow = () => {
@@ -47,7 +47,7 @@ export function BackupSettings() {
     platform.backup()
       .then(() => platform.listBackups().then(setBackups))
       .then(() => toast("Backup feito"))
-      .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      .catch((error: unknown) => toast.error(error))
       .finally(() => setBusy(false))
   }
 
@@ -119,7 +119,7 @@ export function BackupSettings() {
             <Archive size={14} /> Fazer agora
           </button>
           {desktop && (
-            <button className="btn sm ghost" onClick={() => void platform.revealBackups().catch((error: unknown) => toast(String(error)))} disabled={!vault.info}>
+            <button className="btn sm ghost" onClick={() => void platform.revealBackups().catch((error: unknown) => toast.error(error))} disabled={!vault.info}>
               <FolderOpen size={14} /> Abrir pasta
             </button>
           )}
