@@ -29,7 +29,7 @@ import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { useVault } from "../../platform/VaultProvider"
 import { exactAlarmsAllowed, isAndroidApp, openExactAlarmSettings } from "../../platform/reminders"
 import { EventDialog } from "./EventDialog"
-import { addDays, EventTones, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, onDay, sameDay, startOfDay, TimeGrid, useEventLook } from "./views"
+import { addDays, EventTones, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, occurrenceTime, onDay, sameDay, startOfDay, TimeGrid, useEventLook } from "./views"
 import { campaignLook, campaignOfPath } from "../../core/personalization"
 import "../agenda.css"
 import { useCreateRequest } from "../../lib/create-request"
@@ -480,10 +480,10 @@ function AgendaView({ index }: { index: VaultIndex }) {
                 <div className="list">
                   {dayList.length === 0 && <span className="muted small">Nada marcado.</span>}
                   {dayList.map((o) => (
-                    <button key={o.key} className="list-item agenda-day-item" onClick={() => pick(o)} aria-label={occurrenceLabel(o)}>
+                    <button key={o.key} className="list-item agenda-day-item" onClick={() => pick(o)} aria-label={occurrenceLabel(o, selectedDay)}>
                       <span className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />
                       <span className="grow truncate">{o.event.title}</span>
-                      <span className="meta">{o.event.allDay ? "dia inteiro" : hhmm(o.start)}</span>
+                      <span className="meta">{occurrenceTime(o, selectedDay)}</span>
                     </button>
                   ))}
                 </div>
