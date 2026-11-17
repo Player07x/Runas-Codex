@@ -298,6 +298,13 @@ consertou, o PR volta. Os PRs da fase 1 são todos visuais e sempre levam as cap
 
 Ordem: V1 → V2 → V3 → V4 → V5 → V6. Ao fim, uma conferência visual de todas as telas em 320, 390 e 1366 px.
 
+**Conferência visual do fim da fase 1 (17/11):** os seis PRs mesclados num branch local (sem push). Nenhuma das 50
+rotas conferidas rola para os lados em 320, 390 ou 1366 px. As capturas foram feitas com o Electron fora da tela,
+porque o painel de prévia recortava as de celular. As telas do computador ficaram iguais. Um conserto: “Selecionar
+vários” sem ícone no “Mais” do Quadro (commit no V4, #149). Para a conferência da fase 2: até 560 px, a regra
+`.list-item { flex-wrap: wrap }` (`base.css`) deixa o nome descer para baixo do ícone quando a pasta é longa. O
+seletor da campanha foi consertado no Q; outros 6 seletores usam o mesmo padrão.
+
 ### Fase 2 — funções, usabilidade e técnica
 
 | PR | Branch | Itens | Depende de | Observação | Custo |
