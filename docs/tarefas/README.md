@@ -8,7 +8,7 @@ Quem está trabalhando em quê, para dois agentes não mexerem nos mesmos arquiv
 |---|---|---|
 | Atualização 1.3.0 (U35–U49) | [atualizacao-1.3.md](atualizacao-1.3.md) e as [maquetes](atualizacao-1.3-maquetes.html) | lançada na 1.3.0 sem o H (Início “Mesa de hoje”, U46) e o I (mestre remoto, U47), que ficam para depois |
 | Atualização 1.4.0 (U50–U77): transferências por itens, telas no celular e correções de Notas, Wiki e Relações | [atualizacao-1.4.md](atualizacao-1.4.md), as [maquetes](atualizacao-1.4-maquetes.html) e as [maquetes das correções](atualizacao-1.4-correcoes.html) | lançada na 1.4.0 em 14/11; a otimização (U76) fica para a 1.5 |
-| Atualização 1.5.0 (U46, U47, U76, U78–U107): o que ficou de fora da 1.3 e da 1.4, “Sair da mesa”, os pedidos de 16/11, a segurança da gravação e a auditoria de usabilidade de 17/11 | [atualizacao-1.5.md](atualizacao-1.5.md) | lançada na 1.5.0 em 17/11 (PRs #145–#169); D, K, J2, A2, R e L (o Início novo) ficam para a próxima atualização |
+| Atualização 1.5.0 (U46, U47, U76, U78–U107): o que ficou de fora da 1.3 e da 1.4, “Sair da mesa”, os pedidos de 16/11, a segurança da gravação e a auditoria de usabilidade de 17/11 | [atualizacao-1.5.md](atualizacao-1.5.md) | lançada na 1.5.0 em 17/11 (PRs #145–#169) e na 1.5.1 (testes e CI: #171, #172); D, K, J2, A2, R e L (o Início novo) ficam para a próxima atualização |
 
 O que o dono confere à mão está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
 
