@@ -1,7 +1,7 @@
 import { pinchCanvas, selectCanvasBox, type CanvasPoint } from "../../core/canvas-tools"
 import { CanvasImageCrop, CanvasImagePicker } from "./CanvasImageTools"
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
-import { Cable, Ellipsis, FileText, FoldVertical, Group, ImageIcon, Link2, Maximize, Minus, Palette, Plus, StickyNote, Trash, Type } from "lucide-react"
+import { Cable, Ellipsis, FileText, FoldVertical, Group, ImageIcon, Link2, Maximize, Minus, Palette, Plus, SquareDashedMousePointer, StickyNote, Trash, Type } from "lucide-react"
 import {
   addEdge, addNode, anchorPoint, canvasBounds, canvasToSave, colorCss, CANVAS_COLORS, moveNodes, nodesInside, parseCanvas, removeEdge, removeNodes, updateEdge, updateNode,
   type CanvasDoc, type CanvasNode, type CanvasSide, type NodeInput,
@@ -380,7 +380,7 @@ export function CanvasBoard({ path }: { path: string }) {
     { label: "Link", icon: <Link2 size={15} />, disabled: readOnly, onSelect: () => setAskLink(true) },
     { label: "Grupo", icon: <Group size={15} />, disabled: readOnly, onSelect: () => create({ type: "group", label: "Grupo", width: 520, height: 320 }) },
     "separator",
-    { label: multi ? "Parar de selecionar vários" : "Selecionar vários", hint: selectedIds.length > 1 ? `${selectedIds.length} cartões` : undefined, onSelect: () => setMulti(!multi) },
+    { label: multi ? "Parar de selecionar vários" : "Selecionar vários", icon: <SquareDashedMousePointer size={15} />, hint: selectedIds.length > 1 ? `${selectedIds.length} cartões` : undefined, onSelect: () => setMulti(!multi) },
     { label: "Ajustar altura", icon: <FoldVertical size={15} />, disabled: readOnly || !current || !overflowing[current.id], onSelect: () => current && overflowing[current.id] && change(updateNode(doc, current.id, { height: overflowing[current.id] })) },
     { label: "Apagar selecionado", icon: <Trash size={15} />, danger: true, disabled: readOnly || (!selected && !selectedEdge), onSelect: removeSelected },
     ...(!readOnly && (current || selectedEdge) ? (["separator", ...CANVAS_COLORS.map((c): MenuEntry => ({ label: `Cor: ${c.label}`, icon: <span className="canvas-swatch-dot" style={{ background: c.css }} />, hint: current?.color === c.id ? "atual" : undefined, onSelect: () => paint(c.id) }))] as MenuEntry[]) : []),
