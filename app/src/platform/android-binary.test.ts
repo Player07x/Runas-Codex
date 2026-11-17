@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { createAndroidBinary, type AndroidBinaryPlugin } from "./android-binary"
+import { createAndroidBinary, OPEN_TRANSFERS, type AndroidBinaryPlugin } from "./android-binary"
 import { BINARY_CHUNK, toBase64 } from "../core/binary-chunks"
 
 function plugin() {
@@ -40,5 +40,34 @@ describe("binários pela ponte Android em pedaços", () => {
     await expect(createAndroidBinary(native).read("a")).rejects.toThrow("incompleta")
     native.binaryReadChunk.mockResolvedValue({ base64: "AQI=" }); native.binaryReadFinish.mockRejectedValue(new Error("mudou"))
     await expect(createAndroidBinary(native).read("a")).rejects.toThrow("mudou")
+  })
+  it("põe na fila as leituras além de duas abertas e lê todas, como uma mesa com várias cenas", async () => {
+    const native = plugin()
+    let open = 0, most = 0, next = 0
+    const sizes = new Map<number, number>()
+    native.binaryReadStart.mockImplementation(async ({ path }: { path: string }) => {
+      if (open >= OPEN_TRANSFERS) throw new Error("Aguarde os arquivos que já estão em transferência.")
+      open++; most = Math.max(most, open)
+      const id = ++next; sizes.set(id, Number(path.slice(1)))
+      return { id, size: sizes.get(id)! }
+    })
+    native.binaryReadChunk.mockImplementation(async ({ id }: { id: number }) => {
+      await new Promise(resolve => setTimeout(resolve, 1))
+      return { base64: toBase64(new Uint8Array(sizes.get(id)!).fill(id)) }
+    })
+    native.binaryReadFinish.mockImplementation(async () => { open-- })
+    const binary = createAndroidBinary(native)
+    const read = await Promise.all([1, 2, 3, 4, 5].map(n => binary.read(`c${n}`)))
+    expect(read.map(bytes => bytes.length)).toEqual([1, 2, 3, 4, 5])
+    expect(most).toBe(OPEN_TRANSFERS)
+    expect(open).toBe(0)
+  })
+  it("libera a vaga quando uma transferência falha, sem travar a fila", async () => {
+    const native = plugin()
+    native.binaryReadStart.mockRejectedValueOnce(new Error("sumiu")).mockRejectedValueOnce(new Error("sumiu")).mockResolvedValue({ id: 3, size: 1 })
+    native.binaryReadChunk.mockResolvedValue({ base64: toBase64(new Uint8Array([7])) })
+    const binary = createAndroidBinary(native)
+    const results = await Promise.allSettled([binary.read("a"), binary.read("b"), binary.read("c")])
+    expect(results.map(r => r.status)).toEqual(["rejected", "rejected", "fulfilled"])
   })
 })

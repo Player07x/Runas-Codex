@@ -1947,3 +1947,4 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - O android-vault precisa passar antes de mesclar. O teste automatizado exercita a ponte real e compara SHA-256 dos arquivos sintéticos. Limite por arquivo: 512 MB; ainda há um Uint8Array por arquivo no renderer.
 
 - U80: conferir também lixeira/restauração de um arquivo de 270 MB pelo SAF; a restauração agora usa fluxo, preserva o original em conflito e não mantém o antigo teto de 50 MB.
+- U80: no Android, abrir uma mesa com 3 ou mais cenas e exportar um livro com 3 ou mais imagens para DOCX e EPUB. Antes, a terceira leitura simultânea era recusada ("Aguarde os arquivos que já estão em transferência."); agora espera a vez.

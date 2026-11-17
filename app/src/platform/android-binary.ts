@@ -12,10 +12,31 @@ export interface AndroidBinaryPlugin {
   binaryAbort(options: { id: number }): Promise<void>
 }
 
+/** O lado nativo segura no máximo duas transferências abertas (BinaryTransfers.room). */
+export const OPEN_TRANSFERS = 2
+
+/** Fila simples: as transferências além do limite esperam a vez em vez de falhar. Uma mesa com várias cenas
+ * ou um livro com várias imagens lê tudo com Promise.all; sem a fila, a terceira leitura era recusada. */
+function queue(limit: number) {
+  let open = 0
+  const waiting: (() => void)[] = []
+  return async <T>(task: () => Promise<T>): Promise<T> => {
+    if (open < limit) open++
+    else await new Promise<void>(resolve => waiting.push(resolve))
+    try { return await task() } finally {
+      // A vaga passa direto para o próximo da fila; só fica livre quando ninguém espera.
+      const next = waiting.shift()
+      if (next) next()
+      else open--
+    }
+  }
+}
+
 /** Uma alocação JS por arquivo; os base64 temporários têm no máximo 2 MB de bytes cada. */
 export function createAndroidBinary(native: AndroidBinaryPlugin) {
+  const turn = queue(OPEN_TRANSFERS)
   return {
-    async read(path: string): Promise<Uint8Array> {
+    read: (path: string): Promise<Uint8Array> => turn(async () => {
       const { id, size } = await native.binaryReadStart({ path })
       try {
         const bytes = new Uint8Array(binarySize(size))
@@ -29,8 +50,8 @@ export function createAndroidBinary(native: AndroidBinaryPlugin) {
         await native.binaryReadFinish({ id })
         return bytes
       } catch (error) { await native.binaryAbort({ id }).catch(() => undefined); throw error }
-    },
-    async write(path: string, bytes: Uint8Array, expected?: VaultEntry | null, managed = false) {
+    }),
+    write: (path: string, bytes: Uint8Array, expected?: VaultEntry | null, managed = false) => turn(async () => {
       const size = binarySize(bytes.length)
       const version = expected === undefined ? {} : { expected: expected && { size: expected.size, mtime: expected.mtime } }
       const { id } = await native.binaryWriteStart({ path, size, managed, ...version })
@@ -38,6 +59,6 @@ export function createAndroidBinary(native: AndroidBinaryPlugin) {
         for (let at = 0; at < size; at += BINARY_CHUNK) await native.binaryWriteChunk({ id, base64: toBase64(bytes.subarray(at, at + BINARY_CHUNK)) })
         return await native.binaryWriteFinish({ id })
       } catch (error) { await native.binaryAbort({ id }).catch(() => undefined); throw error }
-    },
+    }),
   }
 }
