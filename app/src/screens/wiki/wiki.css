@@ -421,3 +421,10 @@
 .relation-fixes-list del { color: var(--red); }
 .relation-fixes-list ins { color: var(--green); text-decoration: none; }
 @media (pointer: coarse) { .relation-fixes-list label { min-height: 44px; } }
+
+/* U101: índice das categorias no topo da abertura, só no celular. */
+.wiki-category-index { display: none; }
+@media (max-width: 860px) {
+  .wiki-category-index { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wiki-category-index .chip { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 14px; text-decoration: none; }
+}

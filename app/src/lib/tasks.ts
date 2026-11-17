@@ -5,6 +5,7 @@ import { parseContext, tasksInNote, type ParseContext, type Task } from "../core
 import type { VaultIndex } from "../core/vault-index"
 import { registerTaskToggle } from "../markdown/extensions"
 import type { VaultState } from "../platform/VaultProvider"
+import type { Toast } from "../components/ui"
 
 /**
  * Tarefas do cofre com o comportamento do plugin Tasks. As configurações são deste aparelho, uma por cofre
@@ -128,13 +129,13 @@ export function vaultTasks(index: VaultIndex, settings: TasksSettings, options: 
  */
 export interface TasksVaultSnapshot {
   vault: VaultState | null
-  toast: (message: string) => void
+  toast: Toast
 }
 
-let snapshot: TasksVaultSnapshot = { vault: null, toast: () => undefined }
+let snapshot: TasksVaultSnapshot = { vault: null, toast: Object.assign(() => undefined, { error: () => undefined }) }
 const vaultListeners = new Set<() => void>()
 
-export function publishTasksVault(vault: VaultState, toast: (message: string) => void): void {
+export function publishTasksVault(vault: VaultState, toast: Toast): void {
   snapshot = { vault, toast }
   vaultListeners.forEach((listener) => listener())
 }

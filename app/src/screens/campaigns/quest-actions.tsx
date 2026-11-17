@@ -25,7 +25,7 @@ export function useQuestStatus(data: CampaignData) {
       await updateToolBlock(vault, data.campaign.root, TREASURY_TOOL, (content) => withTreasureItem(content, { name: quest.reward!, quantity: 1, holder: "", notes }, crypto.randomUUID()), true)
       toast(`“${quest.reward}” está no Tesouro do grupo.`)
     } catch (err) {
-      toast(errorText(err))
+      toast.error(err)
     }
   }
   return async (quest: QuestInfo, status: QuestStatus): Promise<boolean> => {
@@ -37,7 +37,7 @@ export function useQuestStatus(data: CampaignData) {
     try {
       await vault.setProperty(quest.path, "status", status)
     } catch (err) {
-      toast(errorText(err))
+      toast.error(err)
       return false
     }
     if (status === "concluida" && quest.reward) toast(`“${quest.title}” concluída.`, { label: "Mandar a recompensa para o Tesouro", run: () => sendReward(quest) })
