@@ -272,6 +272,10 @@ No celular, a faixa das notas abertas fica entre a barra do topo e o texto. Prop
   falham nos mesmos pontos (`wikiCategory.previewFive`, `wiki.weekdays`, nós do gráfico); com
   `--user-data-dir` numa pasta vazia, a leitura e a gravação passam. Conserto: o `--smoke` cria um perfil temporário
   próprio quando não recebe `--user-data-dir` (e não mexe mais nas preferências do app instalado).
+- **Achado em 17/11 (PR S, #154):** cada smoke deixa pastas `runas-*` no `/tmp` (`runas-book-pdf-*`, `runas-export-*`
+  com um pacote de 141 MB…). No computador do João havia 289 delas (~4,3 GB, de 13 a 17/11); o `/tmp` em memória
+  encheu e o smoke de gravação falhou com “Unknown system error -122”. Conserto: o smoke apaga o que criou ao terminar
+  (e o app apaga a pasta temporária da exportação depois de copiar o pacote).
 - PRs que mexem em tela do celular ou em transferência só se mesclam com o `android-vault` verde (a 1.4.0 precisou do
   #144 por isso). Fica escrito no `AGENTS.md` e no `docs/tarefas/README.md`.
 
