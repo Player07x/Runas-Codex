@@ -1,4 +1,4 @@
-import { performanceRegressions, type PerformanceBudget } from "./performance-budget"
+import { performanceScreenRegressions, performanceRegressions, type PerformanceBudget } from "./performance-budget"
 const base = { openMs: 1000, indexMs: 500, switchMs: 100, wiki420Ms: 200, jsBytes: 10000 }
 const budget: PerformanceBudget = { baseline: base, factors: { openMs: 3, indexMs: 3, switchMs: 3, wiki420Ms: 3, jsBytes: 1.15 }, allowances: { openMs: 1000, indexMs: 500, switchMs: 300, wiki420Ms: 500, jsBytes: 1000 } }
 describe("orçamento da linha de base", () => {
@@ -12,4 +12,10 @@ describe("orçamento da linha de base", () => {
     for (const value of [NaN, Infinity, -1]) expect(performanceRegressions({ ...base, openMs: value }, budget)).toHaveLength(1)
     expect(performanceRegressions(base, { ...budget, factors: { ...budget.factors, openMs: 0 } })).toHaveLength(1)
   })
+})
+
+it("uma tela lenta não esconde a regressão de outra tela", () => {
+  const perScreen = { ...budget, screens: { Agenda: 100, Configurações: 10000 } }
+  expect(performanceScreenRegressions({ Agenda: 601, Configurações: 10000 }, perScreen)).toEqual(["Agenda: 601 excede 600 ms"])
+  expect(performanceScreenRegressions({ Configurações: 10000 }, perScreen)).toHaveLength(1)
 })

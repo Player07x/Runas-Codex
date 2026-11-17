@@ -25,7 +25,7 @@ try {
     args.push("--benchmark-start=" + started)
     const child = spawn(electron, args, { cwd: desktop, env: { ...process.env, TMPDIR: temporary, TMP: temporary, TEMP: temporary }, stdio: ["ignore", "pipe", "pipe"] })
     let log = ""
-    child.stdout.on("data", data => { log += data }); child.stderr.on("data", data => { log += data })
+    child.stdout.on("data", data => { log += data; process.stdout.write(data) }); child.stderr.on("data", data => { log += data })
     const timeout = setTimeout(() => child.kill("SIGTERM"), 240000)
     const exit = await new Promise((resolve, reject) => { child.once("error", reject); child.once("exit", (code, signal) => resolve({ code, signal })) }).finally(() => clearTimeout(timeout))
     await writeFile(join(output, `run-${run}.log`), log)
@@ -39,6 +39,6 @@ try {
   const numbers = Object.fromEntries(Object.keys(reports[0].numbers).map(key => [key, median(reports.map(report => report.numbers[key]))]))
   const summary = { fixture, numbers, environment: reports[0].environment, runs: reports.length, method: "Mediana de três perfis novos; cache de arquivos do sistema não foi esvaziado; build de produção com Profiler." }
   await writeFile(join(output, "summary.json"), JSON.stringify(summary, null, 2))
-  if (record) await writeFile(join(output, "baseline-candidate.json"), JSON.stringify({ baseline: numbers, factors: { openMs: 3, indexMs: 3, switchMs: 3, wiki420Ms: 3, jsBytes: 1.15 }, allowances: { openMs: 1000, indexMs: 500, switchMs: 300, wiki420Ms: 500, jsBytes: 100000 }, reference: summary }, null, 2))
+  if (record) await writeFile(join(output, "baseline-candidate.json"), JSON.stringify({ baseline: numbers, factors: { openMs: 3, indexMs: 3, switchMs: 3, wiki420Ms: 3, jsBytes: 1.15 }, allowances: { openMs: 1000, indexMs: 500, switchMs: 300, wiki420Ms: 500, jsBytes: 100000 }, screens: Object.fromEntries(reports[0].screens.map(screen => [screen.name, Math.max(...reports.map(report => report.screens.find(item => item.name === screen.name).ms))])), reference: summary }, null, 2))
   console.log(JSON.stringify(summary))
 } finally { await rm(work, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 }) }

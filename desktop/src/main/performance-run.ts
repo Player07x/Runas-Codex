@@ -3,19 +3,24 @@ import { readFile, readdir, stat, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { cpus, totalmem } from "node:os"
 import { gzipSync } from "node:zlib"
-import { performanceRegressions, type PerformanceBudget } from "../../../app/src/core/performance-budget"
+import { performanceScreenRegressions, performanceRegressions, type PerformanceBudget } from "../../../app/src/core/performance-budget"
 import type { RenderSample } from "../../../app/src/core/performance-budget"
 
 interface ScreenMeasurement { name: string; route: string; ms: number; renders: RenderSample[]; images: number; heapBytes: number }
 
 /** Roteiro somente por --performance; usa a mesma janela, ponte e cofre do app, sem instalar ferramentas no renderer. */
 export async function runPerformance(window: BrowserWindow, vaultPath: string | null): Promise<void> {
+  const loaded = window.webContents.isLoading()
+    ? new Promise<void>(resolve => window.webContents.once("did-finish-load", () => resolve()))
+    : Promise.resolve()
   if (!vaultPath) throw Error("O roteiro exige o cofre sintético.")
   const fixture = JSON.parse(await readFile(join(vaultPath, ".runas-performance.json"), "utf8")) as { format?: string }
   if (fixture.format !== "runas-performance-v1") throw Error("Use somente o cofre gerado pelo roteiro de desempenho.")
   const started = Number(process.argv.find(arg => arg.startsWith("--benchmark-start="))?.split("=")[1] ?? Date.now())
-  await new Promise<void>(resolve => window.webContents.once("did-finish-load", () => resolve()))
+  await loaded
   window.setContentSize(1366, 900)
+  window.webContents.setBackgroundThrottling(false)
+  window.showInactive()
   const initial = await window.webContents.executeJavaScript(`(async () => {
     const end = performance.now() + 120000
     while (!window.runasPerformance?.ready) {
@@ -37,7 +42,7 @@ export async function runPerformance(window: BrowserWindow, vaultPath: string | 
     ["Campanhas", "/campanhas", ".page"],
     ["Importar e exportar", "/transferir", "[data-transfer-workspace]"],
     ["Configurações", "/config", ".settings-page"],
-    ["Início", "/", ".page"],
+    ["Início", "/", ".home"],
   ]
   const screens: ScreenMeasurement[] = []
   for (const [name, route, selector] of steps) {
@@ -60,6 +65,7 @@ export async function runPerformance(window: BrowserWindow, vaultPath: string | 
       return { ms, images: images.length, renders: window.runasPerformance.renders, heapBytes: performance.memory?.usedJSHeapSize ?? 0 }
     })()`) as Omit<ScreenMeasurement, "name" | "route">
     screens.push({ name: name!, route: route!, ...sample })
+    console.log(JSON.stringify({ measured: name, ms: Math.round(sample.ms), images: sample.images }))
   }
   // O roteiro sai da mesa antes da amostra final; a memória indica o que ficou retido depois de usar os módulos.
   await new Promise(resolve => setTimeout(resolve, 1000))
@@ -73,7 +79,8 @@ export async function runPerformance(window: BrowserWindow, vaultPath: string | 
   chunks.sort((a,b) => b.bytes - a.bytes)
   const numbers = { openMs, indexMs: initial.indexMs, switchMs: Math.max(...screens.filter(screen => !screen.name.startsWith("Categoria")).map(screen => screen.ms)), wiki420Ms: screens.find(screen => screen.name.startsWith("Categoria"))!.ms, jsBytes: chunks.reduce((sum, chunk) => sum + chunk.bytes, 0) }
   const budgetPath = process.argv.find(arg => arg.startsWith("--performance-budget="))?.slice("--performance-budget=".length)
-  const regressions = budgetPath ? performanceRegressions(numbers, JSON.parse(await readFile(budgetPath, "utf8")) as PerformanceBudget) : []
+  const budget = budgetPath ? JSON.parse(await readFile(budgetPath, "utf8")) as PerformanceBudget : null
+  const regressions = budget ? [...performanceRegressions(numbers, budget), ...performanceScreenRegressions(Object.fromEntries(screens.map(screen => [screen.name, screen.ms])), budget)] : []
   if (initial.notes < 10_000) regressions.push("O cofre do roteiro tem menos de 10 mil notas.")
   if (!screens.every(screen => screen.renders.length > 0)) regressions.push("O Profiler não registrou todas as telas.")
   const report = { numbers, notes: initial.notes, screens, rendererMemory, chunks, regressions, environment: { electron: process.versions.electron, node: process.versions.node, platform: process.platform, cpu: cpus()[0]?.model, cpuCount: cpus().length, ramBytes: totalmem(), viewport: [1366, 900], profiling: true } }
