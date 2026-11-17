@@ -267,6 +267,11 @@ No celular, a faixa das notas abertas fica entre a barra do topo e o texto. Prop
 
 - Descobrir por que os cinco passos do `--smoke --write` falham aqui e não no CI (suspeita: o app instalado aberto
   segura o IndexedDB em `~/.config/runas-codex`; usar um perfil próprio no smoke).
+- **Confirmado em 17/11 (PR V2):** o smoke usa o perfil do app instalado (`~/.config/runas-codex`), com as
+  preferências do aparelho (painéis, modo da wiki, filtros do gráfico…). Com uma cópia desse perfil, o V1 e o V2
+  falham nos mesmos pontos (`wikiCategory.previewFive`, `wiki.weekdays`, nós do gráfico); com
+  `--user-data-dir` numa pasta vazia, a leitura e a gravação passam. Conserto: o `--smoke` cria um perfil temporário
+  próprio quando não recebe `--user-data-dir` (e não mexe mais nas preferências do app instalado).
 - PRs que mexem em tela do celular ou em transferência só se mesclam com o `android-vault` verde (a 1.4.0 precisou do
   #144 por isso). Fica escrito no `AGENTS.md` e no `docs/tarefas/README.md`.
 
