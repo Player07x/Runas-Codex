@@ -194,7 +194,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} onClick={() => setMore(false)} aria-current={current === item.match ? "page" : undefined}>
                 {item.icon}
                 <span>{item.label}</span>
-                {item.count !== undefined && <span className="count">{item.count}</span>}
+                {/* U102: a mesma contagem do cofre da barra lateral (antes, os números fixos da prévia antiga). */}
+                {item.count !== undefined && <span className="count" aria-hidden="true">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
               </a>
             ))}
             <div className="offline-pill">

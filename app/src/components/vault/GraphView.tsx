@@ -442,6 +442,8 @@ class GraphRuntime {
       this.cleanup.push(() => canvas.removeEventListener(type, handler as EventListener))
     }
     on("pointerdown", (event) => {
+      // U85: depois do primeiro gesto (arrastar, pinçar, puxar um nó), o enquadramento automático não volta por cima.
+      this.fitPending = false
       canvas.setPointerCapture(event.pointerId)
       const point = this.local(event)
       this.pointers.set(event.pointerId, point)
@@ -511,6 +513,7 @@ class GraphRuntime {
       }
     })
     on("wheel", (event) => {
+      this.fitPending = false
       this.wheelUntil = performance.now() + 250
       event.preventDefault()
       this.zoomAt(this.local(event), Math.exp(-event.deltaY * 0.0015))
