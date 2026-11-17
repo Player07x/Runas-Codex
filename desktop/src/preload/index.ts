@@ -172,6 +172,8 @@ const bridge: RunasCodexBridge = {
     create: () => invoke(IPC.systemShortcutCreate),
     remove: () => invoke(IPC.systemShortcutRemove),
   },
+  checkWrite: () => invoke(IPC.vaultCheckWrite),
+  openSecuritySettings: () => invoke(IPC.openSecuritySettings),
 }
 
 bridge.saveStream = {
@@ -182,5 +184,7 @@ bridge.saveStream = {
 }
 
 bridge.vtt.collaboration = {state:()=>invoke(VTT.collaborationState),command:command=>invoke(VTT.collaborationCommand,command)}
+
+bridge.notify = (title, body) => invoke(IPC.appNotify, title, body)
 
 contextBridge.exposeInMainWorld("runasCodex", bridge)

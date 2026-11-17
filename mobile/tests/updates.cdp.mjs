@@ -60,8 +60,8 @@ async function foreground(pattern) {for(let i=0;i<60;i++){if(pattern.test(adb('s
 try {
   await connect();await until('window.Capacitor?.Plugins?.RunasUpdates')
   const before=await run('window.Capacitor.Plugins.RunasVault.current()')
-  await run("location.hash='/config';true")
-  await until('document.querySelector("[data-updates]")')
+  await run("location.hash='/config/editor';true")
+  await until('document.querySelector("#config-editor")')
   check('Android não mostra a configuração de atalhos',await run('!document.querySelector("[aria-label^=\\"Atalho:\\"]") && !document.querySelector(".topbar kbd")'))
   await run('document.querySelector("[aria-label=\\"Buscar notas e comandos\\"]").click();true')
   await until('document.querySelector(".palette-list")')
@@ -84,7 +84,9 @@ try {
   adb('shell','appops','set','dev.runas.codex','REQUEST_INSTALL_PACKAGES','allow')
   // Agora percorre os botões da interface de produção, usando o mesmo transporte nativo.
   await run("location.hash='/config';true")
-  await until('document.querySelector("[data-updates]")')
+  await until(`document.querySelector('.settings-index a[href="#/config/privacidade"]')`)
+  await run(`document.querySelector('.settings-index a[href="#/config/privacidade"]').click();true`)
+  await until('document.querySelector("#config-privacidade [data-updates]")')
   await run('[...document.querySelectorAll("[data-updates] button")].find(b=>b.textContent.trim()==="Verificar").click();true')
   await until('document.querySelector("[data-updates]").textContent.includes("0.1.0-beta.14 disponível")')
   await run('[...document.querySelectorAll("[data-updates] button")].find(b=>b.textContent.includes("Baixar e instalar")).click();true')

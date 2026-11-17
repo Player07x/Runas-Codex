@@ -31,7 +31,7 @@ export function QuestMapView({ data }: { data: CampaignData }) {
   const map = useMemo(() => buildQuestMap(data.quests), [data.quests])
   const byPath = useMemo(() => new Map(map.nodes.map((n) => [n.path, n])), [map])
   const title = (path: string) => byPath.get(path)?.title ?? data.quests.find((q) => q.path === path)?.title ?? path
-  const fail = (err: unknown) => toast(err instanceof Error ? err.message : String(err))
+  const fail = (err: unknown) => toast.error(err)
   // A ligação deduzida pela ordem (2.1 dentro de 2) vira `parte_de` de verdade na nota.
   const saveParent = (node: QuestMapNode) => {
     if (data.readOnly || !node.arc) return toast("Libere a gravação em Configurações para gravar a ligação.")

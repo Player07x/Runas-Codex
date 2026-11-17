@@ -8,6 +8,7 @@ Quem está trabalhando em quê, para dois agentes não mexerem nos mesmos arquiv
 |---|---|---|
 | Atualização 1.3.0 (U35–U49) | [atualizacao-1.3.md](atualizacao-1.3.md) e as [maquetes](atualizacao-1.3-maquetes.html) | lançada na 1.3.0 sem o H (Início “Mesa de hoje”, U46) e o I (mestre remoto, U47), que ficam para depois |
 | Atualização 1.4.0 (U50–U77): transferências por itens, telas no celular e correções de Notas, Wiki e Relações | [atualizacao-1.4.md](atualizacao-1.4.md), as [maquetes](atualizacao-1.4-maquetes.html) e as [maquetes das correções](atualizacao-1.4-correcoes.html) | lançada na 1.4.0 em 14/11; a otimização (U76) fica para a 1.5 |
+| Atualização 1.5.0 (U46, U47, U76, U78–U107): o que ficou de fora da 1.3 e da 1.4, “Sair da mesa”, os pedidos de 16/11, a segurança da gravação e a auditoria de usabilidade de 17/11 | [atualizacao-1.5.md](atualizacao-1.5.md) | plano de 16–17/11, decisões respondidas; fase 1 (consertos visuais) em PRs: V1 #146, V2 #147, V3 #148 (sobre o V2), V4 #149, V5 #150, V6 #151 (sobre o V1), conferida em 17/11; fase 2: P #152, Q #153 (sobre o V1), S #154 (sobre o V5); pedidos de 17/11 à tarde: barra da seleção sempre por cima #155, botões e ícones repetidos #156 (sobre o V3); F/U82 #157 (smoke local isolado, validado em 17/11); A1/U76 #158 (linha de base de 1,3 GB e orçamento no CI, validado em 17/11); O/U91 #159 (revisão de segurança, correções de dependências e MIT aprovada em 17/11); B/U83/U103 #160 (Configurações e Markdown, validado em 17/11); revisão Astra/Sol: #160 a2c5b93 (android-vault verde), #154 410d6cf (recorrências preservadas; reexecução e workflow completos verdes); L/U46 #161 (maquete sobre V1 APROVADA pelo João após compactar o cartão mobile; implementação pendente); J1/U80 #162 (binários Android em pedaços, workflow inteiro verde e pronto para revisão); E/U79 #163 (rascunho: teclado/visual/tipos/testes/builds/leitura OK, smoke de gravação dos Livros pendente); contador de pastas de Notas #164 (pedido de 17/11; tipos, 1.048 app+197 desktop, builds e smokes OK; CI Android em andamento); João pediu passagem ao Claude após o contador |
 
 O que o dono confere à mão está no fim de [`docs/04-testes-pendentes.md`](../04-testes-pendentes.md).
 
@@ -18,3 +19,8 @@ O que o dono confere à mão está no fim de [`docs/04-testes-pendentes.md`](../
   o [`panorama.html`](concluidas/panorama.html) mostra o que foi feito por data.
 - [`docs/historico/`](../historico/): documentos que só contam como o projeto chegou aqui (o estudo inicial, a
   comparação dos protótipos e o inventário de responsáveis de 22/10, já desatualizado).
+
+## Aceite do Android na atualização 1.5 (U82)
+
+PR que mexe em tela do celular ou em transferência só se mescla com o job **`android-vault` verde** no CI.
+O dono confere esse resultado antes do merge.

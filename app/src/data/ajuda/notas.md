@@ -9,8 +9,8 @@ Livros.
   e **Bloquear as Notas** (quando há PIN).
 - **Favoritos** (a estrela da nota) e **Tags** ficam no topo da lista. Os favoritos do Obsidian (`bookmarks.json`)
   também aparecem.
-- **Fixar, cor e ícone…** (⋯ da nota) põe a nota no topo da lista, com cor e ícone. **Arquivar** move para
-  `Notas/Arquivo`.
+- **Fixar, cor e ícone…** (menu **Ações da nota**, o ícone de arquivo na barra da nota) põe a nota no topo da
+  lista, com cor e ícone. **Arquivar** move para `Notas/Arquivo`.
 
 ### Abas, painéis e janelas
 

@@ -111,3 +111,8 @@ pré-release quando ele pedir, seguindo a [ADR 0025](docs/adr/0025-lancamentos.m
 sempre maior que o anterior, nenhum arquivo da versão anterior some sem explicação no PR de versão, nada incompleto
 quebra o que já funciona, notas em “Pronto para testar”, “Em construção” e “Problemas conhecidos”, e o que conferir
 acrescentado no fim de `docs/04-testes-pendentes.md`.
+
+## Aceite do Android na atualização 1.5 (U82)
+
+PR que mexe em tela do celular ou em transferência só se mescla com o job **`android-vault` verde** no CI.
+O dono confere esse resultado antes do merge.

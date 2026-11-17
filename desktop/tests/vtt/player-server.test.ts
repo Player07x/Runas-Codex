@@ -93,6 +93,37 @@ describe("servidor da Vista dos Jogadores", () => {
     expect((await fetch(`${base}/seat/character`, { method: "PUT", headers: { cookie: cookie ?? "" } })).status).toBe(405)
     await rm(root, { recursive: true, force: true })
   })
+
+  it("“Sair da mesa” libera o assento, apaga o cookie e funciona até sem cookie (U78)", async () => {
+    const root = join(tmpdir(), `runas-codex-player-leave-${Date.now()}`)
+    await mkdir(root, { recursive: true })
+    await writeFile(join(root, "player.html"), "<h1>player</h1>")
+    let seated = true
+    const left: string[] = []
+    const server = new PlayerServer({
+      staticRoot: root,
+      worldPath: () => null,
+      projection: () => projection,
+      snapshot: () => ({ type: "snapshot", projection, ruler: null, audio: null, moves: false }),
+      onSpectators: () => undefined,
+      authenticateSeat: (token) => token === "token-secreto" && seated ? { slotId: "player-1", label: "Jogador 1" } : null,
+      leaveSeat: (token) => { if (token !== "token-secreto" || !seated) return null; seated = false; left.push(token); return { slotId: "player-1", label: "Jogador 1" } },
+    })
+    servers.push(server)
+    await server.start(0, "chave")
+    const base = `http://127.0.0.1:${server.addressPort}`
+    const cookie = "runas_seat=token-secreto"
+    expect((await fetch(`${base}/seat/leave?k=chave`, { method: "POST", headers: { cookie, origin: "https://evil.example" } })).status).toBe(403)
+    expect(left).toEqual([])
+    const out = await fetch(`${base}/seat/leave?k=chave`, { method: "POST", headers: { cookie } })
+    expect(out.status).toBe(204)
+    expect(out.headers.get("set-cookie")).toBe("runas_seat=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
+    expect(left).toEqual(["token-secreto"])
+    expect((await fetch(`${base}/seat`, { headers: { cookie } })).status).toBe(404)
+    // Preso no lobby, sem assento: sair responde do mesmo jeito.
+    expect((await fetch(`${base}/seat/leave`, { method: "POST" })).status).toBe(204)
+    await rm(root, { recursive: true, force: true })
+  })
 })
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

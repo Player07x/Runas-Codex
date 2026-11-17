@@ -29,7 +29,7 @@ export function CastRelations({ data }: { data: CampaignData }) {
       await writeGeneratedCanvas(vault, file, (existing) => relationMapCanvas(map, existing))
       navigate(campaignRoute(data.campaign.name, "quadro", file))
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
     }
   }
   if (!members.length) return null

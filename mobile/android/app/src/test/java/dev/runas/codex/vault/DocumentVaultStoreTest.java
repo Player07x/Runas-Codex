@@ -32,6 +32,28 @@ public class DocumentVaultStoreTest {
         store = new DocumentVaultStore(documents);
     }
 
+    @Test public void binarioEmEstagioPreservaUriConflitoERollback() throws Exception {
+        File input = temp.newFile();
+        java.nio.file.Files.write(input.toPath(), new byte[2 * 1024 * 1024 + 3]);
+        VaultStore.Entry created = store.writeBinaryFromFile("Anexos/a.bin", input, null, true);
+        assertEquals(input.length(), created.size); assertTrue(created.uri.startsWith("content://"));
+        int writes = documents.writes;
+        assertEquals(created.mtime, store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(created.size,created.mtime), false).mtime);
+        assertEquals(writes, documents.writes);
+        String trash=store.trash("Anexos/a.bin");
+        VaultStore.Entry restored=store.restoreTrash(trash,"Anexos/a.bin");
+        assertEquals(input.length(),restored.size);
+        final VaultStore.Entry restoredVersion=restored;
+        java.nio.file.Files.write(input.toPath(), new byte[]{1,2,3});
+        documents.failPublish = true;
+        refuses("publicação recusada", () -> store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(restoredVersion.size,restoredVersion.mtime), false));
+        assertEquals(restoredVersion.size, store.entry("Anexos/a.bin").size);
+        documents.failPublish = false;
+        documents.file("Anexos/a.bin", "alterado fora do app");
+        refuses("mudou fora", () -> store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(restoredVersion.size,restoredVersion.mtime), false));
+        assertEquals("alterado fora do app", text("Anexos/a.bin"));
+    }
+
     private interface Action { void run() throws IOException; }
     private static void refuses(String message, Action action) {
         try { action.run(); fail("Deveria recusar: " + message); }
@@ -279,6 +301,10 @@ public class DocumentVaultStoreTest {
             if (child(parent.id, name) != null) throw new IOException("Já existe: " + name);
             Item item = new Item("documento:" + ++sequence, parent.id, name, folder, ++clock);
             items.put(item.id, item); return item.node();
+        }
+        public void write(Node file, InputStream source, long size) throws IOException {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            BinaryContent.copy(source, out, size); write(file, out.toByteArray());
         }
         public void write(Node file, byte[] bytes) throws IOException {
             writes++; Item item = item(file); item.data = bytes.clone(); item.mtime = ++clock;

@@ -1,0 +1,309 @@
+{
+  "base": "bcf5bc4665692056d89c3b4e3a4f7722864c4633",
+  "rows": [
+    {
+      "width": 360,
+      "theme": "dark",
+      "scenario": "today",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t1699 px\t1360 px\nPrimeira tela\t800 px\t800 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 1699,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 1360,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "theme": "dark",
+      "scenario": "future",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t1699 px\t1338 px\nPrimeira tela\t800 px\t800 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 1699,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 1338,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "theme": "dark",
+      "scenario": "empty",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t1543 px\t1327 px\nPrimeira tela\t800 px\t800 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 1543,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 1327,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "theme": "light",
+      "scenario": "today",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t1699 px\t1360 px\nPrimeira tela\t800 px\t800 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 1699,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 1360,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "theme": "light",
+      "scenario": "future",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t1699 px\t1338 px\nPrimeira tela\t800 px\t800 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 1699,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 1338,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "theme": "light",
+      "scenario": "empty",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t1543 px\t1327 px\nPrimeira tela\t800 px\t800 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 1543,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 1327,
+          "scroll": 350,
+          "client": 350,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "theme": "dark",
+      "scenario": "today",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t700 px\t688 px\nPrimeira tela\t900 px\t900 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 700,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 688,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "theme": "dark",
+      "scenario": "future",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t700 px\t688 px\nPrimeira tela\t900 px\t900 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 700,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 688,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "theme": "dark",
+      "scenario": "empty",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t672 px\t659 px\nPrimeira tela\t900 px\t900 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 672,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 659,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "theme": "light",
+      "scenario": "today",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t700 px\t688 px\nPrimeira tela\t900 px\t900 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 700,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 688,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "theme": "light",
+      "scenario": "future",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t700 px\t688 px\nPrimeira tela\t900 px\t900 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 700,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 688,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "theme": "light",
+      "scenario": "empty",
+      "metrics": "Blocos\t5\t5\nConteúdo do Início\t672 px\t659 px\nPrimeira tela\t900 px\t900 px\nRolagem lateral no app\tNenhuma\tNenhuma",
+      "failed": [],
+      "frames": [
+        {
+          "variant": "before",
+          "blocks": 5,
+          "content": 672,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        },
+        {
+          "variant": "after",
+          "blocks": 5,
+          "content": 659,
+          "scroll": 1280,
+          "client": 1280,
+          "fonts": "loaded"
+        }
+      ]
+    }
+  ],
+  "keyboard": {
+    "taskChecked": true,
+    "focusLabel": "Revisar o encontro da torreAtrasada · ontem"
+  }
+}

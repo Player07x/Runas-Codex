@@ -4,8 +4,8 @@ import { openDocumentExport } from "../export/ExportDialog"
 import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileCog, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -18,7 +18,7 @@ import { NoteSetContext } from "../../lib/note-set"
 import { goBack, goForward, navigate, useNavHistory } from "../../lib/router"
 import { hasBookmark } from "../../core/bookmarks"
 import { toggleFavorite, useFavorites } from "../../lib/bookmarks"
-import { useOpenNote } from "../../lib/tabs"
+import { TabSwitcherContext, useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
 import { checkboxLines } from "../../markdown/task-checkboxes"
@@ -38,6 +38,9 @@ import "./note-actions.css"
 import { NoteTools, type NoteToolsHandle } from "./NoteTools"
 import { OverflowMenu, type MenuEntry } from "../kit/OverflowMenu"
 import { Notice, SaveStatus } from "../kit/Layout"
+import { draftRecovery, type UnsavedDraft } from "../../core/unsaved-drafts"
+import { retryDelay, writeFailure, type WriteFailure } from "../../core/write-failure"
+import { forgetUnsaved, keepUnsaved, unsavedFor, writeSystem } from "../../lib/unsaved-drafts-store"
 import { FormatGallery } from "../editor/FormatGallery"
 import { SelectionBar, type SelectionAction } from "../editor/SelectionBar"
 import { KeyboardBar } from "../editor/KeyboardBar"
@@ -101,6 +104,8 @@ interface Props {
   /** Livros no celular (U63): as ações do livro entram no ⋯ do capítulo, para a barra ter um ⋯ só. */
   extraMenu?: { label: string; items: MenuEntry[] }
   hideBackControl?: boolean
+  /** Nome do “<” do celular, que diz para onde volta (padrão: “Voltar para a lista”). */
+  backLabel?: string
   formatSelection?: boolean
   typewriter?: boolean
   focused?: boolean
@@ -136,8 +141,10 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode, extraMenu }: Props) {
+export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, backLabel = "Voltar para a lista", variant, statusExtra, defaultMode, extraMenu }: Props) {
   const vault = useVault()
+  // U81: nas abas das Notas no celular, o botão “n abas” fica na barra da nota (a faixa de abas sai).
+  const tabSwitcher = useContext(TabSwitcherContext)
   const toast = useToast()
   const history = useNavHistory()
   const openNote = useOpenNote()
@@ -166,6 +173,13 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [docKey, setDocKey] = useState(0)
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()
+  // U91: o texto que não chega ao cofre fica guardado neste aparelho; o aviso diz o motivo e o app tenta de novo.
+  const vaultPath = vault.info?.path ?? ""
+  const [failure, setFailure] = useState<WriteFailure | null>(null)
+  const [failedAt, setFailedAt] = useState(0)
+  const [kept, setKept] = useState(true)
+  const retries = useRef(0)
+  const [recovery, setRecovery] = useState<UnsavedDraft | null>(null)
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | "decorate" | "images" | null>(null)
   const [gallery, setGallery] = useState(false)
   // Barra da seleção, posição do cursor (barra de status) e foco no editor (barra sobre o teclado, no celular).
@@ -182,7 +196,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [imageRename, setImageRename] = useState<string | null>(null)
   // "Criar ou editar tarefa" (Tasks) na linha do cursor.
   const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
-  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
+  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast.error(error)) }
   const editor = useRef<SourceEditorHandle>(null)
   const tools = useRef<NoteToolsHandle>(null)
   const surface = useRef<HTMLDivElement>(null)
@@ -191,8 +205,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const fileInput = useRef<HTMLInputElement>(null)
 
   // Referências para gravar fora do ciclo do React (troca de nota, saída da tela).
-  const latest = useRef({ path, base, draft, readOnly, save: vault.save, index })
-  latest.current = { path, base, draft, readOnly, save: vault.save, index }
+  const system = writeSystem(vault.platform.kind)
+  const latest = useRef({ path, base, draft, readOnly, save: vault.save, index, vaultPath, system })
+  latest.current = { path, base, draft, readOnly, save: vault.save, index, vaultPath, system }
   const saving = useRef<Promise<void> | null>(null)
   const ownSave = useRef<{ path: string; text: string } | null>(null)
   const saveError = useRef<string | null>(null)
@@ -217,6 +232,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     setState("salvando")
     const run = save(target, next).then(
       () => {
+        forgetUnsaved(latest.current.vaultPath, target)
+        retries.current = 0
+        setFailure(null)
         if (latest.current.path === target) {
           latest.current.base = next
           setBase(next)
@@ -228,13 +246,57 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         const message = err instanceof Error ? err.message : String(err)
         saveError.current = message
         setError(message)
-        setState(message.includes("mudou fora do app") ? "conflito" : "erro")
+        const conflict = message.includes("mudou fora do app")
+        if (!conflict) {
+          // Guarda o texto antes de qualquer outra coisa: fechar a nota ou o app não o perde.
+          setKept(keepUnsaved({ vault: latest.current.vaultPath, path: target, base: original, text: next, at: new Date().toISOString() }))
+          setFailure(writeFailure(message, latest.current.system))
+          setFailedAt(Date.now())
+        }
+        setState(conflict ? "conflito" : "erro")
       },
     )
     saving.current = run
     try { await run } finally { if (saving.current === run) saving.current = null }
   }, [])
   const flushChecked = useCallback(async () => { await flush(); if (saveError.current) throw new Error(saveError.current) }, [flush])
+
+  // U91: tenta de novo sozinho (5 s, 15 s, 30 s, depois a cada minuto) e grava assim que o bloqueio sai.
+  useEffect(() => {
+    if (state !== "erro" || readOnly) return
+    const timer = setTimeout(() => { retries.current++; void flush() }, retryDelay(retries.current))
+    return () => clearTimeout(timer)
+  }, [state, failedAt, readOnly, flush])
+  // Fechar o app com texto não gravado avisa antes (no Electron, o processo principal mostra a pergunta).
+  useEffect(() => {
+    if (state !== "erro") return
+    const hold = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", hold)
+    return () => window.removeEventListener("beforeunload", hold)
+  }, [state])
+  // Ao abrir a nota: texto não gravado de antes volta sozinho se o disco não mudou; se mudou, o usuário escolhe.
+  useEffect(() => {
+    if (readOnly) return
+    const saved = unsavedFor(vaultPath, path)
+    const action = draftRecovery(saved, note.text)
+    if (action === "descartar") forgetUnsaved(vaultPath, path)
+    else if (action === "recuperar" && saved) {
+      setDraft(toEditorText(saved.text))
+      setDocKey((k) => k + 1)
+      toast(`Texto não gravado de ${new Date(saved.at).toLocaleString("pt-BR")} recuperado; gravando no cofre.`)
+    } else if (action === "perguntar") setRecovery(saved)
+    // Só ao abrir: a tela monta um NoteView por nota.
+  }, [])
+  const recoverDraft = () => {
+    if (!recovery) return
+    setDraft(toEditorText(recovery.text))
+    setDocKey((k) => k + 1)
+    setRecovery(null)
+  }
+  const discardDraft = () => {
+    forgetUnsaved(vaultPath, path)
+    setRecovery(null)
+  }
 
   // Grava ao sair da nota (a tela monta um NoteView por nota, com `key={path}`).
   useEffect(() => () => void flush(), [path, flush])
@@ -305,7 +367,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           const saved = await vault.addAttachment(name, new Uint8Array(await file.arrayBuffer()), path)
           links.push(attachmentEmbed(saved, path, vault.config.app, vault.index!))
         } catch (err) {
-          toast(err instanceof Error ? err.message : String(err))
+          toast.error(err)
         }
       }
       if (links.length) setTimeout(() => editor.current?.insertBlock(links.join("\n"), at ?? undefined))
@@ -409,7 +471,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const organize = (action: () => Promise<unknown>) => {
     void flush()
       .then(action)
-      .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => toast.error(err))
   }
   const move = (to: string) =>
     organize(async () => {
@@ -526,7 +588,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     else if (action === "template") setDialog("template")
     else openLinkDialog()
   }
-  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && (selectionAt.focused || barFocused) && !gallery && !dialog
+  // `editorFocused` some na hora em que o foco sai (o editor só avisa um pouco depois): a barra não fica sobre o menu aberto.
+  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && ((selectionAt.focused && editorFocused) || barFocused) && !gallery && !dialog
   const showKeyboardBar = !readOnly && narrow && mode !== "leitura" && editorFocused && !gallery && !dialog
   // No celular, a barra inferior do app dá lugar à barra de formatação enquanto se escreve.
   useEffect(() => {
@@ -547,7 +610,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               const lines = checkboxLines(draft)
               const line = lines[index]
               if (lines.length !== total || line === undefined) {
-                toast("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
+                toast.error("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
                 return
               }
               const all = draft.split("\n")
@@ -614,7 +677,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     mode === "fonte" ? { label: "Editar com prévia", icon: <Type size={16} />, onSelect: () => setMode("live") } : { label: "Ver o código Markdown", icon: <Code2 size={16} />, onSelect: () => setMode("fonte") },
     sep, ...menu,
   ] : menu
-  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
+  // O menu da nota tem o ícone de arquivo: a tela já tem o ⋯ do módulo ou da aba (no livro eram dois ⋯ na mesma barra).
+  // Fica o ⋯ só quando ele junta as ações do livro (celular, U63).
+  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} icon={extraMenu ? undefined : <FileCog size={18} />} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
   const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
   const folder = dirname(path).split("/").pop() ?? ""
 
@@ -641,8 +706,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         {modes}
         {actionsMenu}
       </>, focusHeader) : (
-        <div className="editor-bar doc-bar">
-          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+        <div className={`editor-bar doc-bar ${tabSwitcher ? "with-tabs" : ""}`}>
+          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label={backLabel} title={backLabel}>
             <ChevronLeft size={18} />
           </button>}
           <span className="note-history">
@@ -657,6 +722,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<h1>{note.name}</h1></div>
           {!compactBar && modes}
           <div className="doc-end">
+            {tabSwitcher}
             <SaveStatus state={saveState} />
             {compactBar && modeToggle}
             <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" aria-expanded={panelOpen} title={panelHint}><PanelRight size={17} /><span>Painel</span></button>
@@ -665,12 +731,30 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         </div>
       )}
 
+      {recovery && state !== "conflito" && (
+        <div className="doc-notice">
+          <Notice tone="warn" title="Há um texto desta nota que não foi gravado" actions={<>
+            <button className="btn sm" onClick={recoverDraft}>Recuperar o meu texto</button>
+            <button className="btn sm danger" onClick={discardDraft}>Descartar</button>
+          </>}>
+            Ele é de {new Date(recovery.at).toLocaleString("pt-BR")} e ficou guardado neste aparelho. A nota mudou depois (no Obsidian ou em outro aparelho): recuperar substitui a versão do cofre pelo seu texto.
+          </Notice>
+        </div>
+      )}
       {(state === "conflito" || state === "erro") && (
         <div className="doc-notice">
-          <Notice tone="danger" title={state === "conflito" ? "Esta nota mudou fora do app" : "Não deu para salvar"} actions={state === "conflito" ? <>
+          <Notice tone="danger" title={state === "conflito" ? "Esta nota mudou fora do app" : failure?.title ?? "Não deu para gravar"} actions={state === "conflito" ? <>
             <button className="btn sm" onClick={reloadFromDisk}>Usar a do disco</button>
             <button className="btn sm danger" onClick={keepMine}>Manter a minha</button>
-          </> : undefined}>{error}</Notice>
+          </> : <>
+            <button className="btn sm" onClick={() => { retries.current = 0; void flush() }}>Tentar agora</button>
+            {failure?.windowsProtection && vault.platform.openSecuritySettings && <button className="btn sm" onClick={() => void vault.platform.openSecuritySettings!()}>Abrir a proteção do Windows</button>}
+          </>}>{state === "erro" && failure ? <>
+            <span className="write-failure-steps" role="list">
+              {failure.steps.map((step, i) => <span key={i} role="listitem">{kept || i < failure.steps.length - 1 ? step : "Não deu para guardar o texto neste aparelho: copie o texto da nota antes de fechá-la."}</span>)}
+            </span>
+            <small className="write-failure-detail">Mensagem do sistema: {error}</small>
+          </> : error}</Notice>
         </div>
       )}
 
@@ -687,7 +771,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
             className="editor-surface"
             ref={surface}
             onFocus={() => setEditorFocused(true)}
-            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { setEditorFocused(false); setBarFocused(false) } }}
+            // A barra da seleção fica numa camada fora do editor (SelectionBar): ir para ela não é sair do texto.
+            onBlur={(event) => { const next = event.relatedTarget as Node | null; if (!event.currentTarget.contains(next) && !selectionBar.current?.contains(next)) { setEditorFocused(false); setBarFocused(false) } }}
             onKeyDown={(event) => {
               // Alt+F10 leva o teclado até a barra da seleção (padrão dos editores com barra flutuante).
               if (!(event.altKey && event.key === "F10") || !showSelectionBar) return
@@ -702,7 +787,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               <SelectionBar
                 ref={selectionBar}
                 at={selectionAt}
-                width={surface.current?.clientWidth ?? 640}
+                origin={surface.current}
                 onWrap={(mark) => { setBarFocused(false); editor.current?.wrap(mark) }}
                 onLink={() => { setBarFocused(false); openLinkDialog() }}
                 onMore={() => { setBarFocused(false); setGallery(true) }}

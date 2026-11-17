@@ -114,7 +114,7 @@ export function TaskEditDialog({ task, actions, initialLine, settings: given, on
       } else onLines?.(lines())
       onClose()
     } catch (error) {
-      toast(error instanceof Error ? error.message : String(error))
+      toast.error(error)
     } finally {
       setSaving(false)
     }

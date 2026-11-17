@@ -237,6 +237,41 @@ public final class VaultStore implements VaultFs {
         return readAll(file);
     }
 
+    public InputStream openBinary(String path) throws IOException {
+        File file = resolveInside(path);
+        if (!file.isFile()) throw new VaultError("Escolha um arquivo do cofre.");
+        return new FileInputStream(file);
+    }
+
+    /** U80: publica a cópia privada só depois de fsync e de reconferir a versão no destino. */
+    public synchronized Entry writeBinaryFromFile(String path, File source, Version expected, boolean createOnly) throws IOException {
+        BinaryContent content = BinaryContent.file(source);
+        if (content.size() > BinaryContent.MAX_SIZE) throw new VaultError("O arquivo passa de 512 MB.");
+        File full = resolveForWrite(path);
+        Entry current = full.isFile() ? new Entry(path, full.length(), full.lastModified()) : null;
+        checkBinaryVersion(path, current, expected, createOnly);
+        if (current != null && current.size == content.size() && content.same(new FileInputStream(full))) return current;
+        File folder = full.getParentFile();
+        if (!folder.isDirectory() && !folder.mkdirs()) throw new VaultError("Não deu para criar a pasta do arquivo.");
+        File temp = File.createTempFile(".runas-binary-", ".runas-tmp", folder);
+        try {
+            try (InputStream in = content.open(); FileOutputStream out = new FileOutputStream(temp)) {
+                BinaryContent.copy(in, out, content.size()); out.getFD().sync();
+            }
+            if (!resolveForWrite(path).getCanonicalFile().equals(full.getCanonicalFile())) throw new VaultError("O destino mudou durante a gravação.");
+            Entry now = full.isFile() ? new Entry(path, full.length(), full.lastModified()) : null;
+            checkBinaryVersion(path, now, expected, createOnly);
+            if ((now == null) != (current == null) || (current != null && !sameVersion(now, new Version(current.size, current.mtime)))) throw new VaultError("O arquivo mudou fora do app. Recarregue antes de gravar.");
+            if (!temp.renameTo(full)) throw new VaultError("Não deu para publicar o arquivo no cofre.");
+            return new Entry(path, full.length(), full.lastModified());
+        } finally { if (temp.exists()) temp.delete(); }
+    }
+
+    private static void checkBinaryVersion(String path, Entry current, Version expected, boolean createOnly) throws VaultError {
+        if (createOnly && current != null) throw new VaultError("Já existe “" + path + "”.");
+        if (expected != null && (current == null || !sameVersion(current, expected))) throw new VaultError("O arquivo mudou fora do app. Recarregue antes de gravar.");
+    }
+
     static byte[] readAll(File file) throws IOException {
         try (InputStream in = new FileInputStream(file); ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.max(32, file.length()))) {
             byte[] buffer = new byte[64 * 1024];

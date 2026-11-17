@@ -197,7 +197,8 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} onClick={() => setMore(false)} aria-current={current === item.match ? "page" : undefined}>
                 {item.icon}
                 <span>{item.label}</span>
-                {item.count !== undefined && <span className="count">{item.count}</span>}
+                {/* U102: a mesma contagem do cofre da barra lateral (antes, os números fixos da prévia antiga). */}
+                {item.count !== undefined && <span className="count" aria-hidden="true">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
               </a>
             ))}
             <UpdateNavItem />
@@ -324,7 +325,7 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
   const canCreate = Boolean(vault.index && !vault.info?.readOnly && query.trim() && !notes.some((n) => n.label.toLocaleLowerCase("pt-BR") === q))
   const createNote = () => {
     const folder = vault.index?.allFiles().some((f) => f.path.startsWith("Notas/")) ? "Notas" : ""
-    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast.error(error))
   }
   const items = [
     ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas" })),

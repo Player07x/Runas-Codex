@@ -166,11 +166,13 @@
 .wiki-category-heading > .cat-icon { flex:none; }
 .wiki-category-heading h2 { min-width:0;max-width:100%;font-size:calc(15px * var(--font-scale,1));line-height:1.25;overflow-wrap:anywhere;word-break:break-word; }
 .wiki-category-heading > .chip { flex:0 0 auto;margin-left:auto; }
+/* O título é o link da categoria (o “Ver todos” repetia o mesmo destino): a seta mostra que ele abre. */
+.wiki-category-heading > .wiki-category-go { flex:none;color:var(--muted); }
 .wiki-category-preview { display:grid;grid-template-columns:minmax(0,1fr);gap:2px; }
 .wiki-category-preview .list-item { gap:9px;min-height:44px;flex-wrap:nowrap; }
 /* Nome comprido quebra em até duas linhas dentro do cartão; passou disso, reticências (o nome inteiro fica no title). */
 .wiki-category-preview .list-item > .truncate { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow-wrap:anywhere;line-height:1.3; }
-.wiki-category-all,.wiki-category-back { display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:calc(13px * var(--font-scale,1)); }
+.wiki-category-back { display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:calc(13px * var(--font-scale,1)); }
 .wiki-article-art { display:grid;place-items:center;overflow:hidden;flex:0 0 auto;background:var(--bg-deep);color:var(--gold);border-radius:var(--radius-sm);font-weight:700; }
 .wiki-article-art img { display:block;width:100%;height:100%;object-fit:cover; }
 .wiki-article-art.thumb { width:28px;height:28px;font-size:calc(16px * var(--font-scale,1)); }
@@ -421,3 +423,10 @@
 .relation-fixes-list del { color: var(--red); }
 .relation-fixes-list ins { color: var(--green); text-decoration: none; }
 @media (pointer: coarse) { .relation-fixes-list label { min-height: 44px; } }
+
+/* U101: índice das categorias no topo da abertura, só no celular. */
+.wiki-category-index { display: none; }
+@media (max-width: 860px) {
+  .wiki-category-index { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wiki-category-index .chip { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 14px; text-decoration: none; }
+}

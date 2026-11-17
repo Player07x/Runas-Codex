@@ -61,6 +61,8 @@ interface PlayerServerOptions {
   onPlayers?(count: number): void
   joinSeat?(code: string): JoinedPlayerSeat | null
   authenticateSeat?(token: string): PlayerSeatConnection | null
+  /** U78: “Sair da mesa” libera o assento deste aparelho; devolve o assento liberado. */
+  leaveSeat?(token: string): PlayerSeatConnection | null
   onSeatConnected?(seat: PlayerSeatConnection): void
   onSeatDisconnected?(seat: PlayerSeatConnection): void
   /** Mensagem de um espectador (além do ping); a resposta vai só para ele. */
@@ -256,6 +258,10 @@ export class PlayerServer {
       await this.handleJoin(request, response, url)
       return
     }
+    if (request.method === "POST" && url.pathname === "/seat/leave") {
+      this.handleLeave(request, response)
+      return
+    }
     if (url.pathname === "/healthz" && (request.method === "GET" || request.method === "HEAD")) {
       // Sem chave e sem dados: só confirma que o caminho até o servidor existe
       // (o mestre testa o link público com isto).
@@ -323,6 +329,19 @@ export class PlayerServer {
     if (!joined) { this.recordJoinFailure(address); json(response, 401, { error: "Código inválido." }, false); return }
     const value = encodeURIComponent(joined.token)
     json(response, 200, { seat: joined.seat }, false, { "set-cookie": `${SEAT_COOKIE}=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400` })
+  }
+
+  /**
+   * U78: libera o assento do cookie, fecha as conexões identificadas por ele (a Vista reconecta como espectador) e
+   * apaga o cookie. Sem cookie válido, só apaga o cookie: sair nunca falha para quem está preso no lobby.
+   */
+  private handleLeave(request: IncomingMessage, response: ServerResponse): void {
+    if (!this.validOrigin(request)) { response.writeHead(403, { "cache-control": "no-store" }); response.end(); return }
+    const token = cookie(request, SEAT_COOKIE)
+    const left = token && this.options.leaveSeat ? this.options.leaveSeat(token) : null
+    if (left) for (const client of [...this.clients]) if (client.seat?.slotId === left.slotId) { this.release(client); client.socket.destroy() }
+    response.writeHead(204, { "cache-control": "no-store", "set-cookie": `${SEAT_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0` })
+    response.end()
   }
 
   private authorizedUrl(url: URL): boolean {

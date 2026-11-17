@@ -49,7 +49,7 @@ export function PersonalizeDialog({ title, name, path, createIn, withDescription
       toast("Personalização gravada")
       onClose()
     } catch (error) {
-      toast(error instanceof Error ? error.message : String(error))
+      toast.error(error)
       setBusy(false)
     }
   }

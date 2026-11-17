@@ -42,7 +42,7 @@ export function FilterChooser({ folder, name, fields, chosen, onClose }: { folde
       toast(keys ? "Filtros gravados na categoria." : "A categoria voltou aos filtros automáticos.")
       onClose()
     } catch (error) {
-      toast(error instanceof Error ? error.message : String(error))
+      toast.error(error)
       setBusy(false)
     }
   }

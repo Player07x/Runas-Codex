@@ -55,7 +55,7 @@ export class NoteWindows {
     })
     attachContextMenu(window)
     // U40: a janela da nota mantém o nome da nota com que abriu, mesmo com o título da rota mudando.
-    window.webContents.on("page-title-updated", (event) => event.preventDefault())
+    window.on("page-title-updated", (event) => event.preventDefault())
     this.windows.add(window)
     let closing = false, flushing = false
     window.on("close", event => {

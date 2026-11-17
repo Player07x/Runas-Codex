@@ -70,7 +70,6 @@
 .campaign-session-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 0 12px 12px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-deep) 70%, transparent); }
 /* Sem espaço acima da barra fixa do painel: o conteúdo rolado aparecia por cima dela. */
 .campaign-session-side > .panel-controls { flex: none; margin: 0 -12px; }
-.campaign-panel-close, .campaign-panel-toggle { display: none !important; }
 .campaign-form-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .campaign-form-row .field { min-width: 110px; }
 .campaign-prep { display: flex; align-items: flex-start; gap: 8px; }
@@ -81,8 +80,6 @@
   .campaign-session-layout { grid-template-columns: minmax(0, 1fr); }
   .campaign-session-side { display: none; }
   .campaign-session-layout.show-panel .campaign-session-side { display: flex; position: fixed; z-index: 60; top: calc(var(--topbar-height) + env(safe-area-inset-top)); right: 0; bottom: 0; width: min(380px, 94vw); box-shadow: var(--shadow); background: var(--panel); }
-  .campaign-panel-close { display: inline-flex !important; align-self: flex-start; }
-  .campaign-panel-toggle { display: inline-grid !important; position: absolute; right: 12px; bottom: 12px; z-index: 4; width: 44px; height: 44px; border: 1px solid var(--line-strong); background: var(--panel); box-shadow: var(--shadow-sm); }
 }
 @media (max-width: 860px) {
   .campaign-session-layout.show-panel .campaign-session-side { bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom)); }
@@ -105,8 +102,8 @@
 .campaign-kanban-line { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
 .campaign-kanban-line .campaign-kanban-title { min-width: 0; padding-top: 4px; overflow-wrap: anywhere; }
 .campaign-kanban-meta { gap: 4px 6px; }
-.campaign-quest-back { align-self: flex-start; margin: 8px 12px 0; }
 .campaign-quest-details { gap: 10px; }
+.campaign-reward-send > span { display: inline-flex; align-items: center; gap: 6px; }
 .campaign-questmap-menu { position: absolute; right: 4px; bottom: 4px; }
 .campaign-questmap-item { display: flex; align-items: center; gap: 6px; }
 /* No celular, uma coluna por vez, escolhida no seletor de cima. */
@@ -427,3 +424,13 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
   .campaign-header .campaign-screen-btn { flex: none; min-width: 44px; min-height: 44px; margin: 0; justify-content: center; }
   .campaign-header .campaign-screen-label { display: none; }
 }
+
+/* U106: Tesouro no celular, um cartão por item (nome, quantidade, portador, notas e ações com nome). */
+.treasure-cards { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.treasure-card { display: grid; gap: 8px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.treasure-card-name { overflow-wrap: anywhere; }
+.treasure-card-fields { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 12px; }
+.treasure-quantity { gap: 4px; }
+.treasure-quantity .mono { min-width: 2ch; text-align: center; }
+.treasure-card p { margin: 0; overflow-wrap: anywhere; }
+.treasure-card-actions { flex-wrap: wrap; gap: 8px; }
