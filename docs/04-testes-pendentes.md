@@ -2119,3 +2119,17 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 Atualização da revisão O em 17/11: o João aprovou MIT para o código próprio. O PR inclui `LICENSE` e os campos
 de licença dos pacotes. A escolha de licença está resolvida; conferir direitos/avisos de terceiros e elegibilidade
 para a assinatura gratuita continua pendente antes da inscrição na Foundation.
+
+## Atualização 1.5 — B/U83 e U103: Configurações e Markdown
+
+- Trocar entre todas as seções de Configurações no computador e no celular; só a escolhida deve ficar montada,
+  com o mesmo conteúdo e as mesmas ações. A lista inicial do celular continua sendo a lista de seções.
+- Em Renomear imagem, chegar por Tab ao campo Pasta da imagem: as sugestões só são preparadas ao focar o campo.
+- Exportar o Guia de Valdris em Markdown: capítulo que já começa com seu próprio título não deve repeti-lo.
+  O ZIP Markdown continua preservando os arquivos originais, como antes.
+
+
+## Revisão 1.5 B — roteiro Android de atualizações (17/11/2026)
+
+- O roteiro agora abre Editor antes de conferir a ausência de atalhos e entra em Privacidade pelo índice antes de verificar/instalar. Desde a montagem de apenas uma seção, procurar esses controles em `/config` falhava; não era falha do instalador.
+- Conferir no Android físico: Configurações → Editor; voltar ao índice → Privacidade e atualizações → Verificar. O CI `android-vault` valida instalação, cancelamento, recusas de APK e preservação do cofre SAF.
