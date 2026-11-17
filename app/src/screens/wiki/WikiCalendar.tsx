@@ -146,6 +146,8 @@ export function WikiCalendar({ path }: { path?: string }) {
   const error = chosen && "error" in chosen ? chosen.error : all.find((c) => "error" in c && (!path || c.path === path)) && !ref ? (all.find((c) => "error" in c) as { error: string }).error : null
   const calendar = ref?.calendar ?? null
   const [shown, setShown] = useState<{ year: number; month: number } | null>(null)
+  // U87: recolhido, o botão do painel fica na barra do calendário.
+  const [panelSlot, setPanelSlot] = useState<HTMLElement | null>(null)
   const [selected, setSelected] = useState<WorldDate | null>(null)
   const [sideTab, setSideTab] = useState<"dia" | "hoje" | "configurar" | "sincronizar" | "ajuda">(() => (path && takeConfigureRequest(path) ? "configurar" : "dia"))
   // Mês ou ano inteiro (U9), lembrado por aparelho.
@@ -195,7 +197,7 @@ export function WikiCalendar({ path }: { path?: string }) {
     if (!calendar) return
     if (readOnly) return toast("Libere a gravação em Configurações para avançar o dia do mundo.")
     const next = days === "mes" ? addMonths(calendar, today, 1) : addDays(calendar, today, days)
-    void setToday(next).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+    void setToday(next).catch((err: unknown) => toast.error(err))
   }
 
   if (!calendar) {
@@ -264,6 +266,7 @@ export function WikiCalendar({ path }: { path?: string }) {
           <button type="button" className="btn sm ghost" onClick={() => { setSideTab("configurar"); setPanelCollapsed("agenda", false) }} title="Configurar meses, semana, luas, eras, feriados e relógio">
             <Pencil size={14} /> Configurar
           </button>
+          <span className="panel-slot" ref={setPanelSlot} />
         </div>
       </div>
 
@@ -276,7 +279,7 @@ export function WikiCalendar({ path }: { path?: string }) {
                 onOpenMonth={(month) => { setShown({ year: view.year, month }); setMode("mes") }} />
             : <MonthGrid calendar={calendar} year={view.year} month={view.month} selected={pick} onPick={setSelected} marks={marks} />}
         </div>
-        <ResizablePanel id="agenda" label="Detalhes do calendário" side="right" width={320} className="stack-lg agenda-side">
+        <ResizablePanel id="agenda" label="Detalhes do calendário" collapsedLabel="Detalhes" collapsedTarget={panelSlot} side="right" width={320} className="stack-lg agenda-side">
           {/* Abas no lugar de cartões empilhados (rework F4b, WIK-2): Dia · Hoje no mundo · Sincronizar · Ajuda. */}
           <PanelTabs label="Detalhes do calendário" idPrefix="calendario-painel" value={sideTab} onChange={setSideTab} tabs={[
             { value: "dia", label: "Dia" },
@@ -392,7 +395,7 @@ function AbbrMigration({ root }: { root: string }) {
       for (const note of pending) for (const d of note.dates) await vault.setProperty(note.path, d.key, d.text)
       toast(`Sigla acrescentada às datas de ${pending.length} ${pending.length === 1 ? "nota" : "notas"}.`)
     } catch (error) {
-      toast(error instanceof Error ? error.message : String(error))
+      toast.error(error)
     } finally {
       setBusy(false)
     }

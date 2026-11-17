@@ -82,4 +82,6 @@ export interface RunasCodexBridge {
     finish(id: number): Promise<string>
     abort(id: number): Promise<void>
   }
+  /** Notificação nativa; páginas não recebem permissão de notificações do Chromium. */
+  notify?(title: string, body: string): Promise<void>
 }

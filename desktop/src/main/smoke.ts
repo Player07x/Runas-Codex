@@ -145,6 +145,8 @@ export const SMOKE_SCRIPT = `(async () => {
   // Atualizações (ADR 0017): a versão vem do app e Configurações tem o botão; o smoke não vai à internet.
   result.version = await bridge.updates.version()
   location.hash = "/config"
+  // U83: a seção escondida não fica montada; o roteiro navega até Privacidade como o usuário.
+  ;(await until(() => document.querySelector('.settings-index a[href="#/config/privacidade"]')))?.click()
   result.updatesRow = Boolean(await until(() => document.querySelector("[data-updates] button")))
 
   // Migração do Obsidian (etapa 10): a tela acha os dados dos plugins de RPG do cofre de teste (só lendo).

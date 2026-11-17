@@ -28,7 +28,7 @@ export function ReminderSync() {
     const run = () => {
       const now = new Date()
       const reminders = [...upcomingReminders(agendaEvents(index), now, HORIZON_DAYS), ...tasksRef.current.filter((r) => r.at >= now)].sort((a, b) => a.at.getTime() - b.at.getTime())
-      platform.scheduleReminders(reminders).catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      platform.scheduleReminders(reminders).catch((error: unknown) => toast.error(error))
     }
     const first = setTimeout(run, 1200)
     const refresh = setInterval(run, 3 * 60 * 60 * 1000)
