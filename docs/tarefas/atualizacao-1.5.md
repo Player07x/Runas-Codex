@@ -383,3 +383,21 @@ e **8.868 ms** na maior troca. Os números do CI não substituem os locais nem o
 Typecheck, 1.047 testes do app + 197 do desktop, builds normais e smokes de leitura (28,9 s) e gravação (101,2 s)
 passaram. Temporários dos smokes removidos. O build normal não publica a instrumentação. **A21 físico**, cache
 frio e distribuição exata dos anexos reais continuam sem verificar. O A2 mede novamente depois dos outros PRs.
+
+## Registro de execução do Codex — O/U91 (17/11)
+
+PR **#159**, `seguranca/1.5-revisao`, sobre `origin/main`. Revisão em `docs/seguranca.md`, handlers de consulta e
+pedido recusando câmera/microfone/localização/notificações de páginas, cópia de texto preservada e notificação do
+app pela ponte nativa validada. Auditoria completa no CI, incluindo ferramentas de build, com bloqueio de
+gravidade alta/crítica e artefato dos moderados. Electron 44.10.1 (31/10), undici 7.30.1/6.29.1 (15/10), versões
+com mais de duas semanas e sem script de instalação novo. Auditoria: **0 altos/críticos, 12 moderados**.
+
+João **aprovou MIT** para o código próprio em 17/11 nesta conversa. O PR inclui `LICENSE`, metadados MIT nos
+quatro pacotes e cópia do texto nos builds. Licenças de terceiros preservadas; direitos/avisos dos trechos
+reaproveitados e elegibilidade ainda devem ser conferidos antes da inscrição na SignPath Foundation. Nada foi
+enviado à Foundation ou à Microsoft. O passo a passo gratuito para falso positivo está na revisão.
+
+Typecheck, 1.053 testes do app + 199 do desktop, builds, auditoria e smokes reais passaram: leitura **28,7 s**,
+gravação **99,4 s**, permissões confirmadas, zero violações de rede, temporários removidos. CI código/auditoria e
+Windows/Linux também passaram no commit de implementação; CI do último envio (MIT/documentação) em andamento.
+Defender real, antivírus de terceiros, Android físico e aprovação da assinatura continuam sem verificar.
