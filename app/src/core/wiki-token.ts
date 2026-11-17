@@ -113,3 +113,21 @@ export function linkedTokenMessage(noteName: string, filled: LinkedPart[]): stri
   if (!filled.length) return `Token ligado a ${noteName}. Nada mudou nele: o que você escolheu fica.`
   return `Token ligado a ${noteName}. Da nota: ${new Intl.ListFormat("pt-BR", { type: "conjunction" }).format(filled)}.`
 }
+
+/**
+ * “Desfazer” de ligar ou reimportar o token: volta só os campos que a ação mudou e que ainda estão como ela deixou.
+ * O que mudou depois (posição, PV, outra edição) fica; `null` quando não sobrou nada para desfazer.
+ */
+export function undoTokenChange(current: TokenData, before: TokenData, after: TokenData): TokenData | null {
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  const data: TokenData = { ...current }
+  const writable = data as unknown as Record<string, unknown>
+  let changed = false
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)]) as Set<keyof TokenData>) {
+    if (same(before[key], after[key]) || !same(current[key], after[key])) continue
+    if (before[key] === undefined) delete writable[key]
+    else writable[key] = before[key]
+    changed = true
+  }
+  return changed ? data : null
+}

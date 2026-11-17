@@ -21,7 +21,7 @@ import { useOptionalVault } from "../../platform/VaultProvider"
 import { href } from "../../lib/router"
 import { noteName } from "../../core/text"
 import { listWikiTokens, wikiTokenSource } from "../wiki-tokens"
-import { linkWikiToken, placeWikiToken, reimportWikiToken, WIKI_TOKEN_DRAG_TYPE } from "../library-actions"
+import { linkWikiToken, placeWikiToken, reimportWikiToken, undoTokenEdit, WIKI_TOKEN_DRAG_TYPE } from "../library-actions"
 import { linkedTokenMessage } from "../../core/wiki-token"
 import { useToast } from "../../components/ui"
 import { ConfirmDialog } from "../../components/vault/dialogs"
@@ -447,6 +447,10 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
   const [reimporting, setReimporting] = useState(false)
   const [noteError, setNoteError] = useState("")
   const toast = useToast()
+  // Desfazer volta só o que a nota mudou; se o token sumiu ou já foi mexido, avisa em vez de recriar ou apagar edições.
+  const undoToast = async (before: TokenData, after: TokenData) => {
+    if (!await undoTokenEdit(store, tokenId, before, after)) toast("Nada para desfazer: o token foi removido ou já mudou.")
+  }
   // O mestre remoto não tem o cofre: lá o token mostra a nota só pelo nome.
   const local = Boolean(vault?.index) && Boolean(library)
   const source = data.notePath && vault?.index ? wikiTokenSource(vault.index, data.notePath) : null
@@ -471,11 +475,11 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
     {choosing && vault?.index && <WikiTokenPicker sources={listWikiTokens(vault.index, "Wikis/")} current={data.notePath} onClose={() => setChoosing(false)} onPick={(picked) => {
       setChoosing(false)
       // U94: a nota só preenche o que o token ainda tem no padrão; o aviso diz o que veio dela e deixa desfazer.
-      act(linkWikiToken(store, tokenId, picked, source).then(({ before, filled }) => toast(linkedTokenMessage(picked.name, filled), { label: "Desfazer", run: async () => { await store.put(before) } })))
+      act(linkWikiToken(store, tokenId, picked, source).then(({ before, after, filled }) => toast(linkedTokenMessage(picked.name, filled), { label: "Desfazer", run: () => undoToast(before, after) })))
     }} />}
     {reimporting && source && <ConfirmDialog title="Importar de novo da nota?" confirmLabel="Importar de novo" onClose={() => setReimporting(false)} onConfirm={async () => {
-      const before = await reimportWikiToken(store, tokenId, source)
-      toast(`Token atualizado com os dados de ${source.name}.`, { label: "Desfazer", run: async () => { await store.put(before) } })
+      const { before, after } = await reimportWikiToken(store, tokenId, source)
+      toast(`Token atualizado com os dados de ${source.name}.`, { label: "Desfazer", run: () => undoToast(before, after) })
     }}>
       Nome, imagem, tamanho, disposição e barras deste token voltam a ser os da nota <strong>{source.name}</strong>; o que você mudou neles se perde. O valor atual das barras de mesmo nome fica.
     </ConfirmDialog>}

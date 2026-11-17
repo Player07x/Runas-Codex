@@ -1951,3 +1951,4 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   nome fica) e o aviso tem “Desfazer”.
 - [ ] Com o leitor de tela (NVDA ou TalkBack), os campos de uma barra dizem “Nome da barra”, “PV atual” e
   “PV máximo”; os nomes das faixas e playlists do painel Áudio também têm nome.
+- U94: ligar ou reimportar o token, mover o token e mudar o PV, e só então clicar em Desfazer no aviso: volta só o que veio da nota; a posição e o PV ficam. Remover o token e clicar em Desfazer: o token não volta e aparece "Nada para desfazer".

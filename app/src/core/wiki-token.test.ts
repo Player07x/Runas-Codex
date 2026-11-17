@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { linkedTokenMessage, linkTokenToNote, noteToken, parseTokenBar, savedTokenFileName, tokenBarText, tokenFromSaved, tokenProperties } from "./wiki-token"
+import { linkedTokenMessage, linkTokenToNote, undoTokenChange, noteToken, parseTokenBar, savedTokenFileName, tokenBarText, tokenFromSaved, tokenProperties } from "./wiki-token"
 
 describe("token da nota da Wiki", () => {
   it("lê imagem, tamanho, disposição e barras", () => {
@@ -73,5 +73,23 @@ describe("ligar o token a uma nota (U94)", () => {
     expect(data).toMatchObject({ name: "Lobo", image: "tokens/lobo.png", size: 4, disposition: "hostile", elevation: 3, notePath: "Wikis/Lobo.md" })
     expect(data.bars).toEqual(lobo.bars)
     expect(filled).toEqual(["nome", "imagem", "disposição", "barras"])
+  })
+})
+
+describe("desfazer a ligação do token (U94)", () => {
+  const before = { name: "Token", x: 10, y: 20, size: 1, image: null, rotation: 0, mirror: false, hidden: false, locked: false, disposition: "hostile" as const, elevation: 0, bars: [], showName: true, vision: { enabled: true, range: 0 }, light: { bright: 0, dim: 0, color: "#ffb45a" } }
+  const after = { ...before, name: "Guarda", notePath: "Wikis/Guarda.md", size: 2, bars: [{ label: "PV", value: 12, max: 12, color: "#ff0000" }] }
+
+  it("volta o que a nota trouxe", () => {
+    expect(undoTokenChange(after, before, after)).toEqual(before)
+  })
+
+  it("mantém o que mudou depois: posição, PV e nome trocado à mão", () => {
+    const moved = { ...after, x: 99, name: "Capitão", bars: [{ ...after.bars[0]!, value: 3 }] }
+    expect(undoTokenChange(moved, before, after)).toEqual({ ...before, x: 99, name: "Capitão", bars: moved.bars })
+  })
+
+  it("não faz nada quando tudo o que a ação mudou já foi mexido", () => {
+    expect(undoTokenChange({ ...after, name: "Outro", notePath: "Wikis/Outro.md", size: 3, bars: [] }, before, after)).toBeNull()
   })
 })
