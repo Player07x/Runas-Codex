@@ -1938,3 +1938,12 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Atualização 1.5 — F/U82: smoke local isolado
+
+- Rodar os smokes de leitura e gravação sem `--user-data-dir`, com o app instalado aberto e preferências próprias.
+  Os resultados devem ser iguais aos de um perfil vazio e as preferências do app instalado devem ficar intactas.
+- Conferir no Windows que a pasta `runas-smoke-*` informada no início do log some após o processo encerrar,
+  inclusive quando o roteiro falha; PDFs, pacotes e a cópia gravável ficam todos dentro dela.
+- Com `--user-data-dir` explícito, o perfil fornecido é conservado; só os temporários do roteiro são apagados.
+- PRs de celular ou transferência exigem `android-vault` verde antes do merge.
