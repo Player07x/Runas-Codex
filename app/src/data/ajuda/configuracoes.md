@@ -34,7 +34,7 @@ Abra suas mesas para configurar o acesso da sala. O endereço e o código só ex
 
 ### Privacidade e atualizações
 
-Não há telemetria. **Verificar atualizações** só consulta o servidor quando você toca no botão e permite instalar uma versão assinada. O PIN protege o acesso local quando ativado.
+Não há telemetria. **Verificar atualizações** consulta as versões publicadas e instala a nova depois de conferir a soma SHA-256; **Procurar atualizações sozinho** (ligado por padrão) faz essa consulta uma vez por dia, ao abrir, e mostra **Atualizar para …** na barra lateral. O PIN protege o acesso local quando ativado.
 
 ### Ajuda e exemplos
 

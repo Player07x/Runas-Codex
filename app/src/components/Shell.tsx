@@ -31,6 +31,7 @@ import { useAppearance } from "../lib/appearance"
 import { requestAgendaAction } from "../lib/agenda-request"
 import { useTasksSettings } from "../lib/tasks"
 import { TaskQuickSearch } from "./tasks/TaskQuickSearch"
+import { UpdateBadge, UpdateNavItem } from "./UpdateNavItem"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -136,9 +137,10 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               <span>{item.label}</span>
             </a>
           ))}
+          <UpdateNavItem />
         </div>
         <div className="sidebar-foot">
-          <div className="offline-pill" title="Nenhuma chamada de rede fora da sala do VTT">
+          <div className="offline-pill" title="Nenhuma chamada de rede fora da sala do VTT e da consulta de atualizações">
             <WifiOff size={15} aria-hidden="true" />
             <span>Offline · cofre local</span>
           </div>
@@ -184,6 +186,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         <button onClick={() => setMore(true)} className={!bottom.includes(current) ? "active" : ""} aria-current={!bottom.includes(current) ? "page" : undefined}>
           <Ellipsis size={18} />
           Mais
+          <UpdateBadge />
         </button>
       </nav>
 
@@ -197,6 +200,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
                 {item.count !== undefined && <span className="count">{item.count}</span>}
               </a>
             ))}
+            <UpdateNavItem />
             <div className="offline-pill">
               <WifiOff size={15} /> Offline · cofre local
             </div>

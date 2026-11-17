@@ -44,6 +44,8 @@ const smoke = process.argv.includes("--smoke")
 const saveStreams = new SaveStreams()
 app.on("will-quit", () => { void saveStreams.abortAll() })
 const networkGuard = smoke ? new NetworkGuard() : null
+// No smoke, a consulta de atualizações (a diária, ADR 0038) é contada e recusada: o teste não vai à internet.
+let smokeUpdateChecks = 0
 const argValue = (name: string) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3)
 
 const desktopTray=new DesktopTray()
@@ -149,11 +151,15 @@ function registerIpc(): void {
     await writeFile(result.filePath, content)
     return result.filePath
   })
-  // "Verificar atualizações" (ADR 0017): só quando o usuário clica. Instala só o que a última consulta encontrou.
+  // "Verificar atualizações" (ADR 0017) e a consulta diária (ADR 0038). Instala só o que a última consulta encontrou.
   let lastUpdate: UpdateInfo | null = null
   let installingUpdate = false
   handle(IPC.appVersion, () => app.getVersion())
   handle(IPC.updatesCheck, async () => {
+    if (smoke) {
+      smokeUpdateChecks++
+      throw new Error("No teste automático o app não consulta a internet.")
+    }
     const target = updateTarget()
     if (!target) throw new Error("A atualização pelo app existe no Windows e no Linux.")
     lastUpdate = await checkForUpdate(app.getVersion(), target)
@@ -269,6 +275,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     result.spellcheck = spellcheckReport()
     result.network = networkGuard?.report() ?? { requests: 0, violations: [] }
+    result.updateChecks = smokeUpdateChecks
     console.log(JSON.stringify(result, null, 2))
     ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true)
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
