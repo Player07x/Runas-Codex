@@ -430,3 +430,9 @@ João pediu revisar o trabalho do Astra, abrir a maquete e aguardar confirmaçã
 - **#161**, inicio/1.5-mesa-de-hoje, sobre V1/#146: somente maquete autônoma com antes/depois em 1280/360 px, dois temas e três cenários. Mantém cinco blocos; nenhum dos 12 pares cresce em altura nem tem overflow. Mesa hoje: 700→688 px (1280), 1699→1360 px (360). Capturas e medidas no branch do PR.
 - João viu a prévia e pediu reduzir o destaque mobile. Ajustado para 185 px, aproximadamente metade, com indicadores compactos e ações lado a lado. **Não é aprovação da maquete inteira.**
 - Estado: **esperando aprovação da maquete**. Nenhum código do Início implementado. Tarefas 5–15 e 17 permanecem abertas; a 16 só entregou a maquete. Nenhum merge/tag/release.
+
+## Continuação autorizada e J1/U80 (17/11)
+
+João aprovou a maquete #161 após conferir o cartão mobile compacto de 185 px: “Sim, pode continuar”. A aprovação está registrada no branch da maquete; Home.tsx ainda será implementado na ordem prevista. A reexecução do android-vault de #154 passou e a execução 44115814849 está toda verde.
+
+PR **#162**, transferir/1.5-android-arquivos-grandes, sobre origin/main: ponte em mensagens de até 2 MB e arquivo de até 512 MB; estágio privado, publicação segura e reconferência de versão, nos modos direto/SAF. Restauração SAF também usa fluxo. Tipos, 1.049 testes app + 197 desktop, builds, smokes Electron leitura/gravação e 42 testes Java passaram (heap 256 MB, SHA-256 92/270 MB). CI código/Windows/Linux/APK/room passou no bc94ace; android-vault/revisão em andamento. android-touch falhou aguardando a mesa; captura mostra tour cobrindo a tela, sem erros JS, diagnóstico pendente. PR segue em rascunho até concluir a validação. Android físico e reprodução de áudio não verificados. Revisão geral e integração ainda incompletas. Nenhum merge/tag/release.
