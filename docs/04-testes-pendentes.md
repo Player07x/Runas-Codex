@@ -2138,3 +2138,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 - Conferir a comparação antes/depois de `docs/tarefas/atualizacao-1.5-inicio-maquete.html`, em 1280 e 360 px, nos dois temas e três cenários. O cartão mobile foi compactado após o comentário do João.
 - Aprovar ou ajustar a proposta antes de implementar o Início. A maquete não grava nem abre notas reais; fluxos reais, Android físico e integração ficam para depois da aprovação.
+
+## 1.5 J1/U80 — arquivos grandes no Android
+
+- Em Android físico, exportar/importar uma mesa com áudio de 92 MB e uma pasta com ZIP avulso de 270 MB, nos modos direto e SAF. Conferir reprodução do áudio e integridade do ZIP.
+- Cancelar/falhar uma importação e conferir que o arquivo original fica intacto; trocar cofre ou revogar gravação durante a operação.
+- O android-vault precisa passar antes de mesclar. O teste automatizado exercita a ponte real e compara SHA-256 dos arquivos sintéticos. Limite por arquivo: 512 MB; ainda há um Uint8Array por arquivo no renderer.
+
+- U80: conferir também lixeira/restauração de um arquivo de 270 MB pelo SAF; a restauração agora usa fluxo, preserva o original em conflito e não mantém o antigo teto de 50 MB.
+- U80: no Android, abrir uma mesa com 3 ou mais cenas e exportar um livro com 3 ou mais imagens para DOCX e EPUB. Antes, a terceira leitura simultânea era recusada ("Aguarde os arquivos que já estão em transferência."); agora espera a vez.
