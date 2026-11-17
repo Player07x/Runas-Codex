@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { eventNote, isoDate, occurrences, parseEvent, updateEventNote } from "./agenda"
 import { buildRepeat, repeatForm, repeatText, splitEnd, type RepeatForm } from "./agenda-repeat"
 
 const form = (patch: Partial<RepeatForm>): RepeatForm => ({ choice: "none", days: [], custom: "", end: { kind: "never" }, ...patch })
@@ -42,5 +43,27 @@ describe("repetição do evento (U98)", () => {
     expect(repeatText({ kind: "rrule", rule: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;COUNT=10" })).toBe("Dias úteis, 10 vezes")
     expect(repeatText({ kind: "weekly", days: [6] }, "2026-12-20")).toBe("Toda semana: sáb até 20/12/2026")
     expect(repeatText({ kind: "rrule", rule: "FREQ=YEARLY;COUNT=1" })).toBe("Todo ano, 1 vez")
+  })
+})
+
+
+describe("edição de recorrências existentes", () => {
+  it.each(["FREQ=WEEKLY;BYDAY=SA", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"])("não ressuscita datas puladas ao editar %s", rule => {
+    const text = eventNote({ title: "Mesa", allDay: false, date: "2026-11-16", startTime: "19:00", repeat: { kind: "rrule", rule }, skipDates: ["2026-11-18", "2026-11-21"], reminders: [], countdown: false })
+    const before = parseEvent("Agenda/Mesa.md", text)!
+    const form = repeatForm(before.repeat, before.until)
+    const built = buildRepeat(form, 1, before.skipDates)
+    const after = parseEvent(before.path, updateEventNote(text, { ...before, ...built, title: "Outro nome" }))!
+    const range = [new Date(2026, 10, 16), new Date(2026, 10, 30)] as const
+    expect(occurrences(after, ...range).map(o => isoDate(o.start))).toEqual(occurrences(before, ...range).map(o => isoDate(o.start)))
+    expect(after.skipDates).toEqual(before.skipDates)
+    expect(after.repeat.kind).toBe("rrule")
+  })
+
+  it.each(["FREQ=DAILY;UNTIL=20261120T180000Z", "FREQ=WEEKLY;BYDAY=SA;COUNT=1500"])("preserva a regra que os controles simples não representam: %s", rule => {
+    const repeat = { kind: "rrule" as const, rule }
+    const form = repeatForm(repeat)
+    expect(form.choice).toBe("custom")
+    expect(buildRepeat(form, 1).repeat).toEqual(repeat)
   })
 })

@@ -51,6 +51,11 @@ export function repeatForm(repeat: Repeat, until?: string): RepeatForm {
     return days.join() === WORKDAYS.join() ? { choice: "weekdays", days: [], custom: "", end } : { choice: "weekly", days, custom: "", end }
   }
   const { rule, end } = splitEnd(repeat.rule)
+  // O formulário simples só representa datas inteiras e contagens até 999. Preservar regras importadas evita
+  // perder a hora/fuso do término ou impedir uma edição que só troca o título do evento.
+  if (/;UNTIL=\d{8}T/i.test(repeat.rule) || (end.kind === "count" && (end.times < 1 || end.times > MAX_REPEAT_COUNT))) {
+    return { choice: "custom", days: [], custom: repeat.rule, end: NEVER }
+  }
   const simple = SIMPLE[rule.toUpperCase()]
   if (simple) return { choice: simple, days: [], custom: "", end }
   // “Toda semana” com contagem ou com datas puladas fica gravada como regra semanal com os dias.
@@ -68,9 +73,10 @@ function endRule(end: RepeatEnd): string {
 /**
  * A repetição a gravar. “Toda semana” e “Dias úteis” ficam no tipo semanal do Full Calendar (`daysOfWeek`, e
  * `endRecur` para a data de fim); com “depois de N vezes” viram regra RRULE (`COUNT`), que o tipo semanal não tem.
+ * Datas puladas exigem RRULE também: o tipo semanal não grava `skipDates`.
  * `startDay` é o dia da semana da data do evento (vale quando nenhum dia foi marcado).
  */
-export function buildRepeat(form: RepeatForm, startDay: number): { repeat: Repeat; until?: string } {
+export function buildRepeat(form: RepeatForm, startDay: number, skipDates: readonly string[] = []): { repeat: Repeat; until?: string } {
   const end = endRule(form.end)
   switch (form.choice) {
     case "none":
@@ -80,7 +86,7 @@ export function buildRepeat(form: RepeatForm, startDay: number): { repeat: Repea
     case "weekly":
     case "weekdays": {
       const days = form.choice === "weekdays" ? WORKDAYS : form.days.length ? sortDays(form.days) : [startDay]
-      if (form.end.kind === "count") return { repeat: { kind: "rrule", rule: `FREQ=WEEKLY;BYDAY=${days.map((day) => ICAL_DAYS[day]).join(",")}${end}` } }
+      if (form.end.kind === "count" || skipDates.length > 0) return { repeat: { kind: "rrule", rule: `FREQ=WEEKLY;BYDAY=${days.map((day) => ICAL_DAYS[day]).join(",")}${end}` } }
       return { repeat: { kind: "weekly", days }, ...(form.end.kind === "until" ? { until: form.end.date } : {}) }
     }
     case "daily":

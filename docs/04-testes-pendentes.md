@@ -1957,3 +1957,9 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] “Toda semana” com “Termina: Numa data”: grava `endRecur` como antes; editar o evento mostra a mesma data.
 - [ ] Abrir no Obsidian (Full Calendar) um evento “Todo dia” e um “Dias úteis, 5 vezes”: os dois aparecem nos mesmos
   dias que no app.
+
+
+## Revisão 1.5 S — preservar recorrências ao editar (17/11/2026)
+
+- Pular uma data de uma série semanal (inclusive Dias úteis), editar só o título e conferir que a data continua ausente. A gravação mantém RRULE quando há datas puladas.
+- Regras importadas com horário/fuso no UNTIL ou COUNT acima de 999 ficam em Avançado, preservadas ao editar outros campos. O limite dos controles simples não encurta essas séries.

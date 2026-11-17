@@ -68,7 +68,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
 
   const count = Number(times)
   const end: RepeatEnd = endKind === "until" && until ? { kind: "until", date: until } : endKind === "count" ? { kind: "count", times: count } : { kind: "never" }
-  const built = buildRepeat({ choice, days, custom, end }, new Date(`${date}T12:00`).getDay())
+  const built = buildRepeat({ choice, days, custom, end }, new Date(`${date}T12:00`).getDay(), editing?.skipDates)
   const repeat = built.repeat
 
   // Cada problema aponta o campo que precisa mudar: ele recebe o foco e o aviso fica ligado a ele.
