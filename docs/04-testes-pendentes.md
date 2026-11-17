@@ -2133,3 +2133,8 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 - O roteiro agora abre Editor antes de conferir a ausência de atalhos e entra em Privacidade pelo índice antes de verificar/instalar. Desde a montagem de apenas uma seção, procurar esses controles em `/config` falhava; não era falha do instalador.
 - Conferir no Android físico: Configurações → Editor; voltar ao índice → Privacidade e atualizações → Verificar. O CI `android-vault` valida instalação, cancelamento, recusas de APK e preservação do cofre SAF.
+
+## Início 1.5 — somente maquete U46 (17/11/2026)
+
+- Conferir a comparação antes/depois de `docs/tarefas/atualizacao-1.5-inicio-maquete.html`, em 1280 e 360 px, nos dois temas e três cenários. O cartão mobile foi compactado após o comentário do João.
+- Aprovar ou ajustar a proposta antes de implementar o Início. A maquete não grava nem abre notas reais; fluxos reais, Android físico e integração ficam para depois da aprovação.
