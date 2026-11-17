@@ -359,3 +359,27 @@ Em 16/11: U47 (com o link aberto pelo app), U76, U78, U80, U81 e U82 entram. Em 
 14. **Ligar o token a uma nota (U94):** na primeira ligação, a nota só preenche o que o token ainda tem no padrão; o
     que o mestre já mudou fica, e um aviso diz o que mudou, com “Desfazer”. “Importar de novo da nota” troca tudo,
     avisando antes.
+
+## Registro de execução do Codex — A1/U76 (17/11)
+
+PR **#158**, `desempenho/1.5-linha-de-base`, sobre `origin/main` `80eb718`. Só medição, sem otimizações.
+Cofre sintético de exatamente 1.300.000.000 bytes, 10 mil notas adicionais, 420 artigos com PNGs de 1024 × 768 e
+mesa com 40 peças. Nenhum dado pessoal. O gerador e o executor apagam seus próprios dados de teste.
+
+Ubuntu/i5-10300H/16 GB, Electron 44.4.2, janela 1366 × 900, build com Profiler, três perfis novos: medianas de
+**3.890 ms** para abrir, **2.156 ms** para ler/construir o índice, **393 ms** para a categoria com 420 artigos;
+renderer com **366,9 MiB** residentes após o roteiro e pico de **482,3 MiB**. Todos os chunks JS do Electron:
+**18.423.493 bytes**, incluindo os módulos sob demanda. Configurações: **10.877 ms**, com **10.825 ms** em React;
+é evidência para o U83/B e não foi consertado em A1. Livro inicial: 5.697 ms, contra 196 e 149 ms nas outras
+execuções; o orçamento por tela conserva o maior valor. Método, números por tela e limitações estão em
+`docs/desempenho-1.5.md` e `desktop/benchmarks/baseline-report.json` no branch do PR.
+
+Novo job do CI cobra abertura, índice, troca, categoria, JS e cada tela separadamente, com folga explícita;
+medição ausente/inválida também falha. A conferência local do orçamento passou em outras três execuções.
+No CI ([execução](https://github.com/Player07x/Runas-Codex/actions/runs/44100513281)), AMD EPYC/4 vCPU/16 GB,
+as três execuções passaram: medianas de **4.675 ms** para abrir, **3.446 ms** no índice, **466 ms** na categoria
+e **8.868 ms** na maior troca. Os números do CI não substituem os locais nem o A21 físico.
+
+Typecheck, 1.047 testes do app + 197 do desktop, builds normais e smokes de leitura (28,9 s) e gravação (101,2 s)
+passaram. Temporários dos smokes removidos. O build normal não publica a instrumentação. **A21 físico**, cache
+frio e distribuição exata dos anexos reais continuam sem verificar. O A2 mede novamente depois dos outros PRs.
