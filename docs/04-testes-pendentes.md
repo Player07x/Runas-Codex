@@ -1963,3 +1963,4 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Elenco › “NPC da wiki”: a lista começa só com personagens; “Todos os tipos” mostra lugares, mitos e o resto.
   Em Facções, a lista começa nas organizações.
 - [ ] “Novo NPC”: “Já apareceu na campanha” começa desmarcado.
+- U93: concluir uma missão com recompensa, clicar em "Mandar para o Tesouro" no painel e depois no aviso "Mandar a recompensa para o Tesouro" (e também dar clique duplo no botão): o item entra uma vez só no Tesouro do grupo.

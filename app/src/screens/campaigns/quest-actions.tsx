@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { QuestInfo, QuestStatus } from "../../core/campaigns"
-import { withTreasureItem } from "../../core/campaign-tools"
+import { rewardItemId, withTreasureItem } from "../../core/campaign-tools"
 import { buildQuestMap, questNoticeBoard } from "../../core/quest-map"
 import { ClockDial, Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
@@ -15,25 +15,34 @@ const errorText = (err: unknown) => (err instanceof Error ? err.message : String
  * Manda a recompensa da missão para o Tesouro do grupo (o tesouro é criado se ainda não existe) e grava
  * `recompensa_enviada` na missão, para não mandar duas vezes (U93). Usado no aviso de concluir e no painel da missão.
  */
+/** Missões com recompensa a caminho do Tesouro: o segundo clique (botão + aviso) espera em vez de enviar de novo. */
+const sendingRewards = new Set<string>()
+
 export function useSendReward(data: CampaignData) {
   const vault = useVault()
   const toast = useToast()
   return async (quest: QuestInfo): Promise<boolean> => {
     if (!quest.reward) return false
-    if (quest.rewardSent) {
+    // Lê a marca atual da nota, não a da tela: o aviso de “concluída” pode ser clicado depois do botão do painel.
+    const sent = quest.rewardSent || vault.index?.note(quest.path)?.meta.frontmatter?.data?.recompensa_enviada
+    if (sent || sendingRewards.has(quest.path)) {
       toast(`“${quest.reward}” já está no Tesouro do grupo.`)
       return false
     }
+    sendingRewards.add(quest.path)
     try {
       const from = `${data.campaign.root}Ferramentas/${TREASURY_TOOL.title}.md`
       const notes = `Recompensa de [[${vault.index!.linkTarget(quest.path, from)}]]`
-      await updateToolBlock(vault, data.campaign.root, TREASURY_TOOL, (content) => withTreasureItem(content, { name: quest.reward!, quantity: 1, holder: "", notes }, crypto.randomUUID()), true)
+      // Id fixo da missão: se a marca abaixo falhar, tentar de novo não duplica o item.
+      await updateToolBlock(vault, data.campaign.root, TREASURY_TOOL, (content) => withTreasureItem(content, { name: quest.reward!, quantity: 1, holder: "", notes }, rewardItemId(quest.path)), true)
       await vault.setProperty(quest.path, "recompensa_enviada", isoDate(new Date()))
       toast(`“${quest.reward}” está no Tesouro do grupo.`)
       return true
     } catch (err) {
       toast(errorText(err))
       return false
+    } finally {
+      sendingRewards.delete(quest.path)
     }
   }
 }
