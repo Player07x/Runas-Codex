@@ -55,7 +55,7 @@ export function TasksSettingsCard() {
             onClick={() =>
               void importTasksSettings(path, vault.platform.readTexts)
                 .then((r) => setReport(r.ignored.length ? `Importado. Sem efeito no Runas-Codex (aparência ou recursos só do Obsidian): ${r.ignored.join(", ")}.` : "Importado."))
-                .catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+                .catch((e: unknown) => toast.error(e))
             }
           >
             Importar

@@ -37,9 +37,16 @@
 .canvas-textarea { width: 100%; height: 100%; padding: 0; border: 0; outline: 0; resize: none; background: transparent; color: var(--text); font: inherit; font-size: calc(13px * var(--font-scale, 1)); line-height: 1.5; user-select: text; }
 .canvas-resize { position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border: 2px solid var(--panel); border-radius: 4px; background: var(--cyan); cursor: nwse-resize; touch-action: none; }
 
+/* U96: até 860 px a barra mostra Texto, Nota, Ligar e “Mais” (com o resto); os botões não encolhem uns sobre os outros. */
+.canvas-narrow { display: none; }
+.canvas-swatch-dot { display: inline-block; width: 14px; height: 14px; border: 1px solid var(--line-strong); border-radius: 50%; }
 @media (max-width: 860px) {
   .canvas-toolbar { gap: 4px; padding: 6px 8px; overflow-x: auto; flex-wrap: nowrap; }
-  .canvas-toolbar .btn { min-height: 44px; }
+  .canvas-toolbar .btn { min-height: 44px; padding-inline: 8px; }
+  .canvas-toolbar > * { flex-shrink: 0; }
+  .canvas-toolbar .canvas-wide { display: none; }
+  .canvas-narrow { display: contents; }
+  .canvas-narrow > .kit-menu-wrap { flex-shrink: 0; margin-left: auto; }
   .canvas-inspector { top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; }
   .canvas-resize { width: 22px; height: 22px; right: -10px; bottom: -10px; }
 }

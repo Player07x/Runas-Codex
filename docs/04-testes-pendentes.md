@@ -1939,6 +1939,187 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
 
+## Consertos visuais pequenos (1.5.0, PR V1: U84, U85, U88, U92, U102)
+
+- [ ] Windows e Linux: andar por Notas, Agenda, Wiki e Configurações; o título da janela fica sempre “Runas-Codex”.
+      Uma nota aberta em janela própria continua com o nome dela.
+- [ ] Gráfico (Notas e Wiki): abrir e dar zoom logo de cara, antes de ele parar de se mexer; o zoom fica. O botão de
+      enquadrar continua enquadrando tudo.
+- [ ] VTT › Criar Sala, com uma mesa que tem capa: o ícone do mapa não aparece por cima do nome da mesa.
+- [ ] Celular (ou janela estreita): concluir uma missão com recompensa; o aviso cabe na tela, o botão “Mandar a
+      recompensa para o Tesouro” fica embaixo da mensagem, inteiro, e o aviso não some enquanto o dedo ou o mouse
+      está nele.
+- [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
+- [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
+      campanha continua “Próxima sessão · <campanha>”.
+## Painéis: botão na barra e celular (1.5.0, PR V2: U87, U97)
+
+- [ ] Computador, Agenda: recolher o “Painel da agenda”. A faixa estreita à direita some, o calendário ocupa a
+      largura toda e o botão “Painel” aparece no fim da barra do período (depois de Mês · Semana · Dia · Lista ·
+      Tarefas). Clicar nele abre o painel; o foco vai para o botão de recolher do painel, e de volta ao fechar.
+- [ ] Computador, Wiki › Calendário: o mesmo, com o botão “Detalhes” depois de “Configurar”.
+- [ ] Celular, Agenda: recolher o painel, tocar num dia com eventos; o painel do dia sobe com os eventos. As setas do
+      teclado só mudam o dia escolhido.
+- [ ] Celular, Livros: com o Sumário aberto, ⋯ › “Exportar o livro…”; o Sumário fecha e o formulário de exportação
+      aparece.
+
+## Abas da nota no celular (1.5.0, PR V3: U81, R2)
+
+- [ ] Celular (ou janela com até 640 px), Notas, com duas ou três notas em abas: a faixa de abas não aparece mais em
+      cima da nota. Na barra da nota há um quadradinho com o número de abas; tocar nele abre a folha “Abas abertas”.
+- [ ] Na folha: tocar no nome troca de aba e fecha a folha; ⋯ mostra Fixar, Abrir à direita, Abrir embaixo, Fechar as
+      outras e Fechar; × fecha a aba; “Empilhar as abas” e o botão de workspaces (no canto) continuam ali.
+- [ ] A barra da nota fica só com os botões (voltar, abas, salvo, leitura, painel, ⋯); o nome continua na barra do
+      app e a pasta aparece na folha. O texto começa mais alto do que na 1.4.
+- [ ] Com a nota dividida (Abrir à direita), a folha mostra “Painel ativo” e “Fechar este painel”.
+- [ ] Tablet ou janela entre 641 e 860 px, e o computador: a faixa de abas continua como antes.
+## Quadro e Tesouro no celular (1.5.0, PR V4: U96, U106)
+
+- [ ] Celular, Campanha › Quadro: a barra mostra Texto, Nota, Ligar e “Mais”, sem nomes por cima uns dos outros.
+      “Mais” tem Imagem do cofre, Link, Grupo, Selecionar vários, Ajustar altura, Apagar selecionado, o zoom e
+      Enquadrar tudo; com um cartão escolhido, também as cores (a atual marcada).
+- [ ] Computador, Quadro: a barra continua igual à da 1.4.
+- [ ] Celular, Campanha › Ferramentas › Tesouro do grupo: cada item é um cartão com quantidade (− e +), portador,
+      notas e os botões “Editar” e “Remover”. Uma recompensa de missão aparece como “Recompensa de <link>”, e o
+      link abre a missão na campanha.
+- [ ] Computador, Tesouro: a tabela continua, e a origem da recompensa também vira link na coluna Notas.
+## Wiki no celular e evento que cruza a meia-noite (1.5.0, PR V5: U101, U105)
+
+- [ ] Celular, Wiki (abertura em “Categorias e artigos”): logo abaixo da busca há o índice das categorias; tocar em
+      “Personagens” abre a categoria sem rolar pela prévia das outras. No computador, o índice não aparece.
+- [ ] Celular, Wiki › Novo artigo, nos dois passos: “Continuar” e “Criar artigo” ficam presos no rodapé da folha,
+      mesmo com a ficha longa. Outros diálogos longos (Novo evento) também ficam com o rodapé à vista.
+- [ ] Agenda: criar um evento das 23:00 às 07:30. No painel do dia em que começa: “23:00 até 07:30 de amanhã”; no dia
+      seguinte: “continua de ontem, até 07:30”. Na Lista, o mesmo texto no dia em que começa.
+
+## Avisos de erro (1.5.0, PR V6: U107)
+
+- [ ] Provocar um erro (por exemplo, Importar › Plugins de RPG do Obsidian › escolher como calendário um arquivo
+      `.json` quebrado): o aviso aparece com o ícone de alerta vermelho e a borda avermelhada, não com o ✓ verde, e
+      fica uns 6 s (para enquanto o ponteiro ou o foco estão nele).
+- [ ] Um aviso de sucesso (salvar algo, “Copiado.”) continua com o ✓ verde.
+- [ ] Com leitor de tela (NVDA ou TalkBack), o aviso de erro é lido na hora, começando por “Erro:”.
+
+## Token ligado a uma nota e nomes das barras (1.5.0, PR P: U94, U95)
+
+- [ ] No VTT do computador, criar um token, mudar o nome dele (ex.: “Sentinela”) e acrescentar uma barra; depois
+  “Ligar a uma nota…” com um personagem da Wiki que tenha retrato e `token_barras`. O nome e a barra que você pôs
+  ficam; a imagem vem da nota; o aviso diz “Da nota: imagem” e “Desfazer” volta o token sem nota.
+- [ ] Com um token novo (nome “Token”, sem imagem), ligar à mesma nota: nome, imagem, tamanho, disposição e barras
+  vêm todos da nota.
+- [ ] “Trocar nota…” para outro personagem: o que ainda era da nota anterior troca; o que você mudou fica.
+- [ ] “Importar de novo da nota…” pergunta antes; ao confirmar, troca tudo pelo da nota (o valor das barras de mesmo
+  nome fica) e o aviso tem “Desfazer”.
+- [ ] Com o leitor de tela (NVDA ou TalkBack), os campos de uma barra dizem “Nome da barra”, “PV atual” e
+  “PV máximo”; os nomes das faixas e playlists do painel Áudio também têm nome.
+- U94: ligar ou reimportar o token, mover o token e mudar o PV, e só então clicar em Desfazer no aviso: volta só o que veio da nota; a posição e o PV ficam. Remover o token e clicar em Desfazer: o token não volta e aparece "Nada para desfazer".
+
+## Recompensa no painel da missão e NPC da wiki (1.5.0, PR Q: U93, U100)
+
+- [ ] Concluir uma missão com recompensa e deixar o aviso sumir: no painel da missão (no celular, pelo botão do
+  painel na barra da nota) aparece “Mandar para o Tesouro”. Ao tocar, o item entra no Tesouro do grupo, a missão
+  ganha `recompensa_enviada: "AAAA-MM-DD"` e o botão vira “Já está no Tesouro (desde …)”.
+- [ ] Voltar a missão para “Ativa” e concluir de novo: o aviso não oferece mandar a recompensa outra vez.
+- [ ] Abrir a missão no Obsidian: `recompensa_enviada` aparece como propriedade de texto com a data entre aspas.
+- [ ] Elenco › “NPC da wiki”: a lista começa só com personagens; “Todos os tipos” mostra lugares, mitos e o resto.
+  Em Facções, a lista começa nas organizações.
+- [ ] “Novo NPC”: “Já apareceu na campanha” começa desmarcado.
+- U93: concluir uma missão com recompensa, clicar em "Mandar para o Tesouro" no painel e depois no aviso "Mandar a recompensa para o Tesouro" (e também dar clique duplo no botão): o item entra uma vez só no Tesouro do grupo.
+
+## Repetição de eventos na Agenda (1.5.0, PR S: U98)
+
+- [ ] Novo evento › Repetir: aparecem “Todo dia” e “Dias úteis”; a regra RRULE ficou em
+  “Avançado (regra RRULE)…”.
+- [ ] “Dias úteis” com “Termina: Número de vezes” = 5, começando numa terça: aparecem terça a sexta e a
+  segunda seguinte, e o painel do evento diz “Dias úteis, 5 vezes”.
+- [ ] “Toda semana” com “Termina: Numa data”: grava `endRecur` como antes; editar o evento mostra a mesma data.
+- [ ] Abrir no Obsidian (Full Calendar) um evento “Todo dia” e um “Dias úteis, 5 vezes”: os dois aparecem nos mesmos
+  dias que no app.
+
+
+## Revisão 1.5 S — preservar recorrências ao editar (17/11/2026)
+
+- Pular uma data de uma série semanal (inclusive Dias úteis), editar só o título e conferir que a data continua ausente. A gravação mantém RRULE quando há datas puladas.
+- Regras importadas com horário/fuso no UNTIL ou COUNT acima de 999 ficam em Avançado, preservadas ao editar outros campos. O limite dos controles simples não encurta essas séries.
+
+## Barra da seleção sempre por cima (1.5, conserto pedido em 17/11)
+
+- [ ] Livros › Escrever, com o Sumário aberto: selecionar a primeira palavra de uma linha. A barra da seleção
+      (Negrito… Comentar, Citar da Wiki, Converter em ficha, Mais) aparece inteira, sem nada cobrindo o começo dela.
+- [ ] Com o Apoio aberto, selecionar a última palavra de uma linha: a barra aparece inteira, por cima do painel quando
+      não cabe na coluna do texto.
+- [ ] Janela estreita do computador (uns 900 px): a barra continua inteira, por cima dos painéis.
+- [ ] Rolar o texto com um trecho selecionado: a barra acompanha; com o trecho fora da vista, ela some; ao voltar,
+      reaparece.
+- [ ] Abrir o menu ⋯ (ou qualquer botão da barra da tela) com um trecho selecionado: a barra some na hora, sem ficar
+      por cima do menu.
+- [ ] Teclado: Alt+F10 entra na barra, as setas andam, Esc ou Tab voltam ao texto com a seleção mantida.
+- [ ] O mesmo em Notas, artigo da Wiki e sessão de campanha (modo Editar).
+
+## Botões repetidos (1.5, pedido de 17/11)
+
+- [ ] Celular, uma missão aberta (Campanhas › Missões › missão): no topo não há mais “< Voltar às missões”; o “<” da
+      barra da nota volta às missões (o leitor de tela diz “Voltar às missões”). Na sessão, o “<” diz “Voltar às
+      sessões”; no artigo da Wiki, “Voltar para a Wiki”.
+- [ ] Missão e sessão no celular e com a janela estreita (até 1100 px): não há mais o botão redondo do painel no canto
+      de baixo; o painel abre pelo “Painel” da barra da nota. Dentro do painel não há mais “Voltar à nota”: fecha pelo
+      botão de recolher da barra do painel (o foco volta ao “Painel”).
+- [ ] Na sessão, no celular: digitar no resumo e fechar o painel pelo botão de recolher, sem tocar fora do campo:
+      o texto fica gravado (antes isso era feito pelo “Voltar à nota”, que saiu).
+- [ ] Início sem sessão marcada: o cartão mostra só “Marcar sessão”, que abre as Sessões da campanha ativa editada
+      por último (sem campanha ativa, o botão não aparece). Saiu o botão “Agenda” do cartão e o link “Agenda” de “No
+      horizonte”: a Agenda fica no cartão Agenda dos Espaços. Em Centelhas, “E mais N na nota” virou texto (o “Abrir a
+      nota” fica no título).
+- [ ] Início da Wiki: cada categoria abre pelo título (com a seta “>”); saiu o “Ver todos os N” / “Abrir a categoria”
+      de baixo. “Hoje no mundo” virou só a data (o calendário fica na aba Calendário). “Nova wiki…” ficou só no
+      seletor de wikis (saiu do ⋯ “Ações da wiki”).
+- [ ] Visão geral da campanha: os cartões Missões ativas, Elenco e Linha do tempo não têm mais “Quadro de missões”,
+      “Ver tudo” e “Sessões” (são as abas logo acima); o “+N” do fim de cada cartão virou texto (“+2 NPCs na aba
+      Elenco”).
+- [ ] Ficaram de propósito (dizer se quer mudar): o X e o “Cancelar” dos diálogos; o mesmo item em duas listas
+      diferentes (por exemplo, um artigo na categoria e nos Recentes); a trilha do topo (Campanhas › … › Missões)
+      junto das abas; e o “Remarcar” do aviso de sessão atrasada.
+- [ ] Livros › Escrever no computador: a barra tem um símbolo por botão. Sumário (lista), Ações do capítulo (arquivo
+      com engrenagem, no lugar do segundo ⋯), Prévia ao lado (duas colunas), Foco, Apoio (painel) e um ⋯ só, o do
+      livro. Sumário e Prévia abertos aparecem como botão ligado (fundo ciano). No celular, o ⋯ que junta capítulo e
+      livro continua ⋯.
+- [ ] Em Notas, Wiki e Campanhas, o menu da nota (Ações da nota) também virou o ícone de arquivo, no computador e no
+      celular; o ⋯ fica para o módulo (Ações das notas, Ações da wiki). Na Wiki, a aba Artigos ganhou ícone de jornal
+      (o de biblioteca fica só no seletor de wikis) e o menu do início da Wiki (Nova categoria, Personalizar) ganhou o
+      ícone de ajustes. No Elenco, “NPC da wiki” e “Facção da wiki” têm o ícone da Wiki (o “+” fica para criar e
+      para subir a reputação).
+
+## Atualização 1.5 — F/U82: smoke local isolado
+
+- Rodar os smokes de leitura e gravação sem `--user-data-dir`, com o app instalado aberto e preferências próprias.
+  Os resultados devem ser iguais aos de um perfil vazio e as preferências do app instalado devem ficar intactas.
+- Conferir no Windows que a pasta `runas-smoke-*` informada no início do log some após o processo encerrar,
+  inclusive quando o roteiro falha; PDFs, pacotes e a cópia gravável ficam todos dentro dela.
+- Com `--user-data-dir` explícito, o perfil fornecido é conservado; só os temporários do roteiro são apagados.
+- PRs de celular ou transferência exigem `android-vault` verde antes do merge.
+
+## Atualização 1.5 — A1/U76: linha de base de desempenho
+
+- Repetir no A21 físico o roteiro Notas → Wiki com capas → Livro → Mesa e comparar os números com o relatório
+  da máquina de desenvolvimento. Os números locais e do CI não substituem a medição no aparelho de referência.
+- O roteiro usa exclusivamente dados sintéticos: 10 mil notas, categoria com 420 artigos/capas e volume total
+  de 1,3 GB. Não copiar o cofre real nem conteúdo pessoal para relatórios públicos.
+- A1 só mede e estabelece orçamento; as otimizações ficam para A2, depois dos outros PRs da 1.5.
+
+## Atualização 1.5 — O/U91: revisão de segurança
+
+- Conferir os smokes e artefatos dos instaladores Windows/Linux após a atualização do Electron.
+- No app instalado, copiar link/código e receber lembretes da Agenda; páginas não devem ganhar câmera, microfone,
+  localização ou notificações. As notificações explícitas do app usam a ponte nativa.
+- Conferir o relatório de `npm audit` no CI: altos/críticos impedem aceite; moderados ficam registrados.
+- João: revisar a proposta MIT e os direitos dos trechos reaproveitados em `docs/seguranca.md` antes de adotar
+  licença ou inscrever o projeto em assinatura gratuita. Nenhuma licença foi adotada neste PR.
+- João: se houver detecção real do instalador, usar o passo a passo de envio à Microsoft. Não enviar dados do cofre.
+
+Atualização da revisão O em 17/11: o João aprovou MIT para o código próprio. O PR inclui `LICENSE` e os campos
+de licença dos pacotes. A escolha de licença está resolvida; conferir direitos/avisos de terceiros e elegibilidade
+para a assinatura gratuita continua pendente antes da inscrição na Foundation.
+
 ## Atualização 1.5 — B/U83 e U103: Configurações e Markdown
 
 - Trocar entre todas as seções de Configurações no computador e no celular; só a escolhida deve ficar montada,

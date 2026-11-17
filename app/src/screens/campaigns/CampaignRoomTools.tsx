@@ -56,7 +56,7 @@ export function CampaignRoomTools({ campaign, root, readOnly, onlyPoll = false }
 
   const run = (task: () => Promise<void>) => {
     setBusy(true)
-    void task().catch((e: unknown) => toast(e instanceof Error ? e.message : String(e))).finally(() => setBusy(false))
+    void task().catch((e: unknown) => toast.error(e)).finally(() => setBusy(false))
   }
   const openPrompt = () => run(async () => {
     const prompt: RoomPrompt = {

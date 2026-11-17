@@ -94,6 +94,14 @@ export function nextSession(index: VaultIndex, now: Date, onlyCampaign?: string)
   return candidates.sort((a, b) => (a.when?.getTime() ?? Infinity) - (b.when?.getTime() ?? Infinity))[0] ?? null
 }
 
+/**
+ * U102: o cartão do Início também mostra eventos com contagem regressiva (um compromisso pessoal, por exemplo). Só é
+ * “sessão” o que tem nota de sessão, campanha ou categoria de sessão; o resto aparece como “Próximo evento”.
+ */
+export function isRpgSession(next: NextSession): boolean {
+  return Boolean(next.session || next.campaign || /^sess/i.test(next.event?.event.category ?? ""))
+}
+
 /** CAM-1: sessões marcadas como planejadas cuja data já passou (pedem “realizada”, “cancelada” ou outra data). */
 export function overdueSessions(sessions: SessionInfo[], now: Date): SessionInfo[] {
   const today = isoDay(now)

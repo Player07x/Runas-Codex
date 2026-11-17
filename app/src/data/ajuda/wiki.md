@@ -1,6 +1,6 @@
 A **Wiki** guarda o seu mundo. Cada wiki é uma pasta `Wikis/<nome>/` e cada artigo é uma nota comum, com a ficha
 montada a partir das propriedades. Você pode ter várias wikis (uma por mundo) e trocar pelo seletor no começo da
-barra da Wiki; o ⋯ da barra tem **Nova wiki…** e **Exportar wiki…**.
+barra da Wiki, que também tem **Nova wiki…**; o ⋯ da barra tem **Exportar wiki…**.
 
 ### A página inicial
 
