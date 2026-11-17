@@ -62,3 +62,54 @@ export function savedTokenFileName(name: string, asset: string): string {
   const base = name.replace(/[\\/:*?"<>|#^[\]]+/g, " ").replace(/\s+/g, " ").trim() || "Token"
   return `${base} (token).${ext}`
 }
+
+/** O que uma nota leva ao token, com a imagem já copiada para a mesa (`null`: sem imagem ou não copiada). */
+export interface TokenLook { name: string; image: string | null; size: number; disposition: TokenDisposition; bars: TokenBar[] }
+
+/** Cada parte que a nota preencheu, como aparece no aviso “Da nota: …”. */
+export type LinkedPart = "nome" | "imagem" | "tamanho" | "disposição" | "barras"
+
+const sameText = (a: string, b: string) => a.trim().toLocaleLowerCase("pt-BR") === b.trim().toLocaleLowerCase("pt-BR")
+const sameBars = (a: TokenBar[], b: TokenBar[]) => a.length === b.length && a.every((bar, index) => sameText(bar.label, b[index]!.label) && bar.max === b[index]!.max)
+/** Nome de token novo: “Token” (ferramenta) ou “Token 3” (importado sem nome). */
+const freshName = (name: string) => !name.trim() || /^Token(?: \d+)?$/.test(name.trim())
+
+/**
+ * Ligar um token a uma nota, ou trocar a nota (U94, decisão 14 do João): a nota só preenche o que o token ainda tem
+ * como um token novo (nome “Token”, sem imagem, tamanho 1, Hostil ou Neutro, sem barras) ou o que ainda é igual ao
+ * da nota anterior. O que o mestre escolheu fica. Neutro na nota é a falta de `token_disposicao` (`noteToken`), então
+ * só vale quando o token ainda tem a disposição da nota anterior.
+ */
+export function linkTokenToNote(current: TokenData, notePath: string, note: TokenLook, previous?: TokenLook | null): { data: TokenData; filled: LinkedPart[] } {
+  const data: TokenData = { ...current, notePath }
+  const filled: LinkedPart[] = []
+  if ((freshName(current.name) || (previous && sameText(current.name, previous.name))) && current.name !== note.name) {
+    data.name = note.name
+    filled.push("nome")
+  }
+  if (note.image && current.image !== note.image && (current.image === null || current.image === previous?.image)) {
+    data.image = note.image
+    filled.push("imagem")
+  }
+  if ((current.size === 1 || current.size === previous?.size) && current.size !== note.size) {
+    data.size = note.size
+    filled.push("tamanho")
+  }
+  const fromPrevious = current.disposition === previous?.disposition
+  if (current.disposition !== note.disposition && (fromPrevious || ((current.disposition === "hostile" || current.disposition === "neutral") && note.disposition !== "neutral"))) {
+    data.disposition = note.disposition
+    filled.push("disposição")
+  }
+  const barsFromPrevious = Boolean(previous) && current.bars.length > 0 && sameBars(current.bars, previous!.bars)
+  if ((current.bars.length === 0 && note.bars.length > 0) || (barsFromPrevious && !sameBars(current.bars, note.bars))) {
+    data.bars = note.bars.map((bar) => ({ ...bar }))
+    filled.push("barras")
+  }
+  return { data, filled }
+}
+
+/** Texto do aviso depois de ligar o token (U94). */
+export function linkedTokenMessage(noteName: string, filled: LinkedPart[]): string {
+  if (!filled.length) return `Token ligado a ${noteName}. Nada mudou nele: o que você escolheu fica.`
+  return `Token ligado a ${noteName}. Da nota: ${new Intl.ListFormat("pt-BR", { type: "conjunction" }).format(filled)}.`
+}

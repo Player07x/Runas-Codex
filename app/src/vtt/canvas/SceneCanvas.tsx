@@ -21,7 +21,10 @@ import { useOptionalVault } from "../../platform/VaultProvider"
 import { href } from "../../lib/router"
 import { noteName } from "../../core/text"
 import { listWikiTokens, wikiTokenSource } from "../wiki-tokens"
-import { placeWikiToken, reimportWikiToken, WIKI_TOKEN_DRAG_TYPE } from "../library-actions"
+import { linkWikiToken, placeWikiToken, reimportWikiToken, WIKI_TOKEN_DRAG_TYPE } from "../library-actions"
+import { linkedTokenMessage } from "../../core/wiki-token"
+import { useToast } from "../../components/ui"
+import { ConfirmDialog } from "../../components/vault/dialogs"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { WikiTokenPicker } from "../panels/WikiTokenPicker"
 import { noteRoute } from "../../lib/vault-notes"
@@ -371,18 +374,19 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /** Número que só grava ao sair do campo ou apertar Enter. */
-function NumberInput({ value, onCommit, step = 1, min }: { value: number; onCommit: (value: number) => void; step?: number; min?: number }) {
+/** `label` só fora de um `Field` (que já dá o nome ao campo). */
+function NumberInput({ value, onCommit, step = 1, min, label }: { value: number; onCommit: (value: number) => void; step?: number; min?: number; label?: string }) {
   const [draft, setDraft] = useState(String(value))
   useEffect(() => setDraft(String(value)), [value])
   const commit = () => { const parsed = Number(draft.replace(",", ".")); if (Number.isFinite(parsed) && parsed !== value) onCommit(parsed); else setDraft(String(value)) }
-  return <input inputMode="decimal" value={draft} step={step} min={min} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
+  return <input inputMode="decimal" aria-label={label} value={draft} step={step} min={min} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
 }
 
-function TextInput({ value, onCommit, placeholder }: { value: string; onCommit: (value: string) => void; placeholder?: string }) {
+function TextInput({ value, onCommit, placeholder, label }: { value: string; onCommit: (value: string) => void; placeholder?: string; label?: string }) {
   const [draft, setDraft] = useState(value)
   useEffect(() => setDraft(value), [value])
   const commit = () => { if (draft !== value) onCommit(draft) }
-  return <input value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
+  return <input aria-label={label} value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") commit() }} />
 }
 
 function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; inRail: boolean; onKeep?: () => void; onRemove: () => void; onClose: () => void }) {
@@ -440,7 +444,9 @@ const PLAYER_SLOTS = Array.from({ length: 12 }, (_, index) => `player-${index + 
 function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string; data: TokenData; scene: WorldDocument<SceneData>; store: DocumentStore; update: (patch: Partial<TokenData>) => void }) {
   const vault = useOptionalVault()
   const [choosing, setChoosing] = useState(false)
+  const [reimporting, setReimporting] = useState(false)
   const [noteError, setNoteError] = useState("")
+  const toast = useToast()
   // O mestre remoto não tem o cofre: lá o token mostra a nota só pelo nome.
   const local = Boolean(vault?.index) && Boolean(library)
   const source = data.notePath && vault?.index ? wikiTokenSource(vault.index, data.notePath) : null
@@ -452,7 +458,7 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
           {source ? <a href={href(noteRoute(data.notePath))}>{source.name}</a> : <span className="small">{noteName(data.notePath)}: nota não encontrada</span>}
           {local && <OverflowMenu label="Mais ações da nota" items={[
             { label: "Trocar nota…", onSelect: () => setChoosing(true) },
-            ...(source ? [{ label: "Importar de novo da nota", hint: "o valor das barras fica", onSelect: () => act(reimportWikiToken(store, tokenId, source)) }] : []),
+            ...(source ? [{ label: "Importar de novo da nota…", onSelect: () => setReimporting(true) }] : []),
             { label: "Desvincular", onSelect: () => update({ notePath: undefined }) },
           ]} />}
         </div>
@@ -462,7 +468,17 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
         </div>}
       {noteError && <small className="hint danger" role="alert">{noteError}</small>}
     </Field>
-    {choosing && vault?.index && <WikiTokenPicker sources={listWikiTokens(vault.index, "Wikis/")} current={data.notePath} onClose={() => setChoosing(false)} onPick={(picked) => { setChoosing(false); act(reimportWikiToken(store, tokenId, picked)) }} />}
+    {choosing && vault?.index && <WikiTokenPicker sources={listWikiTokens(vault.index, "Wikis/")} current={data.notePath} onClose={() => setChoosing(false)} onPick={(picked) => {
+      setChoosing(false)
+      // U94: a nota só preenche o que o token ainda tem no padrão; o aviso diz o que veio dela e deixa desfazer.
+      act(linkWikiToken(store, tokenId, picked, source).then(({ before, filled }) => toast(linkedTokenMessage(picked.name, filled), { label: "Desfazer", run: async () => { await store.put(before) } })))
+    }} />}
+    {reimporting && source && <ConfirmDialog title="Importar de novo da nota?" confirmLabel="Importar de novo" onClose={() => setReimporting(false)} onConfirm={async () => {
+      const before = await reimportWikiToken(store, tokenId, source)
+      toast(`Token atualizado com os dados de ${source.name}.`, { label: "Desfazer", run: async () => { await store.put(before) } })
+    }}>
+      Nome, imagem, tamanho, disposição e barras deste token voltam a ser os da nota <strong>{source.name}</strong>; o que você mudou neles se perde. O valor atual das barras de mesmo nome fica.
+    </ConfirmDialog>}
     <ImagePicker kind="tokens" path={data.image} onChange={(image) => update({ image })} />
     <Field label="Nome"><TextInput value={data.name} onCommit={(name) => update({ name })} /></Field>
     <div className="field-row">
@@ -508,15 +524,15 @@ function TokenBars({ bars, templates, onChange }: { bars: TokenBar[]; templates:
     {bars.map((bar, index) => <div key={index} className="bar-card" role="group" aria-label={`Barra ${bar.label}`}>
       <div className="bar-row">
         <input type="color" aria-label={`Cor de ${bar.label}`} value={bar.color} onChange={(event) => setBar(index, { color: event.target.value })} />
-        <TextInput value={bar.label} onCommit={(label) => label.trim() && setBar(index, { label: label.trim().slice(0, 24) })} />
+        <TextInput label="Nome da barra" value={bar.label} onCommit={(label) => label.trim() && setBar(index, { label: label.trim().slice(0, 24) })} />
         <button className="icon-toggle" aria-label={`Subir ${bar.label}`} disabled={index === 0} onClick={() => onChange(moveBar(bars, index, -1))}><ArrowUp size={14} /></button>
         <button className="icon-toggle" aria-label={`Descer ${bar.label}`} disabled={index === bars.length - 1} onClick={() => onChange(moveBar(bars, index, 1))}><ArrowDown size={14} /></button>
         <button className="icon-toggle danger" aria-label={`Remover ${bar.label}`} onClick={() => onChange(bars.filter((_, current) => current !== index))}><X size={14} /></button>
       </div>
       <div className="bar-row">
-        <NumberInput value={bar.value} onCommit={(value) => setBar(index, { value })} />
-        <span>/</span>
-        <NumberInput value={bar.max} min={0} onCommit={(max) => setBar(index, { max })} />
+        <NumberInput label={`${bar.label} atual`} value={bar.value} onCommit={(value) => setBar(index, { value })} />
+        <span aria-hidden="true">/</span>
+        <NumberInput label={`${bar.label} máximo`} value={bar.max} min={0} onCommit={(max) => setBar(index, { max })} />
         <select aria-label={`Quem vê ${bar.label}`} value={bar.visibility ?? "padrao"} onChange={(event) => { const visibility = event.target.value as BarVisibility; setBar(index, { visibility: visibility === "padrao" ? undefined : visibility }) }}>
           {BAR_VISIBILITIES.map((visibility) => <option key={visibility} value={visibility}>{BAR_VISIBILITY_LABELS[visibility]}</option>)}
         </select>

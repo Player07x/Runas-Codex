@@ -1938,3 +1938,16 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Token ligado a uma nota e nomes das barras (1.5.0, PR P: U94, U95)
+
+- [ ] No VTT do computador, criar um token, mudar o nome dele (ex.: “Sentinela”) e acrescentar uma barra; depois
+  “Ligar a uma nota…” com um personagem da Wiki que tenha retrato e `token_barras`. O nome e a barra que você pôs
+  ficam; a imagem vem da nota; o aviso diz “Da nota: imagem” e “Desfazer” volta o token sem nota.
+- [ ] Com um token novo (nome “Token”, sem imagem), ligar à mesma nota: nome, imagem, tamanho, disposição e barras
+  vêm todos da nota.
+- [ ] “Trocar nota…” para outro personagem: o que ainda era da nota anterior troca; o que você mudou fica.
+- [ ] “Importar de novo da nota…” pergunta antes; ao confirmar, troca tudo pelo da nota (o valor das barras de mesmo
+  nome fica) e o aviso tem “Desfazer”.
+- [ ] Com o leitor de tela (NVDA ou TalkBack), os campos de uma barra dizem “Nome da barra”, “PV atual” e
+  “PV máximo”; os nomes das faixas e playlists do painel Áudio também têm nome.
