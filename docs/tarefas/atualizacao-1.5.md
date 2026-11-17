@@ -85,7 +85,7 @@ continua sem relato; as causas de lá abaixo vêm do código e de como esses pro
    para análise de falso positivo (formulário gratuito; o João envia). Assinatura só se houver um programa gratuito
    para projetos abertos (por exemplo, o da SignPath Foundation; condições a conferir antes). Pelo que sei (opinião, a
    confirmar), esses programas exigem uma licença de código aberto, e o repositório é público mas não tem licença:
-   escolher uma licença é decisão do João, levada a ele quando o PR O chegar nesse ponto.
+   em 17/11 o João liberou uma licença de código aberto, se o programa gratuito exigir (a escolha da licença vai no PR O).
    Enquanto não houver assinatura, o aviso de gravação bloqueada (item 2) tem um botão que abre a página certa do
    Windows (`windowsdefender://ransomwareprotection`, endereço local do sistema, sem rede), que funciona em qualquer
    idioma do Windows, como o italiano do relato.
@@ -332,7 +332,8 @@ Em 16/11: U47 (com o link aberto pelo app), U76, U78, U80, U81 e U82 entram. Em 
    novo com “Copiar aviso para os jogadores”; os jogadores entram de novo com o mesmo código, sem perder o assento.
 7. **Início “Mesa de hoje” (U46):** pode começar, **sem poluir o Início mais do que ele já está** (ver o U46).
 8. **Remover assento ocupado (U89):** pedir confirmação e desconectar só aquele jogador; os assentos saem do fim.
-9. **Assinatura no Windows (U91):** **sempre buscar opções gratuitas** (ver o item 6 do U91).
+9. **Assinatura no Windows (U91):** **sempre buscar opções gratuitas** (ver o item 6 do U91). Se o programa gratuito
+   exigir, o código pode ter licença de código aberto (liberado pelo João em 17/11).
 10. **Android sem “acesso a todos os arquivos” por padrão (U91):** sim; quem já usa continua com ele até trocar de pasta.
 11. **Relato real (U91):** Itália, Windows em italiano, Microsoft Defender; liberar o app no Defender resolveu (ver o
     U91). Vira caso de teste do PR M.
