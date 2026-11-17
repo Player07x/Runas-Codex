@@ -1946,3 +1946,9 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - Em Renomear imagem, chegar por Tab ao campo Pasta da imagem: as sugestões só são preparadas ao focar o campo.
 - Exportar o Guia de Valdris em Markdown: capítulo que já começa com seu próprio título não deve repeti-lo.
   O ZIP Markdown continua preservando os arquivos originais, como antes.
+
+
+## Revisão 1.5 B — roteiro Android de atualizações (17/11/2026)
+
+- O roteiro agora abre Editor antes de conferir a ausência de atalhos e entra em Privacidade pelo índice antes de verificar/instalar. Desde a montagem de apenas uma seção, procurar esses controles em `/config` falhava; não era falha do instalador.
+- Conferir no Android físico: Configurações → Editor; voltar ao índice → Privacidade e atualizações → Verificar. O CI `android-vault` valida instalação, cancelamento, recusas de APK e preservação do cofre SAF.
