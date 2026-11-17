@@ -492,3 +492,15 @@ Tipos, suíte, builds, os dois smokes e o JUnit da sala (`javac`) passaram.
 - ADR 0038, regra 6, docs/02, lista de recursos e ajuda; no smoke a consulta é contada e recusada (`updateChecks: 1`).
 
 Tipos, suíte (1.056 + 197), builds e os dois smokes passaram. Próximas: N (sobre M+G) → D → K → J2 → A2 → R → L → conferência final.
+
+**N/U91 item 5 → PR #168** (`seguranca/1.5-android-permissoes`, **empilhado sobre o #165/M**):
+- “Abrir pasta” e “Criar cofre” abrem direto o seletor do Android (SAF);
+- “Acesso a todos os arquivos” virou opção avançada em Configurações › Cofre (quem já usa continua até trocar de pasta);
+- permissão perdida: aviso ao abrir e “Escolher a pasta de novo” (o seletor abre na pasta do cofre) na nota, no Testar gravação e em Configurações;
+- as mensagens do SAF passam a contar como permissão perdida; “Instalar apps” fica por causa da G.
+
+Tipos, suíte (1.053 + 202), builds e os dois smokes passaram. O Java não foi compilado aqui (sem Android SDK): o CI compila. **Ficou de fora:** o “Testar gravação” nativo no Android (mexe na gravação do Android, que recusa arquivos ocultos); proposto como tarefa à parte.
+
+**#163 no Windows:** depois do segundo conserto, o `editorClick` (U16) falha de forma intermitente só no Windows (`card: false` num run, `steady: false` no outro); na `main` passa. Diagnóstico `editorClickDebug` acrescentado ao smoke (58ce328); falhas reexecutadas. Continua em rascunho.
+
+Consumo desta leva (17/11, noite): #163 + G ≈ 11 % da janela de 5 h; N + investigação do #163 ≈ 14 %. Parei com a janela em 72 % e a semanal em 84 %. Próximas: D → K → J2 → A2 → R → L → conferência final.
