@@ -741,6 +741,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           </> : <>
             <button className="btn sm" onClick={() => { retries.current = 0; void flush() }}>Tentar agora</button>
             {failure?.windowsProtection && vault.platform.openSecuritySettings && <button className="btn sm" onClick={() => void vault.platform.openSecuritySettings!()}>Abrir a proteção do Windows</button>}
+            {failure?.kind === "sem-permissao" && system === "android" && vault.platform.regrantVault && <button className="btn sm primary" onClick={() => vault.choose("de-novo").then(() => { retries.current = 0; void flush() }, (reason: unknown) => toast(reason instanceof Error ? reason.message : String(reason)))}>Escolher a pasta de novo</button>}
           </>}>{state === "erro" && failure ? <>
             <span className="write-failure-steps" role="list">
               {failure.steps.map((step, i) => <span key={i} role="listitem">{kept || i < failure.steps.length - 1 ? step : "Não deu para guardar o texto neste aparelho: copie o texto da nota antes de fechá-la."}</span>)}

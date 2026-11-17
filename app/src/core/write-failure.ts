@@ -26,7 +26,7 @@ export function writeFailure(message: string, system: WriteSystem): WriteFailure
     return { kind: "somente-leitura", title: "A pasta do cofre está só para leitura", steps: ["Confira se o disco, o pendrive ou o cartão não está travado contra gravação.", KEEP], windowsProtection: false }
   if (/\bebusy\b|\bemfile\b|resource busy|being used by another process|em uso/.test(text))
     return { kind: "em-uso", title: "O arquivo está em uso por outro programa", steps: ["Espere a verificação do antivírus ou a sincronização terminar, ou feche o programa que abriu a nota.", KEEP], windowsProtection: false }
-  if (/\beperm\b|\beacces\b|access is denied|access denied|operation not permitted|permission denied|securityexception|sem permissão|permissão negada/.test(text)) {
+  if (/\beperm\b|\beacces\b|access is denied|access denied|operation not permitted|permission denied|permission denial|securityexception|sem permissão|permissão negada|sem acesso à pasta|o provedor não deixou|o android não deixou|o android tirou/.test(text)) {
     if (system === "windows") return {
       kind: "seguranca",
       title: "O Windows bloqueou a gravação",
@@ -42,7 +42,7 @@ export function writeFailure(message: string, system: WriteSystem): WriteFailure
     if (system === "android") return {
       kind: "sem-permissao",
       title: "O Android tirou a permissão da pasta do cofre",
-      steps: ["Em Configurações › Cofre, escolha a pasta do cofre de novo para devolver a permissão.", "Apps de limpeza ou de segurança podem tirar essa permissão: libere o Runas-Codex neles.", KEEP],
+      steps: ["Toque em “Escolher a pasta de novo” e confirme a mesma pasta do cofre: o seletor do Android já abre nela.", "Apps de limpeza ou de segurança podem tirar essa permissão: libere o Runas-Codex neles.", KEEP],
       windowsProtection: false,
     }
     return { kind: "sem-permissao", title: "Sem permissão para gravar na pasta do cofre", steps: ["Confira se o seu usuário pode gravar na pasta do cofre.", KEEP], windowsProtection: false }
@@ -55,4 +55,9 @@ export function writeFailure(message: string, system: WriteSystem): WriteFailure
 /** Espera até a próxima tentativa automática: rápida no começo, depois uma vez por minuto. */
 export function retryDelay(attempt: number): number {
   return [5_000, 15_000, 30_000][attempt] ?? 60_000
+}
+
+/** Android (U91): a falha é da permissão da pasta, e o app pode pedir de novo pelo seletor do sistema. */
+export function lostFolderPermission(message: string | undefined, system: WriteSystem): boolean {
+  return Boolean(message) && system === "android" && writeFailure(message!, system).kind === "sem-permissao"
 }

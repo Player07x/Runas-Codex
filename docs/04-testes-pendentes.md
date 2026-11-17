@@ -1952,3 +1952,19 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - Liberar o app no Acesso controlado a pastas com a nota aberta: em até um minuto a nota grava sozinha e mostra “Salvo”.
 - Com texto não gravado, mudar a mesma nota no Obsidian e reabrir no app: aparece “Há um texto desta nota que não foi gravado”, com “Recuperar o meu texto” e “Descartar”.
 - Renomear uma pasta com muitas notas ligadas por links: tudo continua igual, só um pouco mais lento nos lotes grandes (ritmo de gravação).
+
+## Atualização 1.5 — N: Android com menos permissões (U91, item 5)
+
+- [ ] Celular sem o Runas-Codex com “acesso a todos os arquivos”: Configurações › Cofre › **Abrir pasta…** abre direto o
+      seletor de pastas do Android (sem passar pelas configurações do sistema); o cofre abre e grava.
+- [ ] Quem já usa o acesso a todos os arquivos: depois de atualizar, o mesmo cofre abre como antes. Ao trocar de pasta
+      por **Abrir pasta…**, passa a usar o seletor.
+- [ ] **Escolher com acesso total** (avançado): o Android pede o acesso nas configurações dele; ao liberar, o seletor
+      abre e o cofre usa o acesso direto. Recusar oferece o seletor, como antes.
+- [ ] Tirar a permissão da pasta (Configurações do Android › Apps › Runas-Codex › limpar padrões/armazenamento, ou um
+      app de limpeza) e abrir o app: aparece “O Android tirou a permissão da pasta do cofre” com **Escolher de novo**;
+      o seletor abre já na pasta e, confirmando, o cofre volta sem perder nada.
+- [ ] Com a nota aberta e a permissão tirada, editar: o aviso “Não gravado” traz **Escolher a pasta de novo**, e depois
+      de confirmar a nota grava sozinha.
+- [ ] Tirar o “acesso a todos os arquivos” nas configurações do Android com um cofre aberto por ele: ao abrir o app,
+      Configurações › Cofre mostra “O Android tirou o acesso a todos os arquivos do Runas-Codex”.

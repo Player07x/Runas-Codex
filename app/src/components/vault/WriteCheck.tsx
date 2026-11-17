@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { KEEP_STEP, writeFailure } from "../../core/write-failure"
+import { KEEP_STEP, lostFolderPermission, writeFailure } from "../../core/write-failure"
 import { writeSystem } from "../../lib/unsaved-drafts-store"
 import { navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
@@ -31,7 +31,7 @@ export function WriteCheckPanel() {
       <button className="btn sm" onClick={() => void run()} disabled={!available || busy} aria-busy={busy}>{busy ? "Testando…" : "Testar gravação"}</button>
     </div>
     {result?.ok && <Notice tone="ok" title="A gravação funciona nesta pasta." />}
-    {result && !result.ok && failure && <Notice tone="danger" title={failure.title} actions={failure.windowsProtection && vault.platform.openSecuritySettings ? <button className="btn sm" onClick={() => void vault.platform.openSecuritySettings!()}>Abrir a proteção do Windows</button> : undefined}>
+    {result && !result.ok && failure && <Notice tone="danger" title={failure.title} actions={failure.windowsProtection && vault.platform.openSecuritySettings ? <button className="btn sm" onClick={() => void vault.platform.openSecuritySettings!()}>Abrir a proteção do Windows</button> : lostFolderPermission(result.message, writeSystem(vault.platform.kind)) && vault.platform.regrantVault ? <button className="btn sm primary" onClick={() => void vault.choose("de-novo").then(() => setResult(null))}>Escolher a pasta de novo</button> : undefined}>
       <span className="write-failure-steps" role="list">
         <span role="listitem">O sistema não deixou {STEP_TEXT[result.step]}.</span>
         {failure.steps.filter((step) => step !== KEEP_STEP).map((step, i) => <span key={i} role="listitem">{step}</span>)}
@@ -58,5 +58,39 @@ export function WriteCheckRuntime() {
     }, () => undefined)
     return () => { live = false }
   }, [path, writable])
+  // Android (U91): ao abrir, se o sistema tirou a permissão da pasta, o app pede de novo em vez de falhar ao gravar.
+  const lost = lostFolderPermission(vault.error, writeSystem(vault.platform.kind)) && Boolean(vault.platform.regrantVault)
+  useEffect(() => {
+    if (!lost) return
+    toast("O Android tirou a permissão da pasta do cofre.", { label: "Escolher de novo", run: () => void vault.choose("de-novo") })
+  }, [lost])
   return null
+}
+
+/** Configurações › Cofre no Android (U91): devolver a permissão da pasta e a opção avançada do acesso total. */
+export function AndroidFolderAccess() {
+  const vault = useVault()
+  const toast = useToast()
+  const [busy, setBusy] = useState(false)
+  if (!vault.platform.regrantVault || !vault.platform.chooseVaultAllFiles) return null
+  const run = (how: "de-novo" | "todos-os-arquivos") => () => {
+    setBusy(true)
+    vault.choose(how).catch((reason: unknown) => toast(reason instanceof Error ? reason.message : String(reason))).finally(() => setBusy(false))
+  }
+  const lost = lostFolderPermission(vault.error, "android")
+  const direct = Boolean(vault.info && !vault.info.path.startsWith("content://"))
+  return <>
+    {lost && <Notice tone="danger" title="O Android tirou a permissão da pasta do cofre" actions={<button className="btn sm primary" onClick={run("de-novo")} disabled={busy}>Escolher a pasta de novo</button>}>
+      O seletor do Android abre já na pasta do cofre: confirme a mesma pasta. Apps de limpeza ou de segurança podem tirar essa permissão; libere o Runas-Codex neles.
+    </Notice>}
+    <div className="setting-row">
+      <div>
+        <span className="small" style={{ fontWeight: 650 }}>Acesso a todos os arquivos (avançado)</span>
+        <span className="tiny faint">{direct
+          ? "Este cofre usa o acesso a todos os arquivos. Ao escolher outra pasta pelo botão “Abrir pasta”, o app passa a usar o seletor do Android, que pede menos permissão."
+          : "O padrão é o seletor de pastas do Android: o app só vê a pasta do cofre. Em cofres muito grandes (milhares de notas), o acesso a todos os arquivos lê mais rápido, mas o Android pede para você liberá-lo nas configurações dele. O app continua usando só a pasta do cofre."}</span>
+      </div>
+      <button className="btn sm" onClick={run("todos-os-arquivos")} disabled={busy}>Escolher com acesso total</button>
+    </div>
+  </>
 }

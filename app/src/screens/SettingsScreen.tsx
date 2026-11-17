@@ -19,7 +19,7 @@ import { PropertiesDisplaySettings } from "../components/vault/PropertiesDisplay
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import { TasksSettingsCard } from "../components/tasks/TasksSettings"
 import { useRoute } from "../lib/router"
-import { WriteCheckPanel } from "../components/vault/WriteCheck"
+import { AndroidFolderAccess, WriteCheckPanel } from "../components/vault/WriteCheck"
 import "./transfer.css"
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -103,6 +103,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
           <Switch on={Boolean(vault.info && !vault.info.readOnly)} label="Permitir gravação" onChange={(on) => run(() => vault.setWritable(on))()} />
         </Row>
         <WriteCheckPanel />
+        <AndroidFolderAccess />
         <Row title="Espaços" hint="Notas/, Agenda/, Wikis/, Campanhas/, Livros/, Mesas/">
           <span className="small muted">Pastas padrão do cofre</span>
         </Row>

@@ -23,7 +23,7 @@ export interface SharedItem {
 
 interface RunasVaultPlugin {
   current(): Promise<{ vault: NativeInfo | null }>
-  choose(): Promise<{ vault: NativeInfo | null }>
+  choose(options?: { allFiles?: boolean }): Promise<{ vault: NativeInfo | null }>
   create(): Promise<{ vault: NativeInfo | null }>
   access(): Promise<{ granted: boolean }>
   setWritable(options: { writable: boolean }): Promise<{ vault: NativeInfo | null }>
@@ -55,6 +55,7 @@ interface RunasVaultPlugin {
   addListener(event: "change", listener: (data: { changes: NativeChange[] }) => void): Promise<PluginListenerHandle>
   addListener(event: "share", listener: (data: SharedItem) => void): Promise<PluginListenerHandle>
   addListener(event: "open", listener: (data: { route: string }) => void): Promise<PluginListenerHandle>
+  regrant(): Promise<{ vault: NativeInfo | null }>
 }
 
 export const RunasVault = registerPlugin<RunasVaultPlugin>("RunasVault")
@@ -177,6 +178,9 @@ export function createCapacitorPlatform(): Platform {
         abort: () => RunasVault.saveStreamAbort({ id }),
       }
     },
+    // U91 (item 5): devolver a permissão da pasta e a opção avançada do acesso a todos os arquivos.
+    regrantVault: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.regrant()).vault) },
+    chooseVaultAllFiles: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.choose({ allFiles: true })).vault) },
   }
   result.vtt = createAndroidVttApi(result)
   return result
