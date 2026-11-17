@@ -107,6 +107,7 @@
 .campaign-kanban-meta { gap: 4px 6px; }
 .campaign-quest-back { align-self: flex-start; margin: 8px 12px 0; }
 .campaign-quest-details { gap: 10px; }
+.campaign-reward-send > span { display: inline-flex; align-items: center; gap: 6px; }
 .campaign-questmap-menu { position: absolute; right: 4px; bottom: 4px; }
 .campaign-questmap-item { display: flex; align-items: center; gap: 6px; }
 /* No celular, uma coluna por vez, escolhida no seletor de cima. */

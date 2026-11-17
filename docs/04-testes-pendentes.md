@@ -2013,3 +2013,15 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Com o leitor de tela (NVDA ou TalkBack), os campos de uma barra dizem “Nome da barra”, “PV atual” e
   “PV máximo”; os nomes das faixas e playlists do painel Áudio também têm nome.
 - U94: ligar ou reimportar o token, mover o token e mudar o PV, e só então clicar em Desfazer no aviso: volta só o que veio da nota; a posição e o PV ficam. Remover o token e clicar em Desfazer: o token não volta e aparece "Nada para desfazer".
+
+## Recompensa no painel da missão e NPC da wiki (1.5.0, PR Q: U93, U100)
+
+- [ ] Concluir uma missão com recompensa e deixar o aviso sumir: no painel da missão (no celular, pelo botão do
+  painel na barra da nota) aparece “Mandar para o Tesouro”. Ao tocar, o item entra no Tesouro do grupo, a missão
+  ganha `recompensa_enviada: "AAAA-MM-DD"` e o botão vira “Já está no Tesouro (desde …)”.
+- [ ] Voltar a missão para “Ativa” e concluir de novo: o aviso não oferece mandar a recompensa outra vez.
+- [ ] Abrir a missão no Obsidian: `recompensa_enviada` aparece como propriedade de texto com a data entre aspas.
+- [ ] Elenco › “NPC da wiki”: a lista começa só com personagens; “Todos os tipos” mostra lugares, mitos e o resto.
+  Em Facções, a lista começa nas organizações.
+- [ ] “Novo NPC”: “Já apareceu na campanha” começa desmarcado.
+- U93: concluir uma missão com recompensa, clicar em "Mandar para o Tesouro" no painel e depois no aviso "Mandar a recompensa para o Tesouro" (e também dar clique duplo no botão): o item entra uma vez só no Tesouro do grupo.
