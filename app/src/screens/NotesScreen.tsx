@@ -6,7 +6,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragE
 import { Archive, FileDown, ListChecks, Package, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
-import { folderContents } from "../core/folder-contents"
+import { folderContents, folderContentsLabel } from "../core/folder-contents"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
 import { BaseScreen } from "../components/vault/QueryView"
 import { TrashDialog } from "../components/vault/TrashDialog"
@@ -241,7 +241,6 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const notes = useMemo(() => index.notesIn(root), [index, root, vault.version])
   const folders = useMemo(() => [...new Set([...index.allFiles().map((f) => dirname(f.path)), ...createdFolders])].filter(Boolean), [index, createdFolders, vault.version])
   const tree = useMemo(() => buildTree(notes, root, createdFolders), [notes, root, createdFolders])
-  const contents = useMemo(() => folderContents(index.allFiles().map(file => file.path), createdFolders), [index, createdFolders, vault.version])
   // A busca acompanha a digitação sem segurar cada tecla (T6): o React refaz a lista quando sobra tempo.
   const deferredQuery = useDeferredValue(useSettled(query, index.size > LARGE_VAULT ? 180 : 0))
   const results = useMemo(() => (deferredQuery.trim() ? searchNotes(index, deferredQuery, root, 80) : null), [index, deferredQuery, root, vault.version])
@@ -497,12 +496,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [collapseAll, setCollapseAll] = useState(0)
   // Pastas abertas e fechadas, por aparelho, cofre e escopo (U70). A pasta da nota aberta abre sozinha sem virar escolha.
   const [openFolders, setOpenFolders] = useRemembered(`runas-codex:pastas-abertas:${vault.info?.path ?? ""}:${wholeVault ? "cofre" : "notas"}`, parseFolderMemory)
-  // A bolinha e seu nome acessível usam o mesmo conteúdo imediato (pastas + arquivos, inclusive anexos).
-  const contentsOf = (folder: TreeFolder) => contents.get(folder.path) ?? { files: 0, folders: 0, total: 0 }
-  const folderCount = (folder: TreeFolder) => {
-    const { files, folders, total } = contentsOf(folder)
-    return `${total} ${total === 1 ? "item" : "itens"} diretamente nesta pasta: ${folders} ${folders === 1 ? "pasta" : "pastas"} e ${files} ${files === 1 ? "arquivo" : "arquivos"}`
-  }
+  // A bolinha conta o que aparece ao abrir a pasta (subpastas + notas); a dica e o nome acessível dizem os mesmos números.
+  const folderCount = (folder: TreeFolder) => folderContentsLabel(folderContents(folder))
   const renderFolder = (folder: TreeFolder, depth: number): ReactNode => {
     // A pasta Arquivo do espaço fica por último e fechada; as notas fixadas vêm antes das outras.
     const isArchive = (sub: TreeFolder) => sub.path === `${NOTES_ROOT}${ARCHIVE_FOLDER}`
@@ -518,7 +513,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={14} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />}
               <span className="grow truncate" style={{ minWidth: 0 }}>{sub.name}</span>
-              <span className="folder-badge" title={folderCount(sub)} aria-label={folderCount(sub)}>{contentsOf(sub).total}</span>
+              <span className="folder-badge" title={folderCount(sub)} aria-label={folderCount(sub)}>{folderContents(sub).total}</span>
             </summary>} actions={
               <span className="row-menu folder-menu"><OverflowMenu label={`Ações da pasta ${sub.name}`} triggerClassName="icon-btn sm" items={folderMenu(sub.path)} /></span>
             }>

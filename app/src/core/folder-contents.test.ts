@@ -1,30 +1,18 @@
-import { folderContents } from "./folder-contents"
+import { folderContents, folderContentsLabel } from "./folder-contents"
+
+const folder = (notes: number, folders: string[]) => ({ notes: Array.from({ length: notes }, (_, i) => i), folders: new Map(folders.map(name => [name, {}])) })
 
 describe("conteúdo imediato das pastas", () => {
   it("conta subpastas mesmo quando a pasta não tem notas próprias", () => {
-    const counts = folderContents(["Campanhas/Norte/Sessões/Uma.md", "Campanhas/Sul/Sessões/Duas.md"])
-    expect(counts.get("Campanhas")).toEqual({ files: 0, folders: 2, total: 2 })
-    expect(counts.get("Campanhas/Norte")).toEqual({ files: 0, folders: 1, total: 1 })
-    expect(counts.get("Campanhas/Norte/Sessões")).toEqual({ files: 1, folders: 0, total: 1 })
+    expect(folderContents(folder(0, ["Norte", "Sul"]))).toEqual({ notes: 0, folders: 2, total: 2 })
   })
 
-  it("soma arquivos de qualquer tipo e cada subpasta uma vez, sem somar os descendentes", () => {
-    const counts = folderContents(["Notas/Caderno.md", "Notas/mapa.png", "Notas/pacote.zip", "Notas/Sub/A.md", "Notas/Sub/B.md", "Notas/Sub/A.md"])
-    expect(counts.get("Notas")).toEqual({ files: 3, folders: 1, total: 4 })
-    expect(counts.get("Notas/Sub")).toEqual({ files: 2, folders: 0, total: 2 })
-    expect(counts.get("")).toEqual({ files: 0, folders: 1, total: 1 })
+  it("soma as notas e as subpastas que a árvore mostra, sem somar os descendentes", () => {
+    expect(folderContents(folder(8, ["Arquivo", "Ideias", "Projetos"]))).toEqual({ notes: 8, folders: 3, total: 11 })
   })
 
-  it("inclui pastas vazias e não mistura pastas com o mesmo nome em lugares diferentes", () => {
-    const counts = folderContents(["A/Itens/Uma.md", "B/Itens/Duas.md"], ["A/Vazia", "A/Vazia/", "B/Itens"])
-    expect(counts.get("A")).toEqual({ files: 0, folders: 2, total: 2 })
-    expect(counts.get("B")).toEqual({ files: 0, folders: 1, total: 1 })
-    expect(counts.get("A/Vazia")).toEqual({ files: 0, folders: 0, total: 0 })
-  })
-
-  it("não inclui dados ocultos que ficam fora da árvore de notas", () => {
-    const counts = folderContents([".runas/mesas/a.json", "Notas/.cache/Um.md", "Notas/Uma.md"], [".trash", "Notas/.oculta"])
-    expect(counts.get("")).toEqual({ files: 0, folders: 1, total: 1 })
-    expect(counts.get("Notas")).toEqual({ files: 1, folders: 0, total: 1 })
+  it("descreve a bolinha com os mesmos números, no singular e no plural", () => {
+    expect(folderContentsLabel(folderContents(folder(1, [])))).toBe("1 item diretamente nesta pasta: 0 pastas e 1 nota")
+    expect(folderContentsLabel(folderContents(folder(2, ["A"])))).toBe("3 itens diretamente nesta pasta: 1 pasta e 2 notas")
   })
 })
