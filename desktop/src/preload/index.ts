@@ -172,6 +172,8 @@ const bridge: RunasCodexBridge = {
     create: () => invoke(IPC.systemShortcutCreate),
     remove: () => invoke(IPC.systemShortcutRemove),
   },
+  checkWrite: () => invoke(IPC.vaultCheckWrite),
+  openSecuritySettings: () => invoke(IPC.openSecuritySettings),
 }
 
 bridge.saveStream = {

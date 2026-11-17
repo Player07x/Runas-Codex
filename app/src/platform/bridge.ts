@@ -1,6 +1,6 @@
 import type { UpdateInfo, UpdateInstallResult } from "../core/updates"
 import type { VttApi } from "../vtt/shared/ipc"
-import type { BackupInfo, SystemShortcutStatus, VaultChange, VaultEntry, VaultInfo } from "./platform"
+import type { BackupInfo, SystemShortcutStatus, VaultChange, VaultEntry, VaultInfo, WriteCheck } from "./platform"
 import type { BackupSchedule } from "../core/backup-schedule"
 import type { SyncConflict } from "../core/sync-conflicts"
 
@@ -82,4 +82,7 @@ export interface RunasCodexBridge {
     finish(id: number): Promise<string>
     abort(id: number): Promise<void>
   }
+  /** U91: “Testar gravação” no cofre aberto e a proteção contra ransomware do Windows. */
+  checkWrite?(): Promise<WriteCheck>
+  openSecuritySettings?(): Promise<void>
 }

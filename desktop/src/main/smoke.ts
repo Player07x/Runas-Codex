@@ -490,6 +490,8 @@ export const SMOKE_SCRIPT = `(async () => {
     result.master = await bridge.vtt.master.state()
     result.masterScene = (await bridge.vtt.documents.list("scene"))[0]?.id ?? null
   }
+  // U91: “Testar gravação” passa no cofre do smoke com gravação liberada e não deixa arquivo de teste para trás.
+  result.writeCheck = result.vault && !result.vault.readOnly ? await window.runasCodex.checkWrite() : null
   return result
 })()`
 
@@ -741,5 +743,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.bookImport === true
     && typeof result.touch === "object" && Object.values(result.touch as Record<string, unknown>).length === 6 && Object.values(result.touch as Record<string, unknown>).every(value => value === true)
     && typeof result.editorClick === "object" && Object.values(result.editorClick as Record<string, unknown>).length === 4 && Object.values(result.editorClick as Record<string, unknown>).every(value => value === true)
+    && (result.writeCheck === null || (result.writeCheck as { ok?: unknown } | undefined)?.ok === true)
   )
 }

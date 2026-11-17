@@ -40,3 +40,8 @@
 .customization-settings input, .customization-settings textarea { max-width: 100%; min-width: 0; }
 .customization-settings textarea { width: 100%; font-family: var(--font-mono); }
 @media (max-width: 600px) { .version-compare { grid-template-columns: minmax(0, 1fr); } }
+
+/* U91: passo a passo da gravação bloqueada, dentro do aviso. */
+.write-failure-steps { display: grid; gap: 4px; margin-top: 6px; }
+.write-failure-steps > span { display: block; }
+.write-failure-detail { display: block; margin-top: 6px; color: var(--muted); overflow-wrap: anywhere; }

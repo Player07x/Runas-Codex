@@ -100,6 +100,7 @@ export function App() {
         <DesktopTrayRuntime />
         <AndroidRuntime />
         <TasksRuntime />
+        <WriteCheckRuntime />
       </ToastProvider>
     </VaultProvider>
   )
@@ -112,3 +113,4 @@ import { AppearanceRuntime } from "./components/Appearance"
 import { OnboardingRuntime } from "./components/Onboarding"
 import { AndroidRuntime } from "./platform/AndroidRuntime"
 import { TasksRuntime } from "./components/tasks/TasksRuntime"
+import { WriteCheckRuntime } from "./components/vault/WriteCheck"

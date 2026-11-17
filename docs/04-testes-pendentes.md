@@ -1938,3 +1938,17 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## 1.5 M/U91 — gravação bloqueada pela segurança do sistema
+
+- No Windows, ligar o Acesso controlado a pastas (Segurança do Windows › Proteção contra ransomware) com o cofre em Documentos:
+  - ao abrir o cofre aparece o aviso “O Windows bloqueou a gravação”;
+  - Configurações › Cofre › Testar gravação diz o passo que falhou;
+  - “Abrir a proteção do Windows” abre a página certa, também com o Windows em outro idioma.
+- Com a pasta bloqueada, editar uma nota:
+  - aparece “Não gravado” e o passo a passo;
+  - fechar o app pergunta antes;
+  - reabrir o app traz o texto de volta.
+- Liberar o app no Acesso controlado a pastas com a nota aberta: em até um minuto a nota grava sozinha e mostra “Salvo”.
+- Com texto não gravado, mudar a mesma nota no Obsidian e reabrir no app: aparece “Há um texto desta nota que não foi gravado”, com “Recuperar o meu texto” e “Descartar”.
+- Renomear uma pasta com muitas notas ligadas por links: tudo continua igual, só um pouco mais lento nos lotes grandes (ritmo de gravação).
