@@ -1938,3 +1938,9 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Atualização 1.5 — Propriedades pelo teclado (E/U79)
+
+- No modo Editar, usar Tab desde o menu da nota: deve parar em “Propriedades · n” antes do editor. Enter/Space abre e fecha; com a tabela aberta, Tab chega a “Editar como texto”. Alt+P no editor ou na barra alterna a tabela e foca seu botão.
+- Conferir a mesma nota na Wiki, Campanhas e Livros. Código, Escondidas, somente leitura e notas sem frontmatter mantêm seus estados. Ctrl+Home/Backspace não podem estragar o YAML recolhido.
+- Evidência automatizada do Electron em docs/testes-1.5-e.md: 320/390/1366 px, claro/escuro, aberto/recolhido, teclado nativo e bytes preservados. Teclado físico Android e leitor de tela físico ainda não conferidos.

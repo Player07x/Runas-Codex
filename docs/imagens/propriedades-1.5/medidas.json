@@ -1,0 +1,1114 @@
+{
+  "antes": {
+    "stage": "antes",
+    "captures": [
+      {
+        "width": 320,
+        "theme": "dark",
+        "open": false,
+        "file": "antes-320-dark-recolhidas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 719.78125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 320,
+        "theme": "dark",
+        "open": true,
+        "file": "antes-320-dark-abertas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 276,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 832.96875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "open": false,
+        "file": "antes-320-light-recolhidas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 719.78125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "open": true,
+        "file": "antes-320-light-abertas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 276,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 832.96875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "open": false,
+        "file": "antes-390-dark-recolhidas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 694.28125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "open": true,
+        "file": "antes-390-dark-abertas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 346,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 807.46875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "open": false,
+        "file": "antes-390-light-recolhidas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 694.28125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "open": true,
+        "file": "antes-390-light-abertas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 346,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 807.46875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "open": false,
+        "file": "antes-1366-dark-recolhidas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 48,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 151.234375,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 679.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 288,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "open": true,
+        "file": "antes-1366-dark-abertas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 149.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 470,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 780.375,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 389.1875,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 1366,
+        "theme": "light",
+        "open": false,
+        "file": "antes-1366-light-recolhidas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 48,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 151.234375,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 679.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 288,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      },
+      {
+        "width": 1366,
+        "theme": "light",
+        "open": true,
+        "file": "antes-1366-light-abertas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 149.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 470,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 780.375,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 389.1875,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": true
+      }
+    ],
+    "keyboard": [
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      },
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      },
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      },
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      }
+    ]
+  },
+  "depois": {
+    "stage": "depois",
+    "captures": [
+      {
+        "width": 320,
+        "theme": "dark",
+        "open": false,
+        "file": "depois-320-dark-recolhidas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 248,
+          "width": 278,
+          "height": 659.78125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 320,
+        "theme": "dark",
+        "open": true,
+        "file": "depois-320-dark-abertas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 276,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 278,
+          "height": 659.78125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "open": false,
+        "file": "depois-320-light-recolhidas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 248,
+          "width": 278,
+          "height": 659.78125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "open": true,
+        "file": "depois-320-light-abertas.png",
+        "viewport": 320,
+        "scroll": 320,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 278,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 276,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 278,
+          "height": 659.78125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 278,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "open": false,
+        "file": "depois-390-dark-recolhidas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 248,
+          "width": 348,
+          "height": 634.28125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "open": true,
+        "file": "depois-390-dark-abertas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 346,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 348,
+          "height": 634.28125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "open": false,
+        "file": "depois-390-light-recolhidas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 60,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 151.234375,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 248,
+          "width": 348,
+          "height": 634.28125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 248,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "open": true,
+        "file": "depois-390-light-abertas.png",
+        "viewport": 390,
+        "scroll": 390,
+        "bar": {
+          "x": 16,
+          "y": 188,
+          "width": 348,
+          "height": 173.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 17,
+          "y": 193,
+          "width": 346,
+          "height": 44,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 348,
+          "height": 634.28125,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 16,
+          "y": 361.1875,
+          "width": 348,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "open": false,
+        "file": "depois-1366-dark-recolhidas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 48,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 151.234375,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 288,
+          "width": 472,
+          "height": 631.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 288,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "open": true,
+        "file": "depois-1366-dark-abertas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 149.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 470,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 389.1875,
+          "width": 472,
+          "height": 631.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 389.1875,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 1366,
+        "theme": "light",
+        "open": false,
+        "file": "depois-1366-light-recolhidas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 48,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 151.234375,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 288,
+          "width": 472,
+          "height": 631.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 288,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      },
+      {
+        "width": 1366,
+        "theme": "light",
+        "open": true,
+        "file": "depois-1366-light-abertas.png",
+        "viewport": 1366,
+        "scroll": 1366,
+        "bar": {
+          "x": 552,
+          "y": 240,
+          "width": 472,
+          "height": 149.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "toggle": {
+          "x": 553,
+          "y": 245,
+          "width": 470,
+          "height": 32,
+          "font": "13px / 22.1px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "22.1px"
+        },
+        "content": {
+          "x": 552,
+          "y": 389.1875,
+          "width": 472,
+          "height": 631.1875,
+          "font": "15px / 25.5px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "25.5px"
+        },
+        "heading": {
+          "x": 552,
+          "y": 389.1875,
+          "width": 472,
+          "height": 36.75,
+          "font": "650 26.25px / 36.75px \"Geist Variable\", system-ui, sans-serif",
+          "lineHeight": "36.75px"
+        },
+        "insideCM": false
+      }
+    ],
+    "keyboard": [
+      {
+        "tag": "BUTTON",
+        "class": "cm-lp-properties-toggle",
+        "label": "Propriedades· 2"
+      },
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      },
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      },
+      {
+        "tag": "DIV",
+        "class": "cm-content cm-live-preview cm-lineWrapping",
+        "label": "Código-fonte Markdown"
+      }
+    ]
+  },
+  "teclado": {
+    "checks": [
+      {
+        "name": "Tab chega à barra antes do editor",
+        "passed": true
+      },
+      {
+        "name": "Enter abre sem perder foco",
+        "passed": true
+      },
+      {
+        "name": "Tabela aberta: Tab chega a Editar como texto",
+        "passed": true
+      },
+      {
+        "name": "Shift+Tab retorna à barra",
+        "passed": true
+      },
+      {
+        "name": "Space recolhe e mantém o foco",
+        "passed": true
+      },
+      {
+        "name": "Depois da barra recolhida, Tab entra no editor",
+        "passed": true
+      },
+      {
+        "name": "Alt+P no editor abre e foca a barra sem mudar texto/seleção",
+        "passed": true
+      },
+      {
+        "name": "Alt+P na barra recolhe",
+        "passed": true
+      },
+      {
+        "name": "Ctrl+Home e Backspace preservam o YAML protegido",
+        "passed": true
+      },
+      {
+        "name": "Editar como texto mostra o YAML e foca o editor",
+        "passed": true
+      },
+      {
+        "name": "Sair do YAML restaura a barra",
+        "passed": true
+      },
+      {
+        "name": "Nenhuma mudança nos bytes",
+        "passed": true
+      },
+      {
+        "name": "Somente leitura mantém a barra navegável sem tornar o corpo editável",
+        "passed": true
+      },
+      {
+        "name": "Nota só com YAML não fica presa num cartão sem cursor",
+        "passed": true
+      },
+      {
+        "name": "Preferência Escondidas continua sem barra",
+        "passed": true
+      },
+      {
+        "name": "Código continua mostrando o YAML",
+        "passed": true
+      },
+      {
+        "name": "Sem frontmatter não cria controle vazio",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  "geometriaIdentica": true
+}

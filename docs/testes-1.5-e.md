@@ -1,0 +1,27 @@
+# E/U79 — Propriedades pelo teclado
+
+A barra saiu do contenteditable do CodeMirror para um irmão anterior ao editor. O mesmo estado e a mesma proteção do YAML comandam o cartão; abrir/fechar não muda texto nem seleção. Alt+P alterna e foca a barra. O botão permanece conectado ao DOM durante a atualização, preservando Enter/Space e o foco. Desmontar a extensão remove seu próprio cartão.
+
+O CSS do cartão foi levado do tema interno do CodeMirror para um arquivo com escopo `.source-editor`, porque os controles agora ficam fora dele. Cores, tipografia, medidas e conteúdo foram preservados; o anel de foco passa a 3 px. O leitor Markdown e o dialeto não mudaram. Os dois irmãos repartem a altura mínima anterior do editor, sem acrescentar espaço vazio ao fim.
+
+## Conferência visual
+
+Cofre de exemplo em memória, Electron offscreen, escala 1, perfis novos, fonte pronta. Antes: main 80eb718 (UI idêntica à base J1 usada para a captura). Depois: branch editor/1.5-propriedades-teclado.
+
+Doze pares: 320/390/1366 px × claro/escuro × aberto/recolhido. Retângulos da barra, botão e primeira linha do corpo conservados, nenhuma rolagem lateral. Os PNGs e as medidas estão em [imagens/propriedades-1.5](imagens/propriedades-1.5/medidas.json). A comparação é de geometria e conferência visual; não se afirma identidade pixel a pixel de todos os pares.
+
+| Largura | Antes | Depois |
+|---|---|---|
+| 320, escuro | ![Antes](imagens/propriedades-1.5/antes-320-dark-abertas.png) | ![Depois](imagens/propriedades-1.5/depois-320-dark-abertas.png) |
+| 390, claro | ![Antes](imagens/propriedades-1.5/antes-390-light-abertas.png) | ![Depois](imagens/propriedades-1.5/depois-390-light-abertas.png) |
+| 1366, escuro | ![Antes](imagens/propriedades-1.5/antes-1366-dark-abertas.png) | ![Depois](imagens/propriedades-1.5/depois-1366-dark-abertas.png) |
+
+![Foco de teclado na barra](imagens/propriedades-1.5/foco.png)
+
+## Comportamento
+
+17 verificações no Electron passaram, com eventos de teclado nativos (keydown, caractere quando cabível e keyup): Tab/Shift+Tab, Enter, Space, Alt+P a partir do editor e da barra, editar YAML como texto/retornar ao corpo, proteção contra Ctrl+Home/Backspace e bytes intactos. Também foram conferidos o mesmo SourceEditor em somente leitura, somente YAML, Escondidas, Código e sem propriedades. Nenhum erro JS registrado.
+
+Os testes de estado existentes do live preview foram adaptados para consultar o cartão externo; continuam verificando preferência, seleção, proteção e edição do YAML. Tipos e 10 testes específicos passaram. Suíte completa, builds, smokes Electron e CI ainda em validação.
+
+Não verificados: teclado físico e leitor de tela no Android; integração final com todos os PRs da 1.5.

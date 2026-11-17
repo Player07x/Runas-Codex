@@ -4,7 +4,7 @@ import { EditorState, type Extension } from "@codemirror/state"
 import { GFM } from "@lezer/markdown"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import type { PropertiesDisplay } from "../../lib/properties-display"
-import { blockField, frontmatterRange, pointerHeld, pointerHold, propertiesDisplay, propertiesGuard, propertiesState, renderableBlocks, setProperties } from "./live-preview"
+import { blockField, frontmatterRange, pointerHeld, pointerHold, propertiesDisplay, propertiesGuard, propertiesBar, propertiesState, renderableBlocks, setProperties } from "./live-preview"
 
 function state(doc: string) {
   const s = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM, obsidianSyntax] })] })
@@ -98,21 +98,17 @@ describe("propriedades recolhidas (U77)", () => {
   const doc = "---\ntags: [ideias]\nlocal: Porto\n---\n# Caderno\n\nUma ponte\n"
   const body = doc.indexOf("# Caderno")
   const make = (display: PropertiesDisplay = "recolhidas", anchor = body) => parsed(doc, anchor, [propertiesDisplay.of(display), propertiesState, propertiesGuard, pointerHeld, blockField])
-  const widget = (st: EditorState) => {
-    let found: { open: boolean } | null | undefined
-    st.field(blockField).between(0, 1, (_from, _to, deco) => { found = (deco.spec.widget as { open?: boolean } | undefined) ? { open: Boolean((deco.spec.widget as { open: boolean }).open) } : null })
-    return found
-  }
+  const barState = (st: EditorState) => { const bar = propertiesBar(st); return bar ? { open: bar.open } : null }
 
   it("começa como uma barra fechada; “Abertas” mostra a tabela; “Escondidas” não desenha nada", () => {
-    expect(widget(make())).toEqual({ open: false })
-    expect(widget(make("abertas"))).toEqual({ open: true })
-    expect(widget(make("escondidas"))).toBeNull()
+    expect(barState(make())).toEqual({ open: false })
+    expect(barState(make("abertas"))).toEqual({ open: true })
+    expect(barState(make("escondidas"))).toBeNull()
   })
 
   it("abrir a barra não põe o cursor no YAML", () => {
     const s = make().update({ effects: setProperties.of({ open: true }) }).state
-    expect(widget(s)).toEqual({ open: true })
+    expect(barState(s)).toEqual({ open: true })
     expect(s.selection.main.head).toBe(body)
   })
 
@@ -122,7 +118,7 @@ describe("propriedades recolhidas (U77)", () => {
     expect(s.selection.main.head).toBe(body)
     s = s.update({ selection: { anchor: 8 }, userEvent: "select.pointer" }).state
     expect(s.selection.main.head).toBe(body)
-    expect(widget(s)).toEqual({ open: false })
+    expect(barState(s)).toEqual({ open: false })
   })
 
   it("Backspace no começo do corpo e colar dentro do frontmatter não estragam a nota", () => {
@@ -141,10 +137,10 @@ describe("propriedades recolhidas (U77)", () => {
   it("“Editar como texto” mostra o YAML e volta ao cartão quando o cursor sai", () => {
     let s = make()
     s = s.update({ effects: setProperties.of({ editing: true }), selection: { anchor: 17 } }).state
-    expect(widget(s)).toBeUndefined()
+    expect(barState(s)).toBeNull()
     s = s.update({ changes: { from: 17, insert: ", mapa" }, userEvent: "input.type" }).state
     expect(s.doc.toString()).toContain("tags: [ideias, mapa]")
     s = s.update({ selection: { anchor: s.doc.length }, userEvent: "select" }).state
-    expect(widget(s)).toEqual({ open: false })
+    expect(barState(s)).toEqual({ open: false })
   })
 })
