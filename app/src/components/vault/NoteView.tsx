@@ -5,7 +5,7 @@ import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileCog, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -101,6 +101,8 @@ interface Props {
   /** Livros no celular (U63): as ações do livro entram no ⋯ do capítulo, para a barra ter um ⋯ só. */
   extraMenu?: { label: string; items: MenuEntry[] }
   hideBackControl?: boolean
+  /** Nome do “<” do celular, que diz para onde volta (padrão: “Voltar para a lista”). */
+  backLabel?: string
   formatSelection?: boolean
   typewriter?: boolean
   focused?: boolean
@@ -136,7 +138,7 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode, extraMenu }: Props) {
+export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, backLabel = "Voltar para a lista", variant, statusExtra, defaultMode, extraMenu }: Props) {
   const vault = useVault()
   // U81: nas abas das Notas no celular, o botão “n abas” fica na barra da nota (a faixa de abas sai).
   const tabSwitcher = useContext(TabSwitcherContext)
@@ -617,7 +619,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     mode === "fonte" ? { label: "Editar com prévia", icon: <Type size={16} />, onSelect: () => setMode("live") } : { label: "Ver o código Markdown", icon: <Code2 size={16} />, onSelect: () => setMode("fonte") },
     sep, ...menu,
   ] : menu
-  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
+  // O menu da nota tem o ícone de arquivo: a tela já tem o ⋯ do módulo ou da aba (no livro eram dois ⋯ na mesma barra).
+  // Fica o ⋯ só quando ele junta as ações do livro (celular, U63).
+  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} icon={extraMenu ? undefined : <FileCog size={18} />} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
   const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
   const folder = dirname(path).split("/").pop() ?? ""
 
@@ -645,7 +649,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         {actionsMenu}
       </>, focusHeader) : (
         <div className={`editor-bar doc-bar ${tabSwitcher ? "with-tabs" : ""}`}>
-          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label={backLabel} title={backLabel}>
             <ChevronLeft size={18} />
           </button>}
           <span className="note-history">

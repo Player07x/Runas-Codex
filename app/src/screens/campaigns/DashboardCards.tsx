@@ -8,7 +8,7 @@ import { useQuestStatus } from "./quest-actions"
 import { noteName } from "../../core/text"
 import { href } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
-import { campaignRoute, dayLabel, questRoute, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
+import { dayLabel, questRoute, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { revealSession, useCampaignEdits } from "./campaign-edits"
 
 const MAX_LINES = 6
@@ -18,12 +18,7 @@ export function QuestsCard({ data }: { data: CampaignData }) {
   const active = data.quests.filter((q) => q.status === "ativa")
   return (
     <section className="card stack">
-      <div className="row between">
-        <span className="section-title">Missões ativas</span>
-        <a className="btn ghost sm" href={href(campaignRoute(data.campaign.name, "missoes"))}>
-          Quadro de missões
-        </a>
-      </div>
+      <span className="section-title">Missões ativas</span>
       {active.length === 0 && <span className="muted small">Nenhuma missão ativa.</span>}
       {active.slice(0, MAX_LINES).map((q) => (
         <a key={q.path} className="row card tight campaign-quest-line" href={href(noteRoute(q.path))}>
@@ -32,7 +27,7 @@ export function QuestsCard({ data }: { data: CampaignData }) {
           {q.reward && <span className="chip gold">{q.reward}</span>}
         </a>
       ))}
-      {active.length > MAX_LINES && <a className="small" href={href(campaignRoute(data.campaign.name, "missoes"))}>+{active.length - MAX_LINES} {active.length - MAX_LINES === 1 ? "missão ativa" : "missões ativas"}</a>}
+      {active.length > MAX_LINES && <span className="small muted">+{active.length - MAX_LINES} {active.length - MAX_LINES === 1 ? "missão ativa" : "missões ativas"} na aba Missões</span>}
     </section>
   )
 }
@@ -134,12 +129,7 @@ export function CastCard({ data }: { data: CampaignData }) {
   const npcs = [...data.npcs].sort((a, b) => Number(npcAppeared(b.extra)) - Number(npcAppeared(a.extra)))
   return (
     <section className="card stack">
-      <div className="row between">
-        <span className="section-title">Elenco</span>
-        <a className="btn ghost sm" href={href(campaignRoute(data.campaign.name, "elenco"))}>
-          Ver tudo
-        </a>
-      </div>
+      <span className="section-title">Elenco</span>
       {data.players.map((p) => (
         <a key={p.path} className="row campaign-person" href={href(noteRoute(p.path))}>
           <NoteCrest path={p.path} name={p.name} size={32} />
@@ -162,7 +152,7 @@ export function CastCard({ data }: { data: CampaignData }) {
           {npcAttitude(n.extra) && <span className={`chip ${attitudeColor(npcAttitude(n.extra))}`}>{npcAttitude(n.extra)}</span>}
         </div>
       ))}
-      {data.npcs.length > MAX_LINES && <a className="small" href={href(campaignRoute(data.campaign.name, "elenco"))}>+{data.npcs.length - MAX_LINES} NPCs no Elenco</a>}
+      {data.npcs.length > MAX_LINES && <span className="small muted">+{data.npcs.length - MAX_LINES} NPCs na aba Elenco</span>}
       {data.players.length === 0 && data.npcs.length === 0 && <span className="muted small">Ninguém ainda. Acrescente os personagens dos jogadores e os NPCs da wiki no Elenco.</span>}
     </section>
   )
@@ -244,12 +234,7 @@ export function TimelineCard({ data }: { data: CampaignData }) {
   const hidden = all.length - sessions.length
   return (
     <section className="card stack">
-      <div className="row between">
-        <span className="section-title">Linha do tempo</span>
-        <a className="btn ghost sm" href={href(campaignRoute(data.campaign.name, "sessoes"))}>
-          Sessões
-        </a>
-      </div>
+      <span className="section-title">Linha do tempo</span>
       {sessions.length === 0 && <span className="muted small">Nenhuma sessão ainda.</span>}
       <ol className="campaign-timeline">
         {sessions.map((s) => (
@@ -262,7 +247,7 @@ export function TimelineCard({ data }: { data: CampaignData }) {
           </li>
         ))}
       </ol>
-      {hidden > 0 && <a className="small" href={href(campaignRoute(data.campaign.name, "sessoes"))}>Ver todas as {all.length} sessões</a>}
+      {hidden > 0 && <span className="small muted">+{hidden} {hidden === 1 ? "sessão" : "sessões"} na aba Sessões</span>}
     </section>
   )
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { ArrowRight, Check, ChevronLeft, ExternalLink, Gem, PanelRight, Trash2 } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, Gem, Trash2 } from "lucide-react"
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
 import { NoteView } from "../../components/vault/NoteView"
@@ -65,7 +65,6 @@ export function QuestPage({ data, path }: { data: CampaignData; path: string }) 
   return (
     <div className={`campaign-session-layout ${panel.overlay ? "show-panel" : ""}`}>
       <section className="campaign-session-main">
-        <button className="btn ghost sm campaign-quest-back" onClick={back}><ChevronLeft size={14} /> Voltar às missões</button>
         <NoteView
           key={path}
           path={path}
@@ -74,19 +73,14 @@ export function QuestPage({ data, path }: { data: CampaignData; path: string }) 
           panelOpen={panel.expanded}
           panelHint="Situação, ligações e recompensa da missão"
           onBack={back}
+          backLabel="Voltar às missões"
           onCreate={(target) => (data.readOnly ? toast(`“${target}” ainda não existe.`) : setCreatingLink(target))}
           onTag={(tag) => toast(`Tag #${tag}`)}
         />
       </section>
       <ResizablePanel id="campaign-quest" label="Detalhes da missão" side="right" width={360} className="campaign-session-side" onCollapsedChange={panel.onCollapsedChange}>
-        <button className="btn ghost sm campaign-panel-close" onClick={panel.close}>
-          <ChevronLeft size={14} /> Voltar à nota
-        </button>
         <QuestDetails key={quest.path} data={data} quest={quest} />
       </ResizablePanel>
-      <button className="icon-btn campaign-panel-toggle" onClick={panel.toggle} aria-label="Painel da missão" aria-expanded={panel.expanded}>
-        <PanelRight size={18} />
-      </button>
       {creatingLink && <NewNpcDialog data={data} initialName={creatingLink} onClose={() => setCreatingLink(null)} onCreated={(created) => toast(`“${noteName(created)}” criado na wiki.`)} />}
     </div>
   )

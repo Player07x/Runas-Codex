@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PanelRight, PenLine, Plus, ScrollText, SlidersHorizontal, Trash2, Type, Package } from "lucide-react"
+import { BookOpen, ChevronLeft, Columns2, FileDown, FileSearch, History, LayoutTemplate, Library, Maximize2, MessageSquarePlus, Minimize2, PanelRight, PenLine, Plus, ScrollText, SlidersHorizontal, TableOfContents, Trash2, Type, Package } from "lucide-react"
 import { fichaEnd, toFicha } from "../../core/fichas"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { findBooks, readBook, type BookItem } from "../../core/books"
@@ -218,7 +218,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
     {(error || structure.error) && <div className="doc-notice"><Notice tone="danger">{error || structure.error}</Notice></div>}
     <span className="sr-only" role="status">{announcement}</span>
     <div className="books-layout">
-      <ResizablePanel id="book-binder" label="Sumário" side="left" width={260} controlsTarget={binderSlot} reveal={creating} hidden={focus} className="books-binder">
+      <ResizablePanel id="book-binder" label="Sumário" side="left" width={260} controlsTarget={binderSlot} icon={<TableOfContents size={17} />} reveal={creating} hidden={focus} className="books-binder">
         <nav className="book-toc" aria-label="Sumário do livro">
           <BookBinder book={book} items={structure.items} selected={selected} locked={locked} onOpen={open} onSelect={setSelected} run={run} announce={setAnnouncement} />
           {creating ? <form className="book-new stack" onSubmit={(e) => {
@@ -300,7 +300,7 @@ export function BookEditor({ book }: { book: IndexedNote }) {
             />
           </> : <div className="page"><p>Escolha um capítulo no sumário. Links quebrados podem ser corrigidos nos metadados do livro.</p></div>}
       </main>
-      {view === "escrever" && !narrow && <ResizablePanel id="book-preview" label="Prévia ao lado" width={460} maxWidth={960} controlsTarget={previewSlot} defaultCollapsed hidden={focus} className="book-side-panel" onCollapsedChange={sideChanged}>
+      {view === "escrever" && !narrow && <ResizablePanel id="book-preview" label="Prévia ao lado" width={460} maxWidth={960} controlsTarget={previewSlot} icon={<Columns2 size={17} />} defaultCollapsed hidden={focus} className="book-side-panel" onCollapsedChange={sideChanged}>
         {sideOpen && <Suspense fallback={<p className="book-side-loading">Carregando a prévia…</p>}>
           <BookSidePreview book={book} draft={draft} chapterPath={selected} cursor={cursor} onOpenAt={openAt} onDiagramar={() => setView("previa")} />
         </Suspense>}

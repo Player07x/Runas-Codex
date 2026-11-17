@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { useSinglePane } from "../../lib/tabs"
 import { useRemembered } from "../../lib/remembered"
-import { BookOpen, CalendarDays, Check, CircleDot, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
+import { BookOpen, CalendarDays, Check, CircleDot, Library, Minus, Plus, Search, Trash, UserPlus, Pencil, Unlink } from "lucide-react"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { NoteCrest } from "../../components/kit/Emblem"
@@ -175,7 +175,7 @@ function NpcRoster({ data }: { data: CampaignData }) {
         {!data.readOnly && data.campaign.home && (
           <div className="row-wrap">
             <button className="btn sm" onClick={() => setCreating(true)}><UserPlus size={14} /> Novo NPC</button>
-            <button className="btn sm" onClick={() => setPicking(true)}><Plus size={14} /> NPC da wiki</button>
+            <button className="btn sm" onClick={() => setPicking(true)}><Library size={14} /> NPC da wiki</button>
           </div>
         )}
       </div>
@@ -255,7 +255,7 @@ function FactionSection({ data }: { data: CampaignData }) {
       <h2 id="elenco-faccoes" className="section-title">Facções · {factions.length}</h2>
       {!data.readOnly && data.campaign.home && <div className="row-wrap">
         <button className="btn sm" onClick={() => setCreating(true)}><UserPlus size={14} /> Nova facção</button>
-        <button className="btn sm" onClick={() => setPicking(true)}><Plus size={14} /> Facção da wiki</button>
+        <button className="btn sm" onClick={() => setPicking(true)}><Library size={14} /> Facção da wiki</button>
       </div>}
     </div>
     {factions.length === 0
