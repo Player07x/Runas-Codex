@@ -519,7 +519,12 @@ export async function checkRoom(room: { port: number; key: string; codes: string
     socket.onerror = () => (clearTimeout(timer), resolve(null))
   })
   const join = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[0] }) })
-  return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
+  // U78: sair da mesa libera o assento e apaga o cookie; depois dá para entrar com outro código.
+  const cookie = join.headers.get("set-cookie")?.split(";")[0] ?? ""
+  const leave = await fetch(`${base}/seat/leave?k=${room.key}`, { method: "POST", headers: { cookie } })
+  const afterLeave = (await fetch(`${base}/seat?k=${room.key}`, { headers: { cookie } })).status
+  const rejoin = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[1] ?? room.codes[0] }) })
+  return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status, leave: leave.status, leaveCookie: leave.headers.get("set-cookie")?.includes("Max-Age=0") ?? false, afterLeave, rejoin: rejoin.status }
 }
 
 /** Páginas de um PDF gerado pelo Chromium (o número do nó `/Pages` da raiz). */
@@ -683,6 +688,10 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.roomCheck as Record<string, unknown>).withoutKey === 404 &&
     (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
     (result.roomCheck as Record<string, unknown>).join === 200 &&
+    (result.roomCheck as Record<string, unknown>).leave === 204 &&
+    (result.roomCheck as Record<string, unknown>).leaveCookie === true &&
+    (result.roomCheck as Record<string, unknown>).afterLeave === 401 &&
+    (result.roomCheck as Record<string, unknown>).rejoin === 200 &&
     result.books === true &&
     result.bookSideTyping === true &&
     typeof result.campaignSession === "object" &&

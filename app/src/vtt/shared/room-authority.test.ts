@@ -83,6 +83,26 @@ describe("autoridade compartilhada da sala", () => {
     await authority.stop()
     expect(options.joinSeat!(state.seats[0]!.code!)).toBeNull()
   })
+  it("“Sair da mesa” libera o assento, e o mesmo código entra de novo (U78)", async () => {
+    const { authority, options, state } = await room()
+    const code = state.seats[0]!.code!
+    const joined = options.joinSeat!(code)!
+    expect(options.leaveSeat!(joined.token)).toEqual({ slotId: "player-1", label: "Jogador 1" })
+    expect(options.authenticateSeat!(joined.token)).toBeNull()
+    expect(options.leaveSeat!(joined.token)).toBeNull()
+    const again = options.joinSeat!(code)!
+    expect(options.authenticateSeat!(again.token)?.slotId).toBe("player-1")
+    await authority.stop()
+  })
+  it("conta os tokens de cada assento para o painel avisar da duplicidade (U78)", async () => {
+    const { db, authority, state } = await room()
+    expect(state.seats.find((seat) => seat.slotId === "player-1")).toMatchObject({ tokenId: "hero", tokens: 1 })
+    putDocument(db, { id: "hero-2", type: "token", parentId: "scene", data: { name: "Montaria", x: 200, y: 150, disposition: "player", playerSlotId: "player-1" } })
+    await authority.stop()
+    const again = await authority.start(30000, 2)
+    expect(again.seats.find((seat) => seat.slotId === "player-1")).toMatchObject({ status: "attached", tokens: 2 })
+    expect(again.seats.find((seat) => seat.slotId === "player-2")?.tokens).toBe(0)
+  })
   it("recusa espectador, outro assento, parede e movimentos desativados", async () => {
     const { authority, options, db, sent } = await room(),
       move = { type: "move", tokenId: "hero", x: 250, y: 250 }
