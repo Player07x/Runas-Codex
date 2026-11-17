@@ -14,6 +14,7 @@ final class DocumentSubtree implements DocumentTree {
     public List<Node> children(Node parent) throws IOException { return source.children(parent); }
     public InputStream read(Node file) throws IOException { return source.read(file); }
     public Node create(Node parent, String name, boolean folder) throws IOException { return source.create(parent, name, folder); }
+    public void write(Node file, InputStream input, long size) throws IOException { source.write(file, input, size); }
     public void write(Node file, byte[] bytes) throws IOException { source.write(file, bytes); }
     public Node rename(Node file, String name) throws IOException { return source.rename(file, name); }
     public Node move(Node file, Node from, Node to) throws IOException { return source.move(file, from, to); }

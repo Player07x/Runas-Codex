@@ -26,6 +26,7 @@ interface DocumentTree {
     InputStream read(Node file) throws IOException;
     Node create(Node parent, String name, boolean folder) throws IOException;
     void write(Node file, byte[] bytes) throws IOException;
+    void write(Node file, InputStream source, long size) throws IOException;
     Node rename(Node file, String name) throws IOException;
     Node move(Node file, Node from, Node to) throws IOException;
     void delete(Node file) throws IOException;

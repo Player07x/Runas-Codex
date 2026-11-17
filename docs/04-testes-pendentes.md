@@ -1938,3 +1938,10 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+
+## 1.5 J1/U80 — arquivos grandes no Android
+
+- Em Android físico, exportar/importar uma mesa com áudio de 92 MB e uma pasta com ZIP avulso de 270 MB, nos modos direto e SAF. Conferir reprodução do áudio e integridade do ZIP.
+- Cancelar/falhar uma importação e conferir que o arquivo original fica intacto; trocar cofre ou revogar gravação durante a operação.
+- O android-vault precisa passar antes de mesclar. O teste automatizado exercita a ponte real e compara SHA-256 dos arquivos sintéticos. Limite por arquivo: 512 MB; ainda há um Uint8Array por arquivo no renderer.
