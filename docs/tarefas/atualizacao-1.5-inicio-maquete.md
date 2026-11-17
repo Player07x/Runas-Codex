@@ -50,4 +50,4 @@ Nada lê/grava o cofre. Não houve implementação do Home.tsx, merge, tag ou la
 A integração com tarefas, hábitos e relógios existentes, persistência, estados de erro/leitura/PIN e Android físico será validada na implementação, após aprovação.
 A aprovação de aparência não substitui os testes do fluxo real.
 
-**Estado: esperando aprovação do João.** As demais tarefas também aguardam essa confirmação, conforme sua última orientação.
+**Estado: maquete aprovada pelo João nesta conversa em 17/11/2026**, incluindo o destaque mobile compacto. A implementação segue a ordem do arquivo de continuação; a aprovação não autoriza merge ou lançamento.
