@@ -96,7 +96,7 @@ sessao: "[[Campanhas/Cinzas/Sessões/Sessão 10]]"
 `,
   [`${C}Missões/Lobos.md`]: "---\ntipo: missao\nstatus: ativa\nordem: \"1\"\ncontratante: \"[[Conde]]\"\nrecompensa: 200 moedas\n---\n# Descobrir quem solta os lobos\n",
   [`${C}Missões/Grimório.md`]: "---\nstatus: ideia\nordem: \"1.1\"\n---\n# Grimório de Sef\n",
-  [`${C}Missões/Caravana.md`]: "---\nstatus: concluída\nordem: \"0.5\"\n---\n",
+  [`${C}Missões/Caravana.md`]: "---\nstatus: concluída\nordem: \"0.5\"\nrecompensa: mapa\nrecompensa_enviada: \"2026-11-17\"\n---\n",
   [`${C}Personagens/Ilsa.md`]: "---\ntipo: personagem-jogador\njogador: Ana\nconceito: Ladina\n---\n# Ilsa Brasa\n",
   [`${C}Personagens/Torvak.md`]: "---\njogador: Bruno\n---\n",
   [`${C}Quadro.canvas`]: '{"nodes":[],"edges":[]}',
@@ -179,6 +179,9 @@ describe("campanhas", () => {
       ["Grimório de Sef", "ideia", "1.1"],
     ])
     expect(quests[1]).toMatchObject({ reward: "200 moedas", giver: { target: "Conde", dest: "Wikis/Mundo/Personagens/Conde.md" } })
+    // U93: a recompensa já mandada para o Tesouro fica marcada na missão.
+    expect(quests[0]).toMatchObject({ reward: "mapa", rewardSent: "2026-11-17" })
+    expect(quests[1]!.rewardSent).toBeUndefined()
     expect(["10", "2", "1.1", "1"].sort(compareOrder)).toEqual(["1", "1.1", "2", "10"])
   })
 

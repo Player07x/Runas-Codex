@@ -2,6 +2,7 @@
 // desktop para o cofre, mais os spikes da etapa 2 (teclado no CodeMirror e um cofre de 5 mil notas).
 // Uso: node mobile/tests/vault-smoke.cdp.mjs <endpoint devtools> <pasta de saída> <cofre no aparelho> <cofre local>
 // O APK de depuração abre o cofre pelo extra `runasVault` (só em APK depurável).
+import { verifyBinaryChunks } from './vault-binary.cdp.mjs'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import { join, relative } from 'node:path'
@@ -262,6 +263,7 @@ try {
   check('transferência não libera escrita em outros arquivos ocultos', Boolean(invalidWorld.error), invalidWorld)
   const readWorld = await run(call('readBinary', {path:worldPath}))
   check('bytes internos viajam sem alteração', readWorld.ok?.base64 === worldBytes, readWorld.error)
+  await verifyBinaryChunks(run, check, result.metrics, external ? 'external' : saf ? 'saf' : 'direct')
   // O botão de exportar abre o seletor do sistema; voltar deve resolver como cancelado e manter o cofre aberto.
   await run(`window.__saveCancelled=null; window.Capacitor.Plugins.RunasVault.saveAs({name:'Cancelamento.runas',mime:'application/octet-stream',base64:'YQ=='}).then(value=>window.__saveCancelled=value); true`)
   let pickerReady = false

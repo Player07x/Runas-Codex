@@ -86,6 +86,8 @@ export function App() {
       screen = <Home />
   }
 
+  screen = profileScreen(screen)
+
   return (
     <VaultProvider>
       <ToastProvider>
@@ -100,6 +102,7 @@ export function App() {
         <DesktopTrayRuntime />
         <AndroidRuntime />
         <TasksRuntime />
+        {performanceProfiling && <PerformanceRuntime />}
         <WriteCheckRuntime />
       </ToastProvider>
     </VaultProvider>
@@ -113,4 +116,6 @@ import { AppearanceRuntime } from "./components/Appearance"
 import { OnboardingRuntime } from "./components/Onboarding"
 import { AndroidRuntime } from "./platform/AndroidRuntime"
 import { TasksRuntime } from "./components/tasks/TasksRuntime"
+
+import { PerformanceRuntime, performanceProfiling, profileScreen } from "./lib/performance-profile"
 import { WriteCheckRuntime } from "./components/vault/WriteCheck"

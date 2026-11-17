@@ -61,7 +61,16 @@ export function treasuryYaml(data: Treasury): string {
 /** Acrescenta um item no fim do tesouro (a recompensa de uma missão concluída, por exemplo). */
 export function withTreasureItem(code: string, item: Omit<TreasureItem, "id">, id: string): string {
   const treasury = parseTreasury(code)
+  // Um item com o mesmo id já entrou (clique repetido, ou a marca na missão falhou depois): não entra de novo.
+  if (treasury.items.some((current) => current.id === id)) return code
   return treasuryYaml({ ...treasury, items: [...treasury.items, { id, ...item }] })
+}
+
+/** Id da recompensa de uma missão no Tesouro: o mesmo a cada envio, para a recompensa entrar uma vez só. */
+export function rewardItemId(questPath: string): string {
+  let hash = 0x811c9dc5
+  for (const char of questPath) hash = Math.imul(hash ^ char.codePointAt(0)!, 0x01000193) >>> 0
+  return `recompensa-${hash.toString(36)}`
 }
 
 // ---------- Iniciativa ----------

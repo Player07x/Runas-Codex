@@ -18,9 +18,9 @@ dizem por quê.
 
 ### Lixeira e histórico
 
-- **Mandar para a lixeira** (no ⋯ da nota) move o arquivo para `.trash/`, a mesma lixeira do Obsidian. Para ver e
+- **Mandar para a lixeira** (no menu Ações da nota) move o arquivo para `.trash/`, a mesma lixeira do Obsidian. Para ver e
   restaurar: Notas › ⋯ da lista › **Lixeira do cofre…** (ou procure “Lixeira do cofre” no <kbd>Ctrl</kbd> <kbd>K</kbd>).
-- **Histórico de versões** (⋯ da nota ou <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>H</kbd>) guarda versões da nota
+- **Histórico de versões** (menu Ações da nota ou <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>H</kbd>) guarda versões da nota
   neste aparelho; compare duas versões e restaure a que quiser.
 
 ### Backups

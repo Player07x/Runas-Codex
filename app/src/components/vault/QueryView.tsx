@@ -5,7 +5,7 @@ import { display, isQueryLink } from "../../core/queries/expression"
 import { basename } from "../../core/text"
 import { useNoteSet } from "../../lib/note-set"
 import { href } from "../../lib/router"
-import { useOpenNote } from "../../lib/tabs"
+import { TabSwitcherSlot, useOpenNote } from "../../lib/tabs"
 import { noteRoute } from "../../lib/vault-notes"
 import { useNotesLock } from "../../lib/notes-lock"
 import { scopeOf } from "../../core/spaces"
@@ -96,7 +96,7 @@ export function BaseScreen({ path }: { path: string }) {
   }
   const run = (action: () => Promise<void>) => void action().catch(e => setError(e instanceof Error ? e.message : String(e)))
   return <div className="base-screen page">
-    <div className="row-wrap between"><h2>{basename(path)}</h2>{!vault.info?.readOnly && <button className="btn sm" onClick={() => editing ? (setEditing(false), setError("")) : run(begin)}>{editing ? "Cancelar edição" : "Editar YAML"}</button>}</div>
+    <div className="row-wrap between"><h2>{basename(path)}</h2><span className="row">{/* U81: abas no celular */}<TabSwitcherSlot />{!vault.info?.readOnly && <button className="btn sm" onClick={() => editing ? (setEditing(false), setError("")) : run(begin)}>{editing ? "Cancelar edição" : "Editar YAML"}</button>}</span></div>
     {error && <p role="alert" className="query-error">{error}</p>}
     {editing ? <><label className="field"><span>Definição da base</span><textarea aria-label="YAML da base" rows={16} value={text} onChange={e => setText(e.target.value)} /></label><button className="btn primary" onClick={() => run(save)}>Salvar base</button><QueryView code={text} /></> : <BaseFile path={path} subpath="" />}
   </div>

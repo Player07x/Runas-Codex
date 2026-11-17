@@ -121,3 +121,10 @@ docs/                     estudo, checklist, plano e ADRs
 X5, C6, X8 e W1 integradas, com pasta comum e renomeação de imagens, contadores reais e categorias da Wiki com arte,
 busca, filtros e grade/lista. [Novidades e limites da beta.5](docs/releases/v0.1.0-beta.5.md).
 O escopo desta entrega é Windows/Linux; Android permanece na tarefa complementar de revisão e nas frentes C8/X7.
+
+## Licença
+
+O código próprio do Runas-Codex é distribuído sob a [licença MIT](LICENSE), aprovada pelo dono em 17/11/2026.
+Dependências e recursos de terceiros (incluindo fontes, dicionário VERO e bibliotecas vendorizadas) conservam
+suas próprias licenças e avisos; a MIT do projeto não os substitui. A revisão e o caminho de assinatura gratuita
+estão em [docs/seguranca.md](docs/seguranca.md).
