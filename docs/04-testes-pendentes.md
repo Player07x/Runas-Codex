@@ -1938,3 +1938,12 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Wiki no celular e evento que cruza a meia-noite (1.5.0, PR V5: U101, U105)
+
+- [ ] Celular, Wiki (abertura em “Categorias e artigos”): logo abaixo da busca há o índice das categorias; tocar em
+      “Personagens” abre a categoria sem rolar pela prévia das outras. No computador, o índice não aparece.
+- [ ] Celular, Wiki › Novo artigo, nos dois passos: “Continuar” e “Criar artigo” ficam presos no rodapé da folha,
+      mesmo com a ficha longa. Outros diálogos longos (Novo evento) também ficam com o rodapé à vista.
+- [ ] Agenda: criar um evento das 23:00 às 07:30. No painel do dia em que começa: “23:00 até 07:30 de amanhã”; no dia
+      seguinte: “continua de ontem, até 07:30”. Na Lista, o mesmo texto no dia em que começa.
