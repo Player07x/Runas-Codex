@@ -2147,3 +2147,8 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 - U80: conferir também lixeira/restauração de um arquivo de 270 MB pelo SAF; a restauração agora usa fluxo, preserva o original em conflito e não mantém o antigo teto de 50 MB.
 - U80: no Android, abrir uma mesa com 3 ou mais cenas e exportar um livro com 3 ou mais imagens para DOCX e EPUB. Antes, a terceira leitura simultânea era recusada ("Aguarde os arquivos que já estão em transferência."); agora espera a vez.
+
+## Atualização 1.5 — Contador das pastas de Notas (pedido de 17/11)
+
+- Em Notas › Cofre inteiro, conferir que a bolinha soma as subpastas e as notas diretamente dentro de cada pasta. Cada subpasta conta uma vez; seus descendentes não entram de novo na pasta-mãe. A dica e o nome acessível detalham pastas e notas.
+- Conferir depois de criar, mover e remover itens, e no escopo Espaço Notas. O número é o que aparece ao abrir a pasta (subpastas + notas); anexos e arquivos ocultos ficam fora, como na lista. As pastas vazias criadas na sessão entram na conta. Evidência com dados de exemplo em docs/testes-1.5-contagem-pastas.md.

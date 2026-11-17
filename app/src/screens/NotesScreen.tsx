@@ -6,6 +6,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragE
 import { Archive, FileDown, ListChecks, Package, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
+import { folderContents, folderContentsLabel } from "../core/folder-contents"
 import { currentPath, openHere, openInNewTab, pruneLayout, split, type TabLayout } from "../core/tabs"
 import { BaseScreen } from "../components/vault/QueryView"
 import { TrashDialog } from "../components/vault/TrashDialog"
@@ -495,12 +496,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const [collapseAll, setCollapseAll] = useState(0)
   // Pastas abertas e fechadas, por aparelho, cofre e escopo (U70). A pasta da nota aberta abre sozinha sem virar escolha.
   const [openFolders, setOpenFolders] = useRemembered(`runas-codex:pastas-abertas:${vault.info?.path ?? ""}:${wholeVault ? "cofre" : "notas"}`, parseFolderMemory)
-  // Contagem por extenso da pasta: dica e nome acessível da bolinha (U42).
-  const folderCount = (folder: TreeFolder) => {
-    const parts = [folder.notes.length === 1 ? "1 nota" : `${folder.notes.length} notas`]
-    if (folder.folders.size) parts.push(folder.folders.size === 1 ? "1 pasta" : `${folder.folders.size} pastas`)
-    return parts.join(" · ")
-  }
+  // A bolinha conta o que aparece ao abrir a pasta (subpastas + notas); a dica e o nome acessível dizem os mesmos números.
+  const folderCount = (folder: TreeFolder) => folderContentsLabel(folderContents(folder))
   const renderFolder = (folder: TreeFolder, depth: number): ReactNode => {
     // A pasta Arquivo do espaço fica por último e fechada; as notas fixadas vêm antes das outras.
     const isArchive = (sub: TreeFolder) => sub.path === `${NOTES_ROOT}${ARCHIVE_FOLDER}`
@@ -516,7 +513,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               <ChevronDown size={13} className="folder-chevron" />
               {isArchive(sub) ? <Archive size={14} /> : <NoteIcon folder {...preferences.folders[folderKey(vault.info!.path, sub.path)]} />}
               <span className="grow truncate" style={{ minWidth: 0 }}>{sub.name}</span>
-              <span className="folder-badge" title={folderCount(sub)} aria-label={folderCount(sub)}>{sub.notes.length}</span>
+              <span className="folder-badge" title={folderCount(sub)} aria-label={folderCount(sub)}>{folderContents(sub).total}</span>
             </summary>} actions={
               <span className="row-menu folder-menu"><OverflowMenu label={`Ações da pasta ${sub.name}`} triggerClassName="icon-btn sm" items={folderMenu(sub.path)} /></span>
             }>
