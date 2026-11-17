@@ -199,7 +199,7 @@ function CampaignCard({ campaign: c, readOnly, onPersonalize, onDelete }: { camp
   const status = CAMPAIGN_STATUS.find((s) => s.id === c.status)
   const setStatus = (id: string, label: string) => {
     if (!c.home) return
-    void vault.setProperty(c.home, "status", id).then(() => toast(`${c.name}: ${label.toLowerCase()}`), (e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+    void vault.setProperty(c.home, "status", id).then(() => toast(`${c.name}: ${label.toLowerCase()}`), (e: unknown) => toast.error(e))
   }
   return (
     <article className={`card campaign-card${c.look.tone ? " toned" : ""}`} style={toneStyle(c.look.tone)}>

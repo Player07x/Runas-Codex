@@ -1,4 +1,4 @@
-import { nextSession, overdueSessions, sessionLinks } from "./next-session"
+import { isRpgSession, nextSession, overdueSessions, sessionLinks } from "./next-session"
 import { VaultIndex } from "./vault-index"
 
 const vault = (files: Record<string, string>) => new VaultIndex(Object.entries(files).map(([path, text]) => ({ path, size: text.length, mtime: 1 })), files)
@@ -53,5 +53,21 @@ describe("a próxima sessão, de uma fonte só", () => {
     expect(nextSession(index, now)!.campaign).toBe("Cripta")
     expect(nextSession(index, now, "Valdris")!.session?.date).toBe("2026-11-01")
     expect(nextSession(vault({}), now)).toBeNull()
+  })
+})
+
+describe("U102: sessão ou evento no cartão do Início", () => {
+  it("um compromisso pessoal com contagem regressiva aparece, mas não é sessão", () => {
+    const index = vault({ "Agenda/Dormir.md": '---\ntitle: Dormir\ntype: single\ndate: "2026-10-21"\nstartTime: "23:00"\ncategoria: Pessoal\ncontagem: true\n---\n' })
+    const next = nextSession(index, now)!
+    expect(next.title).toBe("Dormir")
+    expect(isRpgSession(next)).toBe(false)
+  })
+
+  it("evento da categoria Sessão e sessão planejada de campanha são sessão", () => {
+    const event = vault({ "Agenda/Mesa.md": '---\ntitle: Mesa de sábado\ntype: single\ndate: "2026-10-24"\nstartTime: "19:30"\ncategoria: Sessão\n---\n' })
+    expect(isRpgSession(nextSession(event, now)!)).toBe(true)
+    const planned = vault({ [camp]: "# Valdris\n", "Campanhas/Valdris/Sessões/Sessão 13.md": '---\ntipo: sessao\nstatus: planejada\ndata: "2026-10-31"\n---\n' })
+    expect(isRpgSession(nextSession(planned, now)!)).toBe(true)
   })
 })

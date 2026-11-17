@@ -27,7 +27,7 @@ export function OnboardingRuntime() {
       try {
         for (const note of starterNotes()) await vault.createNote(note.folder, note.name, note.text)
         remember(info.path); setStatus("Oito notas de exemplo estão prontas. Você pode editá-las ou remover todas nas Configurações.")
-      } catch (error) { setStatus("Não foi possível criar todos os exemplos. Você pode completar pelas Configurações."); toast(String(error)) }
+      } catch (error) { setStatus("Não foi possível criar todos os exemplos. Você pode completar pelas Configurações."); toast.error(error) }
     })()
   }, [vault, toast])
   if (step === null) return null
@@ -57,7 +57,7 @@ export function OnboardingSettings() {
         }
         toast(`${added} notas de exemplo adicionadas.`)
       }
-    } catch (error) { toast(String(error)) } finally { setBusy(false) }
+    } catch (error) { toast.error(error) } finally { setBusy(false) }
   }
   return <section className="card" aria-labelledby="onboarding-title"><h2 id="onboarding-title" className="section-title row settings-card-head"><BookOpen size={16} /> Primeiros passos</h2>
     <div className="setting-row"><div><strong className="small">Tour</strong><span className="tiny muted">Um passeio curto por Notas, Agenda, Wiki, Campanhas, Livros e Mesa.</span></div>

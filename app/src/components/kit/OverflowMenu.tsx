@@ -15,8 +15,10 @@ type Anchor = { top: number; bottom: number; left: number; right: number }
  * O menu abre no fim da página (portal, `position: fixed` calculado pelo botão), para nenhum cartão ou painel com
  * `overflow` cortá-lo; vira para o outro lado e para cima quando não cabe na janela e acompanha a rolagem.
  */
-export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-btn", align = "end", heading }: {
+export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-btn", align = "end", heading, icon }: {
   label: string; items: MenuEntry[]; trigger?: ReactNode; triggerClassName?: string; align?: "start" | "end"; heading?: string
+  /** Ícone no lugar do ⋯, quando a mesma barra já tem outro ⋯ (Livros: capítulo e livro). */
+  icon?: ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
@@ -25,7 +27,7 @@ export function OverflowMenu({ label, items, trigger, triggerClassName = "icon-b
   return <span className="kit-menu-wrap">
     <button ref={button} type="button" className={triggerClassName} aria-label={trigger ? undefined : label} title={label} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined}
       onClick={() => setOpen((v) => !v)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true) } else if (event.key === "Escape" && open) { event.preventDefault(); setOpen(false) } }}>
-      {trigger ?? <Ellipsis size={18} />}
+      {trigger ?? icon ?? <Ellipsis size={18} />}
     </button>
     {open && <MenuPopup id={menuId} label={label} items={items} align={align} heading={heading} anchor={() => button.current?.getBoundingClientRect() ?? null} inside={(node) => Boolean(button.current?.contains(node))} onClose={close} />}
   </span>
