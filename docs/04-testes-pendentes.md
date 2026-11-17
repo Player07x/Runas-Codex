@@ -1960,3 +1960,36 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       app e a pasta aparece na folha. O texto começa mais alto do que na 1.4.
 - [ ] Com a nota dividida (Abrir à direita), a folha mostra “Painel ativo” e “Fechar este painel”.
 - [ ] Tablet ou janela entre 641 e 860 px, e o computador: a faixa de abas continua como antes.
+
+## Botões repetidos (1.5, pedido de 17/11)
+
+- [ ] Celular, uma missão aberta (Campanhas › Missões › missão): no topo não há mais “< Voltar às missões”; o “<” da
+      barra da nota volta às missões (o leitor de tela diz “Voltar às missões”). Na sessão, o “<” diz “Voltar às
+      sessões”; no artigo da Wiki, “Voltar para a Wiki”.
+- [ ] Missão e sessão no celular e com a janela estreita (até 1100 px): não há mais o botão redondo do painel no canto
+      de baixo; o painel abre pelo “Painel” da barra da nota. Dentro do painel não há mais “Voltar à nota”: fecha pelo
+      botão de recolher da barra do painel (o foco volta ao “Painel”).
+- [ ] Na sessão, no celular: digitar no resumo e fechar o painel pelo botão de recolher, sem tocar fora do campo:
+      o texto fica gravado (antes isso era feito pelo “Voltar à nota”, que saiu).
+- [ ] Início sem sessão marcada: o cartão mostra só “Marcar sessão”, que abre as Sessões da campanha ativa editada
+      por último (sem campanha ativa, o botão não aparece). Saiu o botão “Agenda” do cartão e o link “Agenda” de “No
+      horizonte”: a Agenda fica no cartão Agenda dos Espaços. Em Centelhas, “E mais N na nota” virou texto (o “Abrir a
+      nota” fica no título).
+- [ ] Início da Wiki: cada categoria abre pelo título (com a seta “>”); saiu o “Ver todos os N” / “Abrir a categoria”
+      de baixo. “Hoje no mundo” virou só a data (o calendário fica na aba Calendário). “Nova wiki…” ficou só no
+      seletor de wikis (saiu do ⋯ “Ações da wiki”).
+- [ ] Visão geral da campanha: os cartões Missões ativas, Elenco e Linha do tempo não têm mais “Quadro de missões”,
+      “Ver tudo” e “Sessões” (são as abas logo acima); o “+N” do fim de cada cartão virou texto (“+2 NPCs na aba
+      Elenco”).
+- [ ] Ficaram de propósito (dizer se quer mudar): o X e o “Cancelar” dos diálogos; o mesmo item em duas listas
+      diferentes (por exemplo, um artigo na categoria e nos Recentes); a trilha do topo (Campanhas › … › Missões)
+      junto das abas; e o “Remarcar” do aviso de sessão atrasada.
+- [ ] Livros › Escrever no computador: a barra tem um símbolo por botão. Sumário (lista), Ações do capítulo (arquivo
+      com engrenagem, no lugar do segundo ⋯), Prévia ao lado (duas colunas), Foco, Apoio (painel) e um ⋯ só, o do
+      livro. Sumário e Prévia abertos aparecem como botão ligado (fundo ciano). No celular, o ⋯ que junta capítulo e
+      livro continua ⋯.
+- [ ] Em Notas, Wiki e Campanhas, o menu da nota (Ações da nota) também virou o ícone de arquivo, no computador e no
+      celular; o ⋯ fica para o módulo (Ações das notas, Ações da wiki). Na Wiki, a aba Artigos ganhou ícone de jornal
+      (o de biblioteca fica só no seletor de wikis) e o menu do início da Wiki (Nova categoria, Personalizar) ganhou o
+      ícone de ajustes. No Elenco, “NPC da wiki” e “Facção da wiki” têm o ícone da Wiki (o “+” fica para criar e
+      para subir a reputação).
