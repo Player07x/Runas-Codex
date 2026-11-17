@@ -1949,3 +1949,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       teclado só mudam o dia escolhido.
 - [ ] Celular, Livros: com o Sumário aberto, ⋯ › “Exportar o livro…”; o Sumário fecha e o formulário de exportação
       aparece.
+
+## Abas da nota no celular (1.5.0, PR V3: U81, R2)
+
+- [ ] Celular (ou janela com até 640 px), Notas, com duas ou três notas em abas: a faixa de abas não aparece mais em
+      cima da nota. Na barra da nota há um quadradinho com o número de abas; tocar nele abre a folha “Abas abertas”.
+- [ ] Na folha: tocar no nome troca de aba e fecha a folha; ⋯ mostra Fixar, Abrir à direita, Abrir embaixo, Fechar as
+      outras e Fechar; × fecha a aba; “Empilhar as abas” e o botão de workspaces (no canto) continuam ali.
+- [ ] A barra da nota fica só com os botões (voltar, abas, salvo, leitura, painel, ⋯); o nome continua na barra do
+      app e a pasta aparece na folha. O texto começa mais alto do que na 1.4.
+- [ ] Com a nota dividida (Abrir à direita), a folha mostra “Painel ativo” e “Fechar este painel”.
+- [ ] Tablet ou janela entre 641 e 860 px, e o computador: a faixa de abas continua como antes.
