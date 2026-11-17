@@ -104,7 +104,7 @@ export function WikiProvider({ children, articlePath }: { children: ReactNode; a
     },
     players,
     setPlayers: (v) => {
-      void (async()=>{await flushOpenNotes();setPlayersState(v);store(PLAYERS_KEY,v?"1":"0")})().catch(error=>toast(String(error)))
+      void (async()=>{await flushOpenNotes();setPlayersState(v);store(PLAYERS_KEY,v?"1":"0")})().catch(error=>toast.error(error))
     },
     calendar,
     calendars,

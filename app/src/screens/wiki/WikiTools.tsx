@@ -100,7 +100,7 @@ export function WikiTools() {
   } catch (e) { setResults([]); setError(e instanceof Error ? e.message : String(e)) }
  }
  const use = (text: string) => { setDraft(text); setName(suggestName(text)) }
- const copy = (text: string) => void navigator.clipboard?.writeText(text).then(() => toast("Copiado."), () => toast("Não deu para copiar; selecione o texto."))
+ const copy = (text: string) => void navigator.clipboard?.writeText(text).then(() => toast("Copiado."), () => toast.error("Não deu para copiar; selecione o texto."))
  const save = () => setArticleOpen(true)
  const choose = (next: Tool) => { setTool(next); setResults([]); setDraft(""); setName(""); setError("") }
  const isCurrent = (t: Tool) => tool.kind === t.kind && (t.kind === "gerador" ? tool.kind === "gerador" && tool.id === t.id : tool.kind === "tabela" && tool.path === t.path && tool.index === t.index)
