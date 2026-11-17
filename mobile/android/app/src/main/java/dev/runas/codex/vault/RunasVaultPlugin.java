@@ -505,7 +505,10 @@ public class RunasVaultPlugin extends Plugin {
                 if(!creating && (expected==null || expected.size<0 || !Double.isFinite(expected.mtime) || expected.mtime<=0)) throw new IOException("A versão lida é obrigatória para importar os dados da mesa.");
                 target=VaultTransfer.worlds(owner,new File(getContext().getFilesDir(),"vault-transactions"),true);
             }
-            int id=binaryTransfers.writeStart(owner,target,path,call.getLong("size",-1L),expected,creating,binaryCache());
+            // O JSON do Capacitor usa Integer para arquivos abaixo de 2 GB; getLong não converte Integer.
+            double size=call.getData().optDouble("size",Double.NaN);
+            if(!Double.isFinite(size) || size<0 || size>BinaryContent.MAX_SIZE || size!=Math.rint(size)) throw new IOException("Tamanho inválido; o limite é 512 MB.");
+            int id=binaryTransfers.writeStart(owner,target,path,(long)size,expected,creating,binaryCache());
             JSObject result=new JSObject();result.put("id",id);call.resolve(result);
         }catch(IOException | IllegalArgumentException e){fail(call,e);}
     }

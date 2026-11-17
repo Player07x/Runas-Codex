@@ -8,9 +8,12 @@ export async function verifyBinaryChunks(run, check, metrics, mode) {
   const base64 = chunk.toString('base64')
   const sizes = mode === 'external' ? [2] : [92, 270]
   metrics.largeBinaries = []
+  let invalidSizeRefused = false
+  try { await invoke('binaryWriteStart', { path: 'Notas/U80/invalido.bin', size: 1.5, expected: null }) } catch { invalidSizeRefused = true }
+  check('U80: plugin recusa tamanho fracionário vindo do JSON', invalidSizeRefused)
   for (const mb of sizes) {
     const managed = mb === 92
-    const path = managed ? '.runas/mesas/u80-test/assets/audio/audio-92.mp3' : `Notas/U80/arquivo-${mb}.zip`
+    let path = managed ? `.runas/mesas/u80-${mode}-test/assets/audio/audio-92.mp3` : `Notas/U80/arquivo-${mode}-${mb}.zip`
     let id
     try {
       const start = Date.now(), size = mb * 1024 * 1024
@@ -19,6 +22,15 @@ export async function verifyBinaryChunks(run, check, metrics, mode) {
       for (let at = 0; at < size; at += chunk.length) { await invoke('binaryWriteChunk', { id, base64 }); expected.update(chunk) }
       const entry = await invoke('binaryWriteFinish', { id }); id = undefined
       check(`U80 ${mb} MB: publica arquivo completo e caminho correto`, entry.path === path && entry.size === size, entry)
+      if (mode !== 'direct' && !managed) {
+        await invoke('trash', { path })
+        const trash = await invoke('listTrash')
+        const deleted = trash.entries.find(e => e.path.endsWith('/' + path.split('/').at(-1)))
+        if (!deleted) throw Error('O binário grande não chegou à lixeira SAF.')
+        const restored = await invoke('restoreTrash', { path: deleted.path, target: path + '.restaurado.zip' })
+        check(`U80 ${mb} MB: restaura binário SAF sem limite de 50 MB`, restored.size === size, restored)
+        path = restored.path
+      }
       const writeMs = Date.now() - start
       const read = await invoke('binaryReadStart', { path }); id = read.id
       check(`U80 ${mb} MB: tamanho lido corresponde ao gravado`, read.size === size, read)

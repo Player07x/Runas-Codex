@@ -368,8 +368,11 @@ final class DocumentVaultStore implements VaultFs {
         String p = path(path, false), dest = path(target, true);
         if (!p.startsWith(".trash/")) throw new VaultError("Caminho de lixeira inválido.");
         Node source = find(p, true);
-        Entry restored = write(dest, bytes(source, VaultStore.MAX_BINARY_SIZE), null, true);
-        tree.delete(source);
+        if(source.size<0 || source.size>BinaryContent.MAX_SIZE)throw new VaultError("O arquivo passa do limite de 512 MB.");
+        Entry restored = write(dest, BinaryContent.source(source.size,()->tree.read(source)), null, true);
+        Node now=find(p,true);
+        if(!now.id.equals(source.id) || now.size!=source.size || now.mtime!=source.mtime)throw new VaultError("O arquivo na lixeira mudou. As duas cópias foram preservadas.");
+        tree.delete(now);
         return restored;
     }
 

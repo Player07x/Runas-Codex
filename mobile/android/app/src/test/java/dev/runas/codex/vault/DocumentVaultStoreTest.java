@@ -40,13 +40,17 @@ public class DocumentVaultStoreTest {
         int writes = documents.writes;
         assertEquals(created.mtime, store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(created.size,created.mtime), false).mtime);
         assertEquals(writes, documents.writes);
+        String trash=store.trash("Anexos/a.bin");
+        VaultStore.Entry restored=store.restoreTrash(trash,"Anexos/a.bin");
+        assertEquals(input.length(),restored.size);
+        final VaultStore.Entry restoredVersion=restored;
         java.nio.file.Files.write(input.toPath(), new byte[]{1,2,3});
         documents.failPublish = true;
-        refuses("publicação recusada", () -> store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(created.size,created.mtime), false));
-        assertEquals(created.size, store.entry("Anexos/a.bin").size);
+        refuses("publicação recusada", () -> store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(restoredVersion.size,restoredVersion.mtime), false));
+        assertEquals(restoredVersion.size, store.entry("Anexos/a.bin").size);
         documents.failPublish = false;
         documents.file("Anexos/a.bin", "alterado fora do app");
-        refuses("mudou fora", () -> store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(created.size,created.mtime), false));
+        refuses("mudou fora", () -> store.writeBinaryFromFile("Anexos/a.bin", input, new VaultStore.Version(restoredVersion.size,restoredVersion.mtime), false));
         assertEquals("alterado fora do app", text("Anexos/a.bin"));
     }
 

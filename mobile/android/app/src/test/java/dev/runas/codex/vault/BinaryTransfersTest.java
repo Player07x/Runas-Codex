@@ -43,6 +43,14 @@ public class BinaryTransfersTest {
         id=transfer.readStart(store,"a.bin");transfer.readChunk(id);store.writeBinary("a.bin",new byte[]{7},null,false);
         try{transfer.readFinish(id);fail();}catch(IOException expected){}assertEquals(0,transfer.openCount());
     }
+    @Test public void aceitaArquivoVazioERecusaConflitoAntesDoPrimeiroPedaco() throws Exception {
+        VaultStore store=new VaultStore(tmp.newFolder());File cache=tmp.newFolder();BinaryTransfers transfer=new BinaryTransfers();
+        int id=transfer.writeStart(store,store,"vazio.bin",0,null,true,cache);transfer.writeFinish(id);
+        id=transfer.readStart(store,"vazio.bin");assertEquals(0,transfer.size(id));transfer.readFinish(id);
+        try{transfer.writeStart(store,store,"vazio.bin",1,null,true,cache);fail();}catch(IOException expected){}
+        try{transfer.writeStart(store,store,"vazio.bin",1,new VaultStore.Version(12,1),false,cache);fail();}catch(IOException expected){}
+        assertEquals(0,transfer.openCount());assertEquals(0,cache.list().length);
+    }
     @Test public void recusaLimiteOcultosEscapeEExcessoDeBytes() throws Exception {
         VaultStore store=new VaultStore(tmp.newFolder());File cache=tmp.newFolder();BinaryTransfers transfer=new BinaryTransfers();
         for(String path:new String[]{"../x","/x",".obsidian/x"}) {try{transfer.writeStart(store,store,path,1,null,true,cache);fail(path);}catch(IOException expected){}}

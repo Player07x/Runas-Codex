@@ -52,11 +52,16 @@ final class BinaryTransfers {
     synchronized int writeStart(VaultFs owner,VaultFs fs,String path,long size,VaultStore.Version expected,boolean createOnly,File cache) throws IOException {
         room(size);
         for (String part:VaultStore.split(path)) if (part.startsWith(".")) throw new IOException("Não é permitido gravar em caminhos ocultos.");
-        // Mesmo a chamada antiga sem versão fica vinculada ao destino visto antes do primeiro pedaço.
-        if (expected == null && !createOnly) {
-            try { VaultStore.Entry e=fs.entry(path); expected=new VaultStore.Version(e.size,e.mtime); }
-            catch (FileNotFoundException e) { createOnly=true; }
-            catch (VaultStore.VaultError e) { if (e.getMessage().startsWith("Arquivo não encontrado")) createOnly=true; else throw e; }
+        VaultStore.Entry current=null;
+        try { current=fs.entry(path); }
+        catch(FileNotFoundException ignored) { /* arquivo novo */ }
+        catch(VaultStore.VaultError e) { if(!e.getMessage().startsWith("Arquivo não encontrado"))throw e; }
+        if(createOnly && current!=null)throw new IOException("Já existe “"+path+"”.");
+        if(expected!=null && (current==null || !VaultStore.sameVersion(current,expected)))throw new IOException("O arquivo mudou fora do app. Recarregue antes de gravar.");
+        // Mesmo a chamada sem versão fica vinculada ao destino visto antes do primeiro pedaço.
+        if(expected==null && !createOnly) {
+            if(current==null)createOnly=true;
+            else expected=new VaultStore.Version(current.size,current.mtime);
         }
         if (!cache.isDirectory() && !cache.mkdirs()) throw new IOException("Não deu para preparar o arquivo temporário.");
         File file=File.createTempFile("binary-", ".part",cache);

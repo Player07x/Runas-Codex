@@ -5,13 +5,15 @@ import java.io.*;
 /** Fonte reabrível: comparar e publicar um binário não exige outra cópia dele na memória nativa. */
 final class BinaryContent {
     static final long MAX_SIZE = 512L * 1024 * 1024;
-    private final File file;
-    private final byte[] bytes;
-    private BinaryContent(File file, byte[] bytes) { this.file = file; this.bytes = bytes; }
-    static BinaryContent file(File file) { return new BinaryContent(file, null); }
-    static BinaryContent bytes(byte[] bytes) { return new BinaryContent(null, bytes); }
-    long size() { return file == null ? bytes.length : file.length(); }
-    InputStream open() throws IOException { return file == null ? new ByteArrayInputStream(bytes) : new FileInputStream(file); }
+    interface Source { InputStream open() throws IOException; }
+    private final long size;
+    private final Source source;
+    private BinaryContent(long size,Source source) { this.size=size;this.source=source; }
+    static BinaryContent file(File file) { return source(file.length(),()->new FileInputStream(file)); }
+    static BinaryContent bytes(byte[] bytes) { return source(bytes.length,()->new ByteArrayInputStream(bytes)); }
+    static BinaryContent source(long size,Source source) { return new BinaryContent(size,source); }
+    long size() { return size; }
+    InputStream open() throws IOException { return source.open(); }
     boolean same(InputStream existing) throws IOException {
         try (InputStream a = existing; InputStream b = open()) {
             byte[] left = new byte[65536], right = new byte[65536];
