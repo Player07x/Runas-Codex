@@ -1952,6 +1952,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
 - [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
       campanha continua “Próxima sessão · <campanha>”.
+
 ## Painéis: botão na barra e celular (1.5.0, PR V2: U87, U97)
 
 - [ ] Computador, Agenda: recolher o “Painel da agenda”. A faixa estreita à direita some, o calendário ocupa a
@@ -1973,6 +1974,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       app e a pasta aparece na folha. O texto começa mais alto do que na 1.4.
 - [ ] Com a nota dividida (Abrir à direita), a folha mostra “Painel ativo” e “Fechar este painel”.
 - [ ] Tablet ou janela entre 641 e 860 px, e o computador: a faixa de abas continua como antes.
+
 ## Quadro e Tesouro no celular (1.5.0, PR V4: U96, U106)
 
 - [ ] Celular, Campanha › Quadro: a barra mostra Texto, Nota, Ligar e “Mais”, sem nomes por cima uns dos outros.
@@ -1983,6 +1985,7 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       notas e os botões “Editar” e “Remover”. Uma recompensa de missão aparece como “Recompensa de <link>”, e o
       link abre a missão na campanha.
 - [ ] Computador, Tesouro: a tabela continua, e a origem da recompensa também vira link na coluna Notas.
+
 ## Wiki no celular e evento que cruza a meia-noite (1.5.0, PR V5: U101, U105)
 
 - [ ] Celular, Wiki (abertura em “Categorias e artigos”): logo abaixo da busca há o índice das categorias; tocar em
@@ -2209,3 +2212,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - Conferir a mesma nota na Wiki, Campanhas e Livros. Código, Escondidas, somente leitura e notas sem frontmatter mantêm seus estados. Ctrl+Home/Backspace não podem estragar o YAML recolhido.
 - Evidência automatizada do Electron em docs/testes-1.5-e.md: 320/390/1366 px, claro/escuro, aberto/recolhido, teclado nativo e bytes preservados. Teclado físico Android e leitor de tela físico ainda não conferidos.
 - U79: abrir uma nota com propriedades, ir com Tab da barra de propriedades até o texto e digitar: o texto entra no começo do corpo, e o YAML fica intacto.
+
+## Versão 1.5.0
+
+- [ ] Atualizar da 1.4.0 para a 1.5.0 pelo botão “Verificar atualizações” (Ubuntu, AppImage, Windows e Android) e
+  conferir em Configurações › Privacidade e atualizações que a versão instalada é a 1.5.0.
+- [ ] O ícone novo (a runa azul) aparece no menu do sistema, na barra de tarefas, no atalho do Android (ícone redondo e
+  quadrado) e na tela de abertura do Android. No Windows, se o ícone antigo continuar no atalho, é o cache de ícones.
+- [ ] As seções acima, de “Consertos visuais pequenos (1.5.0, PR V1)” até “Propriedades pelo teclado (E/U79)”, entraram
+  nesta versão.
+- [ ] Com a 1.5.0 instalada e a próxima versão publicada, o aviso “Atualizar para …” aparece sozinho na barra lateral
+  (uma consulta por dia), e não aparece com a consulta automática desligada.
