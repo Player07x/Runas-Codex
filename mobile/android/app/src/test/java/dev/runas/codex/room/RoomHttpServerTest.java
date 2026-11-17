@@ -207,4 +207,72 @@ public class RoomHttpServerTest {
       assertEquals(-1, in.read());
     }
   }
+
+  @Test
+  public void sairDaMesaLiberaOAssentoEApagaOCookie() throws Exception {
+    ServerSocket reserve = new ServerSocket(0);
+    int port = reserve.getLocalPort();
+    reserve.close();
+    String token = String.join("", Collections.nCopies(64, "c"));
+    List<String> left = new ArrayList<>();
+    RoomHttpServer.Authority authority =
+        new RoomHttpServer.Authority() {
+          public RoomHttpServer.Joined join(String body) {
+            return null;
+          }
+
+          public String authenticate(String value) {
+            return value.equals(token) && left.isEmpty() ? "{\"slotId\":\"player-2\"}" : null;
+          }
+
+          public String leave(String value) {
+            if (!value.equals(token)) return null;
+            left.add(value);
+            return "{\"slotId\":\"player-2\"}";
+          }
+
+          public String snapshot(String seat) {
+            return "{}";
+          }
+
+          public String message(String seat, String body) {
+            return "{}";
+          }
+
+          public void counts(int players, int spectators) {}
+        };
+    RoomHttpServer.Files files =
+        new RoomHttpServer.Files() {
+          public RoomHttpServer.Resource bundle(String path) {
+            return null;
+          }
+
+          public RoomHttpServer.Resource asset(String path) {
+            return null;
+          }
+        };
+    try (RoomHttpServer server = new RoomHttpServer(port, KEY, authority, files)) {
+      HttpURLConnection request = get(server, "/seat");
+      request.setRequestProperty("Cookie", "runas_seat=" + token);
+      assertEquals(200, request.getResponseCode());
+      request.disconnect();
+      request = get(server, "/seat/leave?k=" + KEY);
+      request.setRequestMethod("POST");
+      request.setRequestProperty("Cookie", "runas_seat=" + token);
+      assertEquals(204, request.getResponseCode());
+      assertTrue(request.getHeaderField("Set-Cookie").contains("runas_seat=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"));
+      request.disconnect();
+      assertEquals(Collections.singletonList(token), left);
+      request = get(server, "/seat");
+      request.setRequestProperty("Cookie", "runas_seat=" + token);
+      assertEquals(401, request.getResponseCode());
+      request.disconnect();
+      // Sem cookie (preso no lobby), sair também responde e apaga o cookie.
+      request = get(server, "/seat/leave");
+      request.setRequestMethod("POST");
+      assertEquals(204, request.getResponseCode());
+      request.disconnect();
+      assertEquals(1, left.size());
+    }
+  }
 }

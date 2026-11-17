@@ -20,6 +20,11 @@ public final class RoomHttpServer implements AutoCloseable {
 
     void counts(int players, int spectators);
 
+    /** U78: “Sair da mesa” libera o assento deste token; devolve o assento liberado (ou null). */
+    default String leave(String token) throws Exception {
+      return null;
+    }
+
     default String masterWorld() throws Exception {
       throw new IOException("Mesa indisponível.");
     }
@@ -308,6 +313,30 @@ public final class RoomHttpServer implements AutoCloseable {
                 "runas_seat="
                     + joined.token
                     + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400"));
+        return;
+      }
+      if (path.equals("/seat/leave") && request[0].equals("POST")) {
+        // U78: sair nunca falha para quem está no lobby; com cookie válido, libera o assento e fecha as conexões
+        // identificadas por ele (a Vista reconecta como espectador).
+        if (!origin) {
+          respond(out, 403, "text/plain", new byte[0], false, headers());
+          return;
+        }
+        String token = cookie(headers);
+        if (!token.isEmpty() && authority.leave(token) != null)
+          for (Client client : clients)
+            if (token.equals(client.token))
+              try {
+                client.socket.close();
+              } catch (IOException ignored) {
+              }
+        respond(
+            out,
+            204,
+            "text/plain",
+            new byte[0],
+            false,
+            headers("Set-Cookie", "runas_seat=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"));
         return;
       }
       if (!request[0].equals("GET") && !request[0].equals("HEAD")) {

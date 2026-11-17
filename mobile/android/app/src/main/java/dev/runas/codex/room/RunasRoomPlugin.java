@@ -183,6 +183,13 @@ public class RunasRoomPlugin extends Plugin {
                             : new RoomHttpServer.Joined(seat.toString(), token);
                       }
 
+                      public String leave(String token) throws Exception {
+                        if (token.isEmpty()) return null;
+                        JSONObject seat =
+                            ask("leave", new JSONObject().put("token", token)).optJSONObject("seat");
+                        return seat == null ? null : seat.toString();
+                      }
+
                       public String authenticate(String token) throws Exception {
                         if (token.isEmpty()) return null;
                         JSONObject seat =

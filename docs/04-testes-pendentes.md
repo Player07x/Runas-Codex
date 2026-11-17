@@ -1938,3 +1938,10 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## 1.5 C/U78 — Sair da mesa
+
+- Na Vista do jogador (computador e Android), entrar com um código, clicar em “Sair da mesa” (ícone de porta na barra de ferramentas) e confirmar: a página volta ao lobby com o campo do código. Entrar com outro código funciona; “Continuar como espectador” também.
+- No painel Jogadores do mestre, o assento do jogador que saiu volta a “Disponível” ou “Ficha anexada”, sem precisar de “Limpar”.
+- Pôr o mesmo “Controlado por” em dois tokens: os dois se movem pelo jogador, e o painel mostra “controla 2 tokens: confira o ‘Controlado por’”.
+- Com o mestre remoto e na sala hospedada no Android: o mesmo sair e entrar.

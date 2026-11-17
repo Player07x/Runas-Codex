@@ -107,6 +107,8 @@ export interface PlayerSeatState {
   tokenId: string | null
   revision: number
   lastSeenAt: number | null
+  /** Tokens com “Controlado por” neste assento (U78); mais de um gera aviso no painel. */
+  tokens?: number
 }
 
 /** Onde o túnel público se conectou à Cloudflare. */
