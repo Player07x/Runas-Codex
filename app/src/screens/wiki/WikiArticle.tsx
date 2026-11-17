@@ -70,7 +70,7 @@ export function WikiArticleView({ path }: { path: string }) {
   return (
     <div className={`wiki-article-layout ${panel.overlay ? "show-panel" : ""}${categoryStyle.tone ? " toned" : ""}`} style={toneStyle(categoryStyle.tone)}>
       <section className="wiki-article-main">
-        <NoteView key={`${path}:${players}`} defaultMode={PHONE() ? "leitura" : undefined} path={path} folders={folders} onShowPanel={panel.toggle} panelOpen={panel.expanded} panelHint="Ficha, relações, citações e links" onBack={() => navigate("/wiki")} onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
+        <NoteView key={`${path}:${players}`} defaultMode={PHONE() ? "leitura" : undefined} path={path} folders={folders} onShowPanel={panel.toggle} panelOpen={panel.expanded} panelHint="Ficha, relações, citações e links" onBack={() => navigate("/wiki")} backLabel="Voltar para a Wiki" onCreate={onCreate} onTag={onTag} showSecrets={!players} extraFormatters={WIKI_FORMATTERS} />
       </section>
       <ResizablePanel id="wiki-article" label="Detalhes do artigo" side="right" width={340} className="wiki-article-side" onCollapsedChange={panel.onCollapsedChange}>
         <PanelTabs label="Detalhes do artigo" idPrefix="artigo-painel" value={tab} onChange={setTab} tabs={[

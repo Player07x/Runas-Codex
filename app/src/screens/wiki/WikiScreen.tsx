@@ -2,7 +2,7 @@ import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useRef, useState } from "react"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Plus, Wrench, Package } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Newspaper, Plus, Wrench, Package } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
 import { wikiItem, requestExport } from "../../lib/transfer-request"
@@ -23,7 +23,7 @@ import "./register"
 import "./wiki.css"
 
 const TABS = [
-  { id: "", label: "Artigos", icon: <Library size={15} /> },
+  { id: "", label: "Artigos", icon: <Newspaper size={15} /> },
   { id: "calendario", label: "Calendário", icon: <CalendarDays size={15} /> },
   { id: "linha-do-tempo", label: "Linha do tempo", icon: <History size={15} /> },
   { id: "mapa", label: "Mapas", icon: <Map size={15} /> },
@@ -150,7 +150,6 @@ function WikiHeader({ current }: { current: string }) {
         { label: "Exportar wiki…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players }) },
         // U54: o pacote (.runas ou Obsidian) com a wiki marcada, as imagens que ela usa e nada mais.
         { label: "Exportar wiki como pacote…", icon: <Package size={15} />, onSelect: () => requestExport({ items: [wikiItem(wiki!.name)] }) },
-        { label: "Nova wiki…", icon: <Plus size={15} />, onSelect: newWiki },
       ]} />
       {creating && <NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />}
     </div>

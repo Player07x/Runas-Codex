@@ -3,7 +3,7 @@ import { Crest } from "../../components/kit/Emblem"
 import { imageTarget } from "../../core/personalization"
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { useMemo, useState } from "react"
-import { CalendarDays, ChevronLeft, Download, FileDown, FileText, Globe, LockKeyhole, PanelRight, Pin, PinOff, Plus, Search, Trash2, Users } from "lucide-react"
+import { CalendarDays, Download, FileDown, FileText, Globe, LockKeyhole, Pin, PinOff, Plus, Search, Trash2, Users } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { campaignJournal, GM_NOTES_FOLDER, listGmNotes, newGmNote, withPinnedNote, previousSession, SESSION_STATUS, setPrepDetail, setSectionText, setTaskLine, SUMMARY_HEADING, uniqueNoteName, type SessionInfo, type SessionStatus } from "../../core/campaigns"
 import { dirname, noteName } from "../../core/text"
@@ -288,23 +288,18 @@ function SessionPage({ data, path }: { data: CampaignData; path: string }) {
           panelOpen={panel.expanded}
           panelHint="Detalhes, preparação e resumo da sessão"
           onBack={() => navigate(campaignRoute(data.campaign.name, "sessoes"))}
+          backLabel="Voltar às sessões"
           onCreate={(target) => (data.readOnly ? toast(`“${target}” ainda não existe.`) : setCreatingLink(target))}
           onTag={(tag) => toast(`Tag #${tag}`)}
         />
       </section>
-      <ResizablePanel id="campaign-session" label="Detalhes da sessão" side="right" width={360} className="campaign-session-side" onCollapsedChange={panel.onCollapsedChange}>
-        <button className="btn ghost sm campaign-panel-close" onClick={() => { drafts.flush(); panel.close() }}>
-          <ChevronLeft size={14} /> Voltar à nota
-        </button>
+      <ResizablePanel id="campaign-session" label="Detalhes da sessão" side="right" width={360} className="campaign-session-side" onCollapsedChange={(collapsed) => { if (collapsed) drafts.flush(); panel.onCollapsedChange(collapsed) }}>
         <DraftsContext.Provider value={drafts}>
           <SessionDetails data={data} session={session} />
           <PrepCard data={data} session={session} />
           <SummaryCard data={data} session={session} />
         </DraftsContext.Provider>
       </ResizablePanel>
-      <button className="icon-btn campaign-panel-toggle" onClick={togglePanel} aria-label="Painel da sessão" aria-expanded={panel.expanded}>
-        <PanelRight size={18} />
-      </button>
       {creatingLink && <NewNpcDialog data={data} initialName={creatingLink} onClose={() => setCreatingLink(null)} onCreated={(created) => toast(`“${noteName(created)}” criado na wiki.`)} />}
     </div>
   )

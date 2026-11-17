@@ -56,7 +56,7 @@ export function usePanelToggle(id: string, narrowAt = 1100) {
  * mostra o nome dele e um botão de recolher; recolhido, vira uma faixa estreita (ou um trilho de ícones, na
  * navegação). Preferências locais; arrastar altera só o espaço do painel, nunca os dados do cofre.
  */
-export function ResizablePanel({ id, label, side = "right", width = 300, maxWidth = 600, as: Tag = "aside", className = "", children, hidden, controlsTarget, collapsedTarget, collapsedLabel, defaultCollapsed = false, reveal = false, collapsedMode = "hide", onCollapsedChange }: {
+export function ResizablePanel({ id, label, side = "right", width = 300, maxWidth = 600, as: Tag = "aside", className = "", children, hidden, controlsTarget, collapsedTarget, collapsedLabel, defaultCollapsed = false, reveal = false, collapsedMode = "hide", onCollapsedChange, icon }: {
   id: string; label: string; side?: "left" | "right"; width?: number; as?: "aside" | "nav" | "section"; className?: string; children: ReactNode; hidden?: boolean; controlsTarget?: HTMLElement | null; defaultCollapsed?: boolean; reveal?: boolean
   /**
    * U87: recolhido no computador, o botão de expandir vai para esta barra da tela (em vez de ficar sozinho numa faixa
@@ -71,6 +71,8 @@ export function ResizablePanel({ id, label, side = "right", width = 300, maxWidt
   collapsedMode?: "hide" | "rail"
   /** Avisa quando o painel abre ou fecha (também ao montar), para quem só quer desenhar o conteúdo aberto. */
   onCollapsedChange?(collapsed: boolean): void
+  /** Ícone do botão em outra barra (`controlsTarget`) no lugar do de painel, quando a barra tem vários painéis. */
+  icon?: ReactNode
 }) {
   const key = `runas-codex:painel:${id}`
   const [prefs, setPrefs] = useState(() => {
@@ -122,9 +124,9 @@ export function ResizablePanel({ id, label, side = "right", width = 300, maxWidt
   const toggle = () => { if (collapsedTarget && wide) refocus.current = true; setPrefs(p => ({ ...p, collapsed: !p.collapsed })) }
   // Painéis com o botão em outra barra (Livros) mantêm o nome no botão; os demais têm a barra do painel com o nome.
   const control = away
-    ? <div className="panel-controls panel-controls-away" data-panel-control={id}><button type="button" className="panel-collapse btn sm" aria-label={action} title={action} aria-expanded={false} onClick={toggle}><Icon size={16} /><span>{collapsedLabel ?? label}</span></button></div>
+    ? <div className="panel-controls panel-controls-away" data-panel-control={id}><button type="button" className="panel-collapse btn sm" aria-label={action} title={action} aria-expanded={false} onClick={toggle}>{icon ?? <Icon size={16} />}<span>{collapsedLabel ?? label}</span></button></div>
     : controlsTarget
-    ? <div className="panel-controls" data-panel-control={id}><button type="button" className="panel-collapse btn ghost" aria-label={action} title={action} aria-expanded={!prefs.collapsed} onClick={toggle}><Icon size={17} /><span>{label}</span></button></div>
+    ? <div className="panel-controls" data-panel-control={id}><button type="button" className="panel-collapse btn ghost" aria-label={action} title={action} aria-expanded={!prefs.collapsed} onClick={toggle}>{icon ?? <Icon size={17} />}<span>{label}</span></button></div>
     : <div className="panel-controls" data-panel-control={id}>
       {collapsedMode !== "rail" && <span className="panel-title">{label}</span>}
       <button type="button" className="panel-collapse icon-btn sm" aria-label={action} title={id === "navigation" ? `${action} (Ctrl+\\)` : action} aria-expanded={!prefs.collapsed} onClick={toggle}><Icon size={17} /></button>

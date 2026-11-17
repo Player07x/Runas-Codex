@@ -10,6 +10,8 @@
 .book-slot { display: flex; align-items: center; gap: 6px; }
 .book-slot:empty { display: none; }
 .book-slot .panel-controls { position: static; display: flex; background: transparent; }
+/* Sumário e Prévia têm ícone próprio, que não muda ao abrir: o painel aberto aparece como botão ligado. */
+.book-slot .panel-collapse[aria-expanded=true] { border-color: color-mix(in srgb, var(--cyan) 40%, var(--line)); background: color-mix(in srgb, var(--cyan) 14%, var(--panel-2)); color: var(--cyan); }
 .book-back span { font-weight: 500; }
 
 /* ---------- Sumário, página e Apoio ---------- */
