@@ -59,7 +59,7 @@ export function AdventureWizard({ data }: { data: CampaignData }) {
       try { localStorage.setItem("runas-codex:campanha:missoes-vista", "mapa") } catch { /* só não abre no mapa */ }
       navigate(campaignRoute(data.campaign.name, "missoes"))
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
     } finally {
       setBusy(false)
     }

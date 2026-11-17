@@ -1,6 +1,6 @@
 import { useDialogFocus } from "./useDialogFocus"
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react"
-import { CheckCircle2, X } from "lucide-react"
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
+import { CheckCircle2, CircleAlert, X } from "lucide-react"
 import runa from "../assets/runa.png"
 
 export function Modal({ title, onClose, children, footer, wide }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
@@ -89,10 +89,22 @@ export function ClockDial({ segments, filled, color, size = 54 }: { segments: nu
  * teclado alcançar o Desfazer.
  */
 export interface ToastAction { label: string; run(): void | Promise<void> }
-const ToastContext = createContext<(message: string, action?: ToastAction) => void>(() => {})
+
+/**
+ * O aviso: `toast("Feito.")` para o que deu certo e `toast.error(motivo)` para o que falhou (U107). O de erro tem ícone
+ * e cor de erro, é anunciado na hora (`role="alert"`) e fica 6 s; o motivo pode ser um `Error`, um texto ou outra coisa.
+ */
+export interface Toast {
+  (message: string, action?: ToastAction): void
+  error(reason: unknown): void
+}
+const ToastContext = createContext<Toast>(Object.assign(() => {}, { error: () => {} }))
+
+/** O texto de um erro qualquer (a mensagem do `Error`, ou ele mesmo como texto). */
+export const reasonText = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason))
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{ id: number; message: string; action?: ToastAction } | null>(null)
+  const [toast, setToast] = useState<{ id: number; message: string; action?: ToastAction; error?: boolean } | null>(null)
   const [held, setHeld] = useState(false)
   const sequence = useRef(0)
   const actionButton = useRef<HTMLButtonElement>(null)
@@ -100,20 +112,27 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     sequence.current += 1
     setToast({ id: sequence.current, message, ...(action ? { action } : {}) })
   }, [])
+  const api = useMemo<Toast>(() => Object.assign((message: string, action?: ToastAction) => show(message, action), {
+    error: (reason: unknown) => {
+      sequence.current += 1
+      setToast({ id: sequence.current, message: reasonText(reason), error: true })
+    },
+  }), [show])
   useEffect(() => {
     if (!toast || held) return
-    const timer = window.setTimeout(() => setToast((current) => (current?.id === toast.id ? null : current)), toast.action ? 10_000 : 2600)
+    const timer = window.setTimeout(() => setToast((current) => (current?.id === toast.id ? null : current)), toast.action ? 10_000 : toast.error ? 6000 : 2600)
     return () => window.clearTimeout(timer)
   }, [toast, held])
   useEffect(() => {
     if (toast?.action && (!document.activeElement || document.activeElement === document.body)) actionButton.current?.focus()
   }, [toast])
   return (
-    <ToastContext.Provider value={show}>
+    <ToastContext.Provider value={api}>
       {children}
       {toast && (
-        <div className="toast" role="status" onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
-          <CheckCircle2 size={16} color="var(--green)" style={{ flex: "none" }} /> <span className="toast-message">{toast.message}</span>
+        <div className={`toast${toast.error ? " toast-error" : ""}`} role={toast.error ? "alert" : "status"} onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
+          {toast.error ? <CircleAlert size={16} color="var(--red)" style={{ flex: "none" }} aria-hidden="true" /> : <CheckCircle2 size={16} color="var(--green)" style={{ flex: "none" }} aria-hidden="true" />}
+          <span className="toast-message">{toast.error && <span className="sr-only">Erro: </span>}{toast.message}</span>
           {toast.action && (
             <button ref={actionButton} type="button" className="btn sm ghost toast-action" onClick={() => {
               const action = toast.action!

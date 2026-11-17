@@ -182,7 +182,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [imageRename, setImageRename] = useState<string | null>(null)
   // "Criar ou editar tarefa" (Tasks) na linha do cursor.
   const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
-  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
+  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast.error(error)) }
   const editor = useRef<SourceEditorHandle>(null)
   const tools = useRef<NoteToolsHandle>(null)
   const surface = useRef<HTMLDivElement>(null)
@@ -305,7 +305,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           const saved = await vault.addAttachment(name, new Uint8Array(await file.arrayBuffer()), path)
           links.push(attachmentEmbed(saved, path, vault.config.app, vault.index!))
         } catch (err) {
-          toast(err instanceof Error ? err.message : String(err))
+          toast.error(err)
         }
       }
       if (links.length) setTimeout(() => editor.current?.insertBlock(links.join("\n"), at ?? undefined))
@@ -409,7 +409,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const organize = (action: () => Promise<unknown>) => {
     void flush()
       .then(action)
-      .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => toast.error(err))
   }
   const move = (to: string) =>
     organize(async () => {
@@ -547,7 +547,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               const lines = checkboxLines(draft)
               const line = lines[index]
               if (lines.length !== total || line === undefined) {
-                toast("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
+                toast.error("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
                 return
               }
               const all = draft.split("\n")

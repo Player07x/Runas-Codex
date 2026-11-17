@@ -1952,3 +1952,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
 - [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
       campanha continua “Próxima sessão · <campanha>”.
+
+## Avisos de erro (1.5.0, PR V6: U107)
+
+- [ ] Provocar um erro (por exemplo, Importar › Plugins de RPG do Obsidian › escolher como calendário um arquivo
+      `.json` quebrado): o aviso aparece com o ícone de alerta vermelho e a borda avermelhada, não com o ✓ verde, e
+      fica uns 6 s (para enquanto o ponteiro ou o foco estão nele).
+- [ ] Um aviso de sucesso (salvar algo, “Copiado.”) continua com o ✓ verde.
+- [ ] Com leitor de tela (NVDA ou TalkBack), o aviso de erro é lido na hora, começando por “Erro:”.

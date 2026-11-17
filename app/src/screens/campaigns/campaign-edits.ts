@@ -24,7 +24,7 @@ export function useCampaignEdits(data: CampaignData) {
       await action()
       return true
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
       return false
     }
   }
@@ -57,7 +57,7 @@ export function useUndoable() {
           await vault.save(path, before)
           toast("Desfeito.")
         } catch (err) {
-          toast(err instanceof Error ? err.message : String(err))
+          toast.error(err)
         }
       },
     })

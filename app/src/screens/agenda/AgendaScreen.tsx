@@ -121,7 +121,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const [exactAlarms, setExactAlarms] = useState(true)
   const [permission, setPermission] = useState(() => (typeof Notification !== "undefined" ? Notification.permission : "granted"))
   const fileInput = useRef<HTMLInputElement>(null)
-  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+  const fail = (error: unknown) => toast.error(error)
 
   const setView = (next: View) => {
     setViewState(next)
@@ -682,7 +682,7 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
             const note = index.note(event.path)
             if (!note) return
             const body = note.text.replace(/\s*$/, "")
-            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast.error(e))
           }}
           onClose={() => setAdding(false)}
         />

@@ -115,7 +115,7 @@ export function CanvasBoard({ path }: { path: string }) {
       const saved = vault.index?.allFiles().find((f) => f.path === path)
       if (saved) lastSeen.current = `${saved.mtime}:${saved.size}`
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
       lastSeen.current = ""
     }
   }, [original, path, toast, vault])

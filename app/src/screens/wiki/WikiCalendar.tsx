@@ -195,7 +195,7 @@ export function WikiCalendar({ path }: { path?: string }) {
     if (!calendar) return
     if (readOnly) return toast("Libere a gravação em Configurações para avançar o dia do mundo.")
     const next = days === "mes" ? addMonths(calendar, today, 1) : addDays(calendar, today, days)
-    void setToday(next).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+    void setToday(next).catch((err: unknown) => toast.error(err))
   }
 
   if (!calendar) {
@@ -392,7 +392,7 @@ function AbbrMigration({ root }: { root: string }) {
       for (const note of pending) for (const d of note.dates) await vault.setProperty(note.path, d.key, d.text)
       toast(`Sigla acrescentada às datas de ${pending.length} ${pending.length === 1 ? "nota" : "notas"}.`)
     } catch (error) {
-      toast(error instanceof Error ? error.message : String(error))
+      toast.error(error)
     } finally {
       setBusy(false)
     }

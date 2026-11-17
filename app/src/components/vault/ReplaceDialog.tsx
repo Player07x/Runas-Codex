@@ -43,7 +43,7 @@ export function ReplaceDialog({ index, paths, scopeLabel, onClose }: { index: Va
       toast(failed.length ? `Substituído em ${done} nota(s); ficaram de fora: ${failed.join(", ")}` : `Substituído em ${done} nota(s). Backup feito antes.`)
       if (!failed.length) onClose()
     } catch (err) {
-      toast(`O backup falhou e nada foi trocado: ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(`O backup falhou e nada foi trocado: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setBusy(false)
     }

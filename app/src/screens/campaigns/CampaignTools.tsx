@@ -79,7 +79,7 @@ function useToolNote(data: CampaignData, tool: ToolNote) {
       await task()
       return true
     } catch (err) {
-      toast(errorText(err))
+      toast.error(err)
       return false
     } finally {
       setBusy(false)
