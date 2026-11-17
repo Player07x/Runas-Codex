@@ -1938,3 +1938,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Atualização 1.5 — O/U91: revisão de segurança
+
+- Conferir os smokes e artefatos dos instaladores Windows/Linux após a atualização do Electron.
+- No app instalado, copiar link/código e receber lembretes da Agenda; páginas não devem ganhar câmera, microfone,
+  localização ou notificações. As notificações explícitas do app usam a ponte nativa.
+- Conferir o relatório de `npm audit` no CI: altos/críticos impedem aceite; moderados ficam registrados.
+- João: revisar a proposta MIT e os direitos dos trechos reaproveitados em `docs/seguranca.md` antes de adotar
+  licença ou inscrever o projeto em assinatura gratuita. Nenhuma licença foi adotada neste PR.
+- João: se houver detecção real do instalador, usar o passo a passo de envio à Microsoft. Não enviar dados do cofre.

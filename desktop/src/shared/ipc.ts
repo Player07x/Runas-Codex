@@ -50,6 +50,7 @@ export const IPC = {
   saveStreamWrite: "files:save-stream-write",
   saveStreamFinish: "files:save-stream-finish",
   saveStreamAbort: "files:save-stream-abort",
+  appNotify: "app:notify",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

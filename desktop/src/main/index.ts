@@ -22,6 +22,7 @@ import { NoteWindows } from "./windows"
 import { checkNoteWindows } from "./notes-windows-smoke"
 import { NetworkGuard } from "./network-guard"
 import { SaveStreams } from "./save-stream"
+import { checkPagePermissions, configurePagePermissions, showAppNotification } from "./page-permissions"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -200,6 +201,7 @@ function registerIpc(): void {
   })
   handle(IPC.saveStreamFinish, (_event, id) => { if (typeof id !== "number") throw new Error("Parâmetro inválido."); return saveStreams.finish(id) })
   handle(IPC.saveStreamAbort, (_event, id) => { if (typeof id !== "number") throw new Error("Parâmetro inválido."); return saveStreams.abort(id) })
+  handle(IPC.appNotify, (_event, title, body) => showAppNotification(title, body))
 }
 
 /** Versão que a interface leu (`null` = só criar; ausente = sem conferência). */
@@ -267,10 +269,12 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (result.vault && !(result.vault as { readOnly: boolean }).readOnly) result.transfers = await checkTransfers(window)
     const shot = argValue("shot")
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
+    result.pagePermissions = await checkPagePermissions(window)
     result.spellcheck = spellcheckReport()
     result.network = networkGuard?.report() ?? { requests: 0, violations: [] }
     console.log(JSON.stringify(result, null, 2))
     ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true)
+    ok = ok && result.pagePermissions === true
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
     const hold = Number(argValue("hold") ?? 0)
     if (hold > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(hold, 600) * 1000))
@@ -284,6 +288,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
 
 void app.whenReady().then(async () => {
   configureSpellchecker()
+  configurePagePermissions(session.defaultSession, contents => contents !== null && ((mainWindow !== null && contents === mainWindow.webContents) || noteWindows.owns(contents)))
   networkGuard?.attach(session.defaultSession)
   if (smoke) await vault.openForSmoke(argValue("vault"), process.argv.includes("--write"))
   else await vault.load()

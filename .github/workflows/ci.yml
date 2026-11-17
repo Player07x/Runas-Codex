@@ -22,3 +22,22 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run desktop:build
+
+  audit:
+    name: Auditoria de dependências (inclui ferramentas de build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Recusar vulnerabilidades altas ou críticas
+        run: npm audit --audit-level=high --json > "$RUNNER_TEMP/npm-audit.json"
+      - name: Guardar relatório completo, inclusive alertas moderados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-dependencias
+          path: ${{ runner.temp }}/npm-audit.json

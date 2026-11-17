@@ -19,7 +19,7 @@
   "devDependencies": {
     "@types/node": "^24.13.5",
     "@vitejs/plugin-react": "^5.2.0",
-    "electron": "44.4.2",
+    "electron": "44.10.1",
     "electron-builder": "26.15.3",
     "electron-vite": "^5.0.0",
     "fflate": "0.8.3",

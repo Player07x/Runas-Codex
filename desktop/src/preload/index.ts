@@ -183,4 +183,6 @@ bridge.saveStream = {
 
 bridge.vtt.collaboration = {state:()=>invoke(VTT.collaborationState),command:command=>invoke(VTT.collaborationCommand,command)}
 
+bridge.notify = (title, body) => invoke(IPC.appNotify, title, body)
+
 contextBridge.exposeInMainWorld("runasCodex", bridge)
