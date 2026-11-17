@@ -38,6 +38,9 @@ import "./note-actions.css"
 import { NoteTools, type NoteToolsHandle } from "./NoteTools"
 import { OverflowMenu, type MenuEntry } from "../kit/OverflowMenu"
 import { Notice, SaveStatus } from "../kit/Layout"
+import { draftRecovery, type UnsavedDraft } from "../../core/unsaved-drafts"
+import { retryDelay, writeFailure, type WriteFailure } from "../../core/write-failure"
+import { forgetUnsaved, keepUnsaved, unsavedFor, writeSystem } from "../../lib/unsaved-drafts-store"
 import { FormatGallery } from "../editor/FormatGallery"
 import { SelectionBar, type SelectionAction } from "../editor/SelectionBar"
 import { KeyboardBar } from "../editor/KeyboardBar"
@@ -170,6 +173,13 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [docKey, setDocKey] = useState(0)
   const [state, setState] = useState<SaveState>("salvo")
   const [error, setError] = useState<string>()
+  // U91: o texto que não chega ao cofre fica guardado neste aparelho; o aviso diz o motivo e o app tenta de novo.
+  const vaultPath = vault.info?.path ?? ""
+  const [failure, setFailure] = useState<WriteFailure | null>(null)
+  const [failedAt, setFailedAt] = useState(0)
+  const [kept, setKept] = useState(true)
+  const retries = useRef(0)
+  const [recovery, setRecovery] = useState<UnsavedDraft | null>(null)
   const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | "decorate" | "images" | null>(null)
   const [gallery, setGallery] = useState(false)
   // Barra da seleção, posição do cursor (barra de status) e foco no editor (barra sobre o teclado, no celular).
@@ -195,8 +205,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const fileInput = useRef<HTMLInputElement>(null)
 
   // Referências para gravar fora do ciclo do React (troca de nota, saída da tela).
-  const latest = useRef({ path, base, draft, readOnly, save: vault.save, index })
-  latest.current = { path, base, draft, readOnly, save: vault.save, index }
+  const system = writeSystem(vault.platform.kind)
+  const latest = useRef({ path, base, draft, readOnly, save: vault.save, index, vaultPath, system })
+  latest.current = { path, base, draft, readOnly, save: vault.save, index, vaultPath, system }
   const saving = useRef<Promise<void> | null>(null)
   const ownSave = useRef<{ path: string; text: string } | null>(null)
   const saveError = useRef<string | null>(null)
@@ -221,6 +232,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     setState("salvando")
     const run = save(target, next).then(
       () => {
+        forgetUnsaved(latest.current.vaultPath, target)
+        retries.current = 0
+        setFailure(null)
         if (latest.current.path === target) {
           latest.current.base = next
           setBase(next)
@@ -232,13 +246,57 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         const message = err instanceof Error ? err.message : String(err)
         saveError.current = message
         setError(message)
-        setState(message.includes("mudou fora do app") ? "conflito" : "erro")
+        const conflict = message.includes("mudou fora do app")
+        if (!conflict) {
+          // Guarda o texto antes de qualquer outra coisa: fechar a nota ou o app não o perde.
+          setKept(keepUnsaved({ vault: latest.current.vaultPath, path: target, base: original, text: next, at: new Date().toISOString() }))
+          setFailure(writeFailure(message, latest.current.system))
+          setFailedAt(Date.now())
+        }
+        setState(conflict ? "conflito" : "erro")
       },
     )
     saving.current = run
     try { await run } finally { if (saving.current === run) saving.current = null }
   }, [])
   const flushChecked = useCallback(async () => { await flush(); if (saveError.current) throw new Error(saveError.current) }, [flush])
+
+  // U91: tenta de novo sozinho (5 s, 15 s, 30 s, depois a cada minuto) e grava assim que o bloqueio sai.
+  useEffect(() => {
+    if (state !== "erro" || readOnly) return
+    const timer = setTimeout(() => { retries.current++; void flush() }, retryDelay(retries.current))
+    return () => clearTimeout(timer)
+  }, [state, failedAt, readOnly, flush])
+  // Fechar o app com texto não gravado avisa antes (no Electron, o processo principal mostra a pergunta).
+  useEffect(() => {
+    if (state !== "erro") return
+    const hold = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", hold)
+    return () => window.removeEventListener("beforeunload", hold)
+  }, [state])
+  // Ao abrir a nota: texto não gravado de antes volta sozinho se o disco não mudou; se mudou, o usuário escolhe.
+  useEffect(() => {
+    if (readOnly) return
+    const saved = unsavedFor(vaultPath, path)
+    const action = draftRecovery(saved, note.text)
+    if (action === "descartar") forgetUnsaved(vaultPath, path)
+    else if (action === "recuperar" && saved) {
+      setDraft(toEditorText(saved.text))
+      setDocKey((k) => k + 1)
+      toast(`Texto não gravado de ${new Date(saved.at).toLocaleString("pt-BR")} recuperado; gravando no cofre.`)
+    } else if (action === "perguntar") setRecovery(saved)
+    // Só ao abrir: a tela monta um NoteView por nota.
+  }, [])
+  const recoverDraft = () => {
+    if (!recovery) return
+    setDraft(toEditorText(recovery.text))
+    setDocKey((k) => k + 1)
+    setRecovery(null)
+  }
+  const discardDraft = () => {
+    forgetUnsaved(vaultPath, path)
+    setRecovery(null)
+  }
 
   // Grava ao sair da nota (a tela monta um NoteView por nota, com `key={path}`).
   useEffect(() => () => void flush(), [path, flush])
@@ -673,12 +731,30 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         </div>
       )}
 
+      {recovery && state !== "conflito" && (
+        <div className="doc-notice">
+          <Notice tone="warn" title="Há um texto desta nota que não foi gravado" actions={<>
+            <button className="btn sm" onClick={recoverDraft}>Recuperar o meu texto</button>
+            <button className="btn sm danger" onClick={discardDraft}>Descartar</button>
+          </>}>
+            Ele é de {new Date(recovery.at).toLocaleString("pt-BR")} e ficou guardado neste aparelho. A nota mudou depois (no Obsidian ou em outro aparelho): recuperar substitui a versão do cofre pelo seu texto.
+          </Notice>
+        </div>
+      )}
       {(state === "conflito" || state === "erro") && (
         <div className="doc-notice">
-          <Notice tone="danger" title={state === "conflito" ? "Esta nota mudou fora do app" : "Não deu para salvar"} actions={state === "conflito" ? <>
+          <Notice tone="danger" title={state === "conflito" ? "Esta nota mudou fora do app" : failure?.title ?? "Não deu para gravar"} actions={state === "conflito" ? <>
             <button className="btn sm" onClick={reloadFromDisk}>Usar a do disco</button>
             <button className="btn sm danger" onClick={keepMine}>Manter a minha</button>
-          </> : undefined}>{error}</Notice>
+          </> : <>
+            <button className="btn sm" onClick={() => { retries.current = 0; void flush() }}>Tentar agora</button>
+            {failure?.windowsProtection && vault.platform.openSecuritySettings && <button className="btn sm" onClick={() => void vault.platform.openSecuritySettings!()}>Abrir a proteção do Windows</button>}
+          </>}>{state === "erro" && failure ? <>
+            <span className="write-failure-steps" role="list">
+              {failure.steps.map((step, i) => <span key={i} role="listitem">{kept || i < failure.steps.length - 1 ? step : "Não deu para guardar o texto neste aparelho: copie o texto da nota antes de fechá-la."}</span>)}
+            </span>
+            <small className="write-failure-detail">Mensagem do sistema: {error}</small>
+          </> : error}</Notice>
         </div>
       )}
 

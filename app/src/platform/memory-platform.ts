@@ -31,6 +31,8 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
   const hidden = (path: string) => path.split("/").some((part) => part.startsWith("."))
   const ensureWritable = (path: string) => {
     if (vault.readOnly) throw new Error("Cofre em somente leitura. Libere a gravação em Configurações › Cofre.")
+    // U91: ?gravacao-bloqueada simula a pasta barrada pela segurança do sistema (para conferir o aviso e o rascunho).
+    if (writeBlocked()) throw new Error("EPERM: operation not permitted, rename (simulado por ?gravacao-bloqueada)")
     if (hidden(path) || path.split("/").includes("..")) throw new Error(`O app não grava em pastas ou arquivos ocultos: ${path}`)
   }
   return {
@@ -208,7 +210,14 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
         abort: async () => { parts = null },
       }
     },
+    async checkWrite() {
+      return writeBlocked() ? { ok: false, step: "trocar", message: "EPERM: operation not permitted, rename (simulado por ?gravacao-bloqueada)" } : { ok: true }
+    },
   }
+}
+
+function writeBlocked(): boolean {
+  return typeof location !== "undefined" && new URLSearchParams(location.search).has("gravacao-bloqueada")
 }
 
 function largeVaultFiles(): [string, { content: string; mtime: number }][] {

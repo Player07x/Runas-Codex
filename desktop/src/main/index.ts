@@ -210,6 +210,9 @@ function registerIpc(): void {
   handle(IPC.saveStreamFinish, (_event, id) => { if (typeof id !== "number") throw new Error("Parâmetro inválido."); return saveStreams.finish(id) })
   handle(IPC.saveStreamAbort, (_event, id) => { if (typeof id !== "number") throw new Error("Parâmetro inválido."); return saveStreams.abort(id) })
   handle(IPC.appNotify, (_event, title, body) => showAppNotification(title, body))
+  handle(IPC.vaultCheckWrite, () => vault.checkWrite())
+  // U91: endereço local do Windows (abre a Segurança do Windows, sem rede); nos outros sistemas não faz nada.
+  handle(IPC.openSecuritySettings, async () => { if (process.platform === "win32") await shell.openExternal("windowsdefender://ransomwareprotection") })
 }
 
 /** Versão que a interface leu (`null` = só criar; ausente = sem conferência). */
@@ -255,6 +258,11 @@ function createMainWindow(): BrowserWindow {
   attachContextMenu(window)
   // U40: o título de cada rota (document.title) serve ao leitor de tela; a janela fica sempre "Runas-Codex".
   window.on("page-title-updated", (event) => event.preventDefault())
+  // U91: a nota com texto não gravado no cofre segura o fechamento (beforeunload); aqui o usuário decide.
+  window.webContents.on("will-prevent-unload", (event) => {
+    const choice = dialog.showMessageBoxSync(window, { type: "warning", buttons: ["Fechar mesmo assim", "Continuar no app"], defaultId: 1, cancelId: 1, title: "Runas-Codex", message: "Há texto que não foi gravado no cofre.", detail: "Ele fica guardado neste aparelho e volta quando você abrir a nota de novo." })
+    if (choice === 0) event.preventDefault()
+  })
 
   if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void window.loadFile(join(__dirname, "../renderer/index.html"))

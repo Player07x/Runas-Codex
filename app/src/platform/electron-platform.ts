@@ -73,5 +73,7 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
       return { write: bytes => stream.write(opened.id, bytes), close: () => stream.finish(opened.id), abort: () => stream.abort(opened.id) }
     } : undefined,
     ...(bridge.notify ? { notify: (title: string, body: string) => bridge.notify!(title, body) } : {}),
+    checkWrite: bridge.checkWrite ? () => bridge.checkWrite!() : undefined,
+    openSecuritySettings: bridge.openSecuritySettings ? () => bridge.openSecuritySettings!() : undefined,
   }
 }

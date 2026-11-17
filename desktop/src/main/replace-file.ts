@@ -2,7 +2,9 @@ import { rename } from "node:fs/promises"
 
 /** Erros do Windows quando outro programa (antivírus, Obsidian, o próprio índice) está com o arquivo aberto. */
 const BUSY = new Set(["EPERM", "EACCES", "EBUSY"])
-const ATTEMPTS = 10
+/** ~6 s no total: o antivírus que examina o arquivo novo pode segurá-lo por alguns segundos (U91). */
+const ATTEMPTS = 16
+const MAX_WAIT = 800
 
 type Options = {
   platform?: NodeJS.Platform
@@ -12,7 +14,8 @@ type Options = {
 
 /**
  * Troca `to` por `from` de uma vez (o `rename` da gravação segura). No Windows, a troca falha enquanto alguém lê o
- * arquivo; a leitura dura milissegundos, então tenta de novo por até ~2 s antes de desistir. Nos outros sistemas,
+ * arquivo; a leitura costuma durar milissegundos (a verificação de um antivírus, alguns segundos), então tenta de novo
+ * por até ~6 s antes de desistir. Nos outros sistemas,
  * o primeiro erro já é a resposta.
  */
 export async function replaceFile(from: string, to: string, options: Options = {}): Promise<void> {
@@ -23,7 +26,7 @@ export async function replaceFile(from: string, to: string, options: Options = {
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (platform !== "win32" || !code || !BUSY.has(code) || attempt >= ATTEMPTS) throw error
-      await wait(50 * attempt)
+      await wait(Math.min(50 * attempt, MAX_WAIT))
     }
   }
 }

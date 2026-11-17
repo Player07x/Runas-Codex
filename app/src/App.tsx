@@ -103,6 +103,7 @@ export function App() {
         <AndroidRuntime />
         <TasksRuntime />
         {performanceProfiling && <PerformanceRuntime />}
+        <WriteCheckRuntime />
       </ToastProvider>
     </VaultProvider>
   )
@@ -117,3 +118,4 @@ import { AndroidRuntime } from "./platform/AndroidRuntime"
 import { TasksRuntime } from "./components/tasks/TasksRuntime"
 
 import { PerformanceRuntime, performanceProfiling, profileScreen } from "./lib/performance-profile"
+import { WriteCheckRuntime } from "./components/vault/WriteCheck"

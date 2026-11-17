@@ -2152,3 +2152,17 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 - Em Notas › Cofre inteiro, conferir que a bolinha soma as subpastas e as notas diretamente dentro de cada pasta. Cada subpasta conta uma vez; seus descendentes não entram de novo na pasta-mãe. A dica e o nome acessível detalham pastas e notas.
 - Conferir depois de criar, mover e remover itens, e no escopo Espaço Notas. O número é o que aparece ao abrir a pasta (subpastas + notas); anexos e arquivos ocultos ficam fora, como na lista. As pastas vazias criadas na sessão entram na conta. Evidência com dados de exemplo em docs/testes-1.5-contagem-pastas.md.
+
+## 1.5 M/U91 — gravação bloqueada pela segurança do sistema
+
+- No Windows, ligar o Acesso controlado a pastas (Segurança do Windows › Proteção contra ransomware) com o cofre em Documentos:
+  - ao abrir o cofre aparece o aviso “O Windows bloqueou a gravação”;
+  - Configurações › Cofre › Testar gravação diz o passo que falhou;
+  - “Abrir a proteção do Windows” abre a página certa, também com o Windows em outro idioma.
+- Com a pasta bloqueada, editar uma nota:
+  - aparece “Não gravado” e o passo a passo;
+  - fechar o app pergunta antes;
+  - reabrir o app traz o texto de volta.
+- Liberar o app no Acesso controlado a pastas com a nota aberta: em até um minuto a nota grava sozinha e mostra “Salvo”.
+- Com texto não gravado, mudar a mesma nota no Obsidian e reabrir no app: aparece “Há um texto desta nota que não foi gravado”, com “Recuperar o meu texto” e “Descartar”.
+- Renomear uma pasta com muitas notas ligadas por links: tudo continua igual, só um pouco mais lento nos lotes grandes (ritmo de gravação).
