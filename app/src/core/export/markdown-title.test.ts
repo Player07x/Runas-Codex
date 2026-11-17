@@ -11,7 +11,7 @@ function fixture(body: string) {
   return { index, book: index.note("Livros/Guia/Guia.md")! }
 }
 describe("título na exportação Markdown (U103)", () => {
-  it.each(["# O Condado\n\nTexto.", "\n\n# O Condado\n\nTexto.", "# o condado ###\n\nTexto.", "   # O Condado\r\n\r\nTexto."])("conserva sem repetir o título que já abre o capítulo: %s", body => {
+  it.each(["# O Condado\n\nTexto.", "# **O Condado**\n\nTexto.", "\n\n# O Condado\n\nTexto.", "# o condado ###\n\nTexto.", "   # O Condado\r\n\r\nTexto."])("conserva sem repetir o título que já abre o capítulo: %s", body => {
     const { index, book } = fixture(body), output = generateMarkdown(index, book)
     expect(output.split("\n\n---\n\n").at(-1)!.trim()).toBe(body.trim())
     expect(output).toContain("# Guia")

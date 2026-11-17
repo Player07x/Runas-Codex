@@ -3,6 +3,7 @@ import { bookExportPlan, nodeXml, paperClass, xml, type ExportBook, type ExportN
 import { bookProperties } from "../books"
 import { parseNote } from "../parse"
 import { foldName } from "../text"
+import { bookTitleKey } from "../books-preview"
 import type { IndexedNote, VaultIndex } from "../vault-index"
 
 const base64 = (bytes: Uint8Array) => { let text = ""; for (let i=0;i<bytes.length;i+=8192) text += String.fromCharCode(...bytes.subarray(i,i+8192)); return btoa(text) }
@@ -64,7 +65,7 @@ export function generateMarkdown(index: VaultIndex, book: IndexedNote, draft?: {
       body = body.slice(0,link.start)+next+body.slice(link.end)
     }
     const first = meta.headings[0]
-    const startsWithTitle = first?.level === 1 && foldName(first.text.trim()) === foldName(s.title.trim())
+    const startsWithTitle = first?.level === 1 && foldName(bookTitleKey(first.text)) === foldName(bookTitleKey(s.title))
       && body.split(/\r?\n/).slice(0, first.line).every(line => !line.trim())
     // O título já escrito pelo autor fica intacto; capa e capítulos sem título continuam ganhando o cabeçalho.
     return startsWithTitle && s.kind !== "capa" ? body : `# ${s.title}\n\n${s.kind === "capa" ? String(bookProperties(book).autor ?? "") : body}`
