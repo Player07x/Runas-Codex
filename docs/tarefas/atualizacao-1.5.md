@@ -401,3 +401,21 @@ Typecheck, 1.053 testes do app + 199 do desktop, builds, auditoria e smokes reai
 gravação **99,4 s**, permissões confirmadas, zero violações de rede, temporários removidos. CI código/auditoria e
 Windows/Linux também passaram no commit de implementação; CI do último envio (MIT/documentação) em andamento.
 Defender real, antivírus de terceiros, Android físico e aprovação da assinatura continuam sem verificar.
+
+## Registro de execução do Codex — B/U83 e U103 (17/11)
+
+PR **#160**, `correcoes/1.5-pequenas`, pronto para revisão, sobre `origin/main`. Configurações monta só a seção
+aberta (antes, 11 montadas). No build de produção em memória com 10.084 notas, medianas antes/depois: Cofre
+132,6/32,7 ms; Aparência 148,1/33,0; Editor 132,8/32,7; Ajuda 181,5/66,2; Obsidian 149,5/116,3; Agenda 166,1/32,9.
+As seis comparações de 320/390/1366 px nos dois temas ficaram idênticas pixel a pixel, sem rolagem horizontal;
+Tab preservado. No diálogo real de imagem: 0 sugestões antes do foco, 31 depois, com Tab até o campo.
+
+Markdown conserva o título inicial do capítulo, inclusive formatado, com a comparação já usada pelos Livros,
+sem alterar o leitor ou os arquivos originais. Dez testes novos de exportação passaram. Typecheck, 1.054 testes
+do app + 197 do desktop e builds passaram. Smokes finais: leitura **28,2 s**, gravação **99,4 s**, ambos exit 0,
+temporários removidos. Evidência em `docs/testes-1.5-b.md`, JSON e 12 PNGs no branch do PR.
+
+No encerramento, João pediu finalizar a tarefa atual e gerar passagem para o GPT Codex Astra revisar o código,
+corrigir falhas e continuar a implementação. Tarefas **5–17 permanecem abertas**. A nova maquete L/1.5 ainda não
+foi criada nem aprovada; o João pediu que ela seja aberta para conferir quando estiver pronta. Nenhum PR foi
+mesclado pelo Codex, e nenhuma versão foi lançada.
