@@ -89,18 +89,25 @@ try {
   adb('shell','input','keyevent','224');adb('shell','input','keyevent','82');adb('shell','am','start','-n','dev.runas.codex/.MainActivity')
   await app.until('document.hasFocus()')
   await master.afterWake()
+  // O código novo chega à tela depois do clique; ler antes disso pegava o antigo, já recusado pela sala.
+  const previousCode=await app.run(`document.querySelector('.player-seats code').textContent`)
   await app.run(`[...document.querySelectorAll('.player-seats button')].find(b=>b.textContent.includes('Regenerar')).click();true`)
   await browser.until(`window.__testWire.readyState===WebSocket.CLOSED`)
   check('regenerar revoga conexão anterior',true)
   guest.close();guest=null
   // Entrar Sala abre o jogador no navegador do próprio aparelho, com a autoridade em segundo plano.
+  await app.until(`document.querySelector('.player-seats code')?.textContent!==${JSON.stringify(previousCode)}`)
   const rotatedCode=await app.run(`document.querySelector('.player-seats code').textContent`)
   await app.run(`window.Capacitor.Plugins.RunasRoom.openUrl({url:${JSON.stringify(link)}});true`)
   androidPlayer=await connectDevtools('http://127.0.0.1:9226',target=>target.url.startsWith(link))
   await androidPlayer.until(`document.querySelector('.player-lobby input')`)
   await androidPlayer.run(`(()=>{const input=document.querySelector('.player-lobby input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(rotatedCode)});input.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
   await click(androidPlayer,'.player-lobby button[type="submit"]')
-  await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`,400)
+  await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`,400).catch(async(error)=>{
+    // Diagnóstico: o que o lobby do jogador mostra quando o assento não vem.
+    console.error('Lobby do jogador no Android:',await androidPlayer.run(`document.querySelector('.player-lobby')?.innerText ?? document.body.innerText.slice(0,400)`).catch(()=>null))
+    throw error
+  })
   await androidPlayer.until(`document.querySelector('.player-host canvas') && document.querySelector('.player-tools')`,400)
   check('Android entra como jogador da sala hospedada no próprio aparelho',true)
   // U78: “Sair da mesa” (com a confirmação aceita) libera o assento e volta ao lobby do jogador.
