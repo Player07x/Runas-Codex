@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { ArrowRight, ChevronLeft, ExternalLink, PanelRight, Trash2 } from "lucide-react"
+import { ArrowRight, Check, ChevronLeft, ExternalLink, Gem, PanelRight, Trash2 } from "lucide-react"
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { OverflowMenu, type MenuEntry } from "../../components/kit/OverflowMenu"
 import { NoteView } from "../../components/vault/NoteView"
@@ -12,7 +12,7 @@ import { useVault } from "../../platform/VaultProvider"
 import { NewNpcDialog } from "./campaign-dialogs"
 import { campaignRoute, questRoute, type CampaignData } from "./campaign-state"
 import { ClocksEditor } from "./ClocksEditor"
-import { useQuestStatus } from "./quest-actions"
+import { useQuestStatus, useSendReward } from "./quest-actions"
 
 /**
  * Menu ⋯ de uma missão (U7), igual no quadro, no mapa e na árvore: abrir dentro da campanha, mover de coluna (a
@@ -96,6 +96,8 @@ function QuestDetails({ data, quest }: { data: CampaignData; quest: QuestInfo })
   const vault = useVault()
   const toast = useToast()
   const setStatus = useQuestStatus(data)
+  const sendReward = useSendReward(data)
+  const [sending, setSending] = useState(false)
   const ro = data.readOnly
   // Relógio de ameaça da missão que acabou de encher: o mestre confirma se a missão falhou.
   const [filled, setFilled] = useState<string | null>(null)
@@ -105,7 +107,7 @@ function QuestDetails({ data, quest }: { data: CampaignData; quest: QuestInfo })
   }
   const set = (key: string, value: string | string[] | undefined) => {
     if (ro) return toast("Cofre em somente leitura: libere a gravação em Configurações.")
-    vault.setProperty(quest.path, key, value).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+    vault.setProperty(quest.path, key, value).catch((err: unknown) => toast.error(err))
   }
   const link = (target: string) => `[[${vault.index!.linkTarget(target, quest.path)}]]`
   const others = data.quests.filter((q) => q.path !== quest.path)
@@ -161,8 +163,16 @@ function QuestDetails({ data, quest }: { data: CampaignData; quest: QuestInfo })
       <label className="field">
         <span>Recompensa</span>
         <input className="input" disabled={ro} value={reward} onChange={(e) => setReward(e.target.value)} onBlur={() => reward.trim() !== (quest.reward ?? "") && set("recompensa", reward.trim() || undefined)} aria-label="Recompensa" />
-        <span className="tiny faint">Ao concluir a missão, o aviso oferece mandar a recompensa para o Tesouro do grupo.</span>
+        {!(quest.status === "concluida" && quest.reward) && <span className="tiny faint">Com a missão concluída, a recompensa pode ir para o Tesouro do grupo.</span>}
       </label>
+      {quest.status === "concluida" && quest.reward && (
+        // U93: a recompensa não fica só no aviso, que some; aqui ela continua à mão até ir para o Tesouro.
+        <div className="campaign-reward-send row-wrap">
+          {quest.rewardSent
+            ? <span className="small muted"><Check size={14} aria-hidden="true" /> Já está no Tesouro (desde {new Date(`${quest.rewardSent}T12:00`).toLocaleDateString("pt-BR")})</span>
+            : <button className="btn sm" disabled={ro || sending} onClick={async () => { setSending(true); try { await sendReward(quest) } finally { setSending(false) } }}><Gem size={14} /> Mandar para o Tesouro</button>}
+        </div>
+      )}
       <div className="stack" style={{ gap: 6 }}>
         <span className="eyebrow">Relógios da missão</span>
         {!quest.clocks?.length && <span className="tiny muted">Uma ameaça que corre junto com a missão (“o ritual se completa”). Quando enche, a missão pode falhar.</span>}

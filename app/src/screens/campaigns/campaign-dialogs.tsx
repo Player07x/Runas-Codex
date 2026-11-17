@@ -385,24 +385,30 @@ export function EditPlayerDialog({ campaign, character, onClose }: { campaign: C
   )
 }
 
-/** Escolhe uma nota da wiki (NPC, facção) para acompanhar na campanha. */
-export function WikiNotePicker({ title, root, exclude, onPick, onClose }: { title: string; root: string; exclude: Set<string>; onPick(path: string): Promise<void>; onClose(): void }) {
+/**
+ * Escolhe uma nota da wiki (NPC, facção) para acompanhar na campanha. Com `kind` (U100), começa só nos artigos daquele
+ * tipo (“NPC da wiki” mostra personagens, não lugares e mitos), com “Todos os tipos” ao lado.
+ */
+export function WikiNotePicker({ title, root, exclude, kind, onPick, onClose }: { title: string; root: string; exclude: Set<string>; kind?: { id: string; label: string }; onPick(path: string): Promise<void>; onClose(): void }) {
   const vault = useVault()
   const index = vault.index!
   const [query, setQuery] = useState("")
+  const [filter, setFilter] = useState<"tipo" | "todos">(kind ? "tipo" : "todos")
   const results = useMemo(() => {
     const q = query.trim()
-    const paths = q ? index.search(q, root, 40).map((h) => h.path) : index.notesIn(root).sort((a, b) => b.mtime - a.mtime).slice(0, 40).map((n) => n.path)
-    return paths.filter((p) => !exclude.has(p))
-  }, [index, query, root, exclude, vault.version])
+    const ofKind = (path: string) => filter === "todos" || !kind || articleKind(index.note(path)?.meta.frontmatter?.data?.tipo)?.id === kind.id
+    const paths = q ? index.search(q, root, 200).map((h) => h.path) : index.notesIn(root).sort((a, b) => b.mtime - a.mtime).map((n) => n.path)
+    return paths.filter((p) => !exclude.has(p) && ofKind(p)).slice(0, 40)
+  }, [index, query, root, exclude, kind, filter, vault.version])
   return (
     <Modal title={title} onClose={onClose} wide>
       <label className="search">
         <Search size={15} />
         <input className="input" autoFocus placeholder={`Buscar em ${root || "todo o cofre"}…`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar nota" />
       </label>
+      {kind && <ChoiceGroup label="Mostrar" value={filter} options={[{ value: "tipo", label: kind.label }, { value: "todos", label: "Todos os tipos" }]} onChange={setFilter} />}
       <div className="list">
-        {results.length === 0 && <span className="muted small">Nada encontrado.</span>}
+        {results.length === 0 && <span className="muted small">{filter === "tipo" && kind ? `Nada encontrado em ${kind.label.toLocaleLowerCase("pt-BR")}. Experimente “Todos os tipos”.` : "Nada encontrado."}</span>}
         {results.map((path) => (
           <button
             key={path}
@@ -413,7 +419,7 @@ export function WikiNotePicker({ title, root, exclude, onPick, onClose }: { titl
             }}
           >
             <FileText size={15} />
-            <span className="grow" style={{ minWidth: 0 }}>
+            <span className="grow" style={{ minWidth: 0, flexBasis: 0 }}>
               <span className="truncate" style={{ display: "block", fontWeight: 600 }}>{noteName(path)}</span>
               <span className="truncate tiny faint" style={{ display: "block" }}>{dirname(path)}</span>
             </span>
@@ -442,7 +448,8 @@ export function NewNpcDialog({ data, initialName = "", initialKind = "personagem
   const [wiki, setWiki] = useState(data.campaign.wiki ?? wikis[0]?.name ?? "")
   const [kind, setKind] = useState<(typeof QUICK_KINDS)[number]["id"]>(initialKind)
   const [name, setName] = useState(initialName.replace(/\.md$/i, "").split("/").pop() ?? "")
-  const [appeared, setAppeared] = useState(true)
+  // Decisão 12 (U100): começa desmarcado, como ao vincular um NPC que já existe.
+  const [appeared, setAppeared] = useState(false)
   const [attitude, setAttitude] = useState<(typeof ATTITUDES)[number]>("neutro")
   // “Sortear” (U24): só o que foi sorteado de propósito entra no artigo, e nunca por cima do nome digitado.
   const [drawn, setDrawn] = useState<{ kind: string; name: string; values: FichaValues; body: string; summary: string } | null>(null)

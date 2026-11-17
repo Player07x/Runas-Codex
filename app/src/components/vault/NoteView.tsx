@@ -4,7 +4,7 @@ import { openDocumentExport } from "../export/ExportDialog"
 import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
 import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
@@ -18,7 +18,7 @@ import { NoteSetContext } from "../../lib/note-set"
 import { goBack, goForward, navigate, useNavHistory } from "../../lib/router"
 import { hasBookmark } from "../../core/bookmarks"
 import { toggleFavorite, useFavorites } from "../../lib/bookmarks"
-import { useOpenNote } from "../../lib/tabs"
+import { TabSwitcherContext, useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
 import { checkboxLines } from "../../markdown/task-checkboxes"
@@ -138,6 +138,8 @@ interface Props {
  */
 export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode, extraMenu }: Props) {
   const vault = useVault()
+  // U81: nas abas das Notas no celular, o botão “n abas” fica na barra da nota (a faixa de abas sai).
+  const tabSwitcher = useContext(TabSwitcherContext)
   const toast = useToast()
   const history = useNavHistory()
   const openNote = useOpenNote()
@@ -182,7 +184,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [imageRename, setImageRename] = useState<string | null>(null)
   // "Criar ou editar tarefa" (Tasks) na linha do cursor.
   const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
-  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
+  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast.error(error)) }
   const editor = useRef<SourceEditorHandle>(null)
   const tools = useRef<NoteToolsHandle>(null)
   const surface = useRef<HTMLDivElement>(null)
@@ -305,7 +307,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           const saved = await vault.addAttachment(name, new Uint8Array(await file.arrayBuffer()), path)
           links.push(attachmentEmbed(saved, path, vault.config.app, vault.index!))
         } catch (err) {
-          toast(err instanceof Error ? err.message : String(err))
+          toast.error(err)
         }
       }
       if (links.length) setTimeout(() => editor.current?.insertBlock(links.join("\n"), at ?? undefined))
@@ -409,7 +411,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const organize = (action: () => Promise<unknown>) => {
     void flush()
       .then(action)
-      .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => toast.error(err))
   }
   const move = (to: string) =>
     organize(async () => {
@@ -547,7 +549,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               const lines = checkboxLines(draft)
               const line = lines[index]
               if (lines.length !== total || line === undefined) {
-                toast("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
+                toast.error("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
                 return
               }
               const all = draft.split("\n")
@@ -641,7 +643,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         {modes}
         {actionsMenu}
       </>, focusHeader) : (
-        <div className="editor-bar doc-bar">
+        <div className={`editor-bar doc-bar ${tabSwitcher ? "with-tabs" : ""}`}>
           {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
             <ChevronLeft size={18} />
           </button>}
@@ -657,6 +659,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<h1>{note.name}</h1></div>
           {!compactBar && modes}
           <div className="doc-end">
+            {tabSwitcher}
             <SaveStatus state={saveState} />
             {compactBar && modeToggle}
             <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" aria-expanded={panelOpen} title={panelHint}><PanelRight size={17} /><span>Painel</span></button>

@@ -116,7 +116,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const [exactAlarms, setExactAlarms] = useState(true)
   const [permission, setPermission] = useState(() => (typeof Notification !== "undefined" ? Notification.permission : "granted"))
   const fileInput = useRef<HTMLInputElement>(null)
-  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+  const fail = (error: unknown) => toast.error(error)
 
   const setView = (next: View) => {
     setViewState(next)
@@ -144,6 +144,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
       /* só não é lembrada */
     }
   }
+  // U87: com o painel recolhido, o botão de abrir fica na barra do período, junto da troca de visão.
+  const [panelSlot, setPanelSlot] = useState<HTMLElement | null>(null)
   const showPanel = (next: Tab) => {
     setTab(next)
     if (narrow()) setPanelCollapsed("agenda", false)
@@ -414,11 +416,12 @@ function AgendaView({ index }: { index: VaultIndex }) {
             { value: "tarefas", label: "Tarefas", icon: <ListChecks size={14} /> },
           ]}
         />
+        <span className="panel-slot" ref={setPanelSlot} />
       </div>
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          {view === "mes" && <MonthView month={cursor} showRoutines={showRoutines} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
+          {view === "mes" && <MonthView month={cursor} showRoutines={showRoutines} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={(day, via) => (via === "toque" && narrow() ? openDay(day) : pickDay(day))} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
           {(view === "semana" || view === "dia") && (
             <TimeGrid
               key={`${view}-${isoDate(range.start)}`}
@@ -438,7 +441,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
           {view === "lista" && <ListView from={cursor} days={listDays} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} onMore={() => setListDays((d) => d + LIST_DAYS)} />}
         </div>
 
-        <ResizablePanel id="agenda" label="Painel da agenda" side="right" width={320} className="agenda-side">
+        <ResizablePanel id="agenda" label="Painel da agenda" collapsedLabel="Painel" collapsedTarget={panelSlot} side="right" width={320} className="agenda-side">
           {(needsNotifications || needsExactAlarms) && (
             <Notice
               tone="warn"
@@ -677,7 +680,7 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
             const note = index.note(event.path)
             if (!note) return
             const body = note.text.replace(/\s*$/, "")
-            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast.error(e))
           }}
           onClose={() => setAdding(false)}
         />
