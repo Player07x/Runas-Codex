@@ -1,5 +1,5 @@
 import { publicWikiIndex } from "./wiki-public"
-import { advanceInitiative, initiativeFromEncounter, initiativeYaml, parseInitiative, parseTreasury, treasuryYaml, withTreasureItem } from "./campaign-tools"
+import { advanceInitiative, initiativeFromEncounter, initiativeYaml, parseInitiative, parseTreasury, rewardItemId, treasuryYaml, withTreasureItem } from "./campaign-tools"
 import { cropPixels, pinchCanvas, selectCanvasBox } from "./canvas-tools"
 import { publicArticleText } from "./public-article"
 import { VaultIndex } from "./vault-index"
@@ -38,4 +38,14 @@ it("acrescenta a recompensa no fim do tesouro sem perder as moedas nem os itens"
     { id: "a", name: "Mapa", quantity: 1, holder: "", notes: "" },
     { id: "b", name: "500 po", quantity: 1, holder: "", notes: "Recompensa de [[O Selo]]" },
   ])
+})
+
+it("não põe a mesma recompensa duas vezes no tesouro", () => {
+  const code = treasuryYaml({ coins: "", items: [] })
+  const id = rewardItemId("Campanhas/Norte/Missões/O Selo.md")
+  expect(id).toBe(rewardItemId("Campanhas/Norte/Missões/O Selo.md"))
+  expect(id).not.toBe(rewardItemId("Campanhas/Norte/Missões/A Torre.md"))
+  const once = withTreasureItem(code, { name: "500 po", quantity: 1, holder: "", notes: "" }, id)
+  expect(withTreasureItem(once, { name: "500 po", quantity: 1, holder: "", notes: "" }, id)).toBe(once)
+  expect(parseTreasury(once).items).toHaveLength(1)
 })

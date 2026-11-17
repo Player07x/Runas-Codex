@@ -23,6 +23,31 @@ jobs:
       - run: npm run build
       - run: npm run desktop:build
 
+  performance:
+    name: Orçamento de desempenho (cofre sintético de 1,3 GB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build com Profiler (só medição)
+        run: npm run desktop:build
+        env:
+          RUNAS_PROFILE: "1"
+      - name: Abrir, trocar de tela e categoria com 420 artigos
+        # Como no Release: o runner restringe namespaces; a flag só é aceita pelo executor no GitHub Actions.
+        run: xvfb-run -a node desktop/benchmarks/run.mjs "$RUNNER_TEMP/runas-performance" --ci-no-sandbox
+      - name: Guardar números, renderizações e tamanhos dos pacotes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desempenho-cofre-sintetico
+          path: ${{ runner.temp }}/runas-performance
+
   audit:
     name: Auditoria de dependências (inclui ferramentas de build)
     runs-on: ubuntu-latest

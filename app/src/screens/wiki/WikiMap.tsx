@@ -155,7 +155,7 @@ function MapEditor({ path }: { path: string }) {
     const dest = resolveDest(target)
     return dest ? { path: dest, route: noteRoute(dest), nested: isMapNote(index, dest), tipo: index.note(dest)?.meta.frontmatter?.data?.tipo } : null
   }
-  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+  const fail = (error: unknown) => toast.error(error)
 
   /** Grava uma mudança no bloco: uma por vez, sempre sobre o texto de agora (outra mudança pode ter gravado antes). */
   const update = (change: SpecChange): Promise<void> => {

@@ -10,6 +10,10 @@ export default defineConfig({
   preload: { plugins: [externalizeDepsPlugin()] },
   renderer: {
     root: resolve(__dirname, "../app"),
+    ...(process.env.RUNAS_PROFILE === "1" ? {
+      resolve: { alias: { "react-dom/client": "react-dom/profiling" } },
+      define: { "import.meta.env.VITE_RUNAS_PROFILE": JSON.stringify("1") },
+    } : {}),
     plugins: [react(), contentSecurityPolicy()],
     build: {
       outDir: resolve(__dirname, "out/renderer"),

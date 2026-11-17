@@ -34,7 +34,8 @@ export function RelationFixes({ root }: { root: string }) {
     }
     setBusy(false); setOff(new Set())
     const notes = new Set(writes.map((write) => write.path)).size
-    toast(failed.length ? `Não deu para gravar: ${failed.join("; ")}` : `Relações gravadas em ${notes} ${notes === 1 ? "nota" : "notas"}.`)
+    if (failed.length) toast.error(`Não deu para gravar: ${failed.join("; ")}`)
+    else toast(`Relações gravadas em ${notes} ${notes === 1 ? "nota" : "notas"}.`)
   }
   return (
     <section className="card stack relation-fixes" aria-labelledby="conferir-relacoes">
