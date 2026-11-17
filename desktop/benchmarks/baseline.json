@@ -1,0 +1,69 @@
+{
+  "baseline": {
+    "openMs": 3890,
+    "indexMs": 2156,
+    "switchMs": 10877.09999999404,
+    "wiki420Ms": 393.2999999821186,
+    "jsBytes": 18423493
+  },
+  "factors": {
+    "openMs": 3,
+    "indexMs": 3,
+    "switchMs": 3,
+    "wiki420Ms": 3,
+    "jsBytes": 1.15
+  },
+  "allowances": {
+    "openMs": 1000,
+    "indexMs": 500,
+    "switchMs": 300,
+    "wiki420Ms": 500,
+    "jsBytes": 100000
+  },
+  "reference": {
+    "fixture": {
+      "format": "runas-performance-v1",
+      "noteCount": 10000,
+      "categoryArticles": 420,
+      "coverBytes": 2360852,
+      "targetBytes": 1300000000,
+      "bytes": 1300000000
+    },
+    "numbers": {
+      "openMs": 3890,
+      "indexMs": 2156,
+      "switchMs": 10877.09999999404,
+      "wiki420Ms": 393.2999999821186,
+      "jsBytes": 18423493
+    },
+    "environment": {
+      "electron": "44.4.2",
+      "node": "24.21.0",
+      "platform": "linux",
+      "cpu": "Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz",
+      "cpuCount": 8,
+      "ramBytes": 16048463872,
+      "viewport": [
+        1366,
+        900
+      ],
+      "profiling": true
+    },
+    "runs": 3,
+    "method": "Mediana de três perfis novos; cache de arquivos do sistema não foi esvaziado; build de produção com Profiler.",
+    "sourceCommit": "80eb718 (main v1.4.0) + instrumentação A1",
+    "screenMethod": "Para cada tela, maior valor das três execuções (inclui o primeiro Livro de 5697 ms); teto = base × 3 + 300 ms. Métricas gerais usam mediana."
+  },
+  "screens": {
+    "Notas": 198.59999999403954,
+    "Wiki": 202.90000000596046,
+    "Categoria com 420 artigos": 432.2999999821186,
+    "Livro": 5697.4000000059605,
+    "Mesa": 331.39999997615814,
+    "Agenda": 116.2999999821186,
+    "Campanhas": 48.5,
+    "Importar e exportar": 136.59999999403954,
+    "Configurações": 10941.800000011921,
+    "Início": 49.900000005960464
+  }
+}

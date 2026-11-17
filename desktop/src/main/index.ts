@@ -23,6 +23,7 @@ import { checkNoteWindows } from "./notes-windows-smoke"
 import { NetworkGuard } from "./network-guard"
 import { SaveStreams } from "./save-stream"
 import { configureSmokeEnvironment, startSmokeCleanup } from "./smoke-environment"
+import { runPerformance } from "./performance-run"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
@@ -301,6 +302,11 @@ void app.whenReady().then(async () => {
   vtt.registerProtocol()
   protocol.handle(VAULT_FILE_SCHEME, (request) => vaultFileResponse(vault.rootPath, request.url, request.headers.get("range")))
   mainWindow = createMainWindow()
+  if (smoke && process.argv.includes("--performance")) {
+    try { await runPerformance(mainWindow, vault.rootPath); vtt.closeWorld(); vault.stop(); app.exit(0) }
+    catch (error) { console.error(error); vtt.closeWorld(); vault.stop(); app.exit(1) }
+    return
+  }
   if (smoke) void runSmoke(mainWindow)
   else {
     deepLinks.register()
