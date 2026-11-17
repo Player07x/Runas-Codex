@@ -3,11 +3,11 @@
 > Plano do Claude (líder desta atualização), feito em 16/11/2026 com o código da `main` em `80eb718` (v1.4.0).
 > Junta o que foi adiado nas duas últimas versões, o pedido de 15/11 (“Sair da mesa”) e os pedidos de 16/11 (oito
 > capturas), mais a correção de segurança pedida no mesmo dia (U91). Em 17/11 entrou a auditoria de usabilidade do
-> Codex, conferida por mim (U92–U106). Em 17/11 o João respondeu as decisões 5 a 14 e pediu a **fase 1 só com os
+> Codex, conferida por mim (U92–U107). Em 17/11 o João respondeu as decisões 5 a 14 e pediu a **fase 1 só com os
 > consertos visuais**. **Nada implementado.** Em 16/11 o João
 > liberou U47, U76, U78, U80, U81 e U82; as decisões que faltam estão no fim.
 
-Funções novas depois da 1.4 = **1.5.0** (ADR 0025, adendo de SemVer). Itens **U46, U47, U76, U78 a U106**. As regras
+Funções novas depois da 1.4 = **1.5.0** (ADR 0025, adendo de SemVer). Itens **U46, U47, U76, U78 a U107**. As regras
 D1–D17 de [`atualizacao-1.2.md`](concluidas/atualizacao-1.2.md#regras-de-design-valem-para-todo-pr-de-tela) valem
 para todo PR de tela, e cada PR segue o `AGENTS.md`.
 
@@ -100,7 +100,7 @@ conferido sem `MANAGE_EXTERNAL_STORAGE` no fluxo padrão. **Fica sem verificar**
 Windows com Acesso controlado a pastas ligado e um antivírus de terceiros, e um celular com app de segurança de
 fábrica. Para isso, o primeiro relato precisa trazer o país, o sistema, o antivírus e a mensagem de erro.
 
-## Usabilidade: auditoria do Codex (17/11) e a minha revisão (U92–U106)
+## Usabilidade: auditoria do Codex (17/11) e a minha revisão (U92–U107)
 
 Em 17/11 o Codex fez uma auditoria de usabilidade para iniciantes no celular (390 e 320 px, com comparação em
 1366 px): 32 percursos, 294 objetivos, 19 achados. Ele usou a prévia do navegador (cofre em memória), não o Electron
@@ -118,7 +118,7 @@ captura mostra, mas depende do cofre real (muitos artigos e eventos) e é reconf
 | A02 “Exportar o livro…” fica atrás do Sumário | P1 | confirmado | `BookEditor.tsx:164` só troca para Diagramar; o painel do Sumário continua aberto por cima | U97 |
 | A03 Vincular o token a uma nota troca nome e disposição | P1 | **confirmado e maior** | `reimportWikiToken` (`vtt/library-actions.ts:76`) troca também retrato, tamanho e barras: se o artigo não tem retrato, o token perde a imagem; se não tem barras, a barra de PV some | U94 |
 | A04 Campos da barra de PV sem nome | P1 | confirmado | `TokenBars` (`SceneCanvas.tsx:511-517`): nome, atual e máximo sem `aria-label` | U95 |
-| A05 Recompensa num aviso que some e sai da tela | P1 | confirmado, e a causa é geral | só existe no aviso (`quest-actions.tsx:43`); o aviso some em 10 s, não pausa com foco nem com o mouse, e `.toast-action{flex:none}` sem quebra de linha estoura em 320 px (também no “Desfazer”) | U92, U93 |
+| A05 Recompensa num aviso que some e sai da tela | P1 | confirmado, e a causa é geral | só existe no aviso (`quest-actions.tsx:43`), que some em 10 s (pausa com o mouse em cima ou com o foco, mas no celular não há mouse); com `left: 50%` o aviso só tem meia tela de largura e, sem quebra de linha, o botão estoura em 320 px (também no “Desfazer”) | U92, U93 |
 | A06 Rotina diária exige RRULE | P2 | confirmado | o seletor não tem “Todo dia”; dá para marcar os 7 dias em “Toda semana”, mas ninguém descobre isso | U98 |
 | A07 Nomear a nota exige “Renomear ou mover” | P2 | confirmado | o título da nota é um `<h1>` fixo (`NoteView.tsx:657`) e a nota nasce “Sem título” | U99 |
 | A08 “NPC da wiki” lista lugares e mitos | P2 | confirmado | usa o seletor genérico de notas, sem filtro de tipo | U100 |
@@ -146,14 +146,17 @@ não é critério de contagem, é número errado; e a causa do A05 vale para tod
   e o nome aparece até quatro vezes (barra do app, aba, barra da nota cortada em “Coroaçã…”, título). Com o teclado
   do Android aberto, sobra pouco texto à vista. Junta-se ao U81 (abas no celular). Ao editar, a barra de baixo já vira
   barra de formatação, e isso está bom.
+- **R4 — Aviso de erro com o ✓ verde de sucesso.** O aviso tem um só desenho, com o ícone de “feito”, e 59 lugares o
+  usam para erros (“Não foi possível…”, mensagens de exceção). Vira o **U107**: o aviso ganha o tom de erro (ícone e
+  cor próprios, `role="alert"`) e esses lugares passam a usá-lo.
 - **R3 — Observação, sem mudança agora:** no celular, as seções da campanha (Painel, Sessões, Missões, Elenco,
   Ferramentas, Quadro) ficam num seletor nativo “Tela da campanha”. Foi decisão da 1.4; fica anotado para a próxima
   rodada com pessoas reais.
 
 **Os itens novos**
 
-- **U92 — Avisos que não somem antes da hora.** O aviso com botão quebra a linha em 320 px; para enquanto tem foco
-  ou o mouse em cima; o tempo vale para todos (WCAG 2.2.1). Teste de 320 px no aviso com ação.
+- **U92 — Avisos que cabem na tela.** O aviso fica centrado pelas duas bordas (não mais com meia tela de largura) e,
+  em 320 px, a mensagem quebra e o botão desce para baixo dela. A pausa com o mouse em cima ou com o foco já existia.
 - **U93 — Recompensa também na missão.** Missão concluída com recompensa ainda não enviada mostra “Mandar para o
   Tesouro” no painel da missão. Depois de enviada, a missão grava `recompensa_enviada: "AAAA-MM-DD"` e o botão vira
   “Já está no Tesouro”, sem duplicar. No Tesouro, a origem aparece como link.
@@ -286,8 +289,9 @@ consertou, o PR volta. Os PRs da fase 1 são todos visuais e sempre levam as cap
 | V3 | `visual/1.5-celular-nota` | U81 abas no celular + R2 (menos barras antes do texto) | V2 | ~6 % |
 | V4 | `visual/1.5-campanhas` | U96 barra do Quadro, U106 Tesouro no celular | — | ~7 % |
 | V5 | `visual/1.5-wiki-agenda` | U101 Wiki no celular, U105 evento que cruza a meia-noite | — | ~6 % |
+| V6 | `visual/1.5-avisos-de-erro` | U107 aviso de erro com ícone e cor de erro | V1 | ~5 % |
 
-Ordem: V1 → V2 → V3 → V4 → V5. Ao fim, uma conferência visual de todas as telas em 320, 390 e 1366 px.
+Ordem: V1 → V2 → V3 → V4 → V5 → V6. Ao fim, uma conferência visual de todas as telas em 320, 390 e 1366 px.
 
 ### Fase 2 — funções, usabilidade e técnica
 
@@ -316,7 +320,7 @@ Ordem: P → Q → R → S → B → J → C → D → K → G → L → M → N
 fecha a versão.
 
 Os custos são estimativas (opinião), comparadas com os PRs da 1.4 (A ~11 %, A2 ~4 %, C ~10 %). A fase 1 soma ~35 %
-de uma janela de 5 h; a versão inteira, perto de uma janela e meia, dividida em três ou quatro janelas.
+de uma janela de 5 h (~40 % com o V6); a versão inteira, perto de uma janela e meia, dividida em três ou quatro janelas.
 
 ## Decisões do João
 
