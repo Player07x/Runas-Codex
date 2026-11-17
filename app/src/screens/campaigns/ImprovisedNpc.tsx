@@ -41,7 +41,7 @@ export function ImprovisedNpcCard({ data }: { data: CampaignData }) {
       setSaved(true)
       toast(`${npc.name} está na wiki${home ? " e no Elenco" : ""}.`)
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
     } finally {
       setBusy(false)
     }

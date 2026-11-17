@@ -228,7 +228,7 @@ function NpcRoster({ data }: { data: CampaignData }) {
           {sorted.length > visibleLimit && <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={more}>Mostrar mais {Math.min(prefs.mode === "grid" && prefs.group === "nenhum" ? nextLimit(sorted.length, visibleLimit, columns, PAGE) - visibleLimit : PAGE, sorted.length - visibleLimit)} de {sorted.length - visibleLimit}</button>}
         </>
       )}
-      {picking && <WikiNotePicker title="Acompanhar NPC" root={root} exclude={exclude} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("npcs", withTrackedLink(data.data.npcs, -1, vault.index!.linkTarget(path, data.campaign.home!), "neutro")) }} />}
+      {picking && <WikiNotePicker title="Acompanhar NPC" root={root} exclude={exclude} kind={{ id: "personagem", label: "Personagens" }} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("npcs", withTrackedLink(data.data.npcs, -1, vault.index!.linkTarget(path, data.campaign.home!), "neutro")) }} />}
       {creating && <NewNpcDialog data={data} onClose={() => setCreating(false)} />}
     </section>
   )
@@ -287,7 +287,7 @@ function FactionSection({ data }: { data: CampaignData }) {
           </li>
         })}</ul>
       </>}
-    {picking && <WikiNotePicker title="Acompanhar facção" root={root} exclude={exclude} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("faccoes", withTrackedLink(data.data.faccoes, -1, vault.index!.linkTarget(path, data.campaign.home!), "0")) }} />}
+    {picking && <WikiNotePicker title="Acompanhar facção" root={root} exclude={exclude} kind={{ id: "organizacao", label: "Organizações" }} onClose={() => setPicking(false)} onPick={async (path) => { await setHome("faccoes", withTrackedLink(data.data.faccoes, -1, vault.index!.linkTarget(path, data.campaign.home!), "0")) }} />}
     {creating && <NewNpcDialog data={data} initialKind="organizacao" onClose={() => setCreating(false)} />}
   </section>
 }

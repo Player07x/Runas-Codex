@@ -8,7 +8,7 @@ import { agendaEvents } from "../lib/agenda-data"
 import { vaultRoute } from "../lib/vault-notes"
 import { useVault } from "../platform/VaultProvider"
 import { campaignInfo, listPlayers } from "../core/campaigns"
-import { nextSession } from "../core/next-session"
+import { isRpgSession, nextSession } from "../core/next-session"
 import { campaignHomePath, campaignLook } from "../core/personalization"
 import { toneStyle } from "../core/tones"
 import { displayTitle, editedAgo, spaceOf } from "../core/relative-time"
@@ -113,7 +113,7 @@ function NextSessionBanner() {
     <section className={`home-session${look?.tone ? " toned" : ""}`} style={toneStyle(look?.tone)} aria-labelledby="home-session-title">
       {look?.cover && next.campaign && <CoverBand tone={look.tone} cover={look.cover} from={campaignHomePath(next.campaign)} height={96} className="home-session-cover" />}
       <div className="session-copy">
-        <span className="home-kicker"><span className="status-dot" /> Próxima sessão{next.campaign ? ` · ${next.campaign}` : ""}</span>
+        <span className="home-kicker"><span className="status-dot" /> {isRpgSession(next) ? "Próxima sessão" : "Próximo evento"}{next.campaign ? ` · ${next.campaign}` : next.event?.event.category ? ` · ${next.event.event.category}` : ""}</span>
         <h2 id="home-session-title" className="row" style={{ gap: 12 }}>
           {next.campaign && <Crest tone={look?.tone} emblem={look?.emblem} name={next.campaign} size={40} />}
           {next.title}
@@ -225,7 +225,7 @@ function Sparks() {
   const { locked } = useNotesLock()
   const sparks = useMemo(() => (note && !locked ? parseSparks(note.text) : []), [note?.text, locked])
   const used = sparks.filter((s) => s.used).length
-  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+  const fail = (error: unknown) => toast.error(error)
 
   const write = async (next: string, undoLabel?: string) => {
     const before = vault.index?.note(SPARKS_PATH)?.text

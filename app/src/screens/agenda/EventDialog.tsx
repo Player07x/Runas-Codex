@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { EVENT_COLORS, type AgendaEvent, type EventInput, type Repeat } from "../../core/agenda"
+import { EVENT_COLORS, type AgendaEvent, type EventInput } from "../../core/agenda"
+import { buildRepeat, MAX_REPEAT_COUNT, repeatForm, type RepeatChoice, type RepeatEnd } from "../../core/agenda-repeat"
 import { Modal, Switch } from "../../components/ui"
 import { Notice } from "../../components/kit/Layout"
 import { isAndroidApp } from "../../platform/reminders"
@@ -8,9 +9,6 @@ import { TaskEditDialog } from "../../components/tasks/TaskEditDialog"
 import { useTasksSettings, useTasksVault } from "../../lib/tasks"
 import { WEEKDAYS } from "./views"
 
-type RepeatChoice = "none" | "weekly" | "biweekly" | "monthly" | "yearly" | "custom"
-
-const SIMPLE_RULES: Record<string, RepeatChoice> = { "FREQ=WEEKLY;INTERVAL=2": "biweekly", "FREQ=MONTHLY": "monthly", "FREQ=YEARLY": "yearly" }
 const REMINDER_OPTIONS: [number, string][] = [
   [0, "Na hora"],
   [15, "15 minutos antes"],
@@ -21,20 +19,6 @@ const REMINDER_OPTIONS: [number, string][] = [
   [10080, "1 semana antes"],
 ]
 const COLOR_NAMES: Record<string, string> = { red: "Vermelho", gold: "Dourado", cyan: "Lavanda", violet: "Violeta", green: "Verde" }
-
-/** Separa `;UNTIL=AAAAMMDD…` de uma regra (o fim da repetição tem campo próprio). */
-function splitUntil(rule: string): { rule: string; until?: string } {
-  const m = /;UNTIL=(\d{4})(\d{2})(\d{2})[^;]*/i.exec(rule)
-  return m ? { rule: rule.replace(m[0], ""), until: `${m[1]}-${m[2]}-${m[3]}` } : { rule }
-}
-
-function repeatChoice(repeat: Repeat): { choice: RepeatChoice; days: number[]; custom: string; until?: string } {
-  if (repeat.kind === "none") return { choice: "none", days: [], custom: "" }
-  if (repeat.kind === "weekly") return { choice: "weekly", days: repeat.days, custom: "" }
-  const { rule, until } = splitUntil(repeat.rule)
-  const choice = SIMPLE_RULES[rule]
-  return choice ? { choice, days: [], custom: "", until } : { choice: "custom", days: [], custom: repeat.rule }
-}
 
 interface SessionOption {
   /** Pasta onde a nota da sessão nova é criada (`Campanhas/<campanha>/Sessões`). */
@@ -53,7 +37,7 @@ interface Props {
 }
 
 export function EventDialog({ initial, editing, sessionNotes, sessionFolders, onSave, onClose }: Props) {
-  const start = repeatChoice(initial.repeat ?? { kind: "none" })
+  const start = repeatForm(initial.repeat ?? { kind: "none" }, initial.until)
   const [title, setTitle] = useState(initial.title ?? "")
   const [allDay, setAllDay] = useState(initial.allDay ?? false)
   const [date, setDate] = useState(initial.date)
@@ -63,7 +47,10 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
   const [choice, setChoice] = useState<RepeatChoice>(start.choice)
   const [days, setDays] = useState<number[]>(start.days.length ? start.days : [new Date(`${initial.date}T12:00`).getDay()])
   const [custom, setCustom] = useState(start.custom || "FREQ=WEEKLY;BYDAY=SA")
-  const [until, setUntil] = useState(initial.until ?? start.until ?? "")
+  // U98: a repetição termina nunca, numa data ou depois de N vezes.
+  const [endKind, setEndKind] = useState<RepeatEnd["kind"]>(start.end.kind)
+  const [until, setUntil] = useState(start.end.kind === "until" ? start.end.date : "")
+  const [times, setTimes] = useState(start.end.kind === "count" ? String(start.end.times) : "10")
   const [reminders, setReminders] = useState<number[]>(initial.reminders ?? [])
   const [location, setLocation] = useState(initial.location ?? "")
   const [category, setCategory] = useState(initial.category ?? "")
@@ -79,14 +66,10 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
 
-  const untilRule = until ? `;UNTIL=${until.replace(/-/g, "")}` : ""
-  const repeat: Repeat =
-    choice === "none" ? { kind: "none" }
-    : choice === "weekly" ? { kind: "weekly", days: days.length ? [...days].sort() : [new Date(`${date}T12:00`).getDay()] }
-    : choice === "biweekly" ? { kind: "rrule", rule: `FREQ=WEEKLY;INTERVAL=2${untilRule}` }
-    : choice === "monthly" ? { kind: "rrule", rule: `FREQ=MONTHLY${untilRule}` }
-    : choice === "yearly" ? { kind: "rrule", rule: `FREQ=YEARLY${untilRule}` }
-    : { kind: "rrule", rule: custom.trim().replace(/^RRULE:/i, "") }
+  const count = Number(times)
+  const end: RepeatEnd = endKind === "until" && until ? { kind: "until", date: until } : endKind === "count" ? { kind: "count", times: count } : { kind: "never" }
+  const built = buildRepeat({ choice, days, custom, end }, new Date(`${date}T12:00`).getDay(), editing?.skipDates)
+  const repeat = built.repeat
 
   // Cada problema aponta o campo que precisa mudar: ele recebe o foco e o aviso fica ligado a ele.
   const [problem, problemAt]: [string | null, string | null] =
@@ -95,6 +78,9 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
     : !allDay && !/^\d{2}:\d{2}$/.test(startTime) ? ["Escolha o horário de início.", "evento-inicio"]
     : endDate && endDate < date ? ["O último dia não pode ser antes do primeiro.", "evento-ate"]
     : choice === "custom" && !/^FREQ=/i.test(custom.trim()) ? ["A regra personalizada começa com FREQ= (formato RRULE do iCalendar).", "evento-regra"]
+    : choice !== "none" && choice !== "custom" && endKind === "until" && !until ? ["Escolha o último dia da repetição.", "evento-fim"]
+    : choice !== "none" && choice !== "custom" && endKind === "until" && until < date ? ["A repetição não pode terminar antes do primeiro dia.", "evento-fim"]
+    : choice !== "none" && choice !== "custom" && endKind === "count" && !(Number.isInteger(count) && count >= 1 && count <= MAX_REPEAT_COUNT) ? [`Diga quantas vezes o evento acontece (de 1 a ${MAX_REPEAT_COUNT}).`, "evento-vezes"]
     : [null, null]
   const [problemField, setProblemField] = useState<string | null>(null)
   const reminderHint = isAndroidApp() ? "Dispara pelo Android, mesmo com o app fechado." : platformKind === "electron" ? "Dispara como notificação do sistema enquanto o app está aberto, mesmo minimizado." : "No navegador, só dispara com esta aba aberta."
@@ -116,7 +102,7 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
       ...(endDate && endDate > date && choice === "none" ? { endDate } : {}),
       ...(allDay ? {} : { startTime, ...(endTime ? { endTime } : {}) }),
       repeat,
-      ...(choice === "weekly" && until ? { until } : {}),
+      ...(built.until ? { until: built.until } : {}),
       skipDates: editing?.repeat.kind === "rrule" && repeat.kind === "rrule" ? editing.skipDates : [],
       ...(editing?.completed !== undefined ? { completed: editing.completed } : {}),
       ...(location.trim() ? { location: location.trim() } : {}),
@@ -228,17 +214,35 @@ export function EventDialog({ initial, editing, sessionNotes, sessionFolders, on
               <span>Repetir</span>
               <select className="select" value={choice} onChange={(e) => setChoice(e.target.value as RepeatChoice)} aria-label="Repetir">
                 <option value="none">Não repete</option>
+                <option value="daily">Todo dia</option>
+                <option value="weekdays">Dias úteis</option>
                 <option value="weekly">Toda semana</option>
                 <option value="biweekly">A cada 2 semanas</option>
                 <option value="monthly">Todo mês</option>
                 <option value="yearly">Todo ano</option>
-                <option value="custom">Personalizado (RRULE)…</option>
+                <option value="custom">Avançado (regra RRULE)…</option>
               </select>
             </label>
             {choice !== "none" && choice !== "custom" && (
               <label className="field">
-                <span>Termina em · opcional</span>
-                <input className="input" type="date" value={until} min={date} onChange={(e) => setUntil(e.target.value)} aria-label="Fim da repetição" />
+                <span>Termina</span>
+                <select className="select" value={endKind} onChange={(e) => setEndKind(e.target.value as RepeatEnd["kind"])} aria-label="Quando a repetição termina">
+                  <option value="never">Nunca</option>
+                  <option value="until">Numa data</option>
+                  <option value="count">Número de vezes</option>
+                </select>
+              </label>
+            )}
+            {choice !== "none" && choice !== "custom" && endKind === "until" && (
+              <label className="field">
+                <span>Último dia</span>
+                <input id="evento-fim" className="input" type="date" value={until} min={date} onChange={(e) => setUntil(e.target.value)} aria-label="Fim da repetição" aria-invalid={problemField === "evento-fim" || undefined} aria-describedby={problemField === "evento-fim" ? "evento-erro" : undefined} />
+              </label>
+            )}
+            {choice !== "none" && choice !== "custom" && endKind === "count" && (
+              <label className="field">
+                <span>Quantas vezes</span>
+                <input id="evento-vezes" className="input" type="number" inputMode="numeric" min={1} max={MAX_REPEAT_COUNT} value={times} onChange={(e) => setTimes(e.target.value)} aria-label="Quantas vezes o evento acontece" aria-invalid={problemField === "evento-vezes" || undefined} aria-describedby={problemField === "evento-vezes" ? "evento-erro" : undefined} />
               </label>
             )}
           </div>

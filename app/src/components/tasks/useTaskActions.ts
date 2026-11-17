@@ -32,7 +32,7 @@ export function useTaskActions() {
         const next = change(note.text, parseContext(settings))
         if (next !== note.text) await vault!.save(task.path, next)
       } catch (error) {
-        toast(error instanceof Error ? error.message : String(error))
+        toast.error(error)
       } finally {
         pending.current.delete(key)
       }
@@ -75,7 +75,7 @@ export function useTaskActions() {
           else await vault.createNote("Agenda", "Tarefas", newAgendaTasksNote(line))
           return true
         } catch (error) {
-          toast(error instanceof Error ? error.message : String(error))
+          toast.error(error)
           return false
         }
       },

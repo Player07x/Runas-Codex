@@ -103,6 +103,7 @@
 .campaign-kanban-line .campaign-kanban-title { min-width: 0; padding-top: 4px; overflow-wrap: anywhere; }
 .campaign-kanban-meta { gap: 4px 6px; }
 .campaign-quest-details { gap: 10px; }
+.campaign-reward-send > span { display: inline-flex; align-items: center; gap: 6px; }
 .campaign-questmap-menu { position: absolute; right: 4px; bottom: 4px; }
 .campaign-questmap-item { display: flex; align-items: center; gap: 6px; }
 /* No celular, uma coluna por vez, escolhida no seletor de cima. */
@@ -423,3 +424,13 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
   .campaign-header .campaign-screen-btn { flex: none; min-width: 44px; min-height: 44px; margin: 0; justify-content: center; }
   .campaign-header .campaign-screen-label { display: none; }
 }
+
+/* U106: Tesouro no celular, um cartão por item (nome, quantidade, portador, notas e ações com nome). */
+.treasure-cards { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.treasure-card { display: grid; gap: 8px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.treasure-card-name { overflow-wrap: anywhere; }
+.treasure-card-fields { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 12px; }
+.treasure-quantity { gap: 4px; }
+.treasure-quantity .mono { min-width: 2ch; text-align: center; }
+.treasure-card p { margin: 0; overflow-wrap: anywhere; }
+.treasure-card-actions { flex-wrap: wrap; gap: 8px; }

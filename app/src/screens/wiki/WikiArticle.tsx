@@ -128,7 +128,7 @@ export function Relations({ path, root, readOnly, shortcuts = true }: { path: st
           </button>
         )}
       </div>
-      {adding && <AddRelation path={path} root={root} onDone={() => setAdding(false)} onError={(m) => toast(m)} />}
+      {adding && <AddRelation path={path} root={root} onDone={() => setAdding(false)} onError={(m) => toast.error(m)} />}
       {relations.length === 0 && !adding && <span className="small muted">Nenhuma. Relações são propriedades como aliados, inimigos, pais, membro_de (uma lista de links).</span>}
       {[...groups].map(([label, list]) => (
         <div key={label} className="stack" style={{ gap: 2 }}>
@@ -245,7 +245,7 @@ function RemoveRelation({ path, relation, onClose }: { path: string; relation: R
     <ConfirmDialog title={`Remover “${relation.type.label}: ${name}”?`} confirmLabel="Remover" danger onClose={onClose} onConfirm={async () => {
       const writes = removeRelationWrites(vault.index!, path, relation.type.key, other, { here: sides.here, there: sides.there && (alsoThere || !sides.here) })
       const failed = await applyWrites(vault.setProperty, writes)
-      if (failed.length) toast(`Não deu para remover: ${failed.join("; ")}`)
+      if (failed.length) toast.error(`Não deu para remover: ${failed.join("; ")}`)
     }}>
       {sides.here && sides.there
         ? <label className="row"><input type="checkbox" checked={alsoThere} onChange={(e) => setAlsoThere(e.target.checked)} /> <span>Remover também em {name}</span></label>

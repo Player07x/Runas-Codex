@@ -186,7 +186,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [imageRename, setImageRename] = useState<string | null>(null)
   // "Criar ou editar tarefa" (Tasks) na linha do cursor.
   const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
-  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
+  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast.error(error)) }
   const editor = useRef<SourceEditorHandle>(null)
   const tools = useRef<NoteToolsHandle>(null)
   const surface = useRef<HTMLDivElement>(null)
@@ -309,7 +309,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           const saved = await vault.addAttachment(name, new Uint8Array(await file.arrayBuffer()), path)
           links.push(attachmentEmbed(saved, path, vault.config.app, vault.index!))
         } catch (err) {
-          toast(err instanceof Error ? err.message : String(err))
+          toast.error(err)
         }
       }
       if (links.length) setTimeout(() => editor.current?.insertBlock(links.join("\n"), at ?? undefined))
@@ -413,7 +413,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const organize = (action: () => Promise<unknown>) => {
     void flush()
       .then(action)
-      .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => toast.error(err))
   }
   const move = (to: string) =>
     organize(async () => {
@@ -530,7 +530,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     else if (action === "template") setDialog("template")
     else openLinkDialog()
   }
-  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && (selectionAt.focused || barFocused) && !gallery && !dialog
+  // `editorFocused` some na hora em que o foco sai (o editor só avisa um pouco depois): a barra não fica sobre o menu aberto.
+  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && ((selectionAt.focused && editorFocused) || barFocused) && !gallery && !dialog
   const showKeyboardBar = !readOnly && narrow && mode !== "leitura" && editorFocused && !gallery && !dialog
   // No celular, a barra inferior do app dá lugar à barra de formatação enquanto se escreve.
   useEffect(() => {
@@ -551,7 +552,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               const lines = checkboxLines(draft)
               const line = lines[index]
               if (lines.length !== total || line === undefined) {
-                toast("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
+                toast.error("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
                 return
               }
               const all = draft.split("\n")
@@ -694,7 +695,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
             className="editor-surface"
             ref={surface}
             onFocus={() => setEditorFocused(true)}
-            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { setEditorFocused(false); setBarFocused(false) } }}
+            // A barra da seleção fica numa camada fora do editor (SelectionBar): ir para ela não é sair do texto.
+            onBlur={(event) => { const next = event.relatedTarget as Node | null; if (!event.currentTarget.contains(next) && !selectionBar.current?.contains(next)) { setEditorFocused(false); setBarFocused(false) } }}
             onKeyDown={(event) => {
               // Alt+F10 leva o teclado até a barra da seleção (padrão dos editores com barra flutuante).
               if (!(event.altKey && event.key === "F10") || !showSelectionBar) return
@@ -709,7 +711,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               <SelectionBar
                 ref={selectionBar}
                 at={selectionAt}
-                width={surface.current?.clientWidth ?? 640}
+                origin={surface.current}
                 onWrap={(mark) => { setBarFocused(false); editor.current?.wrap(mark) }}
                 onLink={() => { setBarFocused(false); openLinkDialog() }}
                 onMore={() => { setBarFocused(false); setGallery(true) }}
