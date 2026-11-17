@@ -2202,3 +2202,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
       de confirmar a nota grava sozinha.
 - [ ] Tirar o “acesso a todos os arquivos” nas configurações do Android com um cofre aberto por ele: ao abrir o app,
       Configurações › Cofre mostra “O Android tirou o acesso a todos os arquivos do Runas-Codex”.
+
+## Atualização 1.5 — Propriedades pelo teclado (E/U79)
+
+- No modo Editar, usar Tab desde o menu da nota: deve parar em “Propriedades · n” antes do editor. Enter/Space abre e fecha; com a tabela aberta, Tab chega a “Editar como texto”. Alt+P no editor ou na barra alterna a tabela e foca seu botão.
+- Conferir a mesma nota na Wiki, Campanhas e Livros. Código, Escondidas, somente leitura e notas sem frontmatter mantêm seus estados. Ctrl+Home/Backspace não podem estragar o YAML recolhido.
+- Evidência automatizada do Electron em docs/testes-1.5-e.md: 320/390/1366 px, claro/escuro, aberto/recolhido, teclado nativo e bytes preservados. Teclado físico Android e leitor de tela físico ainda não conferidos.
+- U79: abrir uma nota com propriedades, ir com Tab da barra de propriedades até o texto e digitar: o texto entra no começo do corpo, e o YAML fica intacto.

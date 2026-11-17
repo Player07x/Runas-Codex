@@ -4,7 +4,7 @@ import { EditorState, type Extension } from "@codemirror/state"
 import { GFM } from "@lezer/markdown"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
 import type { PropertiesDisplay } from "../../lib/properties-display"
-import { blockField, frontmatterRange, pointerHeld, pointerHold, propertiesDisplay, propertiesGuard, propertiesState, renderableBlocks, setProperties } from "./live-preview"
+import { blockField, cursorAfterProperties, frontmatterRange, pointerHeld, pointerHold, propertiesDisplay, propertiesGuard, propertiesBar, propertiesState, renderableBlocks, setProperties } from "./live-preview"
 
 function state(doc: string) {
   const s = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM, obsidianSyntax] })] })
@@ -98,21 +98,17 @@ describe("propriedades recolhidas (U77)", () => {
   const doc = "---\ntags: [ideias]\nlocal: Porto\n---\n# Caderno\n\nUma ponte\n"
   const body = doc.indexOf("# Caderno")
   const make = (display: PropertiesDisplay = "recolhidas", anchor = body) => parsed(doc, anchor, [propertiesDisplay.of(display), propertiesState, propertiesGuard, pointerHeld, blockField])
-  const widget = (st: EditorState) => {
-    let found: { open: boolean } | null | undefined
-    st.field(blockField).between(0, 1, (_from, _to, deco) => { found = (deco.spec.widget as { open?: boolean } | undefined) ? { open: Boolean((deco.spec.widget as { open: boolean }).open) } : null })
-    return found
-  }
+  const barState = (st: EditorState) => { const bar = propertiesBar(st); return bar ? { open: bar.open } : null }
 
   it("começa como uma barra fechada; “Abertas” mostra a tabela; “Escondidas” não desenha nada", () => {
-    expect(widget(make())).toEqual({ open: false })
-    expect(widget(make("abertas"))).toEqual({ open: true })
-    expect(widget(make("escondidas"))).toBeNull()
+    expect(barState(make())).toEqual({ open: false })
+    expect(barState(make("abertas"))).toEqual({ open: true })
+    expect(barState(make("escondidas"))).toBeNull()
   })
 
   it("abrir a barra não põe o cursor no YAML", () => {
     const s = make().update({ effects: setProperties.of({ open: true }) }).state
-    expect(widget(s)).toEqual({ open: true })
+    expect(barState(s)).toEqual({ open: true })
     expect(s.selection.main.head).toBe(body)
   })
 
@@ -122,14 +118,14 @@ describe("propriedades recolhidas (U77)", () => {
     expect(s.selection.main.head).toBe(body)
     s = s.update({ selection: { anchor: 8 }, userEvent: "select.pointer" }).state
     expect(s.selection.main.head).toBe(body)
-    expect(widget(s)).toEqual({ open: false })
+    expect(barState(s)).toEqual({ open: false })
   })
 
   it("Backspace no começo do corpo e colar dentro do frontmatter não estragam a nota", () => {
     let s = make()
     s = s.update({ changes: { from: body - 1, to: body }, userEvent: "delete.backward" }).state
     expect(s.doc.toString()).toBe(doc)
-    s = s.update({ changes: { from: 0, insert: "x" }, userEvent: "input.paste" }).state
+    s = s.update({ changes: { from: 5, insert: "x" }, userEvent: "input.paste" }).state
     expect(s.doc.toString()).toBe(doc)
     // Digitar no corpo continua normal; apagar a nota inteira (Ctrl A) também.
     s = s.update({ changes: { from: body, insert: "Oi " }, userEvent: "input.type" }).state
@@ -138,13 +134,34 @@ describe("propriedades recolhidas (U77)", () => {
     expect(s.doc.toString()).toBe("")
   })
 
+  it("o cursor que começa antes das propriedades escondidas vai para depois delas, menos ao editar o YAML", () => {
+    expect(cursorAfterProperties(make("recolhidas", 0))).toBe(body)
+    expect(cursorAfterProperties(make("recolhidas", body))).toBeNull()
+    expect(cursorAfterProperties(make("recolhidas", 0).update({ effects: setProperties.of({ editing: true }) }).state)).toBeNull()
+    expect(cursorAfterProperties(parsed("# Sem propriedades\n", 0, [propertiesState, propertiesGuard]))).toBeNull()
+  })
+
+  it("o que se digita ou cola com o cursor antes do cartão vai para o começo do corpo, sem tocar no YAML", () => {
+    let s = make()
+    s = s.update({ changes: { from: 0, insert: "Oi " }, userEvent: "input.type" }).state
+    expect(s.doc.toString()).toBe(doc.slice(0, body) + "Oi " + doc.slice(body))
+    expect(s.selection.main.head).toBe(body + 3)
+    s = s.update({ changes: { from: 0, insert: "x" }, userEvent: "input.paste" }).state
+    expect(s.doc.toString()).toBe(doc.slice(0, body) + "xOi " + doc.slice(body))
+    // Nota só com propriedades: o texto começa numa linha nova depois delas.
+    const only = "---\ntags: [a]\n---"
+    let t = parsed(only, 0, [propertiesState, propertiesGuard])
+    t = t.update({ changes: { from: 0, insert: "Texto" }, userEvent: "input.type" }).state
+    expect(t.doc.toString()).toBe(only + "\nTexto")
+  })
+
   it("“Editar como texto” mostra o YAML e volta ao cartão quando o cursor sai", () => {
     let s = make()
     s = s.update({ effects: setProperties.of({ editing: true }), selection: { anchor: 17 } }).state
-    expect(widget(s)).toBeUndefined()
+    expect(barState(s)).toBeNull()
     s = s.update({ changes: { from: 17, insert: ", mapa" }, userEvent: "input.type" }).state
     expect(s.doc.toString()).toContain("tags: [ideias, mapa]")
     s = s.update({ selection: { anchor: s.doc.length }, userEvent: "select" }).state
-    expect(widget(s)).toEqual({ open: false })
+    expect(barState(s)).toEqual({ open: false })
   })
 })

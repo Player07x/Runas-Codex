@@ -1,0 +1,21 @@
+/* U79: o mesmo cartão do live preview, fora do contenteditable e antes dele no Tab. */
+.source-editor { display: flex; flex-direction: column; }
+.source-editor-content { display: flex; flex: 1; min-height: 0; }
+.source-editor .source-editor-content > .cm-editor { flex: 1; min-height: 0; height: auto; }
+.source-editor .cm-lp-properties-wrap { padding: 4px 0 10px; cursor: default; font: calc(15px * var(--font-scale, 1))/1.7 var(--font-sans); white-space: break-spaces; overflow-wrap: anywhere; }
+.source-editor .cm-lp-properties { border: 1px solid var(--line); border-radius: 10px; background-color: var(--panel); font-family: var(--font-sans); font-size: 13px; }
+.source-editor .cm-lp-properties:not(.open) { display: inline-block; max-width: 100%; }
+.source-editor .cm-lp-properties-toggle { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 32px; padding: 4px 12px; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; cursor: pointer; text-align: left; }
+.source-editor .cm-lp-properties-toggle:hover { color: var(--text); background-color: var(--panel-2); }
+.source-editor .cm-lp-properties-toggle:focus-visible, .source-editor .cm-lp-properties-edit:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.source-editor .cm-lp-properties-chevron { width: 7px; height: 7px; margin-right: 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 120ms ease; }
+.source-editor .cm-lp-properties.open .cm-lp-properties-chevron { transform: rotate(45deg) translate(-2px, -1px); }
+.source-editor .cm-lp-properties-title { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.source-editor .cm-lp-properties-count { color: var(--muted); font-size: 12px; }
+.source-editor .cm-lp-properties-body { padding: 2px 12px 8px; border-top: 1px solid var(--line); }
+.source-editor .cm-lp-property { display: grid; grid-template-columns: minmax(90px, 30%) 1fr; gap: 10px; padding: 2px 0; overflow-wrap: anywhere; }
+.source-editor .cm-lp-property > span:first-child { color: var(--muted); }
+.source-editor .cm-lp-properties-edit { margin-top: 6px; min-height: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.source-editor .cm-lp-properties-edit:hover { border-color: var(--cyan); }
+@media (pointer: coarse) { .source-editor .cm-lp-properties-toggle, .source-editor .cm-lp-properties-edit { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .source-editor .cm-lp-properties-chevron { transition: none; } }

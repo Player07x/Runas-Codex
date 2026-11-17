@@ -1,6 +1,6 @@
 import { createRoot, type Root } from "react-dom/client"
 import { syntaxTree } from "@codemirror/language"
-import { EditorState, Facet, StateEffect, StateField, type Extension, type Range, type Text, type Transaction } from "@codemirror/state"
+import { EditorState, Facet, StateEffect, StateField, Transaction, type Extension, type Range, type Text, type TransactionSpec } from "@codemirror/state"
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import type { SyntaxNodeRef } from "@lezer/common"
 import { changeEmbed } from "../../core/embeds"
@@ -12,6 +12,7 @@ import { NoteSetContext } from "../../lib/note-set"
 import { Embed } from "../../markdown/Embed"
 import { ImageEditContext, type ImageEditApi } from "../../markdown/EmbedImage"
 import { isRenderedCodeBlock, toggledTaskLines } from "../../markdown/extensions"
+import "./properties-bar.css"
 
 /**
  * Live preview do editor, como no Obsidian: fora da linha (ou do trecho) do cursor, a marcação some e o texto aparece
@@ -113,19 +114,38 @@ class RenderedBlock extends WidgetType {
  * não põe mais o cursor no YAML (quem não conhece o formato estragava a nota sem querer); para mexer no texto, o botão
  * “Editar como texto” dentro do bloco, o painel Propriedades ou o modo Código.
  */
-class PropertiesWidget extends WidgetType {
-  constructor(readonly yaml: string, readonly open: boolean) {
-    super()
+class PropertiesBar {
+  private dom: HTMLElement | null = null
+  private yaml = ""
+  private open = false
+  private readonly bodyId = `properties-${crypto.randomUUID()}`
+
+  constructor(readonly view: EditorView, readonly parent: HTMLElement) { this.update() }
+
+  update(): void {
+    const bar = propertiesBar(this.view.state)
+    if (bar && this.dom && bar.yaml === this.yaml && bar.open === this.open) return
+    if (!bar) { this.dom?.remove(); this.dom = null; return }
+    this.yaml = bar.yaml; this.open = bar.open
+    const next = this.toDOM(this.view)
+    if (!this.dom) { this.dom = next; this.parent.append(next); return }
+    // Mantém o botão conectado: remover e focar outra cópia perde o Space/Enter nativo durante o clique.
+    const card = this.dom.firstElementChild!
+    card.className = next.firstElementChild!.className
+    const toggle = card.querySelector("button")!
+    toggle.setAttribute("aria-expanded", String(this.open))
+    if (this.open) toggle.setAttribute("aria-controls", this.bodyId)
+    else toggle.removeAttribute("aria-controls")
+    card.querySelector(".cm-lp-properties-count")!.replaceWith(next.querySelector(".cm-lp-properties-count")!)
+    card.querySelector(".cm-lp-properties-body")?.remove()
+    const body = next.querySelector(".cm-lp-properties-body")
+    if (body) card.append(body)
   }
 
-  eq(other: PropertiesWidget): boolean {
-    return other.yaml === this.yaml && other.open === this.open
-  }
+  destroy(): void { this.dom?.remove() }
 
   toDOM(view: EditorView): HTMLElement {
-    // O espaço em volta do cartão fica no padding do invólucro: o CodeMirror mede a altura do bloco pela borda e não
-    // conta margens entre os filhos do conteúdo. Com margem, tudo abaixo ficava 14 px fora do lugar e o clique caía
-    // na linha de baixo (U16).
+    // Mesma geometria do cartão anterior, agora antes do CodeMirror na ordem natural do documento (U79).
     const wrap = document.createElement("div")
     wrap.className = "cm-lp-properties-wrap"
     const dom = document.createElement("div")
@@ -137,6 +157,9 @@ class PropertiesWidget extends WidgetType {
     toggle.type = "button"
     toggle.className = "cm-lp-properties-toggle"
     toggle.setAttribute("aria-expanded", String(this.open))
+    if (this.open) toggle.setAttribute("aria-controls", this.bodyId)
+    toggle.setAttribute("aria-keyshortcuts", "Alt+P")
+    toggle.title = "Abrir ou fechar propriedades (Alt+P)"
     const chevron = document.createElement("span")
     chevron.className = "cm-lp-properties-chevron"
     chevron.setAttribute("aria-hidden", "true")
@@ -153,6 +176,7 @@ class PropertiesWidget extends WidgetType {
     if (this.open) {
       const body = document.createElement("div")
       body.className = "cm-lp-properties-body"
+      body.id = this.bodyId
       for (const [key, value] of Object.entries(data)) {
         const row = document.createElement("div")
         row.className = "cm-lp-property"
@@ -181,10 +205,6 @@ class PropertiesWidget extends WidgetType {
       if (!(event.target as Element).closest("button")) event.preventDefault()
     })
     return wrap
-  }
-
-  ignoreEvent(): boolean {
-    return true
   }
 }
 
@@ -378,6 +398,10 @@ const propertiesGuard = EditorState.transactionFilter.of((tr) => {
   // Digitar, colar, apagar ou arrastar dentro do frontmatter fechado: nada acontece. Apagar uma seleção que cobre o
   // frontmatter inteiro (Ctrl A, Delete) continua valendo.
   if (before && tr.docChanged && (tr.isUserEvent("input") || tr.isUserEvent("delete") || tr.isUserEvent("move"))) {
+    // O cursor no começo da nota fica antes do cartão (o estado começa na posição 0, e o Tab vindo da barra de
+    // propriedades chega aí): o texto digitado ou colado ali vai para o começo do corpo, sem tocar no YAML.
+    const typed = redirectToBody(tr, before)
+    if (typed) return typed
     const end = Math.min(before.to + 1, tr.startState.doc.length)
     let hit = false
     tr.changes.iterChangedRanges((from, to) => {
@@ -393,18 +417,25 @@ const propertiesGuard = EditorState.transactionFilter.of((tr) => {
   return [tr, { selection: { anchor: front.to + 1 }, sequential: true }]
 })
 
+function redirectToBody(tr: Transaction, front: BlockRange): TransactionSpec | null {
+  if (!tr.isUserEvent("input")) return null
+  let insert: string | null = null, count = 0
+  tr.changes.iterChanges((from, to, _fromB, _toB, text) => { count++; if (from === front.from && to === from) insert = text.toString() })
+  if (count !== 1 || !insert) return null
+  const doc = tr.startState.doc, at = front.to + 1
+  // Nota só com propriedades: o corpo começa numa linha nova.
+  const change = at <= doc.length ? { from: at, insert } : { from: doc.length, insert: "\n" + insert }
+  const length = (insert as string).length + (at <= doc.length ? 0 : 1)
+  return { changes: change, selection: { anchor: change.from + length }, userEvent: tr.annotation(Transaction.userEvent), scrollIntoView: true }
+}
+
 function buildBlocks(state: EditorState): DecorationSet {
   const ranges: Range<Decoration>[] = []
   const front = frontmatterRange(state)
   const view = propertiesOf(state)
   // Nota que é só frontmatter, sem linha depois: não há onde pôr o cursor fora dele, então o texto aparece.
   const stuck = front !== null && front.to >= state.doc.length && touches(state, front.from, front.to)
-  if (front && !view.editing && !stuck) {
-    const display = state.facet(propertiesDisplay)
-    ranges.push((display === "escondidas"
-      ? Decoration.replace({ block: true })
-      : Decoration.replace({ widget: new PropertiesWidget(state.sliceDoc(front.from, front.to) + "\n", view.open), block: true })).range(front.from, front.to))
-  }
+  if (front && !view.editing && !stuck) ranges.push(Decoration.replace({ block: true }).range(front.from, front.to))
   const doc = state.doc.toString()
   for (const block of renderableBlocks(state)) {
     if (touches(state, block.from, block.to)) continue
@@ -683,28 +714,58 @@ const theme = EditorView.baseTheme({
   ".cm-lp-block:hover": { outline: "1px dashed var(--line)", outlineOffset: "4px", borderRadius: "6px" },
   ".cm-lp-inline-embed": { display: "inline-block", maxWidth: "100%", verticalAlign: "top", fontFamily: "var(--font-sans)", whiteSpace: "normal" },
   ".cm-lp-frontmatter, .cm-lp-frontmatter span": { fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: "400", color: "var(--muted)" },
-  ".cm-lp-properties-wrap": { padding: "4px 0 10px", cursor: "default" },
-  ".cm-lp-properties": { border: "1px solid var(--line)", borderRadius: "10px", backgroundColor: "var(--panel)", fontFamily: "var(--font-sans)", fontSize: "13px" },
-  ".cm-lp-properties:not(.open)": { display: "inline-block", maxWidth: "100%" },
-  ".cm-lp-properties-toggle": { display: "flex", alignItems: "center", gap: "6px", width: "100%", minHeight: "32px", padding: "4px 12px", border: "0", borderRadius: "10px", background: "none", color: "var(--muted)", font: "inherit", cursor: "pointer", textAlign: "left" },
-  ".cm-lp-properties-toggle:hover": { color: "var(--text)", backgroundColor: "var(--panel-2)" },
-  ".cm-lp-properties-toggle:focus-visible, .cm-lp-properties-edit:focus-visible": { outline: "2px solid var(--cyan)", outlineOffset: "2px" },
-  ".cm-lp-properties-chevron": { width: "7px", height: "7px", marginRight: "2px", borderRight: "2px solid currentColor", borderBottom: "2px solid currentColor", transform: "rotate(-45deg)", transition: "transform 120ms ease" },
-  ".cm-lp-properties.open .cm-lp-properties-chevron": { transform: "rotate(45deg) translate(-2px, -1px)" },
-  ".cm-lp-properties-title": { fontSize: "11px", fontWeight: "700", letterSpacing: "0.06em", textTransform: "uppercase" },
-  ".cm-lp-properties-count": { color: "var(--muted)", fontSize: "12px" },
-  ".cm-lp-properties-body": { padding: "2px 12px 8px", borderTop: "1px solid var(--line)" },
-  ".cm-lp-property": { display: "grid", gridTemplateColumns: "minmax(90px, 30%) 1fr", gap: "10px", padding: "2px 0", overflowWrap: "anywhere" },
-  ".cm-lp-property > span:first-child": { color: "var(--muted)" },
-  ".cm-lp-properties-edit": { marginTop: "6px", minHeight: "32px", padding: "4px 10px", border: "1px solid var(--line)", borderRadius: "8px", background: "var(--panel-2)", color: "var(--text)", font: "inherit", fontSize: "12px", cursor: "pointer" },
-  ".cm-lp-properties-edit:hover": { borderColor: "var(--cyan)" },
-  "@media (pointer: coarse)": { ".cm-lp-properties-toggle, .cm-lp-properties-edit": { minHeight: "44px" } },
-  "@media (prefers-reduced-motion: reduce)": { ".cm-lp-properties-chevron": { transition: "none" } },
+})
+
+/** Estado do cartão externo, com a mesma proteção do YAML e a mesma preferência do U77. */
+export function propertiesBar(state: EditorState): { yaml: string; open: boolean } | null {
+  if (!state.field(propertiesState, false) || state.facet(propertiesDisplay) === "escondidas") return null
+  const front = frontmatterRange(state), view = propertiesOf(state)
+  if (!front || view.editing || (front.to >= state.doc.length && touches(state, front.from, front.to))) return null
+  return { yaml: state.sliceDoc(front.from, front.to) + "\n", open: view.open }
+}
+
+/** Alt+P não muda o texto nem a seleção; a barra recebe o foco, inclusive com a nota rolada. */
+export function toggleProperties(view: EditorView): boolean {
+  const bar = propertiesBar(view.state)
+  if (!bar) return false
+  view.dispatch({ effects: setProperties.of({ open: !bar.open }) })
+  return true
+}
+
+/** O cartão fica fora do CodeMirror; o plugin só acompanha as transações e limpa seu próprio DOM. */
+function propertiesPanel(parent: HTMLElement): Extension {
+  return ViewPlugin.fromClass(class extends PropertiesBar {
+    constructor(view: EditorView) { super(view, parent) }
+  })
+}
+
+/** Onde o cursor deve ficar quando ele está antes ou dentro das propriedades escondidas (`null`: já está bem). */
+export function cursorAfterProperties(state: EditorState): number | null {
+  const front = frontmatterRange(state), main = state.selection.main
+  if (!front || !main.empty || main.head > front.to || front.to + 1 > state.doc.length) return null
+  if (!state.field(propertiesState, false) || propertiesOf(state).editing) return null
+  return front.to + 1
+}
+
+/**
+ * Um estado novo começa com o cursor na posição 0, antes do cartão de propriedades, e nenhuma transação o tira de lá:
+ * o que entrasse ali sem ser digitado (imagem colada, link inserido pela barra) cairia antes do `---` e quebraria
+ * o YAML. Logo depois de montar, o cursor vai para a primeira linha depois das propriedades.
+ */
+const startAfterProperties = ViewPlugin.fromClass(class {
+  private alive = true
+  constructor(view: EditorView) {
+    queueMicrotask(() => {
+      const at = this.alive ? cursorAfterProperties(view.state) : null
+      if (at !== null) view.dispatch({ selection: { anchor: at } })
+    })
+  }
+  destroy() { this.alive = false }
 })
 
 /** O live preview inteiro: liga com `livePreviewHost.of(...)` para os links e blocos desenhados. */
-export function livePreview(display: PropertiesDisplay = "recolhidas"): Extension {
-  return [propertiesDisplay.of(display), propertiesState, propertiesGuard, pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
+export function livePreview(display: PropertiesDisplay = "recolhidas", propertiesParent?: HTMLElement): Extension {
+  return [propertiesDisplay.of(display), propertiesState, propertiesGuard, startAfterProperties, ...(propertiesParent ? [propertiesPanel(propertiesParent)] : []), pointerHeld, blockField, inlinePlugin, clicks, pointerHoldEvents, pointerRelease, theme, EditorView.contentAttributes.of({ class: "cm-live-preview" })]
 }
 
 export { frontmatterRange, renderableBlocks, blockField, pointerHeld, pointerHold, propertiesState, propertiesGuard, setProperties }

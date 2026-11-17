@@ -14,7 +14,7 @@ import { FORMATTER_GROUPS, slashItems, type FormatterEntry, type SlashItem } fro
 import { suggestForTaskLine } from "../../core/tasks/suggest"
 import { currentParseContext, vaultTaskIds } from "../../lib/tasks"
 import { obsidianSyntax } from "../../markdown/lezer-obsidian"
-import { livePreview as livePreviewExtension, livePreviewHost, type LivePreviewHost } from "./live-preview"
+import { livePreview as livePreviewExtension, livePreviewHost, toggleProperties, type LivePreviewHost } from "./live-preview"
 import { readRemembered } from "../../lib/remembered"
 import { parsePropertiesDisplay, PROPERTIES_DISPLAY_KEY } from "../../lib/properties-display"
 
@@ -167,6 +167,8 @@ const highlight = HighlightStyle.define([
 
 export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function SourceEditor({ value, docKey, readOnly, onChange, onSave, suggestLinks, livePreview, onFiles, typewriter, onImageLinkContext, onSelection, onCursor, onSlashAction, lineNumbers = false, extraFormatters }, ref) {
   const host = useRef<HTMLDivElement>(null)
+  const editorHost = useRef<HTMLDivElement>(null)
+  const propertiesHost = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const readOnlyConf = useRef(new Compartment())
   const previewConf = useRef(new Compartment())
@@ -183,7 +185,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
   })
   // O jeito de mostrar as propriedades (U77) é lido ao ligar o live preview: mudar nas Configurações vale na próxima
   // nota aberta.
-  const previewExtensions = (on: boolean) => (on ? [livePreviewHost.of(previewHost.current), livePreviewExtension(readRemembered(PROPERTIES_DISPLAY_KEY, parsePropertiesDisplay))] : [])
+  const previewExtensions = (on: boolean) => (on ? [livePreviewHost.of(previewHost.current), livePreviewExtension(readRemembered(PROPERTIES_DISPLAY_KEY, parsePropertiesDisplay), propertiesHost.current!)] : [])
 
   useEffect(() => {
     const linkSource = (context: CompletionContext): CompletionResult | null => {
@@ -325,7 +327,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
         theme,
       ],
     })
-    view.current = new EditorView({ state, parent: host.current! })
+    view.current = new EditorView({ state, parent: editorHost.current! })
     const editorView = view.current
     const measure = () => { if (view.current === editorView) editorView.requestMeasure() }
     const geometry = new ResizeObserver(measure)
@@ -429,5 +431,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, Props>(function Sourc
     },
   }))
 
-  return <div ref={host} className={`source-editor ${livePreview ? "live" : ""}`} />
+  return <div ref={host} className={`source-editor ${livePreview ? "live" : ""}`} onKeyDownCapture={(event) => {
+    if (!event.repeat && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && (event.code === "KeyP" || event.key.toLowerCase() === "p") && view.current && toggleProperties(view.current)) {
+      event.preventDefault(); event.stopPropagation()
+      propertiesHost.current?.querySelector<HTMLButtonElement>("button")?.focus()
+    }
+  }}><div ref={propertiesHost} /><div ref={editorHost} className="source-editor-content" /></div>
 })
