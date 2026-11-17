@@ -1938,3 +1938,8 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Atualização 1.5 — Contador das pastas de Notas (pedido de 17/11)
+
+- Em Notas › Cofre inteiro, conferir que a bolinha soma as subpastas e os arquivos diretamente dentro de cada pasta, inclusive anexos. Cada subpasta conta uma vez; seus descendentes não entram de novo na pasta-mãe. A dica e o nome acessível detalham pastas e arquivos.
+- Conferir depois de criar, mover e remover itens, e no escopo Espaço Notas. As pastas vazias criadas na sessão entram na conta. Arquivos ocultos continuam fora. Evidência com dados de exemplo em docs/testes-1.5-contagem-pastas.md.

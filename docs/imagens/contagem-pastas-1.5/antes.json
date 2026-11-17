@@ -1,0 +1,1031 @@
+{
+  "stage": "antes",
+  "captures": [
+    {
+      "theme": "dark",
+      "file": "antes-320-dark.png",
+      "width": 320,
+      "scroll": 320,
+      "folders": [
+        {
+          "name": "Agenda",
+          "count": "10",
+          "label": "10 notas"
+        },
+        {
+          "name": "Campanhas",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "A Cripta (one-shot)",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "As Cinzas de Valdris",
+          "count": "3",
+          "label": "3 notas · 3 pastas"
+        },
+        {
+          "name": "Missões",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Sessões",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Coroa Partida",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Livros",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "Caderno de formatadores",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Guia do Condado de Valdris",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Regras da Casa",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Notas",
+          "count": "8",
+          "label": "8 notas · 3 pastas"
+        },
+        {
+          "name": "Diário",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Do Obsidian",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Modelos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Wikis",
+          "count": "0",
+          "label": "0 notas · 1 pasta"
+        },
+        {
+          "name": "Ordem x Caos",
+          "count": "0",
+          "label": "0 notas · 11 pastas"
+        },
+        {
+          "name": "Acontecimentos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Calendários",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Criaturas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Eventos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Geradores",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Idiomas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Itens",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Locais",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Mapas",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Organizações",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "6",
+          "label": "6 notas · 1 pasta"
+        },
+        {
+          "name": "Aliados",
+          "count": "1",
+          "label": "1 nota"
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "file": "antes-320-light.png",
+      "width": 320,
+      "scroll": 320,
+      "folders": [
+        {
+          "name": "Agenda",
+          "count": "10",
+          "label": "10 notas"
+        },
+        {
+          "name": "Campanhas",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "A Cripta (one-shot)",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "As Cinzas de Valdris",
+          "count": "3",
+          "label": "3 notas · 3 pastas"
+        },
+        {
+          "name": "Missões",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Sessões",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Coroa Partida",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Livros",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "Caderno de formatadores",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Guia do Condado de Valdris",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Regras da Casa",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Notas",
+          "count": "8",
+          "label": "8 notas · 3 pastas"
+        },
+        {
+          "name": "Diário",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Do Obsidian",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Modelos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Wikis",
+          "count": "0",
+          "label": "0 notas · 1 pasta"
+        },
+        {
+          "name": "Ordem x Caos",
+          "count": "0",
+          "label": "0 notas · 11 pastas"
+        },
+        {
+          "name": "Acontecimentos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Calendários",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Criaturas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Eventos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Geradores",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Idiomas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Itens",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Locais",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Mapas",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Organizações",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "6",
+          "label": "6 notas · 1 pasta"
+        },
+        {
+          "name": "Aliados",
+          "count": "1",
+          "label": "1 nota"
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "file": "antes-390-dark.png",
+      "width": 390,
+      "scroll": 390,
+      "folders": [
+        {
+          "name": "Agenda",
+          "count": "10",
+          "label": "10 notas"
+        },
+        {
+          "name": "Campanhas",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "A Cripta (one-shot)",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "As Cinzas de Valdris",
+          "count": "3",
+          "label": "3 notas · 3 pastas"
+        },
+        {
+          "name": "Missões",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Sessões",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Coroa Partida",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Livros",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "Caderno de formatadores",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Guia do Condado de Valdris",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Regras da Casa",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Notas",
+          "count": "8",
+          "label": "8 notas · 3 pastas"
+        },
+        {
+          "name": "Diário",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Do Obsidian",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Modelos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Wikis",
+          "count": "0",
+          "label": "0 notas · 1 pasta"
+        },
+        {
+          "name": "Ordem x Caos",
+          "count": "0",
+          "label": "0 notas · 11 pastas"
+        },
+        {
+          "name": "Acontecimentos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Calendários",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Criaturas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Eventos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Geradores",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Idiomas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Itens",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Locais",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Mapas",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Organizações",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "6",
+          "label": "6 notas · 1 pasta"
+        },
+        {
+          "name": "Aliados",
+          "count": "1",
+          "label": "1 nota"
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "file": "antes-390-light.png",
+      "width": 390,
+      "scroll": 390,
+      "folders": [
+        {
+          "name": "Agenda",
+          "count": "10",
+          "label": "10 notas"
+        },
+        {
+          "name": "Campanhas",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "A Cripta (one-shot)",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "As Cinzas de Valdris",
+          "count": "3",
+          "label": "3 notas · 3 pastas"
+        },
+        {
+          "name": "Missões",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Sessões",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Coroa Partida",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Livros",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "Caderno de formatadores",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Guia do Condado de Valdris",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Regras da Casa",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Notas",
+          "count": "8",
+          "label": "8 notas · 3 pastas"
+        },
+        {
+          "name": "Diário",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Do Obsidian",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Modelos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Wikis",
+          "count": "0",
+          "label": "0 notas · 1 pasta"
+        },
+        {
+          "name": "Ordem x Caos",
+          "count": "0",
+          "label": "0 notas · 11 pastas"
+        },
+        {
+          "name": "Acontecimentos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Calendários",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Criaturas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Eventos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Geradores",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Idiomas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Itens",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Locais",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Mapas",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Organizações",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "6",
+          "label": "6 notas · 1 pasta"
+        },
+        {
+          "name": "Aliados",
+          "count": "1",
+          "label": "1 nota"
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "file": "antes-1366-dark.png",
+      "width": 1366,
+      "scroll": 1366,
+      "folders": [
+        {
+          "name": "Agenda",
+          "count": "10",
+          "label": "10 notas"
+        },
+        {
+          "name": "Campanhas",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "A Cripta (one-shot)",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "As Cinzas de Valdris",
+          "count": "3",
+          "label": "3 notas · 3 pastas"
+        },
+        {
+          "name": "Missões",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Sessões",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Coroa Partida",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Livros",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "Caderno de formatadores",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Guia do Condado de Valdris",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Regras da Casa",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Notas",
+          "count": "8",
+          "label": "8 notas · 3 pastas"
+        },
+        {
+          "name": "Diário",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Do Obsidian",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Modelos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Wikis",
+          "count": "0",
+          "label": "0 notas · 1 pasta"
+        },
+        {
+          "name": "Ordem x Caos",
+          "count": "0",
+          "label": "0 notas · 11 pastas"
+        },
+        {
+          "name": "Acontecimentos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Calendários",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Criaturas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Eventos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Geradores",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Idiomas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Itens",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Locais",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Mapas",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Organizações",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "6",
+          "label": "6 notas · 1 pasta"
+        },
+        {
+          "name": "Aliados",
+          "count": "1",
+          "label": "1 nota"
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "file": "antes-1366-light.png",
+      "width": 1366,
+      "scroll": 1366,
+      "folders": [
+        {
+          "name": "Agenda",
+          "count": "10",
+          "label": "10 notas"
+        },
+        {
+          "name": "Campanhas",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "A Cripta (one-shot)",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "As Cinzas de Valdris",
+          "count": "3",
+          "label": "3 notas · 3 pastas"
+        },
+        {
+          "name": "Missões",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Sessões",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Coroa Partida",
+          "count": "1",
+          "label": "1 nota · 1 pasta"
+        },
+        {
+          "name": "Sessões",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Livros",
+          "count": "0",
+          "label": "0 notas · 3 pastas"
+        },
+        {
+          "name": "Caderno de formatadores",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Guia do Condado de Valdris",
+          "count": "7",
+          "label": "7 notas"
+        },
+        {
+          "name": "Regras da Casa",
+          "count": "3",
+          "label": "3 notas"
+        },
+        {
+          "name": "Notas",
+          "count": "8",
+          "label": "8 notas · 3 pastas"
+        },
+        {
+          "name": "Diário",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Do Obsidian",
+          "count": "4",
+          "label": "4 notas"
+        },
+        {
+          "name": "Modelos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Wikis",
+          "count": "0",
+          "label": "0 notas · 1 pasta"
+        },
+        {
+          "name": "Ordem x Caos",
+          "count": "0",
+          "label": "0 notas · 11 pastas"
+        },
+        {
+          "name": "Acontecimentos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Calendários",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Criaturas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Eventos",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Geradores",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Idiomas",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Itens",
+          "count": "1",
+          "label": "1 nota"
+        },
+        {
+          "name": "Locais",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Mapas",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Organizações",
+          "count": "2",
+          "label": "2 notas"
+        },
+        {
+          "name": "Personagens",
+          "count": "6",
+          "label": "6 notas · 1 pasta"
+        },
+        {
+          "name": "Aliados",
+          "count": "1",
+          "label": "1 nota"
+        }
+      ]
+    }
+  ],
+  "keyboard": [
+    {
+      "tag": "A",
+      "label": "2026-10-03 Sessão 10 — As Cinzas de Valdris"
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Ações da nota 2026-10-03 Sessão 10 — As Cinzas de Valdris"
+    },
+    {
+      "tag": "A",
+      "label": "2026-10-10 Sessão 11 — As Cinzas de Valdris"
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Ações da nota 2026-10-10 Sessão 11 — As Cinzas de Valdris"
+    }
+  ]
+}
