@@ -155,6 +155,13 @@ export function WikiHome() {
         </section>
       ) : (
         <>
+          {/* U101: no celular cada categoria vem com a prévia dos artigos, e as últimas ficavam muito abaixo; o índice
+              no topo leva direto a cada uma. No computador, as categorias já aparecem lado a lado. */}
+          {homeView === "artigos" && tree.length > 1 && (
+            <nav className="wiki-category-index" aria-label="Categorias da wiki">
+              {tree.map((folder) => <a key={folder.path + folder.name} className="chip" href={href(categoryRoute(folder.path))}>{folder.name}</a>)}
+            </nav>
+          )}
           <div className={`category-grid${homeView === "categorias" ? " only-categories" : ""}`}>
             {tree.map((folder) => (
               <Category key={folder.path + folder.name} folder={folder} compact={homeView === "categorias"} />
