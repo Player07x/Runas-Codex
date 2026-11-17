@@ -472,3 +472,13 @@ Jobs reexecutados por instabilidade de rede: android-revisao em #149, #150, #155
 Tipos, suíte, builds e os dois smokes passaram. O Android do “Testar gravação” fica para o N.
 
 Próximas, na ordem: C → G → N (sobre M+G) → D → K → J2 → A2 → R → L → conferência final.
+
+**C/U78 → PR #166** (`vtt/1.5-sair-da-mesa`):
+- `POST /seat/leave` no computador e no Android;
+- botão “Sair da mesa” com confirmação;
+- aviso de “Controlado por” repetido no painel do mestre;
+- smokes e teste JUnit novos.
+
+Tipos, suíte, builds, os dois smokes e o JUnit da sala (`javac`) passaram.
+
+**Pendente no #163:** o smoke de gravação no Windows do CI falhou duas vezes em `position`/`editorClick`; o Linux passa. Investigar antes de tirar do rascunho.
