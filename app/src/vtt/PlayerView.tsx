@@ -1,7 +1,7 @@
 import { PlayerActivity } from "./PlayerActivity"
 import type { PublicCollaboration } from "./shared/collaboration"
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { FlipHorizontal2, Hand, KeyRound, LoaderCircle, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
+import { FlipHorizontal2, Hand, KeyRound, LoaderCircle, LogOut, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
 import type { SceneChildren } from "./document-store"
 import { configurePlayerAssets, resolveAssetUrl } from "./api"
 import { AudioEngine } from "./audio-engine"
@@ -205,6 +205,20 @@ export function PlayerView() {
     } finally { setJoining(false) }
   }
 
+  /** U78: libera o assento deste aparelho e volta ao lobby, para entrar com outro código ou ficar só assistindo. */
+  async function leaveSeat(): Promise<void> {
+    if (!seat || !window.confirm(`Sair da mesa como ${seat.label}? Para voltar, peça o código ao mestre ou use o mesmo de novo.`)) return
+    try {
+      const query = transmissionKey ? `?k=${encodeURIComponent(transmissionKey)}` : ""
+      const response = await fetch(`/seat/leave${query}`, { method: "POST", credentials: "same-origin", cache: "no-store" })
+      if (!response.ok) throw new Error(String(response.status))
+      // Recarregar volta como espectador, sem o cookie, com o lobby aberto (como ao entrar).
+      location.reload()
+    } catch {
+      setNotice("Não deu para sair agora: a mesa não respondeu. Tente de novo em instantes.")
+    }
+  }
+
   useEffect(() => {
     const element = host.current
     if (!element) return
@@ -309,6 +323,7 @@ export function PlayerView() {
       <button title="Aproximar (ou afaste dois dedos na tela)" aria-label="Aproximar" onClick={() => view.current?.zoomBy(1.25)}><ZoomIn size={17} /></button>
       <button title="Afastar (ou aproxime dois dedos na tela)" aria-label="Afastar" onClick={() => view.current?.zoomBy(0.8)}><ZoomOut size={17} /></button>
       {canFlip && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Virar meu token (${BINDINGS.flipToken.map(keyLabel).join(" / ")})`} aria-label="Virar meu token" onClick={flipOwn}><FlipHorizontal2 size={17} /></button></>}
+      {seat && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Sair da mesa (${seat.label})`} aria-label="Sair da mesa" data-player-leave onClick={() => void leaveSeat()}><LogOut size={17} /></button></>}
     </nav>}
     {connected && <div className="player-audio">
       {soundOn

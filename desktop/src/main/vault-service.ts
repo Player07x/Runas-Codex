@@ -3,7 +3,8 @@ import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { app, BrowserWindow, dialog, shell, type OpenDialogOptions } from "electron"
 import { IPC, type BackupInfo, type VaultChange, type VaultEntry, type VaultInfo } from "../shared/ipc"
-import { backupFolder, backupVault, createFolder, createVault, listBackups, listVault, readBinary, readTexts, renamePath, trashPath, writeBinarySafe, writeTextSafe } from "./vault"
+import { backupFolder, backupVault, checkWritable, createFolder, createVault, listBackups, listVault, readBinary, readTexts, renamePath, trashPath, writeBinarySafe, writeTextSafe, type WriteCheck } from "./vault"
+import { createWritePace } from "./write-pace"
 import { installSnippet, mediaFile } from "./vault-files"
 import { VaultWatcher } from "./watcher"
 import { listTrash, restoreTrash } from "./trash"
@@ -42,6 +43,8 @@ export class VaultService {
   private ephemeralWritable = false
   private scheduleTimer: NodeJS.Timeout | null = null
   private readonly writes = new WriteQueue()
+  /** Gravações em lote num ritmo menor, para não parecer ransomware ao antivírus (U91). */
+  private readonly pace = createWritePace()
 
   constructor(
     private readonly window: () => BrowserWindow | null,
@@ -230,6 +233,7 @@ export class VaultService {
     const root = this.writableRoot()
     return this.writes.run(root + "\0" + path, async () => {
       await this.dailyBackup()
+      await this.pace()
       const entry = await writeTextSafe(root, path, content, expected)
       this.watcher?.remember(entry)
       this.notify([{ type: "changed", entry }])
@@ -245,6 +249,7 @@ export class VaultService {
     const root = this.writableRoot()
     return this.writes.run(root + "\0" + path, async () => {
       await this.dailyBackup()
+      await this.pace()
       const entry = await writeBinarySafe(root, path, bytes, expected)
       this.watcher?.remember(entry)
       this.notify([{ type: "changed", entry }])
@@ -260,6 +265,7 @@ export class VaultService {
     const root = this.writableRoot()
     await this.dailyBackup()
     this.watcher?.forget(from)
+    await this.pace()
     await renamePath(root, from, to)
     try {
       const info = await stat(join(root, ...to.split("/")))
@@ -276,8 +282,14 @@ export class VaultService {
   async trash(path: string): Promise<void> {
     const root = this.writableRoot()
     this.watcher?.forget(path)
+    await this.pace()
     await trashPath(root, path)
     this.notify([{ type: "deleted", path }])
+  }
+
+  /** “Testar gravação” (U91): o mesmo caminho de uma gravação, num arquivo de teste que não fica no cofre. */
+  checkWrite(): Promise<WriteCheck> {
+    return checkWritable(this.writableRoot())
   }
 
   backup(): Promise<BackupInfo> {

@@ -36,7 +36,7 @@ export function ClocksEditor({ path, clocks, readOnly, size, onChanged }: {
       onChanged?.(next, clocks)
       return true
     } catch (err) {
-      toast(err instanceof Error ? err.message : String(err))
+      toast.error(err)
       return false
     }
   }

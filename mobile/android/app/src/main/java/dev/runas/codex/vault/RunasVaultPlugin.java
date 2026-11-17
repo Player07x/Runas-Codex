@@ -69,6 +69,7 @@ public class RunasVaultPlugin extends Plugin {
     private volatile VaultFs store;
     private String openError;
     private final SaveStreams saveStreams = new SaveStreams();
+    private final BinaryTransfers binaryTransfers = new BinaryTransfers();
     private boolean pickSaf;
     private VaultWatcher watcher;
     private boolean testVault;
@@ -79,6 +80,9 @@ public class RunasVaultPlugin extends Plugin {
     @Override
     public void load() {
         // Teste no emulador (só no APK de depuração): abrir um cofre pelo caminho, sem o seletor.
+        // Somente o diretório privado desta operação; elimina estágios de um processo interrompido.
+        File[] abandoned = binaryCache().listFiles();
+        if (abandoned != null) for (File file : abandoned) if (file.isFile()) file.delete();
         Intent intent = getActivity().getIntent();
         boolean debuggable = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (debuggable && intent != null && intent.getStringExtra("runasVault") != null) {
@@ -91,7 +95,12 @@ public class RunasVaultPlugin extends Plugin {
                 try {
                     if ("saf".equals(prefs().getString("mode", "direct"))) {
                         open(openSaf(Uri.parse(saved)));
-                    } else if (new File(saved).isDirectory() && hasAccess()) open(new VaultStore(new File(saved)));
+                    } else if (new File(saved).isDirectory() && hasAccess()) {
+                        open(new VaultStore(new File(saved)));
+                    } else if (!hasAccess()) {
+                        // U91: o acesso a todos os arquivos foi tirado nas configurações do Android.
+                        openError = "O Android tirou o acesso a todos os arquivos do Runas-Codex.";
+                    }
                 } catch (IOException | SecurityException e) {
                     // Permissão revogada ou pasta removida: a interface oferece escolher novamente.
                     store = null;
@@ -113,6 +122,7 @@ public class RunasVaultPlugin extends Plugin {
     // ---------- Cofre aberto ----------
 
     private void open(VaultFs next) {
+        binaryTransfers.abortAll();
         if (watcher != null) watcher.stop();
         store = next;
         openError = null;
@@ -233,8 +243,16 @@ public class RunasVaultPlugin extends Plugin {
     }
 
     private void withAccess(PluginCall call) {
-        pickSaf = !hasAccess() && prefs().getBoolean("preferSaf", false);
-        if (pickSaf || hasAccess()) {
+        // U91 (item 5): o seletor de pastas do sistema é o padrão e não pede permissão nenhuma. O acesso a todos os
+        // arquivos fica para a opção avançada de Configurações › Cofre, que explica antes de pedir. Um cofre já aberto
+        // pelo acesso total continua assim até a pessoa trocar de pasta.
+        if (!Boolean.TRUE.equals(call.getBoolean("allFiles", false))) {
+            pickSaf = true;
+            pickFolder(call);
+            return;
+        }
+        pickSaf = false;
+        if (hasAccess()) {
             pickFolder(call);
             return;
         }
@@ -276,12 +294,28 @@ public class RunasVaultPlugin extends Plugin {
     }
 
     private void pickFolder(PluginCall call) {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
         boolean debug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         String initial = debug ? call.getString("initialUri", null) : null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && initial != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(initial));
+        pickFolder(call, initial != null ? Uri.parse(initial) : null);
+    }
+
+    private void pickFolder(PluginCall call, Uri initial) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && initial != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initial);
         startActivityForResult(call, intent, "folderResult");
+    }
+
+    /**
+     * U91: o Android tirou a permissão da pasta (app de limpeza, backup restaurado, outro aparelho). Em vez de falhar
+     * ao gravar, o app pede de novo: o seletor do sistema abre já na pasta do cofre, e basta confirmar.
+     */
+    @PluginMethod
+    public void regrant(PluginCall call) {
+        pickMode = "choose";
+        pickSaf = true;
+        String saved = prefs().getString("path", null);
+        pickFolder(call, saved != null && saved.startsWith("content://") ? Uri.parse(saved) : null);
     }
 
     @ActivityCallback
@@ -346,6 +380,7 @@ public class RunasVaultPlugin extends Plugin {
         try {
             VaultFs s = requireStore();
             boolean on = Boolean.TRUE.equals(call.getBoolean("writable", false));
+            if (!on) binaryTransfers.abortAll();
             if (testVault) {
                 testWritable = on;
             } else {
@@ -467,6 +502,62 @@ public class RunasVaultPlugin extends Plugin {
             fail(call, e);
         }
     }
+
+    private File binaryCache() { return new File(getContext().getCacheDir(), "binary-transfers"); }
+    private int binaryId(PluginCall call, boolean writing) throws IOException {
+        int id = call.getInt("id", 0);
+        VaultFs current = writing ? writableStore() : requireStore();
+        if (binaryTransfers.owner(id) != current) { binaryTransfers.abort(id); throw new IOException("O cofre mudou durante a transferência."); }
+        return id;
+    }
+    @PluginMethod public void binaryReadStart(PluginCall call) {
+        try {
+            int id = binaryTransfers.readStart(requireStore(), call.getString("path"));
+            JSObject result = new JSObject(); result.put("id", id); result.put("size", binaryTransfers.size(id)); call.resolve(result);
+        } catch (IOException | IllegalArgumentException e) { fail(call,e); }
+    }
+    @PluginMethod public void binaryReadChunk(PluginCall call) {
+        try { JSObject result=new JSObject(); result.put("base64",Base64.encodeToString(binaryTransfers.readChunk(binaryId(call,false)),Base64.NO_WRAP)); call.resolve(result); }
+        catch(IOException | IllegalArgumentException e) { fail(call,e); }
+    }
+    @PluginMethod public void binaryReadFinish(PluginCall call) {
+        try { binaryTransfers.readFinish(binaryId(call,false));call.resolve(); } catch(IOException e) { fail(call,e); }
+    }
+    @PluginMethod public void binaryWriteStart(PluginCall call) {
+        try {
+            VaultFs owner=writableStore(), target=owner;
+            String path=call.getString("path");
+            boolean managed=Boolean.TRUE.equals(call.getBoolean("managed",false));
+            VaultStore.Version expected=expectedOf(call); boolean creating=createOnly(call);
+            if(managed) {
+                path=VaultTransfer.relative(path);
+                if(!creating && (expected==null || expected.size<0 || !Double.isFinite(expected.mtime) || expected.mtime<=0)) throw new IOException("A versão lida é obrigatória para importar os dados da mesa.");
+                target=VaultTransfer.worlds(owner,new File(getContext().getFilesDir(),"vault-transactions"),true);
+            }
+            // O JSON do Capacitor usa Integer para arquivos abaixo de 2 GB; getLong não converte Integer.
+            double size=call.getData().optDouble("size",Double.NaN);
+            if(!Double.isFinite(size) || size<0 || size>BinaryContent.MAX_SIZE || size!=Math.rint(size)) throw new IOException("Tamanho inválido; o limite é 512 MB.");
+            int id=binaryTransfers.writeStart(owner,target,path,(long)size,expected,creating,binaryCache());
+            JSObject result=new JSObject();result.put("id",id);call.resolve(result);
+        }catch(IOException | IllegalArgumentException e){fail(call,e);}
+    }
+    @PluginMethod public void binaryWriteChunk(PluginCall call) {
+        try {
+            int id=binaryId(call,true); String data=call.getString("base64","");
+            if(data.length()>((BinaryTransfers.CHUNK+2)/3)*4) { binaryTransfers.abort(id);throw new IOException("Pedaço maior que 2 MB."); }
+            binaryTransfers.writeChunk(id,Base64.decode(data,Base64.DEFAULT));call.resolve();
+        }catch(IOException | IllegalArgumentException e){binaryTransfers.abort(call.getInt("id",0));fail(call,e);}
+    }
+    @PluginMethod public void binaryWriteFinish(PluginCall call) {
+        try {
+            int id=binaryId(call,true);
+            VaultStore.Entry e=binaryTransfers.writeFinish(id);
+            // O chamador não escolhe o destino aqui: o caminho já foi fixado no Start.
+            if (watcher!=null && !e.path.startsWith(VaultTransfer.PREFIX)) watcher.remember(e);
+            call.resolve(entryJson(e));
+        }catch(IOException | IllegalArgumentException e){fail(call,e);}
+    }
+    @PluginMethod public void binaryAbort(PluginCall call) { binaryTransfers.abort(call.getInt("id",0));call.resolve(); }
 
     @PluginMethod
     public void readBinary(PluginCall call) {
@@ -869,6 +960,7 @@ public class RunasVaultPlugin extends Plugin {
     protected void handleOnDestroy() {
         if (watcher != null) watcher.stop();
         saveStreams.abortAll();
+        binaryTransfers.abortAll();
         super.handleOnDestroy();
     }
 }

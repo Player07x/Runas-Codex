@@ -3,6 +3,7 @@ import type { VaultChange } from "./platform"
 
 const native = vi.hoisted(() => ({
   current: vi.fn(), list: vi.fn(), writeBinary: vi.fn(), trash: vi.fn(), addListener: vi.fn(),
+  binaryWriteStart: vi.fn(), binaryWriteChunk: vi.fn(), binaryWriteFinish: vi.fn(), binaryAbort: vi.fn(),
   saveStreamStart: vi.fn(), saveStreamWrite: vi.fn(), saveStreamFinish: vi.fn(), saveStreamAbort: vi.fn(),
 }))
 vi.mock("@capacitor/core", () => ({
@@ -32,9 +33,11 @@ describe("anexos do cofre Android", () => {
   it("atualiza a URI quando a gravação troca o documento e conserva a versão esperada", async () => {
     const platform = createCapacitorPlatform()
     await platform.vault(); await platform.listVault()
-    native.writeBinary.mockResolvedValue({ path: "Anexos/a.png", mtime: 2, size: 3, uri: "content://local/document/3" })
+    native.binaryWriteStart.mockResolvedValue({ id: 1 })
+    native.binaryWriteFinish.mockResolvedValue({ path: "Anexos/a.png", mtime: 2, size: 3, uri: "content://local/document/3" })
     await platform.writeBinary("Anexos/a.png", new Uint8Array([1, 2, 3]), { path: "Anexos/a.png", mtime: 1, size: 3 })
-    expect(native.writeBinary).toHaveBeenCalledWith({ path: "Anexos/a.png", base64: "AQID", expected: { mtime: 1, size: 3 } })
+    expect(native.binaryWriteStart).toHaveBeenCalledWith({ path: "Anexos/a.png", size: 3, managed: false, expected: { mtime: 1, size: 3 } })
+    expect(native.binaryWriteChunk).toHaveBeenCalledWith({ id: 1, base64: "AQID" })
     expect(platform.fileUrl("Anexos/a.png")).toBe("https://localhost/_capacitor_content_/local/document/3")
     await platform.trash("Anexos")
     expect(platform.fileUrl("Anexos/a.png")).toBeNull()

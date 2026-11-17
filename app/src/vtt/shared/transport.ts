@@ -18,6 +18,8 @@ export interface PlayerTransportOptions {
   onPlayers?(count: number): void
   joinSeat?(code: string): JoinedPlayerSeat | null
   authenticateSeat?(token: string): PlayerSeatConnection | null
+  /** U78: “Sair da mesa” libera o assento deste aparelho; devolve o assento liberado. */
+  leaveSeat?(token: string): PlayerSeatConnection | null
   onClientMessage?(message: unknown, seat: PlayerSeatConnection | null): PlayerWireMessage | null
 }
 export interface PlayerTransport {

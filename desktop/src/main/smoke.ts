@@ -145,6 +145,8 @@ export const SMOKE_SCRIPT = `(async () => {
   // Atualizações (ADR 0017): a versão vem do app e Configurações tem o botão; o smoke não vai à internet.
   result.version = await bridge.updates.version()
   location.hash = "/config"
+  // U83: a seção escondida não fica montada; o roteiro navega até Privacidade como o usuário.
+  ;(await until(() => document.querySelector('.settings-index a[href="#/config/privacidade"]')))?.click()
   result.updatesRow = Boolean(await until(() => document.querySelector("[data-updates] button")))
 
   // Migração do Obsidian (etapa 10): a tela acha os dados dos plugins de RPG do cofre de teste (só lendo).
@@ -505,6 +507,8 @@ export const SMOKE_SCRIPT = `(async () => {
     result.master = await bridge.vtt.master.state()
     result.masterScene = (await bridge.vtt.documents.list("scene"))[0]?.id ?? null
   }
+  // U91: “Testar gravação” passa no cofre do smoke com gravação liberada e não deixa arquivo de teste para trás.
+  result.writeCheck = result.vault && !result.vault.readOnly ? await window.runasCodex.checkWrite() : null
   return result
 })()`
 
@@ -530,7 +534,12 @@ export async function checkRoom(room: { port: number; key: string; codes: string
     socket.onerror = () => (clearTimeout(timer), resolve(null))
   })
   const join = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[0] }) })
-  return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status }
+  // U78: sair da mesa libera o assento e apaga o cookie; depois dá para entrar com outro código.
+  const cookie = join.headers.get("set-cookie")?.split(";")[0] ?? ""
+  const leave = await fetch(`${base}/seat/leave?k=${room.key}`, { method: "POST", headers: { cookie } })
+  const afterLeave = (await fetch(`${base}/seat?k=${room.key}`, { headers: { cookie } })).status
+  const rejoin = await fetch(`${base}/seat/join?k=${room.key}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: room.codes[1] ?? room.codes[0] }) })
+  return { page: page.status, csp: html.includes("connect-src 'self' ws: wss:"), withoutKey, scene, join: join.status, leave: leave.status, leaveCookie: leave.headers.get("set-cookie")?.includes("Max-Age=0") ?? false, afterLeave, rejoin: rejoin.status }
 }
 
 /** Páginas de um PDF gerado pelo Chromium (o número do nó `/Pages` da raiz). */
@@ -694,6 +703,10 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     (result.roomCheck as Record<string, unknown>).withoutKey === 404 &&
     (result.roomCheck as Record<string, unknown>).scene === "Cena 1" &&
     (result.roomCheck as Record<string, unknown>).join === 200 &&
+    (result.roomCheck as Record<string, unknown>).leave === 204 &&
+    (result.roomCheck as Record<string, unknown>).leaveCookie === true &&
+    (result.roomCheck as Record<string, unknown>).afterLeave === 401 &&
+    (result.roomCheck as Record<string, unknown>).rejoin === 200 &&
     result.books === true &&
     result.bookSideTyping === true &&
     typeof result.campaignSession === "object" &&
@@ -756,5 +769,6 @@ export function smokePassed(result: Record<string, unknown>, hasVault: boolean):
     result.bookImport === true
     && typeof result.touch === "object" && Object.values(result.touch as Record<string, unknown>).length === 6 && Object.values(result.touch as Record<string, unknown>).every(value => value === true)
     && typeof result.editorClick === "object" && Object.values(result.editorClick as Record<string, unknown>).length === 4 && Object.values(result.editorClick as Record<string, unknown>).every(value => value === true)
+    && (result.writeCheck === null || (result.writeCheck as { ok?: unknown } | undefined)?.ok === true)
   )
 }

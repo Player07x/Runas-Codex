@@ -98,7 +98,7 @@ export function OverdueSessions({ data }: { data: CampaignData }) {
   const toast = useToast()
   if (!data.overdue.length) return null
   const mark = (s: SessionInfo, status: "realizada" | "cancelada") =>
-    void vault.setProperty(s.path, "status", status).then(() => toast(status === "realizada" ? `${s.title}: realizada` : `${s.title}: cancelada`), (e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+    void vault.setProperty(s.path, "status", status).then(() => toast(status === "realizada" ? `${s.title}: realizada` : `${s.title}: cancelada`), (e: unknown) => toast.error(e))
   return (
     <div className="stack campaign-overdue">
       {data.overdue.map((s) => (

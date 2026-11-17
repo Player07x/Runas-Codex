@@ -31,6 +31,7 @@ import { useAppearance } from "../lib/appearance"
 import { requestAgendaAction } from "../lib/agenda-request"
 import { useTasksSettings } from "../lib/tasks"
 import { TaskQuickSearch } from "./tasks/TaskQuickSearch"
+import { UpdateBadge, UpdateNavItem } from "./UpdateNavItem"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -136,9 +137,10 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               <span>{item.label}</span>
             </a>
           ))}
+          <UpdateNavItem />
         </div>
         <div className="sidebar-foot">
-          <div className="offline-pill" title="Nenhuma chamada de rede fora da sala do VTT">
+          <div className="offline-pill" title="Nenhuma chamada de rede fora da sala do VTT e da consulta de atualizações">
             <WifiOff size={15} aria-hidden="true" />
             <span>Offline · cofre local</span>
           </div>
@@ -184,6 +186,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
         <button onClick={() => setMore(true)} className={!bottom.includes(current) ? "active" : ""} aria-current={!bottom.includes(current) ? "page" : undefined}>
           <Ellipsis size={18} />
           Mais
+          <UpdateBadge />
         </button>
       </nav>
 
@@ -194,9 +197,11 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               <a key={item.route} className={`nav-link ${current === item.match ? "active" : ""}`} href={href(item.route)} onClick={() => setMore(false)} aria-current={current === item.match ? "page" : undefined}>
                 {item.icon}
                 <span>{item.label}</span>
-                {item.count !== undefined && <span className="count">{item.count}</span>}
+                {/* U102: a mesma contagem do cofre da barra lateral (antes, os números fixos da prévia antiga). */}
+                {item.count !== undefined && <span className="count" aria-hidden="true">{counts[item.match === "vtt" ? "mesas" : item.match as keyof typeof counts] ?? 0}</span>}
               </a>
             ))}
+            <UpdateNavItem />
             <div className="offline-pill">
               <WifiOff size={15} /> Offline · cofre local
             </div>
@@ -320,7 +325,7 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
   const canCreate = Boolean(vault.index && !vault.info?.readOnly && query.trim() && !notes.some((n) => n.label.toLocaleLowerCase("pt-BR") === q))
   const createNote = () => {
     const folder = vault.index?.allFiles().some((f) => f.path.startsWith("Notas/")) ? "Notas" : ""
-    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+    vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast.error(error))
   }
   const items = [
     ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas" })),

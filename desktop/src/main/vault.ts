@@ -194,8 +194,42 @@ export async function renamePath(root: string, from: string, to: string): Promis
   if (caseOnly) {
     const temp = `${target}.${randomBytes(4).toString("hex")}.runas-tmp`
     await rename(source, temp)
-    await rename(temp, target)
+    try {
+      await rename(temp, target)
+    } catch (error) {
+      // O temporário nunca fica para trás: o arquivo volta ao nome de antes (U91).
+      await rename(temp, source).catch(() => undefined)
+      throw error
+    }
   } else await rename(source, target)
+}
+
+/** Resultado do “Testar gravação” (U91): em que passo a pasta recusou e a mensagem do sistema. */
+export type WriteCheck = { ok: true } | { ok: false; step: "criar" | "trocar" | "apagar"; message: string }
+
+/**
+ * Faz o que uma gravação faz, num arquivo de teste oculto na raiz do cofre: cria um temporário, troca por um arquivo
+ * existente (como a gravação segura troca a nota) e apaga. Nada fica para trás, nem quando um passo falha.
+ */
+export async function checkWritable(root: string, options: { replace?: (from: string, to: string) => Promise<void> } = {}): Promise<WriteCheck> {
+  const id = randomBytes(4).toString("hex")
+  const temp = join(root, `.runas-codex-teste-${id}.runas-tmp`)
+  const target = join(root, `.runas-codex-teste-${id}.md`)
+  let step: "criar" | "trocar" | "apagar" = "criar"
+  try {
+    await writeFile(target, "teste de gravação do Runas-Codex\n", "utf8")
+    await writeFile(temp, "teste de gravação do Runas-Codex (2)\n", "utf8")
+    step = "trocar"
+    await (options.replace ?? replaceFile)(temp, target)
+    step = "apagar"
+    await rm(target)
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, step, message: error instanceof Error ? error.message : String(error) }
+  } finally {
+    await rm(temp, { force: true }).catch(() => undefined)
+    await rm(target, { force: true }).catch(() => undefined)
+  }
 }
 
 /** Manda para a lixeira do cofre (`.trash`, a mesma do Obsidian), sem apagar. Devolve o caminho na lixeira. */

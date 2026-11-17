@@ -135,6 +135,14 @@ export interface Platform {
   writeManagedTransfer?(path: string, bytes: Uint8Array, expected: VaultEntry | null): Promise<VaultEntry>
   /** U50 (ADR 0037): salva em pedaços onde o usuário escolher; `null` se cancelou. Sem isso, use `saveBytes`. */
   openSave?(name: string, mime: string): Promise<SaveTarget | null>
+  /** U91: grava, troca e apaga um arquivo de teste no cofre e diz o que falhou (ausente: o sistema não oferece). */
+  checkWrite?(): Promise<WriteCheck>
+  /** U91: abre a Proteção contra ransomware do Windows (endereço local do sistema, sem rede). */
+  openSecuritySettings?(): Promise<void>
+  /** Android (U91): o sistema tirou a permissão da pasta; o seletor abre já na pasta do cofre para devolvê-la. */
+  regrantVault?(): Promise<VaultInfo | null>
+  /** Android (U91), opção avançada: abrir a pasta com “acesso a todos os arquivos” (mais rápido em cofres grandes). */
+  chooseVaultAllFiles?(): Promise<VaultInfo | null>
 }
 
 /** Destino de uma exportação em pedaços. `abort` apaga o que já foi escrito. */
@@ -144,3 +152,6 @@ export interface SaveTarget {
   close(): Promise<string>
   abort(): Promise<void>
 }
+
+/** Resultado do “Testar gravação” (U91): em que passo a pasta recusou e a mensagem do sistema. */
+export type WriteCheck = { ok: true } | { ok: false; step: "criar" | "trocar" | "apagar"; message: string }

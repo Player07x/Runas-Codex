@@ -138,7 +138,7 @@ function PropertiesPanel({ index, path, readOnly, onSetProperty, onCreate }: Pro
   if (!note) return null
   if (fm?.error) return <p className="small" style={{ color: "var(--red)" }}>O frontmatter desta nota tem erro e o app não vai alterá-lo: {fm.error}</p>
   const data = fm?.data ?? {}
-  const save = (key: string, value: PropertyValue | undefined) => onSetProperty(key, value).catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+  const save = (key: string, value: PropertyValue | undefined) => onSetProperty(key, value).catch((error: unknown) => toast.error(error))
   return (
     <div className="stack">
       {Object.keys(data).length === 0 && <span className="muted small">Sem propriedades.</span>}
@@ -175,7 +175,7 @@ function PropertiesPanel({ index, path, readOnly, onSetProperty, onCreate }: Pro
                 setChosen((current) => ({ ...current, [key]: newKind }))
                 setNewKey("")
               },
-              (e: unknown) => toast(e instanceof Error ? e.message : String(e)),
+              (e: unknown) => toast.error(e),
             )
           }}
         >
@@ -366,7 +366,7 @@ function MentionsList({ index, path, canLink, onLink }: { index: VaultIndex; pat
                   setBusy(true)
                   onLink(m)
                     .then(() => toast(`Link criado em “${noteName(m.path)}”`))
-                    .catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+                    .catch((e: unknown) => toast.error(e))
                     .finally(() => setBusy(false))
                 }}
               >
