@@ -2223,3 +2223,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   nesta versão.
 - [ ] Com a 1.5.0 instalada e a próxima versão publicada, o aviso “Atualizar para …” aparece sozinho na barra lateral
   (uma consulta por dia), e não aparece com a consulta automática desligada.
+
+## Versão 1.5.1
+
+- [ ] Com a 1.5.0 instalada, o aviso “Atualizar para 1.5.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.5.1 em Configurações › Privacidade e atualizações. O app em si é o
+  mesmo da 1.5.0.
+- [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
+  (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
