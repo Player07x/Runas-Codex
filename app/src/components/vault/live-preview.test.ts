@@ -125,13 +125,27 @@ describe("propriedades recolhidas (U77)", () => {
     let s = make()
     s = s.update({ changes: { from: body - 1, to: body }, userEvent: "delete.backward" }).state
     expect(s.doc.toString()).toBe(doc)
-    s = s.update({ changes: { from: 0, insert: "x" }, userEvent: "input.paste" }).state
+    s = s.update({ changes: { from: 5, insert: "x" }, userEvent: "input.paste" }).state
     expect(s.doc.toString()).toBe(doc)
     // Digitar no corpo continua normal; apagar a nota inteira (Ctrl A) também.
     s = s.update({ changes: { from: body, insert: "Oi " }, userEvent: "input.type" }).state
     expect(s.doc.toString()).toBe(doc.slice(0, body) + "Oi " + doc.slice(body))
     s = s.update({ changes: { from: 0, to: s.doc.length }, userEvent: "delete.selection" }).state
     expect(s.doc.toString()).toBe("")
+  })
+
+  it("o que se digita ou cola com o cursor antes do cartão vai para o começo do corpo, sem tocar no YAML", () => {
+    let s = make()
+    s = s.update({ changes: { from: 0, insert: "Oi " }, userEvent: "input.type" }).state
+    expect(s.doc.toString()).toBe(doc.slice(0, body) + "Oi " + doc.slice(body))
+    expect(s.selection.main.head).toBe(body + 3)
+    s = s.update({ changes: { from: 0, insert: "x" }, userEvent: "input.paste" }).state
+    expect(s.doc.toString()).toBe(doc.slice(0, body) + "xOi " + doc.slice(body))
+    // Nota só com propriedades: o texto começa numa linha nova depois delas.
+    const only = "---\ntags: [a]\n---"
+    let t = parsed(only, 0, [propertiesState, propertiesGuard])
+    t = t.update({ changes: { from: 0, insert: "Texto" }, userEvent: "input.type" }).state
+    expect(t.doc.toString()).toBe(only + "\nTexto")
   })
 
   it("“Editar como texto” mostra o YAML e volta ao cartão quando o cursor sai", () => {

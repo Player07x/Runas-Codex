@@ -25,3 +25,11 @@ Doze pares: 320/390/1366 px × claro/escuro × aberto/recolhido. Retângulos da 
 Os testes de estado existentes do live preview foram adaptados para consultar o cartão externo; continuam verificando preferência, seleção, proteção e edição do YAML. Tipos, 10 testes específicos, suíte completa (1.044 testes app + 197 desktop, cinco skipped anteriores no app), build web e build Electron passaram. Smoke de leitura passou; o de gravação terminou com bookSideTyping=false ao digitar no capítulo novo de Livros. O diagnóstico do smoke completo mostrou document.hasFocus()=false e a seleção DOM antes do bloco invisível; execCommand insere antes do YAML, e a proteção recusa a alteração. O fluxo isolado com Electron offscreen e a prévia ao lado passou. Ainda é necessário corrigir/conferir esse caminho; não tratar o smoke como aprovado. Ambos usaram cofre de exemplo e perfis novos, sem violações de rede; temporários próprios removidos. CI código passou no fd58d32; android-vault e demais jobs de release ainda em andamento no registro desta evidência.
 
 Não verificados: teclado físico e leitor de tela no Android; integração final com todos os PRs da 1.5.
+
+## Conserto do smoke de gravação (Claude, 17/11)
+
+Causa: o estado do editor começa com o cursor na posição 0, que fica antes do cartão de propriedades escondido. Nenhuma transação de seleção acontece ao focar (o cursor já está em 0), então o filtro que leva o cursor para depois do YAML não age. O texto digitado ali era recusado pela proteção do YAML. Não é só do smoke: o mesmo acontecia a quem chegasse ao editor pelo Tab vindo da barra de propriedades e começasse a digitar.
+
+Conserto em `propertiesGuard`: uma inserção (digitar ou colar) exatamente antes do cartão vai para o começo do corpo; numa nota só com propriedades, entra numa linha nova depois delas. Inserções dentro do YAML fechado continuam recusadas, e apagar também. Dois testes novos em `live-preview.test.ts`.
+
+Verificação: tipos; suíte completa (1.045 do app, 5 pulados como antes, + 197 do desktop); builds web e Electron; smokes de leitura e de gravação (cofre de exemplo copiado, perfis novos) passaram, com `bookSideTyping: true` e nenhuma violação de rede.

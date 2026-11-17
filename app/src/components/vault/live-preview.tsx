@@ -1,6 +1,6 @@
 import { createRoot, type Root } from "react-dom/client"
 import { syntaxTree } from "@codemirror/language"
-import { EditorState, Facet, StateEffect, StateField, type Extension, type Range, type Text, type Transaction } from "@codemirror/state"
+import { EditorState, Facet, StateEffect, StateField, Transaction, type Extension, type Range, type Text, type TransactionSpec } from "@codemirror/state"
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import type { SyntaxNodeRef } from "@lezer/common"
 import { changeEmbed } from "../../core/embeds"
@@ -398,6 +398,10 @@ const propertiesGuard = EditorState.transactionFilter.of((tr) => {
   // Digitar, colar, apagar ou arrastar dentro do frontmatter fechado: nada acontece. Apagar uma seleção que cobre o
   // frontmatter inteiro (Ctrl A, Delete) continua valendo.
   if (before && tr.docChanged && (tr.isUserEvent("input") || tr.isUserEvent("delete") || tr.isUserEvent("move"))) {
+    // O cursor no começo da nota fica antes do cartão (o estado começa na posição 0, e o Tab vindo da barra de
+    // propriedades chega aí): o texto digitado ou colado ali vai para o começo do corpo, sem tocar no YAML.
+    const typed = redirectToBody(tr, before)
+    if (typed) return typed
     const end = Math.min(before.to + 1, tr.startState.doc.length)
     let hit = false
     tr.changes.iterChangedRanges((from, to) => {
@@ -412,6 +416,18 @@ const propertiesGuard = EditorState.transactionFilter.of((tr) => {
   if (!front || !main.empty || main.head > front.to || front.to + 1 > tr.newDoc.length) return tr
   return [tr, { selection: { anchor: front.to + 1 }, sequential: true }]
 })
+
+function redirectToBody(tr: Transaction, front: BlockRange): TransactionSpec | null {
+  if (!tr.isUserEvent("input")) return null
+  let insert: string | null = null, count = 0
+  tr.changes.iterChanges((from, to, _fromB, _toB, text) => { count++; if (from === front.from && to === from) insert = text.toString() })
+  if (count !== 1 || !insert) return null
+  const doc = tr.startState.doc, at = front.to + 1
+  // Nota só com propriedades: o corpo começa numa linha nova.
+  const change = at <= doc.length ? { from: at, insert } : { from: doc.length, insert: "\n" + insert }
+  const length = (insert as string).length + (at <= doc.length ? 0 : 1)
+  return { changes: change, selection: { anchor: change.from + length }, userEvent: tr.annotation(Transaction.userEvent), scrollIntoView: true }
+}
 
 function buildBlocks(state: EditorState): DecorationSet {
   const ranges: Range<Decoration>[] = []
