@@ -419,3 +419,14 @@ No encerramento, João pediu finalizar a tarefa atual e gerar passagem para o GP
 corrigir falhas e continuar a implementação. Tarefas **5–17 permanecem abertas**. A nova maquete L/1.5 ainda não
 foi criada nem aprovada; o João pediu que ela seja aberta para conferir quando estiver pronta. Nenhum PR foi
 mesclado pelo Codex, e nenhuma versão foi lançada.
+
+
+## Revisão Astra/Sol e maquete L/U46 (17/11)
+
+João pediu revisar o trabalho do Astra, abrir a maquete e aguardar confirmação antes de continuar as demais tarefas.
+
+- #160: a2c5b93 corrige o roteiro Android para visitar Editor e Privacidade após a montagem de uma seção por vez. CI código e android-vault passaram.
+- #154: 410d6cf preserva datas puladas ao editar séries semanais e mantém em Avançado regras com hora/fuso no UNTIL ou contagem maior que 999. Quatro regressões confirmadas; typecheck, 1.058 app + 197 desktop, builds e smokes de leitura/gravação passaram. CI código/Windows/Linux/android-room/android-touch/APK passaram; android-vault falhou por timeout de Runtime.evaluate no smoke, sem diagnóstico de regressão confirmado, e foi solicitada reexecução só desse job. Revisão geral da 1.5 e integração continuam incompletas.
+- **#161**, inicio/1.5-mesa-de-hoje, sobre V1/#146: somente maquete autônoma com antes/depois em 1280/360 px, dois temas e três cenários. Mantém cinco blocos; nenhum dos 12 pares cresce em altura nem tem overflow. Mesa hoje: 700→688 px (1280), 1699→1360 px (360). Capturas e medidas no branch do PR.
+- João viu a prévia e pediu reduzir o destaque mobile. Ajustado para 185 px, aproximadamente metade, com indicadores compactos e ações lado a lado. **Não é aprovação da maquete inteira.**
+- Estado: **esperando aprovação da maquete**. Nenhum código do Início implementado. Tarefas 5–15 e 17 permanecem abertas; a 16 só entregou a maquete. Nenhum merge/tag/release.
