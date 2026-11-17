@@ -266,6 +266,19 @@ export const SMOKE_SCRIPT = `(async () => {
   const clickedRange = clickView?.state.selection.main
   const clickedText = clickedRange ? clickView.state.doc.lineAt(clickedRange.head).text : ""
   result.editorClick = { card: Boolean(clickTarget), steady, line: clickedText.includes("Uma ponte que só aparece"), empty: Boolean(clickedRange?.empty) }
+  // Diagnóstico só quando o alvo não aparece (falha vista só no Windows do CI): o que o editor tem naquele momento.
+  if (!clickTarget) {
+    const doc = clickView?.state.doc.toString() ?? ""
+    result.editorClickDebug = {
+      cards: document.querySelectorAll(".cm-lp-properties").length,
+      lines: document.querySelectorAll(".cm-line").length,
+      target: [...document.querySelectorAll(".cm-line")].some((line) => line.textContent.includes("Uma ponte que só aparece")),
+      head: doc.slice(0, 160),
+      cursor: clickView?.state.selection.main.head ?? null,
+      tab: [...document.querySelectorAll(".editor-bar [role=tab][aria-selected=true]")].map((tab) => tab.textContent).join("|"),
+      hash: location.hash,
+    }
+  }
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
 
   // Renomear pela interface: os links das outras notas precisam acompanhar.
