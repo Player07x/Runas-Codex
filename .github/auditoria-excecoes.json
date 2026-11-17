@@ -1,0 +1,9 @@
+[
+  {
+    "aviso": "GHSA-fc5q-39xc-vjpf",
+    "pacote": "picomatch <= 4.0.7",
+    "motivo": "ReDoS com extglobs, sem versão corrigida publicada. Só entra nas ferramentas de build e teste (vite, vitest, electron-builder), com padrões de glob do próprio projeto; não vai no app instalado (npm ls picomatch --omit=dev não acha nada).",
+    "registrada": "2026-11-17",
+    "revisarAte": "2026-12-17"
+  }
+]

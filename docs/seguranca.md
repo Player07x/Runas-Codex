@@ -27,6 +27,11 @@ A auditoria inicial completa, incluindo desenvolvimento, encontrou 12 alertas mo
 Electron e undici). O CI passa a executar `npm audit --audit-level=high --json`, guardar o relatório e recusar
 alertas altos/críticos. Os moderados continuam visíveis no artefato e devem ser acompanhados.
 
+Um alerta alto sem versão corrigida pode virar exceção em `.github/auditoria-excecoes.json`, com o motivo e um prazo
+de revisão; vencido o prazo, o CI volta a recusar. Em 17/11 entrou o
+[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) (picomatch ≤ 4.0.7, sem correção publicada),
+que só aparece nas ferramentas de build e teste e não vai no app instalado.
+
 Correções pontuais, com datas verificadas no registro npm em 17/11:
 
 | Pacote | Antes | Versão fixada | Publicada |
