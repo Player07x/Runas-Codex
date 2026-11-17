@@ -20,6 +20,8 @@ export function ImageRenameDialog({ path, onClose }: { path: string; onClose(): 
   const vault = useVault(), index = vault.index!, toast = useToast()
   const ext = extname(path), [name, setName] = useState(basename(path).slice(0, -ext.length)), [folder, setFolder] = useState(dirname(path))
   const [busy, setBusy] = useState(false), [error, setError] = useState("")
+  const [foldersReady, setFoldersReady] = useState(false)
+  const folders = useMemo(() => foldersReady ? [...new Set(["", DEFAULT_IMAGE_FOLDER, ...index.allFiles().map(file => dirname(file.path))])] : [], [foldersReady, index, vault.version])
   const to = imageRenameTarget(path, name, folder), problem = renameProblem(index, path, to)
   const count = problem ? 0 : planRename(index, path, to).edits.length
   const run = async () => {
@@ -33,8 +35,8 @@ export function ImageRenameDialog({ path, onClose }: { path: string; onClose(): 
   return <Modal title="Renomear ou mover imagem" onClose={() => { if (!busy) onClose() }} footer={<><button className="btn" disabled={busy} onClick={onClose}>Cancelar</button><button className="btn primary" form="rename-image" disabled={busy || Boolean(problem)}>{busy ? "Renomeando…" : "Renomear imagem"}</button></>}>
     <form id="rename-image" className="stack" onSubmit={event => { event.preventDefault(); if (!busy && !problem) void run() }}>
       <p className="small muted">{path}</p><label className="field"><span>Novo nome (extensão {ext} preservada)</span><input className="input" autoFocus aria-label="Novo nome da imagem" value={name} onChange={event => setName(event.target.value)}/></label>
-      <label className="field"><span>Pasta no cofre</span><input className="input" aria-label="Pasta da imagem" value={folder} onChange={event => setFolder(event.target.value)} list="image-folders"/></label>
-      <datalist id="image-folders">{[...new Set(["",DEFAULT_IMAGE_FOLDER,...index.allFiles().map(file => dirname(file.path))])].map(folder => <option key={folder} value={folder}/>)}</datalist>
+      <label className="field"><span>Pasta no cofre</span><input className="input" aria-label="Pasta da imagem" value={folder} onFocus={() => setFoldersReady(true)} onChange={event => setFolder(event.target.value)} list="image-folders"/></label>
+      <datalist id="image-folders">{folders.map(folder => <option key={folder} value={folder}/>)}</datalist>
       <p className="small muted">{problem ?? `Atualiza referências em ${count} notas; referências nos quadros também serão atualizadas. Tamanhos e legendas dos links são preservados.`}</p>
       {error && <p role="alert" className="query-error">{error}</p>}
     </form>

@@ -214,7 +214,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         </nav>
         <div className="settings-sections">
           {current && <a className="settings-back" href="#/config"><ChevronLeft size={16} /> Configurações</a>}
-          {sections.map((item) => (
+          {sections.filter((item) => item.id === current).map((item) => (
             <section key={item.id} id={`config-${item.id}`} className={`settings-section${item.id === current ? " is-current" : ""}`} aria-label={item.title} tabIndex={-1} data-route-focus={item.id === current || undefined}>
               {item.body}
             </section>

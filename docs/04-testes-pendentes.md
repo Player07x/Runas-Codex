@@ -1938,3 +1938,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Atualização 1.5 — B/U83 e U103: Configurações e Markdown
+
+- Trocar entre todas as seções de Configurações no computador e no celular; só a escolhida deve ficar montada,
+  com o mesmo conteúdo e as mesmas ações. A lista inicial do celular continua sendo a lista de seções.
+- Em Renomear imagem, chegar por Tab ao campo Pasta da imagem: as sugestões só são preparadas ao focar o campo.
+- Exportar o Guia de Valdris em Markdown: capítulo que já começa com seu próprio título não deve repeti-lo.
+  O ZIP Markdown continua preservando os arquivos originais, como antes.

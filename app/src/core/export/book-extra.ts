@@ -2,6 +2,7 @@ import { strToU8, zipSync, type Zippable } from "fflate"
 import { bookExportPlan, nodeXml, paperClass, xml, type ExportBook, type ExportNode } from "./book"
 import { bookProperties } from "../books"
 import { parseNote } from "../parse"
+import { foldName } from "../text"
 import type { IndexedNote, VaultIndex } from "../vault-index"
 
 const base64 = (bytes: Uint8Array) => { let text = ""; for (let i=0;i<bytes.length;i+=8192) text += String.fromCharCode(...bytes.subarray(i,i+8192)); return btoa(text) }
@@ -53,7 +54,8 @@ export function generateMarkdown(index: VaultIndex, book: IndexedNote, draft?: {
   const plan = bookExportPlan(index, book, draft)
   return plan.sections.map(s => {
     let body = s.body
-    for (const link of parseNote(body).links.reverse()) {
+    const meta = parseNote(body)
+    for (const link of meta.links.reverse()) {
       if (link.inFrontmatter) continue
       const dest = index.resolve(link,s.path).dest
       if (!dest) continue
@@ -61,7 +63,11 @@ export function generateMarkdown(index: VaultIndex, book: IndexedNote, draft?: {
       const next = link.kind === "wiki" ? `${link.embed?"!":""}[[${target}${link.alias?`|${link.alias}`:""}]]` : `${link.embed?"!":""}[${link.alias ?? ""}](<${dest}${link.subpath ?? ""}>)`
       body = body.slice(0,link.start)+next+body.slice(link.end)
     }
-    return `# ${s.title}\n\n${s.kind === "capa" ? String(bookProperties(book).autor ?? "") : body}`
+    const first = meta.headings[0]
+    const startsWithTitle = first?.level === 1 && foldName(first.text.trim()) === foldName(s.title.trim())
+      && body.split(/\r?\n/).slice(0, first.line).every(line => !line.trim())
+    // O título já escrito pelo autor fica intacto; capa e capítulos sem título continuam ganhando o cabeçalho.
+    return startsWithTitle && s.kind !== "capa" ? body : `# ${s.title}\n\n${s.kind === "capa" ? String(bookProperties(book).autor ?? "") : body}`
   }).join("\n\n---\n\n")+"\n"
 }
 export async function generateMarkdownZip(index: VaultIndex, book: IndexedNote, readBinary: (path: string) => Promise<Uint8Array>, draft?: { path: string; text: string }): Promise<Uint8Array> {
