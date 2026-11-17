@@ -1999,3 +1999,17 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
       fica uns 6 s (para enquanto o ponteiro ou o foco estão nele).
 - [ ] Um aviso de sucesso (salvar algo, “Copiado.”) continua com o ✓ verde.
 - [ ] Com leitor de tela (NVDA ou TalkBack), o aviso de erro é lido na hora, começando por “Erro:”.
+
+## Token ligado a uma nota e nomes das barras (1.5.0, PR P: U94, U95)
+
+- [ ] No VTT do computador, criar um token, mudar o nome dele (ex.: “Sentinela”) e acrescentar uma barra; depois
+  “Ligar a uma nota…” com um personagem da Wiki que tenha retrato e `token_barras`. O nome e a barra que você pôs
+  ficam; a imagem vem da nota; o aviso diz “Da nota: imagem” e “Desfazer” volta o token sem nota.
+- [ ] Com um token novo (nome “Token”, sem imagem), ligar à mesma nota: nome, imagem, tamanho, disposição e barras
+  vêm todos da nota.
+- [ ] “Trocar nota…” para outro personagem: o que ainda era da nota anterior troca; o que você mudou fica.
+- [ ] “Importar de novo da nota…” pergunta antes; ao confirmar, troca tudo pelo da nota (o valor das barras de mesmo
+  nome fica) e o aviso tem “Desfazer”.
+- [ ] Com o leitor de tela (NVDA ou TalkBack), os campos de uma barra dizem “Nome da barra”, “PV atual” e
+  “PV máximo”; os nomes das faixas e playlists do painel Áudio também têm nome.
+- U94: ligar ou reimportar o token, mover o token e mudar o PV, e só então clicar em Desfazer no aviso: volta só o que veio da nota; a posição e o PV ficam. Remover o token e clicar em Desfazer: o token não volta e aparece "Nada para desfazer".
