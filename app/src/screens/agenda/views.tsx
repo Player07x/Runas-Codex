@@ -50,7 +50,8 @@ interface ViewProps {
   today: Date
   selectedDay: Date
   selectedKey?: string
-  onPickDay(day: Date): void
+  /** `via: "toque"`: o dia foi tocado ou clicado (no celular, isso abre o painel do dia; as setas só movem a escolha). */
+  onPickDay(day: Date, via?: "toque"): void
   onPick(occurrence: Occurrence): void
   onCreate(day: Date, time?: string): void
   /** Resumo do tempo livre do dia (ex.: "6h"), quando configurado. */
@@ -118,7 +119,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
                 aria-selected={picked}
                 aria-label={dayLabel(day, today, items.length, free)}
                 className={`month-cell ${day.getMonth() !== month.getMonth() ? "outside" : ""} ${sameDay(day, today) ? "today" : ""} ${picked ? "picked" : ""}`}
-                onClick={() => onPickDay(day)}
+                onClick={() => onPickDay(day, "toque")}
                 onDoubleClick={() => onCreate(day)}
                 onKeyDown={(event) => onKey(event, day)}
                 data-day={iso}

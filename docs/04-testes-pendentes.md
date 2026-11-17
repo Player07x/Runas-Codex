@@ -1952,3 +1952,13 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
 - [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
       campanha continua “Próxima sessão · <campanha>”.
+## Painéis: botão na barra e celular (1.5.0, PR V2: U87, U97)
+
+- [ ] Computador, Agenda: recolher o “Painel da agenda”. A faixa estreita à direita some, o calendário ocupa a
+      largura toda e o botão “Painel” aparece no fim da barra do período (depois de Mês · Semana · Dia · Lista ·
+      Tarefas). Clicar nele abre o painel; o foco vai para o botão de recolher do painel, e de volta ao fechar.
+- [ ] Computador, Wiki › Calendário: o mesmo, com o botão “Detalhes” depois de “Configurar”.
+- [ ] Celular, Agenda: recolher o painel, tocar num dia com eventos; o painel do dia sobe com os eventos. As setas do
+      teclado só mudam o dia escolhido.
+- [ ] Celular, Livros: com o Sumário aberto, ⋯ › “Exportar o livro…”; o Sumário fecha e o formulário de exportação
+      aparece.
