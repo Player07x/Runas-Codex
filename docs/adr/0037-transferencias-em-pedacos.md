@@ -62,3 +62,10 @@ quase não comprimem, então o tamanho compactado fica perto do real.
   serão substituídos.
 - Verificação: testes do núcleo (o leitor da 1.3 abre o pacote novo, guardado × comprimido, leitura por partes,
   corrupção, limites) e o smoke do Electron, que exporta pela tela um pacote de 140 MB e o lê por partes.
+
+
+## U80 — arquivo Android em pedaços (1.5)
+
+A ponte passa cada arquivo em mensagens de até 2 MB, além dos pedaços do pacote já existentes. Leitura fixa tamanho/versão no início e reconfere no final. Gravação prepara um estágio privado no cache, fecha/sincroniza e publica pelo adaptador direto ou pelo journal SAF existente; o original não é aberto com truncamento. Conflito, falha, cancelamento, troca de cofre ou encerramento descartam o estágio. A abertura seguinte limpa estágios privados de processos interrompidos.
+
+O teto por arquivo passa para 512 MB, como no desktop, tanto na exportação quanto na importação sob demanda. O limite de 96 MB da importação legada em memória permanece. O renderer ainda mantém um arquivo por vez em Uint8Array; isto elimina o base64 integral e a cópia integral nativa, sem prometer memória constante em todo o pipeline ZIP. Sem mudança do formato, nova dependência, rede, permissão ou tela.

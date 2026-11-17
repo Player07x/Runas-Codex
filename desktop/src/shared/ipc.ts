@@ -50,6 +50,10 @@ export const IPC = {
   saveStreamWrite: "files:save-stream-write",
   saveStreamFinish: "files:save-stream-finish",
   saveStreamAbort: "files:save-stream-abort",
+  appNotify: "app:notify",
+  /** U91: “Testar gravação” e a página de proteção contra ransomware do Windows. */
+  vaultCheckWrite: "vault:check-write",
+  openSecuritySettings: "desktop:open-security-settings",
 } as const
 
 export type { RunasCodexBridge } from "../../../app/src/platform/bridge"

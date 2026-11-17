@@ -5,7 +5,7 @@ import { categoryLook, isCategoryNote, wikiHomePath, wikiLook } from "../../core
 import { toneStyle } from "../../core/tones"
 import { categoryRoute } from "../../core/wiki-category"
 import { useMemo, useState } from "react"
-import { Folder, FolderPlus, Palette, PenLine, Plus, Search, Unlink } from "lucide-react"
+import { ChevronRight, Folder, FolderPlus, Palette, PenLine, Plus, Search, SlidersHorizontal, Unlink } from "lucide-react"
 import { formatDate } from "../../core/calendar"
 import { searchNotes } from "../../core/search"
 import { noteBody } from "../../core/sections"
@@ -106,9 +106,10 @@ export function WikiHome() {
             <span className="chip">{notes.length - (home ? 1 : 0)} artigos</span>
             {toWrite.length > 0 && <span className="chip red">{toWrite.length} a escrever</span>}
             {calendar?.calendar.today && (
-              <a className="chip violet" href={href(`/wiki/calendario`)} title="Data atual da campanha">
+              // Só a data: a aba Calendário, logo acima, é o caminho até o calendário.
+              <span className="chip violet" title="Data atual da campanha">
                 Hoje no mundo: {formatDate(calendar.calendar, calendar.calendar.today)}
-              </a>
+              </span>
             )}
           </div>
         </div>
@@ -122,7 +123,7 @@ export function WikiHome() {
             <Plus size={16} /> Novo artigo
           </button>
           {/* U66: Personalizar e Nova categoria no ⋯, para o cartão não virar três botões empilhados no celular. */}
-          <OverflowMenu label="Mais ações do início da wiki" items={[
+          <OverflowMenu label="Mais ações do início da wiki" icon={<SlidersHorizontal size={18} />} items={[
             { label: "Nova categoria…", icon: <FolderPlus size={15} />, onSelect: () => (readOnly ? toast("Libere a gravação em Configurações para criar categorias.") : setNewCategory(true)) },
             { label: "Personalizar…", icon: <Palette size={15} />, onSelect: () => (readOnly ? toast("Libere a gravação em Configurações para personalizar.") : setPersonalizing(true)) },
           ]} />
@@ -155,6 +156,13 @@ export function WikiHome() {
         </section>
       ) : (
         <>
+          {/* U101: no celular cada categoria vem com a prévia dos artigos, e as últimas ficavam muito abaixo; o índice
+              no topo leva direto a cada uma. No computador, as categorias já aparecem lado a lado. */}
+          {homeView === "artigos" && tree.length > 1 && (
+            <nav className="wiki-category-index" aria-label="Categorias da wiki">
+              {tree.map((folder) => <a key={folder.path + folder.name} className="chip" href={href(categoryRoute(folder.path))}>{folder.name}</a>)}
+            </nav>
+          )}
           <div className={`category-grid${homeView === "categorias" ? " only-categories" : ""}`}>
             {tree.map((folder) => (
               <Category key={folder.path + folder.name} folder={folder} compact={homeView === "categorias"} />
@@ -212,11 +220,10 @@ function Category({ folder, compact = false }: { folder: FolderNode; compact?: b
   const main = articleKinds().find(kind=>kind.folder.split("/").at(-1) === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
   return <section className={`card category-card${compact ? " compact" : ""}${look.tone ? " toned" : ""}`} style={{["--cat" as string]: look.tone ? "var(--tone, var(--violet))" : "var(--violet)", ...toneStyle(look.tone)}}>
     {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" />}
-    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{notes.length}</span></a>
+    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2><span className="chip">{notes.length}</span><ChevronRight size={16} className="wiki-category-go" aria-hidden="true"/></a>
     {look.description && <p className="small muted wiki-category-description">{look.description}</p>}
     {!compact && <>
       <div className="wiki-category-preview">{notes.slice(0,5).map(note=><a className="list-item small" key={note.path} href={href(articleRoute(note.path))} title={note.name}><ArticleArt note={note} size="thumb"/><span className="grow truncate">{note.name}</span></a>)}</div>
-      <a className="wiki-category-all" href={href(categoryRoute(folder.path))}>{notes.length === 1 ? "Abrir a categoria" : `Ver todos os ${notes.length}`}</a>
     </>}
   </section>
 }

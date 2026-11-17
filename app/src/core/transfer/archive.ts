@@ -12,13 +12,13 @@ import { crc32, readZipDirectory, readZipEntry, ZipWriter, type ZipSink, type Zi
 export const TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 1024 * 1024 * 1024, file: 512 * 1024 * 1024, files: 10000 } as const
 /**
  * Android (PR A2): a exportação sai em pedaços, então o pacote vai até o máximo do ZIP; cada arquivo ainda passa
- * inteiro em base64 pela ponte (64 MB).
+ * pelo plugin em pedaços de 2 MB; o limite por arquivo é 512 MB (U80).
  */
-export const ANDROID_TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 96 * 1024 * 1024, file: 64 * 1024 * 1024, files: 10000 } as const
+export const ANDROID_TRANSFER_LIMITS = { archive: 0xffffffff - 1, expanded: 96 * 1024 * 1024, file: 512 * 1024 * 1024, files: 10000 } as const
 /**
  * Importar um pacote sob demanda (C2): só os textos ficam na memória e cada binário é lido na hora de gravar, então
- * o tamanho total só tem o teto do ZIP sem ZIP64. Por arquivo, o Android segue com o mesmo teto da exportação (passa
- * inteiro pela ponte): o que um celular exporta, outro importa.
+ * o tamanho total só tem o teto do ZIP sem ZIP64. Android e desktop aceitam 512 MB por arquivo; a ponte Android
+ * transporta cada arquivo em pedaços (U80), sem um base64 do tamanho inteiro.
  */
 export const IMPORT_LIMITS = { archive: 0xffffffff - 1, expanded: 0xffffffff - 1, file: 512 * 1024 * 1024, files: 10000 } as const
 export const ANDROID_IMPORT_LIMITS = { ...IMPORT_LIMITS, file: ANDROID_TRANSFER_LIMITS.file } as const

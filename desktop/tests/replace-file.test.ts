@@ -15,11 +15,13 @@ describe("replaceFile", () => {
     expect(waits).toEqual([50, 100])
   })
 
-  it("no Windows, desiste depois de ~2 s com o erro original", async () => {
-    let calls = 0
+  it("no Windows, desiste depois de ~6 s com o erro original (U91: o antivírus pode segurar o arquivo novo)", async () => {
+    let calls = 0, waited = 0
     const rename = async () => { calls++; throw busy("EBUSY") }
-    await expect(replaceFile("a.tmp", "a.md", { platform: "win32", rename, wait: async () => {} })).rejects.toThrow("EBUSY")
-    expect(calls).toBe(10)
+    await expect(replaceFile("a.tmp", "a.md", { platform: "win32", rename, wait: async ms => { waited += ms } })).rejects.toThrow("EBUSY")
+    expect(calls).toBe(16)
+    expect(waited).toBeGreaterThan(5_000)
+    expect(waited).toBeLessThan(7_000)
   })
 
   it("não repete erros que não são de arquivo ocupado", async () => {

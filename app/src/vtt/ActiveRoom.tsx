@@ -28,7 +28,7 @@ export function ActiveRoom() {
   useEffect(() => { if (enabled) setSlot(document.querySelector(".topbar .top-actions")) }, [enabled, route[0]])
   if (!enabled) return null
   return <>
-    {safety > 0 && <aside className="active-room" role="alert" aria-label="Carta X acionada"><span>Carta X acionada — pause a sessão</span><button className="btn" onClick={() => void vtt.collaboration?.command({ type: "ack-safety" }).then(() => setSafety(0)).catch(e => toast(String(e)))}>Confirmar pausa</button>{!inTable && <button className="btn" onClick={backToTable}>Voltar à mesa</button>}</aside>}
+    {safety > 0 && <aside className="active-room" role="alert" aria-label="Carta X acionada"><span>Carta X acionada — pause a sessão</span><button className="btn" onClick={() => void vtt.collaboration?.command({ type: "ack-safety" }).then(() => setSafety(0)).catch(e => toast.error(e))}>Confirmar pausa</button>{!inTable && <button className="btn" onClick={backToTable}>Voltar à mesa</button>}</aside>}
     {/* Na própria mesa, o painel Sala já tem os controles. */}
     {!inTable && slot && createPortal(<OverflowMenu label="Sala do VTT aberta" heading="Sala do VTT" triggerClassName="room-chip"
       trigger={<><span className="room-dot" aria-hidden="true" /><span className="room-chip-label">Sala aberta</span><ChevronDown size={14} aria-hidden="true" /></>}

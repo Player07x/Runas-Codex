@@ -18,6 +18,8 @@ import type { Platform, VaultChange, VaultEntry, VaultInfo } from "./platform"
 import { decodeTransferText, sameTransferVersion, type TransferWrite } from "../core/transfer/plan"
 import { managedWorldPath, transferBytes, transferPath, transferSize } from "../core/transfer/archive"
 
+import { recordIndexDuration } from "../lib/performance-profile"
+
 const BATCH = 200
 
 /**
@@ -102,7 +104,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     try {
       setConfig(obsidianConfig(await platform.readTexts([...CONFIG_FILES]).catch(() => ({}))))
+      const indexStarted = performance.now()
       const loaded = await loadIndex()
+      recordIndexDuration(indexStarted)
       indexRef.current = loaded
       setIndex(loaded)
     } catch (err) {
