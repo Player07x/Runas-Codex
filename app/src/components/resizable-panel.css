@@ -75,3 +75,12 @@
  body .graph-page>.graph-panel[data-panel-collapsed=true] { width:44px; height:44px; bottom:auto; }
  body .scene-canvas>.properties[data-panel-collapsed=true] { width:44px; height:44px; left:auto; }
 }
+/* U87: recolhido no computador, o botão foi para a barra da tela; a coluna do painel e o espaço entre as colunas somem. */
+.resizable-panel[data-panel-away=true] { display:none; }
+@media(min-width:861px) {
+ body .agenda-layout:has(>.resizable-panel[data-panel-away=true]) { grid-template-columns:minmax(0,1fr); }
+}
+.panel-controls-away { position:static; display:inline-flex; flex:none; align-self:stretch; background:transparent; }
+/* Na barra da tela, o botão segue a altura dos vizinhos (a troca de visão), sem o mínimo de 44 px do celular. */
+.panel-controls-away .panel-collapse.btn { min-height:0; }
+.panel-slot { display:contents; }

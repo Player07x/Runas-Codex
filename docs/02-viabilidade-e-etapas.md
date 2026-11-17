@@ -220,14 +220,15 @@ Regras que entram nos testes desde a etapa 3a:
   binário baixado).
 - **Android como jogador:** o app roda em `https://localhost`; conectar a `ws://` na rede local exige liberar conteúdo
   misto e tráfego sem TLS para a LAN.
-- **Nenhuma outra chamada de rede** no app inteiro, a não ser o botão "Verificar atualizações" em Configurações, que
-  consulta as releases do GitHub só quando o usuário clica (ADR 0017). Sem verificação automática de atualização.
+- **Nenhuma outra chamada de rede** no app inteiro, a não ser a consulta às releases do GitHub: o botão "Verificar
+  atualizações" em Configurações (ADR 0017) e a consulta diária ao abrir, ligada por padrão e desligável em
+  Privacidade (ADR 0038). Instalar sempre depende de um clique.
 
 ## 7. Riscos e mitigação
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| **Acesso ao cofre no Android** — o Storage Access Framework é lento (uma consulta por arquivo), não avisa mudanças e renomeia duplicados sozinho | Cofre grande demora dezenas de segundos para abrir | APK com permissão de "todos os arquivos" + `FileObserver`; SAF como reserva; interface de arquivos **em lote** desde o início; decisão no spike da etapa 2 |
+| **Acesso ao cofre no Android** — o Storage Access Framework é lento (uma consulta por arquivo), não avisa mudanças e renomeia duplicados sozinho | Cofre grande demora dezenas de segundos para abrir | APK com permissão de "todos os arquivos" + `FileObserver`; SAF como reserva; interface de arquivos **em lote** desde o início; decisão no spike da etapa 2. **Desde a 1.5 (U91):** o SAF é o padrão, e o acesso a todos os arquivos é opção avançada em Configurações › Cofre |
 | **Hospedar sala no Android** — o sistema pausa o app em segundo plano | Sala cai se a tela apagar | Serviço em primeiro plano, travas de Wi-Fi/tela; tamanho G no cronograma; LAN primeiro |
 | **Dois leitores de Markdown** (editor e renderização) discordando | Texto aparece diferente no editor e na leitura | Um corpus de testes único para os dois; indexar com um só leitor |
 | **Live preview** é o item mais difícil do editor (tabelas, callouts aninhados, teclado do Android) | Atraso | Modos fonte e leitura primeiro; live preview em degraus (marcas → blocos → tabelas "clique para editar") |

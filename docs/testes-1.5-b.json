@@ -1,0 +1,425 @@
+{
+  "before": {
+    "stage": "antes",
+    "routes": [
+      {
+        "round": 0,
+        "section": "cofre",
+        "ms": 27.200000017881393,
+        "mounted": 11
+      },
+      {
+        "round": 0,
+        "section": "aparencia",
+        "ms": 149,
+        "mounted": 11
+      },
+      {
+        "round": 0,
+        "section": "editor",
+        "ms": 150,
+        "mounted": 11
+      },
+      {
+        "round": 0,
+        "section": "ajuda",
+        "ms": 197.5,
+        "mounted": 11
+      },
+      {
+        "round": 0,
+        "section": "obsidian",
+        "ms": 148.90000000596046,
+        "mounted": 11
+      },
+      {
+        "round": 0,
+        "section": "agenda",
+        "ms": 166.09999999403954,
+        "mounted": 11
+      },
+      {
+        "round": 1,
+        "section": "cofre",
+        "ms": 134.7999999821186,
+        "mounted": 11
+      },
+      {
+        "round": 1,
+        "section": "aparencia",
+        "ms": 143.2999999821186,
+        "mounted": 11
+      },
+      {
+        "round": 1,
+        "section": "editor",
+        "ms": 132.30000001192093,
+        "mounted": 11
+      },
+      {
+        "round": 1,
+        "section": "ajuda",
+        "ms": 181.5,
+        "mounted": 11
+      },
+      {
+        "round": 1,
+        "section": "obsidian",
+        "ms": 149.60000002384186,
+        "mounted": 11
+      },
+      {
+        "round": 1,
+        "section": "agenda",
+        "ms": 166.19999998807907,
+        "mounted": 11
+      },
+      {
+        "round": 2,
+        "section": "cofre",
+        "ms": 132.60000002384186,
+        "mounted": 11
+      },
+      {
+        "round": 2,
+        "section": "aparencia",
+        "ms": 148.09999999403954,
+        "mounted": 11
+      },
+      {
+        "round": 2,
+        "section": "editor",
+        "ms": 132.7999999821186,
+        "mounted": 11
+      },
+      {
+        "round": 2,
+        "section": "ajuda",
+        "ms": 149.2999999821186,
+        "mounted": 11
+      },
+      {
+        "round": 2,
+        "section": "obsidian",
+        "ms": 149.5,
+        "mounted": 11
+      },
+      {
+        "round": 2,
+        "section": "agenda",
+        "ms": 149.5,
+        "mounted": 11
+      }
+    ],
+    "captures": [
+      {
+        "width": 320,
+        "theme": "dark",
+        "file": "imagens/1.5-b/antes-320-dark.png",
+        "scroll": 320,
+        "mounted": 11
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "file": "imagens/1.5-b/antes-320-light.png",
+        "scroll": 320,
+        "mounted": 11
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "file": "imagens/1.5-b/antes-390-dark.png",
+        "scroll": 390,
+        "mounted": 11
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "file": "imagens/1.5-b/antes-390-light.png",
+        "scroll": 390,
+        "mounted": 11
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "file": "imagens/1.5-b/antes-1366-dark.png",
+        "scroll": 1366,
+        "mounted": 11
+      },
+      {
+        "width": 1366,
+        "theme": "light",
+        "file": "imagens/1.5-b/antes-1366-light.png",
+        "scroll": 1366,
+        "mounted": 11
+      }
+    ],
+    "keyboard": [
+      {
+        "tag": "BUTTON",
+        "label": "Reler"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Permitir gravação"
+      },
+      {
+        "tag": "BODY",
+        "label": "Pular para o conteúdoRunas-CodexCofre: Mesa do João (exemplo)InícioNotas10015Age"
+      },
+      {
+        "tag": "A",
+        "label": "Pular para o conteúdo"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Recolher Navegação"
+      },
+      {
+        "tag": "A",
+        "label": "Runas-Codex, início"
+      },
+      {
+        "tag": "A",
+        "label": "Início"
+      },
+      {
+        "tag": "A",
+        "label": "Notas"
+      },
+      {
+        "tag": "A",
+        "label": "Agenda"
+      },
+      {
+        "tag": "A",
+        "label": "Wiki"
+      },
+      {
+        "tag": "A",
+        "label": "Campanhas"
+      },
+      {
+        "tag": "A",
+        "label": "Livros"
+      }
+    ],
+    "notes": "10084"
+  },
+  "after": {
+    "stage": "depois",
+    "routes": [
+      {
+        "round": 0,
+        "section": "cofre",
+        "ms": 31.900000005960464,
+        "mounted": 1
+      },
+      {
+        "round": 0,
+        "section": "aparencia",
+        "ms": 32.900000005960464,
+        "mounted": 1
+      },
+      {
+        "round": 0,
+        "section": "editor",
+        "ms": 32.70000001788139,
+        "mounted": 1
+      },
+      {
+        "round": 0,
+        "section": "ajuda",
+        "ms": 100.30000001192093,
+        "mounted": 1
+      },
+      {
+        "round": 0,
+        "section": "obsidian",
+        "ms": 165.09999999403954,
+        "mounted": 1
+      },
+      {
+        "round": 0,
+        "section": "agenda",
+        "ms": 49.400000005960464,
+        "mounted": 1
+      },
+      {
+        "round": 1,
+        "section": "cofre",
+        "ms": 33.099999994039536,
+        "mounted": 1
+      },
+      {
+        "round": 1,
+        "section": "aparencia",
+        "ms": 48.900000005960464,
+        "mounted": 1
+      },
+      {
+        "round": 1,
+        "section": "editor",
+        "ms": 32.29999998211861,
+        "mounted": 1
+      },
+      {
+        "round": 1,
+        "section": "ajuda",
+        "ms": 66.2000000178814,
+        "mounted": 1
+      },
+      {
+        "round": 1,
+        "section": "obsidian",
+        "ms": 116.30000001192093,
+        "mounted": 1
+      },
+      {
+        "round": 1,
+        "section": "agenda",
+        "ms": 32.900000005960464,
+        "mounted": 1
+      },
+      {
+        "round": 2,
+        "section": "cofre",
+        "ms": 32.69999998807907,
+        "mounted": 1
+      },
+      {
+        "round": 2,
+        "section": "aparencia",
+        "ms": 33,
+        "mounted": 1
+      },
+      {
+        "round": 2,
+        "section": "editor",
+        "ms": 32.80000001192093,
+        "mounted": 1
+      },
+      {
+        "round": 2,
+        "section": "ajuda",
+        "ms": 49.29999998211861,
+        "mounted": 1
+      },
+      {
+        "round": 2,
+        "section": "obsidian",
+        "ms": 115.2000000178814,
+        "mounted": 1
+      },
+      {
+        "round": 2,
+        "section": "agenda",
+        "ms": 32.400000005960464,
+        "mounted": 1
+      }
+    ],
+    "captures": [
+      {
+        "width": 320,
+        "theme": "dark",
+        "file": "imagens/1.5-b/depois-320-dark.png",
+        "scroll": 320,
+        "mounted": 1
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "file": "imagens/1.5-b/depois-320-light.png",
+        "scroll": 320,
+        "mounted": 1
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "file": "imagens/1.5-b/depois-390-dark.png",
+        "scroll": 390,
+        "mounted": 1
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "file": "imagens/1.5-b/depois-390-light.png",
+        "scroll": 390,
+        "mounted": 1
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "file": "imagens/1.5-b/depois-1366-dark.png",
+        "scroll": 1366,
+        "mounted": 1
+      },
+      {
+        "width": 1366,
+        "theme": "light",
+        "file": "imagens/1.5-b/depois-1366-light.png",
+        "scroll": 1366,
+        "mounted": 1
+      }
+    ],
+    "keyboard": [
+      {
+        "tag": "BUTTON",
+        "label": "Reler"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Permitir gravação"
+      },
+      {
+        "tag": "BODY",
+        "label": "Pular para o conteúdoRunas-CodexCofre: Mesa do João (exemplo)InícioNotas10015Age"
+      },
+      {
+        "tag": "A",
+        "label": "Pular para o conteúdo"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Recolher Navegação"
+      },
+      {
+        "tag": "A",
+        "label": "Runas-Codex, início"
+      },
+      {
+        "tag": "A",
+        "label": "Início"
+      },
+      {
+        "tag": "A",
+        "label": "Notas"
+      },
+      {
+        "tag": "A",
+        "label": "Agenda"
+      },
+      {
+        "tag": "A",
+        "label": "Wiki"
+      },
+      {
+        "tag": "A",
+        "label": "Campanhas"
+      },
+      {
+        "tag": "A",
+        "label": "Livros"
+      }
+    ],
+    "notes": "10084"
+  },
+  "imageFolders": {
+    "before": 0,
+    "after": 31,
+    "focused": "Pasta da imagem"
+  },
+  "pixelComparison": "Os seis pares RGB são idênticos, pixel a pixel.",
+  "keyboardSame": true
+}

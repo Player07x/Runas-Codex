@@ -1,0 +1,659 @@
+{
+  "summary": {
+    "fixture": {
+      "format": "runas-performance-v1",
+      "noteCount": 10000,
+      "categoryArticles": 420,
+      "coverBytes": 2360852,
+      "targetBytes": 1300000000,
+      "bytes": 1300000000
+    },
+    "numbers": {
+      "openMs": 3890,
+      "indexMs": 2156,
+      "switchMs": 10877.09999999404,
+      "wiki420Ms": 393.2999999821186,
+      "jsBytes": 18423493
+    },
+    "environment": {
+      "electron": "44.4.2",
+      "node": "24.21.0",
+      "platform": "linux",
+      "cpu": "Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz",
+      "cpuCount": 8,
+      "ramBytes": 16048463872,
+      "viewport": [
+        1366,
+        900
+      ],
+      "profiling": true
+    },
+    "runs": 3,
+    "method": "Mediana de três perfis novos; cache de arquivos do sistema não foi esvaziado; build de produção com Profiler.",
+    "sourceCommit": "80eb718 (main v1.4.0) + instrumentação A1",
+    "screenMethod": "Para cada tela, maior valor das três execuções (inclui o primeiro Livro de 5697 ms); teto = base × 3 + 300 ms. Métricas gerais usam mediana."
+  },
+  "screens": [
+    {
+      "name": "Notas",
+      "route": "/notas",
+      "elapsedMs": [
+        198.59999999403954,
+        180.09999999403954,
+        182
+      ],
+      "reactMs": [
+        113.30000001192093,
+        99.00000005960464,
+        95.19999995827675
+      ],
+      "commits": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "Wiki",
+      "route": "/wiki",
+      "elapsedMs": [
+        197.10000002384186,
+        164.30000001192093,
+        202.90000000596046
+      ],
+      "reactMs": [
+        47.19999998807907,
+        37.900000005960464,
+        46.09999996423721
+      ],
+      "commits": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "Categoria com 420 artigos",
+      "route": "/wiki/categoria/Wikis%2FDesempenho%2FPersonagens",
+      "elapsedMs": [
+        432.2999999821186,
+        350.80000001192093,
+        393.2999999821186
+      ],
+      "reactMs": [
+        34.69999998807907,
+        24.19999998807907,
+        31.09999993443489
+      ],
+      "commits": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "name": "Livro",
+      "route": "/livros/Livros%2FGuia%20de%20Valdris%2FGuia%20de%20Valdris.md",
+      "elapsedMs": [
+        5697.4000000059605,
+        196.19999998807907,
+        148.80000001192093
+      ],
+      "reactMs": [
+        45.49999997019768,
+        64.99999997019768,
+        57.79999998211861
+      ],
+      "commits": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "name": "Mesa",
+      "route": "/vtt/mesa/benchmark-mesa",
+      "elapsedMs": [
+        331.39999997615814,
+        248.19999998807907,
+        288.60000002384186
+      ],
+      "reactMs": [
+        23.899999976158142,
+        16.299999952316284,
+        18.200000017881393
+      ],
+      "commits": [
+        9,
+        9,
+        9
+      ]
+    },
+    {
+      "name": "Agenda",
+      "route": "/agenda",
+      "elapsedMs": [
+        116.2999999821186,
+        99.59999999403954,
+        105.80000001192093
+      ],
+      "reactMs": [
+        35.099999994039536,
+        42.09999996423721,
+        54.09999996423721
+      ],
+      "commits": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "name": "Campanhas",
+      "route": "/campanhas",
+      "elapsedMs": [
+        48.5,
+        33.19999998807907,
+        32.30000001192093
+      ],
+      "reactMs": [
+        4.000000029802322,
+        4.200000017881393,
+        3.9000000059604645
+      ],
+      "commits": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "Importar e exportar",
+      "route": "/transferir",
+      "elapsedMs": [
+        136.59999999403954,
+        115.30000001192093,
+        117.2000000178814
+      ],
+      "reactMs": [
+        15.600000023841858,
+        11.5,
+        9.700000017881393
+      ],
+      "commits": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "Configurações",
+      "route": "/config",
+      "elapsedMs": [
+        10877.09999999404,
+        10941.800000011921,
+        10763.600000023842
+      ],
+      "reactMs": [
+        10825.300000011921,
+        10910.900000065565,
+        10703.399999916553
+      ],
+      "commits": [
+        2,
+        4,
+        2
+      ]
+    },
+    {
+      "name": "Início",
+      "route": "/",
+      "elapsedMs": [
+        48.900000005960464,
+        49.400000005960464,
+        49.900000005960464
+      ],
+      "reactMs": [
+        15.300000011920929,
+        14.199999988079071,
+        13.099999994039536
+      ],
+      "commits": [
+        2,
+        2,
+        2
+      ]
+    }
+  ],
+  "rendererMemory": [
+    {
+      "workingSetSize": 341652,
+      "peakWorkingSetSize": 493424
+    },
+    {
+      "workingSetSize": 375748,
+      "peakWorkingSetSize": 494908
+    },
+    {
+      "workingSetSize": 386168,
+      "peakWorkingSetSize": 493876
+    }
+  ],
+  "chunks": [
+    {
+      "name": "index-Co79fLOS.js",
+      "bytes": 5212635,
+      "gzipBytes": 1289498
+    },
+    {
+      "name": "Appearance-CQEsfF0O.js",
+      "bytes": 2483653,
+      "gzipBytes": 533083
+    },
+    {
+      "name": "cynefin-OW5HDTMX-D-Doge8w.js",
+      "bytes": 1304478,
+      "gzipBytes": 213993
+    },
+    {
+      "name": "mermaid.core-CcOKpGZ0.js",
+      "bytes": 1212663,
+      "gzipBytes": 217971
+    },
+    {
+      "name": "import.worker-CvaOU6Db.js",
+      "bytes": 1187387,
+      "gzipBytes": 222379
+    },
+    {
+      "name": "cytoscape.esm-Ct9zsnh1.js",
+      "bytes": 961036,
+      "gzipBytes": 204046
+    },
+    {
+      "name": "BookPages-tQYoaBXa.js",
+      "bytes": 850094,
+      "gzipBytes": 139698
+    },
+    {
+      "name": "docx-JOVewCPk.js",
+      "bytes": 701483,
+      "gzipBytes": 140355
+    },
+    {
+      "name": "MesaTable-YRB3EioT.js",
+      "bytes": 572841,
+      "gzipBytes": 142762
+    },
+    {
+      "name": "katex-Bp87zFyZ.js",
+      "bytes": 485601,
+      "gzipBytes": 105977
+    },
+    {
+      "name": "architectureDiagram-5GKGNRK7-DLa9yYvx.js",
+      "bytes": 423331,
+      "gzipBytes": 65015
+    },
+    {
+      "name": "swimlanes-42K2YHIH-S6PSU_6Q.js",
+      "bytes": 298762,
+      "gzipBytes": 61006
+    },
+    {
+      "name": "cose-bilkent-JH36ORCC-AQYbZlFc.js",
+      "bytes": 214634,
+      "gzipBytes": 34472
+    },
+    {
+      "name": "sequenceDiagram-WJ2MYXX4-_3rjoHct.js",
+      "bytes": 201757,
+      "gzipBytes": 38296
+    },
+    {
+      "name": "ganttDiagram-EL5Y4UJY-D2axSoCJ.js",
+      "bytes": 133652,
+      "gzipBytes": 30678
+    },
+    {
+      "name": "RenderTargetSystem-CaNWwuAi.js",
+      "bytes": 123340,
+      "gzipBytes": 26589
+    },
+    {
+      "name": "c4Diagram-7LVT6UL2-D5UoJMem.js",
+      "bytes": 111218,
+      "gzipBytes": 23427
+    },
+    {
+      "name": "WebGLRenderer-BLh-hmD8.js",
+      "bytes": 108544,
+      "gzipBytes": 22790
+    },
+    {
+      "name": "flowDiagram-HODETNUW-BFznRBWS.js",
+      "bytes": 105337,
+      "gzipBytes": 24509
+    },
+    {
+      "name": "browserAll-DgyI7sST.js",
+      "bytes": 100935,
+      "gzipBytes": 21765
+    },
+    {
+      "name": "WebGPURenderer-Df9q2m_J.js",
+      "bytes": 93391,
+      "gzipBytes": 20993
+    },
+    {
+      "name": "vennDiagram-4TSXK5OY-DFThZgmD.js",
+      "bytes": 88937,
+      "gzipBytes": 21644
+    },
+    {
+      "name": "chunk-TICWLB2K-C3ie06gA.js",
+      "bytes": 84473,
+      "gzipBytes": 20257
+    },
+    {
+      "name": "xychartDiagram-S5SC5T6Z-Cwplts-i.js",
+      "bytes": 83348,
+      "gzipBytes": 16318
+    },
+    {
+      "name": "layout-DUZn1WHc.js",
+      "bytes": 78726,
+      "gzipBytes": 18678
+    },
+    {
+      "name": "blockDiagram-I7D4REHJ-uiwg9htB.js",
+      "bytes": 76098,
+      "gzipBytes": 17400
+    },
+    {
+      "name": "chunk-IMKFNOWR-BdUtRCUi.js",
+      "bytes": 72856,
+      "gzipBytes": 17231
+    },
+    {
+      "name": "quadrantDiagram-AXDQQJYC-Dqr9Uv1g.js",
+      "bytes": 61727,
+      "gzipBytes": 12549
+    },
+    {
+      "name": "timeline-definition-24CTP7MA-BWnV00WA.js",
+      "bytes": 60590,
+      "gzipBytes": 13571
+    },
+    {
+      "name": "gitGraphDiagram-WWUBYQGX-CerYJ2v4.js",
+      "bytes": 57571,
+      "gzipBytes": 11581
+    },
+    {
+      "name": "erDiagram-RLTQ6QDP-9pWYew4I.js",
+      "bytes": 56295,
+      "gzipBytes": 13665
+    },
+    {
+      "name": "requirementDiagram-BXWQKSXE-CSDyLF2n.js",
+      "bytes": 52645,
+      "gzipBytes": 12187
+    },
+    {
+      "name": "BookPreview-7s7PHp8A.js",
+      "bytes": 48647,
+      "gzipBytes": 10666
+    },
+    {
+      "name": "sankeyDiagram-P5KCCOFB-WQQfqxlm.js",
+      "bytes": 46237,
+      "gzipBytes": 11706
+    },
+    {
+      "name": "journeyDiagram-3NMN7TZE-1aYIoXZO.js",
+      "bytes": 45385,
+      "gzipBytes": 11273
+    },
+    {
+      "name": "wardleyDiagram-VM6X3IG4-BuzmCw1Q.js",
+      "bytes": 44612,
+      "gzipBytes": 8853
+    },
+    {
+      "name": "CanvasRenderer-CviEQVnJ.js",
+      "bytes": 44025,
+      "gzipBytes": 8841
+    },
+    {
+      "name": "mindmap-definition-YA3MSWOX-B-rPRIhq.js",
+      "bytes": 43390,
+      "gzipBytes": 10690
+    },
+    {
+      "name": "export-snapshot-BrCpMvmi.js",
+      "bytes": 42181,
+      "gzipBytes": 11819
+    },
+    {
+      "name": "kanban-definition-UXKFOSKX-Don_tebZ.js",
+      "bytes": 38212,
+      "gzipBytes": 9522
+    },
+    {
+      "name": "ishikawaDiagram-5VMMS53U-CPxZlaQp.js",
+      "bytes": 35176,
+      "gzipBytes": 9345
+    },
+    {
+      "name": "webworkerAll-DBDkTr7Q.js",
+      "bytes": 34273,
+      "gzipBytes": 7325
+    },
+    {
+      "name": "diagram-VX7I27RA-gc60kP11.js",
+      "bytes": 32453,
+      "gzipBytes": 7802
+    },
+    {
+      "name": "chunk-SVP7TREG-EW265k13.js",
+      "bytes": 30847,
+      "gzipBytes": 5887
+    },
+    {
+      "name": "player-CGaVjPW8.js",
+      "bytes": 26783,
+      "gzipBytes": 7104
+    },
+    {
+      "name": "dagre-GXQ25YYZ-Bvv39JIU.js",
+      "bytes": 23387,
+      "gzipBytes": 5706
+    },
+    {
+      "name": "index-Bk8PDWAi.js",
+      "bytes": 23371,
+      "gzipBytes": 4460
+    },
+    {
+      "name": "diagram-VSXAHHWV-BqYshxfc.js",
+      "bytes": 21673,
+      "gzipBytes": 5560
+    },
+    {
+      "name": "stateDiagram-D77RDMKH-CKx7wULA.js",
+      "bytes": 19134,
+      "gzipBytes": 4857
+    },
+    {
+      "name": "cynefinDiagram-5FMLGOSQ-BD54U6Tn.js",
+      "bytes": 18434,
+      "gzipBytes": 4658
+    },
+    {
+      "name": "diagram-S7CK7UJ4-BuN5vCr8.js",
+      "bytes": 16113,
+      "gzipBytes": 4961
+    },
+    {
+      "name": "BookSidePreview-CZ7jzm8C.js",
+      "bytes": 14662,
+      "gzipBytes": 4466
+    },
+    {
+      "name": "pieDiagram-E7YTZNPT-DliePHU7.js",
+      "bytes": 12635,
+      "gzipBytes": 3571
+    },
+    {
+      "name": "diagram-UQ7AKVKN-DDVZL13E.js",
+      "bytes": 11520,
+      "gzipBytes": 3404
+    },
+    {
+      "name": "linear-CNrz0PJq.js",
+      "bytes": 11250,
+      "gzipBytes": 3194
+    },
+    {
+      "name": "defaultLocale-B2RvLBDe.js",
+      "bytes": 9369,
+      "gzipBytes": 2810
+    },
+    {
+      "name": "diagram-Z3DM3KII-B6wQhVFf.js",
+      "bytes": 7452,
+      "gzipBytes": 2437
+    },
+    {
+      "name": "web-DEGIdhVA.js",
+      "bytes": 7438,
+      "gzipBytes": 1645
+    },
+    {
+      "name": "arc-rpo05f_d.js",
+      "bytes": 6936,
+      "gzipBytes": 1960
+    },
+    {
+      "name": "book-extra-fNHutsvs.js",
+      "bytes": 5744,
+      "gzipBytes": 2433
+    },
+    {
+      "name": "GpuStencilModesToPixi-BcorPYoe.js",
+      "bytes": 5395,
+      "gzipBytes": 1333
+    },
+    {
+      "name": "ebnfDiagram-PWID7BFC-BrME_CIX.js",
+      "bytes": 3959,
+      "gzipBytes": 1229
+    },
+    {
+      "name": "pegDiagram-XKGWAZYB-D2jPv3oz.js",
+      "bytes": 3789,
+      "gzipBytes": 1278
+    },
+    {
+      "name": "chunk-F27PBJKO-TLhughts.js",
+      "bytes": 3750,
+      "gzipBytes": 1114
+    },
+    {
+      "name": "epub-CAVsFl6P.js",
+      "bytes": 3688,
+      "gzipBytes": 1669
+    },
+    {
+      "name": "abnfDiagram-VCTEODGH-CEBpboyM.js",
+      "bytes": 3552,
+      "gzipBytes": 1251
+    },
+    {
+      "name": "railroadDiagram-O6MQD6OU-O6hCsP_b.js",
+      "bytes": 2925,
+      "gzipBytes": 1025
+    },
+    {
+      "name": "ordinal-CxptdPJm.js",
+      "bytes": 2197,
+      "gzipBytes": 769
+    },
+    {
+      "name": "master-CUOO9B-x.js",
+      "bytes": 1917,
+      "gzipBytes": 794
+    },
+    {
+      "name": "sizeCapture-INFHLROL-BfJSvt6B.js",
+      "bytes": 1880,
+      "gzipBytes": 779
+    },
+    {
+      "name": "zoom-in-DZ8x9SEl.js",
+      "bytes": 1431,
+      "gzipBytes": 507
+    },
+    {
+      "name": "infoDiagram-27XIBGKW-CP49PZAv.js",
+      "bytes": 1087,
+      "gzipBytes": 587
+    },
+    {
+      "name": "chunk-POPQ4Y6H-Ce9kVTRT.js",
+      "bytes": 1071,
+      "gzipBytes": 482
+    },
+    {
+      "name": "swimlanesDiagram-VR7AAH4N-D6WV98_e.js",
+      "bytes": 853,
+      "gzipBytes": 479
+    },
+    {
+      "name": "classDiagram-ZZMXUADV-rJQrivST.js",
+      "bytes": 848,
+      "gzipBytes": 459
+    },
+    {
+      "name": "classDiagram-v2-VYDZK3BY-rJQrivST.js",
+      "bytes": 848,
+      "gzipBytes": 459
+    },
+    {
+      "name": "stateDiagram-v2-MP3YSRHH-Bpd4GJQx.js",
+      "bytes": 810,
+      "gzipBytes": 443
+    },
+    {
+      "name": "chunk-XXDRQBXY-DL5P86Vr.js",
+      "bytes": 483,
+      "gzipBytes": 297
+    },
+    {
+      "name": "chunk-5VM5RSS4-Cl6x_Nsr.js",
+      "bytes": 433,
+      "gzipBytes": 301
+    },
+    {
+      "name": "chunk-2Q5K7J3B-DsdZX_Z2.js",
+      "bytes": 378,
+      "gzipBytes": 236
+    },
+    {
+      "name": "chunk-JWPE2WC7-Bt0UDyaR.js",
+      "bytes": 369,
+      "gzipBytes": 202
+    },
+    {
+      "name": "init-ZxktEp_H.js",
+      "bytes": 258,
+      "gzipBytes": 157
+    },
+    {
+      "name": "channel-YrpEXa39.js",
+      "bytes": 195,
+      "gzipBytes": 166
+    }
+  ]
+}

@@ -33,7 +33,7 @@ export function DocumentBar({ back, title, subtitle, center, status, actions, me
 
 /** “Salvo” e companhia: estado da gravação em texto, nunca só pela cor do ponto. */
 export function SaveStatus({ state }: { state: "salvo" | "salvando" | "erro" | "somente-leitura" }) {
-  const text = { salvo: "Salvo", salvando: "Salvando…", erro: "Não salvo", "somente-leitura": "Somente leitura" }[state]
+  const text = { salvo: "Salvo", salvando: "Salvando…", erro: "Não gravado", "somente-leitura": "Somente leitura" }[state]
   return <span className={`kit-save ${state}`} role="status">{text}</span>
 }
 

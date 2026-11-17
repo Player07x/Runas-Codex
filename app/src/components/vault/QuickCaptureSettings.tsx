@@ -40,7 +40,7 @@ export function QuickCaptureSettings() {
         setStatus(next)
         toast(create ? (next.desktop === "kde" ? "Ação criada. Escolha a tecla nas Configurações do sistema." : "Atalho Ctrl Alt N criado no sistema.") : "Atalho do sistema removido.")
       })
-      .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      .catch((error: unknown) => toast.error(error))
       .finally(() => setBusy(false))
   }
 

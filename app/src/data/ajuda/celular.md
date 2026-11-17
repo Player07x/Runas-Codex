@@ -23,8 +23,12 @@ O mesmo app roda no Android, com o mesmo cofre (sincronizado do jeito que você 
 
 ### Cofre no Android
 
-Na primeira abertura você escolhe a pasta do cofre (o Android pede permissão para essa pasta). Para trocar,
-vá em Configurações › Cofre.
+Na primeira abertura você escolhe a pasta do cofre pelo seletor de pastas do Android: o app só vê essa pasta. Para
+trocar, vá em Configurações › Cofre. Se o Android tirar a permissão da pasta (apps de limpeza fazem isso), o app avisa
+e o botão **Escolher a pasta de novo** abre o seletor já nela.
+
+Em cofres muito grandes, **Acesso a todos os arquivos (avançado)**, em Configurações › Cofre, lê mais rápido; o
+Android pede para você liberá-lo nas configurações dele.
 
 ### Mesa e sala no celular
 

@@ -1,3 +1,6 @@
+import { createAndroidBinary, type AndroidBinaryPlugin } from "./android-binary"
+import { toBase64 } from "../core/binary-chunks"
+export { toBase64, fromBase64 } from "../core/binary-chunks"
 import { createAndroidVttApi } from "./android-room"
 import { createAndroidUpdates } from "./android-updates"
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core"
@@ -21,9 +24,9 @@ export interface SharedItem {
   files: { name: string; mime?: string; base64: string }[]
 }
 
-interface RunasVaultPlugin {
+interface RunasVaultPlugin extends AndroidBinaryPlugin {
   current(): Promise<{ vault: NativeInfo | null }>
-  choose(): Promise<{ vault: NativeInfo | null }>
+  choose(options?: { allFiles?: boolean }): Promise<{ vault: NativeInfo | null }>
   create(): Promise<{ vault: NativeInfo | null }>
   access(): Promise<{ granted: boolean }>
   setWritable(options: { writable: boolean }): Promise<{ vault: NativeInfo | null }>
@@ -55,25 +58,12 @@ interface RunasVaultPlugin {
   addListener(event: "change", listener: (data: { changes: NativeChange[] }) => void): Promise<PluginListenerHandle>
   addListener(event: "share", listener: (data: SharedItem) => void): Promise<PluginListenerHandle>
   addListener(event: "open", listener: (data: { route: string }) => void): Promise<PluginListenerHandle>
+  regrant(): Promise<{ vault: NativeInfo | null }>
 }
 
 export const RunasVault = registerPlugin<RunasVaultPlugin>("RunasVault")
 /** Tamanho de cada pedaço da exportação em pedaços pela ponte do Capacitor (vira ~2,7 MB de base64). */
 const SAVE_CHUNK = 2 * 1024 * 1024
-
-export function toBase64(bytes: Uint8Array): string {
-  let binary = ""
-  // Em pedaços: `String.fromCharCode(...bytes)` estoura a pilha com arquivos grandes.
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return btoa(binary)
-}
-
-export function fromBase64(base64: string): Uint8Array {
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return bytes
-}
 
 /** Só passa `expected` quando foi dado (ausente = grava por cima; `null` = só cria), como no desktop. */
 function withExpected<T extends object>(options: T, expected: Expected): T & { expected?: { mtime: number; size: number } | null } {
@@ -84,6 +74,7 @@ function withExpected<T extends object>(options: T, expected: Expected): T & { e
 const READ_BATCH = 400
 
 export function createCapacitorPlatform(): Platform {
+  const binary = createAndroidBinary(RunasVault)
   let root: string | null = null
   let saf = false
   const sources = new Map<string, string>()
@@ -156,14 +147,14 @@ export function createCapacitorPlatform(): Platform {
       return {lanUrl:state.localUrl!,code:state.key!}
     },
     async stopRoom() { await result.vtt!.player.stop() },
-    readBinary: async (path) => fromBase64((await RunasVault.readBinary({ path })).base64),
-    writeBinary: async (path, bytes, expected) => rememberEntry(await RunasVault.writeBinary(withExpected({ path, base64: toBase64(bytes) }, expected))),
+    readBinary: binary.read,
+    writeBinary: async (path, bytes, expected) => rememberEntry(await binary.write(path, bytes, expected)),
     saveBytes: async (name, bytes, mime) => (await RunasVault.saveAs({ name, mime, base64: toBase64(bytes) })).name,
     appVersion: async () => (await RunasVault.appVersion()).version,
     listTrash: async () => (await RunasVault.listTrash()).entries,
     restoreTrash: async (path, target) => rememberEntry(await RunasVault.restoreTrash({ path, target })),
     listTransferFiles: async (includeWorlds = true) => (await RunasVault.listTransferFiles({ includeWorlds })).entries.map(rememberEntry),
-    writeManagedTransfer: async (path, bytes, expected) => rememberEntry(await RunasVault.writeManagedTransfer({ path, base64: toBase64(bytes), expected })),
+    writeManagedTransfer: async (path, bytes, expected) => rememberEntry(await binary.write(path, bytes, expected, true)),
     printDocument: (name = "Runas-Codex") => RunasVault.printDocument({ name }),
     async openSave(name, mime) {
       // U50 (ADR 0037): o pacote vai em pedaços de 2 MB; um base64 do tamanho do pacote não cabe na ponte.
@@ -177,6 +168,9 @@ export function createCapacitorPlatform(): Platform {
         abort: () => RunasVault.saveStreamAbort({ id }),
       }
     },
+    // U91 (item 5): devolver a permissão da pasta e a opção avançada do acesso a todos os arquivos.
+    regrantVault: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.regrant()).vault) },
+    chooseVaultAllFiles: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.choose({ allFiles: true })).vault) },
   }
   result.vtt = createAndroidVttApi(result)
   return result

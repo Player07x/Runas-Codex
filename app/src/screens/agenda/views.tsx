@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type CSSPropert
 import { toneStyle, type Tone } from "../../core/tones"
 import { isoDate, type AgendaEvent, type Occurrence } from "../../core/agenda"
 import { addDays, dayLabel, layoutDay, monthMarks, moveDay, startOfDay } from "../../core/agenda-grid"
+import { timeOnDay } from "../../core/overnight"
 import { ListRow } from "../../components/kit/Layout"
 
 export { addDays, startOfDay }
@@ -32,9 +33,15 @@ export function useEventLook() {
 
 export const isSessionEvent = (event: AgendaEvent) => Boolean(event.session) || /^sess/i.test(event.category ?? "")
 
-/** Nome completo de um evento para o leitor de tela e a dica: título, horário, local e categoria. */
-export function occurrenceLabel(o: Occurrence): string {
-  const when = o.event.allDay ? "dia inteiro" : `${hhmm(o.start)}${o.event.endTime ? ` às ${hhmm(o.end)}` : ""}`
+/** Horário de uma ocorrência visto do dia `day` (U105: “continua de ontem”, “até 07:30 de amanhã”). */
+export function occurrenceTime(o: Occurrence, day: Date): string {
+  return o.event.allDay ? "dia inteiro" : timeOnDay(o.start, o.end, Boolean(o.event.endTime), day)
+}
+
+/** Nome completo de um evento para o leitor de tela e a dica: título, horário, local e categoria. Com `day`, o horário
+ *  é o daquele dia (um evento que cruza a meia-noite aparece nos dois). */
+export function occurrenceLabel(o: Occurrence, day?: Date): string {
+  const when = day ? occurrenceTime(o, day) : o.event.allDay ? "dia inteiro" : `${hhmm(o.start)}${o.event.endTime ? ` às ${hhmm(o.end)}` : ""}`
   return [o.event.title, when, o.event.location, o.event.category].filter(Boolean).join(", ")
 }
 
@@ -50,7 +57,8 @@ interface ViewProps {
   today: Date
   selectedDay: Date
   selectedKey?: string
-  onPickDay(day: Date): void
+  /** `via: "toque"`: o dia foi tocado ou clicado (no celular, isso abre o painel do dia; as setas só movem a escolha). */
+  onPickDay(day: Date, via?: "toque"): void
   onPick(occurrence: Occurrence): void
   onCreate(day: Date, time?: string): void
   /** Resumo do tempo livre do dia (ex.: "6h"), quando configurado. */
@@ -118,7 +126,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
                 aria-selected={picked}
                 aria-label={dayLabel(day, today, items.length, free)}
                 className={`month-cell ${day.getMonth() !== month.getMonth() ? "outside" : ""} ${sameDay(day, today) ? "today" : ""} ${picked ? "picked" : ""}`}
-                onClick={() => onPickDay(day)}
+                onClick={() => onPickDay(day, "toque")}
                 onDoubleClick={() => onCreate(day)}
                 onKeyDown={(event) => onKey(event, day)}
                 data-day={iso}
@@ -139,7 +147,7 @@ export function MonthView({ month, occurrences, today, selectedDay, selectedKey,
                         event.stopPropagation()
                         onPick(o)
                       }}
-                      title={occurrenceLabel(o)}
+                      title={occurrenceLabel(o, day)}
                     >
                       <span className="pill-title">{o.event.title}</span>
                       {!o.event.allDay && sameDay(o.start, day) && <span className="pill-time">{hhmm(o.start)}</span>}
@@ -310,7 +318,7 @@ export function ListView({ from, days, occurrences, selectedKey, onPick, onMore 
               key={o.key}
               media={<span className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />}
               title={o.event.title}
-              meta={[o.event.allDay ? "dia inteiro" : `${hhmm(o.start)}${o.event.endTime ? `–${hhmm(o.end)}` : ""}`, o.event.category, o.event.location].filter(Boolean).join(" · ")}
+              meta={[occurrenceTime(o, new Date(`${day}T12:00`)), o.event.category, o.event.location].filter(Boolean).join(" · ")}
               onClick={() => onPick(o)}
               current={o.key === selectedKey}
             />

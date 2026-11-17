@@ -22,8 +22,8 @@ export function FolderAppearanceDialog({ path, onClose }: { path: string; onClos
   const key = folderKey(vault.info!.path, path), current = prefs.folders[key] ?? {}
   return createPortal(<Modal title="Ícone e cor da pasta" onClose={onClose}>
     <p className="small muted">Preferências deste aparelho para {path}.</p>
-    <label className="field"><span>Ícone</span><select className="input" aria-label="Ícone da pasta" value={current.icon ?? "folder"} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, icon: e.target.value } } })) } catch (error) { toast(String(error)) } }}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
-    <label className="field"><span>Cor</span><select className="input" aria-label="Cor da pasta" value={current.color ?? ""} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, color: e.target.value } } })) } catch (error) { toast(String(error)) } }}><option value="">Padrão</option>{Object.keys(NOTE_COLORS).map(color => <option key={color}>{color}</option>)}</select></label>
+    <label className="field"><span>Ícone</span><select className="input" aria-label="Ícone da pasta" value={current.icon ?? "folder"} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, icon: e.target.value } } })) } catch (error) { toast.error(error) } }}>{Object.keys(NOTE_ICONS).map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon as keyof typeof NOTE_ICONS]}</option>)}</select></label>
+    <label className="field"><span>Cor</span><select className="input" aria-label="Cor da pasta" value={current.color ?? ""} onChange={e => { try { updatePreferences(p => ({ ...p, folders: { ...p.folders, [key]: { ...current, color: e.target.value } } })) } catch (error) { toast.error(error) } }}><option value="">Padrão</option>{Object.keys(NOTE_COLORS).map(color => <option key={color}>{color}</option>)}</select></label>
   </Modal>, document.body)
 }
 /**
@@ -35,7 +35,7 @@ export function NoteDecorateDialog({ path, before, onClose }: { path: string; be
   const note = vault.index?.note(path)
   if (!note) return null
   const flags = noteFlags(note)
-  const organize = (action: () => Promise<unknown>) => void (before ? before() : Promise.resolve()).then(action).catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+  const organize = (action: () => Promise<unknown>) => void (before ? before() : Promise.resolve()).then(action).catch((err: unknown) => toast.error(err))
   const setColor = (color: NoteColor | undefined) => organize(() => vault.setProperty(path, "cor", color))
   return (
     <Modal title="Fixar, cor e ícone" onClose={onClose} footer={<button className="btn" onClick={onClose}>Fechar</button>}>
@@ -113,7 +113,7 @@ export function SnippetSettings() {
     </span>
     <p className="tiny faint">CSS deste aparelho, ou um snippet do Obsidian (as classes próprias dele podem precisar de ajuste). Ícones e cores ficam no menu da nota e na árvore de pastas.</p>
     {error && <p role="alert" className="query-error">{error}</p>}
-    {prefs.snippets.map(snippet => <div className="setting-row" key={snippet.id}><label className="check"><input type="checkbox" checked={snippet.enabled} onChange={e => { try { updatePreferences(p => ({ ...p, snippets: p.snippets.map(s => s.id === snippet.id ? { ...s, enabled: e.target.checked } : s) })) } catch (error) { toast(String(error)) } }} />{snippet.name}</label><button className="btn sm ghost" onClick={() => { try { updatePreferences(p => ({ ...p, snippets: p.snippets.filter(s => s.id !== snippet.id) })) } catch (error) { toast(String(error)) } }}>Remover</button></div>)}
+    {prefs.snippets.map(snippet => <div className="setting-row" key={snippet.id}><label className="check"><input type="checkbox" checked={snippet.enabled} onChange={e => { try { updatePreferences(p => ({ ...p, snippets: p.snippets.map(s => s.id === snippet.id ? { ...s, enabled: e.target.checked } : s) })) } catch (error) { toast.error(error) } }} />{snippet.name}</label><button className="btn sm ghost" onClick={() => { try { updatePreferences(p => ({ ...p, snippets: p.snippets.filter(s => s.id !== snippet.id) })) } catch (error) { toast.error(error) } }}>Remover</button></div>)}
     {adding && <div className="stack" style={{ gap: 8, marginTop: 8 }}>
       <label className="field"><span>Nome do trecho</span><input className="input" aria-label="Nome do trecho CSS" value={name} onChange={e => setName(e.target.value)} /></label>
       <label className="field"><span>CSS</span><textarea className="input" aria-label="Trecho CSS" rows={6} value={css} onChange={e => setCss(e.target.value)} /></label>

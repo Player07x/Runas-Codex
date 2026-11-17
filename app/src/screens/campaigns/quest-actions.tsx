@@ -1,33 +1,60 @@
 import { useState } from "react"
 import type { QuestInfo, QuestStatus } from "../../core/campaigns"
-import { withTreasureItem } from "../../core/campaign-tools"
+import { rewardItemId, withTreasureItem } from "../../core/campaign-tools"
 import { buildQuestMap, questNoticeBoard } from "../../core/quest-map"
 import { ClockDial, Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { vtt } from "../../vtt/api"
+import { isoDate } from "../../core/agenda"
 import type { CampaignData } from "./campaign-state"
 import { TREASURY_TOOL, updateToolBlock } from "./tool-notes"
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
+/** Missões com recompensa a caminho do Tesouro: o segundo clique (botão + aviso) espera em vez de enviar de novo. */
+const sendingRewards = new Set<string>()
+
+/**
+ * Manda a recompensa da missão para o Tesouro do grupo (o tesouro é criado se ainda não existe) e grava
+ * `recompensa_enviada` na missão, para não mandar duas vezes (U93). Usado no aviso de concluir e no painel da missão.
+ */
+export function useSendReward(data: CampaignData) {
+  const vault = useVault()
+  const toast = useToast()
+  return async (quest: QuestInfo): Promise<boolean> => {
+    if (!quest.reward) return false
+    // Lê a marca atual da nota, não a da tela: o aviso de “concluída” pode ser clicado depois do botão do painel.
+    const sent = quest.rewardSent || vault.index?.note(quest.path)?.meta.frontmatter?.data?.recompensa_enviada
+    if (sent || sendingRewards.has(quest.path)) {
+      toast(`“${quest.reward}” já está no Tesouro do grupo.`)
+      return false
+    }
+    sendingRewards.add(quest.path)
+    try {
+      const from = `${data.campaign.root}Ferramentas/${TREASURY_TOOL.title}.md`
+      const notes = `Recompensa de [[${vault.index!.linkTarget(quest.path, from)}]]`
+      // Id fixo da missão: se a marca abaixo falhar, tentar de novo não duplica o item.
+      await updateToolBlock(vault, data.campaign.root, TREASURY_TOOL, (content) => withTreasureItem(content, { name: quest.reward!, quantity: 1, holder: "", notes }, rewardItemId(quest.path)), true)
+      await vault.setProperty(quest.path, "recompensa_enviada", isoDate(new Date()))
+      toast(`“${quest.reward}” está no Tesouro do grupo.`)
+      return true
+    } catch (err) {
+      toast.error(err)
+      return false
+    } finally {
+      sendingRewards.delete(quest.path)
+    }
+  }
+}
+
 /**
  * Muda a situação da missão (no ⋯, no arrastar entre colunas e no painel da missão). Concluir uma missão com
- * recompensa oferece, no aviso, mandá-la para o Tesouro do grupo (ideia da revisão das Campanhas); o tesouro é criado
- * se ainda não existe.
+ * recompensa ainda não enviada oferece, no aviso, mandá-la para o Tesouro do grupo (ideia da revisão das Campanhas).
  */
 export function useQuestStatus(data: CampaignData) {
   const vault = useVault()
   const toast = useToast()
-  const sendReward = async (quest: QuestInfo) => {
-    try {
-      const from = `${data.campaign.root}Ferramentas/${TREASURY_TOOL.title}.md`
-      const notes = `Recompensa de [[${vault.index!.linkTarget(quest.path, from)}]]`
-      await updateToolBlock(vault, data.campaign.root, TREASURY_TOOL, (content) => withTreasureItem(content, { name: quest.reward!, quantity: 1, holder: "", notes }, crypto.randomUUID()), true)
-      toast(`“${quest.reward}” está no Tesouro do grupo.`)
-    } catch (err) {
-      toast(errorText(err))
-    }
-  }
+  const sendReward = useSendReward(data)
   return async (quest: QuestInfo, status: QuestStatus): Promise<boolean> => {
     if (quest.status === status) return true
     if (data.readOnly) {
@@ -37,10 +64,10 @@ export function useQuestStatus(data: CampaignData) {
     try {
       await vault.setProperty(quest.path, "status", status)
     } catch (err) {
-      toast(errorText(err))
+      toast.error(err)
       return false
     }
-    if (status === "concluida" && quest.reward) toast(`“${quest.title}” concluída.`, { label: "Mandar a recompensa para o Tesouro", run: () => sendReward(quest) })
+    if (status === "concluida" && quest.reward && !quest.rewardSent) toast(`“${quest.title}” concluída.`, { label: "Mandar a recompensa para o Tesouro", run: async () => { await sendReward(quest) } })
     return true
   }
 }

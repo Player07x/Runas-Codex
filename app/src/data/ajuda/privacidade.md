@@ -6,11 +6,11 @@ O cofre é uma pasta no computador ou no armazenamento escolhido no Android. Tem
 
 ### Quando a rede é usada
 
-O app não envia notas, anexos ou estatísticas. A rede só é aberta em dois casos: quando você abre uma sala do VTT para conectar jogadores e quando toca em **Verificar atualizações**. A sala transmite apenas o estado necessário do jogo aos participantes autorizados; o endereço e o código aparecem enquanto a sala está aberta.
+O app não envia notas, anexos ou estatísticas. A rede só é aberta em dois casos: quando você abre uma sala do VTT para conectar jogadores e para saber se há versão nova (uma vez por dia, ao abrir, se **Procurar atualizações sozinho** estiver ligado, e quando você toca em **Verificar atualizações**). A sala transmite apenas o estado necessário do jogo aos participantes autorizados; o endereço e o código aparecem enquanto a sala está aberta.
 
 ### Atualizações
 
-Em **Configurações › Privacidade e atualizações**, toque em **Verificar atualizações**. O desktop consulta a versão publicada e mostra o que está disponível; no Android, o pacote é baixado pelo fluxo do sistema. A atualização não é automática e não altera o cofre. Se não houver conexão, a versão instalada continua funcionando offline.
+Com **Procurar atualizações sozinho** ligado (o padrão), o app pergunta ao GitHub uma vez por dia, ao abrir, qual é a versão mais nova; nada do cofre é enviado. Se houver versão nova, aparece **Atualizar para …** no fim da barra lateral (no celular, em **Mais**, marcado com um ponto): um toque grava as notas abertas, baixa, confere a soma SHA-256 e instala. Em **Configurações › Privacidade e atualizações** você desliga a consulta diária ou toca em **Verificar atualizações** quando quiser. Nada é instalado sem o seu toque, e a atualização não altera o cofre. Se não houver conexão, a versão instalada continua funcionando offline.
 
 ### Segurança do cofre
 

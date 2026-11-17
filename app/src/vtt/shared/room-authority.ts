@@ -39,6 +39,8 @@ export class RoomAuthority {
   private key: string | null = null
   private session: PlayerSession | null = null
   private playerCount = 0
+  /** Quantos tokens cada assento controla (U78: o painel avisa quando passa de um). */
+  private tokenCounts = new Map<string, number>()
   private publicUrl: string | null = null
   private tunnel: PlayerTunnelInfo | null = null
   private tunnelLost = false
@@ -77,6 +79,7 @@ export class RoomAuthority {
       },
       joinSeat: (code) => this.joinSeat(code),
       authenticateSeat: (token) => this.authenticateSeat(token),
+      leaveSeat: (token) => this.leaveSeat(token),
       onClientMessage: (message, seat) => this.handleClientMessage(message, seat),
     })
   }
@@ -178,18 +181,32 @@ export class RoomAuthority {
     return seat ? { slotId: seat.slotId, label: seat.label } : null
   }
 
-  /** Liga cada assento ao token que o mestre atribuiu a ele (campo "Controlado por" do token). */
+  /** U78: “Sair da mesa” no aparelho do jogador. O código continua valendo: o jogador (ou outro) pode entrar de novo. */
+  private leaveSeat(token: string): PlayerSeatConnection | null {
+    const seat = this.session?.authenticateAccessToken(token)
+    if (!seat) return null
+    this.session!.revoke(seat.slotId)
+    this.emit()
+    return { slotId: seat.slotId, label: seat.label }
+  }
+
+  /**
+   * Liga cada assento aos tokens que o mestre atribuiu a ele (campo "Controlado por"). Mover e ver as barras já valem
+   * para todos os tokens do assento (pelo `playerSlotId`); aqui o assento fica ligado ao primeiro e conta os outros,
+   * para o painel do mestre avisar quando um jogador controla mais de um token (U78).
+   */
   private attachAssignedTokens(): void {
     const session = this.session
     const database = this.store.openWorld?.database
     if (!session || !database) return
-    const assigned = new Map<string, string>()
+    const assigned = new Map<string, string[]>()
     for (const token of database.list("token")) {
       const slotId = (token.data as TokenData).playerSlotId
-      if (slotId && session.getSeat(slotId) && !assigned.has(slotId)) assigned.set(slotId, token.id)
+      if (slotId && session.getSeat(slotId)) assigned.set(slotId, [...(assigned.get(slotId) ?? []), token.id])
     }
+    this.tokenCounts = new Map([...assigned].map(([slotId, tokens]) => [slotId, tokens.length]))
     for (const seat of session.list()) {
-      const tokenId = assigned.get(seat.slotId) ?? null
+      const tokenId = assigned.get(seat.slotId)?.[0] ?? null
       if (seat.tokenId !== tokenId) session.markAttached(seat.slotId, tokenId)
     }
   }
@@ -464,6 +481,6 @@ export class RoomAuthority {
   }
 
   private seatStates(codes: Record<string, string> = {}): PlayerSeatState[] {
-    return this.session?.snapshot().seats.map((seat) => ({ ...seat, ...(codes[seat.slotId] ? { code: codes[seat.slotId] } : {}) })) ?? []
+    return this.session?.snapshot().seats.map((seat) => ({ ...seat, ...(codes[seat.slotId] ? { code: codes[seat.slotId] } : {}), tokens: this.tokenCounts.get(seat.slotId) ?? 0 })) ?? []
   }
 }

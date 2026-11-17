@@ -1,3 +1,4 @@
+import { repeatText } from "../../core/agenda-repeat"
 import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
@@ -29,7 +30,7 @@ import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { useVault } from "../../platform/VaultProvider"
 import { exactAlarmsAllowed, isAndroidApp, openExactAlarmSettings } from "../../platform/reminders"
 import { EventDialog } from "./EventDialog"
-import { addDays, EventTones, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, onDay, sameDay, startOfDay, TimeGrid, useEventLook } from "./views"
+import { addDays, EventTones, eventColor, hhmm, isSessionEvent, ListView, MonthView, occurrenceLabel, occurrenceTime, onDay, sameDay, startOfDay, TimeGrid, useEventLook } from "./views"
 import { campaignLook, campaignOfPath } from "../../core/personalization"
 import "../agenda.css"
 import { useCreateRequest } from "../../lib/create-request"
@@ -87,15 +88,9 @@ export function AgendaScreen() {
   return <AgendaView index={vault.index} />
 }
 
+/** A repetição em palavras (“Dias úteis, 10 vezes”), de `core/agenda-repeat.ts`. */
 function describeRepeat(event: AgendaEvent): string | null {
-  const { repeat } = event
-  if (repeat.kind === "none") return null
-  if (repeat.kind === "weekly") return `Toda semana: ${repeat.days.map((d) => ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][d]).join(", ")}${event.until ? ` até ${new Date(`${event.until}T12:00`).toLocaleDateString("pt-BR")}` : ""}`
-  const rule = repeat.rule
-  if (/^FREQ=WEEKLY;INTERVAL=2(;|$)/.test(rule)) return "A cada 2 semanas"
-  if (/^FREQ=MONTHLY(;UNTIL|$)/.test(rule)) return "Todo mês"
-  if (/^FREQ=YEARLY(;UNTIL|$)/.test(rule)) return "Todo ano"
-  return `Regra: ${rule}`
+  return repeatText(event.repeat, event.until)
 }
 
 const reminderText = (minutes: number) => (minutes === 0 ? "na hora" : minutes % 1440 === 0 ? `${minutes / 1440} dia(s) antes` : minutes % 60 === 0 ? `${minutes / 60} h antes` : `${minutes} min antes`)
@@ -121,7 +116,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const [exactAlarms, setExactAlarms] = useState(true)
   const [permission, setPermission] = useState(() => (typeof Notification !== "undefined" ? Notification.permission : "granted"))
   const fileInput = useRef<HTMLInputElement>(null)
-  const fail = (error: unknown) => toast(error instanceof Error ? error.message : String(error))
+  const fail = (error: unknown) => toast.error(error)
 
   const setView = (next: View) => {
     setViewState(next)
@@ -149,6 +144,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
       /* só não é lembrada */
     }
   }
+  // U87: com o painel recolhido, o botão de abrir fica na barra do período, junto da troca de visão.
+  const [panelSlot, setPanelSlot] = useState<HTMLElement | null>(null)
   const showPanel = (next: Tab) => {
     setTab(next)
     if (narrow()) setPanelCollapsed("agenda", false)
@@ -419,11 +416,12 @@ function AgendaView({ index }: { index: VaultIndex }) {
             { value: "tarefas", label: "Tarefas", icon: <ListChecks size={14} /> },
           ]}
         />
+        <span className="panel-slot" ref={setPanelSlot} />
       </div>
 
       <div className="agenda-layout">
         <div className="card flat agenda-main">
-          {view === "mes" && <MonthView month={cursor} showRoutines={showRoutines} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={pickDay} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
+          {view === "mes" && <MonthView month={cursor} showRoutines={showRoutines} occurrences={occurrences} today={today} selectedDay={selectedDay} selectedKey={selectedKey} onPickDay={(day, via) => (via === "toque" && narrow() ? openDay(day) : pickDay(day))} onOpenDay={openDay} onPick={pick} onCreate={create} freeLabel={freeLabel} />}
           {(view === "semana" || view === "dia") && (
             <TimeGrid
               key={`${view}-${isoDate(range.start)}`}
@@ -443,7 +441,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
           {view === "lista" && <ListView from={cursor} days={listDays} occurrences={occurrences} selectedKey={selectedKey} onPick={pick} onMore={() => setListDays((d) => d + LIST_DAYS)} />}
         </div>
 
-        <ResizablePanel id="agenda" label="Painel da agenda" side="right" width={320} className="agenda-side">
+        <ResizablePanel id="agenda" label="Painel da agenda" collapsedLabel="Painel" collapsedTarget={panelSlot} side="right" width={320} className="agenda-side">
           {(needsNotifications || needsExactAlarms) && (
             <Notice
               tone="warn"
@@ -477,10 +475,10 @@ function AgendaView({ index }: { index: VaultIndex }) {
                 <div className="list">
                   {dayList.length === 0 && <span className="muted small">Nada marcado.</span>}
                   {dayList.map((o) => (
-                    <button key={o.key} className="list-item agenda-day-item" onClick={() => pick(o)} aria-label={occurrenceLabel(o)}>
+                    <button key={o.key} className="list-item agenda-day-item" onClick={() => pick(o)} aria-label={occurrenceLabel(o, selectedDay)}>
                       <span className={`dot ${lookOf(o.event).className}`} style={lookOf(o.event, { background: "var(--ev)" }).style} />
                       <span className="grow truncate">{o.event.title}</span>
-                      <span className="meta">{o.event.allDay ? "dia inteiro" : hhmm(o.start)}</span>
+                      <span className="meta">{occurrenceTime(o, selectedDay)}</span>
                     </button>
                   ))}
                 </div>
@@ -682,7 +680,7 @@ function EventDetail({ occurrence, index, readOnly, actions, today, onEdit, onDe
             const note = index.note(event.path)
             if (!note) return
             const body = note.text.replace(/\s*$/, "")
-            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast(e instanceof Error ? e.message : String(e)))
+            void vault.save(event.path, `${body}\n${lines.join("\n")}\n`).catch((e: unknown) => toast.error(e))
           }}
           onClose={() => setAdding(false)}
         />
