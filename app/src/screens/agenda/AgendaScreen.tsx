@@ -1,3 +1,4 @@
+import { repeatText } from "../../core/agenda-repeat"
 import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { CampaignRoomTools } from "../campaigns/CampaignRoomTools"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
@@ -87,15 +88,9 @@ export function AgendaScreen() {
   return <AgendaView index={vault.index} />
 }
 
+/** A repetição em palavras (“Dias úteis, 10 vezes”), de `core/agenda-repeat.ts`. */
 function describeRepeat(event: AgendaEvent): string | null {
-  const { repeat } = event
-  if (repeat.kind === "none") return null
-  if (repeat.kind === "weekly") return `Toda semana: ${repeat.days.map((d) => ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][d]).join(", ")}${event.until ? ` até ${new Date(`${event.until}T12:00`).toLocaleDateString("pt-BR")}` : ""}`
-  const rule = repeat.rule
-  if (/^FREQ=WEEKLY;INTERVAL=2(;|$)/.test(rule)) return "A cada 2 semanas"
-  if (/^FREQ=MONTHLY(;UNTIL|$)/.test(rule)) return "Todo mês"
-  if (/^FREQ=YEARLY(;UNTIL|$)/.test(rule)) return "Todo ano"
-  return `Regra: ${rule}`
+  return repeatText(event.repeat, event.until)
 }
 
 const reminderText = (minutes: number) => (minutes === 0 ? "na hora" : minutes % 1440 === 0 ? `${minutes / 1440} dia(s) antes` : minutes % 60 === 0 ? `${minutes / 60} h antes` : `${minutes} min antes`)

@@ -2025,3 +2025,19 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   Em Facções, a lista começa nas organizações.
 - [ ] “Novo NPC”: “Já apareceu na campanha” começa desmarcado.
 - U93: concluir uma missão com recompensa, clicar em "Mandar para o Tesouro" no painel e depois no aviso "Mandar a recompensa para o Tesouro" (e também dar clique duplo no botão): o item entra uma vez só no Tesouro do grupo.
+
+## Repetição de eventos na Agenda (1.5.0, PR S: U98)
+
+- [ ] Novo evento › Repetir: aparecem “Todo dia” e “Dias úteis”; a regra RRULE ficou em
+  “Avançado (regra RRULE)…”.
+- [ ] “Dias úteis” com “Termina: Número de vezes” = 5, começando numa terça: aparecem terça a sexta e a
+  segunda seguinte, e o painel do evento diz “Dias úteis, 5 vezes”.
+- [ ] “Toda semana” com “Termina: Numa data”: grava `endRecur` como antes; editar o evento mostra a mesma data.
+- [ ] Abrir no Obsidian (Full Calendar) um evento “Todo dia” e um “Dias úteis, 5 vezes”: os dois aparecem nos mesmos
+  dias que no app.
+
+
+## Revisão 1.5 S — preservar recorrências ao editar (17/11/2026)
+
+- Pular uma data de uma série semanal (inclusive Dias úteis), editar só o título e conferir que a data continua ausente. A gravação mantém RRULE quando há datas puladas.
+- Regras importadas com horário/fuso no UNTIL ou COUNT acima de 999 ficam em Avançado, preservadas ao editar outros campos. O limite dos controles simples não encurta essas séries.
