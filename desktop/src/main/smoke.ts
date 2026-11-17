@@ -245,6 +245,8 @@ export const SMOKE_SCRIPT = `(async () => {
   // fechando já no mousedown, o que subia o texto enquanto o CodeMirror relia a posição do mouse.
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Editar"))?.click()
   const findTarget = () => document.querySelector(".cm-lp-properties") && [...document.querySelectorAll(".cm-line")].find((line) => line.textContent.includes("Uma ponte que só aparece"))
+  // Com a janela escondida, o editor pode não ter medido ainda: mede agora, como faria no próximo quadro.
+  ;(await until(() => document.querySelector(".cm-content")?.cmTile?.view))?.measure?.()
   await until(findTarget)
   // Espera o editor medir as linhas depois de abrir (antes disso a altura delas é estimada, como em qualquer abertura).
   await wait(800)

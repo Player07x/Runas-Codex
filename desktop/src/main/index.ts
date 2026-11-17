@@ -226,6 +226,9 @@ function createMainWindow(): BrowserWindow {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      // No smoke a janela fica escondida; no Windows o Chromium a trata como em segundo plano e segura o
+      // requestAnimationFrame, e o CodeMirror deixa de medir as linhas (falha intermitente do clique no editor).
+      backgroundThrottling: !smoke,
     },
   })
 
