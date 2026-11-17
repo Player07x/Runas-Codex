@@ -1938,3 +1938,11 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Atualização 1.5 — A1/U76: linha de base de desempenho
+
+- Repetir no A21 físico o roteiro Notas → Wiki com capas → Livro → Mesa e comparar os números com o relatório
+  da máquina de desenvolvimento. Os números locais e do CI não substituem a medição no aparelho de referência.
+- O roteiro usa exclusivamente dados sintéticos: 10 mil notas, categoria com 420 artigos/capas e volume total
+  de 1,3 GB. Não copiar o cofre real nem conteúdo pessoal para relatórios públicos.
+- A1 só mede e estabelece orçamento; as otimizações ficam para A2, depois dos outros PRs da 1.5.
