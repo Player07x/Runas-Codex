@@ -4,8 +4,8 @@ import { openDocumentExport } from "../export/ExportDialog"
 import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileCog, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -18,7 +18,7 @@ import { NoteSetContext } from "../../lib/note-set"
 import { goBack, goForward, navigate, useNavHistory } from "../../lib/router"
 import { hasBookmark } from "../../core/bookmarks"
 import { toggleFavorite, useFavorites } from "../../lib/bookmarks"
-import { useOpenNote } from "../../lib/tabs"
+import { TabSwitcherContext, useOpenNote } from "../../lib/tabs"
 import { AUDIO_EXT, IMAGE_EXT, VIDEO_EXT } from "../../markdown/Embed"
 import { TaskCheckboxContext, toggledTaskLines, type TaskCheckboxHandler } from "../../markdown/extensions"
 import { checkboxLines } from "../../markdown/task-checkboxes"
@@ -104,6 +104,8 @@ interface Props {
   /** Livros no celular (U63): as ações do livro entram no ⋯ do capítulo, para a barra ter um ⋯ só. */
   extraMenu?: { label: string; items: MenuEntry[] }
   hideBackControl?: boolean
+  /** Nome do “<” do celular, que diz para onde volta (padrão: “Voltar para a lista”). */
+  backLabel?: string
   formatSelection?: boolean
   typewriter?: boolean
   focused?: boolean
@@ -139,8 +141,10 @@ interface Props {
  * Uma nota do cofre: leitura ou código-fonte (o live preview chega na etapa 3b). Grava sozinha depois de uma pausa na
  * digitação e sempre com a versão lida — se o arquivo mudou fora do app, avisa em vez de sobrescrever.
  */
-export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, variant, statusExtra, defaultMode, extraMenu }: Props) {
+export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "Links, propriedades e gráfico local", onBack, onTrashed, onCreate, onTag, headingRequest, lineRequest, onCursorLine, selectionActions, extraFormatters, sidebar, showSecrets = true, onDraftChange, typewriter, focused = true, focusHeader, hideBackControl = false, backLabel = "Voltar para a lista", variant, statusExtra, defaultMode, extraMenu }: Props) {
   const vault = useVault()
+  // U81: nas abas das Notas no celular, o botão “n abas” fica na barra da nota (a faixa de abas sai).
+  const tabSwitcher = useContext(TabSwitcherContext)
   const toast = useToast()
   const history = useNavHistory()
   const openNote = useOpenNote()
@@ -192,7 +196,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [imageRename, setImageRename] = useState<string | null>(null)
   // "Criar ou editar tarefa" (Tasks) na linha do cursor.
   const [taskEdit, setTaskEdit] = useState<{ line: number; text: string } | null>(null)
-  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast(String(error))) }
+  const renameImage = (image: string) => { void flushOpenNotes().then(() => setImageRename(image), error => toast.error(error)) }
   const editor = useRef<SourceEditorHandle>(null)
   const tools = useRef<NoteToolsHandle>(null)
   const surface = useRef<HTMLDivElement>(null)
@@ -363,7 +367,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           const saved = await vault.addAttachment(name, new Uint8Array(await file.arrayBuffer()), path)
           links.push(attachmentEmbed(saved, path, vault.config.app, vault.index!))
         } catch (err) {
-          toast(err instanceof Error ? err.message : String(err))
+          toast.error(err)
         }
       }
       if (links.length) setTimeout(() => editor.current?.insertBlock(links.join("\n"), at ?? undefined))
@@ -467,7 +471,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const organize = (action: () => Promise<unknown>) => {
     void flush()
       .then(action)
-      .catch((err: unknown) => toast(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => toast.error(err))
   }
   const move = (to: string) =>
     organize(async () => {
@@ -584,7 +588,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     else if (action === "template") setDialog("template")
     else openLinkDialog()
   }
-  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && (selectionAt.focused || barFocused) && !gallery && !dialog
+  // `editorFocused` some na hora em que o foco sai (o editor só avisa um pouco depois): a barra não fica sobre o menu aberto.
+  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && ((selectionAt.focused && editorFocused) || barFocused) && !gallery && !dialog
   const showKeyboardBar = !readOnly && narrow && mode !== "leitura" && editorFocused && !gallery && !dialog
   // No celular, a barra inferior do app dá lugar à barra de formatação enquanto se escreve.
   useEffect(() => {
@@ -605,7 +610,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               const lines = checkboxLines(draft)
               const line = lines[index]
               if (lines.length !== total || line === undefined) {
-                toast("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
+                toast.error("Não deu para achar esta tarefa no texto; marque-a no modo Editar.")
                 return
               }
               const all = draft.split("\n")
@@ -672,7 +677,9 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     mode === "fonte" ? { label: "Editar com prévia", icon: <Type size={16} />, onSelect: () => setMode("live") } : { label: "Ver o código Markdown", icon: <Code2 size={16} />, onSelect: () => setMode("fonte") },
     sep, ...menu,
   ] : menu
-  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
+  // O menu da nota tem o ícone de arquivo: a tela já tem o ⋯ do módulo ou da aba (no livro eram dois ⋯ na mesma barra).
+  // Fica o ⋯ só quando ele junta as ações do livro (celular, U63).
+  const actionsMenu = <OverflowMenu label={extraMenu?.label ?? (book ? "Ações do capítulo" : "Ações da nota")} icon={extraMenu ? undefined : <FileCog size={18} />} items={extraMenu ? [...menuItems, sep, ...extraMenu.items] : menuItems} />
   const saveState = readOnly ? "somente-leitura" : state === "salvo" ? "salvo" : state === "erro" || state === "conflito" ? "erro" : "salvando"
   const folder = dirname(path).split("/").pop() ?? ""
 
@@ -699,8 +706,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         {modes}
         {actionsMenu}
       </>, focusHeader) : (
-        <div className="editor-bar doc-bar">
-          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label="Voltar para a lista">
+        <div className={`editor-bar doc-bar ${tabSwitcher ? "with-tabs" : ""}`}>
+          {!hideBackControl && <button className="icon-btn mobile-switch" onClick={onBack} aria-label={backLabel} title={backLabel}>
             <ChevronLeft size={18} />
           </button>}
           <span className="note-history">
@@ -715,6 +722,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<h1>{note.name}</h1></div>
           {!compactBar && modes}
           <div className="doc-end">
+            {tabSwitcher}
             <SaveStatus state={saveState} />
             {compactBar && modeToggle}
             <button className="btn sm ghost doc-panel" onClick={onShowPanel} aria-label="Painel da nota" aria-expanded={panelOpen} title={panelHint}><PanelRight size={17} /><span>Painel</span></button>
@@ -764,7 +772,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
             className="editor-surface"
             ref={surface}
             onFocus={() => setEditorFocused(true)}
-            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { setEditorFocused(false); setBarFocused(false) } }}
+            // A barra da seleção fica numa camada fora do editor (SelectionBar): ir para ela não é sair do texto.
+            onBlur={(event) => { const next = event.relatedTarget as Node | null; if (!event.currentTarget.contains(next) && !selectionBar.current?.contains(next)) { setEditorFocused(false); setBarFocused(false) } }}
             onKeyDown={(event) => {
               // Alt+F10 leva o teclado até a barra da seleção (padrão dos editores com barra flutuante).
               if (!(event.altKey && event.key === "F10") || !showSelectionBar) return
@@ -779,7 +788,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               <SelectionBar
                 ref={selectionBar}
                 at={selectionAt}
-                width={surface.current?.clientWidth ?? 640}
+                origin={surface.current}
                 onWrap={(mark) => { setBarFocused(false); editor.current?.wrap(mark) }}
                 onLink={() => { setBarFocused(false); openLinkDialog() }}
                 onMore={() => { setBarFocused(false); setGallery(true) }}

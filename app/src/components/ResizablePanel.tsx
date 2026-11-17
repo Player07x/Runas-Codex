@@ -56,14 +56,23 @@ export function usePanelToggle(id: string, narrowAt = 1100) {
  * mostra o nome dele e um botão de recolher; recolhido, vira uma faixa estreita (ou um trilho de ícones, na
  * navegação). Preferências locais; arrastar altera só o espaço do painel, nunca os dados do cofre.
  */
-export function ResizablePanel({ id, label, side = "right", width = 300, maxWidth = 600, as: Tag = "aside", className = "", children, hidden, controlsTarget, defaultCollapsed = false, reveal = false, collapsedMode = "hide", onCollapsedChange }: {
+export function ResizablePanel({ id, label, side = "right", width = 300, maxWidth = 600, as: Tag = "aside", className = "", children, hidden, controlsTarget, collapsedTarget, collapsedLabel, defaultCollapsed = false, reveal = false, collapsedMode = "hide", onCollapsedChange, icon }: {
   id: string; label: string; side?: "left" | "right"; width?: number; as?: "aside" | "nav" | "section"; className?: string; children: ReactNode; hidden?: boolean; controlsTarget?: HTMLElement | null; defaultCollapsed?: boolean; reveal?: boolean
+  /**
+   * U87: recolhido no computador, o botão de expandir vai para esta barra da tela (em vez de ficar sozinho numa faixa
+   * estreita ao lado), e a coluna do painel some. Aberto, o painel mantém a própria barra com o nome.
+   */
+  collapsedTarget?: HTMLElement | null
+  /** Nome curto do botão na barra da tela (padrão: `label`). */
+  collapsedLabel?: string
   /** Largura máxima ao arrastar (a prévia das páginas do livro pede mais que os painéis de lista). */
   maxWidth?: number
   /** `rail`: recolhido, mostra só os ícones (navegação principal). */
   collapsedMode?: "hide" | "rail"
   /** Avisa quando o painel abre ou fecha (também ao montar), para quem só quer desenhar o conteúdo aberto. */
   onCollapsedChange?(collapsed: boolean): void
+  /** Ícone do botão em outra barra (`controlsTarget`) no lugar do de painel, quando a barra tem vários painéis. */
+  icon?: ReactNode
 }) {
   const key = `runas-codex:painel:${id}`
   const [prefs, setPrefs] = useState(() => {
@@ -80,7 +89,21 @@ export function ResizablePanel({ id, label, side = "right", width = 300, maxWidt
   }, [id])
   const ref = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; width: number } | null>(null)
-  const collapsedWidth = controlsTarget ? 0 : collapsedMode === "rail" ? 68 : 44
+  const wide = useSyncExternalStore(
+    (listener) => { const list = media("(max-width: 860px)"); list?.addEventListener("change", listener); return () => list?.removeEventListener("change", listener) },
+    () => !media("(max-width: 860px)")?.matches,
+    () => true,
+  )
+  // No celular o painel recolhido já é uma barra com o nome, no fim da tela: o botão só sai dele no computador.
+  const away = Boolean(collapsedTarget) && prefs.collapsed && wide
+  const collapsedWidth = controlsTarget || away ? 0 : collapsedMode === "rail" ? 68 : 44
+  // Ao trocar de lugar (painel ↔ barra da tela), o foco acompanha o botão em vez de cair no fim da página.
+  const refocus = useRef(false)
+  useEffect(() => {
+    if (!refocus.current) return
+    refocus.current = false
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-panel-control="${id}"] button`)?.focus())
+  }, [away, id])
   const collapsedChange = useRef(onCollapsedChange)
   collapsedChange.current = onCollapsedChange
   useEffect(() => { collapsedChange.current?.(prefs.collapsed) }, [prefs.collapsed])
@@ -98,16 +121,19 @@ export function ResizablePanel({ id, label, side = "right", width = 300, maxWidt
   }
   const Icon = side === "left" ? (prefs.collapsed ? PanelLeftOpen : PanelLeftClose) : (prefs.collapsed ? PanelRightOpen : PanelRightClose)
   const action = `${prefs.collapsed ? "Expandir" : "Recolher"} ${label}`
-  const toggle = () => setPrefs(p => ({ ...p, collapsed: !p.collapsed }))
+  const toggle = () => { if (collapsedTarget && wide) refocus.current = true; setPrefs(p => ({ ...p, collapsed: !p.collapsed })) }
   // Painéis com o botão em outra barra (Livros) mantêm o nome no botão; os demais têm a barra do painel com o nome.
-  const control = controlsTarget
-    ? <div className="panel-controls" data-panel-control={id}><button type="button" className="panel-collapse btn ghost" aria-label={action} title={action} aria-expanded={!prefs.collapsed} onClick={toggle}><Icon size={17} /><span>{label}</span></button></div>
+  const control = away
+    ? <div className="panel-controls panel-controls-away" data-panel-control={id}><button type="button" className="panel-collapse btn sm" aria-label={action} title={action} aria-expanded={false} onClick={toggle}>{icon ?? <Icon size={16} />}<span>{collapsedLabel ?? label}</span></button></div>
+    : controlsTarget
+    ? <div className="panel-controls" data-panel-control={id}><button type="button" className="panel-collapse btn ghost" aria-label={action} title={action} aria-expanded={!prefs.collapsed} onClick={toggle}>{icon ?? <Icon size={17} />}<span>{label}</span></button></div>
     : <div className="panel-controls" data-panel-control={id}>
       {collapsedMode !== "rail" && <span className="panel-title">{label}</span>}
       <button type="button" className="panel-collapse icon-btn sm" aria-label={action} title={id === "navigation" ? `${action} (Ctrl+\\)` : action} aria-expanded={!prefs.collapsed} onClick={toggle}><Icon size={17} /></button>
     </div>
-  return <Tag ref={ref} hidden={hidden} className={`resizable-panel ${className}`} data-panel-id={id} data-panel-mode={collapsedMode} data-panel-detached={Boolean(controlsTarget)} data-panel-collapsed={prefs.collapsed} aria-label={label}>
-    {controlsTarget ? createPortal(control, controlsTarget) : control}
+  const target = away ? collapsedTarget : controlsTarget
+  return <Tag ref={ref} hidden={hidden} className={`resizable-panel ${className}`} data-panel-id={id} data-panel-mode={collapsedMode} data-panel-detached={Boolean(controlsTarget)} data-panel-away={away} data-panel-collapsed={prefs.collapsed} aria-label={label}>
+    {target ? createPortal(control, target) : control}
     {children}
     <div className={`panel-edge panel-edge-${side}`} role="separator" aria-label={`Largura de ${label}`} aria-orientation="vertical" aria-valuemin={180} aria-valuemax={maxWidth} aria-valuenow={prefs.width} tabIndex={0}
       onDoubleClick={() => setPrefs({ width, collapsed: false })}

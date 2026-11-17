@@ -4,6 +4,7 @@ import { DEMO_ASSETS, DEMO_TEXT_FILES } from "../data/demo-vault"
 import { generateLargeVault } from "../core/large-vault"
 import { isAndroidApp, onAndroidReminderOpen, scheduleInBrowser, scheduleOnAndroid } from "./reminders"
 import { DEFAULT_BACKUP_SCHEDULE, normalizeBackupSchedule, type BackupSchedule } from "../core/backup-schedule"
+import { demoUpdates } from "./demo-updates"
 
 /**
  * Plataforma em memória: o cofre de exemplo do navegador (e dos testes). Aceita gravar, mas nada vai para o disco —
@@ -213,6 +214,8 @@ export function createMemoryPlatform(onNotify?: (title: string, body: string) =>
     async checkWrite() {
       return writeBlocked() ? { ok: false, step: "trocar", message: "EPERM: operation not permitted, rename (simulado por ?gravacao-bloqueada)" } : { ok: true }
     },
+    // Aviso de atualização só com `?atualizacao-exemplo` (U90), para conferir a tela sem rede.
+    ...demoUpdates(),
   }
 }
 

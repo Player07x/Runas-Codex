@@ -19,7 +19,7 @@ import { ASSET_KINDS } from "../vtt/shared/world"
 
 interface NativeRequest {
   id: string
-  kind: "join" | "authenticate" | "snapshot" | "message" | "master" | "master-world" | "master-asset"
+  kind: "join" | "authenticate" | "leave" | "snapshot" | "message" | "master" | "master-world" | "master-asset"
   payload: { code?: string; token?: string; seat?: PlayerSeatConnection | null; message?: unknown; channel?: string; args?: unknown[]; kind?: string; name?: string; base64?: string }
   roomId: string
 }
@@ -80,6 +80,7 @@ class AndroidTransport implements PlayerTransport {
       let result: object = {}
       if (request.kind === "join") result = this.options.joinSeat?.(payload.code ?? "") ?? {}
       if (request.kind === "authenticate") result = { seat: this.options.authenticateSeat?.(payload.token ?? "") ?? null }
+      if (request.kind === "leave") result = { seat: this.options.leaveSeat?.(payload.token ?? "") ?? null }
       if (request.kind === "snapshot") result = { message: this.options.snapshot(payload.seat ?? null) }
       if (request.kind === "message") {
         const message = this.options.onClientMessage?.(payload.message, payload.seat ?? null) ?? null

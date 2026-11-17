@@ -1,6 +1,6 @@
 # ADR 0017 — "Verificar atualizações" (atualização manual)
 
-- **Status:** aceita (2026-10-14).
+- **Status:** aceita (2026-10-14); a consulta “só quando o usuário clica” foi trocada pela ADR 0038 (consulta diária, desligável).
 
 ## Contexto
 

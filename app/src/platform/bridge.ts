@@ -82,6 +82,8 @@ export interface RunasCodexBridge {
     finish(id: number): Promise<string>
     abort(id: number): Promise<void>
   }
+  /** Notificação nativa; páginas não recebem permissão de notificações do Chromium. */
+  notify?(title: string, body: string): Promise<void>
   /** U91: “Testar gravação” no cofre aberto e a proteção contra ransomware do Windows. */
   checkWrite?(): Promise<WriteCheck>
   openSecuritySettings?(): Promise<void>

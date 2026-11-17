@@ -53,8 +53,9 @@ um VTT. Leia antes de mexer:
    `runas-codex.css`). Propriedades no frontmatter; datas e horas **entre aspas** (`data: "2026-10-17"`). Dados que
    não são texto (estado de tela, preferências) não vão para o cofre; preferências por aparelho vão para o
    `localStorage` com chave `runas-codex:<nome>`.
-6. **Nenhuma chamada de rede** fora da sala do VTT e do botão "Verificar atualizações" (só quando o usuário clica,
-   feito pelo processo principal; ADR 0017). A CSP (`app/csp.ts`) não ganha `unsafe-eval` nem domínios externos.
+6. **Nenhuma chamada de rede** fora da sala do VTT e da consulta de atualizações em `api.github.com` (o botão
+   "Verificar atualizações" e a consulta diária ao abrir, desligável em Privacidade; instalar só com clique; feito pelo
+   processo principal ou pelo plugin do Android; ADR 0017 e 0038). A CSP (`app/csp.ts`) não ganha `unsafe-eval` nem domínios externos.
    Imagens e fontes vêm do próprio app ou do cofre.
 7. **O dialeto Markdown é um só.** O leitor (`app/src/components/Markdown.tsx`, `app/src/markdown/blocks.ts`,
    `remark-obsidian.ts`, `styles/markdown.css`) e o live preview (`components/vault/live-preview.tsx`,
@@ -110,3 +111,8 @@ pré-release quando ele pedir, seguindo a [ADR 0025](docs/adr/0025-lancamentos.m
 sempre maior que o anterior, nenhum arquivo da versão anterior some sem explicação no PR de versão, nada incompleto
 quebra o que já funciona, notas em “Pronto para testar”, “Em construção” e “Problemas conhecidos”, e o que conferir
 acrescentado no fim de `docs/04-testes-pendentes.md`.
+
+## Aceite do Android na atualização 1.5 (U82)
+
+PR que mexe em tela do celular ou em transferência só se mescla com o job **`android-vault` verde** no CI.
+O dono confere esse resultado antes do merge.

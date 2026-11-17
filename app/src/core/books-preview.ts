@@ -77,3 +77,6 @@ export function chapterTitle(chapter: PreviewChapter): { title: string | null; b
   if (first && first[1] === "#" && titleKey(first[2]!) === titleKey(chapter.title)) return { title: chapter.title, body: chapter.body.slice(first[0].length) }
   return { title: chapter.title, body: chapter.body }
 }
+
+/** Comparação de títulos usada também na exportação, sem alterar o desenho do leitor. */
+export { titleKey as bookTitleKey }

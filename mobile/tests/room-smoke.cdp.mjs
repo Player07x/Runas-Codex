@@ -103,6 +103,10 @@ try {
   await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`,400)
   await androidPlayer.until(`document.querySelector('.player-host canvas') && document.querySelector('.player-tools')`,400)
   check('Android entra como jogador da sala hospedada no próprio aparelho',true)
+  // U78: “Sair da mesa” (com a confirmação aceita) libera o assento e volta ao lobby do jogador.
+  await androidPlayer.run(`window.confirm=()=>true;document.querySelector('[data-player-leave]').click();true`)
+  await androidPlayer.until(`document.querySelector('.player-lobby input') && !document.querySelector('.player-seat-badge')`,400)
+  check('Sair da mesa volta ao lobby do jogador',true)
   await writeFile(output+'/android-jogador.png',execFileSync('adb',['exec-out','screencap','-p'],{timeout:15000,maxBuffer:16*1024*1024}))
   adb('shell','am','start','-n','dev.runas.codex/.MainActivity');await app.until('document.hasFocus()')
   await appButton('Desligar')

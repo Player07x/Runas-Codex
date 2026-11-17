@@ -1,4 +1,3 @@
-import { flushOpenNotes } from "../lib/vault-notes"
 import { ImageFolderSettings } from "../components/vault/NoteImages"
 import { AccessibilitySettings, AppearanceSettings } from "../components/Appearance"
 import { HelpScreen } from "./HelpScreen"
@@ -9,7 +8,7 @@ import { useNarrow } from "../components/editor/use-narrow"
 import { Modal, Switch, useToast } from "../components/ui"
 import { attachmentFolderLabel, unusedAttachments } from "../core/attachments"
 import { useVault } from "../platform/VaultProvider"
-import type { UpdateInfo } from "../core/updates"
+import { installedMessage, updates, useUpdates } from "../lib/updates"
 import snippetCss from "../markdown/runas-codex.css?raw"
 import { PinRow } from "../components/vault/PinSettings"
 import { BackupSettings } from "../components/vault/BackupSettings"
@@ -55,7 +54,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   const run = (action: () => Promise<unknown>) => () => {
     setBusy(true)
     action()
-      .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      .catch((error: unknown) => toast.error(error))
       .finally(() => setBusy(false))
   }
   const vaultHint = vault.info
@@ -178,10 +177,11 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     ) },
     { id: "privacidade", title: "Privacidade e atualizações", icon: <ShieldCheck size={16} />, body: (
       <SettingsCard icon={<ShieldCheck size={16} />} title="Privacidade e atualizações">
-        <Row title="Telemetria" hint="Não existe. O app não chama a internet fora da sala.">
+        <Row title="Telemetria" hint="Não existe. Fora da sala do VTT, o app só consulta as versões publicadas (abaixo).">
           <span className="chip green">desligada sempre</span>
         </Row>
         <UpdateRow />
+        <AutoUpdateRow />
         <PinRow />
       </SettingsCard>
     ) },
@@ -217,7 +217,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         </nav>
         <div className="settings-sections">
           {current && <a className="settings-back" href="#/config"><ChevronLeft size={16} /> Configurações</a>}
-          {sections.map((item) => (
+          {sections.filter((item) => item.id === current).map((item) => (
             <section key={item.id} id={`config-${item.id}`} className={`settings-section${item.id === current ? " is-current" : ""}`} aria-label={item.title} tabIndex={-1} data-route-focus={item.id === current || undefined}>
               {item.body}
             </section>
@@ -268,21 +268,14 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
 const formatBytes = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`)
 
 /**
- * "Verificar atualizações" (ADR 0017): o app só vai à internet quando você clica. Mostra a versão nova, baixa o
- * instalador deste sistema da release do GitHub, confere a soma SHA-256 e instala.
+ * "Verificar atualizações" (ADR 0017 e 0038): mostra a versão nova, baixa o instalador deste sistema da release do
+ * GitHub, confere a soma SHA-256 e instala. Usa o mesmo estado do item “Atualizar para …” da barra lateral.
  */
 function UpdateRow() {
-  const vault = useVault()
+  const platform = useVault().platform
   const toast = useToast()
-  const platform = vault.platform
-  const [version, setVersion] = useState("")
-  const [info, setInfo] = useState<UpdateInfo | null>(null)
-  const [state, setState] = useState<"parado" | "verificando" | "baixando">("parado")
-  const [progress, setProgress] = useState<{ received: number; total: number } | null>(null)
-  const [error, setError] = useState("")
-  useEffect(() => {
-    platform.appVersion?.().then(setVersion, () => setVersion(""))
-  }, [platform])
+  const { current, info, phase, progress, error, auto } = useUpdates()
+  useEffect(() => void updates().loadVersion(platform), [platform])
 
   if (!platform.checkUpdate || !platform.installUpdate) {
     return (
@@ -291,27 +284,13 @@ function UpdateRow() {
       </Row>
     )
   }
-  const check = () => {
-    setState("verificando")
-    setError("")
-    platform.checkUpdate!().then(setInfo, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))).finally(() => setState("parado"))
-  }
+  const check = () => void updates().check(platform)
   const install = () => {
-    setState("baixando")
-    setError("")
-    setProgress(null)
-    flushOpenNotes().then(() => platform.installUpdate!((received, total) => setProgress({ received, total }))).then(
-      (result) => {
-        if (result === "instalador-aberto") toast("O instalador abriu. O Runas-Codex vai fechar para ele trocar os arquivos.")
-        else if (result === "reiniciar") toast("Atualizado. O Runas-Codex está reiniciando.")
-        else toast("O instalador do sistema abriu. Confirme a atualização por lá; cancelar mantém o app atual.")
-      },
-      (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)),
-    ).finally(() => setState("parado"))
+    updates().install(platform).then((result) => result && toast(installedMessage(result)), () => {})
   }
   const latest = info?.latest
   const hint = !info
-    ? `Versão instalada: ${version || "…"}. O app só consulta a internet (as versões publicadas no GitHub) quando você clica.`
+    ? `Versão instalada: ${current || "…"}. ${auto ? "O app consulta as versões publicadas no GitHub uma vez por dia, ao abrir, e quando você clica." : "O app só consulta as versões publicadas no GitHub quando você clica."}`
     : !info.newer
       ? `Você está na versão mais nova (${info.current}).`
       : `Versão ${latest!.version} disponível${latest!.publishedAt ? `, publicada em ${new Date(latest!.publishedAt).toLocaleDateString("pt-BR")}` : ""}. Instalada: ${info.current}.`
@@ -321,7 +300,7 @@ function UpdateRow() {
         <span className="small" style={{ fontWeight: 650 }}>Verificar atualizações</span>
         <span className="tiny faint">{hint}</span>
         {info?.newer && !info.asset && <span className="tiny" style={{ color: "var(--gold)" }}>Esta versão não tem instalador para este sistema.</span>}
-        {state === "baixando" && <span className="tiny">{progress && progress.total > 0 && progress.received >= progress.total ? info?.asset?.name.endsWith(".deb") ? "Instalando… Confirme a autorização do sistema. O app reinicia após atualizar." : "Preparando a instalação…" : progress ? `Baixando ${formatBytes(progress.received)} de ${formatBytes(progress.total)}…` : "Baixando…"}</span>}
+        {phase === "baixando" && <span className="tiny">{progress && progress.total > 0 && progress.received >= progress.total ? info?.asset?.name.endsWith(".deb") ? "Instalando… Confirme a autorização do sistema. O app reinicia após atualizar." : "Preparando a instalação…" : progress ? `Baixando ${formatBytes(progress.received)} de ${formatBytes(progress.total)}…` : "Baixando…"}</span>}
         {error && <span className="tiny" role="alert" style={{ color: "var(--red)" }}>{error}</span>}
         {info?.newer && latest?.notes && (
           <details className="tiny" style={{ marginTop: 4 }}>
@@ -331,15 +310,27 @@ function UpdateRow() {
         )}
       </div>
       <div className="row-wrap">
-        <button className="btn sm" disabled={state !== "parado"} onClick={check}>
-          {state === "verificando" ? "Verificando…" : "Verificar"}
+        <button className="btn sm" disabled={phase !== "parado"} onClick={check}>
+          {phase === "verificando" ? "Verificando…" : "Verificar"}
         </button>
         {info?.newer && info.asset && (
-          <button className="btn sm primary" disabled={state !== "parado"} onClick={install}>
+          <button className="btn sm primary" disabled={phase !== "parado"} onClick={install}>
             Baixar e instalar ({formatBytes(info.asset.size)})
           </button>
         )}
       </div>
     </div>
+  )
+}
+
+/** Consultar sozinho uma vez por dia (U90, ADR 0038): ligado por padrão; a escolha vale para este aparelho. */
+function AutoUpdateRow() {
+  const platform = useVault().platform
+  const { auto } = useUpdates()
+  if (!platform.checkUpdate || !platform.installUpdate) return null
+  return (
+    <Row title="Procurar atualizações sozinho" hint="Uma vez por dia, ao abrir, o app pergunta ao GitHub (api.github.com) qual é a versão mais nova. Nada do cofre é enviado. Com versão nova, aparece “Atualizar para …” no fim da barra lateral (no celular, em Mais).">
+      <Switch on={auto} label="Procurar atualizações sozinho" onChange={(on) => updates().setAuto(on)} />
+    </Row>
   )
 }

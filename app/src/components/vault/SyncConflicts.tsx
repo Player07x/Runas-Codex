@@ -95,7 +95,7 @@ export function SyncConflictSettings() {
     setBusy(true)
     action()
       .then(() => setComparing(null))
-      .catch((error: unknown) => toast(error instanceof Error ? error.message : String(error)))
+      .catch((error: unknown) => toast.error(error))
       .finally(() => setBusy(false))
   }
 
