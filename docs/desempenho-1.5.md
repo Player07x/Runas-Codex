@@ -55,7 +55,9 @@ inicial. O relatório lista bytes e gzip por chunk. O Electron-Vite gera esses c
 
 ## Orçamento e reprodução
 
-O CI executa o cenário completo três vezes. Abertura, índice, maior troca e categoria têm teto = mediana local × 3
+O CI executa o cenário completo três vezes, com Xvfb. Como o workflow Release já faz, somente o runner Linux
+usa `--no-sandbox` para contornar a restrição de namespaces; o executor recusa `--ci-no-sandbox` fora do GitHub
+Actions. Essa opção não entra no app instalado nem no build distribuído. Abertura, índice, maior troca e categoria têm teto = mediana local × 3
 + folga fixa (1.000, 500, 300 e 500 ms). Cada tela também tem teto próprio = maior medição local × 3 + 300 ms;
 assim Configurações não esconde uma regressão da Agenda. JS tem teto = base × 1,15 + 100.000 bytes.
 Cada execução é conferida; número inválido, resultado ausente, menos de 10 mil notas, categoria diferente de 420

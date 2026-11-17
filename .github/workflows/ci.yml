@@ -39,7 +39,8 @@ jobs:
         env:
           RUNAS_PROFILE: "1"
       - name: Abrir, trocar de tela e categoria com 420 artigos
-        run: xvfb-run -a node desktop/benchmarks/run.mjs "$RUNNER_TEMP/runas-performance"
+        # Como no Release: o runner restringe namespaces; a flag só é aceita pelo executor no GitHub Actions.
+        run: xvfb-run -a node desktop/benchmarks/run.mjs "$RUNNER_TEMP/runas-performance" --ci-no-sandbox
       - name: Guardar números, renderizações e tamanhos dos pacotes
         if: always()
         uses: actions/upload-artifact@v4

@@ -8,6 +8,8 @@ import electron from "electron"
 import { createPerformanceFixture } from "./fixture.mjs"
 
 const desktop = resolve(dirname(fileURLToPath(import.meta.url)), ".."), output = resolve(process.argv[2] ?? "desempenho-local")
+const ciNoSandbox = process.argv.includes("--ci-no-sandbox")
+if (ciNoSandbox && (process.env.GITHUB_ACTIONS !== "true" || process.platform !== "linux")) throw Error("--ci-no-sandbox é exclusivo do runner Linux do GitHub Actions.")
 const record = process.argv.includes("--record"), budgetFile = join(desktop, "benchmarks/baseline.json")
 const work = await mkdtemp(join(tmpdir(), "codex-performance-"))
 const reports = []
@@ -19,7 +21,7 @@ try {
   for (let run = 1; run <= 3; run++) {
     const profile = join(work, "perfil-" + run), temporary = join(work, "tmp-" + run), reportFile = join(output, `run-${run}.json`)
     await mkdir(profile); await mkdir(temporary)
-    const args = [".", "--smoke", "--performance", "--vault=" + join(work, "cofre"), "--user-data-dir=" + profile, "--performance-output=" + reportFile]
+    const args = [".", "--smoke", "--performance", ...(ciNoSandbox ? ["--no-sandbox"] : []), "--vault=" + join(work, "cofre"), "--user-data-dir=" + profile, "--performance-output=" + reportFile]
     if (!record) args.push("--performance-budget=" + budgetFile)
     const started = Date.now()
     args.push("--benchmark-start=" + started)
@@ -29,7 +31,7 @@ try {
     const timeout = setTimeout(() => child.kill("SIGTERM"), 240000)
     const exit = await new Promise((resolve, reject) => { child.once("error", reject); child.once("exit", (code, signal) => resolve({ code, signal })) }).finally(() => clearTimeout(timeout))
     await writeFile(join(output, `run-${run}.log`), log)
-    if (exit.code !== 0) throw Error(`Roteiro ${run} falhou (${JSON.stringify(exit)}). Veja ${join(output, `run-${run}.log`)}`)
+    if (exit.code !== 0) { console.error(log.slice(-20000)); throw Error(`Roteiro ${run} falhou (${JSON.stringify(exit)}). Veja ${join(output, `run-${run}.log`)}`) }
     const report = JSON.parse(await readFile(reportFile, "utf8")); reports.push(report)
     console.log(JSON.stringify({ run, ...report.numbers, rendererMemory: report.rendererMemory }))
     await rm(profile, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 })
