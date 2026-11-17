@@ -5,10 +5,14 @@ import {
   advanceInitiative, initiativeFromEncounter, initiativeYaml, parseInitiative, parseTreasury, treasuryYaml,
   type Initiative, type TreasureItem, type Treasury,
 } from "../../core/campaign-tools"
+import { wikiLinkParts } from "../../core/inline-links"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
+import { href } from "../../lib/router"
+import { useSinglePane } from "../../lib/tabs"
+import { noteRoute } from "../../lib/vault-notes"
 import { useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
-import type { CampaignData } from "./campaign-state"
+import { questRoute, type CampaignData } from "./campaign-state"
 import { FormDialog } from "./campaign-dialogs"
 import { useUndoable } from "./campaign-edits"
 import { CampaignRoomTools } from "./CampaignRoomTools"
@@ -101,6 +105,8 @@ function TreasuryPanel({ data }: { data: CampaignData }) {
   const tool = useToolNote(data, TREASURY_TOOL)
   const undoable = useUndoable()
   const [editing, setEditing] = useState<TreasureItem | null>(null)
+  // U106: até 860 px a tabela de quatro colunas vira um cartão por item.
+  const narrow = useSinglePane()
   let state: Treasury = { coins: "", items: [] }
   let error = ""
   try {
@@ -139,6 +145,33 @@ function TreasuryPanel({ data }: { data: CampaignData }) {
           </form>
           {state.items.length === 0 ? (
             <p className="muted small">Nenhum item. Recompensas de missões concluídas também chegam aqui.</p>
+          ) : narrow ? (
+            <ul className="treasure-cards">
+              {state.items.map((item) => (
+                <li key={item.id} className="treasure-card">
+                  <strong className="treasure-card-name">{item.name}</strong>
+                  <div className="treasure-card-fields">
+                    <span className="muted small">Quantidade</span>
+                    <span className="row treasure-quantity">
+                      <button className="icon-btn" disabled={tool.disabled || item.quantity <= 0} aria-label={`Diminuir ${item.name}`} onClick={() => setQuantity(item, item.quantity - 1)}>
+                        <Minus size={16} />
+                      </button>
+                      <span className="mono">{item.quantity}</span>
+                      <button className="icon-btn" disabled={tool.disabled} aria-label={`Aumentar ${item.name}`} onClick={() => setQuantity(item, item.quantity + 1)}>
+                        <Plus size={16} />
+                      </button>
+                    </span>
+                    <span className="muted small">Portador</span>
+                    <span>{item.holder || "Grupo"}</span>
+                  </div>
+                  {item.notes && <p className="preserve-lines small"><LinkedText text={item.notes} from={tool.note!.path} data={data} /></p>}
+                  <div className="row treasure-card-actions">
+                    <button className="btn sm ghost" disabled={tool.disabled} aria-label={`Editar ${item.name}`} onClick={() => setEditing(item)}><Pencil size={15} /> Editar</button>
+                    <button className="btn sm ghost danger" disabled={tool.disabled} aria-label={`Remover ${item.name} do tesouro`} onClick={() => remove(item)}><Trash size={15} /> Remover</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : (
             <div className="table-wrap">
               <table>
@@ -161,7 +194,7 @@ function TreasuryPanel({ data }: { data: CampaignData }) {
                         </span>
                       </td>
                       <td>{item.holder || "Grupo"}</td>
-                      <td className="preserve-lines">{item.notes}</td>
+                      <td className="preserve-lines"><LinkedText text={item.notes} from={tool.note!.path} data={data} /></td>
                       <td>
                         <OverflowMenu label={`Ações de ${item.name}`} triggerClassName="icon-btn sm" items={[
                           { label: "Editar…", icon: <Pencil size={15} />, disabled: tool.disabled, onSelect: () => setEditing(item) },
@@ -184,6 +217,17 @@ function TreasuryPanel({ data }: { data: CampaignData }) {
       )}
     </section>
   )
+}
+
+/** U106: “Recompensa de [[Missão]]” com a missão como link (a página dela na campanha, se for desta campanha). */
+function LinkedText({ text, from, data }: { text: string; from: string; data: CampaignData }) {
+  const vault = useVault()
+  return wikiLinkParts(text).map((part, i) => {
+    if ("text" in part) return part.text
+    const dest = vault.index?.resolve(part.link, from).dest
+    if (!dest) return <span key={i} className="muted">{part.label}</span>
+    return <a key={i} href={href(data.quests.some((quest) => quest.path === dest) ? questRoute(data.campaign.name, dest) : noteRoute(dest))}>{part.label}</a>
+  })
 }
 
 type ItemFields = Omit<TreasureItem, "id">

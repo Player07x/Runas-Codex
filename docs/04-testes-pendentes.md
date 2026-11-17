@@ -1938,3 +1938,14 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Quadro e Tesouro no celular (1.5.0, PR V4: U96, U106)
+
+- [ ] Celular, Campanha › Quadro: a barra mostra Texto, Nota, Ligar e “Mais”, sem nomes por cima uns dos outros.
+      “Mais” tem Imagem do cofre, Link, Grupo, Selecionar vários, Ajustar altura, Apagar selecionado, o zoom e
+      Enquadrar tudo; com um cartão escolhido, também as cores (a atual marcada).
+- [ ] Computador, Quadro: a barra continua igual à da 1.4.
+- [ ] Celular, Campanha › Ferramentas › Tesouro do grupo: cada item é um cartão com quantidade (− e +), portador,
+      notas e os botões “Editar” e “Remover”. Uma recompensa de missão aparece como “Recompensa de <link>”, e o
+      link abre a missão na campanha.
+- [ ] Computador, Tesouro: a tabela continua, e a origem da recompensa também vira link na coluna Notas.

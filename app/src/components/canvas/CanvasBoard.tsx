@@ -1,7 +1,7 @@
 import { pinchCanvas, selectCanvasBox, type CanvasPoint } from "../../core/canvas-tools"
 import { CanvasImageCrop, CanvasImagePicker } from "./CanvasImageTools"
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
-import { Cable, FileText, FoldVertical, Group, Link2, Maximize, Minus, Palette, Plus, StickyNote, Trash, Type } from "lucide-react"
+import { Cable, Ellipsis, FileText, FoldVertical, Group, ImageIcon, Link2, Maximize, Minus, Palette, Plus, StickyNote, Trash, Type } from "lucide-react"
 import {
   addEdge, addNode, anchorPoint, canvasBounds, canvasToSave, colorCss, CANVAS_COLORS, moveNodes, nodesInside, parseCanvas, removeEdge, removeNodes, updateEdge, updateNode,
   type CanvasDoc, type CanvasNode, type CanvasSide, type NodeInput,
@@ -15,6 +15,7 @@ import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { LinkPicker } from "../vault/dialogs"
 import { Modal, useToast } from "../ui"
+import { OverflowMenu, type MenuEntry } from "../kit/OverflowMenu"
 import "./canvas.css"
 
 /**
@@ -372,13 +373,29 @@ export function CanvasBoard({ path }: { path: string }) {
   const nodes = doc.nodes.map((node) => (moving && shiftedIds?.has(node.id) ? { ...node, x: node.x + moving.dx, y: node.y + moving.dy } : node))
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const current = selected ? byId.get(selected) : undefined
+  const paint = (color: string) => (current ? change(updateNode(doc, current.id, { color: current.color === color ? "" : color })) : selectedEdge && change(updateEdge(doc, selectedEdge, { color })))
+  // U96: no celular (até 860 px) a barra mostra só Texto, Nota e Ligar com o nome; o resto fica neste “Mais”.
+  const more: MenuEntry[] = [
+    { label: "Imagem do cofre", icon: <ImageIcon size={15} />, disabled: readOnly, onSelect: () => setImagePicker(true) },
+    { label: "Link", icon: <Link2 size={15} />, disabled: readOnly, onSelect: () => setAskLink(true) },
+    { label: "Grupo", icon: <Group size={15} />, disabled: readOnly, onSelect: () => create({ type: "group", label: "Grupo", width: 520, height: 320 }) },
+    "separator",
+    { label: multi ? "Parar de selecionar vários" : "Selecionar vários", hint: selectedIds.length > 1 ? `${selectedIds.length} cartões` : undefined, onSelect: () => setMulti(!multi) },
+    { label: "Ajustar altura", icon: <FoldVertical size={15} />, disabled: readOnly || !current || !overflowing[current.id], onSelect: () => current && overflowing[current.id] && change(updateNode(doc, current.id, { height: overflowing[current.id] })) },
+    { label: "Apagar selecionado", icon: <Trash size={15} />, danger: true, disabled: readOnly || (!selected && !selectedEdge), onSelect: removeSelected },
+    ...(!readOnly && (current || selectedEdge) ? (["separator", ...CANVAS_COLORS.map((c): MenuEntry => ({ label: `Cor: ${c.label}`, icon: <span className="canvas-swatch-dot" style={{ background: c.css }} />, hint: current?.color === c.id ? "atual" : undefined, onSelect: () => paint(c.id) }))] as MenuEntry[]) : []),
+    "separator",
+    { label: "Aumentar zoom", icon: <Plus size={15} />, hint: `${Math.round(view.zoom * 100)} %`, onSelect: () => zoomBy(1.2) },
+    { label: "Diminuir zoom", icon: <Minus size={15} />, onSelect: () => zoomBy(1 / 1.2) },
+    { label: "Enquadrar tudo", icon: <Maximize size={15} />, onSelect: () => fit() },
+  ]
 
   return (
     <NoteSetContext.Provider value={noteSet}>
       <div className="canvas-shell">
         <div className="canvas-toolbar" role="toolbar" aria-label="Quadro">
-          <button className="btn sm" aria-pressed={multi} onClick={()=>setMulti(!multi)}>Selecionar vários</button><span className="small">{selectedIds.length>1?`${selectedIds.length} cartões selecionados`:""}</span>
-          <button className="btn sm" disabled={readOnly} onClick={()=>setImagePicker(true)}>Imagem do cofre</button>
+          <button className="btn sm canvas-wide" aria-pressed={multi} onClick={()=>setMulti(!multi)}>Selecionar vários</button><span className="small canvas-wide">{selectedIds.length>1?`${selectedIds.length} cartões selecionados`:""}</span>
+          <button className="btn sm canvas-wide" disabled={readOnly} onClick={()=>setImagePicker(true)}>Imagem do cofre</button>
           <button className="btn sm" disabled={readOnly} onClick={() => create({ type: "text", text: "", width: 260, height: 120 })}>
             <Type size={14} /> Texto
           </button>
@@ -386,20 +403,20 @@ export function CanvasBoard({ path }: { path: string }) {
             <FileText size={14} /> Nota
           </button>
           <button
-            className="btn sm"
+            className="btn sm canvas-wide"
             disabled={readOnly}
             onClick={() => setAskLink(true)}
           >
             <Link2 size={14} /> Link
           </button>
-          <button className="btn sm" disabled={readOnly} onClick={() => create({ type: "group", label: "Grupo", width: 520, height: 320 })}>
+          <button className="btn sm canvas-wide" disabled={readOnly} onClick={() => create({ type: "group", label: "Grupo", width: 520, height: 320 })}>
             <Group size={14} /> Grupo
           </button>
-          <span className="canvas-sep" />
+          <span className="canvas-sep canvas-wide" />
           <button className={`btn sm ${linking ? "primary" : ""}`} disabled={readOnly || !selected} onClick={() => setLinking(linking ? null : selected)} title="Escolha um cartão e depois clique no cartão de destino">
             <Cable size={14} /> {linking ? "Clique no destino…" : "Ligar"}
           </button>
-          <div className="canvas-colors" aria-label="Cor">
+          <div className="canvas-colors canvas-wide" aria-label="Cor">
             <Palette size={14} />
             {CANVAS_COLORS.map((c) => (
               <button
@@ -409,27 +426,28 @@ export function CanvasBoard({ path }: { path: string }) {
                 title={c.label}
                 aria-label={`Cor ${c.label}`}
                 disabled={readOnly || (!current && !selectedEdge)}
-                onClick={() => (current ? change(updateNode(doc, current.id, { color: current.color === c.id ? "" : c.id })) : selectedEdge && change(updateEdge(doc, selectedEdge, { color: c.id })))}
+                onClick={() => paint(c.id)}
               />
             ))}
           </div>
-          <button className="btn sm" disabled={readOnly || !current || !overflowing[current.id]} onClick={() => current && overflowing[current.id] && change(updateNode(doc, current.id, { height: overflowing[current.id] }))} title="Aumenta o cartão escolhido até o texto caber inteiro">
+          <button className="btn sm canvas-wide" disabled={readOnly || !current || !overflowing[current.id]} onClick={() => current && overflowing[current.id] && change(updateNode(doc, current.id, { height: overflowing[current.id] }))} title="Aumenta o cartão escolhido até o texto caber inteiro">
             <FoldVertical size={14} /> Ajustar altura
           </button>
-          <button className="icon-btn sm" disabled={readOnly || (!selected && !selectedEdge)} onClick={removeSelected} title="Apagar (Delete)" aria-label="Apagar selecionado">
+          <button className="icon-btn sm canvas-wide" disabled={readOnly || (!selected && !selectedEdge)} onClick={removeSelected} title="Apagar (Delete)" aria-label="Apagar selecionado">
             <Trash size={15} />
           </button>
-          <span className="grow" />
-          <button className="icon-btn sm" onClick={() => zoomBy(1 / 1.2)} aria-label="Diminuir zoom">
+          <span className="grow canvas-wide" />
+          <button className="icon-btn sm canvas-wide" onClick={() => zoomBy(1 / 1.2)} aria-label="Diminuir zoom">
             <Minus size={15} />
           </button>
-          <span className="tiny faint canvas-zoom">{Math.round(view.zoom * 100)}%</span>
-          <button className="icon-btn sm" onClick={() => zoomBy(1.2)} aria-label="Aumentar zoom">
+          <span className="tiny faint canvas-zoom canvas-wide">{Math.round(view.zoom * 100)}%</span>
+          <button className="icon-btn sm canvas-wide" onClick={() => zoomBy(1.2)} aria-label="Aumentar zoom">
             <Plus size={15} />
           </button>
-          <button className="icon-btn sm" onClick={() => fit()} title="Enquadrar tudo" aria-label="Enquadrar tudo">
+          <button className="icon-btn sm canvas-wide" onClick={() => fit()} title="Enquadrar tudo" aria-label="Enquadrar tudo">
             <Maximize size={15} />
           </button>
+          <span className="canvas-narrow"><OverflowMenu label="Mais ações do quadro" triggerClassName="btn sm" trigger={<><Ellipsis size={16} /> Mais</>} items={more} /></span>
         </div>
 
         {current?.type==="file" && IMAGE.test(current.file??"") && !readOnly && <CanvasImageCrop key={current.id} node={current} path={path} onCrop={(file,original)=>{const latest=currentDoc.current;if(!latest||latest.nodes.find(n=>n.id===current.id)?.file!==original){toast("A imagem mudou durante o recorte. O anexo criado foi preservado.");return}change(updateNode(latest,current.id,{file,runas_original:typeof current.runas_original==="string"?current.runas_original:original}))}}/>}
