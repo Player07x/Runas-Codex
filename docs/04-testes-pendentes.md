@@ -1939,6 +1939,50 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
 
+## Consertos visuais pequenos (1.5.0, PR V1: U84, U85, U88, U92, U102)
+
+- [ ] Windows e Linux: andar por Notas, Agenda, Wiki e Configurações; o título da janela fica sempre “Runas-Codex”.
+      Uma nota aberta em janela própria continua com o nome dela.
+- [ ] Gráfico (Notas e Wiki): abrir e dar zoom logo de cara, antes de ele parar de se mexer; o zoom fica. O botão de
+      enquadrar continua enquadrando tudo.
+- [ ] VTT › Criar Sala, com uma mesa que tem capa: o ícone do mapa não aparece por cima do nome da mesa.
+- [ ] Celular (ou janela estreita): concluir uma missão com recompensa; o aviso cabe na tela, o botão “Mandar a
+      recompensa para o Tesouro” fica embaixo da mensagem, inteiro, e o aviso não some enquanto o dedo ou o mouse
+      está nele.
+- [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
+- [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
+      campanha continua “Próxima sessão · <campanha>”.
+## Painéis: botão na barra e celular (1.5.0, PR V2: U87, U97)
+
+- [ ] Computador, Agenda: recolher o “Painel da agenda”. A faixa estreita à direita some, o calendário ocupa a
+      largura toda e o botão “Painel” aparece no fim da barra do período (depois de Mês · Semana · Dia · Lista ·
+      Tarefas). Clicar nele abre o painel; o foco vai para o botão de recolher do painel, e de volta ao fechar.
+- [ ] Computador, Wiki › Calendário: o mesmo, com o botão “Detalhes” depois de “Configurar”.
+- [ ] Celular, Agenda: recolher o painel, tocar num dia com eventos; o painel do dia sobe com os eventos. As setas do
+      teclado só mudam o dia escolhido.
+- [ ] Celular, Livros: com o Sumário aberto, ⋯ › “Exportar o livro…”; o Sumário fecha e o formulário de exportação
+      aparece.
+
+## Abas da nota no celular (1.5.0, PR V3: U81, R2)
+
+- [ ] Celular (ou janela com até 640 px), Notas, com duas ou três notas em abas: a faixa de abas não aparece mais em
+      cima da nota. Na barra da nota há um quadradinho com o número de abas; tocar nele abre a folha “Abas abertas”.
+- [ ] Na folha: tocar no nome troca de aba e fecha a folha; ⋯ mostra Fixar, Abrir à direita, Abrir embaixo, Fechar as
+      outras e Fechar; × fecha a aba; “Empilhar as abas” e o botão de workspaces (no canto) continuam ali.
+- [ ] A barra da nota fica só com os botões (voltar, abas, salvo, leitura, painel, ⋯); o nome continua na barra do
+      app e a pasta aparece na folha. O texto começa mais alto do que na 1.4.
+- [ ] Com a nota dividida (Abrir à direita), a folha mostra “Painel ativo” e “Fechar este painel”.
+- [ ] Tablet ou janela entre 641 e 860 px, e o computador: a faixa de abas continua como antes.
+## Quadro e Tesouro no celular (1.5.0, PR V4: U96, U106)
+
+- [ ] Celular, Campanha › Quadro: a barra mostra Texto, Nota, Ligar e “Mais”, sem nomes por cima uns dos outros.
+      “Mais” tem Imagem do cofre, Link, Grupo, Selecionar vários, Ajustar altura, Apagar selecionado, o zoom e
+      Enquadrar tudo; com um cartão escolhido, também as cores (a atual marcada).
+- [ ] Computador, Quadro: a barra continua igual à da 1.4.
+- [ ] Celular, Campanha › Ferramentas › Tesouro do grupo: cada item é um cartão com quantidade (− e +), portador,
+      notas e os botões “Editar” e “Remover”. Uma recompensa de missão aparece como “Recompensa de <link>”, e o
+      link abre a missão na campanha.
+- [ ] Computador, Tesouro: a tabela continua, e a origem da recompensa também vira link na coluna Notas.
 ## Wiki no celular e evento que cruza a meia-noite (1.5.0, PR V5: U101, U105)
 
 - [ ] Celular, Wiki (abertura em “Categorias e artigos”): logo abaixo da busca há o índice das categorias; tocar em

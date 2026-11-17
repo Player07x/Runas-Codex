@@ -17,7 +17,7 @@ import { NotesLockScreen } from "../components/vault/NotesLock"
 import { ReplaceDialog } from "../components/vault/ReplaceDialog"
 import "../components/vault/note-actions.css"
 import { toggleFavorite, useFavorites } from "../lib/bookmarks"
-import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorkspace, setLayout, useSinglePane, useTabLayout, useWorkspaces, type OpenHow } from "../lib/tabs"
+import { deleteWorkspace, IS_NOTE_WINDOW, OpenNoteContext, pruneTabs, saveWorkspace, setLayout, TabSwitcherSlot, useSinglePane, useTabLayout, useWorkspaces, type OpenHow } from "../lib/tabs"
 import { lockNotes, useNotesLock } from "../lib/notes-lock"
 import { scopeOf } from "../core/spaces"
 import { basename, dirname, joinPath, noteName } from "../core/text"
@@ -715,6 +715,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
                 ) : (
                   <div className="page">
                     <p className="muted">“{basename(tabPath)}” não abre aqui.</p>
+                    <TabSwitcherSlot />
                   </div>
                 )
               }

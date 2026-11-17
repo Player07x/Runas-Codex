@@ -113,7 +113,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {toast && (
         <div className="toast" role="status" onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
-          <CheckCircle2 size={16} color="var(--green)" /> {toast.message}
+          <CheckCircle2 size={16} color="var(--green)" style={{ flex: "none" }} /> <span className="toast-message">{toast.message}</span>
           {toast.action && (
             <button ref={actionButton} type="button" className="btn sm ghost toast-action" onClick={() => {
               const action = toast.action!
