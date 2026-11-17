@@ -1939,6 +1939,19 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
 
+## Consertos visuais pequenos (1.5.0, PR V1: U84, U85, U88, U92, U102)
+
+- [ ] Windows e Linux: andar por Notas, Agenda, Wiki e Configurações; o título da janela fica sempre “Runas-Codex”.
+      Uma nota aberta em janela própria continua com o nome dela.
+- [ ] Gráfico (Notas e Wiki): abrir e dar zoom logo de cara, antes de ele parar de se mexer; o zoom fica. O botão de
+      enquadrar continua enquadrando tudo.
+- [ ] VTT › Criar Sala, com uma mesa que tem capa: o ícone do mapa não aparece por cima do nome da mesa.
+- [ ] Celular (ou janela estreita): concluir uma missão com recompensa; o aviso cabe na tela, o botão “Mandar a
+      recompensa para o Tesouro” fica embaixo da mensagem, inteiro, e o aviso não some enquanto o dedo ou o mouse
+      está nele.
+- [ ] Celular: os números do menu “Mais” (Wiki, Campanhas, Livros) são os mesmos da barra lateral do computador.
+- [ ] Início: um evento pessoal com contagem regressiva aparece como “Próximo evento · <categoria>”; uma sessão de
+      campanha continua “Próxima sessão · <campanha>”.
 ## Painéis: botão na barra e celular (1.5.0, PR V2: U87, U97)
 
 - [ ] Computador, Agenda: recolher o “Painel da agenda”. A faixa estreita à direita some, o calendário ocupa a
