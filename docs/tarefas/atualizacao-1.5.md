@@ -482,3 +482,13 @@ Próximas, na ordem: C → G → N (sobre M+G) → D → K → J2 → A2 → R �
 Tipos, suíte, builds, os dois smokes e o JUnit da sala (`javac`) passaram.
 
 **Pendente no #163:** o smoke de gravação no Windows do CI falhou duas vezes em `position`/`editorClick`; o Linux passa. Investigar antes de tirar do rascunho.
+
+**#163, segundo conserto** (4eb93c0): no Windows, a imagem colada (`insertBlock`) usava a seleção do estado, que começava em 0, e entrava antes do `---`. Agora o cursor já abre no corpo, depois das propriedades escondidas. Tipos, suíte, builds e os dois smokes passaram; falta o Windows do CI. #164 saiu do rascunho (CI verde). #166: o android-revisao falhou no túnel da Cloudflare (`fetch failed`, rede externa), reexecutado.
+
+**G/U90 → PR #167** (`shell/1.5-aviso-de-atualizacao`):
+- consulta diária ao abrir, ligada por padrão, desligável em Privacidade (`localStorage`);
+- “Atualizar para 1.x” no fim da barra lateral e no Mais (com ponto no botão), progresso no item;
+- um estado só para Configurações e a barra (`lib/updates.ts`), regra pura em `core/update-schedule.ts`;
+- ADR 0038, regra 6, docs/02, lista de recursos e ajuda; no smoke a consulta é contada e recusada (`updateChecks: 1`).
+
+Tipos, suíte (1.056 + 197), builds e os dois smokes passaram. Próximas: N (sobre M+G) → D → K → J2 → A2 → R → L → conferência final.
