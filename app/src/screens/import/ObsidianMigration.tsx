@@ -90,7 +90,7 @@ export function ObsidianMigration() {
       if (!calendar) throw new Error("O arquivo não é um calendário exportado do Fantasy-Calendar.")
       setExtra({ name: file.name, calendars: [calendar] })
     } catch (err) {
-      toast(err instanceof SyntaxError ? "O arquivo não é um JSON válido." : err instanceof Error ? err.message : String(err))
+      toast.error(err instanceof SyntaxError ? "O arquivo não é um JSON válido." : err)
     }
   }
 
@@ -120,7 +120,8 @@ export function ObsidianMigration() {
         }
       }
       setOutcome(result)
-      toast(result.failed.length ? `Migração com ${result.failed.length} erro(s)` : "Migração concluída")
+      if (result.failed.length) toast.error(`Migração com ${result.failed.length} erro(s)`)
+      else toast("Migração concluída")
     } catch (err) {
       setError(`O backup falhou, e nada foi gravado: ${err instanceof Error ? err.message : String(err)}`)
     } finally {

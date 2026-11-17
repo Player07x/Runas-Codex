@@ -1,4 +1,4 @@
-import { createContext, useContext, useSyncExternalStore } from "react"
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react"
 import { emptyLayout, parseLayout, parseWorkspaces, pruneLayout, renameInLayout, type TabLayout, type Workspace } from "../core/tabs"
 import { navigate } from "./router"
 import { noteRoute } from "./vault-notes"
@@ -87,6 +87,27 @@ export function useSinglePane(): boolean {
     },
     () => window.matchMedia(NARROW).matches,
   )
+}
+
+const PHONE = "(max-width: 640px)"
+
+/** U81: no celular a faixa de abas sai de cima da nota e vira um botão na barra dela (folha com as abas abertas). */
+export function useTabsAsButton(): boolean {
+  return useSyncExternalStore(
+    (listener) => {
+      const query = window.matchMedia(PHONE)
+      query.addEventListener("change", listener)
+      return () => query.removeEventListener("change", listener)
+    },
+    () => window.matchMedia(PHONE).matches,
+  )
+}
+
+/** O botão das abas abertas que a barra da nota (ou da base) desenha; `null` fora das abas das Notas no celular. */
+export const TabSwitcherContext = createContext<ReactNode>(null)
+
+export function TabSwitcherSlot(): ReactNode {
+  return useContext(TabSwitcherContext)
 }
 
 const workspaceCache = new Map<string, Record<string, Workspace>>()

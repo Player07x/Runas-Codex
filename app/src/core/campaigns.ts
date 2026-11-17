@@ -407,6 +407,8 @@ export interface QuestInfo {
   order: string
   giver?: { target: string; dest: string | null }
   reward?: string
+  /** Dia em que a recompensa foi mandada para o Tesouro (`recompensa_enviada`, U93): evita mandar duas vezes. */
+  rewardSent?: string
   tags: string[]
   /** Missão-mãe (arco), pela propriedade `parte_de`: caminho resolvido ou `null` se o link está quebrado. */
   parent?: { target: string; dest: string | null }
@@ -458,6 +460,7 @@ export function listQuests(index: VaultIndex, campaign: CampaignInfo): QuestInfo
         order: str(data.ordem) ?? "",
         ...(giver ? { giver: { target: giver.target, dest: resolveTarget(index, giver.target, note.path) } } : giverText ? { giver: { target: giverText, dest: null } } : {}),
         ...(str(data.recompensa) ? { reward: str(data.recompensa) } : {}),
+        ...(str(data.recompensa_enviada) ? { rewardSent: str(data.recompensa_enviada) } : {}),
         tags: listValue(data.tags),
         ...(parent ? { parent: { target: parent.target, dest: resolveTarget(index, parent.target, note.path) } } : {}),
         requires: listValue(data.requer).flatMap((value) => {

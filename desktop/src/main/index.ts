@@ -22,11 +22,18 @@ import { NoteWindows } from "./windows"
 import { checkNoteWindows } from "./notes-windows-smoke"
 import { NetworkGuard } from "./network-guard"
 import { SaveStreams } from "./save-stream"
+import { configureSmokeEnvironment, startSmokeCleanup } from "./smoke-environment"
 import { runPerformance } from "./performance-run"
 
 // Instalado ou em desenvolvimento, as configurações ficam na mesma pasta: %APPDATA%\runas-codex no Windows e
 // ~/.config/runas-codex no Linux (o nome do produto no instalador não muda a pasta).
 if (!app.commandLine.hasSwitch("user-data-dir")) app.setPath("userData", join(app.getPath("appData"), "runas-codex"))
+
+const smokeEnvironment = configureSmokeEnvironment(app)
+if (smokeEnvironment) {
+  startSmokeCleanup(smokeEnvironment)
+  console.log(JSON.stringify({ smokeEnvironment }))
+}
 
 // O dicionário do corretor vai para o perfil antes de o Chromium procurar (senão ele o baixaria do Google).
 installDictionary()
@@ -245,7 +252,7 @@ function createMainWindow(): BrowserWindow {
   // Sugestões do corretor e recortar/copiar/colar no clique direito.
   attachContextMenu(window)
   // U40: o título de cada rota (document.title) serve ao leitor de tela; a janela fica sempre "Runas-Codex".
-  window.webContents.on("page-title-updated", (event) => event.preventDefault())
+  window.on("page-title-updated", (event) => event.preventDefault())
 
   if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void window.loadFile(join(__dirname, "../renderer/index.html"))
@@ -270,8 +277,10 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
     if (shot) await writeFile(shot, (await window.webContents.capturePage()).toPNG())
     result.spellcheck = spellcheckReport()
     result.network = networkGuard?.report() ?? { requests: 0, violations: [] }
+    // U84: depois de o smoke passar por várias rotas, a janela continua “Runas-Codex” (o título da rota fica no documento).
+    result.windowTitle = window.getTitle()
     console.log(JSON.stringify(result, null, 2))
-    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true)
+    ok = smokePassed(result, vault.rootPath !== null) && spellcheckPassed(spellcheckReport()) && (!result.transfers || (result.transfers as { ok?: boolean }).ok === true) && result.windowTitle === "Runas-Codex"
     // `--hold=<segundos>`: mantém a sala aberta para conferir a página dos jogadores num navegador.
     const hold = Number(argValue("hold") ?? 0)
     if (hold > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(hold, 600) * 1000))
@@ -280,6 +289,7 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
   }
   vtt.closeWorld()
   vault.stop()
+  await saveStreams.abortAll()
   app.exit(ok ? 0 : 1)
 }
 
@@ -306,6 +316,12 @@ void app.whenReady().then(async () => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow()
   })
+})
+
+// Falha antes de abrir a janela também encerra o smoke e libera a limpeza dos temporários.
+if (smoke) process.on("unhandledRejection", (error) => {
+  console.error(error)
+  app.exit(1)
 })
 
 app.on("window-all-closed", () => {
