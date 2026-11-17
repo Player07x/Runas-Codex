@@ -526,7 +526,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     else if (action === "template") setDialog("template")
     else openLinkDialog()
   }
-  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && (selectionAt.focused || barFocused) && !gallery && !dialog
+  // `editorFocused` some na hora em que o foco sai (o editor só avisa um pouco depois): a barra não fica sobre o menu aberto.
+  const showSelectionBar = !readOnly && !narrow && mode !== "leitura" && selectionAt !== null && ((selectionAt.focused && editorFocused) || barFocused) && !gallery && !dialog
   const showKeyboardBar = !readOnly && narrow && mode !== "leitura" && editorFocused && !gallery && !dialog
   // No celular, a barra inferior do app dá lugar à barra de formatação enquanto se escreve.
   useEffect(() => {
@@ -687,7 +688,8 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
             className="editor-surface"
             ref={surface}
             onFocus={() => setEditorFocused(true)}
-            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { setEditorFocused(false); setBarFocused(false) } }}
+            // A barra da seleção fica numa camada fora do editor (SelectionBar): ir para ela não é sair do texto.
+            onBlur={(event) => { const next = event.relatedTarget as Node | null; if (!event.currentTarget.contains(next) && !selectionBar.current?.contains(next)) { setEditorFocused(false); setBarFocused(false) } }}
             onKeyDown={(event) => {
               // Alt+F10 leva o teclado até a barra da seleção (padrão dos editores com barra flutuante).
               if (!(event.altKey && event.key === "F10") || !showSelectionBar) return
@@ -702,7 +704,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
               <SelectionBar
                 ref={selectionBar}
                 at={selectionAt}
-                width={surface.current?.clientWidth ?? 640}
+                origin={surface.current}
                 onWrap={(mark) => { setBarFocused(false); editor.current?.wrap(mark) }}
                 onLink={() => { setBarFocused(false); openLinkDialog() }}
                 onMore={() => { setBarFocused(false); setGallery(true) }}

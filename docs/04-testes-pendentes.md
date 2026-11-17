@@ -1938,3 +1938,17 @@ A lista revisada do que conferir antes da tag está em [`docs/tarefas/concluidas
   tamanho, de propósito).
 - [ ] Abrir no Obsidian uma organização com `membros:` e um personagem com `discipulos:` gravados pelo app: as
   propriedades aparecem como listas de links e nada quebra.
+
+## Barra da seleção sempre por cima (1.5, conserto pedido em 17/11)
+
+- [ ] Livros › Escrever, com o Sumário aberto: selecionar a primeira palavra de uma linha. A barra da seleção
+      (Negrito… Comentar, Citar da Wiki, Converter em ficha, Mais) aparece inteira, sem nada cobrindo o começo dela.
+- [ ] Com o Apoio aberto, selecionar a última palavra de uma linha: a barra aparece inteira, por cima do painel quando
+      não cabe na coluna do texto.
+- [ ] Janela estreita do computador (uns 900 px): a barra continua inteira, por cima dos painéis.
+- [ ] Rolar o texto com um trecho selecionado: a barra acompanha; com o trecho fora da vista, ela some; ao voltar,
+      reaparece.
+- [ ] Abrir o menu ⋯ (ou qualquer botão da barra da tela) com um trecho selecionado: a barra some na hora, sem ficar
+      por cima do menu.
+- [ ] Teclado: Alt+F10 entra na barra, as setas andam, Esc ou Tab voltam ao texto com a seleção mantida.
+- [ ] O mesmo em Notas, artigo da Wiki e sessão de campanha (modo Editar).

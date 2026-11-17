@@ -26,7 +26,8 @@
 
 /* ---------- Barra da seleção ---------- */
 .editor-surface { position: relative; }
-.selection-bar { position: absolute; z-index: 20; display: flex; align-items: center; gap: 2px; padding: 4px; transform: translateX(-50%); border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow-sm); white-space: nowrap; }
+/* Camada fixa acima de painéis, menus (150) e avisos (100): a posição vem de `placeSelectionBar`. */
+.selection-bar { position: fixed; z-index: 160; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; max-width: calc(100vw - 16px); padding: 4px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow-sm); white-space: nowrap; }
 .selection-bar .icon-btn { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
 .selection-bar .btn.sm { min-height: 34px; }
 .selection-bar-sep { align-self: stretch; width: 1px; margin: 4px 2px; background: var(--line); }
