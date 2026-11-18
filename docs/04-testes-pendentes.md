@@ -2231,3 +2231,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+
+## Sala Android — reconexão e rede virtual no CI
+
+- [ ] Com um mestre remoto conectado, usar **Desconectar** no anfitrião. O navegador deve oferecer **Tentar de novo**
+  e o anfitrião deve continuar sem mestre até uma nova entrada explícita. Conferir no Android e no desktop.
+- [ ] Conferir o job `android-room` em execuções independentes. O Chrome do AVD ainda entra e sai pelo link LAN
+  anunciado pela sala, usando o modelo anterior de rede virtual do emulador.

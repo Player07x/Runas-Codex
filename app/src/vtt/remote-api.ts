@@ -45,6 +45,7 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
   let session = ""
   let world: WorldSummary | null = null
   let connecting: Promise<WorldSummary> | null = null
+  let disconnectReason = ""
 
   const lost = (reason: string) => lostListeners.forEach((listener) => listener(reason))
 
@@ -54,11 +55,15 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
     return body.result as T
   }
 
+  function activeSession(): string {
+    if (!session) throw new Error(disconnectReason || "A mesa do mestre ainda não está conectada.")
+    return session
+  }
+
   async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
-    if (!session) await api.connect()
     const response = await fetch(`${connection.origin}/master/rpc?${query}`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-runas-session": session },
+      headers: { "content-type": "application/json", "x-runas-session": activeSession() },
       body: JSON.stringify({ channel, args }),
     })
     return answer<T>(response)
@@ -70,6 +75,8 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
 
   const api: RemoteVttApi = {
     connect() {
+      if (disconnectReason) return Promise.reject(new Error(disconnectReason))
+      if (session && world) return Promise.resolve(world)
       connecting ??= new Promise<WorldSummary>((resolve, reject) => {
         const events = new EventSource(`${connection.origin}/master/events?${query}`)
         let opened = false
@@ -92,18 +99,19 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
           const state = JSON.parse((event as MessageEvent<string>).data) as AudioState
           audioListeners.forEach((listener) => listener(state))
         })
-        events.addEventListener("closed", () => {
-          events.close()
+        // O servidor pode fechar o socket antes do evento “closed”. Nos dois casos, só recarregar abre outra
+        // sessão. Chamadas pendentes e efeitos de limpeza da mesa não podem reservar o assento de mestre de novo.
+        const end = (reason: string) => {
+          if (disconnectReason) return
+          disconnectReason = reason
           session = ""
-          lost("O computador da sala encerrou esta conexão (a chave do mestre mudou, a sala foi desligada ou outra pessoa desconectou este aparelho).")
-        })
-        // O EventSource tentaria de novo sozinho; uma reconexão precisa da mesma chave e de ninguém no lugar.
-        events.onerror = () => {
+          world = null
           events.close()
-          session = ""
-          if (opened) lost("A conexão com o computador da sala caiu.")
-          else reject(new Error("Não foi possível entrar como mestre: a sala está desligada, a chave mudou ou outro aparelho já controla a mesa."))
+          if (opened) lost(reason)
+          else reject(new Error(reason))
         }
+        events.addEventListener("closed", () => end("O computador da sala encerrou esta conexão (a chave do mestre mudou, a sala foi desligada ou outra pessoa desconectou este aparelho)."))
+        events.onerror = () => end(opened ? "A conexão com o computador da sala caiu." : "Não foi possível entrar como mestre: a sala está desligada, a chave mudou ou outro aparelho já controla a mesa.")
       }).finally(() => {
         connecting = null
       })
@@ -140,7 +148,12 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
         }
       },
     },
-    table: { report: (state) => invoke(IPC.tableReport, state) },
+    table: {
+      // O canvas também envia este aviso ao desmontar e depois que um temporizador dispara.
+      report: async (state) => {
+        if (session) await invoke(IPC.tableReport, state).catch(() => undefined)
+      },
+    },
     player: {
       state: () => invoke(IPC.playerState),
       onState: (listener) => {
@@ -185,10 +198,9 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
     vision: { resetExploration: (sceneId) => invoke(IPC.visionResetExploration, sceneId) },
     assets: {
       import: async (kind, fileName, bytes) => {
-        if (!session) await api.connect()
         const response = await fetch(`${connection.origin}/master/asset?${query}&kind=${encodeURIComponent(kind)}&name=${encodeURIComponent(fileName)}`, {
           method: "POST",
-          headers: { "content-type": "application/octet-stream", "x-runas-session": session },
+          headers: { "content-type": "application/octet-stream", "x-runas-session": activeSession() },
           body: bytes as BodyInit,
         })
         return answer<AssetPath>(response)
