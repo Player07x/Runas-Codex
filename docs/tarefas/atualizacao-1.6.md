@@ -98,3 +98,4 @@ janela de 5 h: perto de uma janela e meia, em duas ou três janelas. Paro e perg
   personagem passou a usar “Desfazer” no aviso em vez de pedir confirmação, como Tirar da campanha.
 - **18/11:** F (Ferramentas, U118): #180. Durante o F, o João pediu que o painel Detalhes da nota não role para os
   lados (abas e conteúdo se ajustam à largura): feito à parte no #179.
+- **18/11:** H (Ajuda com tela própria, U119): #181.
