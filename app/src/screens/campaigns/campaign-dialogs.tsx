@@ -283,15 +283,16 @@ export function NewQuestDialog({ campaign, quests = [], npcs = [], initialStatus
   )
 }
 
-export function NewPlayerDialog({ campaign, onClose }: { campaign: CampaignInfo; onClose(): void }) {
+/** `initialName` abre já em “criar novo” com o nome; `initialSelected`, com o personagem da wiki escolhido (U115). */
+export function NewPlayerDialog({ campaign, initialName = "", initialSelected = "", onClose }: { campaign: CampaignInfo; initialName?: string; initialSelected?: string; onClose(): void }) {
   const vault = useVault()
   const index = vault.index!
   const wikis = listWikis(index)
   const [wiki, setWiki] = useState(campaign.wiki ?? wikis[0]?.name ?? "")
-  const [mode, setMode] = useState("existente")
-  const [selected, setSelected] = useState("")
+  const [mode, setMode] = useState(initialName && !initialSelected ? "novo" : "existente")
+  const [selected, setSelected] = useState(initialSelected)
   const [query, setQuery] = useState("")
-  const [name, setName] = useState("")
+  const [name, setName] = useState(initialName)
   const [player, setPlayer] = useState("")
   const [concept, setConcept] = useState("")
   // Se o vínculo falhar depois da criação, tentar de novo reutiliza o artigo já salvo.

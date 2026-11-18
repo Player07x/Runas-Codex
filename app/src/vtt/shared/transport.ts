@@ -21,6 +21,8 @@ export interface PlayerTransportOptions {
   /** U78: “Sair da mesa” libera o assento deste aparelho; devolve o assento liberado. */
   leaveSeat?(token: string): PlayerSeatConnection | null
   onClientMessage?(message: unknown, seat: PlayerSeatConnection | null): PlayerWireMessage | null
+  /** U89: o servidor parou sem `stop()` (erro do sistema, porta tomada): a sala avisa o mestre. */
+  onServerLost?(): void
 }
 export interface PlayerTransport {
   readonly spectatorCount: number
@@ -29,4 +31,6 @@ export interface PlayerTransport {
   stop(): Promise<void>
   publish(message: PlayerWireMessage): void
   publishTo(message: (seat: PlayerSeatConnection | null) => PlayerWireMessage): void
+  /** U89: o assento saiu da sala; quem estava nele é desconectado (o código e o cookie já não valem). */
+  disconnectSeat?(slotId: string): void
 }

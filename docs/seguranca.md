@@ -31,6 +31,9 @@ Um alerta alto sem versão corrigida pode virar exceção em `.github/auditoria-
 de revisão; vencido o prazo, o CI volta a recusar. Em 17/11 entrou o
 [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) (picomatch ≤ 4.0.7, sem correção publicada),
 que só aparece nas ferramentas de build e teste e não vai no app instalado.
+O GitHub retirou esse aviso em 18/11/2026 e o `npm audit` deixou de acusá-lo; a exceção saiu na 1.6 (U113), e a
+lista ficou vazia. O CI agora avisa 14 dias antes de uma exceção vencer e quando o npm já aponta correção para um aviso
+com exceção.
 
 Correções pontuais, com datas verificadas no registro npm em 17/11:
 

@@ -1,4 +1,4 @@
-export const PALETTES = ["orbita", "floresta", "brasa"] as const
+export const PALETTES = ["orbita", "floresta", "brasa", "runa"] as const
 /** Espaçamento do texto de leitura: "muito-amplo" usa os valores da WCAG 1.4.12. */
 export const SPACINGS = ["normal", "amplo", "muito-amplo"] as const
 export const LINE_WIDTHS = ["estreita", "media", "larga"] as const

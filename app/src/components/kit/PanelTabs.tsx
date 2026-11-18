@@ -21,7 +21,7 @@ export function PanelTabs<T extends string>({ tabs, value, onChange, label, idPr
     {tabs.map((tab) => {
       const selected = tab.value === value
       return <button key={tab.value} type="button" role="tab" id={`${idPrefix}-tab-${tab.value}`} aria-selected={selected} aria-controls={`${idPrefix}-panel`} tabIndex={selected ? 0 : -1}
-        aria-label={tab.count !== undefined ? `${tab.label}, ${tab.count}` : undefined} className="kit-tab" onClick={() => onChange(tab.value)}>
+        aria-label={tab.count !== undefined ? `${tab.label}, ${tab.count}` : undefined} title={tab.label} className="kit-tab" onClick={() => onChange(tab.value)}>
         {tab.icon}<span>{tab.label}</span>{tab.count !== undefined && <span className="kit-tab-count" aria-hidden="true">{tab.count}</span>}
       </button>
     })}

@@ -80,10 +80,14 @@ export async function runPerformance(window: BrowserWindow, vaultPath: string | 
   const numbers = { openMs, indexMs: initial.indexMs, switchMs: Math.max(...screens.filter(screen => !screen.name.startsWith("Categoria")).map(screen => screen.ms)), wiki420Ms: screens.find(screen => screen.name.startsWith("Categoria"))!.ms, jsBytes: chunks.reduce((sum, chunk) => sum + chunk.bytes, 0) }
   const budgetPath = process.argv.find(arg => arg.startsWith("--performance-budget="))?.slice("--performance-budget=".length)
   const budget = budgetPath ? JSON.parse(await readFile(budgetPath, "utf8")) as PerformanceBudget : null
-  const regressions = budget ? [...performanceRegressions(numbers, budget), ...performanceScreenRegressions(Object.fromEntries(screens.map(screen => [screen.name, screen.ms])), budget)] : []
+  const timed = budget ? [...performanceRegressions(numbers, budget), ...performanceScreenRegressions(Object.fromEntries(screens.map(screen => [screen.name, screen.ms])), budget)] : []
+  // U108: com --performance-median, quem confere os tempos é o run.mjs, pela mediana das três execuções (uma execução
+  // lenta no CI variava de 8,5 a 15,2 s com o mesmo código). Roteiro quebrado reprova sempre, em qualquer execução.
+  const median = process.argv.includes("--performance-median")
+  const regressions = median ? [] : timed
   if (initial.notes < 10_000) regressions.push("O cofre do roteiro tem menos de 10 mil notas.")
   if (!screens.every(screen => screen.renders.length > 0)) regressions.push("O Profiler não registrou todas as telas.")
-  const report = { numbers, notes: initial.notes, screens, rendererMemory, chunks, regressions, environment: { electron: process.versions.electron, node: process.versions.node, platform: process.platform, cpu: cpus()[0]?.model, cpuCount: cpus().length, ramBytes: totalmem(), viewport: [1366, 900], profiling: true } }
+  const report = { numbers, notes: initial.notes, screens, rendererMemory, chunks, regressions, timedRegressions: timed, environment: { electron: process.versions.electron, node: process.versions.node, platform: process.platform, cpu: cpus()[0]?.model, cpuCount: cpus().length, ramBytes: totalmem(), viewport: [1366, 900], profiling: true } }
   const output = process.argv.find(arg => arg.startsWith("--performance-output="))?.slice("--performance-output=".length)
   if (!output) throw Error("Informe --performance-output=<arquivo.json>.")
   await writeFile(output, JSON.stringify(report, null, 2) + "\n")

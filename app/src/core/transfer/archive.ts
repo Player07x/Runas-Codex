@@ -2,7 +2,8 @@ import { strFromU8, strToU8, Unzip, UnzipInflate, zipSync, type Zippable } from 
 import { nameProblem } from "../names"
 import { foldName } from "../text"
 import type { TransferItemKind } from "./items"
-import { crc32, readZipDirectory, readZipEntry, ZipWriter, type ZipSink, type ZipSource } from "./zip-stream"
+import { crc32, readZipDirectory, readZipEntry, readZipEntryChunks, ZipWriter, type ReadChunks, type ZipSink, type ZipSource } from "./zip-stream"
+import { Sha256 } from "./sha256"
 
 /**
  * Limites do desktop (ADR 0037, antes ADR 0020). Na exportação o pacote é escrito em pedaços: o teto é o do ZIP sem
@@ -29,7 +30,11 @@ export const PACKAGE_MANIFEST = ".runas-pacote.json"
  * Um arquivo do pacote. Os binários de um pacote lido sob demanda (C2, ADR 0037) chegam sem os bytes: `bytes` vazio,
  * `size` com o tamanho e `load()` lê do pacote na hora de gravar. Use `transferSize` e `transferBytes`.
  */
-export interface TransferFile { path: string; bytes: Uint8Array; size?: number; load?: () => Promise<Uint8Array> }
+export interface TransferFile {
+  path: string; bytes: Uint8Array; size?: number; load?: () => Promise<Uint8Array>
+  /** U109: entrega o arquivo em pedaços, para gravar sem juntá-lo inteiro na memória da tela (Android). */
+  stream?: (onChunk: (bytes: Uint8Array) => Promise<void>) => Promise<void>
+}
 export const transferSize = (file: TransferFile): number => (file.load ? file.size ?? 0 : file.bytes.length)
 export const transferBytes = (file: TransferFile): Promise<Uint8Array> => (file.load ? file.load() : Promise.resolve(file.bytes))
 /** O que fica na memória mesmo sob demanda: a prévia lê, reescreve links e confere mesas nesses arquivos. */
@@ -162,7 +167,7 @@ export async function readTransferArchive(bytes: Uint8Array, title = "Cofre impo
 }
 
 /** Uma entrada do ZIP: o tamanho e como ler (da memória ou do pacote, por partes). */
-interface ZipItem { size: number; read(): Promise<Uint8Array> }
+interface ZipItem { size: number; read(): Promise<Uint8Array>; stream?: (onChunk: (bytes: Uint8Array) => Promise<void>) => Promise<void> }
 
 /**
  * U50 (ADR 0037): lê o pacote por partes (`File.slice` na tela), um arquivo por vez, sem o teto de tamanho
@@ -171,7 +176,7 @@ interface ZipItem { size: number; read(): Promise<Uint8Array> }
  */
 export async function readTransferArchiveFrom(source: ZipSource, title = "Cofre importado", limits: TransferLimits = TRANSFER_LIMITS, onProgress?: (done: number, total: number) => void, lazy = false): Promise<TransferArchive> {
   const entries = await readZipDirectory(source, limits), zip = new Map<string, ZipItem>()
-  for (const entry of entries) zip.set(entry.name, { size: entry.size, read: () => readZipEntry(source, entry) })
+  for (const entry of entries) zip.set(entry.name, { size: entry.size, read: () => readZipEntry(source, entry), stream: onChunk => readZipEntryChunks(source, entry, onChunk) })
   // Sem `lazy`, tudo é lido agora (como antes); com ele, a leitura acontece em `archiveFromZip`, um por vez.
   if (!lazy) for (const [index, entry] of entries.entries()) {
     onProgress?.(index, entries.length)
@@ -197,9 +202,18 @@ async function archiveFromZip(zip: Map<string, ZipItem>, title: string, limits: 
       if (!record(entry) || typeof entry.path !== "string" || typeof entry.size !== "number" || typeof entry.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(entry.sha256)) throw new Error("Entrada inválida no manifesto do pacote.")
       const path = transferPath(entry.path), name = "cofre/" + path, item = zip.get(name)
       onProgress?.(done++, total)
+      if (item?.stream && !used.has(name) && !keep(path)) {
+        // U109: confere o SHA-256 em pedaços; nem na conferência o binário fica inteiro na memória.
+        const hash = new Sha256()
+        let size = 0
+        await item.stream(async bytes => { size += bytes.length; hash.update(bytes) })
+        if (size !== entry.size || hash.hex() !== entry.sha256) throw new Error(`A integridade de “${path}” não confere com o manifesto.`)
+        used.add(name); files.push({ path, bytes: EMPTY, size, load: item.read, stream: item.stream })
+        continue
+      }
       const data = item && !used.has(name) ? await item.read() : null
       if (!item || !data || data.length !== entry.size || await sha256(data) !== entry.sha256) throw new Error(`A integridade de “${path}” não confere com o manifesto.`)
-      used.add(name); files.push(keep(path) ? { path, bytes: data } : { path, bytes: EMPTY, size: data.length, load: item.read })
+      used.add(name); files.push(keep(path) ? { path, bytes: data } : { path, bytes: EMPTY, size: data.length, load: item.read, ...(item.stream ? { stream: item.stream } : {}) })
     }
     if ([...zip.keys()].some(name => !name.endsWith("/") && !used.has(name))) throw new Error("O pacote contém arquivos fora do manifesto.")
   } else {
@@ -216,7 +230,7 @@ async function archiveFromZip(zip: Map<string, ZipItem>, title: string, limits: 
       if ((path.split("/").some(part => part.startsWith(".")) && !managedWorldPath(path)) || path.startsWith("__MACOSX/") || path === "Thumbs.db") { ignored.push(raw); continue }
       // Sem manifesto não há SHA para conferir agora: o binário é lido (e o CRC conferido) só na hora de gravar.
       if (keep(path)) { onProgress?.(done++, total); files.push({ path: transferPath(path), bytes: await item.read() }) }
-      else files.push({ path: transferPath(path), bytes: EMPTY, size: item.size, load: item.read })
+      else files.push({ path: transferPath(path), bytes: EMPTY, size: item.size, load: item.read, ...(item.stream ? { stream: item.stream } : {}) })
     }
   }
   if (!files.length) throw new Error("O arquivo não contém notas ou anexos importáveis.")
@@ -249,26 +263,34 @@ export async function createTransferArchive(title: string, files: TransferFile[]
 export async function writeTransferArchive(options: {
   title: string
   paths: string[]
-  read: (path: string) => Promise<Uint8Array>
   kind: "runas" | "markdown"
   limits: TransferLimits
   sink: ZipSink
   /** Os itens escolhidos na exportação (U53); vão no manifesto do `.runas`. */
   items?: PackageItemSpec[]
   onProgress?: (done: number, total: number, path: string) => void
-}): Promise<number> {
-  const { title, paths, read, kind, limits, sink, items, onProgress } = options
+} & ({ read: (path: string) => Promise<Uint8Array> } | { readStream: (path: string, write: ReadChunks) => Promise<void> })): Promise<number> {
+  const { title, paths, kind, limits, sink, items, onProgress } = options
   if (!paths.length || paths.length > limits.files) throw new Error("Selecione arquivos para exportar, dentro do limite de quantidade.")
   validateTransferPaths(paths.map(path => ({ path, bytes: new Uint8Array() })))
   const writer = new ZipWriter(sink), entries: { path: string; size: number; sha256: string }[] = []
   for (const [index, path] of paths.entries()) {
     onProgress?.(index, paths.length, path)
-    const bytes = await read(path)
-    if (bytes.length > limits.file) throw new Error(`“${path}” passa do limite por arquivo.`)
-    await writer.add((kind === "runas" ? "cofre/" : "") + path, bytes)
-    if (kind === "runas") entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
+    const name = (kind === "runas" ? "cofre/" : "") + path
+    if ("readStream" in options) {
+      const hash = kind === "runas" ? new Sha256() : null
+      const size = await writer.addStored(name, (write) => options.readStream(path, write), limits.file, (bytes) => { hash?.update(bytes) })
+      if (hash) entries.push({ path, size, sha256: hash.hex() })
+    } else {
+      const bytes = await options.read(path)
+      if (bytes.length > limits.file) throw new Error(`“${path}” passa do limite por arquivo.`)
+      await writer.add(name, bytes)
+      if (kind === "runas") entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
+    }
     if (writer.written > limits.archive) throw new Error("O pacote passou do limite permitido.")
   }
   if (kind === "runas") await writer.add(PACKAGE_MANIFEST, strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries, ...(items?.length ? { itens: items } : {}) }, null, 2)))
-  return writer.finish()
+  const size = await writer.finish()
+  if (size > limits.archive) throw new Error("O pacote passou do limite permitido.")
+  return size
 }

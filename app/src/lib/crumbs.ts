@@ -1,4 +1,5 @@
 import { noteName } from "../core/text"
+import { helpTopic } from "../core/help"
 import { BOOKS } from "../data/books"
 import { CAMPAIGNS } from "../data/campaigns"
 
@@ -6,9 +7,9 @@ export type Crumb = { label: string; to?: string }
 
 export const SPACE_LABELS: Record<string, string> = {
   "": "Início", notas: "Notas", agenda: "Agenda", wiki: "Wiki", campanhas: "Campanhas", livros: "Livros", vtt: "VTT",
-  transferir: "Importar e exportar", config: "Configurações", quadro: "Quadro",
+  transferir: "Importar e exportar", config: "Configurações", quadro: "Quadro", ajuda: "Ajuda",
 }
-const SPACE_ROUTES: Record<string, string> = { "": "/", notas: "/notas", agenda: "/agenda", wiki: "/wiki", campanhas: "/campanhas", livros: "/livros", vtt: "/vtt", transferir: "/transferir", config: "/config" }
+const SPACE_ROUTES: Record<string, string> = { "": "/", notas: "/notas", agenda: "/agenda", wiki: "/wiki", campanhas: "/campanhas", livros: "/livros", vtt: "/vtt", transferir: "/transferir", config: "/config", ajuda: "/ajuda" }
 
 const WIKI_LABELS: Record<string, string> = { calendario: "Calendário", "linha-do-tempo": "Linha do tempo", mapa: "Mapas", categoria: "Categoria", relacoes: "Relações", grafico: "Gráfico", ferramentas: "Ferramentas" }
 const CAMPAIGN_LABELS: Record<string, string> = { sessao: "Sessão", missoes: "Missões", canvas: "Quadro", sessoes: "Sessões", elenco: "Elenco", quadro: "Quadro", ferramentas: "Ferramentas", painel: "Painel" }
@@ -49,5 +50,6 @@ export function crumbsFor(route: readonly string[]): Crumb[] {
     else crumbs.push({ label: VTT_LABELS[second] ?? label(second) })
   }
   if (first === "config" && second) crumbs.push({ label: CONFIG_LABELS[second] ?? label(second) })
+  if (first === "ajuda" && second) crumbs.push({ label: second === "exemplos" ? "Notas de exemplo e tour" : helpTopic(second)?.title ?? label(second) })
   return crumbs
 }

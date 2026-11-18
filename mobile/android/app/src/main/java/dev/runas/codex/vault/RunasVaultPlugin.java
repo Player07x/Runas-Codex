@@ -626,6 +626,37 @@ public class RunasVaultPlugin extends Plugin {
         }
     }
 
+    /**
+     * “Testar gravação” (U110): cria, troca e apaga um arquivo de teste pelo mesmo caminho de cada gravação de nota.
+     * O arquivo é visível (o Android não grava ocultos) e sai de vez no fim, sem passar pela lixeira.
+     */
+    @PluginMethod
+    public void checkWrite(PluginCall call) {
+        VaultFs s;
+        try { s = writableStore(); } catch (IOException e) { fail(call, e); return; }
+        String path = VaultStore.writeCheckPath();
+        String step = "criar";
+        JSObject result = new JSObject();
+        try {
+            VaultStore.Entry first = s.writeText(path, "teste de gravação do Runas-Codex\n", null, true);
+            if (watcher != null) watcher.remember(first);
+            step = "trocar";
+            VaultStore.Entry second = s.writeText(path, "teste de gravação do Runas-Codex (2)\n", new VaultStore.Version(first.size, first.mtime), false);
+            if (watcher != null) watcher.remember(second);
+            step = "apagar";
+            if (watcher != null) watcher.forget(path);
+            s.removeWriteCheck(path);
+            result.put("ok", true);
+        } catch (IOException | RuntimeException e) {
+            result.put("ok", false);
+            result.put("step", step);
+            result.put("message", e.getMessage() != null ? e.getMessage() : e.toString());
+            if (watcher != null) watcher.forget(path);
+            try { s.removeWriteCheck(path); } catch (IOException | RuntimeException ignored) { /* o teste já falhou; o erro mostrado é o primeiro */ }
+        }
+        call.resolve(result);
+    }
+
     @PluginMethod
     public void listTrash(PluginCall call) {
         try {

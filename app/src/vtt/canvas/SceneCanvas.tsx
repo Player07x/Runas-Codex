@@ -16,7 +16,7 @@ import { barColor } from "../shared/log"
 import type { SoundData } from "../shared/audio"
 import { REGION_SHAPES, REGION_TRIGGERS, type RegionData, type RegionShape, type RegionTrigger } from "../shared/region"
 import type { AssetKind, WorldDocument } from "../shared/world"
-import { resolveAssetUrl, vtt } from "../api"
+import { remoteMaster, resolveAssetUrl, vtt } from "../api"
 import { useOptionalVault } from "../../platform/VaultProvider"
 import { href } from "../../lib/router"
 import { noteName } from "../../core/text"
@@ -465,6 +465,8 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
             ...(source ? [{ label: "Importar de novo da nota…", onSelect: () => setReimporting(true) }] : []),
             { label: "Desvincular", onSelect: () => update({ notePath: undefined }) },
           ]} />}
+          {/* U47: sem o cofre, o mestre remoto não troca nem reimporta a nota, mas pode desvincular (só muda o token). */}
+          {!local && remoteMaster && <OverflowMenu label="Mais ações da nota" items={[{ label: "Desvincular", onSelect: () => update({ notePath: undefined }) }]} />}
         </div>
         : <div className="note-token-link">
           <span className="small muted">Token sem nota da Wiki.</span>

@@ -11,6 +11,7 @@ const native = vi.hoisted(() => ({
   masterDisconnect: vi.fn(async () => ({ key: "a".repeat(32), connected: false })),
   masterEmit: vi.fn(async (_value: { channel: string; payload: unknown }) => undefined),
   openUrl: vi.fn(async () => undefined),
+  openMaster: vi.fn(async () => undefined),
   tunnelStart: vi.fn(async () => ({ url: "https://mesa-de-teste.trycloudflare.com", location: "gru01", protocol: "http2" })),
   tunnelStop: vi.fn(async () => undefined),
   tunnelTest: vi.fn(async (): Promise<unknown> => { throw new Error("Gere o link público primeiro.") }),
@@ -172,5 +173,18 @@ describe("ponte da sala Android", () => {
     native.callbacks.get("tunnel-lost")!({})
     expect(await api.player.state()).toMatchObject({ publicUrl: null, tunnelLost: true })
     await api.player.stop()
+  })
+})
+
+describe("entrada na sala pelo Android", () => {
+  it("abre o mestre numa aba integrada e o jogador no navegador", async () => {
+    const { api } = fixture()
+    const master = "http://192.168.0.8:30000/master?m=" + "a".repeat(32)
+    const player = "http://192.168.0.8:30000/?k=" + "b".repeat(32)
+    await expect(api.player.join(master)).resolves.toBeUndefined()
+    await expect(api.player.join(player)).resolves.toBeUndefined()
+    await expect(api.player.join("https://externo.invalid/master?m=" + "a".repeat(32))).rejects.toThrow("rede local")
+    expect(native.openMaster).toHaveBeenCalledExactlyOnceWith({ url: master })
+    expect(native.openUrl).toHaveBeenCalledExactlyOnceWith({ url: player })
   })
 })

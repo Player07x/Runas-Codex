@@ -106,6 +106,8 @@ try {
   await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`,400).catch(async(error)=>{
     // Diagnóstico: o que o lobby do jogador mostra quando o assento não vem.
     console.error('Lobby do jogador no Android:',await androidPlayer.run(`document.querySelector('.player-lobby')?.innerText ?? document.body.innerText.slice(0,400)`).catch(()=>null))
+    // O outro lado: a sala no app (assentos, código e quem está conectado) no momento da falha.
+    console.error('Sala no app:',await app.run(`document.querySelector('.player-seats')?.innerText ?? document.body.innerText.slice(0,600)`).catch(error=>'sem resposta: '+error.message))
     throw error
   })
   await androidPlayer.until(`document.querySelector('.player-host canvas') && document.querySelector('.player-tools')`,400)
@@ -116,6 +118,25 @@ try {
   check('Sair da mesa volta ao lobby do jogador',true)
   await writeFile(output+'/android-jogador.png',execFileSync('adb',['exec-out','screencap','-p'],{timeout:15000,maxBuffer:16*1024*1024}))
   adb('shell','am','start','-n','dev.runas.codex/.MainActivity');await app.until('document.hasFocus()')
+  // U47: o mesmo aparelho abre a página do mestre em uma Custom Tab e volta ao anfitrião pelo botão Voltar.
+  const masterLink = new URL(link)
+  masterLink.pathname = '/master'
+  masterLink.search = new URLSearchParams({m:(await app.run('window.Capacitor.Plugins.RunasRoom.masterState()')).key}).toString()
+  await app.run(`window.Capacitor.Plugins.RunasRoom.openMaster({url:${JSON.stringify(masterLink.href)}})`)
+  const androidMaster = await connectDevtools('http://127.0.0.1:9226', target => target.url === masterLink.href)
+  try {
+    await androidMaster.until(`document.querySelector('.table-title')?.textContent.includes('Sala Android X7') && document.querySelector('canvas')`,400)
+    const activities = adb('shell','dumpsys','activity','activities')
+    const resumed = activities.split('\n').filter(line => /mResumedActivity|topResumedActivity/.test(line))
+    check('Android abre o mestre em aba integrada', resumed.some(line => line.includes('CustomTabActivity')))
+    check('aba do mestre carrega sem exceções', androidMaster.errors.length === 0)
+    await screenshot(androidMaster,'android-mestre-aba')
+  } finally {
+    androidMaster.close()
+    adb('shell','input','keyevent','4')
+  }
+  await app.until('document.hasFocus()')
+  check('Voltar da mesa do mestre retorna ao Runas-Codex',await app.run(`document.querySelector('.table-title')?.textContent.includes('Sala Android X7')`))
   await appButton('Desligar')
   const closed=async()=>{for(let i=0;i<30;i++){try{const response=await fetch(base+'/healthz',{cache:'no-store',signal:AbortSignal.timeout(3000)});if(!response.ok)return true}catch{return true}await sleep(250)}return false}
   let closedRoom=await closed()

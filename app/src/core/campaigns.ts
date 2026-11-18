@@ -717,6 +717,17 @@ export interface Clock {
 }
 
 export const CLOCK_BLOCK = "runas-relogios"
+/** Quantas partes um relógio pode ter: o mestre digita o número (antes, uma lista com 4, 6, 8, 10 e 12). */
+export const CLOCK_MIN_SEGMENTS = 2
+export const CLOCK_MAX_SEGMENTS = 24
+
+/** O número de partes digitado, ou `null` se não for um inteiro entre o mínimo e o máximo. */
+export function clockSegments(value: string): number | null {
+  const text = value.trim()
+  if (!/^\d+$/.test(text)) return null
+  const n = Number(text)
+  return n >= CLOCK_MIN_SEGMENTS && n <= CLOCK_MAX_SEGMENTS ? n : null
+}
 
 export function parseClocks(content: string): Clock[] {
   const data = parseYaml(content) as unknown
@@ -724,7 +735,7 @@ export function parseClocks(content: string): Clock[] {
   if (!Array.isArray(data)) throw new Error("O bloco runas-relogios precisa ser uma lista.")
   return data.map((raw, i) => {
     const item = (raw ?? {}) as Record<string, unknown>
-    const segments = Math.max(2, Math.min(12, Math.round(num(item.segmentos) ?? 4)))
+    const segments = Math.max(CLOCK_MIN_SEGMENTS, Math.min(CLOCK_MAX_SEGMENTS, Math.round(num(item.segmentos) ?? 4)))
     return {
       name: str(item.nome) ?? `Relógio ${i + 1}`,
       segments,

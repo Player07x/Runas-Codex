@@ -1,4 +1,5 @@
 import type { CollaborationCommand, RoomCollaboration } from "./collaboration"
+import type { HostHandler } from "./host-services"
 import type { AssetPath } from "./scene"
 import type { PlayerRuler } from "./player"
 import type { AudioState } from "./audio"
@@ -38,6 +39,9 @@ export const IPC = {
   playerDownloadCloudflared: "vtt:player-download-cloudflared",
   playerSetAudio: "vtt:player-set-audio",
   playerSetMoves: "vtt:player-set-moves",
+  playerAddSeat: "vtt:player-add-seat",
+  playerRemoveSeat: "vtt:player-remove-seat",
+  playerReconnect: "vtt:player-reconnect",
   visionResetExploration: "vtt:vision-reset-exploration",
   audioState: "vtt:audio-state",
   audioStateChanged: "vtt:audio-state-changed",
@@ -126,6 +130,17 @@ export interface LinkTestResult {
   error?: string
 }
 
+/**
+ * Queda da sala (U89): o túnel do link público, o endereço do computador na rede ou o próprio servidor.
+ * `reconnecting`: o app está reabrindo sozinho; `restored`: voltou, com o link que o painel mostra (o público muda a
+ * cada túnel); `failed`: precisa do mestre (“Reconectar”).
+ */
+export interface PlayerDrop {
+  kind: "tunnel" | "address" | "server"
+  status: "reconnecting" | "restored" | "failed"
+  at: number
+}
+
 export interface PlayerState {
   enabled: boolean
   port: number
@@ -136,6 +151,8 @@ export interface PlayerState {
   tunnel: PlayerTunnelInfo | null
   /** O túnel caiu depois de criado: o link público anterior não funciona mais. */
   tunnelLost: boolean
+  /** A última queda da sala, até a sala ser desligada; `null` sem queda. */
+  drop: PlayerDrop | null
   sceneId: string | null
   /** Tocar também o áudio na vista dos jogadores. */
   audio: boolean
@@ -181,6 +198,12 @@ export interface VttApi {
     stop(): Promise<void>
     rotateSeatCode(slotId: string): Promise<PlayerState>
     clearSeat(slotId: string): Promise<PlayerState>
+    /** U89: mais um assento com a sala aberta (no fim da lista, com código novo). */
+    addSeat(): Promise<PlayerState>
+    /** U89: tira o último assento e desconecta só o jogador dele. */
+    removeSeat(): Promise<PlayerState>
+    /** U89: reabre a sala na mesma porta, com a mesma chave e os mesmos códigos (e o link público, se havia). */
+    reconnect(): Promise<PlayerState>
     openWindow(): Promise<void>
     /** Entrar Sala: abre a página da sala de outra pessoa (o link que o mestre mandou). */
     join(url: string): Promise<void>
@@ -216,6 +239,13 @@ export interface VttApi {
     /** Copia um arquivo para a mesa aberta e devolve o caminho do asset. */
     import(kind: AssetKind, fileName: string, bytes: Uint8Array): Promise<AssetPath>
   }
+  /**
+   * U47: o app da sala atende os pedidos do cofre do mestre remoto (biblioteca, salvar sessão). Só no aparelho que
+   * hospeda a sala; devolve a função que para de atender.
+   */
+  serveHost?(handler: HostHandler): () => void
+  /** U47: o mestre remoto pede um serviço do cofre ao aparelho da sala. Só na mesa do mestre remoto. */
+  callHost?(channel: string, args: unknown[]): Promise<unknown>
   /** Mestre remoto (ADR 0016): só existe na mesa do computador da sala. */
   master?: {
     state(): Promise<MasterState>

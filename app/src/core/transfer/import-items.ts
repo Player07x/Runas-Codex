@@ -2,6 +2,8 @@ import { basename, foldName } from "../text"
 import { VaultIndex } from "../vault-index"
 import { parseWorldManifest } from "../../vtt/shared/world"
 import { transferBytes, transferSize, type TransferArchive } from "./archive"
+import { Sha256 } from "./sha256"
+import type { ReadChunks } from "./zip-stream"
 import { expandTransferItems, listTransferItems, type TransferItemKind, type TransferWorld } from "./items"
 import { buildImportPlan, decodeTransferText, type ImportPlan, type ImportStrategy, type TransferEntry, type TransferWrite } from "./plan"
 
@@ -83,16 +85,24 @@ export function itemState(item: PackageItem, existing: readonly TransferEntry[],
  * Arquivos do pacote iguais aos do cofre (mesmo caminho, tamanho e conteúdo). Só lê do cofre os que têm o mesmo
  * tamanho, um por vez.
  */
-export async function findIdentical(archive: TransferArchive, existing: readonly TransferEntry[], read: (path: string) => Promise<Uint8Array>, onProgress?: (done: number, total: number) => void): Promise<Set<string>> {
+export async function findIdentical(archive: TransferArchive, existing: readonly TransferEntry[], read: (path: string) => Promise<Uint8Array>, onProgress?: (done: number, total: number) => void, readStream?: (path: string, write: ReadChunks) => Promise<void>): Promise<Set<string>> {
   const byName = new Map(existing.map(entry => [foldName(entry.path), entry]))
   const candidates = archive.files.filter(file => byName.get(foldName(file.path))?.size === transferSize(file))
   const same = new Set<string>()
   for (const [i, file] of candidates.entries()) {
     onProgress?.(i, candidates.length)
-    const current = await read(byName.get(foldName(file.path))!.path)
-    // Sob demanda (C2), o binário do pacote é lido aqui, comparado e solto.
-    const bytes = await transferBytes(file)
-    if (current.length === bytes.length && current.every((byte, j) => byte === bytes[j])) same.add(file.path)
+    const entry = byName.get(foldName(file.path))!
+    if (readStream && file.stream) {
+      const incoming = new Sha256(), current = new Sha256()
+      let count = 0
+      await file.stream(async (bytes) => { incoming.update(bytes) })
+      await readStream(entry.path, async (bytes) => { count += bytes.length; current.update(bytes) })
+      if (count === transferSize(file) && incoming.hex() === current.hex()) same.add(file.path)
+    } else {
+      const current = await read(entry.path)
+      const bytes = await transferBytes(file)
+      if (current.length === bytes.length && current.every((byte, j) => byte === bytes[j])) same.add(file.path)
+    }
   }
   return same
 }

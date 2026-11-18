@@ -34,6 +34,8 @@ const themes: [string, Record<string, string>][] = [
   ["Floresta claro", { ...light, ...all.get(':root[data-palette="floresta"][data-theme="light"]') }],
   ["Brasa escuro", { ...dark, ...all.get(':root[data-palette="brasa"]') }],
   ["Brasa claro", { ...light, ...all.get(':root[data-palette="brasa"][data-theme="light"]') }],
+  ["Runa escuro", { ...dark, ...all.get(':root[data-palette="runa"]') }],
+  ["Runa claro", { ...light, ...all.get(':root[data-palette="runa"][data-theme="light"]') }],
 ]
 const surfaces = ["bg", "bg-deep", "panel", "panel-2"]
 

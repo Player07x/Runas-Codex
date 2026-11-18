@@ -32,6 +32,17 @@ public class DocumentVaultStoreTest {
         store = new DocumentVaultStore(documents);
     }
 
+
+    @Test public void testeDeGravacaoApagaDeVezSoOArquivoDoTeste() throws IOException {
+        String path = VaultStore.writeCheckPath();
+        VaultStore.Entry first = store.writeText(path, "a\n", null, true);
+        store.writeText(path, "b\n", new VaultStore.Version(first.size, first.mtime), false);
+        store.removeWriteCheck(path);
+        for (VaultStore.Entry entry : store.list("", true)) assertFalse(entry.path, entry.path.startsWith("Runas-Codex teste") || entry.path.startsWith(".trash"));
+        store.writeText("Notas/A.md", "x", null, true);
+        assertThrows(VaultStore.VaultError.class, () -> store.removeWriteCheck("Notas/A.md"));
+    }
+
     @Test public void binarioEmEstagioPreservaUriConflitoERollback() throws Exception {
         File input = temp.newFile();
         java.nio.file.Files.write(input.toPath(), new byte[2 * 1024 * 1024 + 3]);
@@ -227,6 +238,20 @@ public class DocumentVaultStoreTest {
         assertEquals("um", text("Notas/a.md"));
         refuses("Já existe", () -> store.restoreTrash(".trash/a 1.md", "Notas/a.md"));
         refuses("lixeira", () -> store.restoreTrash("Notas/a.md", "Notas/b.md"));
+    }
+
+    @Test public void bibliotecaUsaLixeiraDoCofreSemLiberarOutrosDadosOcultos() throws IOException {
+        String item = ".runas/mesas/biblioteca/cenas/token-1.json";
+        String scene = ".runas/mesas/porto/cenas/cena-1.json";
+        documents.file(item, "{}");
+        documents.file(scene, "[]");
+        String trashed = store.trash(item);
+        assertEquals(".trash/token-1.json", trashed);
+        assertFalse(store.readTexts(Arrays.asList(item)).containsKey(item));
+        refuses("ocultos", () -> store.trash(scene));
+        store.restoreTrash(trashed, item);
+        assertEquals("{}", text(item));
+        assertEquals("[]", text(scene));
     }
 
     @Test public void snippetEInicializacaoNaoSubstituemConfiguracoesExistentes() throws IOException {

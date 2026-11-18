@@ -38,4 +38,4 @@ Não há telemetria. **Verificar atualizações** consulta as versões publicada
 
 ### Ajuda e exemplos
 
-Reveja o tour de primeiros passos, acrescente as notas de exemplo que faltam ou mande para a lixeira as notas marcadas com `exemplo_runas: true`. A documentação completa está logo abaixo nesta página.
+Leva à **Ajuda**, que tem tela própria (também na barra lateral): os tópicos, o artigo e “Nesta página” lado a lado. No tópico **Notas de exemplo e tour**, reveja o tour, acrescente as notas de exemplo que faltam ou mande para a lixeira as notas marcadas com `exemplo_runas: true`.

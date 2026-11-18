@@ -1,8 +1,11 @@
 package dev.runas.codex.room;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 import com.getcapacitor.*;
@@ -531,6 +534,55 @@ public class RunasRoomPlugin extends Plugin {
       call.resolve();
     } catch (Exception e) {
       call.reject("Não foi possível abrir o link da sala.");
+    }
+  }
+
+  @PluginMethod
+  public void openMaster(PluginCall call) {
+    try {
+      Uri uri = Uri.parse(call.getString("url", ""));
+      String key = uri.getQueryParameter("m");
+      if ((!"http".equals(uri.getScheme()) && !"https".equals(uri.getScheme()))
+          || uri.getHost() == null || uri.getUserInfo() != null
+          || (!"/master".equals(uri.getPath()) && !"/master/".equals(uri.getPath()))
+          || key == null || !key.matches("[0-9a-f]{32}")) {
+        call.reject("Link da mesa do mestre inválido.");
+        return;
+      }
+
+      // A aba pertence à tarefa do app, mas quem carrega o link LAN é o navegador. A página remota
+      // não recebe a ponte do cofre e o WebView principal continua com a política de rede atual.
+      Intent view = new Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE);
+      PackageManager packages = getContext().getPackageManager();
+      Intent service = new Intent("android.support.customtabs.action.CustomTabsService");
+      ResolveInfo preferred = packages.resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY);
+      String browser = null;
+      if (preferred != null) {
+        String name = preferred.activityInfo.packageName;
+        if (packages.resolveService(new Intent(service).setPackage(name), 0) != null) browser = name;
+      }
+      if (browser == null) {
+        for (ResolveInfo candidate : packages.queryIntentServices(service, 0)) {
+          String name = candidate.serviceInfo.packageName;
+          if (packages.resolveActivity(new Intent(view).setPackage(name), PackageManager.MATCH_DEFAULT_ONLY) != null) {
+            browser = name;
+            break;
+          }
+        }
+      }
+      if (browser == null) {
+        call.reject("Para abrir a mesa aqui, instale um navegador com abas integradas ou abra o link pelo navegador.");
+        return;
+      }
+
+      Bundle tab = new Bundle();
+      // A chave SESSION nula identifica uma Custom Tab sem vincular um serviço em segundo plano.
+      tab.putBinder("android.support.customtabs.extra.SESSION", null);
+      view.setPackage(browser).putExtras(tab);
+      getActivity().startActivity(view);
+      call.resolve();
+    } catch (RuntimeException error) {
+      call.reject("Não foi possível abrir a mesa do mestre.");
     }
   }
 

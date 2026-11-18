@@ -6,6 +6,7 @@ import { navigate, useRoute } from "../lib/router"
 import { useToast } from "../components/ui"
 import { OverflowMenu } from "../components/kit/OverflowMenu"
 import { ConfirmDialog } from "../components/vault/dialogs"
+import { HostServices } from "./HostServices"
 
 const backToTable = () => {
   try { const id = sessionStorage.getItem("runas-codex:mesa-aberta"); navigate(id ? `/vtt/mesa/${id}` : "/vtt/criar") } catch { navigate("/vtt/criar") }
@@ -28,6 +29,8 @@ export function ActiveRoom() {
   useEffect(() => { if (enabled) setSlot(document.querySelector(".topbar .top-actions")) }, [enabled, route[0]])
   if (!enabled) return null
   return <>
+    {/* U47: com a sala aberta, este app atende a biblioteca e o “Salvar Sessão” do mestre remoto. */}
+    <HostServices />
     {safety > 0 && <aside className="active-room" role="alert" aria-label="Carta X acionada"><span>Carta X acionada — pause a sessão</span><button className="btn" onClick={() => void vtt.collaboration?.command({ type: "ack-safety" }).then(() => setSafety(0)).catch(e => toast.error(e))}>Confirmar pausa</button>{!inTable && <button className="btn" onClick={backToTable}>Voltar à mesa</button>}</aside>}
     {/* Na própria mesa, o painel Sala já tem os controles. */}
     {!inTable && slot && createPortal(<OverflowMenu label="Sala do VTT aberta" heading="Sala do VTT" triggerClassName="room-chip"

@@ -1,3 +1,4 @@
+import { markFreshNote } from "../lib/fresh-note"
 import { openDocumentExport } from "../components/export/ExportDialog"
 import { ResizablePanel } from "../components/ResizablePanel"
 import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
@@ -222,7 +223,8 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
     }
     if (noteId === "nova") {
       const folder = root.replace(/\/$/, "")
-      vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => navigate(vaultRoute(created), { replace: true }), fail)
+      // U99: a nota nova abre com o nome selecionado, pronto para digitar o nome de verdade.
+      vault.createNote(folder, uniqueName(index, folder, "Sem título")).then((created) => { markFreshNote(created); navigate(vaultRoute(created), { replace: true }) }, fail)
     } else {
       // Como o plugin Notas diárias do Obsidian: pasta, formato do nome e modelo de `.obsidian/daily-notes.json`.
       const { daily, templates } = vault.config

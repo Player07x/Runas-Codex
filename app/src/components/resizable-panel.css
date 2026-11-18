@@ -13,13 +13,24 @@
 .resizable-panel[data-panel-collapsed=true] > .panel-controls { justify-content:center; padding:4px 0; border-bottom:0; }
 .resizable-panel[data-panel-collapsed=true] > .panel-controls .panel-title { display:none; }
 
-/* Navegação principal: o botão fica ao lado da marca; recolhida, vira um trilho só com os ícones. */
-.sidebar.resizable-panel > .panel-controls { position:absolute; top:20px; right:8px; min-height:0; padding:0; border:0; background:transparent; }
-.sidebar.resizable-panel .brand { padding-right:44px; }
-.sidebar[data-panel-collapsed=true] { padding:12px 8px; overflow-x:hidden; }
-.sidebar[data-panel-collapsed=true] > .panel-controls { position:static; justify-content:center; margin-bottom:8px; }
-.sidebar[data-panel-collapsed=true] .brand { justify-content:center; padding:0 0 18px; }
-.sidebar[data-panel-collapsed=true] :is(.brand > div, .nav-link span, .nav-link .count, .nav-label, .offline-pill span) { display:none; }
+/* Navegação principal (U121): o cabeçalho tem altura fixa e o botão de recolher fica parado no alto, preso à borda
+   direita, nos dois estados; só a runa muda de lugar e de tamanho. Assim nem o botão nem os itens andam. */
+.sidebar.resizable-panel { padding-top:0; }
+.sidebar.resizable-panel > .panel-controls { position:absolute; top:12px; right:12px; min-height:0; padding:0; border:0; background:transparent; }
+.sidebar.resizable-panel > .panel-controls .panel-collapse { width:44px; height:44px; border:1px solid var(--line); background:var(--panel); }
+.sidebar.resizable-panel > .panel-controls .panel-collapse:hover { background:var(--panel-2); }
+.sidebar.resizable-panel .brand { position:relative; flex:none; height:96px; margin-inline:-14px; padding:0; }
+.sidebar.resizable-panel .brand img { position:absolute; left:14px; top:12px; width:56px; height:56px; border-radius:14px; transition:left .2s ease, top .2s ease, width .2s ease, height .2s ease, border-radius .2s ease; }
+.sidebar.resizable-panel .brand > div { position:absolute; top:12px; left:76px; right:62px; height:56px; display:grid; align-content:center; transition:opacity .15s ease, visibility .15s; }
+/* Recolhida: a runa pequena logo abaixo do botão, com o centro alinhado ao dele. */
+.sidebar[data-panel-collapsed=true] { padding:0 8px 12px; overflow-x:hidden; }
+.sidebar[data-panel-collapsed=true] .brand { margin-inline:-8px; }
+.sidebar[data-panel-collapsed=true] .brand img, :root[data-tablet=true] .sidebar.resizable-panel .brand img { left:calc(100% - 50px); top:60px; width:32px; height:32px; border-radius:9px; }
+.sidebar.resizable-panel .brand strong { overflow:hidden; font-size:calc(14px * var(--font-scale, 1)); text-overflow:ellipsis; white-space:nowrap; }
+.sidebar[data-panel-collapsed=true] .brand > div { opacity:0; visibility:hidden; }
+.sidebar[data-panel-collapsed=true] :is(.nav-link span, .nav-link .count, .nav-label, .offline-pill span) { display:none; }
+:root[data-tablet=true] .sidebar.resizable-panel { padding-top:0; }
+:root[data-tablet=true] .sidebar.resizable-panel .brand { margin-inline:-6px; }
 .sidebar[data-panel-collapsed=true] .nav-link { justify-content:center; padding:0; }
 .sidebar[data-panel-collapsed=true] .nav-group + .nav-label { display:block; height:1px; margin:14px 8px; padding:0; overflow:hidden; background:var(--line); font-size:0; }
 .sidebar[data-panel-collapsed=true] .offline-pill { justify-content:center; margin-inline:0; }
@@ -84,3 +95,6 @@
 /* Na barra da tela, o botão segue a altura dos vizinhos (a troca de visão), sem o mínimo de 44 px do celular. */
 .panel-controls-away .panel-collapse.btn { min-height:0; }
 .panel-slot { display:contents; }
+/* Com os rótulos junto aos ícones ligados, o nome do botão não cabe ao lado da marca: fica no título (dica). */
+:root[data-labels="true"] .sidebar.resizable-panel > .panel-controls .panel-collapse { padding:0; }
+:root[data-labels="true"] .sidebar.resizable-panel > .panel-controls .panel-collapse::after { content:none; }

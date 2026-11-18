@@ -9,6 +9,7 @@ import { DocumentStore } from "./document-store"
 import { AudioPanel, audioMixListeners } from "./panels/AudioPanel"
 import { TableNotesPanel } from "./panels/TableNotesPanel"
 import { PlayerPanel } from "./panels/PlayerPanel"
+import { RoomDropBanner } from "./RoomDropBanner"
 import { ScenesPanel } from "./panels/ScenesPanel"
 import { LibraryPanel } from "./panels/LibraryPanel"
 import { SettingsDialog } from "./panels/SettingsDialog"
@@ -237,6 +238,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
         </header>
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         <section className="canvas-area" aria-label="Cena">
+          <RoomDropBanner />
           {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} properties={{ host: propertiesHost, open: propertiesOpen, setOpen: setPropertiesOpen }} onLibraryScene={openScene} />}
         </section>
         <aside className="side-panel" aria-label="Painel da mesa">
@@ -263,7 +265,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
               </button>
               <div ref={setPropertiesHost} className="side-properties-body" />
             </section>
-          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession={!remote} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
+          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
         </aside>
       </div>
     </main>

@@ -1,4 +1,5 @@
 import { IPC } from "./ipc"
+import { HOST_CHANNELS } from "./host-services"
 import type { WorldSummary } from "./world"
 
 /**
@@ -30,6 +31,10 @@ export const MASTER_CHANNELS: readonly string[] = [
   IPC.playerSetMoves,
   IPC.playerRotateSeatCode,
   IPC.playerClearSeat,
+  IPC.playerAddSeat,
+  IPC.playerRemoveSeat,
+  // U47: biblioteca e salvar sessão, atendidos pelo app da sala.
+  ...HOST_CHANNELS,
   IPC.collaborationState,
   IPC.collaborationCommand,
 ]

@@ -594,7 +594,10 @@ jobs:
           target=android-35
           EOF
           mkdir -p /tmp/runas-android-room
-          "$ANDROID_HOME/emulator/emulator" -avd runas-sala -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-room/emulator.log 2>&1 &
+          # Este job usa um único AVD. O Wi-Fi compartilhado do netsim perdeu o sinal durante o teste
+          # e encerrou as conexões do Chrome. Use a rede anterior do emulador, mantendo o link LAN real.
+          # Android roda o serviço da sala, o WebView e o Chrome na mesma imagem.
+          "$ANDROID_HOME/emulator/emulator" -avd runas-sala -feature -WiFiPacketStream -memory 4096 -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-room/emulator.log 2>&1 &
           timeout 120 adb wait-for-device
           for i in $(seq 1 120); do
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
@@ -610,12 +613,16 @@ jobs:
           adb shell am force-stop com.google.android.apps.nexuslauncher
           node mobile/tests/room-fixture.mjs /tmp/runas-android-room
           for i in $(seq 1 60); do
-            if adb shell 'mkdir -p /sdcard/Documents/cofre-room/Notas && echo pronto > /sdcard/Documents/cofre-room/.runas-mount-probe && rm /sdcard/Documents/cofre-room/.runas-mount-probe'; then break; fi
+            if adb shell 'mkdir -p /sdcard/Documents/cofre-room/Notas /sdcard/Documents/cofre-room/Campanhas && echo pronto > /sdcard/Documents/cofre-room/.runas-mount-probe && rm /sdcard/Documents/cofre-room/.runas-mount-probe'; then break; fi
             sleep 2
           done
           copied=false
           for i in $(seq 1 10); do
-            if adb push /tmp/runas-android-room/fixture/Notas/. /sdcard/Documents/cofre-room/Notas/; then copied=true; break; fi
+            if adb push /tmp/runas-android-room/fixture/Notas/. /sdcard/Documents/cofre-room/Notas/ &&
+               adb push /tmp/runas-android-room/fixture/Campanhas/. /sdcard/Documents/cofre-room/Campanhas/; then
+              copied=true
+              break
+            fi
             sleep 2
           done
           test "$copied" = true
@@ -624,7 +631,8 @@ jobs:
           adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
           adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-room --ez runasWritable true
           bash mobile/tests/android-devtools.sh
-          adb forward tcp:30000 tcp:30000
+          # A rede da sala passa pelo emulador; os forwards do ADB ficam só para depuração.
+          adb emu redir add tcp:30000:30000 | tr -d '\r' | grep -qx OK
           # Somente no emulador: evitar a apresentação inicial do Chrome e inspecionar o jogador Android.
           adb shell am set-debug-app --persistent com.android.chrome
           adb shell 'echo "_ --disable-fre --no-first-run --no-default-browser-check" > /data/local/tmp/chrome-command-line'

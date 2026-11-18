@@ -2231,3 +2231,227 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Consertos visuais (PR V: U121, U120, U112)
+
+- [ ] Barra lateral no computador: recolher e abrir algumas vezes (botão e Ctrl+\). O botão fica no alto, à direita,
+  sempre na mesma altura e à mesma distância da borda; só a runa muda (grande ao lado do nome, aberta; pequena abaixo do
+  botão, recolhida). O Início não sobe nem desce. Conferir também com “Controles maiores” e “Mostrar rótulos junto aos
+  ícones” ligados, e com a janela baixa (a barra com rolagem).
+- [ ] Configurações: passar por todas as seções no índice. A página não anda para o lado, “Conflitos de sincronização”
+  fica numa linha só quando escolhido, e em Acessibilidade há espaço entre a descrição e “Leitura”/“Prévia”.
+- [ ] Celular (até 560 px): nos seletores de nota (ligar nota à campanha, inserir modelo, busca de tarefas, imagens da
+  nota), um nome com pasta longa fica ao lado do ícone, sem descer para a linha de baixo.
+
+## Atualização 1.6 — Relógios com o número de partes digitado (pedido de 18/11)
+
+- [ ] Missões › Relógios › ⋯ › “Editar nome, partes e tipo…”: o campo Partes aceita qualquer número de 2 a 24. Fora disso
+  (ou vazio), aparece “Digite um número de 2 a 24.” e o Gravar fica desligado. Com menos partes que as preenchidas, o
+  relógio fica cheio.
+- [ ] “Novo relógio”: o mesmo campo, começando em 6; Enter cria o relógio.
+- [ ] No celular, o campo abre o teclado numérico.
+
+## Atualização 1.6 — Cartões da Wiki e organograma livres (PR W1: U114, U117)
+
+- [ ] Wiki › “Só categorias”: nenhum nome de categoria cortado no meio (“Acontecimentos”, “Personagens”, “Organizações”),
+  sem o “›”; embaixo do nome, “n artigos” e, se houver, “· n a escrever”. Conferir também com o texto a 140 %.
+- [ ] Relações › Organograma: abre centrado; arrastar o fundo (ou um cartão) move o desenho para qualquer lado;
+  Ctrl + roda e a pinça aproximam; “Enquadrar” e a tecla 0 voltam ao centro. Clicar num cartão sem arrastar ainda abre
+  os detalhes; arrastar começando num cartão não abre. Setas e Tab levam o desenho junto com o foco.
+- [ ] Relações › Árvore genealógica: os mesmos controles (Afastar, %, Aproximar, Enquadrar, arrastar, + − 0); ao pôr outra
+  pessoa no centro, a árvore enquadra de novo.
+- [ ] No celular: um dedo arrasta o organograma e a árvore, dois dedos aproximam; tocar num nome ainda funciona.
+
+## Atualização 1.6 — Elenco refeito (PR E/U115)
+
+- [ ] Campanha › Elenco no computador: uma barra só (Buscar no elenco, Filtros e exibição, Adicionar, ⋯), abas Todos,
+  Jogadores, NPCs, Facções e Relações com o número de cada uma. Clicar num cartão abre o painel à direita; clicar de
+  novo, ✕ ou Esc fecha, e o foco volta ao cartão.
+- [ ] No painel de um NPC: mudar a atitude, marcar “Já apareceu” (desligado quando uma sessão já cita o NPC), os links
+  “Visto em” e as relações; “Abrir artigo” e “Tirar da campanha” (o aviso traz “Desfazer”).
+- [ ] No painel de um personagem de jogador: “Trocar jogador” e “Desvincular” (agora sem pergunta, com “Desfazer” no
+  aviso). Na facção, o − e o + continuam no cartão e também no painel.
+- [ ] “Adicionar”: digitar parte de um nome lista personagens e organizações da wiki fora do elenco (NPC ou facção num
+  clique; “Jogador” vincula como personagem de jogador); “Criar” abre Novo NPC, Nova facção ou Personagem de jogador
+  já com o nome digitado.
+- [ ] Filtros e exibição: Situação, Atitude, Agrupar, Ordem, Lista/Grade e tamanho dos cartões; o que estiver em uso
+  aparece como etiqueta com ✕ abaixo das abas e no número do botão. As escolhas de antes (Grade, ordem) continuam.
+- [ ] No celular (Android): as abas quebram em duas linhas, o painel sobe de baixo, os filtros abrem por cima da barra
+  de navegação; nada rola para os lados a 320 px.
+
+## Atualização 1.6 — Detalhes da nota sem rolagem para os lados (pedido de 18/11)
+
+- [ ] Notas › uma nota com links de outros espaços (por exemplo, uma sessão citada por um evento da Agenda) e o painel
+  Detalhes da nota na largura padrão: nenhuma barra de rolagem horizontal, nem nas abas nem no conteúdo. Nomes longos
+  terminam em “…” e a etiqueta do espaço encolhe.
+- [ ] Com o painel estreito, as abas não escolhidas mostram só o ícone e o número (o nome aparece ao passar o mouse);
+  alargando o painel (arrastar a borda) os nomes voltam.
+
+## Atualização 1.6 — Ferramentas do mundo e da campanha (PR F/U118)
+
+- [ ] Wiki › Ferramentas: abas Geradores, Tabelas da wiki e Conferir a wiki, cada uma com o número. Em Geradores, os 15
+  em quatro faixas de pílulas; as opções e o Gerar ficam na linha do título; Recentes abertos à direita (clique usa de
+  novo). Gerar 5, Usar um, Guardar na wiki… abre o Novo artigo com o tipo certo.
+- [ ] Tabelas da wiki: cada tabela num cartão com Rolar; o resultado aparece embaixo. Numa wiki sem tabelas, a aba
+  mostra um exemplo e o caminho (menu / do editor › Tabela rolável).
+- [ ] Conferir a wiki: “De um lado só” e “Invertidas” com a lista inteira na tela (sem caixa com rolagem); desmarcar e
+  Gravar/Inverter grava só o que ficou marcado.
+- [ ] Campanha › Ferramentas: as quatro ferramentas em abas no topo, a escolhida com a largura toda e lembrada.
+- [ ] No celular: o gerador num seletor (“Taverna (Lugares)”), as abas quebram em linhas, Recentes no fim.
+
+## Atualização 1.6 — Ajuda com tela própria (PR H/U119)
+
+- [ ] Barra lateral › Ajuda (abaixo de Configurações; no celular, em ⋯ Mais): tópicos com a busca à esquerda, o artigo
+  no meio e “Nesta página” à direita, cada um rolando por si. Clicar num título de “Nesta página” leva até ele.
+- [ ] Links antigos: Configurações › “Ajuda e exemplos”, o Ctrl K “Ajuda e notas de exemplo” e o “Como usar na Ajuda”
+  das Ferramentas da Wiki abrem /ajuda (o endereço /config/ajuda/… também).
+- [ ] Ajuda › Exemplos › “Notas de exemplo e tour”: Rever o tour, Adicionar as que faltam e Remover funcionam como antes.
+- [ ] No celular: /ajuda é a lista de tópicos; tocar abre o artigo com “‹ Tópicos”, “Nesta página” recolhido e o
+  próximo tópico no fim. Nada rola para os lados a 320 px.
+
+## Atualização 1.6 — Busca com Páginas (B/U116)
+
+- [ ] Ctrl K e digitar o nome de uma campanha: o grupo “Páginas” vem antes de “Notas”, com a campanha (“Campanha ·
+  Painel”) e os atalhos Sessões, Missões, Elenco e Quadro embaixo do nome. Enter abre o Painel; cada atalho abre a aba.
+- [ ] Digitar o nome de um NPC que está no Elenco de uma campanha: aparecem o artigo, “… no Elenco” e, se ele for membro
+  de uma organização, “… no organograma”. Enter abre a página; Ctrl Enter abre a nota no editor das Notas.
+- [ ] Digitar “acess”, “backups” ou “calendário”: as telas fixas aparecem em Páginas (os comandos que só levavam a uma
+  tela saíram de Comandos).
+- [ ] No celular (320 px), os atalhos da campanha têm 44 px e quebram a linha sem rolagem para os lados.
+
+## Atualização 1.6 — Imagem em todas as categorias da Wiki
+
+- [ ] Abrir um artigo de Construção, Idioma, Acontecimento, Guerra, Era (e os outros tipos que não tinham imagem) e,
+  em Detalhes › Ficha › Editar, escolher uma imagem no campo “Imagem”: ela aparece no topo da ficha, no cartão da
+  categoria e no Elenco, como o retrato do personagem.
+- [ ] Numa categoria criada por você (Wiki › Nova categoria), a ficha também tem “Imagem”, mesmo que a categoria tenha
+  sido criada antes desta versão sem esse campo.
+- [ ] No Obsidian, um artigo com `imagem: "[[arquivo.png]]"` continua abrindo igual (a propriedade é só texto).
+
+## Atualização 1.6 — Sala: assentos, quedas e Reconectar (D/U89)
+
+- [ ] Com a sala aberta e dois jogadores dentro, clicar em “+ Assento”: aparece “Jogador 3” com código novo, e os dois
+  primeiros continuam conectados.
+- [ ] “Remover Jogador 3” com alguém nele pede confirmação e desconecta só esse jogador; o código dele deixa de valer.
+  Com o assento vazio, remove sem perguntar. Não dá para ter menos de 1 nem mais de 12.
+- [ ] Gerar o link público e matar o processo `cloudflared` (Gerenciador de Tarefas / `pkill cloudflared`): a mesa
+  mostra a faixa “O link público caiu. Abrindo outro túnel…”, vem uma notificação do sistema e, em alguns segundos, a
+  faixa traz o link novo com “Copiar aviso para os jogadores”. Os jogadores entram pelo link novo com o mesmo código.
+- [ ] Sem internet, o túnel não volta: depois de três tentativas a faixa oferece “Reconectar”.
+- [ ] Trocar o computador de Wi-Fi com a sala aberta: em até 10 s a faixa avisa que o endereço mudou e mostra o link da
+  rede local novo.
+- [ ] No Android, matar o túnel (modo avião por alguns segundos): a faixa aparece e o túnel é reaberto sozinho.
+
+## Atualização 1.6 — Mestre remoto completo (K/U47)
+
+- [ ] No computador, abrir uma mesa, ligar a sala e copiar o link do mestre (painel Sala › Mestre remoto). No celular,
+  VTT › Entrar Sala: colar a mensagem inteira com o link. O texto embaixo do campo diz “Link do mestre remoto” e o
+  botão vira “Entrar como mestre remoto”; a mesa do mestre abre (no Android, pelo navegador).
+- [ ] No mestre remoto, a aba Biblioteca lista os itens do cofre do computador, com miniatura. Pôr um token e um mapa
+  na cena funciona; “Guardar na biblioteca” num token do celular aparece na biblioteca do computador.
+- [ ] No mestre remoto, Notas › “Salvar Sessão” lista as campanhas do cofre do computador e cria a sessão em
+  `Campanhas/<campanha>/Sessões/`, que aparece no computador.
+- [ ] Com o app do computador fechado na tela de outra coisa (sala aberta), a biblioteca continua funcionando; com a
+  sala encerrada, o celular avisa para abrir o app.
+- [ ] No token ligado a uma nota, o ⋯ do mestre remoto tem “Desvincular”.
+- [ ] Um link de mestre de fora da rede local e do túnel (ex.: `https://exemplo.com/master?m=…`) é recusado no Entrar Sala.
+
+## Importar direto (1.6, J2/U104)
+
+- [ ] Em Importar e exportar › Importar, o botão de escolher arquivos vem primeiro. As explicações de origem (pacotes,
+  ZIPs, Notion) e a pasta dos arquivos avulsos ficam em “De onde importar e onde entram os arquivos avulsos”,
+  recolhido, e abrem pelo teclado (Enter ou espaço).
+- [ ] Depois de importar, aparece “Abrir o que entrou”, com até 4 atalhos:
+  - um pacote com uma wiki abre a wiki;
+  - uma campanha abre o Painel dela;
+  - um livro abre o livro;
+  - uma mesa do VTT abre “Criar mesa”;
+  - notas soltas abrem em Notas.
+  Escolher outro arquivo apaga os atalhos da importação anterior.
+- [ ] No celular (320 px), os atalhos e o resumo recolhido têm 44 px de altura e não criam rolagem para os lados.
+
+## Android: arquivos grandes em pedaços e “Testar gravação” (1.6, T/U109 e U110)
+
+- [ ] No Android, importe um pacote `.runas` (ou um ZIP) com um áudio ou vídeo grande (100 MB ou mais). A prévia e a
+  gravação terminam sem o app fechar, e o arquivo abre igual no cofre. O binário vai do pacote para a ponte em
+  pedaços de 2 MB; nem a conferência do manifesto junta o arquivo inteiro na memória da tela.
+- [ ] No Android, importe um arquivo grande escolhido avulso (fora de pacote): ele também é gravado em pedaços.
+- [ ] Um pacote com a imagem corrompida é recusado e nada fica pela metade no cofre.
+- [ ] Android, Configurações › Cofre: “Testar gravação” está disponível e diz “A gravação funciona nesta pasta.”, com
+  a pasta escolhida pelo seletor (SAF) e com o acesso a todos os arquivos. Depois do teste, não fica nenhum arquivo
+  “Runas-Codex teste de gravação …” no cofre nem na lixeira (`.trash`), e o Obsidian não mostra nada novo.
+- [ ] Com o cofre em somente leitura, o botão fica desativado (“Libere a gravação para testar.”).
+
+## Nome da nota no título e primeiro modelo (1.6, R/U99)
+
+- [ ] Notas › Nova nota (ou Ctrl N): a nota “Sem título” abre com o nome selecionado no topo. Digitar e apertar
+  Enter renomeia na mesma pasta; a aba, a migalha e os links para a nota acompanham.
+- [ ] Clique no nome de uma nota já existente: ele vira campo. Esc desfaz; sair do campo com um nome válido renomeia;
+  com um nome inválido (`:`, vazio, nome que já existe na pasta), o Enter mostra o aviso em vermelho e sair do campo
+  volta ao nome de antes.
+- [ ] “Renomear ou mover…” continua no ⋯ da nota para mudar de pasta. O nome com `/` no título pede para usar ele.
+- [ ] No celular (Android e 320 px), a nota nova mostra o nome selecionado numa linha própria da barra, com o teclado
+  aberto; depois de confirmar, a barra volta a ter só os botões (o nome fica na barra do app, como antes).
+- [ ] Com o cofre em somente leitura, o nome é texto comum, sem campo.
+- [ ] ⋯ › Inserir modelo… num cofre sem modelos: “Criar o primeiro modelo” cria `Templates/Modelo.md` (ou na pasta de
+  modelos configurada no Obsidian) com `{{title}}`, `{{date}}` e `{{time}}`, e abre com o nome selecionado. No
+  Obsidian, o plugin Modelos acha a nota.
+
+## Atualização 1.6 — Início com “Mesa de hoje” (L/U46)
+
+- [ ] Com uma sessão marcada para hoje numa campanha ativa, o Início abre com “Mesa de hoje” no topo: horário, quanto
+      falta, preparação e presença. “Abrir campanha” só aparece quando a campanha não está ativa.
+- [ ] O bloco **Hoje** mostra os eventos do dia, as tarefas atrasadas ou de hoje e os hábitos. Marcar uma tarefa pelo
+      Início grava o `[x]` na nota (conferir no Obsidian) e some da lista; o mesmo com um hábito.
+- [ ] **Campanhas ativas** mostra a data e a hora do mundo de cada campanha, igual ao Painel; a campanha sem
+      calendário diz “Sem calendário do mundo”.
+- [ ] Centelhas: o botão só com ícone captura a ideia em `Notas/Entrada.md`; o leitor de tela o anuncia como
+      “Capturar ideia”.
+- [ ] No celular (Android, 360 px), sem rolagem para os lados, com os alvos de toque grandes; tema claro e escuro.
+
+## Atualização 1.6 — Smoke do Windows e auditoria (W/U111, U113)
+
+- [ ] Nos próximos PRs, o job **windows** do Release não falha mais em `paste.link` (o smoke agora espera a nota
+      colada chegar ao disco, até 10 s, em vez de 1,5 s fixos).
+- [ ] O job **audit** do CI passa sem nenhuma exceção (`.github/auditoria-excecoes.json` vazio): o GitHub retirou o
+      aviso do picomatch em 18/11.
+- [ ] O job **android-room** falhou em 5 das 15 execuções da 1.6, em PRs que não mexem na sala (esperas de 60 s no
+      emulador: crachá “Jogador 1” e “Nenhum aparelho conectado”). Rodar de novo o job resolve; conserto à parte.
+
+## Atualização 1.6 — Miniaturas e orçamento pela mediana (A2/U86, U76, U108)
+
+- [ ] Wiki › categorias com capa e Campanhas: as capas dos cartões e os retratos (brasões) aparecem nítidos e mais
+      rápidos a partir da segunda visita. Trocar a imagem no disco (mesmo nome) mostra a nova.
+- [ ] A pasta `miniaturas` fica nos dados do app (Linux `~/.config/Runas-Codex/miniaturas`, Windows
+      `%APPDATA%\Runas-Codex\miniaturas`), nunca no cofre; o Obsidian não vê nada novo.
+- [ ] GIF, SVG e WebP continuam aparecendo inteiros (sem miniatura).
+- [ ] O job “Orçamento de desempenho” do CI mostra no `summary.json` os três valores de cada número e reprova só pela
+      mediana.
+
+## Atualização 1.6 — Paleta Runa (P/U122, só maquete)
+
+## Atualização 1.6 — Paleta Runa (P/U122)
+
+- [ ] Configurações › Aparência › Paleta temática › “Runa · ardósia e runa acesa”: fundo azul-ardósia e botões em
+      ciano no escuro; fundo claro e azul-petróleo no claro. Conferir Início, Notas, Wiki, Campanhas e a Mesa.
+- [ ] Com “Contraste alto” ligado (Acessibilidade), a Runa continua legível nos dois temas.
+- [ ] No celular (Android, 360 px), a paleta vale também na barra inferior e nos menus.
+
+
+## Conferência das correções integradas da 1.6
+
+- [ ] Em 320, 390 e 1366 px, buscar um personagem, um evento, uma mesa e **Atalhos**. Conferir o painel ou seção
+  correspondente. Voltar da Ajuda para Tópicos por teclado e abrir Filtros na Linha do tempo em 320 e 390 px.
+- [ ] Com um NPC aberto no Elenco, reordenar a lista de NPCs no Obsidian e conferir que o painel mantém a ficha.
+- [ ] No Android, importar um binário grande já existente e comparar conteúdo igual e diferente. Na opção Substituir,
+  conferir a recuperação pelo .runas de segurança. Cancelar a escolha do destino deve preservar o cofre.
+- [ ] No Android, colar o link do mestre em **Entrar Sala** e conferir a aba integrada, o retorno ao aplicativo,
+  a biblioteca remota e **Salvar Sessão**. Repetir com link LAN e público, quando disponível.
+
+
+## Sala Android — reconexão e rede virtual no CI
+
+- [ ] Com um mestre remoto conectado, usar **Desconectar** no anfitrião. O navegador deve oferecer **Tentar de novo**
+  e o anfitrião deve continuar sem mestre até uma nova entrada explícita. Conferir no Android e no desktop.
+- [ ] Conferir o job `android-room` em execuções independentes. O Chrome do AVD ainda entra e sai pelo link LAN
+  anunciado pela sala, usando o modelo anterior de rede virtual do emulador.

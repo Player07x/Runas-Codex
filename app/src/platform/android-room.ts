@@ -7,13 +7,16 @@ import { IPC, type DocumentChange, type LinkTestResult, type PlayerState, type V
 import type { PlayerWireMessage } from "../vtt/shared/player"
 import { PortableWorldStore } from "../vtt/shared/portable-world-store"
 import { RoomAuthority } from "../vtt/shared/room-authority"
+import { retryAfter } from "../vtt/shared/room-drop"
+import { HOST_CHANNELS, NO_HOST, hostArgs, type HostHandler } from "../vtt/shared/host-services"
 import { VisionService } from "../vtt/shared/vision-service"
 import { AudioService } from "../vtt/shared/audio-service"
 import { RegionService } from "../vtt/shared/region-service"
 import { clearLog, deleteDocument, putDocument } from "../vtt/shared/world-documents"
 import type { PlayerSeatConnection, PlayerTransport, PlayerTransportOptions } from "../vtt/shared/transport"
 import { isAssetPath } from "../vtt/shared/scene"
-import { MASTER_CHANNELS, MASTER_EVENTS, type MasterState } from "../vtt/shared/master"
+import { isMasterLink, MASTER_CHANNELS, MASTER_EVENTS, type MasterState } from "../vtt/shared/master"
+import { parseRoomLink } from "../vtt/shared/room-link"
 import { dispatchMaster } from "../vtt/shared/master-dispatch"
 import { ASSET_KINDS } from "../vtt/shared/world"
 
@@ -34,6 +37,7 @@ interface RoomPlugin {
   masterEmit(options: { channel: string; payload: unknown }): Promise<void>
   addListener(event: "master-state", listener: (state: MasterState) => void): Promise<PluginListenerHandle>
   openUrl(options: { url: string }): Promise<void>
+  openMaster(options: { url: string }): Promise<void>
   addListener(event: "request", listener: (request: NativeRequest) => void): Promise<PluginListenerHandle>
   addListener(event: "counts", listener: (counts: { players: number; spectators: number }) => void): Promise<PluginListenerHandle>
   addListener(event: "stopped", listener: () => void): Promise<PluginListenerHandle>
@@ -90,8 +94,10 @@ class AndroidTransport implements PlayerTransport {
       if (request.kind.startsWith("master")) result = await this.master(request)
       if (payload.seat) this.seats.set(payload.seat.slotId, payload.seat)
       await native.answer({ id: request.id, result })
-    } catch {
-      await native.answer({ id: request.id, result: { error: "Não foi possível concluir o pedido." } })
+    } catch (error) {
+      // O mestre remoto vê o motivo (ex.: abrir o app para usar a biblioteca); o resto continua genérico.
+      const message = request.kind.startsWith("master") && error instanceof Error ? error.message : "Não foi possível concluir o pedido."
+      await native.answer({ id: request.id, result: { error: message } })
     }
   }
   async start(port: number, key: string): Promise<void> {
@@ -114,6 +120,10 @@ class AndroidTransport implements PlayerTransport {
     for (const seat of this.seats.values()) perSeat[seat.slotId] = message(seat)
     void native.publish({ perSeat, assets: this.options.allowedAssets?.() ?? [] }).catch(() => undefined)
   }
+  /** U89: o assento saiu; as respostas privadas dele param (o cookie e o código já não valem). */
+  disconnectSeat(slotId: string): void {
+    this.seats.delete(slotId)
+  }
   /** Os assentos existem antes de um jogador conectar: respostas privadas nunca usam o estado de outro. */
   rememberSeats(state: PlayerState): void {
     for (const seat of state.seats) this.seats.set(seat.slotId, { slotId: seat.slotId, label: seat.label })
@@ -135,6 +145,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
   }
   const vision = new VisionService(() => store.openWorld?.database ?? null)
   let transport: AndroidTransport
+  let hostHandler: HostHandler | null = null
   let stopping = false
   let authority: RoomAuthority
   const flush = async () => {
@@ -164,7 +175,13 @@ export function createAndroidVttApi(platform: Platform): VttApi {
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
             return { result: await api.assets.import(payload.kind as typeof ASSET_KINDS[number], payload.name ?? "", bytes) }
           }
-          return { result: await dispatchMaster(api, payload.channel ?? "", payload.args ?? []) ?? null }
+          // U47: biblioteca e salvar sessão vão para a interface do app, que grava pelo cofre.
+          const channel = payload.channel ?? ""
+          if (HOST_CHANNELS.includes(channel)) {
+            if (!hostHandler) throw new Error(NO_HOST)
+            return { result: await hostHandler(channel, hostArgs(channel, payload.args ?? [])) ?? null }
+          }
+          return { result: await dispatchMaster(api, channel, payload.args ?? []) ?? null }
         },
         (state) => masterListeners.forEach(listener => listener(state)),
       )),
@@ -225,7 +242,12 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     await store.close()
   }
   // O processo do túnel morreu sozinho: o painel avisa que o link público caiu.
-  void native.addListener("tunnel-lost", () => { if (authority.isEnabled) authority.markTunnelLost() })
+  // Decisão 6 do U89: o app abre outro túnel sozinho; a faixa da mesa mostra o link novo.
+  void native.addListener("tunnel-lost", () => {
+    if (!authority.isEnabled) return
+    authority.markTunnelLost(true)
+    void retryAfter(publicLink, () => authority.isEnabled && !authority.currentPublicUrl).then((url) => { if (!url) authority.markTunnelFailed() })
+  })
   /** Pedido do mestre: abre o túnel e monta o link dos jogadores com a chave da sala, como no desktop. */
   const publicLink = async (): Promise<string> => {
     const key = authority.currentKey
@@ -302,6 +324,10 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         await save()
       },
     },
+    serveHost: (handler) => {
+      hostHandler = handler
+      return () => { if (hostHandler === handler) hostHandler = null }
+    },
     player: {
       state: async () => authority.state(),
       onState: (listener) => {
@@ -333,6 +359,24 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         authority.refresh()
         return state
       },
+      addSeat: async () => {
+        const state = authority.addSeat()
+        authority.refresh()
+        return state
+      },
+      removeSeat: async () => {
+        const state = authority.removeSeat()
+        authority.refresh()
+        return state
+      },
+      // No Android, o servidor da sala vive no serviço nativo (parar a sala desliga tudo); “Reconectar” reabre só o
+      // túnel público que caiu.
+      reconnect: () =>
+        ordered(async () => {
+          if (!authority.isEnabled) throw new Error("Ligue a transmissão primeiro.")
+          if (authority.state().drop?.kind === "tunnel" && !authority.currentPublicUrl) await publicLink()
+          return authority.state()
+        }),
       openWindow: async () => {
         const url = authority.localWindowUrl()
         if (url) await native.openUrl({ url })
@@ -340,7 +384,11 @@ export function createAndroidVttApi(platform: Platform): VttApi {
       join: async (url) => {
         const parsed = new URL(url)
         if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error("Link da sala inválido.")
-        await native.openUrl({ url: parsed.href })
+        if (isMasterLink(parsed.href)) {
+          await native.openMaster({ url: parseRoomLink(parsed.href).url })
+        } else {
+          await native.openUrl({ url: parsed.href })
+        }
       },
       setScene: async (id) => {
         authority.setScene(id)

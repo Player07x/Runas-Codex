@@ -2,7 +2,8 @@ import { platform } from "../platform"
 import { createTransferArchive, type TransferFile } from "../core/transfer/archive"
 import { isLibraryItemPath, itemAssets, libraryAssetPath, libraryItemPath, LIBRARY_ROOT, parseLibraryItem, type LibraryItem } from "./shared/library"
 import type { AssetPath } from "./shared/scene"
-import { remoteMaster } from "./api"
+import { remoteMaster, vtt } from "./api"
+import { fromBase64, HOST } from "./shared/host-services"
 
 /** Leitura e gravação da biblioteca da mesa (U13); as regras do formato ficam em `shared/library.ts`. */
 export interface LibraryStore {
@@ -13,6 +14,11 @@ export interface LibraryStore {
   asset(path: AssetPath): Promise<Uint8Array>
   /** Pacote `.runas` (ADR 0020) só com a biblioteca; importa-se em Importar e exportar, como qualquer pacote. */
   exportPackage(): Promise<Uint8Array>
+  /**
+   * Copia as imagens do item para a mesa aberta e devolve o caminho de cada uma lá. Só o mestre remoto tem: a cópia
+   * é feita no aparelho da sala, sem as imagens irem e voltarem pela rede.
+   */
+  copyToWorld?(item: LibraryItem): Promise<Map<AssetPath, AssetPath>>
 }
 
 const encode = (value: unknown) => new TextEncoder().encode(`${JSON.stringify(value, null, 2)}\n`)
@@ -76,9 +82,25 @@ function memoryLibrary(): LibraryStore {
 }
 
 /**
- * A biblioteca é do cofre: o mestre remoto (celular comandando a sala do computador) não tem o cofre e fica sem ela.
- * Sem as gravações da área das mesas (navegador), a prévia guarda na memória.
+ * U47: o mestre remoto (celular comandando a sala) usa a biblioteca do cofre do aparelho da sala, que atende cada
+ * pedido pelo app aberto. Guardar lê as imagens da mesa lá mesmo; pôr na cena copia lá mesmo.
  */
-export const library: LibraryStore | null = remoteMaster ? null
+function remoteLibrary(): LibraryStore {
+  const call = <T>(channel: string, ...args: unknown[]) => {
+    if (!vtt.callHost) return Promise.reject(new Error("Biblioteca indisponível."))
+    return vtt.callHost(channel, args) as Promise<T>
+  }
+  return {
+    list: () => call<LibraryItem[]>(HOST.libraryList),
+    save: (item) => call<void>(HOST.librarySave, item),
+    remove: (item) => call<void>(HOST.libraryRemove, item.id),
+    asset: async (path) => fromBase64(await call<string>(HOST.libraryAsset, path)),
+    exportPackage: () => Promise.reject(new Error("Exporte a biblioteca pelo aparelho da sala.")),
+    copyToWorld: async (item) => new Map(await call<[AssetPath, AssetPath][]>(HOST.libraryCopyToWorld, item)),
+  }
+}
+
+/** No cofre (desktop e Android), no mestre remoto pelo aparelho da sala; sem as gravações da área das mesas (navegador), na memória. */
+export const library: LibraryStore | null = remoteMaster ? remoteLibrary()
   : platform.listTransferFiles && platform.writeManagedTransfer ? vaultLibrary()
     : memoryLibrary()

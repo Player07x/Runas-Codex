@@ -44,7 +44,7 @@ export function CoverImagePicker({ value, onChange, nearNote, legend = "Imagem d
     {images.length === 0 ? <p className="small muted">Ainda não há imagens no cofre. Use “Do computador…”.</p> : <div className="book-cover-grid kit-cover-grid" role="radiogroup" aria-label="Imagens do cofre">
       {shown.map((path) => <label key={path} className={`book-cover-thumb kit-cover-thumb${path === current ? " on" : ""}`} title={path}>
         <input type="radio" name={name} checked={path === current} onChange={() => onChange(`[[${path}]]`)} />
-        <img src={vault.platform.fileUrl(path) ?? ""} alt="" loading="lazy" />
+        <img src={vault.platform.thumbnailUrl?.(path, 256) ?? vault.platform.fileUrl(path) ?? ""} alt="" loading="lazy" decoding="async" />
         <span>{basename(path)}</span>
       </label>)}
     </div>}

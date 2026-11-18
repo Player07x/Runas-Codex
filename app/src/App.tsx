@@ -13,6 +13,7 @@ import { BooksScreen } from "./screens/books/BooksScreen"
 import { VttScreen } from "./screens/vtt/VttScreen"
 import { TransferScreen } from "./screens/TransferScreen"
 import { SettingsScreen } from "./screens/SettingsScreen"
+import { HelpScreen } from "./screens/HelpScreen"
 import { CanvasScreen } from "./components/canvas/CanvasScreen"
 import { CustomizationRuntime } from "./components/vault/Customization"
 
@@ -33,7 +34,8 @@ function isFill(route: string[]): boolean {
     (first === "livros" && Boolean(second)) ||
     (first === "vtt" && (second === "mesa" || second === "jogador")) ||
     (first === "campanhas" && (route[2] === "quadro" || (route[2] === "sessoes" && Boolean(route[3])))) ||
-    first === "quadro"
+    first === "quadro" ||
+    first === "ajuda"
   )
 }
 
@@ -81,6 +83,9 @@ export function App() {
       break
     case "quadro":
       screen = <CanvasScreen path={rest[0]} />
+      break
+    case "ajuda":
+      screen = <HelpScreen />
       break
     default:
       screen = <Home />

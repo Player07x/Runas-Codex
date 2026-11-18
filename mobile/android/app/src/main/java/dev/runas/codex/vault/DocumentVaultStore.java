@@ -342,8 +342,16 @@ final class DocumentVaultStore implements VaultFs {
 
     public synchronized void rename(String from, String to) throws IOException { move(from, to, false); }
 
+    public synchronized void removeWriteCheck(String path) throws IOException {
+        if (!VaultStore.WRITE_CHECK.matcher(path).matches()) throw new VaultError("Só o arquivo do teste de gravação sai sem passar pela lixeira.");
+        Node file = optional(path, true);
+        if (file != null) tree.delete(file);
+        cache.remove(path);
+    }
+
     public synchronized String trash(String path) throws IOException {
-        String p = path(path, true);
+        // A biblioteca da mesa também usa a lixeira do cofre. Imagens e outros dados ocultos não saem por aqui.
+        String p = path(path, !VaultTransfer.isLibraryItem(path));
         Node source = find(p, true);
         folder(".trash");
         int dot = source.folder ? -1 : source.name.lastIndexOf('.');
@@ -365,7 +373,7 @@ final class DocumentVaultStore implements VaultFs {
     }
 
     public synchronized Entry restoreTrash(String path, String target) throws IOException {
-        String p = path(path, false), dest = path(target, true);
+        String p = path(path, false), dest = path(target, !VaultTransfer.isLibraryItem(target));
         if (!p.startsWith(".trash/")) throw new VaultError("Caminho de lixeira inválido.");
         Node source = find(p, true);
         if(source.size<0 || source.size>BinaryContent.MAX_SIZE)throw new VaultError("O arquivo passa do limite de 512 MB.");

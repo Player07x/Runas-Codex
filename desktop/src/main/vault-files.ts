@@ -4,6 +4,8 @@ import { randomBytes } from "node:crypto"
 import { VAULT_FILE_SCHEME } from "../../../app/src/platform/bridge"
 import { resolveInside, VaultError } from "./vault"
 import { fileStream, parseRange } from "./vtt/world-assets"
+import { requestedThumbWidth } from "../../../app/src/core/thumbnails"
+import { createThumbnailer, type Thumbnailer } from "./thumbnails"
 
 /**
  * Anexos do cofre na interface (`vault-file://cofre/<caminho>`): imagens, áudio, vídeo e PDF das notas. Só tipos de
@@ -37,6 +39,23 @@ export async function mediaFile(root: string, path: string): Promise<string | nu
 }
 
 /** Resposta do protocolo `vault-file://` (com Range, para áudio e vídeo começarem de qualquer ponto). */
+let thumbnailer: Promise<Thumbnailer | null> | null = null
+
+/** Testes trocam o gerador de miniaturas (o padrão usa o `nativeImage` do Electron). */
+export function setThumbnailer(next: Thumbnailer | null) {
+  thumbnailer = Promise.resolve(next)
+}
+
+function defaultThumbnailer(): Promise<Thumbnailer | null> {
+  thumbnailer ??= import("electron").then(({ app, nativeImage }) => createThumbnailer(join(app.getPath("userData"), "miniaturas"), async (file, width, type) => {
+    const image = nativeImage.createFromPath(file)
+    if (image.isEmpty() || image.getSize().width <= width) return null
+    const small = image.resize({ width, quality: "good" })
+    return type === "image/png" ? small.toPNG() : small.toJPEG(85)
+  }), () => null)
+  return thumbnailer
+}
+
 export async function vaultFileResponse(root: string | null, url: string, range: string | null): Promise<Response> {
   const parsed = new URL(url)
   if (!root || parsed.hostname !== "cofre") return new Response(null, { status: 404 })
@@ -50,6 +69,12 @@ export async function vaultFileResponse(root: string | null, url: string, range:
   if (!file) return new Response(null, { status: 404 })
   // `no-cache`: o anexo pode mudar no disco (outra imagem com o mesmo nome).
   const headers: Record<string, string> = { "content-type": VAULT_FILE_TYPES[extname(file).toLowerCase()]!, "cache-control": "no-cache", "accept-ranges": "bytes", "x-content-type-options": "nosniff" }
+  // U86: `?w=640` pede a miniatura (capas e retratos nas grades); sem ela, ou se a imagem já é pequena, vai a inteira.
+  const width = requestedThumbWidth(parsed.searchParams.get("w"))
+  if (width && !range) {
+    const thumb = await (await defaultThumbnailer())?.thumbnail(file, width).catch(() => null)
+    if (thumb) return new Response(fileStream(thumb.path), { headers: { ...headers, "content-type": thumb.type } })
+  }
   try {
     const { size } = await stat(file)
     if (!range) return new Response(fileStream(file), { headers: { ...headers, "content-length": String(size) } })

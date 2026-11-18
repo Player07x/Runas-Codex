@@ -4,7 +4,7 @@ export { toBase64, fromBase64 } from "../core/binary-chunks"
 import { createAndroidVttApi } from "./android-room"
 import { createAndroidUpdates } from "./android-updates"
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core"
-import type { BackupInfo, Platform, RoomHostInfo, VaultEntry, VaultInfo } from "./platform"
+import type { BackupInfo, Platform, RoomHostInfo, VaultEntry, VaultInfo, WriteCheck } from "./platform"
 import { onAndroidReminderOpen, scheduleOnAndroid } from "./reminders"
 
 /**
@@ -59,6 +59,7 @@ interface RunasVaultPlugin extends AndroidBinaryPlugin {
   addListener(event: "share", listener: (data: SharedItem) => void): Promise<PluginListenerHandle>
   addListener(event: "open", listener: (data: { route: string }) => void): Promise<PluginListenerHandle>
   regrant(): Promise<{ vault: NativeInfo | null }>
+  checkWrite(): Promise<WriteCheck>
 }
 
 export const RunasVault = registerPlugin<RunasVaultPlugin>("RunasVault")
@@ -171,6 +172,10 @@ export function createCapacitorPlatform(): Platform {
     // U91 (item 5): devolver a permissão da pasta e a opção avançada do acesso a todos os arquivos.
     regrantVault: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.regrant()).vault) },
     chooseVaultAllFiles: async () => { await result.vtt?.closeWorld(); return remember((await RunasVault.choose({ allFiles: true })).vault) },
+    // U110: cria, troca e apaga um arquivo de teste pelo caminho de cada gravação; nada fica no cofre.
+    checkWrite: () => RunasVault.checkWrite(),
+    writeBinaryStream: async (path, size, expected, produce, managed) => rememberEntry(await binary.writeStream(path, size, expected, produce, managed)),
+    readBinaryStream: binary.readStream,
   }
   result.vtt = createAndroidVttApi(result)
   return result

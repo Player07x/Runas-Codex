@@ -7,6 +7,13 @@ import java.util.List;
 /** Única área oculta transportável: mesas do programa; demais preferências e arquivos de controle ficam de fora. */
 final class VaultTransfer {
     static final String PREFIX = ".runas/mesas/";
+    private static final java.util.regex.Pattern LIBRARY_ITEM =
+        java.util.regex.Pattern.compile("\\.runas/mesas/biblioteca/cenas/[A-Za-z0-9_-]{1,64}\\.json");
+
+    static boolean isLibraryItem(String path) {
+        return path != null && LIBRARY_ITEM.matcher(path).matches();
+    }
+
     static String relative(String path) throws IOException {
         if (path == null || !path.startsWith(PREFIX) || path.indexOf('\\') >= 0) throw new VaultStore.VaultError("Caminho inválido para os dados da mesa.");
         String value = path.substring(PREFIX.length());

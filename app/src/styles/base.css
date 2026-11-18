@@ -174,4 +174,7 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
 @media (max-width: 560px) {
   .list-item { flex-wrap: wrap; }
   .list-item .meta { white-space: normal; overflow-wrap: anywhere; }
+  /* U112: o nome logo depois do ícone fica na linha dele, mesmo quando a pasta é longa (antes descia inteiro para
+     baixo do ícone); o que não cabe é cortado ou quebra dentro do próprio nome. Só o que vem depois desce. */
+  .list-item > svg:first-child + :is(span, div, strong):not(.meta) { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
 }

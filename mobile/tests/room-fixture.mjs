@@ -16,4 +16,8 @@ await writeFile(join(folder,'cenas/scene.json'),JSON.stringify([
   doc('wall','wall','scene',{x1:500,y1:0,x2:500,y2:1000}),
 ]))
 await mkdir(join(output,'fixture/Notas'),{recursive:true});await writeFile(join(output,'fixture/Notas/Intacta.md'),'# Nota intacta\n')
-await writeFile(join(output,'fixture.json'),JSON.stringify({map,secret,imageBytes:image.length}))
+const campaign='Campanha Android X7'
+const campaignFolder=join(output,'fixture/Campanhas',campaign)
+await mkdir(campaignFolder,{recursive:true})
+await writeFile(join(campaignFolder,campaign+'.md'),'---\ntipo: campanha\nstatus: ativa\n---\n# '+campaign+'\n')
+await writeFile(join(output,'fixture.json'),JSON.stringify({map,secret,imageBytes:image.length,campaign}))

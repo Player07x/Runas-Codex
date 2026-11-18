@@ -348,6 +348,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         for (const write of writes) {
           onProgress?.(completed, writes.length, bytes, totalBytes)
           if ((await platform.vault())?.path !== identity) throw new Error("O cofre mudou durante a importação.")
+          // U109 (Android): o binário vai do pacote para a ponte em pedaços, sem ficar inteiro na memória da tela.
+          if (write.stream && platform.writeBinaryStream && !/\.(md|canvas|base)$/i.test(write.path)) {
+            const size = transferSize(write)
+            await platform.writeBinaryStream(write.path, size, write.expected, write.stream, Boolean(managedWorldPath(write.path)))
+            completed++; bytes += size
+            continue
+          }
           // Sob demanda (C2): só este arquivo fica na memória enquanto é gravado.
           const data = await transferBytes(write)
           if (managedWorldPath(write.path)) {

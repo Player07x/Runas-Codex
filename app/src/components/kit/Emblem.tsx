@@ -7,6 +7,7 @@ import {
 import { EMBLEMS, toneStyle, type Tone } from "../../core/tones"
 import { articleCategory, categoryLook } from "../../core/personalization"
 import { articleImage } from "../../core/wiki"
+import { thumbWidth } from "../../core/thumbnails"
 import { vaultNoteSet } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 
@@ -25,12 +26,17 @@ export function emblemIcon(id: string | null | undefined): LucideIcon | null {
 
 export const emblemLabel = (id: string | null | undefined) => EMBLEMS.find(([emblem]) => emblem === id)?.[1]
 
-/** URL de uma imagem do cofre (capa, retrato), resolvida como um link a partir de `from`. No navegador de exemplo, nada. */
-export function useVaultImage(target: string | null | undefined, from: string): string | undefined {
+/**
+ * URL de uma imagem do cofre (capa, retrato), resolvida como um link a partir de `from`. No navegador de exemplo, nada.
+ * Com `cssWidth`, pede a miniatura que cobre essa largura na densidade da tela (U86), quando a plataforma tem.
+ */
+export function useVaultImage(target: string | null | undefined, from: string, cssWidth?: number): string | undefined {
   const vault = useVault()
   if (!target || !vault.index || vault.platform.kind === "memory") return undefined
   const found = vaultNoteSet(vault.index, from, {}, vault.platform).resolve?.(target, "wiki")
-  return found ? vault.platform.fileUrl(found.path) ?? undefined : undefined
+  if (!found) return undefined
+  const width = cssWidth ? thumbWidth(cssWidth, typeof window === "undefined" ? 1 : window.devicePixelRatio) : null
+  return (width && vault.platform.thumbnailUrl?.(found.path, width)) || (vault.platform.fileUrl(found.path) ?? undefined)
 }
 
 /**
@@ -38,7 +44,7 @@ export function useVaultImage(target: string | null | undefined, from: string): 
  * única pista (o nome sempre aparece ao lado, e o ícone também).
  */
 export function Crest({ tone, emblem, image, from, name, size = 40, round = false }: { tone?: Tone | null; emblem?: string | null; image?: string | null; from?: string; name: string; size?: number; round?: boolean }) {
-  const url = useVaultImage(image, from ?? "")
+  const url = useVaultImage(image, from ?? "", size)
   const [failed, setFailed] = useState<string>()
   const Icon = emblemIcon(emblem)
   return (
@@ -50,7 +56,9 @@ export function Crest({ tone, emblem, image, from, name, size = 40, round = fals
 
 /** Faixa de capa: a imagem escolhida ou um degradê no tom. */
 export function CoverBand({ tone, cover, from, height = 120, className = "" }: { tone?: Tone | null; cover?: string | null; from: string; height?: number; className?: string }) {
-  const url = useVaultImage(cover, from)
+  // As faixas baixas são as dos cartões (até ~400 px de largura): miniatura. As altas ficam no topo da página, com a
+  // largura toda: imagem inteira.
+  const url = useVaultImage(cover, from, height <= 96 ? 400 : undefined)
   const [failed, setFailed] = useState<string>()
   return (
     <div className={`cover-band${tone ? " toned" : ""} ${className}`} style={{ height, ...toneStyle(tone) }} aria-hidden="true">

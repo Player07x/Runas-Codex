@@ -1,4 +1,4 @@
-import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate"
+import { deflateSync, Inflate, inflateSync, strFromU8, strToU8 } from "fflate"
 
 /**
  * ZIP em pedaços (U50, ADR 0037): o pacote é escrito e lido um arquivo por vez, sem montar o ZIP inteiro na memória.
@@ -7,6 +7,7 @@ import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate"
  * 65.534 arquivos.
  */
 export interface ZipSink { write(bytes: Uint8Array): Promise<void> }
+export type ReadChunks = (bytes: Uint8Array) => Promise<void>
 /** Acesso aleatório ao arquivo do pacote (um `File`/`Blob` no navegador, um arquivo no Node). */
 export interface ZipSource { size: number; read(offset: number, length: number): Promise<Uint8Array> }
 export interface ZipEntryInfo { name: string; method: number; crc: number; compressed: number; size: number; offset: number }
@@ -22,11 +23,12 @@ const crcTable = Uint32Array.from({ length: 256 }, (_, index) => {
   for (let i = 0; i < 8; i++) n = n & 1 ? 0xedb88320 ^ n >>> 1 : n >>> 1
   return n >>> 0
 })
-export function crc32(bytes: Uint8Array): number {
-  let crc = 0xffffffff
+function updateCrc(crc: number, bytes: Uint8Array): number {
   for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255]! ^ crc >>> 8
-  return (crc ^ 0xffffffff) >>> 0
+  return crc
 }
+const finishCrc = (crc: number) => (crc ^ 0xffffffff) >>> 0
+export function crc32(bytes: Uint8Array): number { return finishCrc(updateCrc(0xffffffff, bytes)) }
 
 function dosTime(date: Date): { time: number; date: number } {
   const year = Math.min(Math.max(date.getFullYear(), 1980), 2107)
@@ -46,14 +48,41 @@ export class ZipWriter {
   get written(): number { return this.offset }
 
   async add(name: string, data: Uint8Array): Promise<void> {
+    const deflated = STORED.test(name) || data.length < 64 ? null : deflateSync(data, { level: 6 })
+    const body = deflated && deflated.length < data.length ? deflated : data
+    await this.addEntry(name, body === data ? 0 : 8, data.length, body.length, crc32(data), (write) => write(body))
+  }
+
+  /** Duas leituras mantêm o cabeçalho compatível com ZIPs antigos e limitam a memória ao pedaço atual. */
+  async addStored(name: string, read: (write: ReadChunks) => Promise<void>, limit: number, onWrite: (bytes: Uint8Array) => void): Promise<number> {
+    let size = 0, crc = 0xffffffff
+    await read(async (bytes) => {
+      size += bytes.length
+      if (size > limit) throw new Error(`“${name}” passa do limite por arquivo.`)
+      crc = updateCrc(crc, bytes)
+    })
+    const expected = finishCrc(crc)
+    await this.addEntry(name, 0, size, size, expected, async (write) => {
+      let written = 0, actual = 0xffffffff
+      await read(async (bytes) => {
+        written += bytes.length
+        if (written > size) throw new Error(`“${name}” mudou durante a gravação do pacote.`)
+        actual = updateCrc(actual, bytes)
+        onWrite(bytes)
+        await write(bytes)
+      })
+      if (written !== size || finishCrc(actual) !== expected) throw new Error(`“${name}” mudou durante a gravação do pacote.`)
+    })
+    return size
+  }
+
+  private async addEntry(name: string, method: number, size: number, compressed: number, crc: number, writeBody: (write: ReadChunks) => Promise<void>): Promise<void> {
     if (this.closed) throw new Error("O pacote já foi fechado.")
     if (this.names.has(name)) throw new Error(`O pacote repete “${name}”.`)
     if (this.entries.length >= ZIP_MAX_ENTRIES) throw new Error("O pacote passou de 65.534 arquivos.")
     const nameBytes = strToU8(name)
-    const deflated = STORED.test(name) || data.length < 64 ? null : deflateSync(data, { level: 6 })
-    const body = deflated && deflated.length < data.length ? deflated : data
-    const entry = { name, nameBytes, method: body === data ? 0 : 8, crc: crc32(data), compressed: body.length, size: data.length, offset: this.offset }
-    if (this.offset + 30 + nameBytes.length + body.length > ZIP_MAX_BYTES) throw new Error("O pacote passou de 4 GB, o máximo do formato ZIP.")
+    const entry = { name, nameBytes, method, crc, compressed, size, offset: this.offset }
+    if (this.offset + 30 + nameBytes.length + compressed > ZIP_MAX_BYTES) throw new Error("O pacote passou de 4 GB, o máximo do formato ZIP.")
     const header = new Uint8Array(30 + nameBytes.length), view = new DataView(header.buffer)
     view.setUint32(0, 0x04034b50, true)
     view.setUint16(4, 20, true)
@@ -67,8 +96,8 @@ export class ZipWriter {
     view.setUint16(26, nameBytes.length, true)
     header.set(nameBytes, 30)
     await this.sink.write(header)
-    await this.sink.write(body)
-    this.offset += header.length + body.length
+    await writeBody((bytes) => this.sink.write(bytes))
+    this.offset += header.length + compressed
     this.names.add(name)
     this.entries.push(entry)
   }
@@ -154,6 +183,81 @@ export async function readZipEntry(source: ZipSource, entry: ZipEntryInfo): Prom
   catch { throw new Error(`O arquivo “${entry.name}” está corrompido no ZIP.`) }
   if (data.length !== entry.size || crc32(data) !== entry.crc) throw new Error(`O arquivo “${entry.name}” está incompleto ou corrompido no ZIP.`)
   return data
+}
+
+/** Tamanho dos pedaços entregues por `readZipEntryChunks` e `blobChunks` (o mesmo da ponte do Android). */
+export const STREAM_CHUNK = 2 * 1024 * 1024
+
+/** Junta pedaços de tamanhos variados e entrega blocos de `size` bytes (o último pode ser menor). */
+function rechunk(onChunk: (bytes: Uint8Array) => Promise<void>, size: number) {
+  let parts: Uint8Array[] = [], pending = 0
+  const drain = async (final: boolean) => {
+    while (pending >= size || (final && pending)) {
+      const out = new Uint8Array(Math.min(size, pending))
+      for (let at = 0; at < out.length;) {
+        const part = parts[0]!, take = Math.min(part.length, out.length - at)
+        out.set(part.subarray(0, take), at); at += take
+        if (take === part.length) parts.shift(); else parts[0] = part.subarray(take)
+      }
+      pending -= out.length
+      await onChunk(out)
+    }
+  }
+  return { push(bytes: Uint8Array) { if (bytes.length) { parts.push(bytes); pending += bytes.length } }, drain, reset() { parts = []; pending = 0 } }
+}
+
+/**
+ * U109: extrai um arquivo do ZIP em pedaços de até `chunk` bytes, sem ter o arquivo inteiro na memória: lê o trecho
+ * compactado por partes, descompacta aos poucos e confere tamanho e CRC no fim (quem grava descarta se falhar).
+ */
+export async function readZipEntryChunks(source: ZipSource, entry: ZipEntryInfo, onChunk: (bytes: Uint8Array) => Promise<void>, chunk = STREAM_CHUNK): Promise<void> {
+  const header = await source.read(entry.offset, 30), view = new DataView(header.buffer, header.byteOffset, header.byteLength)
+  if (header.length < 30 || view.getUint32(0, true) !== 0x04034b50) throw new Error(`O conteúdo do ZIP diverge do diretório em “${entry.name}”.`)
+  const start = entry.offset + 30 + view.getUint16(26, true) + view.getUint16(28, true)
+  if (start + entry.compressed > source.size) throw new Error(`O arquivo “${entry.name}” está incompleto no ZIP.`)
+  if (entry.method !== 0 && entry.method !== 8) throw new Error(`O arquivo “${entry.name}” está corrompido no ZIP.`)
+  const out = rechunk(onChunk, chunk)
+  let crc = 0xffffffff, total = 0
+  const take = (bytes: Uint8Array) => {
+    total += bytes.length
+    if (total > entry.size) throw new Error(`O arquivo “${entry.name}” está incompleto ou corrompido no ZIP.`)
+    crc = updateCrc(crc, bytes)
+    // Cópia: o descompactador pode reaproveitar o próprio buffer no pedaço seguinte.
+    out.push(bytes.slice())
+  }
+  const inflater = entry.method === 8 ? new Inflate((data) => take(data)) : null
+  const step = Math.max(64 * 1024, Math.min(chunk, 1024 * 1024))
+  for (let at = 0; at < entry.compressed || (inflater && at === 0); at += step) {
+    const length = Math.min(step, entry.compressed - at)
+    const raw = await source.read(start + at, length)
+    if (raw.length !== length) throw new Error(`O arquivo “${entry.name}” está incompleto no ZIP.`)
+    if (!inflater) {
+      take(raw)
+      await out.drain(false)
+      continue
+    }
+    // Uma leitura do Blob pode ser grande. Alimente o Inflate em blocos pequenos, pois DEFLATE pode expandir
+    // cada bloco em mais de mil vezes antes de entregar a saída ao consumidor.
+    const feed = 4096
+    for (let offset = 0; offset < length || (length === 0 && offset === 0); offset += feed) {
+      const end = Math.min(offset + feed, length)
+      try { inflater.push(raw.subarray(offset, end), at + end >= entry.compressed) } catch (error) {
+        throw error instanceof Error && error.message.includes(entry.name) ? error : new Error(`O arquivo “${entry.name}” está corrompido no ZIP.`)
+      }
+      await out.drain(false)
+    }
+  }
+  if (total !== entry.size || finishCrc(crc) !== entry.crc) { out.reset(); throw new Error(`O arquivo “${entry.name}” está incompleto ou corrompido no ZIP.`) }
+  await out.drain(true)
+}
+
+/** U109: entrega um arquivo escolhido na tela em pedaços (`File.slice`), sem ler o arquivo inteiro de uma vez. */
+export async function blobChunks(blob: Blob, onChunk: (bytes: Uint8Array) => Promise<void>, chunk = STREAM_CHUNK): Promise<void> {
+  for (let at = 0; at < blob.size; at += chunk) {
+    const bytes = new Uint8Array(await blob.slice(at, Math.min(blob.size, at + chunk)).arrayBuffer())
+    if (!bytes.length) throw new Error("O arquivo mudou enquanto era lido.")
+    await onChunk(bytes)
+  }
 }
 
 /** Fonte sobre bytes já na memória (testes e o leitor antigo). */

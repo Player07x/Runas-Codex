@@ -59,3 +59,15 @@
   .transfer-item-state { margin-inline-start: 10px; }
   .transfer-item-action { padding-inline-start: 10px; }
 }
+
+/* U104: explicações recolhidas e atalhos para o que acabou de entrar. */
+.transfer-help { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.transfer-help > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--muted); }
+.transfer-help[open] > summary { margin-bottom: 8px; }
+.transfer-opened { align-items: center; gap: 8px; }
+@media (max-width: 860px) { .transfer-help > summary { min-height: 44px; } .transfer-opened .btn { min-height: 44px; } }
+.transfer-help > summary { list-style: none; gap: 8px; }
+.transfer-help > summary::-webkit-details-marker { display: none; }
+.transfer-help > summary::before { content: "▸"; color: var(--cyan); transition: transform .15s; }
+.transfer-help[open] > summary::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .transfer-help > summary::before { transition: none; } }

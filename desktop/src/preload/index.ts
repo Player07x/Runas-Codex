@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron"
 import { IPC, type RunasCodexBridge, type VaultChange } from "../shared/ipc"
 import { IPC as VTT, type DocumentChange, type PlayerState } from "../../../app/src/vtt/shared/ipc"
+import { HOST_RELAY } from "../../../app/src/vtt/shared/host-services"
 import type { AudioState } from "../../../app/src/vtt/shared/audio"
 import { MASTER_IPC, type MasterState } from "../../../app/src/vtt/shared/master"
 
@@ -95,6 +96,9 @@ const bridge: RunasCodexBridge = {
       stop: () => invoke(VTT.playerStop),
       rotateSeatCode: (slotId) => invoke(VTT.playerRotateSeatCode, slotId),
       clearSeat: (slotId) => invoke(VTT.playerClearSeat, slotId),
+      addSeat: () => invoke(VTT.playerAddSeat),
+      removeSeat: () => invoke(VTT.playerRemoveSeat),
+      reconnect: () => invoke(VTT.playerReconnect),
       openWindow: () => invoke(VTT.playerOpenWindow),
       join: (url) => invoke(VTT.playerJoin, url),
       setScene: (sceneId) => invoke(VTT.playerSetScene, sceneId),
@@ -140,6 +144,21 @@ const bridge: RunasCodexBridge = {
       },
       rotate: () => invoke(MASTER_IPC.rotate),
       disconnect: () => invoke(MASTER_IPC.disconnect),
+    },
+    // U47: o processo principal repassa os pedidos do cofre do mestre remoto; a interface responde.
+    serveHost: (handler) => {
+      const listener = (_event: unknown, request: { id: number; channel: string; args: unknown[] }) => {
+        void handler(request.channel, request.args).then(
+          (result) => ipcRenderer.invoke(HOST_RELAY.reply, { id: request.id, result }),
+          (error: unknown) => ipcRenderer.invoke(HOST_RELAY.reply, { id: request.id, error: error instanceof Error ? error.message : String(error) }),
+        )
+      }
+      ipcRenderer.on(HOST_RELAY.request, listener)
+      void ipcRenderer.invoke(HOST_RELAY.ready, true)
+      return () => {
+        ipcRenderer.removeListener(HOST_RELAY.request, listener)
+        void ipcRenderer.invoke(HOST_RELAY.ready, false)
+      }
     },
     renameWorld: (id, title) => invoke(VTT.renameWorld, id, title),
     deleteWorld: (id) => invoke(VTT.deleteWorld, id),

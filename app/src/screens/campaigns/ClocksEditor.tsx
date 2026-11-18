@@ -1,13 +1,19 @@
-import { useState } from "react"
+import { useId, useState } from "react"
 import { Minus, Pencil, Plus, Trash } from "lucide-react"
-import { setClocks, type Clock } from "../../core/campaigns"
+import { CLOCK_MAX_SEGMENTS, CLOCK_MIN_SEGMENTS, clockSegments, setClocks, type Clock } from "../../core/campaigns"
 import { ClockDial, useToast } from "../../components/ui"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useVault } from "../../platform/VaultProvider"
 import { FormDialog } from "./campaign-dialogs"
 import { useUndoable } from "./campaign-edits"
 
-const SEGMENTS = [4, 6, 8, 10, 12]
+/** Campo das partes: o mestre digita quantas quer (de 2 a 24), sem lista fixa. */
+function SegmentsInput({ value, onChange, describedBy }: { value: string; onChange(value: string): void; describedBy?: string }) {
+  const invalid = clockSegments(value) === null
+  return <input className="input clock-segments" type="number" inputMode="numeric" min={CLOCK_MIN_SEGMENTS} max={CLOCK_MAX_SEGMENTS} step={1}
+    value={value} onChange={(e) => onChange(e.target.value)} aria-label="Partes" aria-invalid={invalid || undefined} aria-describedby={describedBy}
+    title={`De ${CLOCK_MIN_SEGMENTS} a ${CLOCK_MAX_SEGMENTS} partes`} />
+}
 
 /**
  * Relógios de um bloco `runas-relogios` (na nota da campanha ou da missão): avançar e voltar, editar nome, partes e
@@ -97,19 +103,18 @@ function ClockForm({ onSubmit, onCancel }: { onSubmit(clock: Clock): void; onCan
       className="campaign-inline-form"
       onSubmit={(e) => {
         e.preventDefault()
-        if (name.trim()) onSubmit({ name: name.trim(), segments: Number(segments), filled: 0, kind })
+        const parts = clockSegments(segments)
+        if (name.trim() && parts) onSubmit({ name: name.trim(), segments: parts, filled: 0, kind })
       }}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
       <input className="input" autoFocus placeholder="Nome do relógio" value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do relógio" />
-      <select className="select" value={segments} onChange={(e) => setSegments(e.target.value)} aria-label="Partes">
-        {SEGMENTS.map((n) => <option key={n} value={n}>{n} partes</option>)}
-      </select>
+      <SegmentsInput value={segments} onChange={setSegments} />
       <select className="select" value={kind} onChange={(e) => setKind(e.target.value as Clock["kind"])} aria-label="Tipo">
         <option value="ameaca">Ameaça</option>
         <option value="progresso">Progresso</option>
       </select>
-      <button type="submit" className="btn sm primary" disabled={!name.trim()}>Criar</button>
+      <button type="submit" className="btn sm primary" disabled={!name.trim() || clockSegments(segments) === null}>Criar</button>
       <button type="button" className="btn sm ghost" onClick={onCancel}>Cancelar</button>
     </form>
   )
@@ -117,12 +122,14 @@ function ClockForm({ onSubmit, onCancel }: { onSubmit(clock: Clock): void; onCan
 
 function ClockDialog({ clock, onSave, onClose }: { clock: Clock; onSave(clock: Clock): Promise<void>; onClose(): void }) {
   const [name, setName] = useState(clock.name)
-  const [segments, setSegments] = useState(clock.segments)
+  const [segments, setSegments] = useState(String(clock.segments))
   const [kind, setKind] = useState(clock.kind)
+  const parts = clockSegments(segments)
+  const hint = useId()
   // Menos partes que as já preenchidas: o relógio fica cheio, sem passar do total.
   return (
-    <FormDialog title="Editar relógio" confirmLabel="Gravar" disabled={!name.trim()} onClose={onClose}
-      onConfirm={() => onSave({ name: name.trim(), segments, kind, filled: Math.min(clock.filled, segments) })}>
+    <FormDialog title="Editar relógio" confirmLabel="Gravar" disabled={!name.trim() || parts === null} onClose={onClose}
+      onConfirm={() => onSave({ name: name.trim(), segments: parts!, kind, filled: Math.min(clock.filled, parts!) })}>
       <label className="field">
         <span>Nome</span>
         <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do relógio" />
@@ -130,9 +137,8 @@ function ClockDialog({ clock, onSave, onClose }: { clock: Clock; onSave(clock: C
       <div className="campaign-form-row">
         <label className="field grow">
           <span>Partes</span>
-          <select className="select" value={segments} onChange={(e) => setSegments(Number(e.target.value))} aria-label="Partes">
-            {[...new Set([...SEGMENTS, clock.segments])].sort((a, b) => a - b).map((n) => <option key={n} value={n}>{n} partes</option>)}
-          </select>
+          <SegmentsInput value={segments} onChange={setSegments} describedBy={hint} />
+          <span id={hint} className={`tiny ${parts === null ? "clock-segments-error" : "faint"}`}>{parts === null ? `Digite um número de ${CLOCK_MIN_SEGMENTS} a ${CLOCK_MAX_SEGMENTS}.` : `De ${CLOCK_MIN_SEGMENTS} a ${CLOCK_MAX_SEGMENTS}.`}</span>
         </label>
         <label className="field grow">
           <span>Tipo</span>

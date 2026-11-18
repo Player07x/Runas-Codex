@@ -150,7 +150,9 @@ export function NewNoteDialog({ initial, hint, templates, onConfirm, onClose }: 
 }
 
 /** Escolher um modelo para inserir na nota aberta. */
-export function TemplatePicker({ templates, folder, onPick, onClose }: { templates: string[]; folder: string; onPick(path: string): void; onClose(): void }) {
+export function TemplatePicker({ templates, folder, onPick, onCreateFirst, onClose }: { templates: string[]; folder: string; onPick(path: string): void; onCreateFirst?: () => Promise<void>; onClose(): void }) {
+  const [creating, setCreating] = useState(false)
+  const [problem, setProblem] = useState("")
   return (
     <Modal title="Inserir modelo" onClose={onClose}>
       <div className="list">
@@ -160,6 +162,19 @@ export function TemplatePicker({ templates, folder, onPick, onClose }: { templat
             <code>{"{{hora}}"}</code>.
           </span>
         )}
+        {templates.length === 0 && onCreateFirst && (
+          <button
+            className="btn primary"
+            disabled={creating}
+            onClick={() => {
+              setCreating(true)
+              onCreateFirst().then(onClose, (error: unknown) => { setProblem(error instanceof Error ? error.message : String(error)); setCreating(false) })
+            }}
+          >
+            <LayoutTemplate size={15} /> {creating ? "Criando…" : "Criar o primeiro modelo"}
+          </button>
+        )}
+        {problem && <span role="alert" className="small" style={{ color: "var(--red)" }}>{problem}</span>}
         {templates.map((path) => (
           <button
             key={path}

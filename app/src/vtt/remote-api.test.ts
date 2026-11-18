@@ -7,7 +7,8 @@ class Events {
   handlers = new Map<string, (event: { data: string }) => void>()
   constructor(_url: string) { Events.current = this }
   addEventListener(name: string, handler: (event: { data: string }) => void) { this.handlers.set(name, handler) }
-  close() {}
+  onerror: (() => void) | undefined
+  close = vi.fn()
 }
 afterEach(() => vi.unstubAllGlobals())
 
@@ -28,5 +29,37 @@ describe("consulta de documentos do mestre remoto", () => {
       { channel: "vtt:documents-list", args: ["token", "scene"] },
       { channel: "vtt:documents-list", args: ["scene", null] },
     ])
+  })
+})
+
+
+describe("desconexão do mestre remoto", () => {
+  it.each(["erro do SSE", "aviso explícito"])("bloqueia novas chamadas após %s", async (reason) => {
+    vi.stubGlobal("EventSource", Events)
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ result: null })))
+    vi.stubGlobal("fetch", fetch)
+    const api = createRemoteVttApi({ origin: "http://127.0.0.1:30000", key: "mestre" })
+    const connected = api.connect()
+    const events = Events.current
+    const world = { id: "mesa" }
+    events.handlers.get("hello")!({ data: JSON.stringify({ session: "sessao", world }) })
+    await connected
+    expect(await api.connect()).toEqual(world)
+    await api.table.report({ sceneId: "cena", selection: [], center: null })
+    expect(fetch).toHaveBeenCalledTimes(1)
+    fetch.mockClear()
+
+    const lost = vi.fn()
+    api.onLost(lost)
+    if (reason === "erro do SSE") events.onerror!()
+    else events.handlers.get("closed")!({ data: "" })
+    await api.table.report({ sceneId: null, selection: [], center: null })
+    await expect(api.documents.list("scene")).rejects.toThrow()
+    await expect(api.assets.import("maps", "mapa.png", new Uint8Array([1]))).rejects.toThrow()
+    await expect(api.connect()).rejects.toThrow()
+    expect(lost).toHaveBeenCalledTimes(1)
+    expect(events.close).toHaveBeenCalledTimes(1)
+    expect(Events.current).toBe(events)
+    expect(fetch).not.toHaveBeenCalled()
   })
 })

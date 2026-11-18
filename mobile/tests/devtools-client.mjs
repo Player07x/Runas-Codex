@@ -31,7 +31,10 @@ export async function connectDevtools(endpoint,match=()=>true) {
   }
   await send('Runtime.enable');await send('Page.enable');await send('Network.enable')
   return {send,run,errors,network,frames,close:()=>socket.close(),until:async(expression,tries=200)=>{
+    const started=Date.now()
     for(let n=0;n<tries;n++){if(await run(`(()=>{try{return Boolean(${expression})}catch{return false}})()`))return;await sleep(150)}
-    throw new Error('Não aconteceu: '+expression)
+    // Diagnóstico do android-room instável (1.6): o estado da página quando a espera estoura, para a falha dizer a causa.
+    const state=await run(`JSON.stringify({url:location.href,visibility:document.visibilityState,focus:document.hasFocus(),ready:document.readyState,text:(document.body?.innerText??'').slice(0,800)})`).catch(error=>'sem resposta: '+error.message)
+    throw new Error('Não aconteceu em '+Math.round((Date.now()-started)/1000)+' s: '+expression+'\nEstado da página: '+state)
   }}
 }
