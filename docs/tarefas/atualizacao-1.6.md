@@ -96,3 +96,5 @@ janela de 5 h: perto de uma janela e meia, em duas ou três janelas. Paro e perg
   da lista 4/6/8/10/12 (**U123**). Feito à parte no #176 (2 a 24 partes).
 - **18/11:** fase 1 aberta (V #175, U123 #176, W1 #177). Fase 2 começou pelo E (Elenco, U115): #178. Desvincular um
   personagem passou a usar “Desfazer” no aviso em vez de pedir confirmação, como Tirar da campanha.
+- **18/11:** F (Ferramentas, U118): #180. Durante o F, o João pediu que o painel Detalhes da nota não role para os
+  lados (abas e conteúdo se ajustam à largura): feito à parte no #179.
