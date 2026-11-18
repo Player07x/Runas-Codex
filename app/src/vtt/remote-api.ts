@@ -141,6 +141,7 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
       },
     },
     table: { report: (state) => invoke(IPC.tableReport, state) },
+    callHost: (channel, args) => invoke(channel, ...args),
     player: {
       state: () => invoke(IPC.playerState),
       onState: (listener) => {

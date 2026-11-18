@@ -16,7 +16,7 @@ export const WIKI_TOKEN_DRAG_TYPE = "application/x-runas-wiki-token"
 export const LIBRARY_CHANGED = "runas-codex:biblioteca"
 
 /** Bytes de uma imagem da mesa aberta (o mesmo endereço que a cena desenha). */
-async function worldAsset(path: AssetPath): Promise<Uint8Array> {
+export async function worldAsset(path: AssetPath): Promise<Uint8Array> {
   const response = await fetch(resolveAssetUrl(path))
   if (!response.ok) throw new Error("Não foi possível ler a imagem da mesa.")
   return new Uint8Array(await response.arrayBuffer())
@@ -45,7 +45,9 @@ export async function saveSceneToLibrary(store: DocumentStore, sceneId: string):
 }
 
 /** Copia as imagens do item para a mesa aberta (pelo hash, sem duplicar) e devolve o caminho de cada uma lá. */
-async function copyAssets(item: LibraryItem): Promise<Map<AssetPath, AssetPath>> {
+export async function copyAssets(item: LibraryItem): Promise<Map<AssetPath, AssetPath>> {
+  const store = requireLibrary()
+  if (store.copyToWorld) return store.copyToWorld(item)
   const copied = new Map<AssetPath, AssetPath>()
   for (const asset of itemAssets(item)) {
     const [kind, file] = asset.split("/") as [AssetKind, string]

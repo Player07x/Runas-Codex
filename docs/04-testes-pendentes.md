@@ -2245,3 +2245,17 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Trocar o computador de Wi-Fi com a sala aberta: em até 10 s a faixa avisa que o endereço mudou e mostra o link da
   rede local novo.
 - [ ] No Android, matar o túnel (modo avião por alguns segundos): a faixa aparece e o túnel é reaberto sozinho.
+
+## Atualização 1.6 — Mestre remoto completo (K/U47)
+
+- [ ] No computador, abrir uma mesa, ligar a sala e copiar o link do mestre (painel Sala › Mestre remoto). No celular,
+  VTT › Entrar Sala: colar a mensagem inteira com o link. O texto embaixo do campo diz “Link do mestre remoto” e o
+  botão vira “Entrar como mestre remoto”; a mesa do mestre abre (no Android, pelo navegador).
+- [ ] No mestre remoto, a aba Biblioteca lista os itens do cofre do computador, com miniatura. Pôr um token e um mapa
+  na cena funciona; “Guardar na biblioteca” num token do celular aparece na biblioteca do computador.
+- [ ] No mestre remoto, Notas › “Salvar Sessão” lista as campanhas do cofre do computador e cria a sessão em
+  `Campanhas/<campanha>/Sessões/`, que aparece no computador.
+- [ ] Com o app do computador fechado na tela de outra coisa (sala aberta), a biblioteca continua funcionando; com a
+  sala encerrada, o celular avisa para abrir o app.
+- [ ] No token ligado a uma nota, o ⋯ do mestre remoto tem “Desvincular”.
+- [ ] Um link de mestre de fora da rede local e do túnel (ex.: `https://exemplo.com/master?m=…`) é recusado no Entrar Sala.

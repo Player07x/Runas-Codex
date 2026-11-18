@@ -8,6 +8,7 @@ import type { PlayerWireMessage } from "../vtt/shared/player"
 import { PortableWorldStore } from "../vtt/shared/portable-world-store"
 import { RoomAuthority } from "../vtt/shared/room-authority"
 import { retryAfter } from "../vtt/shared/room-drop"
+import { HOST_CHANNELS, NO_HOST, hostArgs, type HostHandler } from "../vtt/shared/host-services"
 import { VisionService } from "../vtt/shared/vision-service"
 import { AudioService } from "../vtt/shared/audio-service"
 import { RegionService } from "../vtt/shared/region-service"
@@ -91,8 +92,10 @@ class AndroidTransport implements PlayerTransport {
       if (request.kind.startsWith("master")) result = await this.master(request)
       if (payload.seat) this.seats.set(payload.seat.slotId, payload.seat)
       await native.answer({ id: request.id, result })
-    } catch {
-      await native.answer({ id: request.id, result: { error: "Não foi possível concluir o pedido." } })
+    } catch (error) {
+      // O mestre remoto vê o motivo (ex.: abrir o app para usar a biblioteca); o resto continua genérico.
+      const message = request.kind.startsWith("master") && error instanceof Error ? error.message : "Não foi possível concluir o pedido."
+      await native.answer({ id: request.id, result: { error: message } })
     }
   }
   async start(port: number, key: string): Promise<void> {
@@ -140,6 +143,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
   }
   const vision = new VisionService(() => store.openWorld?.database ?? null)
   let transport: AndroidTransport
+  let hostHandler: HostHandler | null = null
   let stopping = false
   let authority: RoomAuthority
   const flush = async () => {
@@ -169,7 +173,13 @@ export function createAndroidVttApi(platform: Platform): VttApi {
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
             return { result: await api.assets.import(payload.kind as typeof ASSET_KINDS[number], payload.name ?? "", bytes) }
           }
-          return { result: await dispatchMaster(api, payload.channel ?? "", payload.args ?? []) ?? null }
+          // U47: biblioteca e salvar sessão vão para a interface do app, que grava pelo cofre.
+          const channel = payload.channel ?? ""
+          if (HOST_CHANNELS.includes(channel)) {
+            if (!hostHandler) throw new Error(NO_HOST)
+            return { result: await hostHandler(channel, hostArgs(channel, payload.args ?? [])) ?? null }
+          }
+          return { result: await dispatchMaster(api, channel, payload.args ?? []) ?? null }
         },
         (state) => masterListeners.forEach(listener => listener(state)),
       )),
@@ -311,6 +321,10 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         audio.sceneChanged()
         await save()
       },
+    },
+    serveHost: (handler) => {
+      hostHandler = handler
+      return () => { if (hostHandler === handler) hostHandler = null }
     },
     player: {
       state: async () => authority.state(),

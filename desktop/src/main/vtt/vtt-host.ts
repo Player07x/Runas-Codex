@@ -2,6 +2,7 @@ import { join } from "node:path"
 import { app, BrowserWindow, Notification, protocol, screen, type IpcMainInvokeEvent } from "electron"
 import { ASSET_SCHEME, IPC, type DocumentChange, type DocumentInput, type LinkTestResult, type PlayerBarVisibility, type PlayerState, type TableReport } from "../../../../app/src/vtt/shared/ipc"
 import { dropNotice, retryAfter } from "../../../../app/src/vtt/shared/room-drop"
+import { HOST_CHANNELS, HOST_RELAY, NO_HOST, hostArgs } from "../../../../app/src/vtt/shared/host-services"
 import { MASTER_CHANNELS, MASTER_IPC } from "../../../../app/src/vtt/shared/master"
 import { ASSET_KINDS, type AssetKind, type DocumentType, type NewWorldInput } from "../../../../app/src/vtt/shared/world"
 import { AudioService } from "./audio-service"
@@ -44,6 +45,10 @@ export class VttHost {
   private addressTimer: ReturnType<typeof setInterval> | null = null
   /** A queda já avisada pela notificação do sistema (uma por mudança). */
   private notifiedDrop = 0
+  /** U47: janelas do app que atendem os pedidos do cofre do mestre remoto, e os pedidos esperando resposta. */
+  private readonly hostWindows = new Set<number>()
+  private readonly hostPending = new Map<number, { resolve(value: unknown): void; reject(error: Error): void; timer: ReturnType<typeof setTimeout> }>()
+  private hostSeq = 0
   /** Os mesmos tratadores do IPC, para o mestre remoto chamar (só os canais de `MASTER_CHANNELS`). */
   private readonly handlers = new Map<string, Listener>()
   readonly master: MasterRemote
@@ -112,6 +117,18 @@ export class VttHost {
     if (!notice || !state.drop || state.drop.at === this.notifiedDrop) return
     this.notifiedDrop = state.drop.at
     if (Notification.isSupported()) new Notification({ title: "Sala da mesa", body: notice.message }).show()
+  }
+
+  /** U47: repassa à interface do app o pedido do cofre (biblioteca, salvar sessão) e espera a resposta. */
+  private hostRequest(channel: string, args: unknown[]): Promise<unknown> {
+    const target = BrowserWindow.getAllWindows().find((window) => !window.isDestroyed() && this.hostWindows.has(window.webContents.id))
+    if (!target) return Promise.reject(new Error(NO_HOST))
+    const id = ++this.hostSeq
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { this.hostPending.delete(id); reject(new Error(NO_HOST)) }, 30_000)
+      this.hostPending.set(id, { resolve, reject, timer })
+      target.webContents.send(HOST_RELAY.request, { id, channel, args })
+    })
   }
 
   private watchAddress(on: boolean): void {
@@ -325,6 +342,18 @@ export class VttHost {
     })
     handle(IPC.playerRotateSeatCode, (_event, slotId) => t.rotateSeatCode(slot(slotId)))
     handle(IPC.playerClearSeat, (_event, slotId) => t.clearSeat(slot(slotId)))
+    // U47: serviços do cofre para o mestre remoto, atendidos pela interface do app.
+    handle(HOST_RELAY.ready, (event, on) => { if (on) this.hostWindows.add(event.sender.id); else this.hostWindows.delete(event.sender.id) })
+    handle(HOST_RELAY.reply, (_event, message) => {
+      const reply = message as { id?: unknown; result?: unknown; error?: unknown } | null
+      const pending = typeof reply?.id === "number" ? this.hostPending.get(reply.id) : undefined
+      if (!pending || !reply) return
+      this.hostPending.delete(reply.id as number)
+      clearTimeout(pending.timer)
+      if (typeof reply.error === "string") pending.reject(new Error(reply.error))
+      else pending.resolve(reply.result)
+    })
+    for (const channel of HOST_CHANNELS) handle(channel, (_event, ...args) => this.hostRequest(channel, hostArgs(channel, args)))
     handle(IPC.playerAddSeat, () => t.addSeat())
     handle(IPC.playerRemoveSeat, () => t.removeSeat())
     // U89: a mesma porta, chave e assentos; o túnel só é reaberto se tinha caído (o que estava no ar continua valendo).

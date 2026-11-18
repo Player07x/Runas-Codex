@@ -265,7 +265,7 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
               </button>
               <div ref={setPropertiesHost} className="side-properties-body" />
             </section>
-          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession={!remote} /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
+          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
         </aside>
       </div>
     </main>

@@ -1,4 +1,5 @@
 import type { CollaborationCommand, RoomCollaboration } from "./collaboration"
+import type { HostHandler } from "./host-services"
 import type { AssetPath } from "./scene"
 import type { PlayerRuler } from "./player"
 import type { AudioState } from "./audio"
@@ -238,6 +239,13 @@ export interface VttApi {
     /** Copia um arquivo para a mesa aberta e devolve o caminho do asset. */
     import(kind: AssetKind, fileName: string, bytes: Uint8Array): Promise<AssetPath>
   }
+  /**
+   * U47: o app da sala atende os pedidos do cofre do mestre remoto (biblioteca, salvar sessão). Só no aparelho que
+   * hospeda a sala; devolve a função que para de atender.
+   */
+  serveHost?(handler: HostHandler): () => void
+  /** U47: o mestre remoto pede um serviço do cofre ao aparelho da sala. Só na mesa do mestre remoto. */
+  callHost?(channel: string, args: unknown[]): Promise<unknown>
   /** Mestre remoto (ADR 0016): só existe na mesa do computador da sala. */
   master?: {
     state(): Promise<MasterState>
