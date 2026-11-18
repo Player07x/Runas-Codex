@@ -92,3 +92,5 @@ janela de 5 h: perto de uma janela e meia, em duas ou três janelas. Paro e perg
 - **18/11:** o João pediu o botão à direita, não à esquerda: fica no alto, preso à borda direita da barra.
 - **18/11:** o João deu o ok (“Inicio o plano de atualização 1.6.0”). Começo pelo PR V; as escolhas que ele pode
   trocar ficam como estão.
+- **18/11:** durante o V, o João pediu que os relógios de progresso e ameaça tenham as partes num campo numérico em vez
+  da lista 4/6/8/10/12 (**U123**). Feito à parte no #176 (2 a 24 partes).
