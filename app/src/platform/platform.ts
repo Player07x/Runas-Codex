@@ -143,6 +143,8 @@ export interface Platform {
   regrantVault?(): Promise<VaultInfo | null>
   /** Android (U91), opção avançada: abrir a pasta com “acesso a todos os arquivos” (mais rápido em cofres grandes). */
   chooseVaultAllFiles?(): Promise<VaultInfo | null>
+  /** U86: endereço da miniatura de uma imagem do cofre (`width` é uma das larguras de `core/thumbnails`). */
+  thumbnailUrl?(path: string, width: number): string | null
 }
 
 /** Destino de uma exportação em pedaços. `abort` apaga o que já foi escrito. */

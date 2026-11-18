@@ -2231,3 +2231,13 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Miniaturas e orçamento pela mediana (A2/U86, U76, U108)
+
+- [ ] Wiki › categorias com capa e Campanhas: as capas dos cartões e os retratos (brasões) aparecem nítidos e mais
+      rápidos a partir da segunda visita. Trocar a imagem no disco (mesmo nome) mostra a nova.
+- [ ] A pasta `miniaturas` fica nos dados do app (Linux `~/.config/Runas-Codex/miniaturas`, Windows
+      `%APPDATA%\Runas-Codex\miniaturas`), nunca no cofre; o Obsidian não vê nada novo.
+- [ ] GIF, SVG e WebP continuam aparecendo inteiros (sem miniatura).
+- [ ] O job “Orçamento de desempenho” do CI mostra no `summary.json` os três valores de cada número e reprova só pela
+      mediana.

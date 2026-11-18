@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { installSnippet, mediaFile, vaultFileResponse } from "../src/main/vault-files"
+import { installSnippet, mediaFile, setThumbnailer, vaultFileResponse } from "../src/main/vault-files"
+import { createThumbnailer } from "../src/main/thumbnails"
 
 let base: string
 let root: string
@@ -69,5 +70,45 @@ describe("installSnippet", () => {
     await mkdir(join(base, "config-de-fora"), { recursive: true })
     await symlink(join(base, "config-de-fora"), join(other, ".obsidian"))
     await expect(installSnippet(other, "x")).rejects.toThrow("fora do cofre")
+  })
+})
+
+describe("vault-file:// com miniatura (U86)", () => {
+  afterEach(() => setThumbnailer(null))
+
+  it("serve a miniatura pedida com ?w= e guarda no cache, fora do cofre", async () => {
+    const cache = join(base, "miniaturas")
+    const calls: number[] = []
+    setThumbnailer(createThumbnailer(cache, async (_file, width) => { calls.push(width); return Buffer.from("miniatura " + width) }))
+    const first = await vaultFileResponse(root, url("Notas/Anexos/mapa com espaço.png") + "?w=640", null)
+    expect(first.headers.get("content-type")).toBe("image/png")
+    expect(Buffer.from(await first.arrayBuffer()).toString()).toBe("miniatura 640")
+    const again = await vaultFileResponse(root, url("Notas/Anexos/mapa com espaço.png") + "?w=640", null)
+    expect(Buffer.from(await again.arrayBuffer()).toString()).toBe("miniatura 640")
+    // A imagem grande foi lida uma vez só, e nada foi gravado no cofre.
+    expect(calls).toEqual([640])
+    expect((await readdir(join(root, "Notas", "Anexos"))).sort()).toEqual(["mapa com espaço.png"])
+  })
+
+  it("devolve a imagem inteira quando ela já é pequena, quando a largura não é das fixas e para tipos sem miniatura", async () => {
+    const calls: string[] = []
+    setThumbnailer(createThumbnailer(join(base, "miniaturas"), async (file) => { calls.push(file); return null }))
+    const whole = Buffer.from([137, 80, 78, 71, 1, 2, 3, 4, 5, 6])
+    for (const suffix of ["?w=640", "?w=640", "?w=641"]) {
+      const response = await vaultFileResponse(root, url("Notas/Anexos/mapa com espaço.png") + suffix, null)
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(whole)
+    }
+    // A marca de “já é pequena” evita ler de novo.
+    expect(calls).toHaveLength(1)
+  })
+
+  it("troca a miniatura quando a imagem muda no disco", async () => {
+    const cache = join(base, "miniaturas")
+    let version = 0
+    setThumbnailer(createThumbnailer(cache, async () => Buffer.from("v" + ++version)))
+    const read = async () => Buffer.from(await (await vaultFileResponse(root, url("Notas/Anexos/mapa com espaço.png") + "?w=256", null)).arrayBuffer()).toString()
+    expect(await read()).toBe("v1")
+    await writeFile(join(root, "Notas", "Anexos", "mapa com espaço.png"), Buffer.from([137, 80, 78, 71, 9, 9, 9, 9, 9, 9, 9, 9]))
+    expect(await read()).toBe("v2")
   })
 })
