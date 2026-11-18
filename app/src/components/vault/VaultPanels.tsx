@@ -1,3 +1,4 @@
+import "./vault-panels.css"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { AlertTriangle, ArrowUpRight, Calendar, CheckSquare, Clock, Copy, Hash, Link2, List, ListTree, Network, Plus, Star, Tags, Trash2, Type, Unlink } from "lucide-react"
 import { hasBookmark, type Bookmark } from "../../core/bookmarks"

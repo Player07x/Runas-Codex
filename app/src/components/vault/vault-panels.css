@@ -1,0 +1,20 @@
+/*
+ * Detalhes da nota: nada rola para os lados. O conteúdo se ajusta à largura do painel (nomes longos encurtam com “…”),
+ * e, quando as quatro abas não cabem com o nome, as que não estão escolhidas mostram só o ícone e o número (o nome
+ * continua no nome acessível e na dica).
+ */
+.vault-panels { container-type: inline-size; min-width: 0; }
+.vault-panels > .kit-tabs { overflow: visible; }
+.vault-panels > .kit-tabpanel,
+.vault-panels > .kit-tabpanel > .pane-body { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.vault-panels .pane-body > * { min-width: 0; }
+.vault-panels .pane-body .card.link { width: 100%; min-width: 0; overflow-wrap: anywhere; }
+.vault-panels .pane-body .chip { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-panels .pane-body .list-item { min-width: 0; max-width: 100%; }
+@container (max-width: 459px) {
+  .vault-panels > .kit-tabs { gap: 0; padding: 0 4px; }
+  .vault-panels > .kit-tabs .kit-tab { position: relative; flex: 1 1 auto; justify-content: center; min-width: 0; padding: 0 6px; }
+  .vault-panels > .kit-tabs .kit-tab:not([aria-selected="true"]) > span:not(.kit-tab-count) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}

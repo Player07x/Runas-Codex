@@ -2231,3 +2231,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Detalhes da nota sem rolagem para os lados (pedido de 18/11)
+
+- [ ] Notas › uma nota com links de outros espaços (por exemplo, uma sessão citada por um evento da Agenda) e o painel
+  Detalhes da nota na largura padrão: nenhuma barra de rolagem horizontal, nem nas abas nem no conteúdo. Nomes longos
+  terminam em “…” e a etiqueta do espaço encolhe.
+- [ ] Com o painel estreito, as abas não escolhidas mostram só o ícone e o número (o nome aparece ao passar o mouse);
+  alargando o painel (arrastar a borda) os nomes voltam.
