@@ -2231,3 +2231,13 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Busca com Páginas (B/U116)
+
+- [ ] Ctrl K e digitar o nome de uma campanha: o grupo “Páginas” vem antes de “Notas”, com a campanha (“Campanha ·
+  Painel”) e os atalhos Sessões, Missões, Elenco e Quadro embaixo do nome. Enter abre o Painel; cada atalho abre a aba.
+- [ ] Digitar o nome de um NPC que está no Elenco de uma campanha: aparecem o artigo, “… no Elenco” e, se ele for membro
+  de uma organização, “… no organograma”. Enter abre a página; Ctrl Enter abre a nota no editor das Notas.
+- [ ] Digitar “acess”, “backups” ou “calendário”: as telas fixas aparecem em Páginas (os comandos que só levavam a uma
+  tela saíram de Comandos).
+- [ ] No celular (320 px), os atalhos da campanha têm 44 px e quebram a linha sem rolagem para os lados.

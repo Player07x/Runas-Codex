@@ -4,14 +4,15 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
   Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
-  ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords, Accessibility,
-  LockKeyhole,
+  ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords,
+  LockKeyhole, PanelsTopLeft,
 } from "lucide-react"
 import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
 import { routeOfNote } from "../lib/navigation"
 import { vaultRoute } from "../lib/vault-notes"
+import { searchPages, type PageShortcut } from "../core/search-pages"
 import { noteName } from "../core/text"
 import { pageTitle } from "../core/page-title"
 import { crumbsFor } from "../lib/crumbs"
@@ -284,10 +285,6 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
       { label: "Nota do dia", icon: <CalendarDays size={16} />, hint: "Notas", run: () => navigate("/notas/hoje") },
       { label: "Criar Sala", icon: <DoorOpen size={16} />, hint: "VTT", run: () => navigate("/vtt/criar") },
       { label: "Entrar Sala", icon: <LogIn size={16} />, hint: "VTT", run: () => navigate("/vtt/entrar") },
-      { label: "Abrir agenda", icon: <CalendarDays size={16} />, hint: "", run: () => navigate("/agenda") },
-      { label: "Calendário do mundo", icon: <CalendarDays size={16} />, hint: "Wiki", run: () => navigate("/wiki/calendario") },
-      { label: "Gráfico da wiki", icon: <Library size={16} />, hint: "Wiki", run: () => navigate("/wiki/grafico") },
-      { label: "Importar / Exportar", icon: <ArrowDownUp size={16} />, hint: "", run: () => navigate("/transferir") },
       { label: "Alternar tema", icon: <Sun size={16} />, hint: "", run: onToggleTheme },
       { label: "Voltar", icon: <ArrowLeft size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Alt ←", run: goBack },
       { label: "Avançar", icon: <ArrowRight size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Alt →", run: goForward },
@@ -295,13 +292,10 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
       ...["Salvar nota", "Histórico de versões", "Extrair seleção para nota", "Mesclar em outra nota", "Dividir painel à direita", "Dividir painel para baixo", "Workspaces", "Lixeira do cofre", "Nova base"].map((label, index) => ({ label, icon: <FileText size={16} />, hint: "Notas", run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: ["save", "history", "extract", "merge", "split-right", "split-below", "workspace", "trash", "newbase"][index] })) })),
       { label: "Alternar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("toggleTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" })) },
       { label: "Criar ou editar tarefa (Tasks)", icon: <FileText size={16} />, hint: vault.platform.kind === "capacitor" ? "Notas" : shortcutText(shortcutLabel("editTask", prefs.shortcuts)), run: () => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "edit-task" })) },
-      { label: "Acessibilidade", icon: <Accessibility size={16} />, hint: "Configurações", run: () => navigate("/config/acessibilidade") },
       { label: "Enquete de data", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("enquete") },
       { label: "Tempo livre", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("tempo-livre") },
       { label: "Importar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("importar-ics") },
       { label: "Exportar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("exportar-ics") },
-      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
-      { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
       { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
       { label: "Busca rápida de tarefas (Tasks)", icon: <Search size={16} />, hint: "Tasks", run: onOpenQuickSearch },
       ...[...taskSettings.coreStatuses, ...taskSettings.customStatuses]
@@ -327,14 +321,20 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
     const folder = vault.index?.allFiles().some((f) => f.path.startsWith("Notas/")) ? "Notas" : ""
     vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast.error(error))
   }
-  const items = [
-    ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas" })),
+  // U116: primeiro as páginas onde as notas achadas aparecem (e as telas pelo nome); Ctrl Enter abre a nota.
+  const pages = useMemo(() => searchPages(vault.index, query, notes.map((n) => n.path)), [vault.index, vault.version, query, notes])
+  type Item = { key: string; label: string; icon: ReactNode; hint: string; run: () => void; section: string; notePath?: string; shortcuts?: PageShortcut[] }
+  const items: Item[] = [
+    ...pages.map((p) => ({ key: p.key, label: p.label, icon: <PanelsTopLeft size={16} />, hint: p.detail, run: () => navigate(p.route), section: "Páginas", notePath: p.notePath, shortcuts: p.shortcuts })),
+    ...notes.map((n) => ({ key: n.key, label: n.label, icon: <FileText size={16} />, hint: n.path.split("/").slice(0, -1).join(" › "), run: () => navigate(n.route), section: "Notas", notePath: n.path })),
     ...(canCreate ? [{ key: "criar", label: `Criar nota “${query.trim()}”`, icon: <Plus size={16} />, hint: vault.platform.kind === "capacitor" ? "" : "Enter", run: createNote, section: "Notas" }] : []),
     ...cmds.map((c) => ({ key: c.label, ...c, section: "Comandos" })),
   ]
 
-  const run = (index: number) => {
-    items[index]?.run()
+  const run = (index: number, asNote = false) => {
+    const item = items[index]
+    if (asNote && item?.notePath) navigate(vaultRoute(item.notePath))
+    else item?.run()
     onClose()
   }
 
@@ -344,9 +344,9 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
         <div className="palette-input">
           <Search size={18} color="var(--muted)" />
           <input
-            aria-label="Buscar notas e comandos"
+            aria-label="Buscar páginas, notas e comandos"
             autoFocus
-            placeholder="Buscar nota (nome, apelido, tag:, path:) ou um comando…"
+            placeholder="Buscar página, nota (nome, apelido, tag:, path:) ou comando…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
@@ -355,7 +355,7 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") setSelected((s) => Math.min(items.length - 1, s + 1))
               if (event.key === "ArrowUp") setSelected((s) => Math.max(0, s - 1))
-              if (event.key === "Enter") run(selected)
+              if (event.key === "Enter") run(selected, event.ctrlKey || event.metaKey)
               if (event.key === "Escape") onClose()
             }}
           />
@@ -365,17 +365,23 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
           {items.map((item, index) => (
             <div key={item.key}>
               {(index === 0 || items[index - 1].section !== item.section) && <div className="palette-section">{item.section}</div>}
-              <button className={`palette-item ${index === selected ? "selected" : ""}`} onMouseEnter={() => setSelected(index)} onClick={() => run(index)}>
-                {item.icon}
-                <span className="truncate">{item.label}</span>
-                <small className="truncate">{item.hint}</small>
-              </button>
+              <div className={`palette-row ${index === selected ? "selected" : ""}`} onMouseEnter={() => setSelected(index)}>
+                <button className="palette-item" onClick={(event) => run(index, event.ctrlKey || event.metaKey)}>
+                  {item.icon}
+                  <span className="truncate">{item.label}</span>
+                  <small className="truncate">{item.hint}</small>
+                </button>
+                {item.shortcuts && <span className="palette-shortcuts">
+                  {item.shortcuts.map((shortcut) => <button key={shortcut.route} type="button" className="palette-shortcut" aria-label={`${shortcut.label} de ${item.label}`} onClick={() => { navigate(shortcut.route); onClose() }}>{shortcut.label}</button>)}
+                </span>}
+              </div>
             </div>
           ))}
         </div>
         {vault.platform.kind !== "capacitor" && <div className="palette-foot">
           <span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span>
           <span><kbd>Enter</kbd> abrir</span>
+          <span className="palette-foot-note"><kbd>Ctrl</kbd> <kbd>Enter</kbd> abrir a nota</span>
           <span><kbd>Esc</kbd> fechar</span>
         </div>}
       </div>

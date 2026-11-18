@@ -459,7 +459,7 @@ export interface Relation {
 }
 
 /** Relações que a própria nota declara. */
-function declaredRelations(index: VaultIndex, note: IndexedNote): { type: RelationType; other: string | null; target: string; note?: string }[] {
+export function declaredRelations(index: VaultIndex, note: IndexedNote): { type: RelationType; other: string | null; target: string; note?: string }[] {
   const data = note.meta.frontmatter?.data
   if (!data) return []
   return Object.entries(data).flatMap(([key, value]) => {
