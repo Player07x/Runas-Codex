@@ -2231,3 +2231,18 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Nome da nota no título e primeiro modelo (1.6, R/U99)
+
+- [ ] Notas › Nova nota (ou Ctrl N): a nota “Sem título” abre com o nome selecionado no topo. Digitar e apertar
+  Enter renomeia na mesma pasta; a aba, a migalha e os links para a nota acompanham.
+- [ ] Clique no nome de uma nota já existente: ele vira campo. Esc desfaz; sair do campo com um nome válido renomeia;
+  com um nome inválido (`:`, vazio, nome que já existe na pasta), o Enter mostra o aviso em vermelho e sair do campo
+  volta ao nome de antes.
+- [ ] “Renomear ou mover…” continua no ⋯ da nota para mudar de pasta. O nome com `/` no título pede para usar ele.
+- [ ] No celular (Android e 320 px), a nota nova mostra o nome selecionado numa linha própria da barra, com o teclado
+  aberto; depois de confirmar, a barra volta a ter só os botões (o nome fica na barra do app, como antes).
+- [ ] Com o cofre em somente leitura, o nome é texto comum, sem campo.
+- [ ] ⋯ › Inserir modelo… num cofre sem modelos: “Criar o primeiro modelo” cria `Templates/Modelo.md` (ou na pasta de
+  modelos configurada no Obsidian) com `{{title}}`, `{{date}}` e `{{time}}`, e abre com o nome selecionado. No
+  Obsidian, o plugin Modelos acha a nota.
