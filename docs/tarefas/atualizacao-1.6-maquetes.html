@@ -255,6 +255,29 @@ tr.phase td { background: var(--bg); color: var(--gold); font-weight: 700; font-
 .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
 .sw { display: grid; gap: 4px; font-size: 11.5px; color: var(--muted); }
 .sw i { width: 74px; height: 46px; border-radius: 10px; display: block; border: 1px solid var(--line); }
+
+/* Barra lateral (U121): cabeçalho de altura fixa; o botão não se mexe, só a runa troca de lugar e de tamanho. */
+.sbpair { display: flex; flex-wrap: wrap; gap: 22px; align-items: start; }
+.sbcol { display: grid; gap: 8px; justify-items: start; }
+.sbcol .lbl { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.sb { position: relative; width: 240px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-deep); overflow: hidden; transition: width .2s ease; }
+.sb.mini { width: 64px; }
+.sb-head { position: relative; height: 96px; }
+.sb-toggle { position: absolute; left: 14px; top: 12px; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--text); display: grid; place-items: center; font: 600 15px/1 var(--sans); padding: 0; cursor: pointer; }
+.sb-logo { position: absolute; left: 60px; top: 12px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #6be7ff 0 16%, #2f4a7a 17% 30%, #1d2e57 31% 100%); box-shadow: 0 0 18px rgb(107 231 255 / 25%); transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease; }
+.sb.mini .sb-logo { left: 16px; top: 56px; width: 32px; height: 32px; box-shadow: none; }
+.sb-name { position: absolute; left: 126px; top: 18px; right: 8px; display: grid; gap: 1px; white-space: nowrap; transition: opacity .15s ease; }
+.sb-name b { font-size: 14px; }
+.sb-name small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.sb.mini .sb-name { opacity: 0; visibility: hidden; }
+.sb-items { display: grid; gap: 4px; padding: 0 10px 12px; }
+.sb-item { display: flex; align-items: center; gap: 12px; height: 36px; padding-left: 10px; border-radius: 9px; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; }
+.sb-item i { width: 22px; height: 22px; border-radius: 6px; background: var(--panel-2); display: block; flex: none; }
+.sb-item.on { background: var(--cyan-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--cyan); }
+.sb.mini .sb-item span { display: none; }
+.sbguide { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--gold); pointer-events: none; }
+.sbguide.g1 { top: 30px; } .sbguide.g2 { top: 96px; }
+@media (prefers-reduced-motion: reduce) { .sb, .sb-logo, .sb-name { transition: none; } }
 </style>
 
 <div class="wrap">
@@ -281,7 +304,7 @@ tr.phase td { background: var(--bg); color: var(--gold); font-weight: 700; font-
       <thead><tr><th>PR</th><th>Branch</th><th>O que entra</th><th>Itens</th><th class="num">Custo*</th></tr></thead>
       <tbody>
         <tr class="phase"><td colspan="5">Fase 1 · consertos visuais (as suas capturas)</td></tr>
-        <tr><td>V</td><td><code>visual/1.6-consistencia</code></td><td>Barra lateral que não muda os botões de lugar; Configurações sem pulos; listas do celular</td><td>U121, U120, U112</td><td class="num">~6 %</td></tr>
+        <tr><td>V</td><td><code>visual/1.6-consistencia</code></td><td>Barra lateral com o botão de recolher parado (só a runa muda); Configurações sem pulos; listas do celular</td><td>U121, U120, U112</td><td class="num">~6 %</td></tr>
         <tr><td>W1</td><td><code>wiki/1.6-cartoes-e-organograma</code></td><td>Nome das categorias inteiro e sem “›”; organograma e árvore genealógica que se movem livres</td><td>U114, U117</td><td class="num">~6 %</td></tr>
         <tr class="phase"><td colspan="5">Fase 2 · telas refeitas (maquetes desta página)</td></tr>
         <tr><td>E</td><td><code>campanhas/1.6-elenco</code></td><td>Elenco novo: uma barra, um botão de acrescentar, painel de detalhes</td><td>U115</td><td class="num">~12 %</td></tr>
@@ -627,19 +650,33 @@ Rumor: o dono deve dinheiro à Casa Ormund.</div>
   <div class="lead"><span class="eyebrow">Anexos 1, 4, 7–10 · PRs V e W1</span><h2 id="t-cons">Consertos visuais</h2>
     <p class="muted">Esses não precisam de maquete grande. Mostro a causa que achei no código e o antes e depois.</p></div>
 
-  <div class="card" style="gap:14px">
-    <h3>Barra lateral: recolher sem mexer nos botões (anexos 9 e 10 · U121)</h3>
-    <p class="small muted">Recolhida, o botão de recolher fica no topo e a runa desce; aberta, a runa sobe e o botão vai para a direita. Os itens descem cerca de 40 px (na sua captura, o Início sai de 270 para 228). Proposta: a runa no mesmo lugar nos dois estados, o botão no rodapé (onde fica “Offline”) e os itens na mesma altura.</p>
-    <div class="ba">
-      <div><span class="lbl before">Antes</span><div class="pair">
-        <div class="side rail"><span class="t">⇤</span><span class="b"><i></i></span><span class="gap"></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="guide" style="top:122px"></span></div>
-        <div class="side"><span class="b"><i></i><b>Runas-Codex</b><span class="t" style="margin-left:auto">⇤</span></span><span class="n"><i></i>Início</span><span class="n"><i></i>Notas</span><span class="n"><i></i>Agenda</span><span class="guide" style="top:122px"></span></div>
-      </div><span class="cap">A linha tracejada é a mesma altura nos dois: os itens não batem com ela.</span></div>
-      <div><span class="lbl after">Depois</span><div class="pair">
-        <div class="side rail"><span class="b"><i></i></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="gap"></span><span class="t">⇥</span></div>
-        <div class="side"><span class="b"><i></i><b>Runas-Codex</b></span><span class="n"><i></i>Início</span><span class="n"><i></i>Notas</span><span class="n"><i></i>Agenda</span><span class="gap"></span><span class="n"><span class="t">⇤</span>Recolher · Offline</span></div>
-      </div><span class="cap">Runa, itens e botão no mesmo lugar; só o texto aparece e some.</span></div>
+  <div class="card" style="gap:14px" id="barra-lateral">
+    <h3>Barra lateral: o botão de recolher fica parado (anexos 9 e 10 · U121)</h3>
+    <p class="small muted">Hoje o botão anda. Recolhida, ele fica no topo e a runa desce; aberta, ele vai para a direita, a runa sobe e os itens sobem cerca de 40 px (na sua captura, o Início sai de 270 para 228).
+      Proposta, como você pediu: o layout continua o de antes, e <b>só a runa se mexe</b>. O botão fica no canto de cima, no mesmo ponto nos dois estados.
+      Recolhida, a runa fica pequena, logo abaixo do botão. Aberta, ela sobe para a linha do botão e cresce, com o nome ao lado. O cabeçalho tem a mesma altura nos dois estados, então os itens também não se mexem.</p>
+    <div class="sbpair">
+      <div class="sbcol"><span class="lbl">Aberta</span>
+        <div class="sb" aria-hidden="true">
+          <div class="sb-head"><span class="sb-toggle">⇤</span><span class="sb-logo"></span><span class="sb-name"><b>Runas-Codex</b><small>Cofre: Mesa do Mestre</small></span></div>
+          <div class="sb-items"><span class="sb-item on"><i></i><span>Início</span></span><span class="sb-item"><i></i><span>Notas</span></span><span class="sb-item"><i></i><span>Agenda</span></span><span class="sb-item"><i></i><span>Wiki</span></span></div>
+          <span class="sbguide g1"></span><span class="sbguide g2"></span>
+        </div></div>
+      <div class="sbcol"><span class="lbl">Recolhida</span>
+        <div class="sb mini" aria-hidden="true">
+          <div class="sb-head"><span class="sb-toggle">⇥</span><span class="sb-logo"></span><span class="sb-name"><b>Runas-Codex</b><small>Cofre: Mesa do Mestre</small></span></div>
+          <div class="sb-items"><span class="sb-item on"><i></i><span>Início</span></span><span class="sb-item"><i></i><span>Notas</span></span><span class="sb-item"><i></i><span>Agenda</span></span><span class="sb-item"><i></i><span>Wiki</span></span></div>
+          <span class="sbguide g1"></span><span class="sbguide g2"></span>
+        </div></div>
+      <div class="sbcol"><span class="lbl">Experimente</span>
+        <div class="sb" id="sb-demo">
+          <div class="sb-head"><button type="button" class="sb-toggle" id="sb-demo-toggle" aria-expanded="true" aria-label="Recolher a barra lateral">⇤</button><span class="sb-logo"></span><span class="sb-name"><b>Runas-Codex</b><small>Cofre: Mesa do Mestre</small></span></div>
+          <div class="sb-items"><span class="sb-item on"><i></i><span>Início</span></span><span class="sb-item"><i></i><span>Notas</span></span><span class="sb-item"><i></i><span>Agenda</span></span><span class="sb-item"><i></i><span>Wiki</span></span></div>
+        </div>
+        <span class="cap">Clique no botão de cima: ele não sai do lugar.</span></div>
     </div>
+    <p class="cap">As linhas tracejadas marcam o botão e o primeiro item: batem nos dois estados. A runa vai de 32 para 56 px. A troca leva 0,2 s e não anima com “Reduzir movimento” ligado.
+      O botão continua com o nome “Recolher a barra lateral” ou “Abrir a barra lateral” para o leitor de tela, e a runa continua levando ao Início.</p>
   </div>
 
   <div class="card" style="gap:14px">
@@ -725,3 +762,17 @@ Rumor: o dono deve dinheiro à Casa Ormund.</div>
   </div>
 </section>
 </div>
+
+<script>
+// Maquete da barra lateral: o mesmo botão recolhe e abre, sem sair do lugar.
+(() => {
+  const bar = document.getElementById("sb-demo"), toggle = document.getElementById("sb-demo-toggle")
+  if (!bar || !toggle) return
+  toggle.addEventListener("click", () => {
+    const rail = bar.classList.toggle("mini")
+    toggle.textContent = rail ? "⇥" : "⇤"
+    toggle.setAttribute("aria-expanded", String(!rail))
+    toggle.setAttribute("aria-label", rail ? "Abrir a barra lateral" : "Recolher a barra lateral")
+  })
+})()
+</script>
