@@ -2231,3 +2231,17 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Importar direto (1.6, J2/U104)
+
+- [ ] Em Importar e exportar › Importar, o botão de escolher arquivos vem primeiro. As explicações de origem (pacotes,
+  ZIPs, Notion) e a pasta dos arquivos avulsos ficam em “De onde importar e onde entram os arquivos avulsos”,
+  recolhido, e abrem pelo teclado (Enter ou espaço).
+- [ ] Depois de importar, aparece “Abrir o que entrou”, com até 4 atalhos:
+  - um pacote com uma wiki abre a wiki;
+  - uma campanha abre o Painel dela;
+  - um livro abre o livro;
+  - uma mesa do VTT abre “Criar mesa”;
+  - notas soltas abrem em Notas.
+  Escolher outro arquivo apaga os atalhos da importação anterior.
+- [ ] No celular (320 px), os atalhos e o resumo recolhido têm 44 px de altura e não criam rolagem para os lados.
