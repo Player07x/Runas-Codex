@@ -15,7 +15,8 @@ import { RegionService } from "../vtt/shared/region-service"
 import { clearLog, deleteDocument, putDocument } from "../vtt/shared/world-documents"
 import type { PlayerSeatConnection, PlayerTransport, PlayerTransportOptions } from "../vtt/shared/transport"
 import { isAssetPath } from "../vtt/shared/scene"
-import { MASTER_CHANNELS, MASTER_EVENTS, type MasterState } from "../vtt/shared/master"
+import { isMasterLink, MASTER_CHANNELS, MASTER_EVENTS, type MasterState } from "../vtt/shared/master"
+import { parseRoomLink } from "../vtt/shared/room-link"
 import { dispatchMaster } from "../vtt/shared/master-dispatch"
 import { ASSET_KINDS } from "../vtt/shared/world"
 
@@ -36,6 +37,7 @@ interface RoomPlugin {
   masterEmit(options: { channel: string; payload: unknown }): Promise<void>
   addListener(event: "master-state", listener: (state: MasterState) => void): Promise<PluginListenerHandle>
   openUrl(options: { url: string }): Promise<void>
+  openMaster(options: { url: string }): Promise<void>
   addListener(event: "request", listener: (request: NativeRequest) => void): Promise<PluginListenerHandle>
   addListener(event: "counts", listener: (counts: { players: number; spectators: number }) => void): Promise<PluginListenerHandle>
   addListener(event: "stopped", listener: () => void): Promise<PluginListenerHandle>
@@ -382,7 +384,11 @@ export function createAndroidVttApi(platform: Platform): VttApi {
       join: async (url) => {
         const parsed = new URL(url)
         if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error("Link da sala inválido.")
-        await native.openUrl({ url: parsed.href })
+        if (isMasterLink(parsed.href)) {
+          await native.openMaster({ url: parseRoomLink(parsed.href).url })
+        } else {
+          await native.openUrl({ url: parsed.href })
+        }
       },
       setScene: async (id) => {
         authority.setScene(id)

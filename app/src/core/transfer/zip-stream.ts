@@ -54,13 +54,12 @@ export class ZipWriter {
   }
 
   /** Duas leituras mantêm o cabeçalho compatível com ZIPs antigos e limitam a memória ao pedaço atual. */
-  async addStored(name: string, read: (write: ReadChunks) => Promise<void>, limit: number, onMeasure: (bytes: Uint8Array) => void): Promise<number> {
+  async addStored(name: string, read: (write: ReadChunks) => Promise<void>, limit: number, onWrite: (bytes: Uint8Array) => void): Promise<number> {
     let size = 0, crc = 0xffffffff
     await read(async (bytes) => {
       size += bytes.length
       if (size > limit) throw new Error(`“${name}” passa do limite por arquivo.`)
       crc = updateCrc(crc, bytes)
-      onMeasure(bytes)
     })
     const expected = finishCrc(crc)
     await this.addEntry(name, 0, size, size, expected, async (write) => {
@@ -69,6 +68,7 @@ export class ZipWriter {
         written += bytes.length
         if (written > size) throw new Error(`“${name}” mudou durante a gravação do pacote.`)
         actual = updateCrc(actual, bytes)
+        onWrite(bytes)
         await write(bytes)
       })
       if (written !== size || finishCrc(actual) !== expected) throw new Error(`“${name}” mudou durante a gravação do pacote.`)

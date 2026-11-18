@@ -2436,3 +2436,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
       ciano no escuro; fundo claro e azul-petróleo no claro. Conferir Início, Notas, Wiki, Campanhas e a Mesa.
 - [ ] Com “Contraste alto” ligado (Acessibilidade), a Runa continua legível nos dois temas.
 - [ ] No celular (Android, 360 px), a paleta vale também na barra inferior e nos menus.
+
+
+## Conferência das correções integradas da 1.6
+
+- [ ] Em 320, 390 e 1366 px, buscar um personagem, um evento, uma mesa e **Atalhos**. Conferir o painel ou seção
+  correspondente. Voltar da Ajuda para Tópicos por teclado e abrir Filtros na Linha do tempo em 320 e 390 px.
+- [ ] Com um NPC aberto no Elenco, reordenar a lista de NPCs no Obsidian e conferir que o painel mantém a ficha.
+- [ ] No Android, importar um binário grande já existente e comparar conteúdo igual e diferente. Na opção Substituir,
+  conferir a recuperação pelo .runas de segurança. Cancelar a escolha do destino deve preservar o cofre.
+- [ ] No Android, colar o link do mestre em **Entrar Sala** e conferir a aba integrada, o retorno ao aplicativo,
+  a biblioteca remota e **Salvar Sessão**. Repetir com link LAN e público, quando disponível.
