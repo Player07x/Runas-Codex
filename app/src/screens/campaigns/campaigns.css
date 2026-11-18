@@ -115,30 +115,8 @@
   .campaign-kanban-pick .select { min-height: 44px; }
 }
 
-.campaign-cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 8px; }
-.campaign-tracked { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: calc(13px * var(--font-scale, 1)); }
-.campaign-tracked:first-of-type { border-top: 0; }
-.campaign-cast-view-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-left: auto; }
-.campaign-cast-view-controls .kit-choice { flex: none; }
-.campaign-faction-list, .campaign-faction-grid { margin: 0; padding: 0; list-style: none; }
-.campaign-faction-list { display: grid; }
-.campaign-faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-.campaign-faction-grid.size-small { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-.campaign-faction-grid.size-medium { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-.campaign-faction-grid.size-large { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
-.campaign-faction-grid .campaign-tracked { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-content: start; min-width: 0; min-height: 112px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.campaign-faction-grid .campaign-tracked:first-child { border-top: 1px solid var(--line); }
-.campaign-faction-grid .campaign-faction-reputation { grid-column: 1 / -1; justify-content: flex-end; margin-top: auto; }
-.campaign-faction-grid .campaign-tracked > .kit-menu-wrap { justify-self: end; }
-.campaign-roster-grid.size-small { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
-.campaign-roster-grid.size-medium { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
-.campaign-roster-grid.size-large { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
 .campaign-seen a { color: inherit; }
-.campaign-attitude { width: auto; min-height: 32px; font-size: calc(12px * var(--font-scale, 1)); }
 @media (max-width: 860px) { .campaign-attitude { min-height: 44px; } }
-.campaign-attitude.green { color: var(--green); }
-.campaign-attitude.red { color: var(--red); }
-.campaign-attitude.gold { color: var(--gold); }
 
 .campaign-boards { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .campaign-boards-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
@@ -228,7 +206,6 @@
 .campaign-card-cover { position: relative; margin: 0 calc(-1 * var(--space-section)) 18px; }
 .campaign-card-cover .campaign-banner { margin: 0; border-radius: 0; }
 .campaign-card-cover .crest { position: absolute; left: var(--space-section); bottom: -16px; box-shadow: 0 0 0 3px var(--panel); background-color: var(--panel); }
-.campaign-tracked .crest { margin-right: 2px; }
 .campaign-cover-band { margin: calc(-1 * 22px) calc(-1 * 22px) 0; width: calc(100% + 44px); flex: 1 0 100%; border-radius: 0; }
 .campaign-cover .crest { box-shadow: 0 0 0 3px var(--panel); }
 
@@ -241,51 +218,9 @@
   .campaign-cover .page-title { font-size: calc(20px * var(--font-scale, 1)); }
 }
 
-/* Elenco para mais de 100 NPCs (T9): ferramentas numa linha que quebra, lista compacta com a marca “apareceu”. */
-.campaign-roster-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
-.campaign-roster-tools .search { flex: 1 1 220px; min-width: 0; }
-.campaign-roster-tools .field .select { min-width: 140px; }
-.campaign-roster-group { margin: 12px 0 4px; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.campaign-roster-list { display: grid; margin: 0; padding: 0; list-style: none; }
-.campaign-roster-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: calc(13px * var(--font-scale, 1)); }
-.campaign-roster-row:first-child { border-top: 0; }
-/* Grade do Elenco (E1): cartões com a imagem do artigo, como nas categorias da Wiki. */
-.campaign-roster-count { flex-wrap: wrap; gap: 8px; }
-.campaign-roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-.campaign-npc-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; font-size: calc(13px * var(--font-scale, 1)); }
-.campaign-npc-card:hover { border-color: var(--line-strong); }
-.campaign-npc-card-head { display: grid; gap: 8px; color: var(--text); text-decoration: none; }
-.campaign-npc-card-head strong { padding: 0 12px; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.35; overflow-wrap: anywhere; }
-a.campaign-npc-card-head:hover strong { text-decoration: underline; }
-.campaign-npc-card-body { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: 2px 12px 12px; min-width: 0; }
-.campaign-npc-card-controls { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.campaign-npc-card-controls .campaign-attitude { flex: 1 1 100%; min-width: 0; }
-.campaign-npc-card-controls .campaign-appeared { flex: 1 1 auto; justify-content: center; }
-.campaign-roster-name { display: grid; min-width: 0; flex: 1 1 160px; }
-.campaign-roster-name a { color: inherit; }
-/* O nome é o alvo da linha: 24 px de altura (achado da revisão no Android). */
-.campaign-roster-name > a { display: inline-flex; align-items: center; min-height: 24px; justify-self: start; max-width: 100%; }
-.campaign-appeared { gap: 4px; min-height: 30px; cursor: pointer; }
-.campaign-appeared:disabled { cursor: default; opacity: 1; }
-@media (max-width: 860px) {
-  .campaign-cast-view-controls { margin-left: 0; }
-  .campaign-cast-view-controls > * { flex: 1 1 auto; }
-  .campaign-faction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .campaign-faction-grid.size-small, .campaign-faction-grid.size-medium, .campaign-faction-grid.size-large { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .campaign-roster-tools > * { flex: 1 1 100%; }
-  .campaign-roster-row .campaign-attitude { flex: 1 1 auto; }
-  .campaign-appeared, .campaign-roster-tools .select { min-height: 44px; }
-  .campaign-roster-name > a { min-height: 44px; }
-  .campaign-roster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .campaign-npc-card-body { padding: 2px 9px 9px; }
-  .campaign-npc-card-head strong { padding: 0 9px; }
-  .campaign-roster-count .btn { min-height: 44px; }
-}
 /* Cabeçalhos dos cartões: no celular os botões descem inteiros em vez de quebrar o texto (“Personag/em”). */
 .campaign-page .card > .row.between { flex-wrap: wrap; gap: 8px; }
 .campaign-page .card > .row.between .btn { white-space: nowrap; }
-.campaign-roster-more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-weight: 600; }
-.campaign-roster-more .stack { padding-top: 6px; }
 
 /* Mapa de missões: arcos como grupos, cartões com a borda da situação (tracejada = bloqueada) e setas de requer. */
 .campaign-questmap-bar { align-items: center; }
@@ -405,9 +340,6 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .campaign-choose-list { list-style: none; margin: 0; padding: 0; gap: 6px; }
 .campaign-choose { width: 100%; justify-content: flex-start; min-height: 44px; }
 
-/* Cartão Pequeno do Elenco (U33): atitude em texto e o ⋯; o resto mora no menu. */
-.campaign-npc-card-compact { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
-.campaign-npc-card-tags { gap: 4px; min-width: 0; }
 
 /* U67: o título do cartão de campanha com 44 px de altura no celular e no toque. */
 @media (max-width: 640px), (pointer: coarse) {
@@ -434,3 +366,94 @@ a.campaign-npc-card-head:hover strong { text-decoration: underline; }
 .treasure-quantity .mono { min-width: 2ch; text-align: center; }
 .treasure-card p { margin: 0; overflow-wrap: anywhere; }
 .treasure-card-actions { flex-wrap: wrap; gap: 8px; }
+
+/* Elenco (U115): uma barra, abas por tipo, cartões só com nome e atitude, e o painel do cartão escolhido. */
+.campaign-cast-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.campaign-cast-search { flex: 1 1 240px; min-width: 0; max-width: 360px; }
+.campaign-cast-search .input { width: 100%; }
+.campaign-cast-add { margin-left: auto; }
+.campaign-cast-filters { position: relative; }
+.campaign-cast-filters > summary { list-style: none; gap: 6px; }
+.campaign-cast-filters > summary::-webkit-details-marker { display: none; }
+.campaign-cast-filters[open] > summary { border-color: var(--cyan); }
+.campaign-cast-filter-count { min-height: 0; padding: 0 6px; background: var(--cyan); color: var(--on-accent); font-weight: 700; }
+.campaign-cast-filters-body { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; display: grid; gap: 12px; width: min(340px, calc(100vw - 32px)); padding: 14px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); }
+.campaign-cast-filters-body .select { width: 100%; }
+.campaign-cast-page .kit-tabs { padding: 0; }
+.campaign-cast-chips { gap: 6px; }
+.campaign-cast-chip { gap: 4px; min-height: 30px; cursor: pointer; }
+.campaign-cast-chip:hover { border-color: var(--line-strong); color: var(--text); }
+.campaign-cast-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.campaign-cast-page.has-detail .campaign-cast-layout { grid-template-columns: minmax(0, 1fr) minmax(280px, 320px); }
+.campaign-cast-layout .kit-tabpanel { min-width: 0; }
+.campaign-cast-layout .kit-tabpanel:focus-visible { outline-offset: 4px; }
+.campaign-cast-sections { display: grid; gap: 20px; min-width: 0; }
+.campaign-cast-section { display: grid; gap: 8px; min-width: 0; }
+.campaign-cast-section-title { margin: 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.campaign-cast-section-title .tiny { color: var(--faint); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.campaign-cast-grid, .campaign-cast-cards, .campaign-cast-list { margin: 0; padding: 0; list-style: none; }
+.campaign-cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(220px * var(--font-scale, 1)), 100%), 1fr)); gap: 8px; }
+.campaign-cast-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(190px * var(--font-scale, 1)), 100%), 1fr)); gap: 10px; }
+.campaign-cast-cards.size-small { grid-template-columns: repeat(auto-fill, minmax(min(calc(145px * var(--font-scale, 1)), 100%), 1fr)); }
+.campaign-cast-cards.size-large { grid-template-columns: repeat(auto-fill, minmax(min(calc(270px * var(--font-scale, 1)), 100%), 1fr)); }
+.campaign-cast-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(260px * var(--font-scale, 1)), 100%), 1fr)); gap: 6px; }
+/* O cartão é um botão: o clique abre o painel; a facção leva o − e o + ao lado. */
+.campaign-cast-item { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+.campaign-cast-list > .campaign-cast-item { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.campaign-cast-item:hover, .campaign-cast-grid .campaign-cast-card:hover { border-color: var(--line-strong); }
+.campaign-cast-item.selected, .campaign-cast-grid .campaign-cast-card.selected { border-color: transparent; box-shadow: 0 0 0 2px var(--cyan); }
+.campaign-cast-card { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; min-height: 44px; padding: 8px 10px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.campaign-cast-grid .campaign-cast-card { width: 100%; height: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.campaign-cast-card-text { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.campaign-cast-card-text strong, .campaign-cast-card-text h2 { max-width: 100%; overflow-wrap: anywhere; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.3; }
+.campaign-cast-tags { gap: 4px; }
+.campaign-cast-unseen { border-style: dashed; color: var(--muted); }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card { flex-direction: column; align-items: stretch; padding: 0; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0 10px 10px; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .crest { margin: 10px 10px 0; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { flex-direction: row; align-items: center; padding: 8px 10px; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > :is(.crest, .campaign-cast-card-text) { margin: 0; padding: 0; }
+.campaign-cast-item > .campaign-faction-reputation { flex: none; padding: 0 8px 8px; justify-content: flex-end; }
+.campaign-cast-list > .campaign-cast-item > .campaign-faction-reputation { padding: 0 8px 0 0; }
+.campaign-rep-pips { display: inline-flex; gap: 3px; margin-inline: 2px; }
+.campaign-rep-pips i { display: block; width: 7px; height: 7px; border-radius: 2px; background: var(--panel-2); }
+.campaign-rep-pips i.zero { background: var(--line-strong); }
+.campaign-rep-pips i.pos { background: var(--green); }
+.campaign-rep-pips i.neg { background: var(--red); }
+.campaign-roster-group { margin: 4px 0 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.campaign-appeared { gap: 4px; min-height: 32px; cursor: pointer; }
+.campaign-appeared:disabled { cursor: default; opacity: 1; }
+/* Painel de detalhes: coluna à direita no computador; no celular, uma folha que sobe por cima. */
+.campaign-cast-detail { position: sticky; top: 0; display: grid; gap: 14px; min-width: 0; max-height: calc(100dvh - var(--topbar-height) - 32px); padding: 14px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.campaign-cast-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.campaign-cast-detail-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.campaign-cast-detail-who h2 { margin: 0; font-size: calc(17px * var(--font-scale, 1)); }
+.campaign-cast-detail-who h2:focus { outline: none; }
+.campaign-cast-detail-part { display: grid; gap: 6px; justify-items: start; min-width: 0; }
+.campaign-cast-detail-part .kit-choice { max-width: 100%; }
+.campaign-cast-detail-label { color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); font-weight: 600; }
+.campaign-cast-detail-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: calc(13px * var(--font-scale, 1)); }
+.campaign-cast-detail-list a { overflow-wrap: anywhere; }
+.campaign-cast-detail-actions { gap: 6px; padding-top: 4px; border-top: 1px solid var(--line); }
+/* “Adicionar ao elenco”: o que está na wiki primeiro, criar embaixo. */
+.campaign-cast-add-body { gap: 14px; }
+.campaign-cast-add-body .search .input { width: 100%; }
+.campaign-cast-add-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.campaign-cast-add-list > li { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.campaign-cast-add-list .list-item { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 860px) {
+  .campaign-cast-page.has-detail .campaign-cast-layout { grid-template-columns: minmax(0, 1fr); }
+  .campaign-cast-detail { position: fixed; z-index: 70; inset: auto 0 0; max-height: 72dvh; padding-bottom: calc(14px + env(safe-area-inset-bottom)); border-color: var(--line-strong); border-radius: 18px 18px 0 0; box-shadow: var(--shadow); }
+  .campaign-cast-page.has-detail { padding-bottom: 40dvh; }
+}
+@media (max-width: 640px), (pointer: coarse) {
+  .campaign-cast-search { flex-basis: 0; max-width: none; }
+  .campaign-cast-filters > summary, .campaign-cast-add, .campaign-cast-chip, .campaign-appeared, .campaign-cast-detail .btn, .campaign-cast-add-body .btn { min-height: 44px; min-width: 44px; justify-content: center; }
+  .campaign-cast-add { margin-left: 0; }
+  .campaign-cast-page .kit-tabs { flex-wrap: wrap; overflow: visible; }
+  .campaign-cast-page .kit-tab { min-height: 44px; }
+  .campaign-cast-cards, .campaign-cast-cards.size-large { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .campaign-cast-cards.size-small { grid-template-columns: minmax(0, 1fr); }
+  .campaign-cast-detail .icon-btn, .campaign-cast-item .icon-btn { width: 44px; height: 44px; }
+  .campaign-cast-filters-body { position: fixed; z-index: 75; top: auto; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; max-height: 80dvh; overflow-y: auto; }
+}

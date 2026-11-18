@@ -2231,3 +2231,20 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Elenco refeito (PR E/U115)
+
+- [ ] Campanha › Elenco no computador: uma barra só (Buscar no elenco, Filtros e exibição, Adicionar, ⋯), abas Todos,
+  Jogadores, NPCs, Facções e Relações com o número de cada uma. Clicar num cartão abre o painel à direita; clicar de
+  novo, ✕ ou Esc fecha, e o foco volta ao cartão.
+- [ ] No painel de um NPC: mudar a atitude, marcar “Já apareceu” (desligado quando uma sessão já cita o NPC), os links
+  “Visto em” e as relações; “Abrir artigo” e “Tirar da campanha” (o aviso traz “Desfazer”).
+- [ ] No painel de um personagem de jogador: “Trocar jogador” e “Desvincular” (agora sem pergunta, com “Desfazer” no
+  aviso). Na facção, o − e o + continuam no cartão e também no painel.
+- [ ] “Adicionar”: digitar parte de um nome lista personagens e organizações da wiki fora do elenco (NPC ou facção num
+  clique; “Jogador” vincula como personagem de jogador); “Criar” abre Novo NPC, Nova facção ou Personagem de jogador
+  já com o nome digitado.
+- [ ] Filtros e exibição: Situação, Atitude, Agrupar, Ordem, Lista/Grade e tamanho dos cartões; o que estiver em uso
+  aparece como etiqueta com ✕ abaixo das abas e no número do botão. As escolhas de antes (Grade, ordem) continuam.
+- [ ] No celular (Android): as abas quebram em duas linhas, o painel sobe de baixo, os filtros abrem por cima da barra
+  de navegação; nada rola para os lados a 320 px.

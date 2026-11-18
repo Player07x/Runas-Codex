@@ -1,4 +1,4 @@
-/** Personagens: criação/seleção na wiki e alterações só no vínculo da campanha. */
+/** Personagens: criação/seleção na wiki e alterações só no vínculo da campanha (Elenco com painel de detalhes, U115). */
 export const CAMPAIGN_PLAYERS_SMOKE = `
 {
   location.hash = campaignRoute + "/elenco"
@@ -24,9 +24,17 @@ export const CAMPAIGN_PLAYERS_SMOKE = `
     button.click()
     if (!await until(() => !document.querySelector(".modal"))) throw new Error("Diálogo de personagem não fechou")
   }
+  // “Adicionar” › “Personagem de jogador”.
   const openPlayer = async () => {
-    ;[...document.querySelectorAll("button")].find(b => b.textContent.trim() === "Personagem")?.click()
+    document.querySelector("[aria-label='Adicionar ao elenco']")?.click()
+    ;(await until(() => [...document.querySelectorAll(".modal button")].find(b => b.textContent.trim().startsWith("Personagem de jogador"))))?.click()
     if (!await until(() => document.querySelector("[aria-label='Origem do personagem']"))) throw new Error("Diálogo de personagem ausente")
+  }
+  // Trocar jogador e Desvincular moram no painel do cartão escolhido.
+  const openDetail = async (name) => {
+    if (document.querySelector(".campaign-cast-detail h2")?.textContent === name) return
+    ;[...(cast()?.querySelectorAll("button") ?? [])].find(b => b.textContent.includes(name))?.click()
+    if (!await until(() => document.querySelector(".campaign-cast-detail h2")?.textContent === name)) throw new Error("Painel do personagem ausente: " + name)
   }
   await openPlayer()
   selectValue("Origem do personagem", "novo")
@@ -44,6 +52,7 @@ export const CAMPAIGN_PLAYERS_SMOKE = `
     linked: Boolean(heroPath && created[homePath]?.includes(heroPath.replace(/\\.md$/, "")) && created[homePath]?.includes("Ana do smoke")),
     legacyPreserved: cast()?.children.length === originalCount + 1,
   }
+  await openDetail("Herói da wiki do smoke")
   document.querySelector("[aria-label='Trocar jogador de Herói da wiki do smoke']")?.click()
   await until(() => document.querySelector("[aria-label='Nome de quem joga']"))
   fillPlayer("Nome de quem joga", "Bia do smoke")
@@ -51,9 +60,9 @@ export const CAMPAIGN_PLAYERS_SMOKE = `
   await until(() => cast()?.textContent.includes("Bia do smoke"))
   const edited = await bridge.vault.read([homePath, heroPath])
   result.campaignPlayers.changedPlayer = edited[homePath]?.includes("Bia do smoke") && edited[heroPath] === created[heroPath]
+  await openDetail("Herói da wiki do smoke")
+  // Desvincular não pergunta: o aviso traz “Desfazer”.
   document.querySelector("[aria-label='Desvincular Herói da wiki do smoke da campanha']")?.click()
-  // Desvincular pede confirmação no próprio cartão.
-  ;(await until(() => [...(cast()?.querySelectorAll("button") ?? [])].find(b => b.textContent.trim() === "Confirmar")))?.click()
   await until(() => cast()?.children.length === originalCount)
   const unlinked = await bridge.vault.read([homePath, heroPath])
   result.campaignPlayers.unlinked = cast()?.children.length === originalCount && !unlinked[homePath]?.includes(heroPath.replace(/\\.md$/, "")) && unlinked[heroPath] === created[heroPath]
