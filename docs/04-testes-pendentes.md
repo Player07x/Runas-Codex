@@ -2231,3 +2231,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Relógios com o número de partes digitado (pedido de 18/11)
+
+- [ ] Missões › Relógios › ⋯ › “Editar nome, partes e tipo…”: o campo Partes aceita qualquer número de 2 a 24. Fora disso
+  (ou vazio), aparece “Digite um número de 2 a 24.” e o Gravar fica desligado. Com menos partes que as preenchidas, o
+  relógio fica cheio.
+- [ ] “Novo relógio”: o mesmo campo, começando em 6; Enter cria o relógio.
+- [ ] No celular, o campo abre o teclado numérico.

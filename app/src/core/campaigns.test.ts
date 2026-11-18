@@ -1,5 +1,5 @@
 import {
-  appendToSection, campaignJournal, castRows, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
+  appendToSection, campaignJournal, clockSegments, castRows, campaignStats, flattenLinks, clocksOf, compareOrder, listCampaigns, listPlayers, listQuests, listSessions, newCampaignNote, newQuestNote, newSessionNote, nextSessionNumber,
   nextCampaignSession, npcAppeared, npcAttitude, npcExtra, npcSightings, PREP_STEPS, prepItems, previousSession, reputationOf, secretsOf, sectionText, setClocks, setPrepDetail, setSecretRevealed, setSectionText, setTaskLine,
   withCampaignPlayer, trackedLinks, campaignContents, uniqueNoteName, upcomingSession, withoutPosition, withTrackedLink, isGmNote, newGmNote, listGmNotes, withPinnedNote, isSessionNote,
 } from "./campaigns"
@@ -245,6 +245,16 @@ describe("campanhas", () => {
     expect(next.replace("preenchidos: 6", "preenchidos: 5")).toBe(text)
     expect(clocksOf(setClocks("# Nova\n", [{ name: "Ameaça", segments: 6, filled: 1, kind: "ameaca" }]))).toEqual([{ name: "Ameaça", segments: 6, filled: 1, kind: "ameaca" }])
     expect(clocksOf("```runas-relogios\nnome: x\n```")).toHaveProperty("error")
+  })
+
+  it("relógios: aceita o número de partes digitado, de 2 a 24", () => {
+    expect(clockSegments("5")).toBe(5)
+    expect(clockSegments(" 24 ")).toBe(24)
+    expect(clockSegments("2")).toBe(2)
+    for (const bad of ["", "1", "25", "3.5", "-4", "seis", "1e1"]) expect(clockSegments(bad)).toBeNull()
+    // Relógios gravados com mais partes do que a lista antiga oferecia continuam como estão.
+    expect(clocksOf("```runas-relogios\n- { nome: Longo, segmentos: 16, preenchidos: 20 }\n```")).toEqual([{ name: "Longo", segments: 16, filled: 16, kind: "ameaca" }])
+    expect(clocksOf("```runas-relogios\n- { nome: Demais, segmentos: 40 }\n```")).toEqual([{ name: "Demais", segments: 24, filled: 0, kind: "ameaca" }])
   })
 
   it("notas novas: campanha, sessão (com evento e roteiro de preparação), missão e nome livre", () => {
