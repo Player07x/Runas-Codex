@@ -2231,3 +2231,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Smoke do Windows e auditoria (W/U111, U113)
+
+- [ ] Nos próximos PRs, o job **windows** do Release não falha mais em `paste.link` (o smoke agora espera a nota
+      colada chegar ao disco, até 10 s, em vez de 1,5 s fixos).
+- [ ] O job **audit** do CI passa sem nenhuma exceção (`.github/auditoria-excecoes.json` vazio): o GitHub retirou o
+      aviso do picomatch em 18/11.
+- [ ] O job **android-room** falhou em 5 das 15 execuções da 1.6, em PRs que não mexem na sala (esperas de 60 s no
+      emulador: crachá “Jogador 1” e “Nenhum aparelho conectado”). Rodar de novo o job resolve; conserto à parte.
