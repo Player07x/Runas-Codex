@@ -1,0 +1,727 @@
+<meta charset="utf-8">
+<title>Plano da 1.6.0</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura (plano) com maquetes no visual Órbita do app; quadros de computador rolam de lado
+   dentro do próprio quadro no celular. Cores = tokens do app (app/src/styles/tokens.css). */
+:root {
+  color-scheme: dark;
+  --bg: #11131a; --bg-deep: #0c0f15; --panel: #191d27; --panel-2: #242936; --panel-hover: #303748;
+  --text: #f0f2fa; --muted: #b0b8cd; --faint: #a0aabe; --line: #303747; --line-strong: #69799c;
+  --cyan: #bec6ff; --green: #9dcbb4; --red: #ffa48e; --gold: #ecc484; --violet: #bfadf1; --on-accent: #1a2040;
+  --sans: "Geist", system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #fff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+    --text: #222a42; --muted: #53617c; --faint: #57657f; --line: #cbd3e6; --line-strong: #68799a;
+    --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #fff;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f0f2fa; --bg-deep: #e5e8f4; --panel: #fff; --panel-2: #e9edf8; --panel-hover: #dce2f3;
+  --text: #222a42; --muted: #53617c; --faint: #57657f; --line: #cbd3e6; --line-strong: #68799a;
+  --cyan: #454e9c; --green: #396549; --red: #a54433; --gold: #795b1f; --violet: #6e5588; --on-accent: #fff;
+}
+:root {
+  --cyan-soft: color-mix(in srgb, var(--cyan) 14%, transparent); --gold-soft: color-mix(in srgb, var(--gold) 15%, transparent);
+  --red-soft: color-mix(in srgb, var(--red) 14%, transparent); --green-soft: color-mix(in srgb, var(--green) 15%, transparent);
+  --violet-soft: color-mix(in srgb, var(--violet) 15%, transparent);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-deep); color: var(--text); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 40px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 64px; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(30px, 4vw, 42px); line-height: 1.1; }
+h2 { font-size: 26px; line-height: 1.2; }
+h3 { font-size: 17px; line-height: 1.3; }
+p { margin: 0; max-width: 72ch; }
+ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 76ch; }
+a { color: var(--cyan); }
+code { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+.eyebrow { color: var(--faint); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.muted { color: var(--muted); } .small { font-size: 13px; } .tiny { font-size: 11.5px; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+section.block { display: grid; gap: 20px; scroll-margin-top: 16px; }
+.lead { display: grid; gap: 10px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.tag.gold { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
+.tag.cyan { background: var(--cyan-soft); color: var(--cyan); border-color: transparent; }
+.tag.green { background: var(--green-soft); color: var(--green); border-color: transparent; }
+.tag.red { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { text-decoration: none; font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); background: var(--panel); }
+.toc a:hover { border-color: var(--line-strong); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; color: var(--faint); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; background: var(--panel-2); }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tr.phase td { background: var(--bg); color: var(--gold); font-weight: 700; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.why { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 14px; }
+.note { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.note h4 { font-size: 14px; }
+.note p, .note li { font-size: 13.5px; color: var(--muted); }
+.note ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.cap { font-size: 12.5px; color: var(--faint); }
+
+/* ——— Quadros de tela (maquetes) ——— */
+.frames { display: grid; gap: 18px; }
+.frames.split { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+@media (max-width: 1000px) { .frames.split { grid-template-columns: minmax(0, 1fr); } }
+.scroll-x { overflow-x: auto; padding-bottom: 6px; }
+.app { min-width: 940px; border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--bg); display: grid; grid-template-columns: 52px minmax(0, 1fr); font-size: 13px; line-height: 1.45; }
+.phone { width: 360px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 22px; overflow: hidden; background: var(--bg); font-size: 13px; line-height: 1.45; display: grid; grid-template-rows: auto 1fr auto; }
+.rail { background: var(--bg-deep); border-right: 1px solid var(--line); display: grid; align-content: start; justify-items: center; gap: 6px; padding: 12px 0; }
+.rail i { width: 30px; height: 30px; border-radius: 9px; display: block; background: var(--panel-2); }
+.rail i.on { background: var(--cyan-soft); box-shadow: inset 0 0 0 1px var(--cyan); }
+.rail i.logo { background: radial-gradient(circle at 50% 45%, #6be7ff 0 18%, #1d2e57 19% 100%); border-radius: 50%; }
+.main { display: grid; grid-template-rows: auto auto 1fr; min-width: 0; }
+.top { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.crumbs { display: flex; gap: 6px; color: var(--muted); font-size: 12.5px; min-width: 0; white-space: nowrap; }
+.crumbs b { color: var(--text); }
+.fake-search { flex: 1; max-width: 360px; margin-inline: auto; border: 1px solid var(--line); border-radius: 9px; padding: 5px 10px; color: var(--faint); font-size: 12px; display: flex; justify-content: space-between; }
+.fake-search kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.tabsbar { display: flex; gap: 18px; padding: 0 14px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.tabsbar span { padding: 9px 0; }
+.tabsbar span.on { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--gold); }
+.content { padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ph h2 { font-size: 22px; }
+.row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wrapr { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.btn.primary { background: var(--cyan); color: var(--on-accent); border-color: transparent; }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--red); background: transparent; }
+.btn .badge { background: var(--cyan); color: var(--on-accent); border-radius: 999px; font-size: 10.5px; padding: 0 6px; }
+.input { border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px; color: var(--faint); background: var(--bg); font-size: 12.5px; min-width: 0; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.seg span { padding: 4px 10px; border-radius: 7px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.seg span.on { background: var(--panel-2); color: var(--text); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.seg span .n { color: var(--faint); font-variant-numeric: tabular-nums; margin-left: 4px; font-weight: 500; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--panel-2); color: var(--muted); white-space: nowrap; }
+.chip.green { background: var(--green-soft); color: var(--green); }
+.chip.red { background: var(--red-soft); color: var(--red); }
+.chip.gold { background: var(--gold-soft); color: var(--gold); }
+.chip.cyan { background: var(--cyan-soft); color: var(--cyan); }
+.chip.violet { background: var(--violet-soft); color: var(--violet); }
+.chip.out { background: transparent; border: 1px dashed var(--line-strong); color: var(--faint); font-weight: 500; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.sec-title { font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sec-title .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.av { display: grid; place-items: center; font-weight: 700; color: #fff; border-radius: 10px; flex: none; }
+.av.a1 { background: linear-gradient(150deg, #8a5a44, #3b2a2a); } .av.a2 { background: linear-gradient(150deg, #4c6a8a, #24304a); }
+.av.a3 { background: linear-gradient(150deg, #6b7f4e, #2b3424); } .av.a4 { background: linear-gradient(150deg, #7d5a8f, #2f2440); }
+.av.a5 { background: linear-gradient(150deg, #8f7a46, #3a3020); } .av.a6 { background: linear-gradient(150deg, #4f8a86, #1f3634); }
+.av.a7 { background: linear-gradient(150deg, #8a4a5a, #3a1f28); } .av.a8 { background: linear-gradient(150deg, #5a5f8f, #262840); }
+.muted-line { color: var(--faint); font-size: 11.5px; }
+.annot { display: grid; gap: 4px; border-left: 3px solid var(--gold); padding: 2px 0 2px 12px; }
+.annot b { color: var(--gold); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.annot p { font-size: 13.5px; color: var(--muted); }
+
+/* Elenco */
+.cast { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 14px; align-items: start; }
+.pcs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pc { display: flex; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); min-width: 0; }
+.pc .av { width: 34px; height: 34px; }
+.pc b, .npc b, .fac b { display: block; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.npcs { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.npc { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg); display: grid; min-width: 0; position: relative; }
+.npc .av { height: 74px; border-radius: 0; font-size: 22px; }
+.npc .meta { padding: 6px 8px 8px; display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.npc.sel { box-shadow: 0 0 0 2px var(--cyan); border-color: transparent; }
+.npc .flag { position: absolute; top: 6px; left: 6px; }
+.facs { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.fac { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.fac .av { width: 32px; height: 32px; border-radius: 50%; grid-row: span 2; }
+.rep { display: flex; align-items: center; gap: 6px; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 8px; height: 8px; border-radius: 2px; background: var(--panel-2); display: block; }
+.pips i.p { background: var(--green); } .pips i.n { background: var(--red); } .pips i.z { background: var(--line-strong); }
+.mini-btn { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); font-size: 14px; line-height: 1; }
+.detail { position: sticky; top: 0; display: grid; gap: 12px; }
+.detail .portrait { height: 120px; border-radius: 10px; font-size: 40px; }
+.detail .field { display: grid; gap: 5px; }
+.detail .field > span { font-size: 11px; color: var(--faint); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.switch i { width: 34px; height: 20px; border-radius: 999px; background: var(--green); position: relative; display: block; flex: none; }
+.switch i::after { content: ""; position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); }
+.linklist { display: grid; gap: 3px; font-size: 12.5px; }
+.linklist a { color: var(--cyan); text-decoration: none; }
+.pop { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 12px; padding: 10px; display: grid; gap: 8px; box-shadow: 0 18px 50px rgb(0 0 0 / 30%); font-size: 13px; }
+.pop .opt { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; }
+.pop .opt.on { background: var(--panel-hover); }
+.pop .grp { font-size: 10.5px; color: var(--faint); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; }
+.pops { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 14px; align-items: start; }
+
+/* Celular */
+.ptop { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.pbody { padding: 12px; display: grid; gap: 10px; align-content: start; }
+.pnav { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--bg-deep); padding: 8px 4px; }
+.pnav i { width: 24px; height: 24px; border-radius: 7px; background: var(--panel-2); justify-self: center; display: block; }
+.pnav i.on { background: var(--cyan-soft); box-shadow: inset 0 0 0 1px var(--cyan); }
+.phone .npcs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.phone .seg span { padding: 6px 9px; }
+.ib { width: 44px; height: 40px; border-radius: 10px; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); font-weight: 700; flex: none; background: var(--panel); }
+.sheet { border-top: 1px solid var(--line-strong); border-radius: 18px 18px 0 0; background: var(--panel); padding: 12px; display: grid; gap: 10px; margin-top: -4px; box-shadow: 0 -16px 40px rgb(0 0 0 / 30%); }
+.grab { width: 40px; height: 4px; border-radius: 99px; background: var(--line-strong); justify-self: center; }
+
+/* Ferramentas */
+.tools { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; align-items: start; }
+.picker { display: grid; gap: 8px; }
+.pick-row { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; align-items: center; }
+.pick-row > span { font-size: 11px; color: var(--faint); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.pill { display: inline-flex; align-items: center; min-height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--text); background: var(--bg); }
+.pill.on { background: var(--cyan); color: var(--on-accent); border-color: transparent; font-weight: 600; }
+.results { margin: 0; padding: 0; list-style: none; display: grid; }
+.results li { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 7px 4px; border-top: 1px solid var(--line); font-size: 12.5px; }
+.results li:first-child { border-top: 0; }
+.results li.on { background: var(--cyan-soft); border-radius: 8px; }
+.textarea { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--bg); font-size: 12.5px; color: var(--text); white-space: pre-line; }
+.recent { display: grid; gap: 2px; }
+.recent div { padding: 6px 4px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.recent div b { color: var(--text); font-weight: 600; }
+.fixes li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.cb { width: 16px; height: 16px; border-radius: 4px; background: var(--cyan); display: block; }
+.cb.off { background: transparent; border: 1.5px solid var(--line-strong); }
+
+/* Ajuda */
+.help3 { display: grid; grid-template-columns: 230px minmax(0, 1fr) 170px; min-height: 470px; }
+.help3 > div { min-width: 0; }
+.hpane { border-right: 1px solid var(--line); padding: 12px; display: grid; gap: 10px; align-content: start; background: var(--bg); }
+.htopic { padding: 6px 8px; border-radius: 8px; font-size: 12.5px; }
+.htopic.on { background: var(--cyan-soft); box-shadow: inset 3px 0 0 var(--cyan); font-weight: 600; }
+.hgrp { font-size: 10.5px; color: var(--faint); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px 0; }
+.harticle { padding: 18px 22px; display: grid; gap: 10px; align-content: start; }
+.harticle p { font-size: 13px; color: var(--muted); }
+.harticle h4 { font-size: 15px; margin-top: 4px; }
+.htoc { border-left: 1px solid var(--line); padding: 16px 12px; display: grid; gap: 6px; align-content: start; font-size: 12px; }
+.htoc a { color: var(--muted); text-decoration: none; padding-left: 8px; border-left: 2px solid transparent; }
+.htoc a.on { color: var(--text); border-left-color: var(--cyan); }
+.scrollhint { font-size: 10.5px; color: var(--gold); font-weight: 600; }
+
+/* Busca */
+.palette { max-width: 620px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--panel); overflow: hidden; box-shadow: 0 24px 60px rgb(0 0 0 / 35%); font-size: 13px; }
+.palette .q { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.palette .q b { font-weight: 500; }
+.palette .q .caret { width: 1.5px; height: 16px; background: var(--cyan); display: inline-block; }
+.palette .grp { padding: 10px 14px 4px; font-size: 10.5px; color: var(--faint); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.palette .it { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 14px; }
+.palette .it.on { background: var(--panel-hover); }
+.palette .it .where { color: var(--faint); font-size: 11.5px; white-space: nowrap; }
+.palette .it .sub { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ico { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.ico.page { background: var(--gold-soft); color: var(--gold); }
+.ico.note { background: var(--panel-2); color: var(--muted); }
+.palette .foot { border-top: 1px solid var(--line); padding: 7px 14px; font-size: 11px; color: var(--faint); display: flex; gap: 14px; }
+
+/* Antes e depois pequenos */
+.ba { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 14px; align-items: start; }
+.ba > div { display: grid; gap: 8px; align-content: start; }
+.ba .lbl { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ba .lbl.before { color: var(--red); } .ba .lbl.after { color: var(--green); }
+.catcard { width: 220px; max-width: 100%; border: 1px solid var(--line); border-top: 3px solid var(--violet); border-radius: 12px; background: var(--panel); overflow: hidden; }
+.catcard .cover { height: 56px; background: linear-gradient(120deg, #6b4a3a, #2c3550 60%, #5b6e4a); }
+.catcard .in { padding: 10px 12px 12px; display: grid; gap: 6px; }
+.catcard .head { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.catcard .head.after { grid-template-columns: 30px minmax(0, 1fr); }
+.catcard .ci { width: 30px; height: 30px; border-radius: 8px; background: var(--red-soft); }
+.catcard h5 { margin: 0; font-size: 15px; line-height: 1.2; }
+.catcard h5.broken { width: 78px; overflow-wrap: anywhere; }
+.catcard p { font-size: 12px; color: var(--muted); }
+.side { width: 230px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-deep); padding: 10px; display: grid; gap: 6px; font-size: 12px; position: relative; }
+.side.rail { width: 64px; justify-items: center; }
+.side .b { display: flex; align-items: center; gap: 8px; height: 34px; }
+.side .b i { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #6be7ff 0 18%, #1d2e57 19% 100%); display: block; flex: none; }
+.side .t { width: 28px; height: 28px; border-radius: 8px; border: 1px dashed var(--gold); display: grid; place-items: center; color: var(--gold); font-weight: 700; flex: none; }
+.side .n { display: flex; align-items: center; gap: 8px; height: 30px; color: var(--muted); }
+.side .n i { width: 22px; height: 22px; border-radius: 6px; background: var(--panel-2); display: block; flex: none; }
+.side .gap { height: 26px; }
+.guide { position: absolute; left: -6px; right: -6px; border-top: 1px dashed var(--gold); }
+.pair { display: flex; gap: 14px; flex-wrap: wrap; align-items: start; }
+.setidx { width: 240px; max-width: 100%; display: grid; gap: 2px; font-size: 12.5px; }
+.setidx div { display: flex; gap: 8px; align-items: center; min-height: 34px; padding: 4px 10px; border-radius: 9px; color: var(--muted); }
+.setidx div.on { background: var(--cyan-soft); color: var(--text); font-weight: 650; box-shadow: inset 3px 0 0 var(--cyan); }
+.setidx.before { width: 196px; }
+.orgbox { height: 160px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); position: relative; overflow: hidden; }
+.orgbox .node { position: absolute; width: 70px; height: 22px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--panel); }
+.orgbox .ln { position: absolute; border-left: 1px solid var(--line-strong); }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.sw { display: grid; gap: 4px; font-size: 11.5px; color: var(--muted); }
+.sw i { width: 74px; height: 46px; border-radius: 10px; display: block; border: 1px solid var(--line); }
+</style>
+
+<div class="wrap">
+<header class="lead">
+  <span class="eyebrow">Runas-Codex · plano do Claude · 18/11/2026</span>
+  <h1>Atualização 1.6.0</h1>
+  <p class="muted">O que ficou da 1.5, mais os nove ajustes que você mandou hoje (as dez capturas). Nada foi implementado:
+    as maquetes abaixo esperam o seu ok. Depois dele, sigo a ordem da tabela e mando um PR por linha.</p>
+  <div class="wrapr"><span class="tag gold">Esperando o seu ok</span><span class="tag">Base: main 33228ee (v1.5.1)</span><span class="tag">14 PRs + 1 maquete final</span></div>
+  <nav class="toc" aria-label="Partes do plano">
+    <a href="#plano">O plano</a><a href="#elenco">Elenco</a><a href="#ferramentas">Ferramentas</a><a href="#ajuda">Ajuda</a>
+    <a href="#busca">Busca</a><a href="#consertos">Consertos visuais</a><a href="#pendencias">Pendências da 1.5</a><a href="#paleta">Paleta nova</a>
+  </nav>
+</header>
+
+<!-- ——————————————————— PLANO ——————————————————— -->
+<section class="block" id="plano" aria-labelledby="t-plano">
+  <h2 id="t-plano">O plano</h2>
+  <p class="muted">Primeiro o que você vê errado todo dia, depois as telas refeitas, depois as funções que a 1.5 deixou para trás.
+    A otimização (A2) fecha a versão, porque mede o código já com tudo. A paleta nova é a última tarefa, como você pediu.
+    Os custos são estimativas minhas, comparadas com os PRs da 1.5 (C ~6 %, G ~8 %, M ~10 %).</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>PR</th><th>Branch</th><th>O que entra</th><th>Itens</th><th class="num">Custo*</th></tr></thead>
+      <tbody>
+        <tr class="phase"><td colspan="5">Fase 1 · consertos visuais (as suas capturas)</td></tr>
+        <tr><td>V</td><td><code>visual/1.6-consistencia</code></td><td>Barra lateral que não muda os botões de lugar; Configurações sem pulos; listas do celular</td><td>U121, U120, U112</td><td class="num">~6 %</td></tr>
+        <tr><td>W1</td><td><code>wiki/1.6-cartoes-e-organograma</code></td><td>Nome das categorias inteiro e sem “›”; organograma e árvore genealógica que se movem livres</td><td>U114, U117</td><td class="num">~6 %</td></tr>
+        <tr class="phase"><td colspan="5">Fase 2 · telas refeitas (maquetes desta página)</td></tr>
+        <tr><td>E</td><td><code>campanhas/1.6-elenco</code></td><td>Elenco novo: uma barra, um botão de acrescentar, painel de detalhes</td><td>U115</td><td class="num">~12 %</td></tr>
+        <tr><td>F</td><td><code>wiki/1.6-ferramentas</code></td><td>Ferramentas do mundo em abas; Ferramentas da campanha no mesmo padrão</td><td>U118</td><td class="num">~12 %</td></tr>
+        <tr><td>H</td><td><code>ajuda/1.6-tela-propria</code></td><td>Ajuda sai das Configurações e ganha tela própria, com uma rolagem por painel</td><td>U119</td><td class="num">~7 %</td></tr>
+        <tr><td>B</td><td><code>busca/1.6-paginas</code></td><td>A busca mostra as páginas (campanha, artigo, livro…) além das notas</td><td>U116</td><td class="num">~6 %</td></tr>
+        <tr class="phase"><td colspan="5">Fase 3 · o que ficou da 1.5</td></tr>
+        <tr><td>D</td><td><code>vtt/1.6-sala-assentos-e-quedas</code></td><td>Assentos com a sala aberta, aviso de queda, “Reconectar”</td><td>U89</td><td class="num">~10 %</td></tr>
+        <tr><td>K</td><td><code>vtt/1.6-mestre-remoto</code></td><td>Mestre remoto completo, entrando pelo link dentro do app</td><td>U47</td><td class="num">~18 %</td></tr>
+        <tr><td>J2</td><td><code>transferir/1.6-importar-direto</code></td><td>Importar: arquivo e prévia primeiro; “Abrir o que entrou”</td><td>U104</td><td class="num">~6 %</td></tr>
+        <tr><td>T</td><td><code>transferir/1.6-android-pedacos-na-tela</code></td><td>Arquivo grande no Android sem juntar na memória; “Testar gravação” no Android</td><td>U109, U110</td><td class="num">~8 %</td></tr>
+        <tr><td>R</td><td><code>notas/1.6-nome-e-modelos</code></td><td>Título da nota editável; “Criar o primeiro modelo”</td><td>U99</td><td class="num">~6 %</td></tr>
+        <tr><td>L</td><td><code>inicio/1.6-mesa-de-hoje</code></td><td>Início “Mesa de hoje”, a maquete já aprovada (#161)</td><td>U46</td><td class="num">~10 %</td></tr>
+        <tr class="phase"><td colspan="5">Fase 4 · fechar a versão</td></tr>
+        <tr><td>W</td><td><code>testes/1.6-windows-e-auditoria</code></td><td>Smoke do Windows estável; exceção do picomatch (vence em 17/12)</td><td>U111, U113</td><td class="num">~4 %</td></tr>
+        <tr><td>A2</td><td><code>desempenho/1.6-imagens-e-consertos</code></td><td>Miniaturas das capas; consertos que a medida apontar; orçamento do CI estável</td><td>U86, U76, U108</td><td class="num">~15 %</td></tr>
+        <tr><td>P</td><td><code>visual/1.6-paleta-runa</code></td><td>Só a maquete da paleta nova, para você aprovar</td><td>U122</td><td class="num">~5 %</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="cap">* Parte de uma janela de 5 h. Soma ~131 %: perto de uma janela e meia, em duas ou três janelas. Paro e pergunto se uma janela chegar perto de 95 %.
+    Cada PR de tela leva capturas de antes e depois em 320, 390 e 1366 px, nos dois temas e pelo teclado. PR de celular ou de transferência só se mescla com o <code>android-vault</code> verde.</p>
+</section>
+
+<!-- ——————————————————— ELENCO ——————————————————— -->
+<section class="block" id="elenco" aria-labelledby="t-elenco">
+  <div class="lead">
+    <span class="eyebrow">Anexo 2 · PR E · U115</span>
+    <h2 id="t-elenco">Elenco: uma barra só e um painel de detalhes</h2>
+    <p class="muted">Hoje a tela tem quatro seções com controles próprios. Cada uma tem os seus botões de acrescentar e o seu Lista ou Grade, e todo cartão traz atitude, “apareceu” e ⋯.
+      No exemplo do app, com só 3 NPCs, são <b class="num">71</b> controles na tela. A proposta junta o que se repete e leva os detalhes de cada um para um painel, como a tela Relações da Wiki já faz.</p>
+  </div>
+
+  <div class="scroll-x">
+  <div class="app" role="img" aria-label="Maquete do Elenco no computador: barra com busca, Filtros e exibição, Adicionar; tipos em abas; grade de NPCs com um selecionado e painel de detalhes à direita">
+    <div class="rail"><i class="logo"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i></div>
+    <div class="main">
+      <div class="top"><div class="crumbs"><span>Campanhas</span>›<span>As Cinzas de Valdris</span>›<b>Elenco</b></div><div class="fake-search"><span>Buscar notas e comandos…</span><kbd>Ctrl K</kbd></div></div>
+      <div class="tabsbar"><span>As Cinzas de Valdris ▾</span><span>Painel</span><span>Sessões</span><span>Missões</span><span class="on">Elenco</span><span>Ferramentas</span><span>Quadro</span></div>
+      <div class="content">
+        <div class="ph">
+          <div><div class="eyebrow">As Cinzas de Valdris</div><h2>Elenco</h2></div>
+          <div class="wrapr">
+            <span class="input" style="width:240px">⌕ Buscar no elenco</span>
+            <span class="btn">Filtros e exibição <span class="badge">1</span></span>
+            <span class="btn primary">＋ Adicionar</span>
+            <span class="btn ghost" aria-label="Mais ações">⋯</span>
+          </div>
+        </div>
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap">
+          <div class="seg"><span class="on">Todos<span class="n">21</span></span><span>Jogadores<span class="n">3</span></span><span>NPCs<span class="n">14</span></span><span>Facções<span class="n">4</span></span><span>Relações<span class="n">9</span></span></div>
+          <span class="chip out">Ordem: visto há menos tempo ✕</span>
+        </div>
+        <div class="cast">
+          <div style="display:grid;gap:14px;min-width:0">
+            <div class="sec-title">Jogadores · 3</div>
+            <div class="pcs">
+              <div class="pc"><span class="av a1">I</span><span style="min-width:0"><b>Ilsa Brasa</b><span class="muted-line">Ana · Ladina de rua</span></span></div>
+              <div class="pc"><span class="av a2">M</span><span style="min-width:0"><b>Mirela</b><span class="muted-line">Carla · Sacerdotisa</span></span></div>
+              <div class="pc"><span class="av a3">S</span><span style="min-width:0"><b>Sef</b><span class="muted-line">Diego · Aprendiz de mago</span></span></div>
+            </div>
+            <div class="sec-title">NPCs · 14 <span class="muted">clique num cartão para ver e mudar</span></div>
+            <div class="npcs">
+              <div class="npc"><span class="av a4">A</span><div class="meta"><b>Aldren Vael</b><span class="chip green">aliado</span></div></div>
+              <div class="npc sel"><span class="av a2">C</span><div class="meta"><b>Conde Ormund</b><span class="chip red">hostil</span></div></div>
+              <div class="npc"><span class="av a5">E</span><div class="meta"><b>Edric Ormund</b><span class="chip">desconfiado</span></div></div>
+              <div class="npc"><span class="av a6">H</span><div class="meta"><b>Helga Ruiva</b><span class="chip green">amigável</span></div></div>
+              <div class="npc"><span class="chip out flag">ainda não apareceu</span><span class="av a7">I</span><div class="meta"><b>Irmã Vesna</b><span class="chip">neutro</span></div></div>
+              <div class="npc"><span class="av a8">L</span><div class="meta"><b>Lorde Cael</b><span class="chip">neutro</span></div></div>
+              <div class="npc"><span class="av a1">M</span><div class="meta"><b>Mestre Doran</b><span class="chip green">aliado</span></div></div>
+              <div class="npc"><span class="av a3">O</span><div class="meta"><b>Oto da Ponte</b><span class="chip green">amigável</span></div></div>
+            </div>
+            <div class="sec-title">Facções · 4 <span class="muted">− e + mudam a reputação</span></div>
+            <div class="facs">
+              <div class="fac"><span class="av a2">C</span><b>Casa Ormund</b><span class="rep"><span class="mini-btn">−</span><span class="pips"><i class="n"></i><i class="n"></i><i></i><i class="z"></i><i></i><i></i><i></i></span><span class="chip red num">−2</span><span class="mini-btn">+</span></span></div>
+              <div class="fac"><span class="av a6">G</span><b>Guarda de Valdris</b><span class="rep"><span class="mini-btn">−</span><span class="pips"><i></i><i></i><i></i><i class="z"></i><i class="p"></i><i></i><i></i></span><span class="chip green num">+1</span><span class="mini-btn">+</span></span></div>
+              <div class="fac"><span class="av a4">L</span><b>Lâminas Cinzentas</b><span class="rep"><span class="mini-btn">−</span><span class="pips"><i></i><i></i><i></i><i class="z"></i><i></i><i></i><i></i></span><span class="chip num">0</span><span class="mini-btn">+</span></span></div>
+            </div>
+          </div>
+          <aside class="card detail" aria-label="Painel de detalhes">
+            <div class="sec-title">Detalhes <span class="muted">✕</span></div>
+            <span class="av a2 portrait">C</span>
+            <div><h3>Conde Ormund</h3><span class="muted-line">NPC · Valdris · Casa Ormund</span></div>
+            <div class="field"><span>Atitude com o grupo</span>
+              <div class="seg"><span>aliado</span><span>amigável</span><span>neutro</span><span>desconfiado</span><span class="on">hostil</span></div></div>
+            <div class="switch"><span class="small">Já apareceu<br><span class="muted-line">citado na Sessão 9</span></span><i></i></div>
+            <div class="field"><span>Visto em</span><div class="linklist"><a href="#elenco">Sessão 9 · O baile das cinzas</a><a href="#elenco">Sessão 11 · A ponte</a></div></div>
+            <div class="field"><span>Relações</span><div class="linklist"><span>inimigo de <a href="#elenco">Ilsa Brasa</a></span><span>líder de <a href="#elenco">Casa Ormund</a></span><span>pai de <a href="#elenco">Edric Ormund</a></span></div></div>
+            <div class="wrapr"><span class="btn">Abrir artigo</span><span class="btn danger">Tirar da campanha</span></div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="frames split">
+    <div class="pops">
+      <div class="pop" role="img" aria-label="Menu Adicionar: um campo que busca na wiki e cria o que não existir">
+        <div class="grp">＋ Adicionar ao elenco</div>
+        <span class="input" style="color:var(--text)">Hel<span style="color:var(--cyan)">|</span></span>
+        <div class="grp">Da wiki Valdris</div>
+        <div class="opt on"><span class="av a6" style="width:22px;height:22px;border-radius:6px;font-size:10px">H</span> Helena de Tirso <span class="chip" style="margin-left:auto">personagem</span></div>
+        <div class="opt"><span class="av a4" style="width:22px;height:22px;border-radius:6px;font-size:10px">H</span> Herdeiros do Sol <span class="chip" style="margin-left:auto">organização</span></div>
+        <div class="grp">Criar</div>
+        <div class="opt">＋ NPC “Hel”</div><div class="opt">＋ Facção “Hel”</div><div class="opt">＋ Personagem de jogador “Hel”</div>
+      </div>
+      <div class="pop" role="img" aria-label="Filtros e exibição num só painel">
+        <div class="grp">Filtros e exibição</div>
+        <div class="row" style="justify-content:space-between"><span class="small">Situação</span><span class="seg"><span class="on">Todos</span><span>Apareceram</span><span>Ainda não</span></span></div>
+        <div class="row" style="justify-content:space-between"><span class="small">Atitude</span><span class="input">Todas ▾</span></div>
+        <div class="row" style="justify-content:space-between"><span class="small">Agrupar</span><span class="input">Sem grupos ▾</span></div>
+        <div class="row" style="justify-content:space-between"><span class="small">Ordem</span><span class="input" style="color:var(--text)">Visto há menos tempo ▾</span></div>
+        <div class="row" style="justify-content:space-between"><span class="small">Exibir</span><span class="seg"><span>Lista</span><span class="on">Grade</span></span></div>
+        <div class="row" style="justify-content:space-between"><span class="small">Cartões</span><span class="seg"><span class="on">Pequenos</span><span>Médios</span><span>Grandes</span></span></div>
+      </div>
+    </div>
+    <div class="phone" role="img" aria-label="Maquete do Elenco no celular a 360 px: busca e dois botões, tipos em duas linhas, grade de dois cartões e a folha de detalhes subindo">
+      <div class="ptop"><b>Elenco</b><span class="muted-line">As Cinzas de Valdris</span></div>
+      <div class="pbody">
+        <div class="row"><span class="input" style="flex:1">⌕ Buscar no elenco</span><span class="ib" aria-label="Filtros">⚙</span><span class="ib" style="background:var(--cyan);color:var(--on-accent)">＋</span></div>
+        <div class="seg"><span class="on">Todos<span class="n">21</span></span><span>Jogadores<span class="n">3</span></span><span>NPCs<span class="n">14</span></span><span>Facções<span class="n">4</span></span><span>Relações<span class="n">9</span></span></div>
+        <div class="npcs">
+          <div class="npc"><span class="av a4">A</span><div class="meta"><b>Aldren Vael</b><span class="chip green">aliado</span></div></div>
+          <div class="npc sel"><span class="av a2">C</span><div class="meta"><b>Conde Ormund</b><span class="chip red">hostil</span></div></div>
+        </div>
+      </div>
+      <div class="sheet">
+        <span class="grab"></span>
+        <div class="row"><span class="av a2" style="width:40px;height:40px">C</span><div><b>Conde Ormund</b><div class="muted-line">NPC · Casa Ormund</div></div></div>
+        <div class="seg"><span>aliado</span><span>amigável</span><span>neutro</span><span>desconfiado</span><span class="on">hostil</span></div>
+        <div class="switch"><span class="small">Já apareceu</span><i></i></div>
+        <div class="row"><span class="btn" style="flex:1;justify-content:center;min-height:44px">Abrir artigo</span><span class="btn danger" style="min-height:44px">Tirar</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="why">
+    <div class="note"><h4>O que junta</h4><ul>
+      <li>Os 5 botões de acrescentar (Personagem, Novo NPC, NPC da wiki, Nova facção, Facção da wiki) viram <b>um</b> “Adicionar”: digite o nome; se estiver na wiki, escolhe; se não, cria.</li>
+      <li>Os dois Lista ou Grade e o Tamanho, mais Situação, Atitude, Agrupar e Ordem, vão para <b>um</b> “Filtros e exibição”. O que estiver em uso aparece como etiqueta com ✕.</li>
+      <li>Jogadores, NPCs, Facções e Relações viram abas com o número de cada um; “Todos” mostra as três primeiras juntas, como hoje.</li>
+    </ul></div>
+    <div class="note"><h4>O que muda de lugar (nada some)</h4><ul>
+      <li>Atitude, “apareceu”, sessões em que apareceu, relações, Trocar jogador, Abrir artigo e Tirar da campanha ficam no painel do cartão escolhido.</li>
+      <li>O cartão mostra só o nome e a atitude, e um selo “ainda não apareceu” quando é o caso. Ele deixa de repetir “apareceu” em 13 de 14 NPCs.</li>
+      <li>A lista de relações vira a aba Relações; “Gerar no Quadro” vai para o ⋯ da tela.</li>
+      <li>O − e o + da reputação continuam no cartão da facção (1 clique).</li>
+    </ul></div>
+    <div class="note"><h4>Cliques, no seu cenário (14 NPCs, 4 facções, 3 jogadores)</h4>
+      <div class="table-wrap" style="background:transparent"><table>
+        <thead><tr><th>Ação</th><th class="num">Hoje</th><th class="num">Proposta</th></tr></thead>
+        <tbody>
+          <tr><td>Controles na tela</td><td class="num">91</td><td class="num">39</td></tr>
+          <tr><td>Mudar a atitude</td><td class="num">2</td><td class="num">2</td></tr>
+          <tr><td>Ver as relações de um NPC</td><td class="num">rolar e procurar</td><td class="num">1</td></tr>
+          <tr><td>Acrescentar da wiki ou criar</td><td class="num">1 + escolher</td><td class="num">1 + escolher</td></tr>
+          <tr><td>Mudar a reputação</td><td class="num">1</td><td class="num">1</td></tr>
+          <tr><td>Abrir o artigo</td><td class="num">1</td><td class="num">2</td></tr>
+        </tbody></table></div>
+      <p class="cap">Contei pelos componentes de <code>CastView.tsx</code> (grade pequena, facções em lista, 9 relações, a ordem “visto há menos tempo” em uso). Abrir o artigo fica com 1 clique a mais; o resto fica igual ou melhora.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————— FERRAMENTAS ——————————————————— -->
+<section class="block" id="ferramentas" aria-labelledby="t-ferr">
+  <div class="lead">
+    <span class="eyebrow">Anexo 5 · PR F · U118</span>
+    <h2 id="t-ferr">Ferramentas do mundo: abas, escolha em uma faixa, recentes sempre à vista</h2>
+    <p class="muted">Medido no app a 1366 × 860: a lista dos 15 geradores tem <b class="num">880 px</b> de altura, e o resultado ao lado, <b class="num">203 px</b>. Por isso sobra o vazio da sua captura.
+      Os Recentes ficam fechados lá embaixo, e o “Conferir relações” é manutenção, não gerador, mas fica no meio dos geradores.</p>
+  </div>
+  <div class="scroll-x">
+  <div class="app" role="img" aria-label="Maquete das Ferramentas do mundo: abas Geradores, Tabelas da wiki e Conferir a wiki; geradores escolhidos por faixas de pílulas por grupo; resultados com Usar; recentes à direita">
+    <div class="rail"><i class="logo"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="main">
+      <div class="top"><div class="crumbs"><span>Wiki</span>›<b>Ferramentas</b></div><div class="fake-search"><span>Buscar notas e comandos…</span><kbd>Ctrl K</kbd></div></div>
+      <div class="tabsbar"><span>Valdris ▾</span><span>Artigos</span><span>Calendário</span><span>Linha do tempo</span><span>Mapas</span><span>Relações</span><span class="on">Ferramentas</span><span>Gráfico</span></div>
+      <div class="content">
+        <div class="ph"><div><div class="eyebrow">Wiki · funciona sem internet</div><h2>Ferramentas do mundo</h2></div>
+          <div class="seg"><span class="on">Geradores<span class="n">15</span></span><span>Tabelas da wiki<span class="n">2</span></span><span>Conferir a wiki <span class="chip gold">48</span></span></div></div>
+        <div class="tools">
+          <div style="display:grid;gap:12px;min-width:0">
+            <div class="card picker">
+              <div class="pick-row"><span>Pessoas</span><div class="wrapr"><span class="pill">Nome</span><span class="pill">NPC</span><span class="pill">Mercador</span></div></div>
+              <div class="pick-row"><span>Lugares</span><div class="wrapr"><span class="pill">Lugar</span><span class="pill on">Taverna</span><span class="pill">Masmorra</span><span class="pill">Clima</span></div></div>
+              <div class="pick-row"><span>Enredo</span><div class="wrapr"><span class="pill">Gancho</span><span class="pill">Rumor</span><span class="pill">Lenda</span><span class="pill">Aventura</span></div></div>
+              <div class="pick-row"><span>Mundo</span><div class="wrapr"><span class="pill">Facção</span><span class="pill">Divindade</span><span class="pill">Item mágico</span><span class="pill">Tesouro</span></div></div>
+            </div>
+            <div class="card">
+              <div class="row" style="justify-content:space-between;flex-wrap:wrap">
+                <div><h3>Taverna</h3><span class="muted-line">Nome, prato, bebida, um detalhe e um rumor. Vai para Locais (Local).</span></div>
+                <div class="wrapr"><span class="small muted">Quantos</span><span class="seg"><span>1</span><span class="on">5</span><span>10</span></span><span class="btn primary">⚄ Gerar de novo</span></div>
+              </div>
+              <ul class="results">
+                <li><span>O Javali Manco: ensopado de lentilha, hidromel de urze…</span><span class="wrapr"><span class="mini-btn">⧉</span><span class="btn">Usar</span></span></li>
+                <li class="on"><span>A Raposa e o Sino: torta de peixe, cerveja escura…</span><span class="wrapr"><span class="mini-btn">⧉</span><span class="btn">Escolhido</span></span></li>
+                <li><span>Pouso da Lebre: pão de centeio, vinho quente…</span><span class="wrapr"><span class="mini-btn">⧉</span><span class="btn">Usar</span></span></li>
+              </ul>
+              <div class="textarea">A Raposa e o Sino — torta de peixe, cerveja escura. O sino da porta toca sozinho à meia-noite.
+Rumor: o dono deve dinheiro à Casa Ormund.</div>
+              <div class="row" style="flex-wrap:wrap"><span class="input" style="flex:1;color:var(--text)">A Raposa e o Sino</span><span class="btn">⧉ Copiar</span><span class="btn primary">Guardar na wiki…</span></div>
+            </div>
+          </div>
+          <aside class="card" aria-label="Recentes">
+            <div class="sec-title">Recentes · 12 <span class="muted">até sair da Wiki</span></div>
+            <div class="recent">
+              <div><b>Taverna:</b> O Javali Manco…</div><div><b>Taverna:</b> A Raposa e o Sino…</div><div><b>NPC:</b> Bruna Telhas, ferreira, mão queimada…</div>
+              <div><b>Rumor:</b> A ponte velha vai cair no inverno…</div><div><b>Nome:</b> Tomé Varela</div><div><b>Clima:</b> Garoa fina e vento do norte…</div>
+            </div>
+            <span class="muted-line">Clique para usar de novo.</span>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div class="frames split">
+    <div class="pops">
+      <div class="card" role="img" aria-label="Aba Conferir a wiki com a lista das relações de um lado só, cada uma com caixa de marcar">
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap"><h3>Conferir a wiki</h3><span class="seg"><span class="on">De um lado só<span class="n">48</span></span><span>Invertidas<span class="n">0</span></span></span></div>
+        <p class="muted-line">Relações escritas só numa das notas. Desmarque o que não quiser e grave.</p>
+        <ul class="results fixes">
+          <li><i class="cb"></i><span>Helga Ruiva <span class="muted">membro de</span> Guarda de Valdris</span><span class="muted-line">falta na Guarda</span></li>
+          <li><i class="cb"></i><span>Edric Ormund <span class="muted">filho de</span> Conde Ormund</span><span class="muted-line">falta no Conde</span></li>
+          <li><i class="cb off"></i><span>Oto da Ponte <span class="muted">aliado de</span> Mestre Doran</span><span class="muted-line">falta no Doran</span></li>
+        </ul>
+        <div class="row"><span class="btn primary">Gravar 47 relações</span><span class="muted-line">mostra a lista inteira, sem abrir janela</span></div>
+      </div>
+      <div class="card" role="img" aria-label="Ferramentas da campanha no mesmo padrão: abas no topo e a ferramenta escolhida ocupando a largura">
+        <div class="eyebrow">Ferramentas da campanha · mesmo padrão</div>
+        <div class="seg"><span class="on">Tesouro do grupo</span><span>Iniciativa</span><span>Nova aventura</span><span>Atividades pela sala</span></div>
+        <p class="muted-line">A lista de 4 itens à esquerda vira abas no topo; a ferramenta escolhida usa a largura toda e continua lembrada.</p>
+      </div>
+    </div>
+    <div class="phone" role="img" aria-label="Ferramentas no celular: abas, seletor do gerador, opções e resultado">
+      <div class="ptop"><b>Ferramentas do mundo</b><span class="muted-line">Valdris</span></div>
+      <div class="pbody">
+        <div class="seg"><span class="on">Geradores</span><span>Tabelas<span class="n">2</span></span><span>Conferir <span class="chip gold">48</span></span></div>
+        <span class="input" style="color:var(--text);min-height:44px;display:flex;align-items:center">Taverna (Lugares) ▾</span>
+        <div class="row" style="justify-content:space-between"><span class="seg"><span>1</span><span class="on">5</span><span>10</span></span><span class="btn primary" style="min-height:44px">⚄ Gerar</span></div>
+        <ul class="results"><li class="on"><span>A Raposa e o Sino…</span><span class="btn">Escolhido</span></li><li><span>Pouso da Lebre…</span><span class="btn">Usar</span></li></ul>
+        <span class="btn primary" style="justify-content:center;min-height:44px">Guardar na wiki…</span>
+        <div class="sec-title">Recentes · 12 <span class="muted">▾</span></div>
+      </div>
+      <div class="pnav"><i></i><i></i><i></i><i class="on"></i><i></i></div>
+    </div>
+  </div>
+  <div class="why">
+    <div class="note"><h4>Geradores</h4><p>Os 15 geradores ficam em quatro faixas de pílulas (Pessoas, Lugares, Enredo, Mundo), que ocupam 4 linhas no lugar de 880 px. As opções e o “Gerar” ficam na mesma linha do título. Os recentes ficam abertos ao lado e não se perdem lá embaixo.</p></div>
+    <div class="note"><h4>Tabelas da wiki</h4><p>Cada tabela vira um cartão com “Rolar” e o resultado ali mesmo. Sem tabelas, a aba mostra um exemplo e o caminho (menu / do editor › Tabela rolável), com o link da Ajuda.</p></div>
+    <div class="note"><h4>Conferir a wiki</h4><p>O “Conferir relações” ganha aba própria, com o número no rótulo. A lista aparece inteira e se grava de uma vez, como hoje. Depois cabem outras conferências (links quebrados, artigos sem categoria) sem poluir os geradores.</p></div>
+  </div>
+</section>
+
+<!-- ——————————————————— AJUDA ——————————————————— -->
+<section class="block" id="ajuda" aria-labelledby="t-ajuda">
+  <div class="lead">
+    <span class="eyebrow">Anexo 6 · PR H · U119</span>
+    <h2 id="t-ajuda">Ajuda com tela própria</h2>
+    <p class="muted">Hoje a Ajuda é a 12ª seção das Configurações. O título das Configurações, a apresentação e a busca ocupam o topo, e o índice dos 22 tópicos começa a
+      <b class="num">297 px</b>. Ele tem <b class="num">2.036 px</b> de conteúdo numa caixa de <b class="num">828 px</b>, uma rolagem dentro de outra. As notas de exemplo ficam a <b class="num">2.096 px</b> do topo, e o “Nesta página” lista os títulos sem levar a eles.</p>
+  </div>
+  <div class="scroll-x">
+  <div class="app" role="img" aria-label="Maquete da Ajuda: três painéis, cada um com a própria rolagem; tópicos com busca à esquerda, artigo no centro, Nesta página à direita">
+    <div class="rail"><i class="logo"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i></div>
+    <div class="main" style="grid-template-rows:auto 1fr">
+      <div class="top"><div class="crumbs"><span>Ajuda</span>›<b>Primeiros passos</b></div><div class="fake-search"><span>Buscar notas e comandos…</span><kbd>Ctrl K</kbd></div></div>
+      <div class="help3">
+        <div class="hpane">
+          <span class="input">⌕ Buscar na Ajuda (22 tópicos)</span>
+          <div class="hgrp">Começar</div><div class="htopic on">Primeiros passos</div><div class="htopic">Notas e o cofre</div>
+          <div class="hgrp">Mundo e campanhas</div><div class="htopic">Wiki</div><div class="htopic">Campanhas</div><div class="htopic">Livros</div>
+          <div class="hgrp">Mesa e jogo</div><div class="htopic">VTT: mesas e sala</div>
+          <div class="hgrp">Arquivos e sistema</div><div class="htopic">Importar e exportar</div><div class="htopic">Compatibilidade com o Obsidian</div>
+          <div class="hgrp">Exemplos</div><div class="htopic">Notas de exemplo</div>
+          <span class="scrollhint">↕ rola sozinho</span>
+        </div>
+        <div class="harticle">
+          <div class="eyebrow">Começar</div><h3 style="font-size:20px">Primeiros passos</h3>
+          <p>O Runas-Codex é um caderno de mestre e de escritor que funciona sem internet. Tudo o que você escreve vira um arquivo <code>.md</code> numa pasta do seu computador ou celular, o cofre.</p>
+          <h4>Os espaços</h4><p>A barra de navegação leva aos espaços do app. Cada um guarda as notas numa pasta própria do cofre.</p>
+          <h4>A busca Ctrl K</h4><p>Encontra notas, páginas e comandos.</p>
+          <div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:10px"><span class="muted-line">← Ajuda</span><span class="btn">Notas e o cofre →</span></div>
+          <span class="scrollhint">↕ rola sozinho</span>
+        </div>
+        <div class="htoc"><span class="eyebrow">Nesta página</span><a class="on" href="#ajuda">Os espaços</a><a href="#ajuda">A busca Ctrl K</a><a href="#ajuda">O botão Novo</a><a href="#ajuda">Onde ficam os arquivos</a></div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div class="why">
+    <div class="note"><h4>Onde fica</h4><ul><li>Rota própria <code>/ajuda</code> e item “Ajuda” na barra lateral, abaixo de Configurações (e no ⋯ do celular).</li><li>As Configurações continuam com “Ajuda e exemplos” no índice, que leva para lá. Links antigos <code>/config/ajuda/…</code> continuam funcionando.</li></ul></div>
+    <div class="note"><h4>Como rola</h4><ul><li>A tela ocupa a altura da janela, como as Notas: tópicos, artigo e “Nesta página” rolam cada um por si.</li><li>Nada fica dentro de outra rolagem. Os tópicos de baixo e as notas de exemplo ficam à vista sem rolar a página.</li></ul></div>
+    <div class="note"><h4>No celular</h4><ul><li><code>/ajuda</code> é a lista de tópicos com a busca; tocar abre o artigo com “‹ Tópicos”, “Nesta página” recolhido e “Próximo” no fim.</li><li>Alvos de 44 px, sem rolagem de lado em 320 px.</li></ul></div>
+  </div>
+</section>
+
+<!-- ——————————————————— BUSCA ——————————————————— -->
+<section class="block" id="busca" aria-labelledby="t-busca">
+  <div class="lead">
+    <span class="eyebrow">Anexo 3 · PR B · U116</span>
+    <h2 id="t-busca">Busca que mostra as páginas</h2>
+    <p class="muted">Hoje o Ctrl K procura no índice e abre tudo no editor das Notas (<code>vaultRoute</code>). A proposta põe primeiro as <b>Páginas</b>, as telas onde aquela nota aparece,
+      e depois a nota, para quem quer editar o arquivo.</p>
+  </div>
+  <div class="frames split" style="grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))">
+    <div class="palette" role="img" aria-label="Busca por Cinzas: a página da campanha com atalhos para Sessões, Missões e Elenco, e a nota da campanha">
+      <div class="q">⌕ <b>Cinzas</b><span class="caret"></span></div>
+      <div class="grp">Páginas</div>
+      <div class="it on"><span class="ico page">▣</span><span><b>As Cinzas de Valdris</b><span class="sub"><span class="chip">Sessões</span><span class="chip">Missões</span><span class="chip">Elenco</span><span class="chip">Quadro</span></span></span><span class="where">Campanha · Painel</span></div>
+      <div class="it"><span class="ico page">▣</span><span>Crônica das Cinzas</span><span class="where">Artigo · Wiki Valdris › Lendas</span></div>
+      <div class="grp">Notas</div>
+      <div class="it"><span class="ico note">≡</span><span>As Cinzas de Valdris</span><span class="where">Campanhas › As Cinzas de Valdris</span></div>
+      <div class="it"><span class="ico note">≡</span><span>Crônica das Cinzas</span><span class="where">Wikis › Valdris › Lendas</span></div>
+      <div class="grp">Comandos</div>
+      <div class="it"><span class="ico note">＋</span><span>Criar nota “Cinzas”</span><span class="where">Enter</span></div>
+      <div class="foot"><span>↑↓ navegar</span><span>Enter abrir</span><span>Ctrl Enter abrir a nota</span></div>
+    </div>
+    <div class="palette" role="img" aria-label="Busca por Ormund: o artigo do personagem na wiki, o personagem no Elenco da campanha, e a nota">
+      <div class="q">⌕ <b>Conde Ormund</b><span class="caret"></span></div>
+      <div class="grp">Páginas</div>
+      <div class="it on"><span class="ico page">▣</span><span><b>Conde Ormund</b></span><span class="where">Artigo · Wiki Valdris › Personagens</span></div>
+      <div class="it"><span class="ico page">▣</span><span>Conde Ormund no Elenco</span><span class="where">Campanha · As Cinzas de Valdris</span></div>
+      <div class="it"><span class="ico page">▣</span><span>Conde Ormund no organograma</span><span class="where">Wiki Valdris › Relações</span></div>
+      <div class="grp">Notas</div>
+      <div class="it"><span class="ico note">≡</span><span>Conde Ormund</span><span class="where">Wikis › Valdris › Personagens</span></div>
+      <div class="foot"><span>↑↓ navegar</span><span>Enter abrir</span><span>Ctrl Enter abrir a nota</span></div>
+    </div>
+  </div>
+  <div class="why">
+    <div class="note"><h4>Que páginas aparecem</h4><ul>
+      <li>Campanha (Painel, com atalhos para as abas), sessão, missão, artigo da wiki, personagem no Elenco, organização no organograma, livro e capítulo, evento da Agenda e mesa do VTT.</li>
+      <li>As telas fixas também, pelo nome: “Relações”, “Calendário do mundo”, “Acessibilidade”… Os comandos que hoje só levam a uma tela passam para Páginas.</li></ul></div>
+    <div class="note"><h4>Como fica por dentro</h4><ul><li>Uma regra pura em <code>app/src/core/</code> diz quais páginas mostram cada nota, com testes. A busca continua no índice, sem custo novo de leitura.</li>
+      <li>No máximo 7 páginas e 7 notas. Enter abre a página; Ctrl Enter abre a nota no editor.</li></ul></div>
+  </div>
+</section>
+
+<!-- ——————————————————— CONSERTOS ——————————————————— -->
+<section class="block" id="consertos" aria-labelledby="t-cons">
+  <div class="lead"><span class="eyebrow">Anexos 1, 4, 7–10 · PRs V e W1</span><h2 id="t-cons">Consertos visuais</h2>
+    <p class="muted">Esses não precisam de maquete grande. Mostro a causa que achei no código e o antes e depois.</p></div>
+
+  <div class="card" style="gap:14px">
+    <h3>Barra lateral: recolher sem mexer nos botões (anexos 9 e 10 · U121)</h3>
+    <p class="small muted">Recolhida, o botão de recolher fica no topo e a runa desce; aberta, a runa sobe e o botão vai para a direita. Os itens descem cerca de 40 px (na sua captura, o Início sai de 270 para 228). Proposta: a runa no mesmo lugar nos dois estados, o botão no rodapé (onde fica “Offline”) e os itens na mesma altura.</p>
+    <div class="ba">
+      <div><span class="lbl before">Antes</span><div class="pair">
+        <div class="side rail"><span class="t">⇤</span><span class="b"><i></i></span><span class="gap"></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="guide" style="top:122px"></span></div>
+        <div class="side"><span class="b"><i></i><b>Runas-Codex</b><span class="t" style="margin-left:auto">⇤</span></span><span class="n"><i></i>Início</span><span class="n"><i></i>Notas</span><span class="n"><i></i>Agenda</span><span class="guide" style="top:122px"></span></div>
+      </div><span class="cap">A linha tracejada é a mesma altura nos dois: os itens não batem com ela.</span></div>
+      <div><span class="lbl after">Depois</span><div class="pair">
+        <div class="side rail"><span class="b"><i></i></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="n"><i></i></span><span class="gap"></span><span class="t">⇥</span></div>
+        <div class="side"><span class="b"><i></i><b>Runas-Codex</b></span><span class="n"><i></i>Início</span><span class="n"><i></i>Notas</span><span class="n"><i></i>Agenda</span><span class="gap"></span><span class="n"><span class="t">⇤</span>Recolher · Offline</span></div>
+      </div><span class="cap">Runa, itens e botão no mesmo lugar; só o texto aparece e some.</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="gap:14px">
+    <h3>Configurações sem pulos (anexos 6 a 8 · U120)</h3>
+    <ul class="plain small muted">
+      <li><b>A página anda para o lado.</b> Medi no app: Conflitos não tem barra de rolagem; Acessibilidade tem uma de 10 px. Como a página é centralizada, ela anda metade da barra (7 px na sua captura). Conserto: <code>scrollbar-gutter: stable</code> na área de conteúdo, que vale para todas as telas.</li>
+      <li><b>“Conflitos de sincronização” quebra em duas linhas quando escolhido.</b> O negrito alarga o texto, e o índice tem 220 px: a linha passa de 40 para 54 px e empurra os itens de baixo. Conserto: índice de 240 px e o mesmo peso de letra nos dois estados (o escolhido se marca pela cor e pela faixa).</li>
+      <li><b>“Leitura” e “Prévia” colados no texto de cima</b> (Acessibilidade). Conserto: um só cabeçalho de seção (título, descrição, ação) para as 11 seções, com o mesmo espaço, e confiro as 11 em 320, 390 e 1366 px.</li>
+    </ul>
+    <div class="ba">
+      <div><span class="lbl before">Antes · 220 px</span><div class="setidx before"><div>▢ Backups</div><div class="on">▢ Conflitos de<br>sincronização</div><div>▢ Obsidian e anexos</div></div></div>
+      <div><span class="lbl after">Depois · 240 px</span><div class="setidx"><div>▢ Backups</div><div class="on" style="font-weight:400">▢ Conflitos de sincronização</div><div>▢ Obsidian e anexos</div></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="gap:14px">
+    <h3>Cartões das categorias da Wiki (anexo 1 · U114)</h3>
+    <p class="small muted">No modo “Só categorias”, o título divide a linha com o ícone, o número e o “›”. Sobram uns 110 px, e a regra <code>overflow-wrap: break-word</code> corta a palavra (“Acontecim/entos”, “Personag/ens”). O cartão inteiro já é o link, então o “›” sai. O número desce para a linha de baixo, com o que falta escrever.</p>
+    <div class="ba">
+      <div><span class="lbl before">Antes</span><div class="catcard"><div class="cover"></div><div class="in"><div class="head"><span class="ci"></span><h5 class="broken">Acontecimentos</h5><span class="chip">4</span><span class="muted">›</span></div><p>Fato ou episódio que ocorre em determinado momento e…</p></div></div></div>
+      <div><span class="lbl after">Depois</span><div class="catcard"><div class="cover"></div><div class="in"><div class="head after"><span class="ci"></span><h5>Acontecimentos</h5></div><span class="muted-line">4 artigos · 1 a escrever</span><p>Fato ou episódio que ocorre em determinado momento e…</p></div></div></div>
+    </div>
+    <p class="cap">Palavra que mesmo assim não couber quebra com hífen, nunca no meio sem aviso. Vale para os dois modos da Wiki e para as capas do celular.</p>
+  </div>
+
+  <div class="card" style="gap:14px">
+    <h3>Organograma e árvore genealógica livres (anexo 4 · U117)</h3>
+    <p class="small muted">O organograma usa a rolagem da caixa para mover. Quando o desenho é menor que a caixa, não há o que rolar, e ele fica preso no canto de cima. Proposta: arrastar move o desenho para qualquer lado (com margem em volta), ele abre centrado, e “Enquadrar” volta ao centro. O teclado continua: setas movem o foco entre as pessoas, e o desenho acompanha. A árvore genealógica hoje nem arrasta nem tem zoom: ganha os mesmos controles do organograma. A teia diplomática já usa o mesmo desenho do Gráfico, que se move livre.</p>
+    <div class="ba">
+      <div><span class="lbl before">Antes</span><div class="orgbox"><span class="node" style="left:56px;top:8px"></span><span class="ln" style="left:90px;top:30px;height:16px"></span><span class="node" style="left:10px;top:46px"></span><span class="node" style="left:90px;top:46px"></span><span class="node" style="left:10px;top:76px"></span><span class="node" style="left:90px;top:76px"></span></div><span class="cap">Preso no canto; arrastar não faz nada.</span></div>
+      <div><span class="lbl after">Depois</span><div class="orgbox"><span class="node" style="left:calc(50% - 35px);top:30px"></span><span class="ln" style="left:50%;top:52px;height:16px"></span><span class="node" style="left:calc(50% - 78px);top:68px"></span><span class="node" style="left:calc(50% + 8px);top:68px"></span><span class="node" style="left:calc(50% - 78px);top:98px"></span><span class="node" style="left:calc(50% + 8px);top:98px"></span><span class="muted-line" style="position:absolute;right:10px;bottom:6px">✥ arraste para qualquer lado</span></div><span class="cap">Centrado; move livre, como um mapa.</span></div>
+    </div>
+    <p class="cap">De quebra: o campo de busca da lista “Organizações” está vazio, sem texto de exemplo. Ganha “Filtrar organizações”.</p>
+  </div>
+</section>
+
+<!-- ——————————————————— PENDÊNCIAS ——————————————————— -->
+<section class="block" id="pendencias" aria-labelledby="t-pend">
+  <div class="lead"><span class="eyebrow">Fase 3 e 4</span><h2 id="t-pend">O que ficou da 1.5</h2>
+    <p class="muted">Como no plano da 1.5, com as decisões 5 a 14 que você já respondeu. Os itens novos vêm das notas da 1.5.0 (“Problemas conhecidos”) e dos registros dos PRs.</p></div>
+  <div class="why">
+    <div class="note"><h4>Funções adiadas</h4><ul>
+      <li><b>D · U89:</b> “+ Assento” e “Remover” com a sala aberta; faixa e notificação quando o servidor, o túnel ou o IP caem; “Reconectar” (decisões 6 e 8).</li>
+      <li><b>K · U47:</b> o celular comanda a sala com Biblioteca e “Salvar Sessão”; “Entrar como mestre remoto” colando o link.</li>
+      <li><b>J2 · U104:</b> Importar com o arquivo e a prévia primeiro; “Abrir o que entrou”.</li>
+      <li><b>R · U99:</b> título da nota editável no topo (decisão 13); “Criar o primeiro modelo”.</li>
+      <li><b>L · U46:</b> o Início “Mesa de hoje”, igual à maquete aprovada.</li></ul></div>
+    <div class="note"><h4>Problemas conhecidos e técnica</h4><ul>
+      <li><b>T · U109:</b> no Android, arquivo grande ainda é juntado inteiro na memória antes da ponte; perto de 512 MB pode falhar.</li>
+      <li><b>T · U110:</b> “Testar gravação” também no Android, sem deixar arquivo oculto no cofre.</li>
+      <li><b>W · U111:</b> o smoke do Windows às vezes falha com a janela escondida.</li>
+      <li><b>W · U113:</b> rever a exceção do picomatch até 17/12.</li>
+      <li><b>A2 · U108:</b> o teste de desempenho do CI variou de 8,5 a 15,2 s com o mesmo código (teto 12,7 s).</li>
+      <li><b>V · U112:</b> até 560 px, o nome de item de lista desce para baixo do ícone (e 6 seletores parecidos).</li></ul></div>
+    <div class="note"><h4>Fica de fora</h4><p>A contagem das pastas vazias criadas fora do app antes de abri-lo. O app só vê o que o índice lista, e varrer o disco atrás de pastas vazias custa mais do que resolve. Continua nos problemas conhecidos.</p></div>
+  </div>
+</section>
+
+<!-- ——————————————————— PALETA ——————————————————— -->
+<section class="block" id="paleta" aria-labelledby="t-pal">
+  <div class="lead"><span class="eyebrow">Última tarefa · PR P · U122</span><h2 id="t-pal">Paleta nova a partir da runa</h2>
+    <p class="muted">Depois de tudo implementado, faço a maquete de uma paleta temática tirada do ícone novo, nos temas escuro e claro, aplicada às telas principais.
+      Ela entra como mais uma opção em Aparência, ao lado de Floresta e das outras, e passa no teste de contraste (<code>styles/tokens.test.ts</code>). As cores abaixo são só o ponto de partida, tiradas do ícone.</p></div>
+  <div class="swatches" role="img" aria-label="Cores do ícone: pedra azul-marinho escura, pedra média, brilho ciano e núcleo claro">
+    <span class="sw"><i style="background:#0f1a33"></i>pedra funda</span>
+    <span class="sw"><i style="background:#1d2e57"></i>pedra</span>
+    <span class="sw"><i style="background:#2f4a7a"></i>aresta</span>
+    <span class="sw"><i style="background:#14b8e0"></i>brilho</span>
+    <span class="sw"><i style="background:#6be7ff"></i>runa</span>
+    <span class="sw"><i style="background:#c9f6ff"></i>núcleo</span>
+  </div>
+</section>
+
+<section class="block" aria-labelledby="t-ok">
+  <h2 id="t-ok">O que preciso de você</h2>
+  <div class="note">
+    <p>Um <b>ok</b> no plano e nas três maquetes (Elenco, Ferramentas, Ajuda). Se quiser mudar alguma, diga o quê, e eu refaço só aquela antes de começar.
+      Duas escolhas que fiz e que você pode trocar no mesmo recado:</p>
+    <ul>
+      <li>As Ferramentas da campanha entram no mesmo padrão das da Wiki (abas no topo). Se preferir mexer só na Wiki, tiro.</li>
+      <li>No Elenco, clicar no cartão abre o painel de detalhes, e o artigo da wiki fica no “Abrir artigo” do painel (1 clique a mais para abrir o artigo).</li>
+    </ul>
+  </div>
+</section>
+</div>
