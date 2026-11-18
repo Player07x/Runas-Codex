@@ -353,8 +353,12 @@
    abre a categoria (o link do título se estende sobre o cartão). */
 .wiki-home-toolbar { display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-column); }
 .wiki-home-toolbar .wiki-search { flex:1 1 280px; }
-.category-grid.only-categories { grid-template-columns:repeat(auto-fill, minmax(min(200px, 100%), 1fr)); }
+/* U114: o cartão cresce com o tamanho do texto, para o nome da categoria caber inteiro também com a letra maior. */
+.category-grid.only-categories { grid-template-columns:repeat(auto-fill, minmax(min(calc(200px * var(--font-scale, 1)), 100%), 1fr)); }
+/* U114: a palavra inteira na linha (sem o número e o “›” ao lado sobra espaço). Um nome que ainda não caiba quebra com
+   hífen onde o sistema hifeniza (Android); sem dicionário (Electron), quebra no limite do cartão em vez de vazar. */
 .category-card.compact .wiki-category-heading h2 { word-break:normal;overflow-wrap:break-word;hyphens:auto; }
+.category-card.compact .wiki-category-count { margin-top:-6px; }
 .category-card.compact { position:relative; }
 .category-card.compact .wiki-category-heading::after { content:"";position:absolute;inset:0;border-radius:inherit; }
 .category-card.compact .wiki-category-heading:focus-visible { outline:none; }

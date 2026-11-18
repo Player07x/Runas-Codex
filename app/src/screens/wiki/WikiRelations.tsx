@@ -1,5 +1,5 @@
 import "./relations.css"
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react"
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minus, Plus, Search, ZoomIn, ZoomOut } from "lucide-react"
 import type { GraphData } from "../../core/graph-data"
 import { layoutNeighbors, layoutOrg, orgStructureOf, type LayoutNode, type OrgPerson, type OrgStructure } from "../../core/relation-layout"
@@ -14,6 +14,7 @@ import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
 import { DEFAULT_FORCES, GraphView } from "../../components/vault/GraphView"
 import { href, navigate } from "../../lib/router"
 import { useSinglePane } from "../../lib/tabs"
+import { usePanZoom } from "../../lib/use-pan-zoom"
 import { noteRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Relations } from "./WikiArticle"
@@ -107,19 +108,19 @@ export function WikiRelations({ path }: { path?: string }) {
     return () => window.removeEventListener("keydown", onKey)
   }, [panel, selected])
 
-  const lists: Record<View, { title: string; items: string[]; meta(item: string): string; empty: ReactNode }> = {
+  const lists: Record<View, { title: string; items: string[]; meta(item: string): string; empty: ReactNode; placeholder: string }> = {
     organizacao: {
-      title: "Organizações", items: orgs,
+      title: "Organizações", items: orgs, placeholder: "Filtrar organizações pelo nome",
       meta: (o) => { const s = structures.get(o)!; return s.members ? `${plural(s.members - s.former, "membro", "membros")}${s.former ? `, ${plural(s.former, "antigo", "antigos")}` : ""}` : "Sem membros" },
       empty: <>Nenhuma organização. Crie artigos do tipo Organização; os membros usam <code>membro_de</code> (o cargo entre parênteses), <code>lider_de</code> e <code>subordinado_a</code>.</>,
     },
     familia: {
-      title: "Pessoas", items: people,
+      title: "Pessoas", items: people, placeholder: "Filtrar pessoas pelo nome",
       meta: (p) => plural(edges.filter((e) => e.type.group === "familia" && (e.from === p || e.to === p)).length, "laço de família", "laços de família"),
       empty: <>Nenhuma relação de família. Use as propriedades <code>pais</code>, <code>filhos</code>, <code>conjuges</code> e <code>irmaos</code> (listas de links) nos artigos.</>,
     },
     diplomacia: {
-      title: "Facções", items: web.nodes,
+      title: "Facções", items: web.nodes, placeholder: "Filtrar facções pelo nome",
       meta: (f) => `${articleKind(index.note(f)?.meta.frontmatter?.data?.tipo)?.label ?? "Facção"} · ${plural(web.edges.filter((e) => e.from === f || e.to === f).length, "relação", "relações")}`,
       empty: <>Nenhuma relação entre facções. Em organizações, países, culturas e religiões, use <code>aliados</code>, <code>inimigos</code>, <code>rivais</code>, <code>em_guerra_com</code>, <code>paz_tensa_com</code> e <code>vassalo_de</code>.</>,
     },
@@ -131,7 +132,7 @@ export function WikiRelations({ path }: { path?: string }) {
 
   const listPart = <div className="relations-list">
     <FormField label={list.title} hint={<span role="status">{shown.length === list.items.length ? plural(list.items.length, "item", "itens") : `${shown.length} de ${list.items.length}`}</span>}>
-      {(control) => <input id={control.id} className="input" type="search" value={query} onChange={(event) => setQuery(event.target.value)} aria-describedby={control.describedBy} autoComplete="off" />}
+      {(control) => <input id={control.id} className="input" type="search" placeholder={list.placeholder} value={query} onChange={(event) => setQuery(event.target.value)} aria-describedby={control.describedBy} autoComplete="off" />}
     </FormField>
     <div className="relations-list-rows">
       {shown.map((item) => <ListRow key={item} media={<NoteCrest path={item} name={noteName(item)} size={32} round={view === "familia"} />} title={noteName(item)} meta={list.meta(item)}
@@ -220,34 +221,14 @@ const countBelow = (p: OrgPerson): number => p.children.reduce((n, c) => n + 1 +
 
 // ---------- Organograma ----------
 
-function useZoom(region: RefObject<HTMLDivElement | null>, width: number, height: number) {
-  const [scale, setScale] = useState(1)
-  const clamp = (value: number) => Math.min(1.6, Math.max(0.3, Math.round(value * 100) / 100))
-  const fit = () => {
-    const el = region.current
-    if (!el) return
-    setScale(clamp(Math.min(1, (el.clientWidth - 8) / width, (el.clientHeight - 8) / height)))
-    el.scrollTo({ left: 0, top: 0 })
-  }
-  /** Muda o zoom mantendo parado o ponto (x, y) da região, como num mapa. */
-  const zoomAt = (factor: number, x?: number, y?: number) => setScale((old) => {
-    const next = clamp(old * factor), el = region.current
-    if (el && next !== old) {
-      const px = x ?? el.clientWidth / 2, py = y ?? el.clientHeight / 2
-      requestAnimationFrame(() => el.scrollTo({ left: (el.scrollLeft + px) * (next / old) - px, top: (el.scrollTop + py) * (next / old) - py }))
-    }
-    return next
-  })
-  /** Ao abrir: enquadra, mas se tudo só couber abaixo de 60 %, abre a 100 % com o topo (a organização) no meio (U72). */
-  const initial = () => {
-    const el = region.current
-    if (!el) return
-    const fits = Math.min(1, (el.clientWidth - 8) / width, (el.clientHeight - 8) / height)
-    if (fits >= 0.6) return fit()
-    setScale(1)
-    requestAnimationFrame(() => el.scrollTo({ left: Math.max(0, (width - el.clientWidth) / 2), top: 0 }))
-  }
-  return { scale, zoomIn: () => zoomAt(1.25), zoomOut: () => zoomAt(1 / 1.25), zoomAt, fit, initial }
+/** Afastar, a porcentagem, Aproximar e Enquadrar: os mesmos no organograma e na árvore genealógica. */
+function ZoomTools({ zoom, label }: { zoom: ReturnType<typeof usePanZoom>; label: string }) {
+  return <div className="row relations-zoom-tools" role="toolbar" aria-label={label}>
+    <button type="button" className="icon-btn" aria-label="Afastar" title="Afastar (−)" onClick={zoom.zoomOut}><ZoomOut size={17} /></button>
+    <span className="small muted relations-zoom">{Math.round(zoom.view.scale * 100)} %</span>
+    <button type="button" className="icon-btn" aria-label="Aproximar" title="Aproximar (+)" onClick={zoom.zoomIn}><ZoomIn size={17} /></button>
+    <button type="button" className="btn sm ghost" title="Enquadrar (0)" onClick={zoom.fit}><Maximize2 size={15} aria-hidden="true" /> Enquadrar</button>
+  </div>
 }
 
 const ARROWS: Record<string, "up" | "down" | "left" | "right" | undefined> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" }
@@ -273,39 +254,10 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
   const near = useMemo(() => layoutNeighbors(layout), [layout])
   const [active, setActive] = useState(selected && near.has(selected) ? selected : structure.org)
   const focusNext = useRef(false)
-  const zoom = useZoom(region, layout.width, layout.height)
+  // U117: o desenho se move livre (arrastar, pinça, roda); abre centrado e “Enquadrar” volta ao centro.
+  const zoom = usePanZoom(region, { width: layout.width, height: layout.height }, ".org-card, button, a, input")
   const activeNode = near.has(active) ? active : structure.org
-  // Enquadra ao abrir a organização (o componente nasce de novo a cada organização).
-  const fitted = useRef(false)
-  useEffect(() => { if (!fitted.current) { fitted.current = true; zoom.initial() } })
-  // Ctrl + roda (e a pinça do touchpad, que chega igual) aproxima no ponto do ponteiro; precisa de ouvinte não passivo.
-  useEffect(() => {
-    const el = region.current
-    if (!el) return
-    const onWheel = (event: WheelEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return
-      event.preventDefault()
-      const box = el.getBoundingClientRect()
-      zoom.zoomAt(event.deltaY < 0 ? 1.15 : 1 / 1.15, event.clientX - box.left, event.clientY - box.top)
-    }
-    el.addEventListener("wheel", onWheel, { passive: false })
-    return () => el.removeEventListener("wheel", onWheel)
-  })
-  // Arrastar o fundo com o mouse move a vista (no toque, o dedo já rola).
-  const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
-  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "touch" || event.button !== 0 || (event.target as HTMLElement).closest(".org-card, button, a, input")) return
-    const el = region.current!
-    drag.current = { x: event.clientX, y: event.clientY, left: el.scrollLeft, top: el.scrollTop }
-    el.setPointerCapture(event.pointerId)
-    el.classList.add("dragging")
-  }
-  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const start = drag.current, el = region.current
-    if (!start || !el) return
-    el.scrollTo({ left: start.left - (event.clientX - start.x), top: start.top - (event.clientY - start.y) })
-  }
-  const endDrag = () => { drag.current = null; region.current?.classList.remove("dragging") }
+  const boxOf = (path: string) => { const n = layout.nodes.find((node) => node.path === path); return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : undefined }
   const onDoubleClick = (event: ReactMouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest(".org-card, button, a, input")) return
     const box = region.current!.getBoundingClientRect()
@@ -319,14 +271,16 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
     const hit = names.find((n) => n.name.toLocaleLowerCase("pt-BR") === text.trim().toLocaleLowerCase("pt-BR"))
     if (!hit) return
     setActive(hit.path); onSelect(hit.path)
-    requestAnimationFrame(() => region.current?.querySelector<HTMLElement>(`[data-node="${CSS.escape(hit.path)}"]`)?.scrollIntoView({ block: "center", inline: "center" }))
+    const box = boxOf(hit.path)
+    if (box) zoom.centerOn(box)
   }
   useEffect(() => {
     if (!focusNext.current) return
     focusNext.current = false
     const el = region.current?.querySelector<HTMLElement>(`[data-node="${CSS.escape(activeNode)}"]`)
     el?.focus({ preventScroll: true })
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" })
+    const box = boxOf(activeNode)
+    if (box) zoom.reveal(box)
   }, [activeNode, layout])
 
   if (!structure.members) return <p className="muted relations-empty">Ninguém declarou ser membro de {noteName(structure.org)} (propriedade <code>membro_de</code> nos artigos dos membros, com o cargo entre parênteses).</p>
@@ -351,16 +305,10 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
       <input className="input" type="search" list={`${help}-nomes`} placeholder="Encontrar no organograma" value={finding} onChange={(e) => find(e.target.value)} />
       <datalist id={`${help}-nomes`}>{names.map((n) => <option key={n.path} value={n.name} />)}</datalist>
     </label>
-    <div className="row relations-zoom-tools" role="toolbar" aria-label="Zoom do organograma">
-      <button type="button" className="icon-btn" aria-label="Afastar" title="Afastar (−)" onClick={zoom.zoomOut}><ZoomOut size={17} /></button>
-      <span className="small muted relations-zoom">{Math.round(zoom.scale * 100)} %</span>
-      <button type="button" className="icon-btn" aria-label="Aproximar" title="Aproximar (+)" onClick={zoom.zoomIn}><ZoomIn size={17} /></button>
-      <button type="button" className="btn sm ghost" title="Enquadrar (0)" onClick={zoom.fit}><Maximize2 size={15} aria-hidden="true" /> Enquadrar</button>
+    <ZoomTools zoom={zoom} label="Zoom do organograma" />
     </div>
-    </div>
-    <div ref={region} className="relations-graph-region" role="region" aria-label={`Organograma de ${noteName(structure.org)}`} aria-describedby={help} onKeyDown={onKey} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onDoubleClick={onDoubleClick}>
-      <div className="relations-graph-size" style={{ width: layout.width * zoom.scale, height: layout.height * zoom.scale }}>
-        <div className="relations-graph-canvas" style={{ width: layout.width, height: layout.height, transform: `scale(${zoom.scale})` }}>
+    <div ref={region} className="relations-graph-region" role="region" aria-label={`Organograma de ${noteName(structure.org)}`} aria-describedby={help} onKeyDown={onKey} {...zoom.handlers} onDoubleClick={onDoubleClick}>
+        <div className="relations-graph-canvas" style={{ width: layout.width, height: layout.height, transform: zoom.transform, visibility: zoom.ready ? undefined : "hidden" }}>
           <svg className="relations-graph-lines" width={layout.width} height={layout.height} aria-hidden="true">
             {layout.edges.map((e) => <path key={`${e.from}>${e.to}`} d={e.d} />)}
           </svg>
@@ -378,7 +326,6 @@ function OrgGraph({ structure, collapsed, selected, onSelect, onToggle }: {
             </button>}
           </div>)}
         </div>
-      </div>
     </div>
     <p id={help} className="small muted relations-help">Setas andam pelo organograma, Enter mostra os detalhes do nó, + e − aproximam, 0 enquadra. Borda tracejada: antigo membro.</p>
   </div>
@@ -439,11 +386,24 @@ function FamilyTreeView({ center, root, onSelect }: { center: string; root: stri
     <input className="input" type="number" min={0} max={5} inputMode="numeric" aria-label={label} value={generations[key]} onChange={(event) => change(key, Number(event.target.value))} />
     <button type="button" className="icon-btn sm" aria-label={`Mais ${label.toLocaleLowerCase("pt-BR")}`} disabled={generations[key] >= 5} onClick={() => change(key, generations[key] + 1)}><Plus size={14} /></button>
   </div>
+  // U117: a árvore ganha os controles do organograma (arrastar, zoom, Enquadrar); ao trocar a pessoa do centro, enquadra.
+  const region = useRef<HTMLDivElement>(null)
+  const zoom = usePanZoom(region, { width: layout.width, height: layout.height }, "a, button, input", center)
+  const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return
+    if (event.key === "+" || event.key === "=") { event.preventDefault(); zoom.zoomIn() }
+    if (event.key === "-") { event.preventDefault(); zoom.zoomOut() }
+    if (event.key === "0") { event.preventDefault(); zoom.fit() }
+  }
   return (
     <div className="relations-graph">
-      <div className="row-wrap relations-family-controls">{stepper("up", "Gerações acima")}{stepper("down", "Gerações abaixo")}</div>
+      <div className="relations-graph-tools">
+        <div className="row-wrap relations-family-controls">{stepper("up", "Gerações acima")}{stepper("down", "Gerações abaixo")}</div>
+        <ZoomTools zoom={zoom} label="Zoom da árvore genealógica" />
+      </div>
       <p className="sr-only" aria-live="polite">Centralizado em {noteName(center)}</p>
-      <div className="relations-graph-region family-tree" role="region" aria-label={`Árvore genealógica de ${noteName(center)}`}>
+      <div ref={region} className="relations-graph-region family-tree" role="region" aria-label={`Árvore genealógica de ${noteName(center)}`} onKeyDown={onKey} {...zoom.handlers}>
+        <div className="relations-graph-canvas" style={{ width: layout.width, height: layout.height, transform: zoom.transform, visibility: zoom.ready ? undefined : "hidden" }}>
         <svg viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height} role="group" aria-label={`${layout.nodes.length} pessoas, por geração`}>
           <g aria-hidden="true">{layout.lines.map((line, i) => line.kind === "casamento"
             ? <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} className="tree-marriage" />
@@ -458,8 +418,9 @@ function FamilyTreeView({ center, root, onSelect }: { center: string; root: stri
             </a>
           ))}
         </svg>
+        </div>
       </div>
-      <p className="small muted relations-help">Linha cheia: filiação · tracejada: casamento. Escolha um nome para pô-lo no centro; no centro, para ver os detalhes.</p>
+      <p className="small muted relations-help">Linha cheia: filiação · tracejada: casamento. Escolha um nome para pô-lo no centro; no centro, para ver os detalhes. Arraste para mover; + e − aproximam, 0 enquadra.</p>
     </div>
   )
 }

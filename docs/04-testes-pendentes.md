@@ -2231,3 +2231,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Cartões da Wiki e organograma livres (PR W1: U114, U117)
+
+- [ ] Wiki › “Só categorias”: nenhum nome de categoria cortado no meio (“Acontecimentos”, “Personagens”, “Organizações”),
+  sem o “›”; embaixo do nome, “n artigos” e, se houver, “· n a escrever”. Conferir também com o texto a 140 %.
+- [ ] Relações › Organograma: abre centrado; arrastar o fundo (ou um cartão) move o desenho para qualquer lado;
+  Ctrl + roda e a pinça aproximam; “Enquadrar” e a tecla 0 voltam ao centro. Clicar num cartão sem arrastar ainda abre
+  os detalhes; arrastar começando num cartão não abre. Setas e Tab levam o desenho junto com o foco.
+- [ ] Relações › Árvore genealógica: os mesmos controles (Afastar, %, Aproximar, Enquadrar, arrastar, + − 0); ao pôr outra
+  pessoa no centro, a árvore enquadra de novo.
+- [ ] No celular: um dedo arrasta o organograma e a árvore, dois dedos aproximam; tocar num nome ainda funciona.
