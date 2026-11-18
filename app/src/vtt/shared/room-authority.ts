@@ -1,5 +1,5 @@
 import { CollaborationRoom } from "./collaboration"
-import type { DocumentChange, PlayerBarVisibility, PlayerSeatState, PlayerState, PlayerTunnelInfo, TableReport } from "./ipc"
+import type { DocumentChange, PlayerBarVisibility, PlayerDrop, PlayerSeatState, PlayerState, PlayerTunnelInfo, TableReport } from "./ipc"
 import type { LogData, SceneData, TokenData, TileData, DrawingData, NoteData } from "./scene"
 import type { RegionData } from "./region"
 import type { WorldDocument } from "./world"
@@ -44,6 +44,10 @@ export class RoomAuthority {
   private publicUrl: string | null = null
   private tunnel: PlayerTunnelInfo | null = null
   private tunnelLost = false
+  /** U89: a última queda (túnel, endereço ou servidor) até a sala ser desligada. */
+  private drop: PlayerDrop | null = null
+  /** O endereço da rede local quando a sala abriu (ou na última conferência). */
+  private lastAddress = ""
   private sceneId: string | null = null
   private table: TableReport = { sceneId: null, selection: [], center: null, zoom: null }
   private ruler: PlayerRuler | null = null
@@ -81,6 +85,7 @@ export class RoomAuthority {
       authenticateSeat: (token) => this.authenticateSeat(token),
       leaveSeat: (token) => this.leaveSeat(token),
       onClientMessage: (message, seat) => this.handleClientMessage(message, seat),
+      onServerLost: () => this.markServerLost(),
     })
   }
 
@@ -94,6 +99,7 @@ export class RoomAuthority {
       publicUrl: this.publicUrl,
       tunnel: this.tunnel,
       tunnelLost: this.tunnelLost,
+      drop: this.drop,
       sceneId: this.sceneId,
       audio: this.audioEnabled,
       moves: this.movesEnabled,
@@ -125,6 +131,8 @@ export class RoomAuthority {
     this.publicUrl = null
     this.tunnel = null
     this.tunnelLost = false
+    this.drop = null
+    this.lastAddress = this.localAddress()
     this.attachAssignedTokens()
     this.refreshProjection()
     this.emit(0)
@@ -141,6 +149,7 @@ export class RoomAuthority {
     this.publicUrl = null
     this.tunnel = null
     this.tunnelLost = false
+    this.drop = null
     this.ruler = null
     this.session = null
     this.playerCount = 0
@@ -164,6 +173,67 @@ export class RoomAuthority {
     const state = this.state()
     this.emit()
     return state
+  }
+
+  /** U89: mais um assento com a sala aberta; o código novo vai só nesta resposta, como ao ligar. */
+  addSeat(): PlayerState {
+    if (!this.session) throw new Error("Ligue a transmissão antes de administrar os assentos.")
+    const { seat, code } = this.session.addSeat()
+    // Um token que já era deste assento (a sala teve mais jogadores antes) volta a ser dele.
+    this.attachAssignedTokens()
+    const state = { ...this.state(), seats: this.seatStates({ [seat.slotId]: code }) }
+    this.emit()
+    return state
+  }
+
+  /** U89 (decisão 8): tira o último assento e desconecta só quem estava nele. */
+  removeSeat(): PlayerState {
+    if (!this.session) throw new Error("Ligue a transmissão antes de administrar os assentos.")
+    const seat = this.session.removeLastSeat()
+    this.tokenCounts.delete(seat.slotId)
+    this.server.disconnectSeat?.(seat.slotId)
+    const state = this.state()
+    this.emit()
+    return state
+  }
+
+  /**
+   * U89: o endereço do computador na rede mudou (outro Wi-Fi, outro IP). O servidor escuta em todas as interfaces,
+   * então a sala continua no ar; o link da rede local é que muda, e o mestre precisa mandar o novo.
+   */
+  checkAddress(): boolean {
+    if (!this.enabled) return false
+    const address = this.localAddress()
+    if (address === this.lastAddress) return false
+    this.lastAddress = address
+    this.drop = { kind: "address", status: "restored", at: Date.now() }
+    this.emit()
+    return true
+  }
+
+  /** U89: o servidor da sala parou sem o mestre pedir; os jogadores caíram e só “Reconectar” traz a sala de volta. */
+  markServerLost(): void {
+    if (!this.enabled) return
+    this.drop = { kind: "server", status: "failed", at: Date.now() }
+    this.emit(0)
+  }
+
+  /**
+   * U89: reabre a sala na mesma porta, com a mesma chave e os mesmos assentos: o link da rede local volta igual (se o
+   * IP não mudou) e os jogadores entram de novo sem perder o assento.
+   */
+  async reconnect(): Promise<PlayerState> {
+    if (!this.enabled || !this.key || !this.session) throw new Error("Ligue a transmissão primeiro.")
+    const key = this.key
+    await this.server.stop()
+    await this.server.start(this.port, key)
+    this.port = this.server.addressPort
+    this.key = key
+    this.lastAddress = this.localAddress()
+    if (this.drop?.kind === "server" || this.drop?.kind === "address") this.drop = { kind: this.drop.kind, status: "restored", at: Date.now() }
+    this.refreshProjection()
+    this.emit(0)
+    return this.state()
   }
 
   private joinSeat(code: string): JoinedPlayerSeat | null {
@@ -223,14 +293,28 @@ export class RoomAuthority {
     this.publicUrl = url
     this.tunnel = url ? tunnel : null
     this.tunnelLost = false
+    // Decisão 6: o túnel reaberto depois de uma queda tem outro endereço; a faixa da mesa mostra o link novo.
+    if (url && this.drop?.kind === "tunnel") this.drop = { kind: "tunnel", status: "restored", at: Date.now() }
     this.emit()
   }
 
-  /** O processo do túnel morreu sozinho: o link público deixou de existir e o painel precisa dizer isso. */
-  markTunnelLost(): void {
+  /**
+   * O processo do túnel morreu sozinho: o link público deixou de existir e o painel precisa dizer isso. Com
+   * `reopening`, o app já está abrindo outro túnel (decisão 6 do U89).
+   */
+  markTunnelLost(reopening = false): void {
     this.publicUrl = null
     this.tunnel = null
     this.tunnelLost = true
+    this.drop = { kind: "tunnel", status: reopening ? "reconnecting" : "failed", at: Date.now() }
+    this.emit()
+  }
+
+  /** As tentativas de reabrir o túnel acabaram: fica com o mestre (“Reconectar” ou “Gerar novo link público”). */
+  markTunnelFailed(): void {
+    if (!this.enabled || this.publicUrl) return
+    this.tunnelLost = true
+    this.drop = { kind: "tunnel", status: "failed", at: Date.now() }
     this.emit()
   }
 

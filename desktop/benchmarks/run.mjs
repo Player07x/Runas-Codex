@@ -22,7 +22,7 @@ try {
     const profile = join(work, "perfil-" + run), temporary = join(work, "tmp-" + run), reportFile = join(output, `run-${run}.json`)
     await mkdir(profile); await mkdir(temporary)
     const args = [".", "--smoke", "--performance", ...(ciNoSandbox ? ["--no-sandbox"] : []), "--vault=" + join(work, "cofre"), "--user-data-dir=" + profile, "--performance-output=" + reportFile]
-    if (!record) args.push("--performance-budget=" + budgetFile)
+    if (!record) args.push("--performance-budget=" + budgetFile, "--performance-median")
     const started = Date.now()
     args.push("--benchmark-start=" + started)
     const child = spawn(electron, args, { cwd: desktop, env: { ...process.env, TMPDIR: temporary, TMP: temporary, TEMP: temporary }, stdio: ["ignore", "pipe", "pipe"] })
@@ -39,8 +39,19 @@ try {
   }
   const median = values => values.toSorted((a,b) => a - b)[Math.floor(values.length / 2)]
   const numbers = Object.fromEntries(Object.keys(reports[0].numbers).map(key => [key, median(reports.map(report => report.numbers[key]))]))
-  const summary = { fixture, numbers, environment: reports[0].environment, runs: reports.length, method: "Mediana de três perfis novos; cache de arquivos do sistema não foi esvaziado; build de produção com Profiler." }
+  const summary = { fixture, numbers, environment: reports[0].environment, runs: reports.length, method: "Mediana de três perfis novos (o teto vale para a mediana); cache de arquivos do sistema não foi esvaziado; build de produção com Profiler." }
+  // U108: o teto vale para a mediana das três execuções (números e cada tela), não para cada uma.
+  const screens = Object.fromEntries(reports[0].screens.map(screen => [screen.name, median(reports.map(report => report.screens.find(item => item.name === screen.name)?.ms ?? Number.NaN))]))
+  const runs = Object.fromEntries(Object.keys(reports[0].numbers).map(key => [key, reports.map(report => Math.round(report.numbers[key]))]))
+  let regressions = []
+  if (!record) {
+    const { performanceRegressions, performanceScreenRegressions } = await import("../../app/src/core/performance-budget.ts")
+    const budget = JSON.parse(await readFile(budgetFile, "utf8"))
+    regressions = [...performanceRegressions(numbers, budget), ...performanceScreenRegressions(screens, budget)]
+  }
+  Object.assign(summary, { screens, runsByMetric: runs, regressions })
   await writeFile(join(output, "summary.json"), JSON.stringify(summary, null, 2))
   if (record) await writeFile(join(output, "baseline-candidate.json"), JSON.stringify({ baseline: numbers, factors: { openMs: 3, indexMs: 3, switchMs: 3, wiki420Ms: 3, jsBytes: 1.15 }, allowances: { openMs: 1000, indexMs: 500, switchMs: 300, wiki420Ms: 500, jsBytes: 100000 }, screens: Object.fromEntries(reports[0].screens.map(screen => [screen.name, Math.max(...reports.map(report => report.screens.find(item => item.name === screen.name).ms))])), reference: summary }, null, 2))
   console.log(JSON.stringify(summary))
+  if (regressions.length) { console.error("Acima do orçamento (mediana de três execuções):\n" + regressions.join("\n")); process.exitCode = 1 }
 } finally { await rm(work, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 }) }

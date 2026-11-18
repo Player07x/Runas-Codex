@@ -201,6 +201,33 @@ export class PlayerSession {
     seat.lastSeenAt = null
   }
 
+  /** U89: um assento a mais no fim, com código novo; os outros códigos continuam valendo. */
+  addSeat(): { seat: PlayerSeat; code: string } {
+    if (this.seatsById.size >= MAX_PLAYER_SEATS) throw new Error(`A sala aceita no máximo ${MAX_PLAYER_SEATS} jogadores.`)
+    const next = Math.max(0, ...[...this.seatsById.keys()].map((id) => Number(/^player-(\d+)$/.exec(id)?.[1] ?? 0))) + 1
+    const code = randomCode()
+    const seat: PlayerSeat = {
+      slotId: `player-${next}`,
+      label: seatLabel(next - 1),
+      codeHash: hashPlayerSecret(code),
+      sessionCookieHash: null,
+      tokenId: null,
+      status: "available",
+      revision: 0,
+      lastSeenAt: null,
+    }
+    this.seatsById.set(seat.slotId, seat)
+    return { seat: { ...seat }, code }
+  }
+
+  /** U89 (decisão 8): os assentos saem do fim. Devolve o assento tirado; o código dele deixa de valer. */
+  removeLastSeat(): PlayerSeat {
+    if (this.seatsById.size <= MIN_PLAYER_SEATS) throw new Error(`A sala precisa de pelo menos ${MIN_PLAYER_SEATS} jogador.`)
+    const last = [...this.seatsById.values()].at(-1)!
+    this.seatsById.delete(last.slotId)
+    return { ...last }
+  }
+
   bumpRevision(slotId: string): number {
     const seat = this.requireSeat(slotId)
     seat.revision += 1

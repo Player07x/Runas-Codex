@@ -24,7 +24,7 @@ function createBrowserPreviewApi(): VttApi {
   const documents = new Map<string, WorldDocument>()
   const documentListeners = new Set<(change: DocumentChange) => void>()
   const playerListeners = new Set<(value: PlayerState) => void>()
-  const player: PlayerState = { enabled: false, port: 30000, key: null, localUrl: null, publicUrl: null, tunnel: null, tunnelLost: false, sceneId: null, audio: true, moves: true, bars: "friendly", spectators: 0, players: 0, sessionId: null, seats: [] }
+  const player: PlayerState = { enabled: false, port: 30000, key: null, localUrl: null, publicUrl: null, tunnel: null, tunnelLost: false, drop: null, sceneId: null, audio: true, moves: true, bars: "friendly", spectators: 0, players: 0, sessionId: null, seats: [] }
   const emitPlayer = () => playerListeners.forEach((listener) => listener({ ...player }))
   return {
     collaboration: {state:async()=>collaboration.snapshot(),command:async command=>collaboration.command(command)},
@@ -105,6 +105,20 @@ function createBrowserPreviewApi(): VttApi {
       stop: async () => { player.enabled = false; player.key = null; player.localUrl = null; player.publicUrl = null; player.sessionId = null; player.players = 0; player.spectators = 0; player.seats = []; emitPlayer() },
       rotateSeatCode: async (slotId) => { const seat = player.seats.find((candidate) => candidate.slotId === slotId); if (!seat) throw new Error("Assento de jogador não encontrado."); seat.code = `PREVIEW-${slotId.toUpperCase()}-${Date.now()}`; emitPlayer(); return { ...player, seats: player.seats.map((candidate) => ({ ...candidate })) } },
       clearSeat: async (slotId) => { const seat = player.seats.find((candidate) => candidate.slotId === slotId); if (!seat) throw new Error("Assento de jogador não encontrado."); seat.status = "available"; seat.tokenId = null; seat.revision = 0; emitPlayer(); return { ...player, seats: player.seats.map((candidate) => ({ ...candidate })) } },
+      addSeat: async () => {
+        if (player.seats.length >= 12) throw new Error("A sala aceita no máximo 12 jogadores.")
+        const n = player.seats.length + 1
+        player.seats.push({ slotId: `player-${n}`, label: `Jogador ${n}`, code: `PREVIEW-${n}`, status: "available", tokenId: null, revision: 0, lastSeenAt: null })
+        emitPlayer()
+        return { ...player, seats: player.seats.map((candidate) => ({ ...candidate })) }
+      },
+      removeSeat: async () => {
+        if (player.seats.length <= 1) throw new Error("A sala precisa de pelo menos 1 jogador.")
+        player.seats.pop()
+        emitPlayer()
+        return { ...player, seats: player.seats.map((candidate) => ({ ...candidate })) }
+      },
+      reconnect: async () => { player.drop = player.drop ? { ...player.drop, status: "restored", at: Date.now() } : null; emitPlayer(); return { ...player } },
       openWindow: async () => undefined,
       join: async (url) => {
         const target = new URL(url)

@@ -75,5 +75,6 @@ export function createElectronPlatform(bridge: RunasCodexBridge): Platform {
     ...(bridge.notify ? { notify: (title: string, body: string) => bridge.notify!(title, body) } : {}),
     checkWrite: bridge.checkWrite ? () => bridge.checkWrite!() : undefined,
     openSecuritySettings: bridge.openSecuritySettings ? () => bridge.openSecuritySettings!() : undefined,
+    thumbnailUrl: (path, width) => `${VAULT_FILE_SCHEME}://cofre/${path.split("/").map(encodeURIComponent).join("/")}?w=${width}`,
   }
 }

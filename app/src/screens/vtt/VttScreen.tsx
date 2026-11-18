@@ -1,6 +1,6 @@
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package } from "lucide-react"
+import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package, MonitorPlay } from "lucide-react"
 import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
@@ -10,6 +10,7 @@ import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal } from "../../components/ui"
 import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
 import { MesaTable } from "../../vtt/MesaTable"
+import { parseRoomLink, type RoomLink } from "../../vtt/shared/room-link"
 import { isBrowserPreview, vtt } from "../../vtt/api"
 import type { WorldSummary } from "../../vtt/shared/world"
 import { useVault } from "../../platform/VaultProvider"
@@ -262,12 +263,9 @@ function readRecent(): RecentRoom[] {
 }
 
 /** Link da sala: `http(s)://endereço/?k=chave`. Aceita também só o endereço com a chave colada à parte. */
-function roomUrl(link: string): string {
-  let text = link.trim()
-  if (!/^https?:\/\//i.test(text)) text = `http://${text}`
-  const url = new URL(text)
-  if (!url.searchParams.get("k")) throw new Error("O link precisa ter a chave da sala (a parte ?k=…). Peça ao mestre o link completo.")
-  return url.href
+/** O link reconhecido enquanto a pessoa digita (para dizer se é de jogador ou de mestre); `null` se ainda não é um. */
+function detectLink(text: string): RoomLink | null {
+  try { return text.trim() ? parseRoomLink(text) : null } catch { return null }
 }
 
 /** Entrar Sala: abre a página da sala de outra pessoa. O código do assento é pedido dentro da própria sala. */
@@ -275,11 +273,14 @@ function JoinRoom() {
   const [link, setLink] = useState("")
   const [error, setError] = useState<string>()
   const [recent, setRecent] = useState(readRecent)
+  const detected = detectLink(link)
   const join = async (value: string) => {
     setError(undefined)
     try {
-      const url = roomUrl(value)
+      const { url, master } = parseRoomLink(value)
+      // U47: o link do mestre abre a mesa do mestre remoto. Ele não fica nas salas recentes: quem o tem comanda a mesa.
       await vtt.player.join(url)
+      if (master) return
       const next = [{ url, at: Date.now() }, ...recent.filter((r) => r.url !== url)].slice(0, 8)
       setRecent(next)
       try {
@@ -310,11 +311,12 @@ function JoinRoom() {
           >
             <label className="field">
               <span>Link que o mestre mandou</span>
-              <input className="input mono" placeholder="http://192.168.0.12:30000/?k=… ou https://….trycloudflare.com/?k=…" value={link} onChange={(event) => setLink(event.target.value)} aria-label="Link da sala" autoFocus />
+              <input className="input mono" placeholder="http://192.168.0.12:30000/?k=… ou https://….trycloudflare.com/?k=…" value={link} onChange={(event) => setLink(event.target.value)} aria-label="Link da sala" aria-describedby="join-link-kind" autoFocus />
             </label>
+            <span id="join-link-kind" className="small muted" role="status">{detected?.master ? "Link do mestre remoto: abre a mesa para você comandar a sala deste aparelho." : detected ? "Link da sala dos jogadores." : "Pode colar a mensagem inteira; o app acha o link nela."}</span>
             {error && <span className="small" style={{ color: "var(--red)" }}>{error}</span>}
             <button type="submit" className="btn primary lg" disabled={!link.trim()}>
-              <LogIn size={18} /> Entrar
+              <LogIn size={18} /> {detected?.master ? "Entrar como mestre remoto" : "Entrar"}
             </button>
           </form>
           <span className="small muted row">
@@ -322,6 +324,9 @@ function JoinRoom() {
           </span>
           <span className="small muted row">
             <Camera size={14} /> No celular, ler o QR com a câmera abre a sala no navegador.
+          </span>
+          <span className="small muted row">
+            <MonitorPlay size={14} /> Para comandar a mesa de outro aparelho, cole aqui o link do mestre (painel Sala › Mestre remoto, no aparelho que hospeda a mesa).
           </span>
         </section>
         <ResizablePanel id="vtt-join" label="Detalhes da sala" width={320} className="stack-lg">

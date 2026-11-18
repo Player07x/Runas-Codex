@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { Minus, Pencil, Plus, Trash } from "lucide-react"
 import { findCodeBlocks } from "../../core/codeblocks"
 import {
@@ -30,7 +31,7 @@ const TOOL_KEY = "runas-codex:campanha:ferramenta"
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
-/** Ferramentas da campanha (rework F4c, CAM-6): a lista à esquerda e só a escolhida à direita; a última fica lembrada. */
+/** Ferramentas da campanha (rework F4c, CAM-6; abas no topo na U118): só a escolhida, com a largura toda; a última fica lembrada. */
 export function CampaignTools({ data }: { data: CampaignData }) {
   const [tool, setTool] = useState<ToolId>(() => {
     try {
@@ -51,21 +52,13 @@ export function CampaignTools({ data }: { data: CampaignData }) {
   return (
     <div className="page campaign-tools">
       <h1 className="page-title">Ferramentas da campanha</h1>
-      <div className="campaign-tools-layout">
-        <nav className="campaign-tools-list" aria-label="Ferramentas">
-          {TOOLS.map((t) => (
-            <button key={t.id} type="button" className={`list-item ${tool === t.id ? "active" : ""}`} aria-current={tool === t.id ? "true" : undefined} onClick={() => choose(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <div className="campaign-tools-current">
-          {tool === "tesouro" && <TreasuryPanel data={data} />}
-          {tool === "iniciativa" && <InitiativePanel data={data} />}
-          {tool === "aventura" && <AdventureWizard data={data} />}
-          {tool === "sala" && <CampaignRoomTools campaign={data.campaign.name} root={data.campaign.root} readOnly={data.readOnly} />}
-        </div>
-      </div>
+      <PanelTabs label="Ferramentas da campanha" idPrefix="campanha-ferramentas" value={tool} onChange={choose} tabs={TOOLS.map((t) => ({ value: t.id, label: t.label }))} />
+      <TabPanel idPrefix="campanha-ferramentas" value={tool}>
+        {tool === "tesouro" && <TreasuryPanel data={data} />}
+        {tool === "iniciativa" && <InitiativePanel data={data} />}
+        {tool === "aventura" && <AdventureWizard data={data} />}
+        {tool === "sala" && <CampaignRoomTools campaign={data.campaign.name} root={data.campaign.root} readOnly={data.readOnly} />}
+      </TabPanel>
     </div>
   )
 }

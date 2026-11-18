@@ -261,3 +261,30 @@ describe("privacidade das atividades na conexão real",()=>{
   }finally{for(const socket of sockets)socket.destroy()}
  })
 })
+
+describe("quedas da sala (U89)", () => {
+  const options = (onServerLost: () => void) => ({ staticRoot: tmpdir(), worldPath: () => null, projection: () => projection, snapshot: () => ({ type: "snapshot" as const, projection, ruler: null, audio: null, moves: false }), onSpectators: () => undefined, onServerLost })
+
+  it("avisa quando o servidor fecha sem o mestre pedir", async () => {
+    let lost = 0
+    const server = new PlayerServer(options(() => { lost++ }))
+    servers.push(server)
+    await server.start(0, "chave")
+    await new Promise<void>((resolve) => server["server"]!.close(() => resolve()))
+    expect(lost).toBe(1)
+    expect(server.addressPort).toBe(0)
+  })
+
+  it("desligar a sala não conta como queda, e a sala reabre na mesma porta", async () => {
+    let lost = 0
+    const server = new PlayerServer(options(() => { lost++ }))
+    servers.push(server)
+    await server.start(0, "chave")
+    const port = server.addressPort
+    await server.stop()
+    await server.start(port, "chave")
+    expect(server.addressPort).toBe(port)
+    expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(200)
+    expect(lost).toBe(0)
+  })
+})

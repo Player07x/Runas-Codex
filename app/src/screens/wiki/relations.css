@@ -16,8 +16,8 @@
 .relations-graph { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .relations-graph-tools { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
 .relations-zoom { min-width: 3.5em; text-align: center; font-variant-numeric: tabular-nums; }
-.relations-graph-region { position: relative; flex: 1; min-height: 0; overflow: auto; }
-.relations-graph-size { position: relative; }
+/* U117: a região não rola; o desenho anda pela câmera (lib/use-pan-zoom.ts), para qualquer lado. */
+.relations-graph-region { position: relative; flex: 1; min-height: 280px; overflow: hidden; touch-action: none; }
 .relations-graph-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .relations-graph-lines { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .relations-graph-lines path { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
@@ -53,7 +53,7 @@
 .relations-mobile-bar .btn { flex: none; white-space: nowrap; }
 
 .diplomacy-graph { flex: 1; min-height: 320px; overflow: hidden; }
-.family-tree svg { display: block; margin: 0 auto; }
+.family-tree svg { display: block; }
 
 @media (max-width: 860px) {
   .relations-layout { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; border: 0; border-radius: 0; background: none; overflow: visible; }
@@ -74,7 +74,7 @@
 }
 
 /* Árvore genealógica (U25): gerações acima e abaixo, cada uma com −/+ e o número. */
-.relations-family-controls { gap: 12px; margin-bottom: 8px; }
+.relations-family-controls { gap: 12px; }
 .relations-stepper { display: flex; align-items: center; gap: 4px; }
 .relations-stepper > span { margin-right: 4px; }
 .relations-stepper .input { width: 4.5em; text-align: center; }

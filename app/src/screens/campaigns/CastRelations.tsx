@@ -1,5 +1,4 @@
 import { useMemo } from "react"
-import { Shapes } from "lucide-react"
 import { buildRelationMap, PARTY, relationMapCanvas } from "../../core/relation-map"
 import { href, navigate } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
@@ -12,16 +11,16 @@ const SHOWN = 30
 
 /**
  * Relações do Elenco (ideia da revisão das Campanhas): quem é aliado, inimigo ou membro de quem, lido das notas da
- * wiki. A lista é a alternativa acessível ao mapa; “Gerar no Quadro” desenha o mesmo como `.canvas`.
+ * wiki. A lista (aba Relações e painel de detalhes) é a alternativa acessível ao mapa; `generate` desenha o mesmo como
+ * `.canvas` no Quadro (U115: no ⋯ da tela).
  */
-export function CastRelations({ data }: { data: CampaignData }) {
+export function useCastRelations(data: CampaignData) {
   const vault = useVault()
   const toast = useToast()
   const members = useMemo(() => relationMembers(data), [data])
   const map = useMemo(() => buildRelationMap(vault.index!, members, relationScope(data)), [vault.index, vault.version, members, data])
   const titles = new Map(members.map((m) => [m.path, m.title]))
   const edges = map.edges.filter((e) => e.from !== PARTY)
-  const link = (path: string) => <a href={href(noteRoute(path))}>{titles.get(path) ?? path}</a>
   const generate = async () => {
     if (data.readOnly) return toast("Libere a gravação em Configurações para gerar o quadro.")
     const file = `${data.campaign.root}${RELATION_MAP_FILE}`
@@ -32,15 +31,16 @@ export function CastRelations({ data }: { data: CampaignData }) {
       toast.error(err)
     }
   }
-  if (!members.length) return null
+  return { edges, members, title: (path: string) => titles.get(path) ?? path, generate, file: `${data.campaign.root}${RELATION_MAP_FILE}` }
+}
+
+/** A aba Relações: a lista inteira (as primeiras 30, o resto no Quadro). */
+export function CastRelations({ relations }: { relations: ReturnType<typeof useCastRelations> }) {
+  const { edges, title } = relations
+  const link = (path: string) => <a href={href(noteRoute(path))}>{title(path)}</a>
+  if (!relations.members.length) return <span className="muted small">O elenco está vazio: as relações aparecem quando houver personagens, NPCs ou facções.</span>
   return (
-    <section className="card stack">
-      <div className="row between">
-        <h2 className="section-title">Relações</h2>
-        <button className="btn sm" onClick={() => void generate()} title={`Cria ou atualiza ${data.campaign.root}${RELATION_MAP_FILE}; o que você acrescentar no quadro continua`}>
-          <Shapes size={14} /> Gerar no Quadro
-        </button>
-      </div>
+    <div className="stack">
       {edges.length === 0 ? (
         <span className="muted small">Nenhuma relação entre o elenco. Elas vêm dos artigos da wiki (Aliados, Inimigos, Membro de…); o quadro também mostra a atitude de cada um com o grupo.</span>
       ) : (
@@ -50,7 +50,7 @@ export function CastRelations({ data }: { data: CampaignData }) {
           ))}
         </ul>
       )}
-      {edges.length > SHOWN && <span className="tiny faint">E mais {edges.length - SHOWN} no quadro.</span>}
-    </section>
+      {edges.length > SHOWN && <span className="tiny faint">E mais {edges.length - SHOWN} no quadro (⋯ › Gerar relações no Quadro).</span>}
+    </div>
   )
 }

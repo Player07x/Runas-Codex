@@ -342,6 +342,13 @@ final class DocumentVaultStore implements VaultFs {
 
     public synchronized void rename(String from, String to) throws IOException { move(from, to, false); }
 
+    public synchronized void removeWriteCheck(String path) throws IOException {
+        if (!VaultStore.WRITE_CHECK.matcher(path).matches()) throw new VaultError("Só o arquivo do teste de gravação sai sem passar pela lixeira.");
+        Node file = optional(path, true);
+        if (file != null) tree.delete(file);
+        cache.remove(path);
+    }
+
     public synchronized String trash(String path) throws IOException {
         String p = path(path, true);
         Node source = find(p, true);

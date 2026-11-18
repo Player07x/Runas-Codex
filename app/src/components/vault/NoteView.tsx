@@ -31,6 +31,9 @@ import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
 import { Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
+import { NoteTitle } from "./NoteTitle"
+import { FIRST_TEMPLATE, firstTemplateFolder, titleTarget } from "../../core/note-title"
+import { markFreshNote } from "../../lib/fresh-note"
 import { LINK_SELECTOR, targetOf, useLinkPreview } from "./LinkPreview"
 import type { LivePreviewHost } from "./live-preview"
 import { SourceEditor, type EditorSelectionInfo, type SourceEditorHandle } from "./SourceEditor"
@@ -620,6 +623,14 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
           },
     [body, draft, readOnly, toast],
   )
+  // U99: o título renomeia na mesma pasta; grava o que está aberto antes, como o “Renomear ou mover”.
+  const renameInPlace = async (name: string) => {
+    await flush()
+    const to = titleTarget(path, name)
+    const plan = await vault.rename(path, to)
+    if (plan.edits.length) toast(`Links atualizados em ${plan.edits.length} ${plan.edits.length === 1 ? "arquivo" : "arquivos"}`)
+    navigate(vaultRoute(to), { replace: true })
+  }
   const sep = "separator" as const
   const editing = !readOnly
   // O menu ⋯ junta o que eram ícones soltos na barra (rework F3, EST-1); tudo tem nome e, quando há, o atalho.
@@ -719,7 +730,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
             </button>
           </span>
           {/* O nome é o h1 da tela (nota aberta, artigo da Wiki): leitores de tela navegam pelos títulos. */}
-          <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<h1>{note.name}</h1></div>
+          <div className="doc-title editor-status" title={path}>{folder && <small>{folder}</small>}<NoteTitle index={index} path={path} name={note.name} readOnly={readOnly} onRename={renameInPlace} /></div>
           {!compactBar && modes}
           <div className="doc-end">
             {tabSwitcher}
@@ -857,6 +868,13 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
         <TemplatePicker
           templates={vault.templates().map((t) => t.path)}
           folder={vault.config.templates.folder}
+          onCreateFirst={readOnly ? undefined : async () => {
+            // U99: cria o primeiro modelo na pasta de modelos do Obsidian e abre, com o nome selecionado.
+            await flush()
+            const created = await vault.createNote(firstTemplateFolder(vault.config.templates.folder), "Modelo", FIRST_TEMPLATE)
+            markFreshNote(created)
+            navigate(vaultRoute(created))
+          }}
           onClose={() => setDialog(null)}
           onPick={(templatePath) => {
             const template = fillTemplate(index.note(templatePath)?.text ?? "", { title: noteName(path), date: new Date(), config: vault.config.templates })

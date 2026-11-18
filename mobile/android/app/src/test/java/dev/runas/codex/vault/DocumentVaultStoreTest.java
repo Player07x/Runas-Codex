@@ -32,6 +32,17 @@ public class DocumentVaultStoreTest {
         store = new DocumentVaultStore(documents);
     }
 
+
+    @Test public void testeDeGravacaoApagaDeVezSoOArquivoDoTeste() throws IOException {
+        String path = VaultStore.writeCheckPath();
+        VaultStore.Entry first = store.writeText(path, "a\n", null, true);
+        store.writeText(path, "b\n", new VaultStore.Version(first.size, first.mtime), false);
+        store.removeWriteCheck(path);
+        for (VaultStore.Entry entry : store.list("", true)) assertFalse(entry.path, entry.path.startsWith("Runas-Codex teste") || entry.path.startsWith(".trash"));
+        store.writeText("Notas/A.md", "x", null, true);
+        assertThrows(VaultStore.VaultError.class, () -> store.removeWriteCheck("Notas/A.md"));
+    }
+
     @Test public void binarioEmEstagioPreservaUriConflitoERollback() throws Exception {
         File input = temp.newFile();
         java.nio.file.Files.write(input.toPath(), new byte[2 * 1024 * 1024 + 3]);

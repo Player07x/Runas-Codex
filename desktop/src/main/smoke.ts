@@ -216,8 +216,14 @@ export const SMOKE_SCRIPT = `(async () => {
     pastedPath = (await bridge.vault.list()).find((e) => /^Imagem colada \\d{14}\\.png$/.test(e.path))?.path ?? null
     if (!pastedPath) pastedPath = (await bridge.vault.list()).find((e) => /^Anexos\\/Imagens\\/Imagem colada \\d{14}\\.png$/.test(e.path))?.path ?? null
   }
-  await wait(1500)
-  const caderno = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
+  // U111: a gravação automática da nota pode passar de 1,5 s no Windows do CI; espera o link chegar ao disco (até 10 s).
+  const pastedName = pastedPath?.split("/").at(-1)
+  let caderno = ""
+  for (let i = 0; i < 40; i++) {
+    await wait(250)
+    caderno = (await bridge.vault.read(["Notas/Caderno.md"]))["Notas/Caderno.md"] ?? ""
+    if (!pastedName || caderno.includes(pastedName + "]]")) break
+  }
   ;[...document.querySelectorAll(".editor-bar [role=tab]")].find((tab) => tab.textContent.includes("Leitura"))?.click()
   const pastedImg = await until(() => [...document.querySelectorAll(".editor-body .md img")].find((img) => img.src.includes("Imagem%20colada")))
   if (pastedImg) { pastedImg.loading = "eager"; await until(() => pastedImg.complete, 30) }

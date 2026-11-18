@@ -106,6 +106,8 @@ try {
   await androidPlayer.until(`document.querySelector('.player-seat-badge')?.textContent.includes('Jogador 1')`,400).catch(async(error)=>{
     // Diagnóstico: o que o lobby do jogador mostra quando o assento não vem.
     console.error('Lobby do jogador no Android:',await androidPlayer.run(`document.querySelector('.player-lobby')?.innerText ?? document.body.innerText.slice(0,400)`).catch(()=>null))
+    // O outro lado: a sala no app (assentos, código e quem está conectado) no momento da falha.
+    console.error('Sala no app:',await app.run(`document.querySelector('.player-seats')?.innerText ?? document.body.innerText.slice(0,600)`).catch(error=>'sem resposta: '+error.message))
     throw error
   })
   await androidPlayer.until(`document.querySelector('.player-host canvas') && document.querySelector('.player-tools')`,400)

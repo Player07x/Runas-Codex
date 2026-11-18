@@ -7,6 +7,13 @@ describe("migalha da barra de cima", () => {
     expect(labels(["livros", "Livros/Guia do Condado de Valdris/Guia do Condado de Valdris.md"])).toEqual(["Livros", "Guia do Condado de Valdris"])
   })
 
+  it("dá à Ajuda migalha própria, com o nome do tópico", () => {
+    expect(labels(["ajuda"])).toEqual(["Ajuda"])
+    expect(labels(["ajuda", "editor"])).toEqual(["Ajuda", "O editor de notas"])
+    expect(labels(["ajuda", "exemplos"])).toEqual(["Ajuda", "Notas de exemplo e tour"])
+    expect(crumbsFor(["ajuda", "editor"])[0]!.to).toBe("/ajuda")
+  })
+
   it("nomeia as abas da Wiki com maiúscula, inclusive Ferramentas", () => {
     expect(labels(["wiki", "ferramentas"])).toEqual(["Wiki", "Ferramentas"])
     expect(labels(["wiki", "linha-do-tempo"])).toEqual(["Wiki", "Linha do tempo"])

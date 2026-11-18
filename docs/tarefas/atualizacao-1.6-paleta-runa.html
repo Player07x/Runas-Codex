@@ -1,0 +1,180 @@
+<title>Paleta Runa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura; as duas maquetes da paleta lado a lado (empilham no celular), contraste embaixo. */
+:root {
+  --page: #f0f2fa; --sheet: #ffffff; --ink: #222a42; --ink-2: #53617c; --rule: #cbd3e6; --accent: #454e9c;
+  --sans: "Geist", system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #11131a; --sheet: #191d27; --ink: #f0f2fa; --ink-2: #b0b8cd; --rule: #303747; --accent: #bec6ff; color-scheme: dark;
+} }
+:root[data-theme="dark"] { --page: #11131a; --sheet: #191d27; --ink: #f0f2fa; --ink-2: #b0b8cd; --rule: #303747; --accent: #bec6ff; color-scheme: dark; }
+
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--sans); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+header { display: grid; gap: 10px; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; text-wrap: balance; letter-spacing: -.02em; }
+h2 { margin: 0 0 4px; font-size: 20px; text-wrap: balance; }
+p { margin: 0; }
+.lead { color: var(--ink-2); font-size: 16px; }
+section { display: grid; gap: 16px; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 20px; }
+figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+figcaption { font: 500 13px/1.4 var(--mono); color: var(--ink-2); }
+
+/* As maquetes usam as cores da própria paleta, fixas: mostram o app, não a página. */
+.app { --sidebar-w: 150px; display: grid; grid-template-columns: var(--sidebar-w) 1fr; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-size: 13px; min-height: 360px; box-shadow: 0 18px 50px rgb(0 0 0 / 18%); }
+.app.dark { --bg:#0f1322; --bg-deep:#0a0d18; --panel:#161c31; --panel-2:#202842; --panel-hover:#2b3557; --text:#eef3ff; --muted:#b3bddb; --faint:#a2aecf; --line:#2c3654; --line-strong:#6e80b4; --cyan:#7fe3f0; --on-accent:#0c2a33; --gold:#ecc484; --green:#9dcbb4; --red:#ffa48e; }
+.app.light { --bg:#eef1f8; --bg-deep:#e2e7f3; --panel:#ffffff; --panel-2:#e6ebf6; --panel-hover:#d8e0f1; --text:#1d2440; --muted:#4c5677; --faint:#525c7c; --line:#c6cee3; --line-strong:#66729a; --cyan:#0b6676; --on-accent:#ffffff; --gold:#795b1f; --green:#396549; --red:#a54433; }
+.side { background: var(--bg-deep); border-right: 1px solid var(--line); padding: 12px 8px; display: grid; align-content: start; gap: 2px; }
+.brand { display: flex; align-items: center; gap: 8px; padding: 2px 6px 12px; font-weight: 600; }
+.brand svg { width: 26px; height: 26px; flex: none; }
+.nav { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; color: var(--muted); }
+.nav.on { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.nav i { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; flex: none; }
+.main { padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.main .kick { font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.main h3 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+.card .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin-right: 6px; }
+.muted { color: var(--muted); }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 500; }
+.btn.primary { background: var(--cyan); border-color: var(--cyan); color: var(--on-accent); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { padding: 2px 8px; border-radius: 99px; background: var(--panel-2); color: var(--muted); font-size: 12px; }
+.chip.ok { color: var(--green); } .chip.warn { color: var(--gold); } .chip.bad { color: var(--red); }
+a.lk { color: var(--cyan); text-decoration: underline; text-underline-offset: 2px; }
+.check { display: flex; gap: 8px; align-items: center; }
+.check b { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line-strong); flex: none; }
+.check b.on { background: var(--cyan); border-color: var(--cyan); }
+@media (max-width: 520px) { .app { grid-template-columns: 1fr; } .side { grid-auto-flow: column; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); } .brand span { display: none; } .brand { padding: 2px 6px; } }
+
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.sw { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--sheet); }
+.sw span { display: block; height: 44px; }
+.sw p { padding: 6px 8px; font: 12px/1.4 var(--mono); color: var(--ink-2); }
+.sw p strong { display: block; color: var(--ink); font-family: var(--sans); font-weight: 600; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 12px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 500 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+tr:last-child td { border-bottom: 0; }
+td.n { font-family: var(--mono); }
+.notes { display: grid; gap: 10px; max-width: 72ch; }
+.notes li { margin-bottom: 6px; }
+.notes ul { margin: 0; padding-left: 20px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Runas-Codex 1.6 · U122 · maquete para aprovar</span>
+    <h1>Paleta Runa</h1>
+    <p class="lead">Uma quarta paleta em Configurações › Aparência, ao lado de Órbita, Floresta e Brasa, tirada do ícone novo: a pedra azul-ardósia vira o fundo e a runa acesa vira a cor de ação. Nada disto está no app ainda; implemento depois do seu ok.</p>
+  </header>
+
+  <section aria-labelledby="t-telas">
+    <h2 id="t-telas">O Início com a paleta Runa</h2>
+    <div class="pair">
+      <figure>
+        <div class="app dark" role="img" aria-label="Maquete do Início no tema escuro da paleta Runa: barra lateral azul-ardósia, cartão da sessão de hoje e botão principal em ciano.">
+          <div class="side">
+            <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 27 9 25 27 13 31 5 22 6 8Z" fill="#2a3566"/><path d="M13 9v15M13 9l7 5-7 4M15 17l6 7" stroke="#7fe3f0" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Runas-Codex</span></div>
+            <div class="nav on"><i></i>Início</div><div class="nav"><i></i>Notas</div><div class="nav"><i></i>Agenda</div><div class="nav"><i></i>Wiki</div><div class="nav"><i></i>Campanhas</div>
+          </div>
+          <div class="main">
+            <span class="kick">Mesa do João</span>
+            <h3>Início</h3>
+            <div class="card">
+              <span class="kick"><span class="dot"></span>Mesa de hoje · As Cinzas de Valdris</span>
+              <strong>Sessão 13: A torre silenciosa</strong>
+              <div class="row"><span class="muted">23:30 · 4 jogadores</span><span class="btn primary">Preparar sessão →</span></div>
+            </div>
+            <div class="card">
+              <div class="check"><b class="on"></b><span>Mandar o lembrete no grupo</span></div>
+              <div class="check"><b></b><span>Comprar pilhas para o leitor de dados</span></div>
+              <div class="chips"><span class="chip ok">Restaurado</span><span class="chip warn">Atrasada</span><span class="chip bad">Dano</span></div>
+              <a class="lk">Ver o dia na Agenda</a>
+            </div>
+          </div>
+        </div>
+        <figcaption>Runa · escuro</figcaption>
+      </figure>
+      <figure>
+        <div class="app light" role="img" aria-label="Maquete do Início no tema claro da paleta Runa: fundo cinza-azulado claro, cartões brancos e botão principal em azul-petróleo.">
+          <div class="side">
+            <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 27 9 25 27 13 31 5 22 6 8Z" fill="#2a3566"/><path d="M13 9v15M13 9l7 5-7 4M15 17l6 7" stroke="#7fe3f0" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Runas-Codex</span></div>
+            <div class="nav on"><i></i>Início</div><div class="nav"><i></i>Notas</div><div class="nav"><i></i>Agenda</div><div class="nav"><i></i>Wiki</div><div class="nav"><i></i>Campanhas</div>
+          </div>
+          <div class="main">
+            <span class="kick">Mesa do João</span>
+            <h3>Início</h3>
+            <div class="card">
+              <span class="kick"><span class="dot"></span>Mesa de hoje · As Cinzas de Valdris</span>
+              <strong>Sessão 13: A torre silenciosa</strong>
+              <div class="row"><span class="muted">23:30 · 4 jogadores</span><span class="btn primary">Preparar sessão →</span></div>
+            </div>
+            <div class="card">
+              <div class="check"><b class="on"></b><span>Mandar o lembrete no grupo</span></div>
+              <div class="check"><b></b><span>Comprar pilhas para o leitor de dados</span></div>
+              <div class="chips"><span class="chip ok">Restaurado</span><span class="chip warn">Atrasada</span><span class="chip bad">Dano</span></div>
+              <a class="lk">Ver o dia na Agenda</a>
+            </div>
+          </div>
+        </div>
+        <figcaption>Runa · claro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-cores">
+    <h2 id="t-cores">As cores</h2>
+    <p class="lead">Só o fundo, os painéis, o texto, as bordas e a cor de ação mudam, como nas outras paletas. Verde, vermelho, dourado e violeta continuam os do Órbita, porque têm significado (sucesso, dano, narrativa, magia).</p>
+    <div class="swatches">
+      <div class="sw"><span style="background:#0f1322"></span><p><strong>Fundo</strong>#0f1322 · #eef1f8</p></div>
+      <div class="sw"><span style="background:#161c31"></span><p><strong>Painel</strong>#161c31 · #ffffff</p></div>
+      <div class="sw"><span style="background:#202842"></span><p><strong>Painel 2</strong>#202842 · #e6ebf6</p></div>
+      <div class="sw"><span style="background:#6e80b4"></span><p><strong>Borda forte</strong>#6e80b4 · #66729a</p></div>
+      <div class="sw"><span style="background:#7fe3f0"></span><p><strong>Ação (escuro)</strong>#7fe3f0, a runa acesa</p></div>
+      <div class="sw"><span style="background:#0b6676"></span><p><strong>Ação (claro)</strong>#0b6676, petróleo</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-contraste">
+    <h2 id="t-contraste">Contraste, pelas regras do <code>tokens.test.ts</code></h2>
+    <p class="lead">O pior caso de cada cor sobre fundo, fundo fundo, painel e painel 2. Calculado com a mesma fórmula do teste; ao implementar, a paleta entra na lista do teste e é cobrada no CI.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cor</th><th>Mínimo</th><th>Runa escuro</th><th>Runa claro</th></tr></thead>
+        <tbody>
+          <tr><td>Texto</td><td class="n">4,5:1</td><td class="n">13,09</td><td class="n">12,30</td></tr>
+          <tr><td>Texto secundário</td><td class="n">4,5:1</td><td class="n">7,77</td><td class="n">5,84</td></tr>
+          <tr><td>Texto discreto</td><td class="n">4,5:1</td><td class="n">6,58</td><td class="n">5,33</td></tr>
+          <tr><td>Links e ação</td><td class="n">4,5:1</td><td class="n">9,80</td><td class="n">5,34</td></tr>
+          <tr><td>Texto do botão principal</td><td class="n">4,5:1</td><td class="n">10,14</td><td class="n">6,61</td></tr>
+          <tr><td>Borda de controles</td><td class="n">3:1</td><td class="n">3,75</td><td class="n">3,82</td></tr>
+          <tr><td>Dourado · vermelho · verde no painel</td><td class="n">4,5:1</td><td class="n">10,28 · 8,80 · 9,35</td><td class="n">6,31 · 6,04 · 6,71</td></tr>
+          <tr><td>Contraste alto: texto (pior)</td><td class="n">7:1</td><td class="n">8,41</td><td class="n">9,37</td></tr>
+          <tr><td>Contraste alto: borda de controles</td><td class="n">4,5:1</td><td class="n">7,17</td><td class="n">7,93</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-depois">
+    <h2 id="t-depois">Depois do ok</h2>
+    <div class="notes">
+      <ul>
+        <li>Um bloco <code>[data-palette="runa"]</code> (escuro e claro) no fim de <code>styles/tokens.css</code>, e a paleta na lista do <code>tokens.test.ts</code>.</li>
+        <li>A opção “Runa” em Configurações › Aparência, com a amostra igual às das outras paletas.</li>
+        <li>Conferir em 320, 390 e 1366 px, nos dois temas e com contraste alto, como as outras paletas.</li>
+        <li>O Órbita continua sendo o padrão. Para a Runa virar o padrão, é só pedir.</li>
+      </ul>
+    </div>
+  </section>
+</div>

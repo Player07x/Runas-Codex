@@ -45,3 +45,20 @@
 .write-failure-steps { display: grid; gap: 4px; margin-top: 6px; }
 .write-failure-steps > span { display: block; }
 .write-failure-detail { display: block; margin-top: 6px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* U99: o nome no topo da nota é um campo que parece título até receber o foco. */
+.doc-title .note-title { display: flex; min-width: 0; }
+.note-title-input { flex: 1 1 auto; width: 100%; min-width: 0; padding: 0 4px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-overflow: ellipsis; }
+.note-title-input:hover { border-color: var(--line); }
+.note-title-input:focus { outline: none; border-color: var(--cyan); background: var(--panel); text-overflow: clip; }
+.note-title-input[aria-invalid="true"] { border-color: var(--red); }
+.note-title-input:disabled { opacity: 1; }
+.note-title-problem { overflow: hidden; color: var(--red); font-size: calc(12px * var(--font-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 860px) { .note-title-input { min-height: 44px; } }
+/* No celular a barra não tem espaço para o título; enquanto o nome é editado (nota nova), ele ganha a linha toda. */
+@media (max-width: 640px) {
+  .doc-bar:has(.note-title.editing) { flex-wrap: wrap; }
+  .doc-bar:has(.note-title.editing) .doc-title { flex: 1 1 100%; order: -1; }
+  /* O R2 esconde o nome na barra do celular (já está na barra do app); ao editar, ele aparece. */
+  .doc-bar.with-tabs .doc-title > .note-title.editing, .doc-bar.with-tabs .doc-title > .note-title.editing ~ .note-title-problem { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }
+}

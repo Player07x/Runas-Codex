@@ -19,17 +19,22 @@
 
 /* Configurações com índice (rework F5, CFG-1). No computador, o índice fica ao lado e todas as seções seguem na
    página; no celular, /config é a lista de seções e /config/<seção> mostra só a escolhida. */
-.settings-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--space-column); align-items: start; max-width: 1100px; }
+.settings-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-column); align-items: start; max-width: 1100px; }
 .settings-index { position: sticky; top: 12px; display: grid; gap: 2px; }
 .settings-index a { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 12px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: calc(14px * var(--font-scale, 1)); }
 .settings-index a:hover { background: var(--panel-hover); color: var(--text); }
-.settings-index a[aria-current] { background: var(--cyan-soft, color-mix(in srgb, var(--cyan) 14%, transparent)); color: var(--text); font-weight: 650; box-shadow: inset 3px 0 0 var(--cyan); }
+.settings-index a[aria-current] { background: var(--cyan-soft, color-mix(in srgb, var(--cyan) 14%, transparent)); color: var(--text); box-shadow: inset 3px 0 0 var(--cyan); }
 .settings-sections { display: grid; gap: var(--space-column); min-width: 0; }
 /* A margem enorme faz o foco na seção (Shell, data-route-focus) não rolar a página: o título e o índice ficam à vista. */
 .settings-section { display: grid; gap: var(--space-column); min-width: 0; scroll-margin-top: 100vh; }
 .settings-section:focus { outline: none; }
 .settings-section:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; border-radius: var(--radius); }
 .settings-back { display: none; }
+/* U120: o mesmo cabeçalho nas seções (título, ação à direita, descrição) e o mesmo respiro antes do conteúdo; o
+   escolhido no índice não engrossa a letra, para o nome não ir para duas linhas e empurrar os de baixo. */
+.settings-section .card > .settings-card-head { display: flex; align-items: center; gap: 8px; min-height: 32px; margin: 0 0 4px; }
+.settings-section .card > .settings-card-head + p.tiny { display: block; max-width: 72ch; margin: 0 0 var(--space-group); }
+.settings-section .card > .settings-card-head + p.tiny + .setting-row { border-top: 0; }
 /* Uma seção por página, também no computador (o índice ao lado leva às outras). */
 .settings-page.has-current .settings-section:not(.is-current) { display: none; }
 @media (max-width: 860px) {

@@ -76,6 +76,13 @@ public final class VaultStore implements VaultFs {
         }
     }
 
+    /** Nome do arquivo do “Testar gravação” (U110): visível (o app não grava ocultos) e apagado no fim do teste. */
+    public static final Pattern WRITE_CHECK = Pattern.compile("^Runas-Codex teste de gravação [0-9a-f]{8}\\.md$");
+
+    public static String writeCheckPath() {
+        return "Runas-Codex teste de gravação " + randomHex() + ".md";
+    }
+
     public static final long MAX_BINARY_SIZE = 50L * 1024 * 1024;
     public static final List<String> SPACE_FOLDERS = Arrays.asList("Notas", "Agenda", "Wikis", "Campanhas", "Livros", "Mesas");
     public static final String SNIPPET_PATH = ".obsidian/snippets/runas-codex.css";
@@ -345,6 +352,12 @@ public final class VaultStore implements VaultFs {
             File temp = new File(target.getAbsolutePath() + "." + randomHex() + ".runas-tmp");
             if (!source.renameTo(temp) || !temp.renameTo(target)) throw new VaultError("Não deu para renomear “" + from + "”.");
         } else if (!source.renameTo(target)) throw new VaultError("Não deu para mover “" + from + "” para “" + to + "”.");
+    }
+
+    public void removeWriteCheck(String path) throws IOException {
+        if (!WRITE_CHECK.matcher(path).matches()) throw new VaultError("Só o arquivo do teste de gravação sai sem passar pela lixeira.");
+        File file = resolveInside(path);
+        if (file.exists() && !file.delete()) throw new VaultError("Não deu para apagar o arquivo de teste.");
     }
 
     /** Manda para a lixeira do cofre; devolve o caminho lá dentro. */

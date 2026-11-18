@@ -51,6 +51,9 @@
 .top-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .new-trigger { min-height: 36px; padding: 0 12px; }
 .content { flex: 1 1 0; min-height: 0; overflow: auto; }
+/* U120: a barra de rolagem tem o lugar reservado, então trocar entre uma página curta e uma longa não empurra a
+   página para o lado. As telas que ocupam a altura toda (.fill) não rolam e não perdem esse espaço. */
+.content:not(.fill) { scrollbar-gutter: stable; }
 .content.fill { overflow: hidden; display: flex; flex-direction: column; }
 
 /* ---------- Barra inferior (celular) ---------- */
@@ -95,7 +98,16 @@
 .palette-list { max-height: 50vh; overflow: auto; padding: 6px; }
 .palette-section { padding: 8px 10px 4px; color: var(--faint); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .palette-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text); text-align: left; }
-.palette-item.selected, .palette-item:hover { background: var(--panel-2); }
+.palette-item.selected, .palette-item:hover, .palette-row.selected { background: var(--panel-2); }
+/* U116: a linha de uma página leva, embaixo do nome, os atalhos para as abas (a campanha: Sessões, Missões, Elenco, Quadro). */
+.palette-row { display: flex; flex-wrap: wrap; align-items: center; border-radius: 9px; }
+.palette-row .palette-item { flex: 1 1 100%; min-width: 0; }
+.palette-row.selected .palette-item:hover { background: transparent; }
+.palette-shortcuts { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 6px 36px; }
+.palette-shortcut { min-height: 28px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--text); font-size: calc(12px * var(--font-scale, 1)); }
+.palette-shortcut:hover { border-color: var(--cyan); color: var(--cyan); }
+@media (max-width: 860px) { .palette-item { min-height: 44px; } .palette-shortcut { min-height: 44px; padding: 0 14px; } }
+@media (max-width: 480px) { .palette-foot-note { display: none; } }
 .palette-item small { margin-left: auto; color: var(--faint); }
 .palette-foot { display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--faint); font-size: calc(12px * var(--font-scale, 1)); }
 

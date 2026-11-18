@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
 import QRCode from "qrcode"
-import { Activity, ExternalLink, KeyRound, MonitorPlay, Radio, RefreshCw, RotateCw, Square, Target, Trash2, Users, Wifi } from "lucide-react"
+import { Activity, ExternalLink, KeyRound, Minus, MonitorPlay, Plus, Radio, RefreshCw, RotateCw, Square, Target, Trash2, Users, Wifi } from "lucide-react"
 import type { LinkTestResult, PlayerState } from "../shared/ipc"
 import { MasterRemotePanel, errorMessage } from "./MasterRemotePanel"
 import type { DocumentStore } from "../document-store"
 import { useDocumentsVersion } from "../document-store"
 import { isAndroidRoom, remoteMaster, vtt } from "../api"
+import { MAX_PLAYER_SEATS } from "../shared/player-session"
 
 export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId: string | null }) {
   useDocumentsVersion(store)
@@ -83,12 +84,24 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
         {qr && <img className="player-qr" src={qr} alt="QR code do link para os jogadores" />}
         <small className="hint">{state.publicUrl ? "Link público pela internet: qualquer pessoa com ele assiste à cena. Desligue a transmissão para encerrá-lo." : lanHint}</small>
         {state.publicUrl && state.tunnel && <small className="hint">Túnel conectado{state.tunnel.location ? ` via ${state.tunnel.location.toUpperCase()}` : ""}{state.tunnel.protocol ? ` (${state.tunnel.protocol})` : ""}.</small>}
-        {state.tunnelLost && <p className="error" role="alert">O link público caiu: o cloudflared encerrou. Gere um novo link; o endereço muda a cada vez e os jogadores precisam do novo.</p>}
+        {state.tunnelLost && <p className="error" role="alert">{state.drop?.kind === "tunnel" && state.drop.status === "reconnecting" ? "O link público caiu. O app está abrindo outro túnel; o endereço muda e os jogadores precisam do novo." : "O link público caiu e não foi reaberto. Gere um novo link; o endereço muda a cada vez e os jogadores precisam do novo."}</p>}
       </div>
       <div className="player-seats">
         <div className="player-link-heading"><strong>Assentos da sessão</strong><span><KeyRound size={14} /> {state.seats.length} {state.seats.length === 1 ? "jogador" : "jogadores"}</span></div>
-        <p className="hint">Entregue um código a cada jogador. Regenerar invalida o código anterior; limpar desconecta quem está no assento.</p>
+        <p className="hint">Entregue um código a cada jogador. Regenerar invalida o código anterior; limpar desconecta quem está no assento. Dá para acrescentar ou tirar assentos com a sala aberta; eles saem do fim da lista.</p>
         <div className="table-scroll"><table><thead><tr><th>Assento</th><th>Código</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{state.seats.map((seat) => <tr key={seat.slotId}><td>{seat.label}</td><td><code>{seat.code ?? "••••••••"}</code>{seat.code && <button className="ghost small" aria-label={`Copiar código de ${seat.label}`} onClick={() => { void navigator.clipboard?.writeText(seat.code ?? "") }}>Copiar</button>}</td><td>{seat.status === "attached" ? "Ficha anexada" : seat.status === "connected" ? "Conectado" : "Disponível"}{(seat.tokens ?? 0) > 1 && <small className="seat-duplicate" role="note"> · controla {seat.tokens} tokens: confira o “Controlado por”</small>}</td><td><button className="ghost small" disabled={busy} onClick={() => void run(async () => { const next = await vtt.player.rotateSeatCode(seat.slotId); setState(next) })}><RotateCw size={13} /> Regenerar</button><button className="ghost small danger" disabled={busy || (!seat.tokenId && seat.status === "available")} onClick={() => { if (window.confirm(`Limpar a ficha de ${seat.label}?`)) void run(async () => { const next = await vtt.player.clearSeat(seat.slotId); setState(next) }) }}><Trash2 size={13} /> Limpar</button></td></tr>)}</tbody></table></div>
+        <div className="player-seats-actions">
+          <button className="ghost small" disabled={busy || state.seats.length >= MAX_PLAYER_SEATS} onClick={() => void run(async () => { const next = await vtt.player.addSeat(); setState(next) })}><Plus size={13} /> Assento</button>
+          <button className="ghost small danger" disabled={busy || state.seats.length <= 1} onClick={() => {
+            const last = state.seats.at(-1)
+            if (!last) return
+            // Decisão 8: assento ocupado pede confirmação e desconecta só aquele jogador.
+            const busySeat = last.status !== "available" || Boolean(last.tokenId)
+            if (busySeat && !window.confirm(`Remover ${last.label}? Quem está nesse assento é desconectado; os outros jogadores continuam.`)) return
+            void run(async () => { const next = await vtt.player.removeSeat(); setState(next) })
+          }}><Minus size={13} /> Remover {state.seats.at(-1)?.label ?? "assento"}</button>
+          {state.seats.length >= MAX_PLAYER_SEATS && <small className="hint">A sala aceita até {MAX_PLAYER_SEATS} jogadores.</small>}
+        </div>
       </div>
       {!remoteMaster && vtt.master && <MasterRemotePanel api={vtt.master} roomUrl={state.publicUrl ?? state.localUrl} android={isAndroidRoom} />}
       {!remoteMaster && <div className="player-actions">{!isAndroidRoom && <button className="ghost" onClick={() => void run(() => vtt.player.openWindow())}><MonitorPlay size={15} /> Abrir janela local</button>}<button className="ghost" disabled={busy} onClick={() => { if (window.confirm(isAndroidRoom ? "Abrir um túnel público pela Cloudflare? Quem tiver o link assiste à cena pela internet até você desligar a transmissão." : "Baixar o cloudflared do release oficial da Cloudflare, verificar o SHA-256 e abrir um túnel público?")) void run(async () => { setTunneling(true); try { await vtt.player.publicLink() } finally { setTunneling(false) } }) }}><ExternalLink size={15} /> {tunneling ? "Conectando à Cloudflare…" : state.publicUrl ? "Gerar novo link público" : "Gerar link público"}</button>{state.publicUrl && <button className="ghost" disabled={busy || testing} onClick={() => { setTesting(true); setLinkTest(null); void vtt.player.testPublicLink().then(setLinkTest).catch((reason) => setLinkTest({ ok: false, ms: 0, error: reason instanceof Error ? reason.message : String(reason) })).finally(() => setTesting(false)) }}><Activity size={15} /> {testing ? "Testando…" : "Testar link"}</button>}</div>}

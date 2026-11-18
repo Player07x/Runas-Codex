@@ -152,7 +152,6 @@
 .wiki-resource-insert .input { width:auto;max-width:100%; }
 .wiki-gallery { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:12px; }
 .wiki-gallery img { max-width:100%;max-height:220px;object-fit:contain; }
-.wiki-tools .card { margin-block:16px;max-width:900px; }
 .wiki-media .input,.wiki-tools .input { width:100%;min-width:0; }
 .wiki-media summary,.wiki-table summary,.wiki-table .btn { min-height:44px; }
 .wiki-article-main details.spoiler { display:inline-block;padding:.15em .4em;border:1px solid var(--line);border-radius:var(--radius-sm); }
@@ -235,10 +234,6 @@
 }
 
 /* Ferramentas do mundo (rework F4b, WIK-5): geradores à esquerda, resultado à direita. */
-.wiki-tools-layout { display: grid; grid-template-columns: minmax(180px, 220px) minmax(0, 1fr); gap: var(--space-section); align-items: start; margin-block: var(--space-section); }
-.wiki-tools-list { display: grid; gap: 2px; }
-.wiki-tools-list .list-item.active { background: color-mix(in srgb, var(--cyan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cyan); }
-@media (max-width: 860px) { .wiki-tools-layout { grid-template-columns: minmax(0, 1fr); } .wiki-tools-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
 
 /* Teia diplomática em tabela (rework F4b, WIK-4). */
 .relation-kind { display: inline-flex; align-items: center; gap: 8px; }
@@ -284,39 +279,56 @@
 .category-kind-key { flex-basis:100%;padding-left:2px; }
 
 /* Ferramentas do mundo (beta.22): geradores em grupos, opções numa linha e vários resultados com “Usar”. */
-.wiki-tools-list { gap: 14px; }
-.wiki-tools-group { display: grid; gap: 2px; align-content: start; }
-.wiki-tools-group .eyebrow { padding: 0 10px 4px; }
-.wiki-tools-empty { padding: 4px 10px; }
+/* Ferramentas do mundo (U118): abas; geradores em faixas de pílulas, o resultado embaixo e os Recentes ao lado. */
+.wiki-tools > .kit-tabs { padding: 0; }
+.wiki-tools > .kit-tabpanel { padding: 0; margin-block: var(--space-section); }
+.wiki-tools .card { margin: 0; max-width: none; }
+.wiki-tools-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: var(--space-section); align-items: start; }
+.wiki-tools-main { display: grid; gap: var(--space-section); min-width: 0; }
+.wiki-tools-picker { display: grid; gap: 10px; }
+.wiki-tools-pick-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; align-items: center; }
+.wiki-tools-pick-row > span { color: var(--faint); font-size: calc(11px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.wiki-tools-pick-row .row-wrap { gap: 6px; }
+.wiki-tools-pill { display: inline-flex; align-items: center; min-height: 32px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--text); font: inherit; font-size: calc(13px * var(--font-scale, 1)); cursor: pointer; }
+.wiki-tools-pill:hover { border-color: var(--line-strong); }
+.wiki-tools-pill.on { border-color: transparent; background: var(--cyan); color: var(--on-accent); font-weight: 600; }
+.wiki-tools-result-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.wiki-tools-result-head > .stack { flex: 1 1 240px; }
 .wiki-tools-title { margin: 0; font-size: calc(18px * var(--font-scale, 1)); }
 .wiki-tools-options { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .wiki-tools-options .field { min-width: 0; }
-.wiki-tools-options .select { min-width: 180px; max-width: 100%; }
-.wiki-tools-roll { margin-left: auto; }
+.wiki-tools-options .select { min-width: 160px; max-width: 100%; }
 .wiki-tools-results { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: resultado; }
 .wiki-tools-results li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); overflow-wrap: anywhere; counter-increment: resultado; }
 .wiki-tools-results li::before { content: counter(resultado); min-width: 1.5em; color: var(--muted); font: calc(12px * var(--font-scale, 1)) var(--font-mono); padding-top: 2px; }
 .wiki-tools-results .grow { min-width: 0; }
 .wiki-tools-save { padding-top: 10px; border-top: 1px solid var(--line); }
-.wiki-tools-recent summary { cursor: pointer; min-height: 32px; }
-.wiki-tools-recent ul { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.wiki-tools-recent { position: sticky; top: 0; display: grid; gap: 8px; }
+.wiki-tools-recent-title { margin: 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.wiki-tools-recent ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .wiki-tools-recent-item { width: 100%; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: left; font: inherit; font-size: calc(13px * var(--font-scale, 1)); overflow-wrap: anywhere; cursor: pointer; }
 .wiki-tools-recent-item:hover { background: var(--panel-hover); }
 .wiki-tools-recent-item:focus-visible { outline: 3px solid var(--cyan); outline-offset: 1px; }
-@media (max-width: 860px) {
-  .wiki-tools-list { grid-template-columns: minmax(0, 1fr); }
-  .wiki-tools-group { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-  .wiki-tools-group .eyebrow, .wiki-tools-empty { grid-column: 1 / -1; }
-  .wiki-tools-roll { margin-left: 0; flex: 1 1 100%; }
-  .wiki-tools-roll, .wiki-tools-results .btn, .wiki-tools-results .icon-btn, .wiki-tools-recent-item, .wiki-tools-list .list-item { min-height: 44px; }
-  .wiki-tools-options .select { min-height: 44px; }
-}
-/* No celular a lista de ferramentas vira um seletor, para o resultado aparecer sem rolar a lista inteira. */
+.wiki-tools-tables { display: grid; gap: var(--space-section); }
+.wiki-tools-table-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(220px * var(--font-scale, 1)), 100%), 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.wiki-tools-table-card { display: grid; gap: 6px; justify-items: start; align-content: start; min-width: 0; overflow-wrap: anywhere; }
+.wiki-tools-table-card.on { border-color: transparent; box-shadow: 0 0 0 2px var(--cyan); }
+.wiki-tools-example { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); font: calc(12.5px * var(--font-scale, 1)) var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.relation-fixes-head { align-items: center; justify-content: space-between; gap: 10px; }
+/* No celular a escolha do gerador vira um seletor e o resultado vem logo abaixo; os Recentes ficam no fim. */
 .wiki-tools-pick { display: none; }
 @media (max-width: 860px) {
+  .wiki-tools-layout { grid-template-columns: minmax(0, 1fr); }
+  .wiki-tools-recent { position: static; }
+}
+@media (max-width: 640px) {
   .wiki-tools-pick { display: grid; }
-  .wiki-tools-pick .select { min-height: 44px; }
-  .wiki-tools-layout > .wiki-tools-list { display: none; }
+  .wiki-tools-picker { display: none; }
+  .wiki-tools > .kit-tabs { flex-wrap: wrap; overflow: visible; }
+  .wiki-tools-result-head > .stack { flex-basis: 100%; }
+  .wiki-tools-options { width: 100%; }
+  .wiki-tools-roll { flex: 1 1 100%; justify-content: center; }
+  .wiki-tools-pick .select, .wiki-tools-options .select, .wiki-tools-roll, .wiki-tools-results .btn, .wiki-tools-results .icon-btn, .wiki-tools-recent-item, .wiki-tools-pill, .wiki-tools-table-card .btn, .wiki-tools > .kit-tabs .kit-tab { min-height: 44px; }
 }
 
 /* ---------- Calendário: vista do ano (U9) ---------- */
@@ -353,8 +365,12 @@
    abre a categoria (o link do título se estende sobre o cartão). */
 .wiki-home-toolbar { display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-column); }
 .wiki-home-toolbar .wiki-search { flex:1 1 280px; }
-.category-grid.only-categories { grid-template-columns:repeat(auto-fill, minmax(min(200px, 100%), 1fr)); }
+/* U114: o cartão cresce com o tamanho do texto, para o nome da categoria caber inteiro também com a letra maior. */
+.category-grid.only-categories { grid-template-columns:repeat(auto-fill, minmax(min(calc(200px * var(--font-scale, 1)), 100%), 1fr)); }
+/* U114: a palavra inteira na linha (sem o número e o “›” ao lado sobra espaço). Um nome que ainda não caiba quebra com
+   hífen onde o sistema hifeniza (Android); sem dicionário (Electron), quebra no limite do cartão em vez de vazar. */
 .category-card.compact .wiki-category-heading h2 { word-break:normal;overflow-wrap:break-word;hyphens:auto; }
+.category-card.compact .wiki-category-count { margin-top:-6px; }
 .category-card.compact { position:relative; }
 .category-card.compact .wiki-category-heading::after { content:"";position:absolute;inset:0;border-radius:inherit; }
 .category-card.compact .wiki-category-heading:focus-visible { outline:none; }
@@ -416,8 +432,8 @@
 @media (pointer: fine) { .wiki-relations .small.row:not(:hover, :focus-within) > .wiki-relation-remove { opacity: 0; } }
 @media (pointer: fine) { .wiki-relations .wiki-relation-remove.icon-btn.sm { width: 26px; height: 26px; min-width: 26px; min-height: 26px; } }
 /* U75: conferir relações nas Ferramentas. */
-.relation-fixes { margin-block: var(--space-section); }
-.relation-fixes-list ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; max-height: 360px; overflow: auto; }
+.relation-fixes { margin: 0; }
+.relation-fixes-list ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .relation-fixes-list label { align-items: flex-start; gap: 8px; min-height: 32px; }
 .relation-fixes-list code { overflow-wrap: anywhere; }
 .relation-fixes-list del { color: var(--red); }

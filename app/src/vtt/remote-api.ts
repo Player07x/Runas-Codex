@@ -141,6 +141,7 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
       },
     },
     table: { report: (state) => invoke(IPC.tableReport, state) },
+    callHost: (channel, args) => invoke(channel, ...args),
     player: {
       state: () => invoke(IPC.playerState),
       onState: (listener) => {
@@ -154,6 +155,9 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
       stop: refuse,
       rotateSeatCode: (slotId) => invoke(IPC.playerRotateSeatCode, slotId),
       clearSeat: (slotId) => invoke(IPC.playerClearSeat, slotId),
+      addSeat: () => invoke(IPC.playerAddSeat),
+      removeSeat: () => invoke(IPC.playerRemoveSeat),
+      reconnect: refuse,
       openWindow: refuse,
       join: refuse,
       setScene: (sceneId) => invoke(IPC.playerSetScene, sceneId),

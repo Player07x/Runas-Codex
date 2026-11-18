@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { onTransferRequest, takeTransferRequest, type TransferRequest } from "../../lib/transfer-request"
-import { Archive, ArrowDownToLine, ArrowUpFromLine, BookOpen, CalendarDays, Dices, FileText, FolderOpen, FolderOutput, FolderTree, History, Library, ListChecks, Package, ScrollText } from "lucide-react"
+import { Archive, ArrowDownToLine, ArrowUpFromLine, BookOpen, CalendarDays, Dices, FileText, FolderOpen, FolderOutput, FolderTree, History, Library, ExternalLink, ListChecks, Package, ScrollText } from "lucide-react"
 import { useVault } from "../../platform/VaultProvider"
 import { Segmented } from "../../components/ui"
 import { navigate, useRoute } from "../../lib/router"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { buildImportPlan, sameTransferVersion, selectTransferPaths, type ImportPlan, type ImportStrategy, type TransferEntry } from "../../core/transfer/plan"
 import { ANDROID_IMPORT_LIMITS, ANDROID_TRANSFER_LIMITS, createTransferArchive, IMPORT_LIMITS, transferSize, type PackageItemSpec, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
-import { blobSource, bufferedSink } from "../../core/transfer/zip-stream"
+import { blobChunks, blobSource, bufferedSink } from "../../core/transfer/zip-stream"
 import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core/transfer/notion"
 import "./transfer-workspace.css"
+import { importedPlaces } from "../../core/transfer/imported"
+import { bookProperties } from "../../core/books"
+import { keptInMemory } from "../../core/transfer/archive"
 import { parseWorldManifest } from "../../vtt/shared/world"
 import { DocumentExport } from "./DocumentExport"
 import { expandTransferItems, listTransferItems, missingFromPackage, TRANSFER_ITEM_GROUPS, transferStats, type TransferItem, type TransferWorld } from "../../core/transfer/items"
@@ -74,6 +77,8 @@ export function TransferWorkspace() {
   const [status, setStatus] = useState("")
   const [error, setError] = useState("")
   const [preview, setPreview] = useState<Preview | null>(null)
+  // U104: o que a última importação gravou, para “Abrir o que entrou”.
+  const [imported, setImported] = useState<string[]>([])
   const [incoming, setIncoming] = useState<Set<string>>(new Set())
   const [strategy, setStrategy] = useState<ImportStrategy>("merge")
   // U53: a prévia abre por itens; “Por arquivos” é a escolha de sempre, arquivo por arquivo.
@@ -121,6 +126,7 @@ export function TransferWorkspace() {
   const scoped = entries.filter(entry => (scopes.find(item => item.value === scope)?.roots ?? [""]).some(root => !root || entry.path.startsWith(root + "/")))
   const visible = scoped.filter(entry => entry.path.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")))
   const items = useMemo(() => vault.index ? listTransferItems(vault.index, entries, worldList) : [], [vault.index, entries, worldList])
+  const places = useMemo(() => importedPlaces(imported, path => { const note = vault.index?.note(path); return !!note && bookProperties(note).tipo === "livro" }), [imported, vault.index])
   const worldRoots = useMemo(() => new Map(worldList.map(world => [world.id, world.root])), [worldList])
   // Tamanho de cada item sozinho, sem notas ligadas (o que aparece ao lado do nome).
   const itemSizes = useMemo(() => new Map(items.map(item => [item.id, transferStats(entries, expandTransferItems(vault.index!, entries, [item], false, worldRoots))])), [items, entries, worldRoots])
@@ -223,6 +229,7 @@ export function TransferWorkspace() {
   async function prepareImport(files: FileList | null) {
     if (!files?.length) return
     const chosen = [...files]
+    setImported([])
     await act(async () => {
       await flushOpenNotes()
       if (chosen.length > 1 && chosen.some(file => /\.(zip|runas)$/i.test(file.name))) throw new Error("Escolha um pacote por vez, ou selecione apenas notas e anexos avulsos.")
@@ -249,7 +256,8 @@ export function TransferWorkspace() {
         for (const file of chosen) {
           if (file.size > limits.file || (total += file.size) > limits.expanded || chosen.length > limits.files) throw new Error("A seleção de arquivos excede os limites informados.")
           const path = transferPath((prefix ? prefix + "/" : "") + file.name)
-          data.push({ path, bytes: new Uint8Array(await file.arrayBuffer()) })
+          // U109: só os textos são lidos agora; os binários são lidos ao gravar, em pedaços onde a plataforma permite.
+          data.push(keptInMemory(path) ? { path, bytes: new Uint8Array(await file.arrayBuffer()) } : { path, bytes: new Uint8Array(0), size: file.size, load: async () => new Uint8Array(await file.arrayBuffer()), stream: onChunk => blobChunks(file, onChunk) })
         }
         archive = { title: "Arquivos importados", kind: "markdown", files: data, ignored: [] }
       }
@@ -281,6 +289,7 @@ export function TransferWorkspace() {
       return item?.kind === "mesa" ? `mesa “${itemChoices.get(id)?.name?.trim() || defaultCopyName(item)}”` : target
     })
     setPreview(null); setEntries(await listFiles())
+    setImported(plan.writes.map(write => write.path))
     setStatus(`${written} arquivo(s) importados. ${plan.skipped.length} existente(s) preservados.${copies.length ? ` Cópia em ${copies.join(", ")}.` : ""}`)
   }
   /** Marca ou desmarca vários de uma vez (pasta da árvore, “Selecionar os filtrados”). */
@@ -360,9 +369,13 @@ export function TransferWorkspace() {
       </> : <>
         {vault.info.readOnly && <p role="status">O cofre está em somente leitura. Libere a gravação em Configurações para importar.</p>}
         <label className="field"><span>Pacote .runas, ZIP Markdown ou arquivos de notas e anexos</span><input type="file" aria-label="Arquivo para importar" multiple disabled={busy || !canImport} accept=".runas,.zip,.md,.canvas,.base,image/*,audio/*,video/*,.pdf" onChange={event => { const files = event.target.files; void prepareImport(files); event.target.value = "" }} /></label>
-        <label className="field"><span>Pasta de destino para arquivos avulsos</span><input className="input" value={destination} disabled={busy} onChange={event => setDestination(event.target.value)} /></label>
-        <p className="small muted">Pacotes e ZIPs conservam seus caminhos internos, inclusive as mesas do VTT. Arquivos avulsos entram na pasta acima.</p>
-        <p className="small muted">Do Notion: use Exportar (no menu ⋯ da página ou nas configurações do espaço de trabalho), escolha “Markdown &amp; CSV” com as subpáginas e importe o .zip aqui. As páginas entram na pasta {NOTION_FOLDER}/, sem os códigos nos nomes, e as colunas dos bancos de dados viram propriedades.</p>
+        {/* U104: escolher o arquivo vem primeiro; as explicações de cada origem e a pasta dos avulsos ficam recolhidas. */}
+        <details className="transfer-help" data-transfer-help>
+          <summary>De onde importar e onde entram os arquivos avulsos</summary>
+          <label className="field"><span>Pasta de destino para arquivos avulsos</span><input className="input" value={destination} disabled={busy} onChange={event => setDestination(event.target.value)} /></label>
+          <p className="small muted">Pacotes e ZIPs conservam seus caminhos internos, inclusive as mesas do VTT. Arquivos avulsos entram na pasta acima.</p>
+          <p className="small muted">Do Notion: use Exportar (no menu ⋯ da página ou nas configurações do espaço de trabalho), escolha “Markdown &amp; CSV” com as subpáginas e importe o .zip aqui. As páginas entram na pasta {NOTION_FOLDER}/, sem os códigos nos nomes, e as colunas dos bancos de dados viram propriedades.</p>
+        </details>
         {preview && <div className="stack" data-transfer-preview>
           <h3>{preview.archive.title}</h3><p className="small">{count(preview.items.length, "item", "itens")} · {preview.archive.files.length} arquivo(s) disponíveis · {sizeLabel([...packageSizes.values()].reduce((total, size) => total + size, 0))}; {calculated.plan?.conflicts.length ?? 0} conflito(s) na seleção.{preview.archive.ignored.length > 0 && ` ${preview.archive.ignored.length} arquivo(s) de configuração ou controle foram ignorados.`}</p>
           <Segmented label="Importar por" value={importChoice} onChange={next => { setImportChoice(next); setShown(100) }} options={[{ value: "itens", label: "Por itens", icon: <ListChecks size={14} /> }, { value: "arquivos", label: "Por arquivos", icon: <FolderTree size={14} /> }]} />
@@ -410,7 +423,9 @@ export function TransferWorkspace() {
         </div>}
       </>}
       <p className="small muted">Limites: pacote de até {sizeLabel(importLimits.archive)}, com {sizeLabel(importLimits.file)} por arquivo (as imagens são lidas do pacote só na hora de gravar); notas e anexos avulsos, {sizeLabel(limits.expanded)} no total.</p>
-      {status && <p role="status" className="small transfer-status">{status}</p>}{notice && <p className="small transfer-notice">{notice}</p>}{error && <p role="alert" className="transfer-error">{error}</p>}
+      {status && <p role="status" className="small transfer-status">{status}</p>}
+      {direction === "importar" && places.length > 0 && <div className="row-wrap transfer-opened" data-imported-places><span className="small">Abrir o que entrou:</span>{places.map(place => <button key={place.route} className="btn sm" onClick={() => navigate(place.route)}><ExternalLink size={14} /> {place.label}</button>)}</div>}
+      {notice && <p className="small transfer-notice">{notice}</p>}{error && <p role="alert" className="transfer-error">{error}</p>}
     </section>}
     {direction === "exportar" && goal === "documento" && vault.info && <DocumentExport paths={choice === "itens" ? planned.paths : selected === null ? scoped.map(entry => entry.path) : [...selected]} />}
     <div className="transfer-grid">

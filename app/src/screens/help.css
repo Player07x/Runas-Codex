@@ -1,39 +1,56 @@
-.help-screen { display: grid; gap: var(--space-column); max-width: 1180px; }
-.help-intro { display: grid; gap: 7px; max-width: 780px; }
-.help-intro h2 { font-family: var(--font-display); font-size: calc(22px * var(--font-scale, 1)); }
-.help-search { display: flex; align-items: center; gap: 8px; margin-top: 8px; max-width: 620px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+/* Ajuda com tela própria (U119): a tela ocupa a altura da janela e os três painéis rolam cada um por si. */
+.help-screen { flex: 1 1 auto; display: grid; grid-template-columns: minmax(210px, 250px) minmax(0, 1fr) minmax(160px, 200px); min-height: 0; height: 100%; }
+.help-pane { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.help-index { display: grid; gap: var(--space-group); align-content: start; padding: 16px 12px 24px; border-right: 1px solid var(--line); }
+.help-index-head { display: grid; gap: 8px; padding: 0 4px; }
+.help-search { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
 .help-search:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 2px color-mix(in srgb, var(--cyan) 22%, transparent); }
 .help-search .input { border: 0; background: transparent; padding-left: 2px; flex: 1; min-width: 0; }
-.help-layout { display: grid; grid-template-columns: minmax(210px, 270px) minmax(0, 1fr); gap: var(--space-column); align-items: start; }
-.help-index { display: grid; gap: var(--space-group); position: sticky; top: 12px; max-height: calc(100vh - 32px); overflow: auto; padding-right: 3px; }
-.help-group { display: grid; gap: 3px; align-content: start; }
+.help-group { display: grid; gap: 2px; align-content: start; }
 .help-group > .eyebrow { padding: 4px 10px; }
-.help-topic { display: grid; gap: 2px; width: 100%; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text); text-align: left; }
+.help-topic { display: grid; gap: 2px; width: 100%; padding: 7px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text); text-align: left; text-decoration: none; }
 .help-topic:hover { background: var(--panel-hover); }
 .help-topic.selected { border-color: color-mix(in srgb, var(--cyan) 48%, var(--line)); background: color-mix(in srgb, var(--cyan) 10%, var(--panel)); }
 .help-topic-title { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; }
-.help-topic-title svg { color: var(--muted); }
+.help-topic-title svg { flex: none; color: var(--muted); }
 .help-topic-summary { color: var(--muted); font-size: calc(11.5px * var(--font-scale, 1)); line-height: 1.35; }
-.help-article { min-width: 0; padding: clamp(16px, 3vw, 30px); }
+.help-topic:not(.selected) .help-topic-summary { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.help-article-pane { padding: clamp(16px, 3vw, 32px); }
+.help-article { max-width: 780px; min-width: 0; margin: 0 auto; }
+.help-back { display: none; }
 .help-article-head { display: grid; gap: 7px; margin-bottom: var(--space-section); padding-bottom: var(--space-group); border-bottom: 1px solid var(--line); }
-.help-article-head h2 { font-family: var(--font-display); font-size: calc(25px * var(--font-scale, 1)); }
-.help-toc { justify-self: start; margin-top: 4px; color: var(--muted); }
-.help-toc summary { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; cursor: pointer; font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; }
-.help-toc ul { margin: 3px 0 0 23px; padding: 0; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
-.help-next { display: flex; justify-content: flex-end; margin-top: var(--space-section); padding-top: var(--space-group); border-top: 1px solid var(--line); }
-.help-onboarding { max-width: 780px; }
+.help-article-head .page-title { font-family: var(--font-display); font-size: calc(25px * var(--font-scale, 1)); }
+.help-article-head .page-title:focus { outline: none; }
+.help-toc-inline { display: none; justify-self: start; color: var(--muted); }
+.help-toc-inline summary { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; }
+.help-toc { display: grid; gap: 8px; align-content: start; padding: 20px 14px; border-left: 1px solid var(--line); }
+.help-toc ul, .help-toc-inline ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.help-toc a, .help-toc-inline a { display: block; padding: 5px 8px; border-left: 2px solid var(--line); color: var(--muted); font-size: calc(12.5px * var(--font-scale, 1)); text-decoration: none; }
+.help-toc a:hover, .help-toc-inline a:hover { color: var(--text); }
+.help-toc a[aria-current], .help-toc-inline a[aria-current] { border-left-color: var(--cyan); color: var(--text); font-weight: 600; }
+.help-next { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: var(--space-section); padding-top: var(--space-group); border-top: 1px solid var(--line); }
 .help-markdown { min-width: 0; }
-.help-markdown h3 { scroll-margin-top: 18px; }
-@media (max-width: 860px) {
-  .help-layout { grid-template-columns: minmax(0, 1fr); }
-  .help-index { position: static; max-height: none; }
-  .help-group { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); }
-  .help-group > .eyebrow { grid-column: 1 / -1; }
-  .help-topic { min-height: 64px; }
+/* Tabelas do manual: a primeira coluna (o nome) não quebra letra a letra quando o artigo fica estreito. */
+.help-markdown :is(td, th):first-child { white-space: nowrap; }
+.help-markdown h3 { scroll-margin-top: 16px; }
+.help-markdown h3:focus { outline: none; }
+.help-article .card { margin-top: var(--space-group); }
+@media (max-width: 1100px) {
+  .help-screen { grid-template-columns: minmax(220px, 260px) minmax(0, 1fr); }
+  .help-toc { display: none; }
+  .help-toc-inline { display: block; }
 }
-@media (max-width: 500px) {
-  .help-article { padding: 16px; }
-  .help-group { grid-template-columns: 1fr; }
+/* No celular: /ajuda é a lista de tópicos; /ajuda/<tópico> é o artigo, com “‹ Tópicos”. */
+@media (max-width: 860px) {
+  .help-screen { grid-template-columns: minmax(0, 1fr); }
+  .help-index { border-right: 0; padding: 12px 16px 24px; }
+  .help-screen.has-topic .help-index, .help-screen:not(.has-topic) .help-article-pane { display: none; }
+  .help-article-pane { padding: 12px 16px 24px; }
+  .help-back { display: inline-flex; justify-self: start; margin: 0 0 8px -8px; }
+  .help-topic, .help-search .input, .help-back, .help-next .btn, .help-toc-inline a { min-height: 44px; }
+  .help-toc-inline a { display: flex; align-items: center; }
+  /* Na lista do celular nenhum tópico está aberto ainda. */
+  .help-screen:not(.has-topic) .help-topic.selected { border-color: transparent; background: transparent; }
 }
 .help-formatters { display: grid; gap: var(--space-group); margin-top: var(--space-section); }
 .help-formatters h3 { font-size: calc(19px * var(--font-scale, 1)); }

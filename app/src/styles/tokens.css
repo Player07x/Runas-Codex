@@ -91,6 +91,17 @@
  --text:#432d23;--muted:#765343;--faint:#7d5945;--line:#ddc7b3;--line-strong:#97765e;
  --cyan:#8d4828;--cyan-dim:#9d5735;--on-accent:#fff;
 }
+/* U122: Runa, tirada do ícone (pedra azul-ardósia e a runa acesa em ciano). */
+:root[data-palette="runa"] {
+ --bg:#0f1322;--bg-deep:#0a0d18;--panel:#161c31;--panel-2:#202842;--panel-hover:#2b3557;
+ --text:#eef3ff;--muted:#b3bddb;--faint:#a2aecf;--line:#2c3654;--line-strong:#6e80b4;
+ --cyan:#7fe3f0;--cyan-dim:#5cbfcd;--on-accent:#0c2a33;
+}
+:root[data-palette="runa"][data-theme="light"] {
+ --bg:#eef1f8;--bg-deep:#e2e7f3;--panel:#fff;--panel-2:#e6ebf6;--panel-hover:#d8e0f1;
+ --text:#1d2440;--muted:#4c5677;--faint:#525c7c;--line:#c6cee3;--line-strong:#66729a;
+ --cyan:#0b6676;--cyan-dim:#2f7f8d;--on-accent:#fff;
+}
 
 /* Contraste alto (Configurações › Acessibilidade, ou prefers-contrast: more): texto e bordas neutros e mais fortes,
    iguais nas três paletas; o fundo e a cor de destaque continuam os da paleta. Texto a 7:1 e bordas de controles a

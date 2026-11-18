@@ -207,4 +207,23 @@ public class VaultStoreTest {
         store.backup(backups, 2);
         assertEquals(2, VaultStore.listBackups(backups).size());
     }
+
+    @Test
+    public void testeDeGravacaoApagaDeVezSoOArquivoDoTeste() throws IOException {
+        String path = VaultStore.writeCheckPath();
+        assertTrue(VaultStore.WRITE_CHECK.matcher(path).matches());
+        VaultStore.Entry first = store.writeText(path, "a\n", null, true);
+        store.writeText(path, "b\n", new VaultStore.Version(first.size, first.mtime), false);
+        store.removeWriteCheck(path);
+        assertFalse(new File(root, path).exists());
+        assertFalse(new File(root, ".trash").exists());
+        // Qualquer outro arquivo continua indo só para a lixeira.
+        file("Notas/A.md", "x");
+        try {
+            store.removeWriteCheck("Notas/A.md");
+            fail("apagou uma nota de vez");
+        } catch (VaultStore.VaultError expected) {
+            assertTrue(new File(root, "Notas/A.md").exists());
+        }
+    }
 }

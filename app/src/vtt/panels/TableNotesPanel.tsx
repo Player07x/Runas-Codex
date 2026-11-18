@@ -3,9 +3,10 @@ import { ClipboardCopy, Dices, Info, Save, Swords, Trash2 } from "lucide-react"
 import type { LogKind } from "../shared/log"
 import { TABLE_NOTES_ID } from "../shared/scene"
 import { useDocumentsVersion, type DocumentStore } from "../document-store"
-import { vtt } from "../api"
-import { appendLine, eventLine, sessionFromTableNotes } from "../../core/table-notes"
-import { listCampaigns, listSessions, sessionFileName, uniqueNoteName } from "../../core/campaigns"
+import { remoteMaster, vtt } from "../api"
+import { appendLine, eventLine } from "../../core/table-notes"
+import { saveTableSession, sessionTargets } from "../session-save"
+import { HOST, type SessionInput, type SessionTargets } from "../shared/host-services"
 import { Modal, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 
@@ -67,7 +68,10 @@ export function TableNotesPanel({ store, canSaveSession }: { store: DocumentStor
     </label>
     <small className="hint" role="status" aria-live="polite">{state === "gravando" ? "Gravando…" : state === "erro" ? "Não deu para gravar; o texto continua aqui e tenta de novo ao sair do campo." : draft ? "Gravado com a mesa." : ""}</small>
     <Events store={store} onCopy={(line) => change(appendLine(latest.current, line))} />
-    {saving && <SaveSessionDialog text={draft} onClose={() => setSaving(false)} onSaved={(clear) => { setSaving(false); if (clear) { change(""); flush() } }} />}
+    {saving && (() => {
+      const props = { text: draft, onClose: () => setSaving(false), onSaved: (clear: boolean) => { setSaving(false); if (clear) { change(""); flush() } } }
+      return remoteMaster ? <RemoteSaveSession {...props} /> : <LocalSaveSession {...props} />
+    })()}
   </div>
 }
 
@@ -103,15 +107,34 @@ function Events({ store, onCopy }: { store: DocumentStore; onCopy: (line: string
   </details>
 }
 
-/** Campanha, número e título da sessão; a data já vem como o dia de hoje. Só no app com o cofre (não no mestre remoto). */
-function SaveSessionDialog({ text, onClose, onSaved }: { text: string; onClose: () => void; onSaved: (clear: boolean) => void }) {
+/** No app com o cofre: as campanhas e a gravação vêm do `useVault()`. */
+function LocalSaveSession(props: { text: string; onClose: () => void; onSaved: (clear: boolean) => void }) {
   const vault = useVault()
+  const readOnly = vault.info?.readOnly ?? true
+  const targets = sessionTargets(vault.index, readOnly)
+  return <SaveSessionDialog {...props} targets={targets} save={(input) => saveTableSession({ index: vault.index, readOnly, createNote: vault.createNote }, input)} />
+}
+
+/** U47: no mestre remoto, o aparelho da sala lista as campanhas e cria a sessão no cofre dele. */
+function RemoteSaveSession(props: { text: string; onClose: () => void; onSaved: (clear: boolean) => void }) {
+  const [targets, setTargets] = useState<SessionTargets | null>(null)
+  const [error, setError] = useState("")
+  useEffect(() => {
+    void vtt.callHost?.(HOST.sessionTargets, []).then((value) => setTargets(value as SessionTargets), (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
+  }, [])
+  if (!targets) return <Modal title="Salvar Sessão" onClose={props.onClose} footer={<button className="btn" onClick={props.onClose}>Fechar</button>}>
+    <p className="small" role={error ? "alert" : "status"} style={error ? { color: "var(--red)" } : undefined}>{error || "Consultando as campanhas no aparelho da sala…"}</p>
+  </Modal>
+  return <SaveSessionDialog {...props} targets={targets} save={async (input) => String(await vtt.callHost!(HOST.sessionSave, [input]))} />
+}
+
+/** Campanha, número e título da sessão; a data já vem como o dia de hoje. */
+function SaveSessionDialog({ text, onClose, onSaved, targets, save: saveInput }: { text: string; onClose: () => void; onSaved: (clear: boolean) => void; targets: SessionTargets; save: (input: SessionInput) => Promise<string> }) {
   const toast = useToast()
-  const index = vault.index
-  const campaigns = index ? listCampaigns(index) : []
+  const campaigns = targets.campaigns
   const [campaign, setCampaign] = useState(campaigns[0]?.name ?? "")
   const chosen = campaigns.find((entry) => entry.name === campaign)
-  const next = chosen && index ? Math.max(0, ...listSessions(index, chosen, new Date()).map((session) => session.number ?? 0)) + 1 : 1
+  const next = chosen?.next ?? 1
   const [number, setNumber] = useState("")
   const [title, setTitle] = useState("")
   const [date, setDate] = useState(today)
@@ -119,14 +142,12 @@ function SaveSessionDialog({ text, onClose, onSaved }: { text: string; onClose: 
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const n = Number(number || next)
-  const readOnly = vault.info?.readOnly ?? true
+  const readOnly = targets.readOnly
   const save = async () => {
-    if (!chosen || !index) return
+    if (!chosen) return
     setBusy(true); setError("")
     try {
-      const folder = `${chosen.root}Sessões`
-      const name = uniqueNoteName(index, folder, sessionFileName(n))
-      await vault.createNote(folder, name, sessionFromTableNotes({ number: n, title, date, text }))
+      const folder = await saveInput({ campaign: chosen.name, number: n, title, date, text })
       toast(`Sessão ${n} salva em ${folder}/.`)
       onSaved(clear)
     } catch (reason) {
