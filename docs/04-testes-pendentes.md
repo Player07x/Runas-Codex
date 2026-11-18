@@ -2428,8 +2428,6 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] O job “Orçamento de desempenho” do CI mostra no `summary.json` os três valores de cada número e reprova só pela
       mediana.
 
-## Atualização 1.6 — Paleta Runa (P/U122, só maquete)
-
 ## Atualização 1.6 — Paleta Runa (P/U122)
 
 - [ ] Configurações › Aparência › Paleta temática › “Runa · ardósia e runa acesa”: fundo azul-ardósia e botões em
@@ -2455,3 +2453,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   e o anfitrião deve continuar sem mestre até uma nova entrada explícita. Conferir no Android e no desktop.
 - [ ] Conferir o job `android-room` em execuções independentes. O Chrome do AVD ainda entra e sai pelo link LAN
   anunciado pela sala, usando o modelo anterior de rede virtual do emulador.
+
+## Versão 1.6.0
+
+- [ ] Com a 1.5.1 instalada, o aviso “Atualizar para 1.6.0” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.6.0 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.6.0 instalada (Windows, Linux e Android) as seções “Atualização 1.6” acima, a “Conferência das
+  correções integradas da 1.6” e a “Sala Android — reconexão e rede virtual no CI”.
