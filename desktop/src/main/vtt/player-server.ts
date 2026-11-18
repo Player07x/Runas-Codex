@@ -67,6 +67,8 @@ interface PlayerServerOptions {
   onSeatDisconnected?(seat: PlayerSeatConnection): void
   /** Mensagem de um espectador (além do ping); a resposta vai só para ele. */
   onClientMessage?(message: unknown, seat: PlayerSeatConnection | null): PlayerWireMessage | null
+  /** U89: o servidor fechou sem `stop()`. */
+  onServerLost?(): void
   /** Intervalo do batimento; só os testes mudam o padrão. */
   heartbeatMs?: number
   maxConnections?: number
@@ -216,6 +218,16 @@ export class PlayerServer {
       server.once("listening", onListening)
       server.listen({ host: "0.0.0.0", port })
     })
+    // U89: fechar sem `stop()` (que tira o servidor antes de fechar) é queda; o painel oferece “Reconectar”.
+    const lost = () => {
+      if (this.server !== server) return
+      this.server = null
+      if (this.heartbeat) { clearInterval(this.heartbeat); this.heartbeat = null }
+      for (const client of [...this.clients]) { this.release(client); client.socket.destroy() }
+      this.options.onServerLost?.()
+    }
+    server.on("close", lost)
+    server.on("error", () => { if (this.server === server) server.close() })
     this.startHeartbeat()
   }
 
@@ -240,6 +252,11 @@ export class PlayerServer {
 
   publish(message: PlayerWireMessage): void {
     for (const client of this.clients) client.send(message)
+  }
+
+  /** U89: o assento saiu da sala; quem estava nele cai (o cookie já não vale para entrar de novo). */
+  disconnectSeat(slotId: string): void {
+    for (const client of [...this.clients]) if (client.seat?.slotId === slotId) { this.release(client); client.socket.destroy() }
   }
 
   publishToSeat(slotId: string, message: PlayerWireMessage): void {

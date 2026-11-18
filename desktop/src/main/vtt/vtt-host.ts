@@ -1,6 +1,7 @@
 import { join } from "node:path"
-import { app, BrowserWindow, protocol, screen, type IpcMainInvokeEvent } from "electron"
-import { ASSET_SCHEME, IPC, type DocumentChange, type DocumentInput, type LinkTestResult, type PlayerBarVisibility, type TableReport } from "../../../../app/src/vtt/shared/ipc"
+import { app, BrowserWindow, Notification, protocol, screen, type IpcMainInvokeEvent } from "electron"
+import { ASSET_SCHEME, IPC, type DocumentChange, type DocumentInput, type LinkTestResult, type PlayerBarVisibility, type PlayerState, type TableReport } from "../../../../app/src/vtt/shared/ipc"
+import { dropNotice, retryAfter } from "../../../../app/src/vtt/shared/room-drop"
 import { MASTER_CHANNELS, MASTER_IPC } from "../../../../app/src/vtt/shared/master"
 import { ASSET_KINDS, type AssetKind, type DocumentType, type NewWorldInput } from "../../../../app/src/vtt/shared/world"
 import { AudioService } from "./audio-service"
@@ -39,6 +40,10 @@ export class VttHost {
   private readonly listeners: ((change: DocumentChange) => void)[] = []
   private tunnel: ReturnType<typeof startCloudflared> | null = null
   private playerWindow: BrowserWindow | null = null
+  /** U89: confere o endereço da rede enquanto a sala está aberta. */
+  private addressTimer: ReturnType<typeof setInterval> | null = null
+  /** A queda já avisada pela notificação do sistema (uma por mudança). */
+  private notifiedDrop = 0
   /** Os mesmos tratadores do IPC, para o mestre remoto chamar (só os canais de `MASTER_CHANNELS`). */
   private readonly handlers = new Map<string, Listener>()
   readonly master: MasterRemote
@@ -51,7 +56,7 @@ export class VttHost {
     const database = () => this.store.openWorld?.database ?? null
     this.vision = new VisionService(database)
     // A página dos jogadores é o `player.html` do mesmo build da interface.
-    this.transmission = new PlayerTransmission(this.store, join(__dirname, "../renderer"), (state) => this.send(IPC.playerStateChanged, state), this.vision)
+    this.transmission = new PlayerTransmission(this.store, join(__dirname, "../renderer"), (state) => { this.send(IPC.playerStateChanged, state); this.notifyDrop(state) }, this.vision)
     // Movimentos dos jogadores passam pelo mesmo caminho das mudanças da mesa (visão, regiões, áudio).
     this.transmission.setCommit((change) => this.broadcast(change))
     this.audio = new AudioService(database, () => this.transmission.audibleSceneId, (state) => {
@@ -101,6 +106,48 @@ export class VttHost {
     if (!this.vaultWritable()) throw new Error("A mesa grava dentro do cofre (.runas/mesas): libere a gravação em Configurações › Cofre.")
   }
 
+  /** U89: notificação do sistema a cada queda nova (a faixa da mesa diz o mesmo e oferece o que fazer). */
+  private notifyDrop(state: PlayerState): void {
+    const notice = dropNotice(state)
+    if (!notice || !state.drop || state.drop.at === this.notifiedDrop) return
+    this.notifiedDrop = state.drop.at
+    if (Notification.isSupported()) new Notification({ title: "Sala da mesa", body: notice.message }).show()
+  }
+
+  private watchAddress(on: boolean): void {
+    if (this.addressTimer) clearInterval(this.addressTimer)
+    this.addressTimer = on ? setInterval(() => this.transmission.checkAddress(), 10_000) : null
+  }
+
+  /** Abre o túnel público (cloudflared) para a sala; se ele cair sozinho, abre outro (decisão 6 do U89). */
+  private async openTunnel(): Promise<string> {
+    const t = this.transmission
+    if (!t.isEnabled) throw new Error("Abra a sala primeiro.")
+    this.stopTunnel()
+    const binary = await ensureCloudflared(app.getPath("userData"))
+    const tunnel: ReturnType<typeof startCloudflared> = startCloudflared(binary, t.currentPort, {
+      onExit: () => {
+        if (this.tunnel !== tunnel) return
+        this.tunnel = null
+        t.markTunnelLost(true)
+        void retryAfter(() => this.openTunnel(), () => t.isEnabled && this.tunnel === null).then((url) => { if (!url) t.markTunnelFailed() })
+      },
+    })
+    this.tunnel = tunnel
+    try {
+      const key = t.currentKey
+      if (!key) throw new Error("A sala foi fechada.")
+      const url = publicPlayerUrl(await tunnel.url, key)
+      if (this.tunnel !== tunnel || t.currentKey !== key) throw new Error("O túnel público foi substituído.")
+      t.setPublicUrl(url, tunnel.details())
+      return url
+    } catch (error) {
+      if (this.tunnel === tunnel) this.tunnel = null
+      tunnel.process.kill()
+      throw error
+    }
+  }
+
   private stopTunnel(): void {
     this.tunnel?.process.kill()
     this.tunnel = null
@@ -113,6 +160,7 @@ export class VttHost {
   }
 
   private async closeServices(): Promise<void> {
+    this.watchAddress(false)
     this.master?.stop()
     this.stopTunnel()
     this.closePlayerWindow()
@@ -265,9 +313,11 @@ export class VttHost {
     handle(IPC.playerStart, async (_event, port, seatCount) => {
       const state = await t.start(port === undefined ? 30000 : Number(port), seatCount === undefined ? 1 : Number(seatCount))
       this.master.start()
+      this.watchAddress(true)
       return state
     })
     handle(IPC.playerStop, async () => {
+      this.watchAddress(false)
       this.master.stop()
       this.stopTunnel()
       await t.stop()
@@ -275,6 +325,15 @@ export class VttHost {
     })
     handle(IPC.playerRotateSeatCode, (_event, slotId) => t.rotateSeatCode(slot(slotId)))
     handle(IPC.playerClearSeat, (_event, slotId) => t.clearSeat(slot(slotId)))
+    handle(IPC.playerAddSeat, () => t.addSeat())
+    handle(IPC.playerRemoveSeat, () => t.removeSeat())
+    // U89: a mesma porta, chave e assentos; o túnel só é reaberto se tinha caído (o que estava no ar continua valendo).
+    handle(IPC.playerReconnect, async () => {
+      const tunnelDown = t.state().drop?.kind === "tunnel"
+      const state = await t.reconnect()
+      if (tunnelDown && !t.currentPublicUrl) { await this.openTunnel(); return t.state() }
+      return state
+    })
     handle(IPC.playerOpenWindow, () => {
       const url = t.isEnabled ? t.localWindowUrl() : null
       if (!url) throw new Error("Abra a sala primeiro.")
@@ -297,31 +356,7 @@ export class VttHost {
       t.setBars(bars as PlayerBarVisibility)
     })
     // Link público (túnel rápido da Cloudflare), só quando o mestre pede: é a única ida à internet do app.
-    handle(IPC.playerPublicLink, async () => {
-      if (!t.isEnabled) throw new Error("Abra a sala primeiro.")
-      this.stopTunnel()
-      const binary = await ensureCloudflared(app.getPath("userData"))
-      const tunnel: ReturnType<typeof startCloudflared> = startCloudflared(binary, t.currentPort, {
-        onExit: () => {
-          if (this.tunnel !== tunnel) return
-          this.tunnel = null
-          t.markTunnelLost()
-        },
-      })
-      this.tunnel = tunnel
-      try {
-        const key = t.currentKey
-        if (!key) throw new Error("A sala foi fechada.")
-        const url = publicPlayerUrl(await tunnel.url, key)
-        if (this.tunnel !== tunnel || t.currentKey !== key) throw new Error("O túnel público foi substituído.")
-        t.setPublicUrl(url, tunnel.details())
-        return url
-      } catch (error) {
-        if (this.tunnel === tunnel) this.tunnel = null
-        tunnel.process.kill()
-        throw error
-      }
-    })
+    handle(IPC.playerPublicLink, () => this.openTunnel())
     // Do computador do mestre até o servidor, passando pela Cloudflare: confirma DNS, borda e túnel.
     handle(IPC.playerTestPublicLink, async (): Promise<LinkTestResult> => {
       const publicUrl = t.currentPublicUrl

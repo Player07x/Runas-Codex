@@ -2231,3 +2231,17 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Sala: assentos, quedas e Reconectar (D/U89)
+
+- [ ] Com a sala aberta e dois jogadores dentro, clicar em “+ Assento”: aparece “Jogador 3” com código novo, e os dois
+  primeiros continuam conectados.
+- [ ] “Remover Jogador 3” com alguém nele pede confirmação e desconecta só esse jogador; o código dele deixa de valer.
+  Com o assento vazio, remove sem perguntar. Não dá para ter menos de 1 nem mais de 12.
+- [ ] Gerar o link público e matar o processo `cloudflared` (Gerenciador de Tarefas / `pkill cloudflared`): a mesa
+  mostra a faixa “O link público caiu. Abrindo outro túnel…”, vem uma notificação do sistema e, em alguns segundos, a
+  faixa traz o link novo com “Copiar aviso para os jogadores”. Os jogadores entram pelo link novo com o mesmo código.
+- [ ] Sem internet, o túnel não volta: depois de três tentativas a faixa oferece “Reconectar”.
+- [ ] Trocar o computador de Wi-Fi com a sala aberta: em até 10 s a faixa avisa que o endereço mudou e mostra o link da
+  rede local novo.
+- [ ] No Android, matar o túnel (modo avião por alguns segundos): a faixa aparece e o túnel é reaberto sozinho.

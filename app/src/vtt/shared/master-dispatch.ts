@@ -57,6 +57,8 @@ export async function dispatchMaster(api: VttApi, channel: string, args: unknown
     case IPC.playerSetMoves: return api.player.setMoves(boolean())
     case IPC.playerRotateSeatCode: return api.player.rotateSeatCode(text())
     case IPC.playerClearSeat: return api.player.clearSeat(text())
+    case IPC.playerAddSeat: return api.player.addSeat()
+    case IPC.playerRemoveSeat: return api.player.removeSeat()
     case IPC.collaborationState: return api.collaboration?.state()
     case IPC.collaborationCommand: return api.collaboration?.command(args[0] as CollaborationCommand)
     default: throw new Error("Comando do mestre indisponível.")

@@ -7,6 +7,7 @@ import { IPC, type DocumentChange, type LinkTestResult, type PlayerState, type V
 import type { PlayerWireMessage } from "../vtt/shared/player"
 import { PortableWorldStore } from "../vtt/shared/portable-world-store"
 import { RoomAuthority } from "../vtt/shared/room-authority"
+import { retryAfter } from "../vtt/shared/room-drop"
 import { VisionService } from "../vtt/shared/vision-service"
 import { AudioService } from "../vtt/shared/audio-service"
 import { RegionService } from "../vtt/shared/region-service"
@@ -113,6 +114,10 @@ class AndroidTransport implements PlayerTransport {
     const perSeat: Record<string, PlayerWireMessage> = { "": message(null) }
     for (const seat of this.seats.values()) perSeat[seat.slotId] = message(seat)
     void native.publish({ perSeat, assets: this.options.allowedAssets?.() ?? [] }).catch(() => undefined)
+  }
+  /** U89: o assento saiu; as respostas privadas dele param (o cookie e o código já não valem). */
+  disconnectSeat(slotId: string): void {
+    this.seats.delete(slotId)
   }
   /** Os assentos existem antes de um jogador conectar: respostas privadas nunca usam o estado de outro. */
   rememberSeats(state: PlayerState): void {
@@ -225,7 +230,12 @@ export function createAndroidVttApi(platform: Platform): VttApi {
     await store.close()
   }
   // O processo do túnel morreu sozinho: o painel avisa que o link público caiu.
-  void native.addListener("tunnel-lost", () => { if (authority.isEnabled) authority.markTunnelLost() })
+  // Decisão 6 do U89: o app abre outro túnel sozinho; a faixa da mesa mostra o link novo.
+  void native.addListener("tunnel-lost", () => {
+    if (!authority.isEnabled) return
+    authority.markTunnelLost(true)
+    void retryAfter(publicLink, () => authority.isEnabled && !authority.currentPublicUrl).then((url) => { if (!url) authority.markTunnelFailed() })
+  })
   /** Pedido do mestre: abre o túnel e monta o link dos jogadores com a chave da sala, como no desktop. */
   const publicLink = async (): Promise<string> => {
     const key = authority.currentKey
@@ -333,6 +343,24 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         authority.refresh()
         return state
       },
+      addSeat: async () => {
+        const state = authority.addSeat()
+        authority.refresh()
+        return state
+      },
+      removeSeat: async () => {
+        const state = authority.removeSeat()
+        authority.refresh()
+        return state
+      },
+      // No Android, o servidor da sala vive no serviço nativo (parar a sala desliga tudo); “Reconectar” reabre só o
+      // túnel público que caiu.
+      reconnect: () =>
+        ordered(async () => {
+          if (!authority.isEnabled) throw new Error("Ligue a transmissão primeiro.")
+          if (authority.state().drop?.kind === "tunnel" && !authority.currentPublicUrl) await publicLink()
+          return authority.state()
+        }),
       openWindow: async () => {
         const url = authority.localWindowUrl()
         if (url) await native.openUrl({ url })

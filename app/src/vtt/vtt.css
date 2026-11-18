@@ -502,3 +502,18 @@
 
 /* U41: o campo do tamanho do token fica com a largura do número; os atalhos vão ao lado. */
 .vtt-root .field.token-size-field .kit-token-size-input input.input:not([type="color"]) { width: 5rem; }
+
+/* U89: faixa de queda da sala no topo da cena (túnel, endereço da rede ou servidor). */
+.vtt-root .room-drop { position: absolute; z-index: 20; top: 12px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; width: min(720px, calc(100% - 24px)); padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line)); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow-sm); color: var(--text); }
+.vtt-root .room-drop.failed { border-color: color-mix(in srgb, var(--red) 60%, var(--line)); }
+.vtt-root .room-drop > svg { flex: none; color: var(--gold); }
+.vtt-root .room-drop.failed > svg { color: var(--red); }
+.vtt-root .room-drop p { flex: 1 1 260px; margin: 0; font-size: calc(14px * var(--font-scale, 1)); }
+.vtt-root .room-drop-error { color: var(--red); }
+.vtt-root .room-drop-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.vtt-root .room-drop-spin { animation: room-drop-spin 1.2s linear infinite; }
+@keyframes room-drop-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .vtt-root .room-drop-spin { animation: none; } }
+@media (max-width: 860px) { .vtt-root .room-drop-actions button { min-height: 44px; } }
+/* U89: acrescentar e tirar assentos com a sala aberta. */
+.player-seats-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }

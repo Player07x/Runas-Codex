@@ -30,6 +30,8 @@ export const MASTER_CHANNELS: readonly string[] = [
   IPC.playerSetMoves,
   IPC.playerRotateSeatCode,
   IPC.playerClearSeat,
+  IPC.playerAddSeat,
+  IPC.playerRemoveSeat,
   IPC.collaborationState,
   IPC.collaborationCommand,
 ]
