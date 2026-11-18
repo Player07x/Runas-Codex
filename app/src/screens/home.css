@@ -83,3 +83,72 @@
 @media (max-width: 640px), (pointer: coarse) {
   .home-section-head a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
 }
+
+/* ---------- Início 1.6 (U46, maquete aprovada em 17/11): Hoje, Campanhas ativas e os blocos menores ---------- */
+.home { gap: 20px; }
+.home .home-columns { grid-template-columns: 1.15fr 1fr 1.1fr; gap: 26px; }
+.home-secondary { display: grid; gap: 22px; min-width: 0; }
+.home .home-session { padding: 18px 22px; }
+.home .home-section-head h2 { font-size: calc(16px * var(--font-scale, 1)); }
+.home .home-note { min-height: 50px; padding: 8px 0; gap: 8px; }
+.home .home-note h3 { font-size: calc(14px * var(--font-scale, 1)); }
+.home .home-quick { padding: 14px; gap: 8px; }
+.home .home-capture { flex-wrap: nowrap; }
+.home .home-capture .input { flex: 1; min-width: 0; }
+.home-capture-btn { flex: none; min-width: 44px; min-height: 44px; justify-content: center; }
+.home .home-quick > p { font-size: calc(12px * var(--font-scale, 1)); }
+.home .home-sparks { font-size: calc(13px * var(--font-scale, 1)); }
+.home .home-sparks li, .home .home-sparks .check { min-height: 44px; }
+
+.today-event { display: flex; gap: 12px; align-items: center; padding: 4px 0 14px; border-bottom: 1px solid var(--line); color: var(--text); font-size: calc(14px * var(--font-scale, 1)); text-decoration: none; }
+a.today-event:hover { color: var(--cyan); }
+.today-event > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.today-event small, .today-check small { display: block; margin-top: 3px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
+.today-event > svg { flex: none; color: var(--muted); }
+.today-time { flex: none; color: var(--gold); font-family: var(--font-mono); font-size: calc(14px * var(--font-scale, 1)); }
+.today-empty { margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.today-group { margin: 16px 0 4px; color: var(--faint); font-size: calc(11px * var(--font-scale, 1)); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; }
+.today-check { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: calc(14px * var(--font-scale, 1)); cursor: pointer; }
+.today-check input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--cyan); }
+.today-check > span { min-width: 0; overflow-wrap: anywhere; }
+.today-check.overdue small { color: var(--red); }
+.today-check:has(input:checked) > span { color: var(--muted); text-decoration: line-through; }
+.today-more { display: flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 8px; color: var(--cyan); font-size: calc(13px * var(--font-scale, 1)); }
+
+.campaign-item { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.campaign-item:hover strong { color: var(--cyan); }
+.campaign-item > span:nth-child(2) { flex: 1; min-width: 0; }
+.campaign-item strong { display: block; font-size: calc(14px * var(--font-scale, 1)); font-weight: 550; overflow-wrap: anywhere; }
+.campaign-item small { display: block; margin-top: 4px; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); line-height: 1.5; }
+.campaign-item > svg:last-child { flex: none; color: var(--muted); }
+.active-campaigns > p.tiny { margin: 8px 0 0; }
+
+@media (max-width: 1200px) {
+  .home .home-columns { grid-template-columns: 1fr 1fr; }
+  .home-secondary { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 860px) {
+  .home .home-columns { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .home-secondary { grid-template-columns: minmax(0, 1fr); }
+  .home .home-session { padding: 18px; }
+  .today-group { margin-top: 12px; }
+  .today-check { min-height: 44px; }
+}
+/* No celular, o destaque ocupa perto de metade da altura de antes: indicadores numa linha, ações lado a lado. */
+@media (max-width: 560px) {
+  .home .home-session { padding: 12px 14px; gap: 10px; align-items: stretch; }
+  .home .session-copy { flex: 1 1 100%; gap: 6px; }
+  .home .home-session .home-kicker { font-size: calc(12px * var(--font-scale, 1)); letter-spacing: 0; text-transform: none; line-height: 1.25; }
+  .home .home-session h2 { font-size: calc(19px * var(--font-scale, 1)); line-height: 1.2; }
+  .home .session-stats { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 8px; margin: 2px 0 0; }
+  .home .session-stats dt { font-size: calc(12px * var(--font-scale, 1)); letter-spacing: 0; text-transform: none; }
+  .home .session-stats dd { font-size: calc(14px * var(--font-scale, 1)); line-height: 1.2; gap: 2px; }
+  .home .session-countdown { font-size: calc(12px * var(--font-scale, 1)); padding: 0; background: transparent; white-space: nowrap; }
+  .home .session-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+  .home .session-buttons .btn { min-height: 44px; padding: 8px; font-size: calc(13px * var(--font-scale, 1)); }
+  .home .session-buttons .btn svg { display: none; }
+  .home .home-session.empty .session-buttons { grid-template-columns: 1fr; }
+  .home .session-buttons .btn:only-child { grid-column: 1 / -1; }
+  /* Presença numa linha: o “ainda não marcada” fica para o painel da sessão; o ícone sai para caber. */
+  .home .session-unmarked, .home .session-stats dd > svg { display: none; }
+}

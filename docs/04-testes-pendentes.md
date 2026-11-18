@@ -2231,3 +2231,15 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Início com “Mesa de hoje” (L/U46)
+
+- [ ] Com uma sessão marcada para hoje numa campanha ativa, o Início abre com “Mesa de hoje” no topo: horário, quanto
+      falta, preparação e presença. “Abrir campanha” só aparece quando a campanha não está ativa.
+- [ ] O bloco **Hoje** mostra os eventos do dia, as tarefas atrasadas ou de hoje e os hábitos. Marcar uma tarefa pelo
+      Início grava o `[x]` na nota (conferir no Obsidian) e some da lista; o mesmo com um hábito.
+- [ ] **Campanhas ativas** mostra a data e a hora do mundo de cada campanha, igual ao Painel; a campanha sem
+      calendário diz “Sem calendário do mundo”.
+- [ ] Centelhas: o botão só com ícone captura a ideia em `Notas/Entrada.md`; o leitor de tela o anuncia como
+      “Capturar ideia”.
+- [ ] No celular (Android, 360 px), sem rolagem para os lados, com os alvos de toque grandes; tema claro e escuro.
