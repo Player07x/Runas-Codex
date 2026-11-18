@@ -2231,3 +2231,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Imagem em todas as categorias da Wiki
+
+- [ ] Abrir um artigo de Construção, Idioma, Acontecimento, Guerra, Era (e os outros tipos que não tinham imagem) e,
+  em Detalhes › Ficha › Editar, escolher uma imagem no campo “Imagem”: ela aparece no topo da ficha, no cartão da
+  categoria e no Elenco, como o retrato do personagem.
+- [ ] Numa categoria criada por você (Wiki › Nova categoria), a ficha também tem “Imagem”, mesmo que a categoria tenha
+  sido criada antes desta versão sem esse campo.
+- [ ] No Obsidian, um artigo com `imagem: "[[arquivo.png]]"` continua abrindo igual (a propriedade é só texto).
