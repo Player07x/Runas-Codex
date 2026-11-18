@@ -2231,3 +2231,8 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Paleta Runa (P/U122, só maquete)
+
+- [ ] Ver a maquete `docs/tarefas/atualizacao-1.6-paleta-runa.html` e dizer se a paleta Runa entra (e se vira o
+      padrão). Nada muda no app até o ok.
