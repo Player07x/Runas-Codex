@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, ChevronLeft, ChevronRight, ListTree, Search } from "lucide-react"
 import { HELP_GROUPS, HELP_TOPICS, helpHeadings, helpTopic, searchHelp, type HelpTopic } from "../core/help"
 import { FORMATTERS, FORMATTER_GROUPS } from "../core/formatters"
@@ -74,6 +74,8 @@ export function HelpScreen() {
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
   const article = useRef<HTMLDivElement>(null)
+  const indexTitle = useRef<HTMLHeadingElement>(null)
+  const previousTopic = useRef(asked)
   const body = topic ? BODIES[topic.id] : ""
   const hits = useMemo(() => searchHelp(query, BODIES), [query])
   const headings = useMemo(() => (topic ? helpHeadings(body) : []), [body, topic])
@@ -87,6 +89,13 @@ export function HelpScreen() {
 
   // Trocar de tópico volta o artigo ao topo.
   useEffect(() => { if (article.current) article.current.scrollTop = 0; setActive(0) }, [asked])
+  // Em tela estreita o link “Tópicos” fica no painel que acaba de ser ocultado.
+  useLayoutEffect(() => {
+    if (previousTopic.current && !asked && indexTitle.current?.getClientRects().length) {
+      indexTitle.current.focus({ preventScroll: true })
+    }
+    previousTopic.current = asked
+  }, [asked])
   // “Nesta página” marca o título que está no alto do artigo.
   const headingElements = () => [...(article.current?.querySelectorAll<HTMLElement>(".help-markdown h3") ?? [])]
   // Depois de um clique em “Nesta página”, o título escolhido fica marcado enquanto a rolagem anda.
@@ -119,7 +128,7 @@ export function HelpScreen() {
         <div className="help-index-head">
           {asked
             ? <span className="eyebrow row"><BookOpen size={15} aria-hidden="true" /> Manual offline</span>
-            : <h1 className="page-title row help-index-title"><BookOpen size={18} aria-hidden="true" /> Ajuda</h1>}
+            : <h1 ref={indexTitle} tabIndex={-1} className="page-title row help-index-title"><BookOpen size={18} aria-hidden="true" /> Ajuda</h1>}
           <label className="help-search">
             <Search size={17} aria-hidden="true" />
             <input type="search" className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar na Ajuda" aria-label={`Buscar na Ajuda (${HELP_TOPICS.length} tópicos)`} />
