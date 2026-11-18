@@ -2,7 +2,8 @@
 
 > Plano do Claude (líder desta atualização), feito em 18/11/2026 com o código da `main` em `33228ee` (v1.5.1).
 > O João pediu para levantar as pendências das últimas atualizações e, na mesma manhã, mandou nove ajustes com dez
-> capturas. **Nada implementado: esperando o ok do João** no plano e nas [maquetes](atualizacao-1.6-maquetes.html).
+> capturas. **O João deu o ok em 18/11** no plano e nas [maquetes](atualizacao-1.6-maquetes.html); as fases seguem a
+> ordem abaixo.
 
 Junta os ajustes de 18/11 (U114–U122), os seis PRs que a 1.5 deixou para depois (D, K, J2, R, L e A2), os problemas
 conhecidos das notas da 1.5.0 e o que os registros da 1.5 apontaram sem conserto (U108–U113). As decisões 5 a 14 da
@@ -89,3 +90,5 @@ janela de 5 h: perto de uma janela e meia, em duas ou três janelas. Paro e perg
 - **18/11:** o João pediu para refazer a barra lateral (U121): o botão de recolher não pode mudar de lugar; só a runa
   muda de posição e de tamanho. Maquete refeita, com uma versão para clicar.
 - **18/11:** o João pediu o botão à direita, não à esquerda: fica no alto, preso à borda direita da barra.
+- **18/11:** o João deu o ok (“Inicio o plano de atualização 1.6.0”). Começo pelo PR V; as escolhas que ele pode
+  trocar ficam como estão.
