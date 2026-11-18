@@ -2,7 +2,7 @@ import { strFromU8, strToU8, Unzip, UnzipInflate, zipSync, type Zippable } from 
 import { nameProblem } from "../names"
 import { foldName } from "../text"
 import type { TransferItemKind } from "./items"
-import { crc32, readZipDirectory, readZipEntry, readZipEntryChunks, ZipWriter, type ZipSink, type ZipSource } from "./zip-stream"
+import { crc32, readZipDirectory, readZipEntry, readZipEntryChunks, ZipWriter, type ReadChunks, type ZipSink, type ZipSource } from "./zip-stream"
 import { Sha256 } from "./sha256"
 
 /**
@@ -263,26 +263,34 @@ export async function createTransferArchive(title: string, files: TransferFile[]
 export async function writeTransferArchive(options: {
   title: string
   paths: string[]
-  read: (path: string) => Promise<Uint8Array>
   kind: "runas" | "markdown"
   limits: TransferLimits
   sink: ZipSink
   /** Os itens escolhidos na exportação (U53); vão no manifesto do `.runas`. */
   items?: PackageItemSpec[]
   onProgress?: (done: number, total: number, path: string) => void
-}): Promise<number> {
-  const { title, paths, read, kind, limits, sink, items, onProgress } = options
+} & ({ read: (path: string) => Promise<Uint8Array> } | { readStream: (path: string, write: ReadChunks) => Promise<void> })): Promise<number> {
+  const { title, paths, kind, limits, sink, items, onProgress } = options
   if (!paths.length || paths.length > limits.files) throw new Error("Selecione arquivos para exportar, dentro do limite de quantidade.")
   validateTransferPaths(paths.map(path => ({ path, bytes: new Uint8Array() })))
   const writer = new ZipWriter(sink), entries: { path: string; size: number; sha256: string }[] = []
   for (const [index, path] of paths.entries()) {
     onProgress?.(index, paths.length, path)
-    const bytes = await read(path)
-    if (bytes.length > limits.file) throw new Error(`“${path}” passa do limite por arquivo.`)
-    await writer.add((kind === "runas" ? "cofre/" : "") + path, bytes)
-    if (kind === "runas") entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
+    const name = (kind === "runas" ? "cofre/" : "") + path
+    if ("readStream" in options) {
+      const hash = kind === "runas" ? new Sha256() : null
+      const size = await writer.addStored(name, (write) => options.readStream(path, write), limits.file, (bytes) => { hash?.update(bytes) })
+      if (hash) entries.push({ path, size, sha256: hash.hex() })
+    } else {
+      const bytes = await options.read(path)
+      if (bytes.length > limits.file) throw new Error(`“${path}” passa do limite por arquivo.`)
+      await writer.add(name, bytes)
+      if (kind === "runas") entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
+    }
     if (writer.written > limits.archive) throw new Error("O pacote passou do limite permitido.")
   }
   if (kind === "runas") await writer.add(PACKAGE_MANIFEST, strToU8(JSON.stringify({ format: "runas-codex", version: 1, title, files: entries, ...(items?.length ? { itens: items } : {}) }, null, 2)))
-  return writer.finish()
+  const size = await writer.finish()
+  if (size > limits.archive) throw new Error("O pacote passou do limite permitido.")
+  return size
 }

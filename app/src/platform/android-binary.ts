@@ -35,22 +35,31 @@ function queue(limit: number) {
 /** Uma alocação JS por arquivo; os base64 temporários têm no máximo 2 MB de bytes cada. */
 export function createAndroidBinary(native: AndroidBinaryPlugin) {
   const turn = queue(OPEN_TRANSFERS)
+  const readChunks = (path: string, receive: (size: number) => (chunk: Uint8Array, offset: number) => void | Promise<void>) => turn(async () => {
+    const { id, size } = await native.binaryReadStart({ path })
+    try {
+      const write = receive(binarySize(size))
+      for (let at = 0; at < size;) {
+        const { base64 } = await native.binaryReadChunk({ id })
+        if (base64.length > Math.ceil(BINARY_CHUNK / 3) * 4) throw new Error("Pedaço maior que 2 MB na leitura do arquivo.")
+        const chunk = fromBase64(base64)
+        if (!chunk.length || chunk.length > BINARY_CHUNK || at + chunk.length > size) throw new Error("A leitura do arquivo ficou incompleta ou mudou de tamanho.")
+        await write(chunk, at)
+        at += chunk.length
+      }
+      await native.binaryReadFinish({ id })
+    } catch (error) { await native.binaryAbort({ id }).catch(() => undefined); throw error }
+  })
   return {
-    read: (path: string): Promise<Uint8Array> => turn(async () => {
-      const { id, size } = await native.binaryReadStart({ path })
-      try {
-        const bytes = new Uint8Array(binarySize(size))
-        for (let at = 0; at < size;) {
-          const { base64 } = await native.binaryReadChunk({ id })
-          if (base64.length > Math.ceil(BINARY_CHUNK / 3) * 4) throw new Error("Pedaço maior que 2 MB na leitura do arquivo.")
-          const chunk = fromBase64(base64)
-          if (!chunk.length || chunk.length > BINARY_CHUNK || at + chunk.length > size) throw new Error("A leitura do arquivo ficou incompleta ou mudou de tamanho.")
-          bytes.set(chunk, at); at += chunk.length
-        }
-        await native.binaryReadFinish({ id })
-        return bytes
-      } catch (error) { await native.binaryAbort({ id }).catch(() => undefined); throw error }
-    }),
+    async read(path: string): Promise<Uint8Array> {
+      let bytes = new Uint8Array(0)
+      await readChunks(path, (size) => {
+        bytes = new Uint8Array(size)
+        return (chunk, at) => bytes.set(chunk, at)
+      })
+      return bytes
+    },
+    readStream: (path: string, write: (chunk: Uint8Array) => Promise<void>) => readChunks(path, () => write),
     write: (path: string, bytes: Uint8Array, expected?: VaultEntry | null, managed = false) => turn(async () => {
       const size = binarySize(bytes.length)
       const version = expected === undefined ? {} : { expected: expected && { size: expected.size, mtime: expected.mtime } }

@@ -175,6 +175,7 @@ export function createCapacitorPlatform(): Platform {
     // U110: cria, troca e apaga um arquivo de teste pelo caminho de cada gravação; nada fica no cofre.
     checkWrite: () => RunasVault.checkWrite(),
     writeBinaryStream: async (path, size, expected, produce, managed) => rememberEntry(await binary.writeStream(path, size, expected, produce, managed)),
+    readBinaryStream: binary.readStream,
   }
   result.vtt = createAndroidVttApi(result)
   return result

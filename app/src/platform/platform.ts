@@ -150,6 +150,8 @@ export interface Platform {
   writeBinaryStream?(path: string, size: number, expected: VaultEntry | null | undefined, produce: (write: (bytes: Uint8Array) => Promise<void>) => Promise<void>, managed?: boolean): Promise<VaultEntry>
   /** U86: endereço da miniatura de uma imagem do cofre (`width` é uma das larguras de `core/thumbnails`). */
   thumbnailUrl?(path: string, width: number): string | null
+  /** Lê um binário do cofre em pedaços, aguardando o consumo de cada um. */
+  readBinaryStream?(path: string, write: (chunk: Uint8Array) => Promise<void>): Promise<void>
 }
 
 /** Destino de uma exportação em pedaços. `abort` apaga o que já foi escrito. */

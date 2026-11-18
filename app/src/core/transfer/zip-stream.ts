@@ -7,6 +7,7 @@ import { deflateSync, Inflate, inflateSync, strFromU8, strToU8 } from "fflate"
  * 65.534 arquivos.
  */
 export interface ZipSink { write(bytes: Uint8Array): Promise<void> }
+export type ReadChunks = (bytes: Uint8Array) => Promise<void>
 /** Acesso aleatório ao arquivo do pacote (um `File`/`Blob` no navegador, um arquivo no Node). */
 export interface ZipSource { size: number; read(offset: number, length: number): Promise<Uint8Array> }
 export interface ZipEntryInfo { name: string; method: number; crc: number; compressed: number; size: number; offset: number }
@@ -22,11 +23,12 @@ const crcTable = Uint32Array.from({ length: 256 }, (_, index) => {
   for (let i = 0; i < 8; i++) n = n & 1 ? 0xedb88320 ^ n >>> 1 : n >>> 1
   return n >>> 0
 })
-export function crc32(bytes: Uint8Array): number {
-  let crc = 0xffffffff
+function updateCrc(crc: number, bytes: Uint8Array): number {
   for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255]! ^ crc >>> 8
-  return (crc ^ 0xffffffff) >>> 0
+  return crc
 }
+const finishCrc = (crc: number) => (crc ^ 0xffffffff) >>> 0
+export function crc32(bytes: Uint8Array): number { return finishCrc(updateCrc(0xffffffff, bytes)) }
 
 function dosTime(date: Date): { time: number; date: number } {
   const year = Math.min(Math.max(date.getFullYear(), 1980), 2107)
@@ -46,14 +48,41 @@ export class ZipWriter {
   get written(): number { return this.offset }
 
   async add(name: string, data: Uint8Array): Promise<void> {
+    const deflated = STORED.test(name) || data.length < 64 ? null : deflateSync(data, { level: 6 })
+    const body = deflated && deflated.length < data.length ? deflated : data
+    await this.addEntry(name, body === data ? 0 : 8, data.length, body.length, crc32(data), (write) => write(body))
+  }
+
+  /** Duas leituras mantêm o cabeçalho compatível com ZIPs antigos e limitam a memória ao pedaço atual. */
+  async addStored(name: string, read: (write: ReadChunks) => Promise<void>, limit: number, onMeasure: (bytes: Uint8Array) => void): Promise<number> {
+    let size = 0, crc = 0xffffffff
+    await read(async (bytes) => {
+      size += bytes.length
+      if (size > limit) throw new Error(`“${name}” passa do limite por arquivo.`)
+      crc = updateCrc(crc, bytes)
+      onMeasure(bytes)
+    })
+    const expected = finishCrc(crc)
+    await this.addEntry(name, 0, size, size, expected, async (write) => {
+      let written = 0, actual = 0xffffffff
+      await read(async (bytes) => {
+        written += bytes.length
+        if (written > size) throw new Error(`“${name}” mudou durante a gravação do pacote.`)
+        actual = updateCrc(actual, bytes)
+        await write(bytes)
+      })
+      if (written !== size || finishCrc(actual) !== expected) throw new Error(`“${name}” mudou durante a gravação do pacote.`)
+    })
+    return size
+  }
+
+  private async addEntry(name: string, method: number, size: number, compressed: number, crc: number, writeBody: (write: ReadChunks) => Promise<void>): Promise<void> {
     if (this.closed) throw new Error("O pacote já foi fechado.")
     if (this.names.has(name)) throw new Error(`O pacote repete “${name}”.`)
     if (this.entries.length >= ZIP_MAX_ENTRIES) throw new Error("O pacote passou de 65.534 arquivos.")
     const nameBytes = strToU8(name)
-    const deflated = STORED.test(name) || data.length < 64 ? null : deflateSync(data, { level: 6 })
-    const body = deflated && deflated.length < data.length ? deflated : data
-    const entry = { name, nameBytes, method: body === data ? 0 : 8, crc: crc32(data), compressed: body.length, size: data.length, offset: this.offset }
-    if (this.offset + 30 + nameBytes.length + body.length > ZIP_MAX_BYTES) throw new Error("O pacote passou de 4 GB, o máximo do formato ZIP.")
+    const entry = { name, nameBytes, method, crc, compressed, size, offset: this.offset }
+    if (this.offset + 30 + nameBytes.length + compressed > ZIP_MAX_BYTES) throw new Error("O pacote passou de 4 GB, o máximo do formato ZIP.")
     const header = new Uint8Array(30 + nameBytes.length), view = new DataView(header.buffer)
     view.setUint32(0, 0x04034b50, true)
     view.setUint16(4, 20, true)
@@ -67,8 +96,8 @@ export class ZipWriter {
     view.setUint16(26, nameBytes.length, true)
     header.set(nameBytes, 30)
     await this.sink.write(header)
-    await this.sink.write(body)
-    this.offset += header.length + body.length
+    await writeBody((bytes) => this.sink.write(bytes))
+    this.offset += header.length + compressed
     this.names.add(name)
     this.entries.push(entry)
   }
@@ -192,7 +221,7 @@ export async function readZipEntryChunks(source: ZipSource, entry: ZipEntryInfo,
   const take = (bytes: Uint8Array) => {
     total += bytes.length
     if (total > entry.size) throw new Error(`O arquivo “${entry.name}” está incompleto ou corrompido no ZIP.`)
-    for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255]! ^ crc >>> 8
+    crc = updateCrc(crc, bytes)
     // Cópia: o descompactador pode reaproveitar o próprio buffer no pedaço seguinte.
     out.push(bytes.slice())
   }
@@ -202,13 +231,23 @@ export async function readZipEntryChunks(source: ZipSource, entry: ZipEntryInfo,
     const length = Math.min(step, entry.compressed - at)
     const raw = await source.read(start + at, length)
     if (raw.length !== length) throw new Error(`O arquivo “${entry.name}” está incompleto no ZIP.`)
-    if (!inflater) take(raw)
-    else try { inflater.push(raw, at + length >= entry.compressed) } catch (error) {
-      throw error instanceof Error && error.message.includes(entry.name) ? error : new Error(`O arquivo “${entry.name}” está corrompido no ZIP.`)
+    if (!inflater) {
+      take(raw)
+      await out.drain(false)
+      continue
     }
-    await out.drain(false)
+    // Uma leitura do Blob pode ser grande. Alimente o Inflate em blocos pequenos, pois DEFLATE pode expandir
+    // cada bloco em mais de mil vezes antes de entregar a saída ao consumidor.
+    const feed = 4096
+    for (let offset = 0; offset < length || (length === 0 && offset === 0); offset += feed) {
+      const end = Math.min(offset + feed, length)
+      try { inflater.push(raw.subarray(offset, end), at + end >= entry.compressed) } catch (error) {
+        throw error instanceof Error && error.message.includes(entry.name) ? error : new Error(`O arquivo “${entry.name}” está corrompido no ZIP.`)
+      }
+      await out.drain(false)
+    }
   }
-  if (total !== entry.size || ((crc ^ 0xffffffff) >>> 0) !== entry.crc) { out.reset(); throw new Error(`O arquivo “${entry.name}” está incompleto ou corrompido no ZIP.`) }
+  if (total !== entry.size || finishCrc(crc) !== entry.crc) { out.reset(); throw new Error(`O arquivo “${entry.name}” está incompleto ou corrompido no ZIP.`) }
   await out.drain(true)
 }
 

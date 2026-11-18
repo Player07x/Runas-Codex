@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { strToU8 } from "fflate"
 import { readTransferArchiveFrom, TRANSFER_LIMITS, writeTransferArchive } from "./archive"
 import { Sha256 } from "./sha256"
+import { findIdentical } from "./import-items"
 import { blobChunks, bytesSource, readZipDirectory, readZipEntry, readZipEntryChunks } from "./zip-stream"
 
 const noise = (size: number) => Uint8Array.from({ length: size }, (_, i) => (i * 2654435761) >>> 24)
@@ -78,5 +79,39 @@ describe("ZIP lido em pedaços (U109)", () => {
     const { pieces, bytes: joined } = await collect((onChunk) => blobChunks(new Blob([bytes]), onChunk, 10_000))
     expect(pieces.map((piece) => piece.length)).toEqual([10_000, 10_000, 5_000])
     expect(joined).toEqual(bytes)
+  })
+})
+
+describe("prévia e pacote de segurança em pedaços", () => {
+  it("compara o binário do pacote com o do cofre sem chamar o leitor inteiro", async () => {
+    const archive = await readTransferArchiveFrom(bytesSource(await pack("runas")), "Cofre", TRANSFER_LIMITS, undefined, true)
+    const path = "Anexos/Imagens/Mapa.png"
+    const bytes = vault[path]!
+    const known = [{ path, size: bytes.length, mtime: 1 }]
+    const refuseFullRead = async () => { throw new Error("Leitura inteira inesperada") }
+    const match = await findIdentical(archive, known, refuseFullRead, undefined, (_path, write) => blobChunks(new Blob([bytes.slice().buffer]), write, 8_000))
+    expect([...match]).toEqual([path])
+    const changed = bytes.slice()
+    changed[100] = changed[100]! ^ 0xff
+    const mismatch = await findIdentical(archive, known, refuseFullRead, undefined, (_path, write) => blobChunks(new Blob([changed.buffer]), write, 10_000))
+    expect([...mismatch]).toEqual([])
+  })
+
+  it("gera um backup .runas legível pelo leitor inteiro e recusa uma origem que muda durante a gravação", async () => {
+    const path = "Anexos/Imagens/Mapa.png"
+    const original = vault[path]!
+    const backup = await collect(async (write) => {
+      await writeTransferArchive({
+        title: "Antes de importar", paths: [path], kind: "runas", limits: TRANSFER_LIMITS, sink: { write },
+        readStream: (_path, put) => blobChunks(new Blob([original.slice().buffer]), put, 10_000),
+      })
+    })
+    const archive = await readTransferArchiveFrom(bytesSource(backup.bytes), "Cofre", TRANSFER_LIMITS)
+    expect(archive.files[0]?.bytes).toEqual(original)
+    let reads = 0
+    await expect(writeTransferArchive({
+      title: "Antes de importar", paths: [path], kind: "runas", limits: TRANSFER_LIMITS, sink: { write: async () => undefined },
+      async readStream(_path, write) { await write(Uint8Array.of(++reads)) },
+    })).rejects.toThrow("mudou durante a gravação")
   })
 })

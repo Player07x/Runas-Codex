@@ -160,10 +160,13 @@ export function TransferWorkspace() {
       setStatus(`Lendo ${index + 1} de ${paths.length}: ${path}`)
       files.push({ path, bytes: await vault.platform.readBinary(path) })
     }
+    await verifySnapshot(paths, known, identity, title)
+    return files
+  }
+  async function verifySnapshot(paths: string[], known: TransferEntry[], identity: string | undefined, title: string) {
     if ((await vault.platform.vault())?.path !== identity) throw new Error("O cofre mudou durante a preparação.")
     const current = await (vault.platform.listTransferFiles?.(paths.some(path => managedWorldPath(path)) || worlds || scope === "Mesas") ?? vault.platform.listVault())
     for (const path of paths) if (!sameTransferVersion(current.find(entry => entry.path === path), known.find(entry => entry.path === path)!)) throw new Error(`“${path}” mudou durante a preparação de ${title}. Tente novamente.`)
-    return files
   }
   async function exportFiles() {
     await flushOpenNotes()
@@ -264,7 +267,7 @@ export function TransferWorkspace() {
       const existing = await (vault.platform.listTransferFiles?.(true) ?? vault.platform.listVault())
       buildImportPlan(archive, existing, "merge")
       // U53: compara com o cofre só os arquivos de mesmo caminho e tamanho, para dizer o que é igual e o que mudou.
-      const identical = await findIdentical(archive, existing, path => vault.platform.readBinary(path), (done, total) => setStatus(`Comparando com o cofre: ${done + 1} de ${total}`))
+      const identical = await findIdentical(archive, existing, path => vault.platform.readBinary(path), (done, total) => setStatus(`Comparando com o cofre: ${done + 1} de ${total}`), vault.platform.readBinaryStream)
       const items = packageItems(archive)
       setPreview({ archive, existing, items, identical }); setIncoming(new Set(archive.files.map(file => file.path))); setStrategy("merge")
       setItemChoices(new Map(items.map(item => [item.id, { strategy: "merge" }]))); setImportChoice("itens")
@@ -277,9 +280,35 @@ export function TransferWorkspace() {
     await flushOpenNotes()
     if (plan.replacements.length) {
       setStatus("Preparando o pacote de segurança dos arquivos que serão substituídos…")
-      const files = await collect(plan.replacements.map(entry => entry.path), plan.replacements, "pacote de segurança")
-      const backup = await createTransferArchive(`Antes de importar em ${vault.info!.name}`, files, "runas", limits)
-      const saved = await vault.platform.saveBytes(`Antes da importação - ${safeName(vault.info!.name)}.runas`, backup, "application/octet-stream")
+      const paths = plan.replacements.map(entry => entry.path)
+      const name = `Antes da importação - ${safeName(vault.info!.name)}.runas`
+      const mime = "application/octet-stream"
+      const { openSave, readBinaryStream } = vault.platform
+      let saved: string | null
+      if (openSave && readBinaryStream) {
+        const identity = vault.info?.path
+        const target = await openSave(name, mime)
+        saved = null
+        if (target) {
+          try {
+            const sink = bufferedSink((bytes) => target.write(bytes), 2 * 1024 * 1024)
+            await writeTransferArchive({
+              title: `Antes de importar em ${vault.info!.name}`, paths, readStream: readBinaryStream, kind: "runas", limits, sink,
+              onProgress: (done, total, path) => setStatus(`Guardando ${done + 1} de ${total}: ${path}`),
+            })
+            await sink.flush()
+            await verifySnapshot(paths, plan.replacements, identity, "pacote de segurança")
+            saved = await target.close()
+          } catch (error) {
+            await target.abort().catch(() => undefined)
+            throw error
+          }
+        }
+      } else {
+        const files = await collect(paths, plan.replacements, "pacote de segurança")
+        const backup = await createTransferArchive(`Antes de importar em ${vault.info!.name}`, files, "runas", limits)
+        saved = await vault.platform.saveBytes(name, backup, mime)
+      }
       if (!saved) { setStatus("Importação cancelada; nenhum arquivo foi substituído."); return }
     }
     setStatus("Importando os arquivos confirmados…")
