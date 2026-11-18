@@ -2447,3 +2447,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   conferir a recuperação pelo .runas de segurança. Cancelar a escolha do destino deve preservar o cofre.
 - [ ] No Android, colar o link do mestre em **Entrar Sala** e conferir a aba integrada, o retorno ao aplicativo,
   a biblioteca remota e **Salvar Sessão**. Repetir com link LAN e público, quando disponível.
+
+
+## Sala Android — reconexão e rede virtual no CI
+
+- [ ] Com um mestre remoto conectado, usar **Desconectar** no anfitrião. O navegador deve oferecer **Tentar de novo**
+  e o anfitrião deve continuar sem mestre até uma nova entrada explícita. Conferir no Android e no desktop.
+- [ ] Conferir o job `android-room` em execuções independentes. O Chrome do AVD ainda entra e sai pelo link LAN
+  anunciado pela sala, usando o modelo anterior de rede virtual do emulador.

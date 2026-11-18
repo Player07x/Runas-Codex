@@ -594,7 +594,9 @@ jobs:
           target=android-35
           EOF
           mkdir -p /tmp/runas-android-room
-          "$ANDROID_HOME/emulator/emulator" -avd runas-sala -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-room/emulator.log 2>&1 &
+          # Este job usa um único AVD. O Wi-Fi compartilhado do netsim perdeu o sinal durante o teste
+          # e encerrou as conexões do Chrome. Use a rede anterior do emulador, mantendo o link LAN real.
+          "$ANDROID_HOME/emulator/emulator" -avd runas-sala -feature -WiFiPacketStream -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > /tmp/runas-android-room/emulator.log 2>&1 &
           timeout 120 adb wait-for-device
           for i in $(seq 1 120); do
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
