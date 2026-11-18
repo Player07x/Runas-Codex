@@ -256,17 +256,17 @@ tr.phase td { background: var(--bg); color: var(--gold); font-weight: 700; font-
 .sw { display: grid; gap: 4px; font-size: 11.5px; color: var(--muted); }
 .sw i { width: 74px; height: 46px; border-radius: 10px; display: block; border: 1px solid var(--line); }
 
-/* Barra lateral (U121): cabeçalho de altura fixa; o botão não se mexe, só a runa troca de lugar e de tamanho. */
+/* Barra lateral (U121): cabeçalho de altura fixa; o botão fica no alto, preso à borda direita; só a runa troca de lugar e de tamanho. */
 .sbpair { display: flex; flex-wrap: wrap; gap: 22px; align-items: start; }
 .sbcol { display: grid; gap: 8px; justify-items: start; }
 .sbcol .lbl { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-.sb { position: relative; width: 240px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-deep); overflow: hidden; transition: width .2s ease; }
+.sb { position: relative; width: 248px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-deep); overflow: hidden; transition: width .2s ease; }
 .sb.mini { width: 64px; }
 .sb-head { position: relative; height: 96px; }
-.sb-toggle { position: absolute; left: 14px; top: 12px; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--text); display: grid; place-items: center; font: 600 15px/1 var(--sans); padding: 0; cursor: pointer; }
-.sb-logo { position: absolute; left: 60px; top: 12px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #6be7ff 0 16%, #2f4a7a 17% 30%, #1d2e57 31% 100%); box-shadow: 0 0 18px rgb(107 231 255 / 25%); transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease; }
+.sb-toggle { position: absolute; right: 14px; top: 12px; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--text); display: grid; place-items: center; font: 600 15px/1 var(--sans); padding: 0; cursor: pointer; }
+.sb-logo { position: absolute; left: 14px; top: 12px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #6be7ff 0 16%, #2f4a7a 17% 30%, #1d2e57 31% 100%); box-shadow: 0 0 18px rgb(107 231 255 / 25%); transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease; }
 .sb.mini .sb-logo { left: 16px; top: 56px; width: 32px; height: 32px; box-shadow: none; }
-.sb-name { position: absolute; left: 126px; top: 18px; right: 8px; display: grid; gap: 1px; white-space: nowrap; transition: opacity .15s ease; }
+.sb-name { position: absolute; left: 80px; top: 18px; right: 58px; display: grid; gap: 1px; white-space: nowrap; transition: opacity .15s ease; }
 .sb-name b { font-size: 14px; }
 .sb-name small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
 .sb.mini .sb-name { opacity: 0; visibility: hidden; }
@@ -651,10 +651,10 @@ Rumor: o dono deve dinheiro à Casa Ormund.</div>
     <p class="muted">Esses não precisam de maquete grande. Mostro a causa que achei no código e o antes e depois.</p></div>
 
   <div class="card" style="gap:14px" id="barra-lateral">
-    <h3>Barra lateral: o botão de recolher fica parado (anexos 9 e 10 · U121)</h3>
+    <h3>Barra lateral: o botão de recolher fica à direita, sempre na mesma altura (anexos 9 e 10 · U121)</h3>
     <p class="small muted">Hoje o botão anda. Recolhida, ele fica no topo e a runa desce; aberta, ele vai para a direita, a runa sobe e os itens sobem cerca de 40 px (na sua captura, o Início sai de 270 para 228).
-      Proposta, como você pediu: o layout continua o de antes, e <b>só a runa se mexe</b>. O botão fica no canto de cima, no mesmo ponto nos dois estados.
-      Recolhida, a runa fica pequena, logo abaixo do botão. Aberta, ela sobe para a linha do botão e cresce, com o nome ao lado. O cabeçalho tem a mesma altura nos dois estados, então os itens também não se mexem.</p>
+      Proposta, como você pediu: o layout continua o de antes, e <b>só a runa muda de lugar</b>. O botão fica no alto, à direita, sempre colado à borda da barra e na mesma altura: ao recolher, ele acompanha a borda e não pula para outra linha.
+      Recolhida, a runa fica pequena, logo abaixo do botão. Aberta, ela sobe para a linha do botão, à esquerda, e cresce, com o nome ao lado. O cabeçalho tem a mesma altura nos dois estados, então os itens também não se mexem.</p>
     <div class="sbpair">
       <div class="sbcol"><span class="lbl">Aberta</span>
         <div class="sb" aria-hidden="true">
@@ -673,9 +673,9 @@ Rumor: o dono deve dinheiro à Casa Ormund.</div>
           <div class="sb-head"><button type="button" class="sb-toggle" id="sb-demo-toggle" aria-expanded="true" aria-label="Recolher a barra lateral">⇤</button><span class="sb-logo"></span><span class="sb-name"><b>Runas-Codex</b><small>Cofre: Mesa do Mestre</small></span></div>
           <div class="sb-items"><span class="sb-item on"><i></i><span>Início</span></span><span class="sb-item"><i></i><span>Notas</span></span><span class="sb-item"><i></i><span>Agenda</span></span><span class="sb-item"><i></i><span>Wiki</span></span></div>
         </div>
-        <span class="cap">Clique no botão de cima: ele não sai do lugar.</span></div>
+        <span class="cap">Clique no botão: ele acompanha a borda, na mesma altura.</span></div>
     </div>
-    <p class="cap">As linhas tracejadas marcam o botão e o primeiro item: batem nos dois estados. A runa vai de 32 para 56 px. A troca leva 0,2 s e não anima com “Reduzir movimento” ligado.
+    <p class="cap">As linhas tracejadas marcam o botão e o primeiro item: batem nos dois estados, e o botão fica a 14 px da borda direita nos dois. A runa vai de 32 para 56 px. A troca leva 0,2 s e não anima com “Reduzir movimento” ligado.
       O botão continua com o nome “Recolher a barra lateral” ou “Abrir a barra lateral” para o leitor de tela, e a runa continua levando ao Início.</p>
   </div>
 
