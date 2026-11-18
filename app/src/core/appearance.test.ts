@@ -31,7 +31,7 @@ describe("Aparência e primeiros passos", () => {
   })
   it("mantém contraste AA dos textos e controles nas seis combinações de tema", () => {
     const blocks = [...tokens.matchAll(/(:root[^{}]*)\{([^{}]*)\}/g)].map(m => ({ selector: m[1]!, colors: Object.fromEntries([...m[2]!.matchAll(/--([\w-]+):\s*(#[\da-fA-F]{3,6})\s*;/g)].map(c => [c[1]!, c[2]!])) }))
-    for (const palette of ["orbita", "floresta", "brasa"]) for (const light of [false, true]) {
+    for (const palette of ["orbita", "floresta", "brasa", "runa"]) for (const light of [false, true]) {
       const colors: Record<string, string> = {}
       for (const block of blocks) {
         if (block.selector.includes('data-theme="light"') && !light) continue
