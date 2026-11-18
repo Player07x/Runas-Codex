@@ -2231,3 +2231,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Consertos visuais (PR V: U121, U120, U112)
+
+- [ ] Barra lateral no computador: recolher e abrir algumas vezes (botão e Ctrl+\). O botão fica no alto, à direita,
+  sempre na mesma altura e à mesma distância da borda; só a runa muda (grande ao lado do nome, aberta; pequena abaixo do
+  botão, recolhida). O Início não sobe nem desce. Conferir também com “Controles maiores” e “Mostrar rótulos junto aos
+  ícones” ligados, e com a janela baixa (a barra com rolagem).
+- [ ] Configurações: passar por todas as seções no índice. A página não anda para o lado, “Conflitos de sincronização”
+  fica numa linha só quando escolhido, e em Acessibilidade há espaço entre a descrição e “Leitura”/“Prévia”.
+- [ ] Celular (até 560 px): nos seletores de nota (ligar nota à campanha, inserir modelo, busca de tarefas, imagens da
+  nota), um nome com pasta longa fica ao lado do ícone, sem descer para a linha de baixo.

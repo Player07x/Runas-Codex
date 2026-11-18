@@ -51,6 +51,9 @@
 .top-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .new-trigger { min-height: 36px; padding: 0 12px; }
 .content { flex: 1 1 0; min-height: 0; overflow: auto; }
+/* U120: a barra de rolagem tem o lugar reservado, então trocar entre uma página curta e uma longa não empurra a
+   página para o lado. As telas que ocupam a altura toda (.fill) não rolam e não perdem esse espaço. */
+.content:not(.fill) { scrollbar-gutter: stable; }
 .content.fill { overflow: hidden; display: flex; flex-direction: column; }
 
 /* ---------- Barra inferior (celular) ---------- */
