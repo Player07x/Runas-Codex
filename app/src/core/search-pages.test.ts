@@ -20,6 +20,7 @@ faccoes: ["[[Ordem da Brasa]]"]
   "Wikis/Valdris/Lendas/Crônica.md": "# Crônica das Cinzas\n",
   "Livros/Guia/Guia.md": "---\ntipo: livro\n---\n# Guia de Valdris\n",
   "Livros/Guia/Capítulos/Abertura.md": "# Abertura\n",
+  "Agenda/Reunião @ Torre.md": "---\ntitle: Reunião na Torre\ndate: 2026-11-19\nallDay: true\n---\n",
   "Notas/Solta.md": "# Solta\n",
 }
 const index = new VaultIndex(Object.keys(files).map((path) => ({ path, size: 1, mtime: 1 })), files)
@@ -89,4 +90,13 @@ describe("páginas da busca (U116)", () => {
     const pages = searchPages(index, "acess", ["Wikis/Valdris/Lendas/Crônica.md"])
     expect(pages[0]?.label).toBe("Acessibilidade")
   })
+  it("abre o evento na Agenda, a mesa no VTT e os atalhos no Editor", () => {
+    const path = "Agenda/Reunião @ Torre.md"
+    expect(notePages(index, path)[0]).toMatchObject({ route: `/agenda/evento/${encodeURIComponent(path)}`, notePath: path })
+    expect(searchPages(index, "cripta", [], 7, [{ id: "mesa-7", title: "A Cripta" }])).toEqual([
+      { key: "mesa:mesa-7", label: "A Cripta", detail: "Mesa · VTT", route: "/vtt/mesa/mesa-7" },
+    ])
+    expect(screenPages("atalhos")[0]?.route).toBe("/config/editor")
+  })
+
 })
