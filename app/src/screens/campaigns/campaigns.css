@@ -213,11 +213,10 @@
 .campaign-tabs .tabs-measure { position: absolute; visibility: hidden; pointer-events: none; display: flex; height: 0; overflow: hidden; white-space: nowrap; }
 .campaign-tabs .tabs-measure span { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: calc(14px * var(--font-scale, 1)); font-weight: 650; }
 
-/* Ferramentas da campanha (rework F4c, CAM-6): lista à esquerda, a escolhida à direita. */
-.campaign-tools-layout { display: grid; grid-template-columns: minmax(180px, 220px) minmax(0, 1fr); gap: var(--space-section); align-items: start; }
-.campaign-tools-list { display: grid; gap: 2px; }
-.campaign-tools-list .list-item.active { background: color-mix(in srgb, var(--cyan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cyan); }
-@media (max-width: 860px) { .campaign-tools-layout { grid-template-columns: minmax(0, 1fr); } .campaign-tools-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+/* Ferramentas da campanha (rework F4c, CAM-6; U118): abas no topo, a escolhida com a largura toda. No celular as abas quebram em linhas. */
+.campaign-tools > .kit-tabs { padding: 0; margin-bottom: var(--space-group); }
+.campaign-tools > .kit-tabpanel { padding: 0; }
+@media (max-width: 640px) { .campaign-tools > .kit-tabs { flex-wrap: wrap; overflow: visible; } }
 
 /* CAM-9: estatísticas recolhidas no fim do painel, no celular. */
 .campaign-stats-card summary { min-height: 44px; cursor: pointer; }

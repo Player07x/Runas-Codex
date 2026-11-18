@@ -2231,3 +2231,15 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Ferramentas do mundo e da campanha (PR F/U118)
+
+- [ ] Wiki › Ferramentas: abas Geradores, Tabelas da wiki e Conferir a wiki, cada uma com o número. Em Geradores, os 15
+  em quatro faixas de pílulas; as opções e o Gerar ficam na linha do título; Recentes abertos à direita (clique usa de
+  novo). Gerar 5, Usar um, Guardar na wiki… abre o Novo artigo com o tipo certo.
+- [ ] Tabelas da wiki: cada tabela num cartão com Rolar; o resultado aparece embaixo. Numa wiki sem tabelas, a aba
+  mostra um exemplo e o caminho (menu / do editor › Tabela rolável).
+- [ ] Conferir a wiki: “De um lado só” e “Invertidas” com a lista inteira na tela (sem caixa com rolagem); desmarcar e
+  Gravar/Inverter grava só o que ficou marcado.
+- [ ] Campanha › Ferramentas: as quatro ferramentas em abas no topo, a escolhida com a largura toda e lembrada.
+- [ ] No celular: o gerador num seletor (“Taverna (Lugares)”), as abas quebram em linhas, Recentes no fim.
