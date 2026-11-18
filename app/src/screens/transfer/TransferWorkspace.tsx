@@ -7,9 +7,10 @@ import { navigate, useRoute } from "../../lib/router"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { buildImportPlan, sameTransferVersion, selectTransferPaths, type ImportPlan, type ImportStrategy, type TransferEntry } from "../../core/transfer/plan"
 import { ANDROID_IMPORT_LIMITS, ANDROID_TRANSFER_LIMITS, createTransferArchive, IMPORT_LIMITS, transferSize, type PackageItemSpec, LEGACY_ARCHIVE_LIMIT, managedWorldPath, readTransferArchiveFrom, transferPath, TRANSFER_LIMITS, writeTransferArchive, type TransferArchive, type TransferFile } from "../../core/transfer/archive"
-import { blobSource, bufferedSink } from "../../core/transfer/zip-stream"
+import { blobChunks, blobSource, bufferedSink } from "../../core/transfer/zip-stream"
 import { convertNotionExport, NOTION_FOLDER, unwrapNestedZips } from "../../core/transfer/notion"
 import "./transfer-workspace.css"
+import { keptInMemory } from "../../core/transfer/archive"
 import { parseWorldManifest } from "../../vtt/shared/world"
 import { DocumentExport } from "./DocumentExport"
 import { expandTransferItems, listTransferItems, missingFromPackage, TRANSFER_ITEM_GROUPS, transferStats, type TransferItem, type TransferWorld } from "../../core/transfer/items"
@@ -249,7 +250,8 @@ export function TransferWorkspace() {
         for (const file of chosen) {
           if (file.size > limits.file || (total += file.size) > limits.expanded || chosen.length > limits.files) throw new Error("A seleção de arquivos excede os limites informados.")
           const path = transferPath((prefix ? prefix + "/" : "") + file.name)
-          data.push({ path, bytes: new Uint8Array(await file.arrayBuffer()) })
+          // U109: só os textos são lidos agora; os binários são lidos ao gravar, em pedaços onde a plataforma permite.
+          data.push(keptInMemory(path) ? { path, bytes: new Uint8Array(await file.arrayBuffer()) } : { path, bytes: new Uint8Array(0), size: file.size, load: async () => new Uint8Array(await file.arrayBuffer()), stream: onChunk => blobChunks(file, onChunk) })
         }
         archive = { title: "Arquivos importados", kind: "markdown", files: data, ignored: [] }
       }

@@ -60,5 +60,24 @@ export function createAndroidBinary(native: AndroidBinaryPlugin) {
         return await native.binaryWriteFinish({ id })
       } catch (error) { await native.binaryAbort({ id }).catch(() => undefined); throw error }
     }),
+    /** U109: os pedaços vão para a ponte assim que chegam; a tela nunca tem o arquivo inteiro. */
+    writeStream: (path: string, size: number, expected: VaultEntry | null | undefined, produce: (write: (bytes: Uint8Array) => Promise<void>) => Promise<void>, managed = false) => turn(async () => {
+      binarySize(size)
+      const version = expected === undefined ? {} : { expected: expected && { size: expected.size, mtime: expected.mtime } }
+      const { id } = await native.binaryWriteStart({ path, size, managed, ...version })
+      try {
+        let written = 0
+        await produce(async bytes => {
+          for (let at = 0; at < bytes.length; at += BINARY_CHUNK) {
+            const part = bytes.subarray(at, at + BINARY_CHUNK)
+            written += part.length
+            if (written > size) throw new Error("O arquivo ficou maior do que o previsto durante a gravação.")
+            await native.binaryWriteChunk({ id, base64: toBase64(part) })
+          }
+        })
+        if (written !== size) throw new Error("O arquivo chegou incompleto à gravação.")
+        return await native.binaryWriteFinish({ id })
+      } catch (error) { await native.binaryAbort({ id }).catch(() => undefined); throw error }
+    }),
   }
 }

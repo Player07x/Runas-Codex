@@ -27,4 +27,6 @@ public interface VaultFs {
     VaultStore.Entry restoreTrash(String path, String target) throws IOException;
     String installSnippet(String css) throws IOException;
     VaultStore.Backup backup(File folder, int keep) throws IOException;
+    /** “Testar gravação” (U110): apaga de vez o arquivo do teste, sem lixeira; recusa qualquer outro nome. */
+    void removeWriteCheck(String path) throws IOException;
 }

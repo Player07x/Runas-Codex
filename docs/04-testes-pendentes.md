@@ -2231,3 +2231,15 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Android: arquivos grandes em pedaços e “Testar gravação” (1.6, T/U109 e U110)
+
+- [ ] No Android, importe um pacote `.runas` (ou um ZIP) com um áudio ou vídeo grande (100 MB ou mais). A prévia e a
+  gravação terminam sem o app fechar, e o arquivo abre igual no cofre. O binário vai do pacote para a ponte em
+  pedaços de 2 MB; nem a conferência do manifesto junta o arquivo inteiro na memória da tela.
+- [ ] No Android, importe um arquivo grande escolhido avulso (fora de pacote): ele também é gravado em pedaços.
+- [ ] Um pacote com a imagem corrompida é recusado e nada fica pela metade no cofre.
+- [ ] Android, Configurações › Cofre: “Testar gravação” está disponível e diz “A gravação funciona nesta pasta.”, com
+  a pasta escolhida pelo seletor (SAF) e com o acesso a todos os arquivos. Depois do teste, não fica nenhum arquivo
+  “Runas-Codex teste de gravação …” no cofre nem na lixeira (`.trash`), e o Obsidian não mostra nada novo.
+- [ ] Com o cofre em somente leitura, o botão fica desativado (“Libere a gravação para testar.”).

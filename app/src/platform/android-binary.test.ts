@@ -70,4 +70,19 @@ describe("binários pela ponte Android em pedaços", () => {
     const results = await Promise.allSettled([binary.read("a"), binary.read("b"), binary.read("c")])
     expect(results.map(r => r.status)).toEqual(["rejected", "rejected", "fulfilled"])
   })
+  it("grava em pedaços o que chega aos poucos, sem juntar o arquivo (U109)", async () => {
+    const native = plugin(), api = createAndroidBinary(native)
+    const parts = [new Uint8Array(BINARY_CHUNK + 5).fill(1), new Uint8Array(10).fill(2)]
+    await api.writeStream("Anexos/a.bin", BINARY_CHUNK + 15, null, async write => { for (const part of parts) await write(part) })
+    expect(native.binaryWriteStart).toHaveBeenCalledWith({ path: "Anexos/a.bin", size: BINARY_CHUNK + 15, expected: null, managed: false })
+    expect(native.binaryWriteChunk.mock.calls.map(([options]) => Buffer.from(options.base64, "base64").length)).toEqual([BINARY_CHUNK, 5, 10])
+    expect(native.binaryWriteFinish).toHaveBeenCalledWith({ id: 9 })
+  })
+  it("descarta a gravação em pedaços quando o arquivo chega incompleto ou falha no meio (U109)", async () => {
+    const native = plugin(), api = createAndroidBinary(native)
+    await expect(api.writeStream("a.bin", 10, undefined, async write => { await write(new Uint8Array(4)) })).rejects.toThrow("incompleto")
+    await expect(api.writeStream("a.bin", 10, undefined, async () => { throw new Error("CRC") })).rejects.toThrow("CRC")
+    expect(native.binaryAbort).toHaveBeenCalledTimes(2)
+    expect(native.binaryWriteFinish).not.toHaveBeenCalled()
+  })
 })

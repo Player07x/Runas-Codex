@@ -143,6 +143,11 @@ export interface Platform {
   regrantVault?(): Promise<VaultInfo | null>
   /** Android (U91), opção avançada: abrir a pasta com “acesso a todos os arquivos” (mais rápido em cofres grandes). */
   chooseVaultAllFiles?(): Promise<VaultInfo | null>
+  /**
+   * U109 (Android): grava um binário de `size` bytes que chega em pedaços (`produce` chama `write` para cada um), sem
+   * juntá-lo inteiro na memória da tela. `managed` grava nos dados internos das mesas, como `writeManagedTransfer`.
+   */
+  writeBinaryStream?(path: string, size: number, expected: VaultEntry | null | undefined, produce: (write: (bytes: Uint8Array) => Promise<void>) => Promise<void>, managed?: boolean): Promise<VaultEntry>
 }
 
 /** Destino de uma exportação em pedaços. `abort` apaga o que já foi escrito. */
