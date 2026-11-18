@@ -102,13 +102,15 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
   })
   // O cofre pode ser reindexado com o painel aberto. Resolva a referência antes de usar a posição para editar.
   const current = chosen && chosen.kind !== "pj" ? trackedSelection(chosen.kind === "npc" ? data.npcs : data.factions, chosen) : undefined
-  const selected = chosen?.kind === "pj" ? chosen : chosen && current ? selectTracked(chosen.kind, current) : null
+  const selected = chosen?.kind === "pj" ? (data.players.some((player) => player.path === chosen.path) ? chosen : null)
+    : chosen && current ? selectTracked(chosen.kind, current) : null
   const detailsOpen = selected !== null
   const [adding, setAdding] = useState(false)
   const [dialog, setDialog] = useState<ReactNode>(null)
   const relations = useCastRelations(data)
   const detailId = useId()
   const returnFocus = useRef<HTMLElement | null>(null)
+  const searchInput = useRef<HTMLInputElement>(null)
 
   const rows = useMemo(() => castRows(index, data.npcs, data.sessions), [index, vault.version, data.npcs, data.sessions])
   const q = fold(query.trim())
@@ -134,7 +136,10 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
     returnFocus.current = from
     setSelected(selected && sameSelection(selected, next) ? null : next)
   }
-  const close = () => { setSelected(null); requestAnimationFrame(() => returnFocus.current?.focus()) }
+  const close = () => {
+    setSelected(null)
+    requestAnimationFrame(() => (returnFocus.current?.isConnected ? returnFocus.current : searchInput.current)?.focus())
+  }
   // No celular o painel sobe por cima da lista: o foco vai para ele e Esc o fecha.
   useEffect(() => {
     if (!detailsOpen) return
@@ -167,7 +172,7 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
       <div className="campaign-cast-bar">
         <label className="search campaign-cast-search">
           <Search size={15} aria-hidden="true" />
-          <input className="input" type="search" value={query} onChange={(e) => { setQuery(e.target.value); setLimit(PAGE) }} placeholder="Buscar no elenco" aria-label="Buscar no elenco (nome, jogador, local ou facção)" />
+          <input ref={searchInput} className="input" type="search" value={query} onChange={(e) => { setQuery(e.target.value); setLimit(PAGE) }} placeholder="Buscar no elenco" aria-label="Buscar no elenco (nome, jogador, local ou facção)" />
         </label>
         <FiltersMenu narrow={narrow} active={chips.length} seen={seen} attitude={attitude} prefs={prefs} rows={rows}
           onSeen={(value) => { setFilters((c) => ({ ...c, seen: value })); setLimit(PAGE) }} onAttitude={(value) => { setFilters((c) => ({ ...c, attitude: value })); setLimit(PAGE) }} onPrefs={setPrefs} />
