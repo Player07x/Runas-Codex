@@ -240,6 +240,20 @@ public class DocumentVaultStoreTest {
         refuses("lixeira", () -> store.restoreTrash("Notas/a.md", "Notas/b.md"));
     }
 
+    @Test public void bibliotecaUsaLixeiraDoCofreSemLiberarOutrosDadosOcultos() throws IOException {
+        String item = ".runas/mesas/biblioteca/cenas/token-1.json";
+        String scene = ".runas/mesas/porto/cenas/cena-1.json";
+        documents.file(item, "{}");
+        documents.file(scene, "[]");
+        String trashed = store.trash(item);
+        assertEquals(".trash/token-1.json", trashed);
+        assertFalse(store.readTexts(Arrays.asList(item)).containsKey(item));
+        refuses("ocultos", () -> store.trash(scene));
+        store.restoreTrash(trashed, item);
+        assertEquals("{}", text(item));
+        assertEquals("[]", text(scene));
+    }
+
     @Test public void snippetEInicializacaoNaoSubstituemConfiguracoesExistentes() throws IOException {
         documents.file(".obsidian/app.json", "meu");
         store.initialize();

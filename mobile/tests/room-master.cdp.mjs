@@ -75,6 +75,26 @@ export async function checkRemoteMaster({ app, browser, base, playerKey, fixture
     }
     check('canal fora da lista recebe 403', (await request('vault:read')).status === 403)
     check('RPC exige sessão do SSE', (await request('vtt:documents-list', ['scene'], 'errada')).status === 403)
+    const campaign = fixture.campaign
+    const targets = await rpc('vtt:host-session-targets')
+    check('mestre recebe as campanhas graváveis do cofre', targets.readOnly === false && targets.campaigns.some(entry => entry.name === campaign && entry.next === 1))
+    const sessionText = 'Sessão guardada pelo mestre no Android.'
+    const sessionFolder = await rpc('vtt:host-session-save', { campaign, number: 1, title: 'Mesa X7', date: '2026-11-18', text: sessionText })
+    check('mestre salva na pasta da campanha do aparelho da sala', sessionFolder === `Campanhas/${campaign}/Sessões`)
+    const localNote = `${output}/sessao-salva.md`
+    adb('pull', `/sdcard/Documents/cofre-room/${sessionFolder}/Sessão 1.md`, localNote)
+    const note = await readFile(localNote, 'utf8')
+    check('sessão preserva as anotações e o estado realizado', note.includes(sessionText) && note.includes('status: realizada'))
+
+    const libraryItem = { formatVersion: 1, kind: 'token', id: 'x7-biblioteca', name: 'Token de biblioteca X7', createdAt: 1, data: { name: 'Token de biblioteca X7', image: fixture.secret }, children: [] }
+    await rpc('vtt:host-library-save', libraryItem)
+    const items = await rpc('vtt:host-library-list')
+    check('mestre guarda e lista itens na biblioteca do Android', items.some(item => item.id === libraryItem.id && item.data.image === fixture.secret))
+    const libraryImage = Buffer.from(await rpc('vtt:host-library-asset', fixture.secret), 'base64')
+    check('biblioteca remota devolve a imagem do cofre', libraryImage.equals(await readFile(`${output}/fixture/.runas/mesas/ci-x7/assets/${fixture.secret}`)))
+    await rpc('vtt:host-library-remove', libraryItem.id)
+    check('mestre remove o item da biblioteca', !(await rpc('vtt:host-library-list')).some(item => item.id === libraryItem.id))
+
     const token = { id: 'r5-token', type: 'token', parentId: 'scene', data: { name: 'Token do tablet R5', x: 350, y: 150, disposition: 'friendly' } }
     browser.frames.length = 0
     await rpc('vtt:documents-put', token)
