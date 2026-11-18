@@ -36,7 +36,14 @@ type Order = "nome" | "recente" | "adicao"
 type Mode = "list" | "grid"
 type CardSize = "small" | "medium" | "large"
 type Prefs = { group: Group; order: Order; mode: Mode; size: CardSize }
-type Selected = { kind: "pj"; path: string } | { kind: "npc" | "faccao"; position: number }
+type Selected = { kind: "pj"; path: string } | { kind: "npc" | "faccao"; reference: string; position: number }
+
+const selectTracked = (kind: "npc" | "faccao", item: TrackedLink): Selected => ({ kind, reference: item.dest ?? item.target, position: item.position })
+
+function trackedSelection(items: TrackedLink[], selected: Extract<Selected, { reference: string }>): TrackedLink | undefined {
+  const matches = items.filter((item) => (item.dest ?? item.target) === selected.reference)
+  return matches.length === 1 ? matches[0] : matches.find((item) => item.position === selected.position)
+}
 
 const PAGE = 60
 const TABS: Tab[] = ["todos", "jogadores", "npcs", "faccoes", "relacoes"]
@@ -70,7 +77,7 @@ const SEEN: Record<Seen, string> = { todos: "Todos", apareceu: "Apareceram", ain
 const fold = (text: string) => text.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{M}/gu, "")
 const repText = (rep: number) => (rep > 0 ? `+${rep}` : String(rep))
 
-export function CastView({ data }: { data: CampaignData }) {
+export function CastView({ data, requestedPath }: { data: CampaignData; requestedPath?: string }) {
   const vault = useVault()
   const index = vault.index!
   const { setHome } = useCampaignEdits(data)
@@ -78,12 +85,25 @@ export function CastView({ data }: { data: CampaignData }) {
   const narrow = useSinglePane()
   const root = data.campaign.root
   const canEdit = !data.readOnly && Boolean(data.campaign.home)
-  const [tab, setTab] = useRemembered(`runas-codex:campanha:elenco-aba:${root}`, parseTab)
+  const [rememberedTab, setTab] = useRemembered(`runas-codex:campanha:elenco-aba:${root}`, parseTab)
+  const [fromLink, setFromLink] = useState(Boolean(requestedPath))
+  const tab = fromLink ? "todos" : rememberedTab
   const [filters, setFilters] = useRemembered(`runas-codex:campanha:elenco-filtros:${root}`, parseCastFilters)
   const [prefs, setPrefs] = usePrefs(root)
   const [query, setQuery] = useState("")
   const [limit, setLimit] = useState(PAGE)
-  const [selected, setSelected] = useState<Selected | null>(null)
+  const [chosen, setSelected] = useState<Selected | null>(() => {
+    if (!requestedPath) return null
+    if (data.players.some((player) => player.path === requestedPath)) return { kind: "pj", path: requestedPath }
+    const npc = data.npcs.find((item) => item.dest === requestedPath)
+    if (npc) return selectTracked("npc", npc)
+    const faction = data.factions.find((item) => item.dest === requestedPath)
+    return faction ? selectTracked("faccao", faction) : null
+  })
+  // O cofre pode ser reindexado com o painel aberto. Resolva a referência antes de usar a posição para editar.
+  const current = chosen && chosen.kind !== "pj" ? trackedSelection(chosen.kind === "npc" ? data.npcs : data.factions, chosen) : undefined
+  const selected = chosen?.kind === "pj" ? chosen : chosen && current ? selectTracked(chosen.kind, current) : null
+  const detailsOpen = selected !== null
   const [adding, setAdding] = useState(false)
   const [dialog, setDialog] = useState<ReactNode>(null)
   const relations = useCastRelations(data)
@@ -112,17 +132,17 @@ export function CastView({ data }: { data: CampaignData }) {
 
   const select = (next: Selected, from: HTMLElement) => {
     returnFocus.current = from
-    setSelected((current) => (current && sameSelection(current, next) ? null : next))
+    setSelected(selected && sameSelection(selected, next) ? null : next)
   }
   const close = () => { setSelected(null); requestAnimationFrame(() => returnFocus.current?.focus()) }
   // No celular o painel sobe por cima da lista: o foco vai para ele e Esc o fecha.
   useEffect(() => {
-    if (!selected) return
+    if (!detailsOpen) return
     if (narrow) requestAnimationFrame(() => document.getElementById(`${detailId}-title`)?.focus())
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !document.querySelector(".modal")) close() }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [selected, narrow])
+  }, [chosen, detailsOpen, narrow])
 
   // O que estiver em uso nos filtros aparece como etiqueta com ✕.
   const chips: { label: string; clear(): void }[] = [
@@ -132,7 +152,7 @@ export function CastView({ data }: { data: CampaignData }) {
     ...(prefs.order !== "nome" ? [{ label: `Ordem: ${ORDERS[prefs.order].toLocaleLowerCase("pt-BR")}`, clear: () => setPrefs({ order: "nome" }) }] : []),
   ]
   const show = (part: Tab) => tab === "todos" ? part !== "relacoes" : tab === part
-  const detail = selected ? <CastDetail data={data} selected={selected} rows={rows} relations={relations} id={detailId} onClose={close}
+  const detail = selected ? <CastDetail data={data} selected={selected} rows={rows} relations={relations} id={detailId} focusOnRoute={fromLink} onClose={close}
     onSaveNpc={saveNpc} onSaveFaction={saveFaction} onRemoveNpc={removeNpc} onRemoveFaction={removeFaction} onUnlink={unlinkPlayer}
     onEditPlayer={(p) => setDialog(<EditPlayerDialog campaign={data.campaign} character={p} onClose={() => setDialog(null)} />)} /> : null
 
@@ -156,7 +176,7 @@ export function CastView({ data }: { data: CampaignData }) {
           { label: "Gerar relações no Quadro", hint: relations.file.split("/").at(-1), icon: <Shapes size={15} />, disabled: data.readOnly || !relations.members.length, onSelect: () => void relations.generate() },
         ]} />
       </div>
-      <PanelTabs label="Tipos do elenco" idPrefix="elenco" value={tab} onChange={(value) => { setTab(value); setLimit(PAGE) }} tabs={[
+      <PanelTabs label="Tipos do elenco" idPrefix="elenco" value={tab} onChange={(value) => { setFromLink(false); setTab(value); setLimit(PAGE) }} tabs={[
         { value: "todos", label: "Todos", count: counts.todos }, { value: "jogadores", label: "Jogadores", count: counts.jogadores },
         { value: "npcs", label: "NPCs", count: counts.npcs }, { value: "faccoes", label: "Facções", count: counts.faccoes }, { value: "relacoes", label: "Relações", count: counts.relacoes },
       ]} />
@@ -185,10 +205,10 @@ export function CastView({ data }: { data: CampaignData }) {
               empty={data.factions.length ? "Nenhuma facção com esse nome." : "Organizações da wiki com a reputação do grupo (−3 a +3). Use “Adicionar”."}>
               <ul className={prefs.mode === "grid" ? `campaign-cast-cards size-${prefs.size}` : "campaign-cast-list"}>
                 {factions.map((item) => {
-                  const name = noteName(item.target), rep = reputationOf(item.extra), on = isSelected(selected, { kind: "faccao", position: item.position })
+                  const name = noteName(item.target), rep = reputationOf(item.extra), on = isSelected(selected, selectTracked("faccao", item))
                   const note = item.dest ? index.note(item.dest) : undefined
                   return <li key={item.position} className={`campaign-cast-item${on ? " selected" : ""}`}>
-                    <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => select({ kind: "faccao", position: item.position }, e.currentTarget)}>
+                    <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => select(selectTracked("faccao", item), e.currentTarget)}>
                       {prefs.mode === "grid" && prefs.size !== "small" && note ? <ArticleArt note={note} size="thumb" /> : <NoteCrest path={item.dest} name={name} size={32} />}
                       <span className="campaign-cast-card-text"><strong className={item.dest ? undefined : "wikilink broken"}>{name}</strong></span>
                     </button>
@@ -207,7 +227,10 @@ export function CastView({ data }: { data: CampaignData }) {
   )
 }
 
-const sameSelection = (a: Selected, b: Selected) => a.kind === b.kind && (a.kind === "pj" ? a.path === (b as { path: string }).path : a.position === (b as { position: number }).position)
+function sameSelection(a: Selected, b: Selected): boolean {
+  if (a.kind === "pj" || b.kind === "pj") return a.kind === "pj" && b.kind === "pj" && a.path === b.path
+  return a.kind === b.kind && a.reference === b.reference && a.position === b.position
+}
 const isSelected = (current: Selected | null, item: Selected) => Boolean(current && sameSelection(current, item))
 
 function CastSection({ title, count, total, hint, empty, children }: { title: string; count: number; total: number; hint?: string; empty: string; children: ReactNode }) {
@@ -269,13 +292,13 @@ function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detai
         {group && <h3 className="campaign-roster-group">{group} · {list.length}</h3>}
         <ul ref={i === 0 ? gridRef : undefined} className={grid ? `campaign-cast-cards npcs size-${prefs.size}` : "campaign-cast-list"}>
           {list.map((row) => {
-            const on = isSelected(selected, { kind: "npc", position: row.item.position })
+            const on = isSelected(selected, selectTracked("npc", row.item))
             const note = row.item.dest ? vault.index?.note(row.item.dest) : undefined
             const media = grid && prefs.size !== "small"
               ? note ? <ArticleArt note={note} size="cover" /> : <span className="wiki-article-art cover" aria-hidden="true"><span className="wiki-art-initial">{Array.from(row.name.trim())[0]?.toLocaleUpperCase("pt-BR") ?? "?"}</span></span>
               : <NoteCrest path={row.item.dest} name={row.name} size={32} />
             return <li key={row.item.position} className={`campaign-cast-item${on ? " selected" : ""}`}>
-              <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => onSelect({ kind: "npc", position: row.item.position }, e.currentTarget)}>
+              <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => onSelect(selectTracked("npc", row.item), e.currentTarget)}>
                 {media}
                 <span className="campaign-cast-card-text">
                   <strong className={row.item.dest ? undefined : "wikilink broken"}>{row.name}</strong>
@@ -349,8 +372,8 @@ function FiltersMenu({ narrow, active, seen, attitude, prefs, rows, onSeen, onAt
 }
 
 /** Painel do cartão escolhido: tudo o que antes ficava em cada cartão. */
-function CastDetail({ data, selected, rows, relations, id, onClose, onSaveNpc, onSaveFaction, onRemoveNpc, onRemoveFaction, onUnlink, onEditPlayer }: {
-  data: CampaignData; selected: Selected; rows: CastRow[]; relations: ReturnType<typeof useCastRelations>; id: string; onClose(): void
+function CastDetail({ data, selected, rows, relations, id, focusOnRoute, onClose, onSaveNpc, onSaveFaction, onRemoveNpc, onRemoveFaction, onUnlink, onEditPlayer }: {
+  data: CampaignData; selected: Selected; rows: CastRow[]; relations: ReturnType<typeof useCastRelations>; id: string; focusOnRoute: boolean; onClose(): void
   onSaveNpc(item: TrackedLink, extra: string): void; onSaveFaction(item: TrackedLink, extra: string): void
   onRemoveNpc(row: CastRow): void; onRemoveFaction(item: TrackedLink): void; onUnlink(p: PlayerCharacter): void; onEditPlayer(p: PlayerCharacter): void
 }) {
@@ -376,7 +399,7 @@ function CastDetail({ data, selected, rows, relations, id, onClose, onSaveNpc, o
     <div className="campaign-cast-detail-who">
       <NoteCrest path={path} name={name} size={48} round={!faction} />
       <div className="campaign-cast-card-text">
-        <h2 id={titleId} tabIndex={-1}>{name}</h2>
+        <h2 id={titleId} tabIndex={-1} data-route-focus={focusOnRoute || undefined}>{name}</h2>
         <span className="small muted">{[kindLabel, sub].filter(Boolean).join(" · ")}</span>
       </div>
     </div>

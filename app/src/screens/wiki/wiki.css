@@ -446,3 +446,10 @@
   .wiki-category-index { display: flex; flex-wrap: wrap; gap: 6px; }
   .wiki-category-index .chip { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 14px; text-decoration: none; }
 }
+
+/* No celular, o painel usa a largura dos controles. O botão Filtros costuma ficar na metade direita da linha. */
+@media (max-width: 560px) {
+  .timeline-controls { position: relative; }
+  .timeline-controls .dropdown { position: static; }
+  .timeline-controls .dropdown-panel { width: min(300px, 100%); min-width: 0; }
+}

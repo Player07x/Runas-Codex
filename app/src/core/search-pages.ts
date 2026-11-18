@@ -1,3 +1,4 @@
+import { AGENDA_ROOT, parseEvent } from "./agenda"
 import { bookRoute } from "./books"
 import {
   campaignInfo, campaignNameOf, isPlayerNote, isQuestNote, isSessionNote, listPlayers, noteTitle, trackedLinks,
@@ -53,9 +54,9 @@ export const SCREEN_PAGES: readonly SearchPage[] = [
   { key: "tela:config", label: "Configurações", detail: "Tela", route: "/config" },
   { key: "tela:acessibilidade", label: "Acessibilidade", detail: "Configurações", route: "/config/acessibilidade" },
   { key: "tela:aparencia", label: "Aparência", detail: "Configurações", route: "/config/aparencia" },
-  { key: "tela:atalhos", label: "Atalhos", detail: "Configurações", route: "/config/atalhos" },
+  { key: "tela:atalhos", label: "Atalhos", detail: "Configurações", route: "/config/editor" },
   { key: "tela:backups", label: "Backups", detail: "Configurações", route: "/config/backups" },
-  { key: "tela:ajuda", label: "Ajuda e notas de exemplo", detail: "Ajuda", route: "/config/ajuda" },
+  { key: "tela:ajuda", label: "Ajuda e notas de exemplo", detail: "Ajuda", route: "/ajuda" },
 ]
 
 /** As telas fixas cujo nome contém a busca (sem diferenciar acentos). Busca vazia não lista nenhuma. */
@@ -74,6 +75,11 @@ export function notePages(index: VaultIndex, path: string): SearchPage[] {
   const title = noteTitle(note)
   const pages: SearchPage[] = []
   const add = (page: Omit<SearchPage, "notePath">) => pages.push({ ...page, notePath: path })
+
+  if (path.startsWith(AGENDA_ROOT)) {
+    const event = parseEvent(path, note.text)
+    if (event) add({ key: `evento:${path}`, label: event.title, detail: "Evento · Agenda", route: `/agenda/evento/${encodeURIComponent(path)}` })
+  }
 
   const campaign = campaignNameOf(path)
   if (campaign) {
@@ -133,7 +139,7 @@ export function notePages(index: VaultIndex, path: string): SearchPage[] {
  * As páginas da busca: as das notas achadas (na ordem delas) e depois as telas fixas pelo nome, sem repetir, até
  * `limit`.
  */
-export function searchPages(index: VaultIndex | null | undefined, query: string, notePaths: readonly string[], limit = 7): SearchPage[] {
+export function searchPages(index: VaultIndex | null | undefined, query: string, notePaths: readonly string[], limit = 7, worlds: readonly { id: string; title: string }[] = []): SearchPage[] {
   const seen = new Set<string>()
   const pages: SearchPage[] = []
   const push = (page: SearchPage) => {
@@ -144,8 +150,11 @@ export function searchPages(index: VaultIndex | null | undefined, query: string,
   // A tela cujo nome começa pela busca vem antes (“acess” → Acessibilidade); as outras, depois das notas.
   const screens = screenPages(query)
   const q = fold(query)
-  for (const page of screens) if (fold(page.label).startsWith(q)) push(page)
+  const tables: SearchPage[] = q ? worlds.filter((world) => fold(world.title).includes(q)).map((world) => ({
+    key: `mesa:${world.id}`, label: world.title, detail: "Mesa · VTT", route: `/vtt/mesa/${encodeURIComponent(world.id)}`,
+  })) : []
+  for (const page of [...screens, ...tables]) if (fold(page.label).startsWith(q)) push(page)
   if (index && q) for (const path of notePaths) for (const page of notePages(index, path)) push(page)
-  for (const page of screens) push(page)
+  for (const page of [...screens, ...tables]) push(page)
   return pages
 }

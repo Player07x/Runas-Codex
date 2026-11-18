@@ -33,6 +33,8 @@ import { requestAgendaAction } from "../lib/agenda-request"
 import { useTasksSettings } from "../lib/tasks"
 import { TaskQuickSearch } from "./tasks/TaskQuickSearch"
 import { UpdateBadge, UpdateNavItem } from "./UpdateNavItem"
+import { vtt } from "../vtt/api"
+import type { WorldSummary } from "../vtt/shared/world"
 
 type NavItem = { route: string; label: string; icon: ReactNode; count?: number; match: string }
 
@@ -322,8 +324,15 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
     const folder = vault.index?.allFiles().some((f) => f.path.startsWith("Notas/")) ? "Notas" : ""
     vault.createNote(folder, query.trim()).then((path) => navigate(vaultRoute(path)), (error: unknown) => toast.error(error))
   }
-  // U116: primeiro as páginas onde as notas achadas aparecem (e as telas pelo nome); Ctrl Enter abre a nota.
-  const pages = useMemo(() => searchPages(vault.index, query, notes.map((n) => n.path)), [vault.index, vault.version, query, notes])
+  const [worlds, setWorlds] = useState<WorldSummary[]>([])
+  useEffect(() => {
+    let current = true
+    setWorlds([])
+    void vtt.listWorlds().then((list) => { if (current) setWorlds(list) }, () => undefined)
+    return () => { current = false }
+  }, [vault.info?.path])
+  // Ctrl Enter abre a nota associada quando a página tem uma.
+  const pages = useMemo(() => searchPages(vault.index, query, notes.map((n) => n.path), 7, worlds), [vault.index, vault.version, query, notes, worlds])
   type Item = { key: string; label: string; icon: ReactNode; hint: string; run: () => void; section: string; notePath?: string; shortcuts?: PageShortcut[] }
   const items: Item[] = [
     ...pages.map((p) => ({ key: p.key, label: p.label, icon: <PanelsTopLeft size={16} />, hint: p.detail, run: () => navigate(p.route), section: "Páginas", notePath: p.notePath, shortcuts: p.shortcuts })),

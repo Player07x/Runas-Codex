@@ -77,7 +77,7 @@ function CampaignPage({ name, section, id }: { name: string; section: string; id
       {section === "" && <CampaignDashboard data={data} onScreen={() => setScreen(true)} />}
       {section === "sessoes" && <SessionsView data={data} path={id} />}
       {section === "missoes" && <QuestBoard data={data} path={id} />}
-      {section === "elenco" && <CastView data={data} />}
+      {section === "elenco" && <CastView key={id ?? ""} data={data} requestedPath={id} />}
       {section === "ferramentas" && <CampaignTools data={data} />}
       {section === "quadro" && <BoardsView data={data} path={id} />}
       {screen && <StorytellerScreen data={data} onClose={() => setScreen(false)} />}

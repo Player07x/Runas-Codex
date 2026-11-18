@@ -83,6 +83,7 @@ export function HelpScreen() {
   const previous = index > 0 ? HELP_TOPICS[index - 1] : undefined
   const next = index < HELP_TOPICS.length - 1 ? HELP_TOPICS[index + 1] : index === HELP_TOPICS.length - 1 ? EXAMPLES : undefined
   const title = topic?.title ?? EXAMPLES.title
+  const ArticleTitle = asked ? "h1" : "h2"
 
   // Trocar de tópico volta o artigo ao topo.
   useEffect(() => { if (article.current) article.current.scrollTop = 0; setActive(0) }, [asked])
@@ -116,7 +117,9 @@ export function HelpScreen() {
     <div className={`help-screen${asked ? " has-topic" : ""}`}>
       <nav className="help-pane help-index" aria-label="Tópicos da Ajuda">
         <div className="help-index-head">
-          <span className="eyebrow row"><BookOpen size={15} aria-hidden="true" /> Manual offline</span>
+          {asked
+            ? <span className="eyebrow row"><BookOpen size={15} aria-hidden="true" /> Manual offline</span>
+            : <h1 className="page-title row help-index-title"><BookOpen size={18} aria-hidden="true" /> Ajuda</h1>}
           <label className="help-search">
             <Search size={17} aria-hidden="true" />
             <input type="search" className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar na Ajuda" aria-label={`Buscar na Ajuda (${HELP_TOPICS.length} tópicos)`} />
@@ -143,7 +146,7 @@ export function HelpScreen() {
           <a href={href("/ajuda")} className="btn ghost help-back" onClick={(event) => { event.preventDefault(); navigate("/ajuda") }}><ChevronLeft size={16} aria-hidden="true" /> Tópicos</a>
           <header className="help-article-head">
             <span className="eyebrow">{topic?.group ?? EXAMPLES.group}</span>
-            <h1 id="help-topic-title" className="page-title" tabIndex={-1}>{title}</h1>
+            <ArticleTitle id="help-topic-title" className="page-title" tabIndex={-1}>{title}</ArticleTitle>
             <p className="muted">{topic?.summary ?? EXAMPLES.summary}</p>
             {toc && <details className="help-toc-inline"><summary><ListTree size={15} aria-hidden="true" /> Nesta página</summary>{toc}</details>}
           </header>

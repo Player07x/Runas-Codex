@@ -20,7 +20,7 @@ import { FreeTimeDialog, FreeTimePanel, shortMinutes, useFreeTime, useNow } from
 import { dirname, joinPath, noteName } from "../../core/text"
 import type { VaultIndex } from "../../core/vault-index"
 import { agendaEvents } from "../../lib/agenda-data"
-import { navigate } from "../../lib/router"
+import { navigate, useRoute } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
 import { Empty, Modal, Segmented, useToast } from "../../components/ui"
 import { ConfirmDialog } from "../../components/vault/dialogs"
@@ -77,6 +77,8 @@ const narrow = () => typeof window !== "undefined" && window.matchMedia?.("(max-
 
 export function AgendaScreen() {
   const vault = useVault()
+  const [, section, id] = useRoute()
+  const requestedPath = section === "evento" ? id : undefined
   if (vault.loading && !vault.index) return <div className="page"><p className="muted">Abrindo o cofre…</p></div>
   if (!vault.index) {
     return (
@@ -85,7 +87,7 @@ export function AgendaScreen() {
       </div>
     )
   }
-  return <AgendaView index={vault.index} />
+  return <AgendaView key={requestedPath ?? ""} index={vault.index} requestedPath={requestedPath} />
 }
 
 /** A repetição em palavras (“Dias úteis, 10 vezes”), de `core/agenda-repeat.ts`. */
@@ -95,13 +97,21 @@ function describeRepeat(event: AgendaEvent): string | null {
 
 const reminderText = (minutes: number) => (minutes === 0 ? "na hora" : minutes % 1440 === 0 ? `${minutes / 1440} dia(s) antes` : minutes % 60 === 0 ? `${minutes / 60} h antes` : `${minutes} min antes`)
 
-function AgendaView({ index }: { index: VaultIndex }) {
+function AgendaView({ index, requestedPath }: { index: VaultIndex; requestedPath?: string }) {
   const vault = useVault()
   const toast = useToast()
   const readOnly = vault.info?.readOnly ?? true
   const [poll, setPoll] = useState(false)
   const [view, setViewState] = useState<View>(savedView)
-  const [tab, setTabState] = useState<Tab>(savedTab)
+  const events = useMemo(() => agendaEvents(index), [index, vault.version])
+  const [requested] = useState(() => {
+    if (!requestedPath) return
+    const event = events.find((item) => item.path === requestedPath)
+    if (!event) return
+    const day = new Date(`${event.date}T00:00`)
+    return expandEvents([event], day, addDays(day, 366))[0]
+  })
+  const [tab, setTabState] = useState<Tab>(() => requested ? "evento" : savedTab())
   const [listDays, setListDays] = useState(LIST_DAYS)
   const [showRoutines, setShowRoutinesState] = useState(savedRoutines)
   const newTask = useRef<HTMLInputElement>(null)
@@ -109,9 +119,9 @@ function AgendaView({ index }: { index: VaultIndex }) {
   const now = useNow()
   const todayKey = isoDate(new Date(now))
   const today = useMemo(() => startOfDay(new Date(`${todayKey}T00:00`)), [todayKey])
-  const [cursor, setCursor] = useState(today)
-  const [selectedDay, setSelectedDay] = useState(today)
-  const [selectedKey, setSelectedKey] = useState<string>()
+  const [cursor, setCursor] = useState(() => requested ? startOfDay(requested.start) : today)
+  const [selectedDay, setSelectedDay] = useState(cursor)
+  const [selectedKey, setSelectedKey] = useState(requested?.key)
   const [dialog, setDialog] = useState<{ kind: "new"; day: Date; time?: string } | { kind: "edit"; event: AgendaEvent } | { kind: "delete"; event: AgendaEvent } | { kind: "import"; events: EventInput[] } | null>(null)
   const [exactAlarms, setExactAlarms] = useState(true)
   const [permission, setPermission] = useState(() => (typeof Notification !== "undefined" ? Notification.permission : "granted"))
@@ -156,7 +166,7 @@ function AgendaView({ index }: { index: VaultIndex }) {
   }, [])
   // No celular o painel começa fechado: o calendário vem primeiro e o dia abre por cima ao ser escolhido; Esc fecha.
   useEffect(() => {
-    if (narrow()) setPanelCollapsed("agenda", true)
+    if (requested || narrow()) setPanelCollapsed("agenda", !requested)
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || !narrow() || document.querySelector(".modal, [role=dialog]")) return
       const panel = document.querySelector<HTMLElement>("[data-panel-id=agenda]")
@@ -168,7 +178,6 @@ function AgendaView({ index }: { index: VaultIndex }) {
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  const events = useMemo(() => agendaEvents(index), [index, vault.version])
   // Tarefas do plugin Tasks (com o filtro global e as opções do cofre); as do espaço Notas somem com o PIN bloqueado.
   const actions = useTaskActions()
   const { locked } = useNotesLock()
@@ -204,7 +213,8 @@ function AgendaView({ index }: { index: VaultIndex }) {
     const found = occurrences.find((o) => o.key === selectedKey)
     if (found) return found
     // Ocorrência fora do intervalo visível (depois de navegar): procura de novo pelo dia.
-    const [path, day] = selectedKey.split("@") as [string, string]
+    const separator = selectedKey.lastIndexOf("@")
+    const path = selectedKey.slice(0, separator), day = selectedKey.slice(separator + 1)
     const event = events.find((e) => e.path === path)
     return event ? expandEvents([event], new Date(`${day}T00:00`), addDays(new Date(`${day}T00:00`), 1)).find((o) => o.key === selectedKey) : undefined
   }, [selectedKey, occurrences, events])

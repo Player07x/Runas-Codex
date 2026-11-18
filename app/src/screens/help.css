@@ -2,6 +2,7 @@
 .help-screen { flex: 1 1 auto; display: grid; grid-template-columns: minmax(210px, 250px) minmax(0, 1fr) minmax(160px, 200px); min-height: 0; height: 100%; }
 .help-pane { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .help-index { display: grid; gap: var(--space-group); align-content: start; padding: 16px 12px 24px; border-right: 1px solid var(--line); }
+.help-index-title { gap: 8px; }
 .help-index-head { display: grid; gap: 8px; padding: 0 4px; }
 .help-search { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
 .help-search:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 2px color-mix(in srgb, var(--cyan) 22%, transparent); }
