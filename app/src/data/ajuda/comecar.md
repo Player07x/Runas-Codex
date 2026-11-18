@@ -17,7 +17,7 @@ notas numa pasta própria do cofre:
 | **Livros** | Livros e suplementos, com prévia paginada e PDF | `Livros/` |
 | **VTT** | A mesa virtual e a sala para os jogadores | `Mesas/` |
 
-Embaixo ficam **Importar e exportar** e **Configurações** (onde está esta ajuda).
+Embaixo ficam **Importar e exportar**, **Configurações** e esta **Ajuda**.
 
 ### A barra de cima
 
@@ -35,7 +35,7 @@ leitura**: nada é gravado até você liberar em Configurações › Cofre. Veja
 
 ### Primeiros passos e exemplos
 
-Em Configurações › Ajuda e exemplos ficam o **tour** (três telas sobre os espaços) e as **notas de exemplo**, que
+Na **Ajuda** (item da barra lateral, abaixo de Configurações), o tópico **Notas de exemplo e tour** tem o **tour** (três telas sobre os espaços) e as **notas de exemplo**, que
 você pode acrescentar ou remover juntas a qualquer momento (só saem as notas marcadas com `exemplo_runas: true`).
 
 ### Onde aprender mais

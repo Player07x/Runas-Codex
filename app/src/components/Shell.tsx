@@ -5,7 +5,7 @@ import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
   Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
   ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords, Accessibility,
-  LockKeyhole,
+  LockKeyhole, CircleHelp,
 } from "lucide-react"
 import runa from "../assets/runa.png"
 import { href, navigate } from "../lib/router"
@@ -48,6 +48,7 @@ export const NAV: NavItem[] = [
 const TOOLS: NavItem[] = [
   { route: "/transferir", label: "Importar e exportar", icon: <ArrowDownUp size={18} />, match: "transferir" },
   { route: "/config", label: "Configurações", icon: <Settings size={18} />, match: "config" },
+  { route: "/ajuda", label: "Ajuda", icon: <CircleHelp size={18} />, match: "ajuda" },
 ]
 
 
@@ -300,7 +301,7 @@ function CommandPalette({ onClose, onToggleTheme, onOpenQuickSearch }: { onClose
       { label: "Tempo livre", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("tempo-livre") },
       { label: "Importar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("importar-ics") },
       { label: "Exportar .ics", icon: <CalendarDays size={16} />, hint: "Agenda", run: () => requestAgendaAction("exportar-ics") },
-      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/ajuda") },
+      { label: "Ajuda e notas de exemplo", icon: <FileText size={16} />, hint: "Ajuda", run: () => navigate("/ajuda") },
       { label: "Backups", icon: <FileText size={16} />, hint: "Configurações", run: () => navigate("/config/backups") },
       { label: "Importar mesa", icon: <Dices size={16} />, hint: "VTT", run: () => navigate("/transferir/importar") },
       { label: "Busca rápida de tarefas (Tasks)", icon: <Search size={16} />, hint: "Tasks", run: onOpenQuickSearch },

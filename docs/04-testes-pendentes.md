@@ -2231,3 +2231,13 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   mesmo da 1.5.0.
 - [ ] O job “Orçamento de desempenho” do CI variou de 8,5 s a 15,2 s para abrir o cofre sintético com o mesmo código
   (teto de 12,7 s) e falhou duas vezes no PR #172, que só mexia no CI. Rever o teto ou a medição na A2.
+
+## Atualização 1.6 — Ajuda com tela própria (PR H/U119)
+
+- [ ] Barra lateral › Ajuda (abaixo de Configurações; no celular, em ⋯ Mais): tópicos com a busca à esquerda, o artigo
+  no meio e “Nesta página” à direita, cada um rolando por si. Clicar num título de “Nesta página” leva até ele.
+- [ ] Links antigos: Configurações › “Ajuda e exemplos”, o Ctrl K “Ajuda e notas de exemplo” e o “Como usar na Ajuda”
+  das Ferramentas da Wiki abrem /ajuda (o endereço /config/ajuda/… também).
+- [ ] Ajuda › Exemplos › “Notas de exemplo e tour”: Rever o tour, Adicionar as que faltam e Remover funcionam como antes.
+- [ ] No celular: /ajuda é a lista de tópicos; tocar abre o artigo com “‹ Tópicos”, “Nesta página” recolhido e o
+  próximo tópico no fim. Nada rola para os lados a 320 px.

@@ -1,6 +1,5 @@
 import { ImageFolderSettings } from "../components/vault/NoteImages"
 import { AccessibilitySettings, AppearanceSettings } from "../components/Appearance"
-import { HelpScreen } from "./HelpScreen"
 import { DesktopTraySettings } from "../platform/DesktopTray"
 import { useEffect, useState, type ReactNode } from "react"
 import { Accessibility, Archive, Bell, ChevronLeft, CircleHelp, Dices, FileWarning, FolderOpen, Keyboard, Network, Palette, Plus, RefreshCw, ShieldCheck, Vault } from "lucide-react"
@@ -17,7 +16,7 @@ import { QuickCaptureSettings } from "../components/vault/QuickCaptureSettings"
 import { PropertiesDisplaySettings } from "../components/vault/PropertiesDisplaySettings"
 import { ShortcutSettings, SnippetSettings } from "../components/vault/Customization"
 import { TasksSettingsCard } from "../components/tasks/TasksSettings"
-import { useRoute } from "../lib/router"
+import { navigate, useRoute } from "../lib/router"
 import { AndroidFolderAccess, WriteCheckPanel } from "../components/vault/WriteCheck"
 import "./transfer.css"
 
@@ -48,7 +47,10 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
   const toast = useToast()
   const vault = useVault()
   // /config/<seção> (Ctrl K › “Acessibilidade” leva a /config/acessibilidade) abre e foca a seção.
-  const section = useRoute()[1]
+  const route = useRoute()
+  const section = route[1]
+  // Links antigos da Ajuda (/config/ajuda/<tópico>) levam à tela própria dela, sem ficar no histórico.
+  useEffect(() => { if (section === "ajuda") navigate(`/ajuda${route[2] ? `/${route[2]}` : ""}`, { replace: true }) }, [section, route[2]])
   const desktop = vault.platform.kind !== "memory"
   const [busy, setBusy] = useState(false)
   const run = (action: () => Promise<unknown>) => () => {
@@ -185,7 +187,14 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
         <PinRow />
       </SettingsCard>
     ) },
-    { id: "ajuda", title: "Ajuda e exemplos", icon: <CircleHelp size={16} />, body: <HelpScreen /> },
+    // A Ajuda tem tela própria (U119): o item do índice leva a /ajuda, e /config/ajuda/… continua funcionando.
+    { id: "ajuda", title: "Ajuda e exemplos", icon: <CircleHelp size={16} />, body: (
+      <SettingsCard icon={<CircleHelp size={16} />} title="Ajuda e exemplos">
+        <Row title="A Ajuda tem tela própria" hint="Tópicos, artigo e “Nesta página” lado a lado, e as notas de exemplo e o tour.">
+          <a className="btn sm" href="#/ajuda">Abrir a Ajuda</a>
+        </Row>
+      </SettingsCard>
+    ) },
   ]
   // Cada seção é uma página: /config/<seção> mostra só ela. No computador o índice fica ao lado e /config abre a
   // primeira seção; no celular /config é a lista de seções e a seção tem o caminho de volta.
@@ -209,7 +218,7 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
       <div className="settings-layout">
         <nav className="settings-index" aria-label="Seções das Configurações">
           {sections.map((item) => (
-            <a key={item.id} href={`#/config/${item.id}`} aria-current={item.id === current ? "true" : undefined}>
+            <a key={item.id} href={item.id === "ajuda" ? "#/ajuda" : `#/config/${item.id}`} aria-current={item.id === current ? "true" : undefined}>
               {item.icon}
               <span>{item.title}</span>
             </a>
