@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useState } from "react"
 import { ArrowDown, ArrowUp, ChevronDown, Clock3, Plus, Trash2 } from "lucide-react"
 import { addMonths, formatDate, noteDateText, parseWorldDate, type Calendar, type WorldDate } from "../../core/calendar"
+import { convertBetween } from "../../core/calendar-sync"
 import { noteName } from "../../core/text"
+import type { CalendarRef } from "../../core/wiki"
 import { advanceWorldClock, clockProblem, clockText, durationText, handAngles, minutesPerDay, minutesPerTurn, nextPeriodIn, parseWorldClock, type WorldClock } from "../../core/world-clock"
 import { worldDateAhead } from "../../core/world-today"
 import { FormField, FormGrid } from "../../components/kit/FormField"
@@ -71,13 +73,15 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
     </Notice>
   </section>
 
-  const write = async (next: WorldClock, nextToday?: WorldDate) => {
+  const write = async (next: WorldClock, nextToday?: WorldDate, target?: CalendarRef) => {
     try {
       // U39: o ponteiro e a data são da campanha (gravados na nota dela); sem data nenhuma, fica no calendário.
+      // Outro calendário escolhido em “Ajustar data e hora”: a data já vem nele, e a campanha passa a usá-lo.
       const when = nextToday ?? today
-      if (when) await setCampaignTime(data, when, next)
+      const other = target && target.path !== ref.path ? target : undefined
+      if (when) await setCampaignTime(data, when, next, other)
       else await setClock(ref, next)
-      const text = clockSentence(next, calendar, nextToday ?? today)
+      const text = clockSentence(next, other?.calendar ?? calendar, nextToday ?? today)
       setSaid(text)
       return true
     } catch (err) {
@@ -148,28 +152,52 @@ export function WorldClockCard({ data }: { data: CampaignData }) {
     </div>
     {data.readOnly && <p className="small muted">O cofre está só para leitura: o relógio não avança daqui.</p>}
     <p className="sr-only" role="status">{said && `Agora: ${said}.`}</p>
-    {dialog === "ajustar" && <AdjustDialog calendar={calendar} clock={clock} today={today} onClose={() => setDialog(null)} onSave={(c, d) => write(c, d)} />}
+    {dialog === "ajustar" && <AdjustDialog current={ref} calendars={data.calendars} calendar={calendar} clock={clock} today={today} onClose={() => setDialog(null)} onSave={(c, d, target) => write(c, d, target)} />}
     {dialog === "configurar" && <ConfigureDialog clock={clock} onClose={() => setDialog(null)} onSave={(c) => saveRule(c)} />}
   </section>
 }
 
-/** Ajustar data e hora: data, hora e período juntos, gravados de uma vez no bloco do calendário. */
-function AdjustDialog({ calendar, clock, today, onClose, onSave }: {
-  calendar: Calendar; clock: WorldClock; today: WorldDate | undefined; onClose(): void; onSave(clock: WorldClock, today?: WorldDate): Promise<boolean>
+/**
+ * Ajustar data e hora: data, hora e período juntos, gravados de uma vez. Com dois ou mais calendários na wiki, o mestre
+ * escolhe em qual a campanha conta o tempo: com os dois sincronizados, a data se converte sozinha.
+ */
+function AdjustDialog({ current, calendars, calendar: shownCalendar, clock: shownClock, today, onClose, onSave }: {
+  current: CalendarRef; calendars: CalendarRef[]; calendar: Calendar; clock: WorldClock; today: WorldDate | undefined; onClose(): void
+  onSave(clock: WorldClock, today: WorldDate | undefined, target: CalendarRef): Promise<boolean>
 }) {
-  const [date, setDate] = useState(today ? noteDateText(today, calendar) : "")
-  const [hora, setHora] = useState(clock.hora)
-  const [periodo, setPeriodo] = useState(clock.periodo)
+  const [target, setTarget] = useState(current)
+  // O calendário escolhido, como a campanha o veria: o atual com a data dela, outro com o relógio dele.
+  const calendar = target.path === current.path ? shownCalendar : target.calendar
+  const clock = target.path === current.path ? shownClock : parseWorldClock(target.calendar)
+  const [date, setDate] = useState(today ? noteDateText(today, shownCalendar) : "")
+  const [hora, setHora] = useState(shownClock.hora)
+  const [periodo, setPeriodo] = useState(shownClock.periodo)
+  const [converted, setConverted] = useState<"sim" | "nao" | null>(null)
   const [errors, setErrors] = useState<{ date?: string; hora?: string }>({})
   const [busy, setBusy] = useState(false)
+  const choose = (path: string) => {
+    const next = calendars.find((c) => c.path === path)
+    if (!next || next.path === target.path) return
+    // Sincronizados: o mesmo dia no outro calendário. Sem ligação: começa no “hoje” dele (o mestre confere).
+    const parsed = parseWorldDate(date)
+    const same = parsed ? convertBetween(calendars, target, { year: parsed.year, month: parsed.month, day: parsed.day }, next) : null
+    const start = same ?? next.calendar.today ?? null
+    setDate(start ? noteDateText(start, next.calendar) : "")
+    setConverted(parsed ? (same ? "sim" : "nao") : null)
+    const rule = next.path === current.path ? shownClock : parseWorldClock(next.calendar)
+    if (!rule.periodos.includes(periodo)) setPeriodo(rule.periodo)
+    setTarget(next)
+    setErrors({})
+  }
   const save = async () => {
     const parsed = date.trim() ? parseWorldDate(date) : null
-    const dateError = date.trim() && !parsed ? "Preencha dia, mês e ano." : !date.trim() && today ? "A data não pode ficar vazia." : undefined
+    const switching = target.path !== current.path
+    const dateError = date.trim() && !parsed ? "Preencha dia, mês e ano." : !date.trim() && (today || switching) ? "A data não pode ficar vazia." : undefined
     const next = { ...clock, hora: hora.trim().padStart(5, "0"), periodo }
     const horaError = clockProblem(next) ?? undefined
     if (dateError || horaError) return setErrors({ date: dateError, hora: horaError })
     setBusy(true)
-    const done = await onSave(next, parsed ? { year: parsed.year, month: parsed.month, day: parsed.day } : undefined)
+    const done = await onSave(next, parsed ? { year: parsed.year, month: parsed.month, day: parsed.day } : undefined, target)
     setBusy(false)
     if (done) onClose()
   }
@@ -179,6 +207,11 @@ function AdjustDialog({ calendar, clock, today, onClose, onSave }: {
   </>}>
     <form onSubmit={(event) => { event.preventDefault(); void save() }}>
       <FormGrid>
+        {calendars.length > 1 && <FormField label="Calendário" wide hint={converted === "sim" ? `A data foi convertida para o ${target.calendar.name}.` : converted === "nao" ? `${target.calendar.name} não está sincronizado com o anterior: a data começa no “hoje” dele. Confira antes de salvar.` : "Em qual calendário a campanha conta o tempo."}>
+          {(control) => <select id={control.id} className="select" value={target.path} onChange={(event) => choose(event.target.value)} aria-describedby={control.describedBy}>
+            {calendars.map((c) => <option key={c.path} value={c.path}>{c.calendar.name} ({c.calendar.abbr})</option>)}
+          </select>}
+        </FormField>}
         <FormField label="Data no mundo" wide group error={errors.date} hint={`Dia, mês e ano (${calendar.name})`}>
           {(control) => <WorldDateField id={control.id} value={date} onChange={(value) => { setDate(value); setErrors({}) }} calendars={[calendar]} calendar={calendar} describedBy={control.describedBy} invalid={control.invalid} labelledBy={control.labelId} />}
         </FormField>
