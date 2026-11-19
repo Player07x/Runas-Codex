@@ -611,13 +611,18 @@ jobs:
           # O redir do emulador entra pela rede celular (eth0, 10.0.2.15). Com o Wi-Fi ligado, ele vira a rede padrão
           # alguns segundos depois do boot; 30 s depois o Android rebaixa a celular, destrói as conexões dela e passa a
           # recusar as respostas do app por ali, no meio do teste. Sem Wi-Fi, a celular é a única rede do começo ao fim.
-          adb shell svc wifi disable
-          for i in $(seq 1 60); do
+          # O assistente do emulador (googlesdksetup) liga o Wi-Fi sozinho logo depois do boot: desligar de novo a cada
+          # volta e seguir só com o estado estável por ~10 s.
+          stable=0
+          for i in $(seq 1 90); do
+            adb shell svc wifi disable || true
             if adb shell dumpsys wifi | grep -q 'Wi-Fi is disabled' &&
                adb shell ip -4 addr show eth0 | grep -q 'inet 10\.0\.2\.15/' &&
-               adb shell dumpsys connectivity | grep -q 'MOBILE\[[^]]*\] CONNECTED'; then break; fi
+               adb shell dumpsys connectivity | grep -q 'MOBILE\[[^]]*\] CONNECTED'; then stable=$((stable + 1)); else stable=0; fi
+            if [ "$stable" -ge 5 ]; then break; fi
             sleep 2
           done
+          echo "Rede estável depois de $i voltas."
           adb shell dumpsys wifi | grep -q 'Wi-Fi is disabled'
           adb shell ip -4 addr show eth0 | grep 'inet 10\.0\.2\.15/'
           adb shell dumpsys connectivity | grep -E 'Active default network|ni\{' | head -5 || true
