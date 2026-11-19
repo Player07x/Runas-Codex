@@ -419,6 +419,8 @@ export interface RelationType {
   inverse: string
   symmetric?: boolean
   group: "familia" | "organizacao" | "diplomacia" | "outras"
+  /** Um parente só, como a árvore genealógica escreve no traço (“tio ou tia”). */
+  one?: string
 }
 
 export const RELATION_TYPES: RelationType[] = [
@@ -427,23 +429,23 @@ export const RELATION_TYPES: RelationType[] = [
   { key: "conjuges", label: "Cônjuges", inverse: "Cônjuges", symmetric: true, group: "familia" },
   { key: "irmaos", label: "Irmãos", inverse: "Irmãos", symmetric: true, group: "familia" },
   // Parentes além do núcleo (pedido de 18/11): cada par tem a chave do outro lado, como pais e filhos.
-  { key: "meio_irmaos", label: "Meio-irmãos", inverse: "Meio-irmãos", symmetric: true, group: "familia" },
-  { key: "avos", label: "Avós", inverse: "Netos", group: "familia" },
-  { key: "netos", label: "Netos", inverse: "Avós", group: "familia" },
-  { key: "bisavos", label: "Bisavós", inverse: "Bisnetos", group: "familia" },
-  { key: "bisnetos", label: "Bisnetos", inverse: "Bisavós", group: "familia" },
-  { key: "tios", label: "Tios", inverse: "Sobrinhos", group: "familia" },
-  { key: "sobrinhos", label: "Sobrinhos", inverse: "Tios", group: "familia" },
-  { key: "primos", label: "Primos", inverse: "Primos", symmetric: true, group: "familia" },
-  { key: "sogros", label: "Sogros", inverse: "Genros e noras", group: "familia" },
-  { key: "genros", label: "Genros e noras", inverse: "Sogros", group: "familia" },
-  { key: "cunhados", label: "Cunhados", inverse: "Cunhados", symmetric: true, group: "familia" },
-  { key: "padrastos", label: "Padrastos e madrastas", inverse: "Enteados", group: "familia" },
-  { key: "enteados", label: "Enteados", inverse: "Padrastos e madrastas", group: "familia" },
-  { key: "pais_adotivos", label: "Pais adotivos", inverse: "Filhos adotivos", group: "familia" },
-  { key: "filhos_adotivos", label: "Filhos adotivos", inverse: "Pais adotivos", group: "familia" },
-  { key: "padrinhos", label: "Padrinhos", inverse: "Afilhados", group: "familia" },
-  { key: "afilhados", label: "Afilhados", inverse: "Padrinhos", group: "familia" },
+  { key: "meio_irmaos", label: "Meio-irmãos", inverse: "Meio-irmãos", symmetric: true, group: "familia", one: "meio-irmão" },
+  { key: "avos", label: "Avós", inverse: "Netos", group: "familia", one: "avô ou avó" },
+  { key: "netos", label: "Netos", inverse: "Avós", group: "familia", one: "neto ou neta" },
+  { key: "bisavos", label: "Bisavós", inverse: "Bisnetos", group: "familia", one: "bisavô ou bisavó" },
+  { key: "bisnetos", label: "Bisnetos", inverse: "Bisavós", group: "familia", one: "bisneto ou bisneta" },
+  { key: "tios", label: "Tios", inverse: "Sobrinhos", group: "familia", one: "tio ou tia" },
+  { key: "sobrinhos", label: "Sobrinhos", inverse: "Tios", group: "familia", one: "sobrinho ou sobrinha" },
+  { key: "primos", label: "Primos", inverse: "Primos", symmetric: true, group: "familia", one: "primo ou prima" },
+  { key: "sogros", label: "Sogros", inverse: "Genros e noras", group: "familia", one: "sogro ou sogra" },
+  { key: "genros", label: "Genros e noras", inverse: "Sogros", group: "familia", one: "genro ou nora" },
+  { key: "cunhados", label: "Cunhados", inverse: "Cunhados", symmetric: true, group: "familia", one: "cunhado ou cunhada" },
+  { key: "padrastos", label: "Padrastos e madrastas", inverse: "Enteados", group: "familia", one: "padrasto ou madrasta" },
+  { key: "enteados", label: "Enteados", inverse: "Padrastos e madrastas", group: "familia", one: "enteado ou enteada" },
+  { key: "pais_adotivos", label: "Pais adotivos", inverse: "Filhos adotivos", group: "familia", one: "pai ou mãe adotivos" },
+  { key: "filhos_adotivos", label: "Filhos adotivos", inverse: "Pais adotivos", group: "familia", one: "filho ou filha adotivos" },
+  { key: "padrinhos", label: "Padrinhos", inverse: "Afilhados", group: "familia", one: "padrinho ou madrinha" },
+  { key: "afilhados", label: "Afilhados", inverse: "Padrinhos", group: "familia", one: "afilhado ou afilhada" },
   { key: "mentor", label: "Mentor", inverse: "Discípulos", group: "outras" },
   // Cada relação com sentido tem a chave do outro lado (U73): `membros: [[Aurora]]` na organização é a mesma ligação
   // que `membro_de: [[Organização]]` em Aurora, como `pais` e `filhos` já eram.
@@ -578,8 +580,8 @@ export interface FamilyTree {
   center: string
   /** Gerações: -2 avós, -1 pais, 0 a pessoa (com cônjuges e irmãos), 1 filhos, 2 netos. */
   generations: Map<number, string[]>
-  /** Ligações pai/mãe → filho e entre cônjuges. */
-  edges: { from: string; to: string; kind: "filiacao" | "casamento" }[]
+  /** Ligações pai/mãe → filho, entre cônjuges e da pessoa no centro a cada outro parente (`label`: “tio ou tia”). */
+  edges: { from: string; to: string; kind: "filiacao" | "casamento" | "parentesco"; label?: string }[]
 }
 
 export function familyTree(index: VaultIndex, center: string, depth = 2, scope = ""): FamilyTree {
@@ -625,10 +627,18 @@ export function familyTree(index: VaultIndex, center: string, depth = 2, scope =
     meio_irmaos: 0, primos: 0, cunhados: 0, avos: -2, tios: -1, sogros: -1, padrastos: -1, pais_adotivos: -1, padrinhos: -1,
     netos: 2, sobrinhos: 1, genros: 1, enteados: 1, filhos_adotivos: 1, afilhados: 1, bisavos: -3, bisnetos: 3,
   }
+  // Quem só entra pela relação ganha um traço até a pessoa no centro, com o parentesco escrito nele; quem a filiação
+  // já pôs no lugar continua só com as linhas de sempre.
   for (const r of relationsOf(index, center, scope)) {
     const generation = RELATIVE_GENERATION[r.type.key]
-    if (r.other && generation !== undefined && Math.abs(generation) <= depth) place(generation, r.other)
+    if (r.other && generation !== undefined && Math.abs(generation) <= depth && place(generation, r.other))
+      edges.push({ from: center, to: r.other, kind: "parentesco", label: r.type.one ?? r.type.label.toLocaleLowerCase("pt-BR") })
   }
+  // Filiação entre quem já está na árvore, uma linha abaixo do outro: o primo fica pendurado no tio que é pai dele.
+  const generationOf = new Map<string, number>()
+  for (const [g, people] of generations) for (const p of people) generationOf.set(p, g)
+  for (const [person, g] of generationOf) for (const child of childrenOf(person))
+    if (generationOf.get(child) === g + 1) edges.push({ from: person, to: child, kind: "filiacao" })
   const unique = new Map(edges.map((e) => [`${e.from}|${e.to}|${e.kind}`, e]))
   return { center, generations, edges: [...unique.values()] }
 }
