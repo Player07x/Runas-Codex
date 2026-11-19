@@ -2486,3 +2486,13 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com a 1.6.0 instalada, o aviso “Atualizar para 1.7.0” aparece na barra lateral (ou pelo botão “Verificar
   atualizações”), e a atualização termina com a 1.7.0 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.0 instalada a seção “Parentes na Wiki (1.7)” acima.
+
+## Árvore genealógica com os parentes (1.7.1)
+
+- [ ] Num personagem com `tios` e `primos` (por exemplo Prismeus), Wiki › Relações › Árvore genealógica: um traço
+  tracejado azul liga a pessoa a cada parente, com o parentesco escrito numa etiqueta (“tio ou tia”, “primo ou
+  prima”). Entre parentes da mesma linha, a curva passa por baixo, sem cruzar as caixas.
+- [ ] Se o primo é filho do tio, a linha cheia de filiação liga os dois (o primo fica embaixo do tio).
+- [ ] A Lista da árvore tem a coluna “Irmãos e outros parentes” (“Tios: …; Primos: …”), dos dois lados.
+- [ ] Tema claro e escuro, e no celular (390 px) sem rolagem para os lados; passar o mouse numa caixa mostra o
+  parentesco (“1 geração acima, tio ou tia”).
