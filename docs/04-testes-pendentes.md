@@ -2541,3 +2541,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   teste agora espera o nome existir em resolvedores públicos (1.1.1.1 e 8.8.8.8) e acessa o link por eles.
 - [ ] Se voltar a falhar, o `tunel/resultado.json` do artefato traz `dns` (o que o DNS do runner e o público
   respondiam), `timings.dnsMs` e `retries` (a causa de cada tentativa, como `ENOTFOUND` ou `ETIMEDOUT`).
+
+## Correção: a página rolava inteira no Elenco (depois da 1.7.2)
+
+- [ ] Numa campanha com facções suficientes para ficarem abaixo da dobra, abrir **Elenco → Todos** e rolar rápido para
+      cima e para baixo várias vezes: a barra lateral não sobe, não aparece faixa vazia embaixo e só a lista rola.
+- [ ] Repetir com a janela maximizada e restaurada, e no celular (a barra de baixo continua no lugar).
+
+## Correção: botões “Usar” dos geradores
+
+- [ ] Em Wiki › Ferramentas, gerar 10 tavernas (ou outro gerador de texto longo): os botões de copiar e **Usar** ficam
+      dentro de cada cartão, alinhados na mesma coluna. No celular, eles vão para uma linha abaixo do texto.
