@@ -2510,6 +2510,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com a janela estreita (ou no celular), o mesmo botão abre e fecha a camada com os detalhes; recolher pelo botão
   da barra do painel também fecha a camada.
 
+## Versão 1.7.2
+
+- [ ] Com a 1.7.1 instalada, o aviso “Atualizar para 1.7.2” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.2 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.2 instalada a seção “Botão Painel nas Notas” acima.
+
 ## Calendários da Wiki (depois da 1.7.1)
 
 - [ ] Wiki › Calendário com dois ou mais calendários: escolher outro na lista e clicar **Tornar padrão**. Aparece o
