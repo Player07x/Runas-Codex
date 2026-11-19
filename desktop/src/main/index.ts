@@ -309,6 +309,12 @@ async function runSmoke(window: BrowserWindow): Promise<void> {
   } catch (error) {
     console.error(error)
   }
+  // O resultado já saiu. No CI do Linux o processo às vezes não fechava depois daqui e prendia o job até o limite de
+  // 30 min, sem o smoke com gravação chegar a rodar: se a limpeza ou o app.exit não terminarem em 15 s, sai assim mesmo.
+  setTimeout(() => {
+    console.error("Smoke: o app não fechou 15 s depois do resultado; saindo à força.")
+    process.exit(ok ? 0 : 1)
+  }, 15_000)
   vtt.closeWorld()
   vault.stop()
   await saveStreams.abortAll()
