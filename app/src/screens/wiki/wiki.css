@@ -305,7 +305,10 @@
 .wiki-tools-results { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: resultado; }
 .wiki-tools-results li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); overflow-wrap: anywhere; counter-increment: resultado; }
 .wiki-tools-results li::before { content: counter(resultado); min-width: 1.5em; color: var(--muted); font: calc(12px * var(--font-scale, 1)) var(--font-mono); padding-top: 2px; }
-.wiki-tools-results .grow { min-width: 0; }
+/* O texto divide o espaço a partir de zero e os botões nunca encolhem: com resultado longo, "Usar" ficava para fora do
+   cartão (o .row tem min-width: 0) e cada linha punha os botões numa altura diferente. */
+.wiki-tools-results .grow { flex: 1 1 0; min-width: 0; }
+.wiki-tools-results li > .row { flex: none; }
 .wiki-tools-save { padding-top: 10px; border-top: 1px solid var(--line); }
 .wiki-tools-recent { position: sticky; top: 0; display: grid; gap: 8px; }
 .wiki-tools-recent-title { margin: 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
@@ -332,6 +335,10 @@
   .wiki-tools-result-head > .stack { flex-basis: 100%; }
   .wiki-tools-options { width: 100%; }
   .wiki-tools-roll { flex: 1 1 100%; justify-content: center; }
+  /* Botões numa linha própria, à direita, para o texto usar a largura toda. */
+  .wiki-tools-results li { flex-wrap: wrap; }
+  .wiki-tools-results .grow { flex-basis: calc(100% - 1.5em - 10px); }
+  .wiki-tools-results li > .row { margin-left: auto; }
   .wiki-tools-pick .select, .wiki-tools-options .select, .wiki-tools-roll, .wiki-tools-results .btn, .wiki-tools-results .icon-btn, .wiki-tools-recent-item, .wiki-tools-pill, .wiki-tools-table-card .btn, .wiki-tools > .kit-tabs .kit-tab { min-height: 44px; }
 }
 

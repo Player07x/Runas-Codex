@@ -2515,3 +2515,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com a 1.7.1 instalada, o aviso “Atualizar para 1.7.2” aparece na barra lateral (ou pelo botão “Verificar
   atualizações”), e a atualização termina com a 1.7.2 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.2 instalada a seção “Botão Painel nas Notas” acima.
+
+## Correção: a página rolava inteira no Elenco (depois da 1.7.2)
+
+- [ ] Numa campanha com facções suficientes para ficarem abaixo da dobra, abrir **Elenco → Todos** e rolar rápido para
+      cima e para baixo várias vezes: a barra lateral não sobe, não aparece faixa vazia embaixo e só a lista rola.
+- [ ] Repetir com a janela maximizada e restaurada, e no celular (a barra de baixo continua no lugar).
+
+## Correção: botões “Usar” dos geradores
+
+- [ ] Em Wiki › Ferramentas, gerar 10 tavernas (ou outro gerador de texto longo): os botões de copiar e **Usar** ficam
+      dentro de cada cartão, alinhados na mesma coluna. No celular, eles vão para uma linha abaixo do texto.

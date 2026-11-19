@@ -2,6 +2,10 @@
 /* No Android de ponta a ponta, a barra de status e o entalhe ocupam as bordas (no navegador e no desktop, 0). */
 .shell { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
 .shell.collapsed { grid-template-columns: 64px minmax(0, 1fr); }
+/* A casca é a janela: nada passa dela. Um texto só para leitor de tela (.sr-only, posição absoluta) sem ancestral
+   posicionado alongava o documento, e a rolagem rápida vazava da lista para a página, subindo a barra lateral e
+   deixando uma faixa vazia embaixo (Elenco, aba "Todos", com as facções abaixo da dobra). `clip` não cria rolagem. */
+.shell { position: relative; overflow: clip; }
 
 .sidebar { display: flex; flex-direction: column; gap: 6px; min-height: 0; padding: 24px 14px 14px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--bg-deep); }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 24px; text-decoration: none; color: var(--text); }
@@ -50,7 +54,7 @@
 .search-trigger kbd { margin-left: auto; }
 .top-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .new-trigger { min-height: 36px; padding: 0 12px; }
-.content { flex: 1 1 0; min-height: 0; overflow: auto; }
+.content { position: relative; flex: 1 1 0; min-height: 0; overflow: auto; }
 /* U120: a barra de rolagem tem o lugar reservado, então trocar entre uma página curta e uma longa não empurra a
    página para o lado. As telas que ocupam a altura toda (.fill) não rolam e não perdem esse espaço. */
 .content:not(.fill) { scrollbar-gutter: stable; }
