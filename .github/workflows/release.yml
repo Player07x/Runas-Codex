@@ -71,8 +71,19 @@ jobs:
         working-directory: desktop
         run: |
           sudo apt-get update && sudo apt-get install -y xvfb
-          xvfb-run -a release/linux-unpacked/runas-codex --smoke --no-sandbox --vault="$PWD/tests/cofre-exemplo"
-          xvfb-run -a release/linux-unpacked/runas-codex --smoke --no-sandbox --vault="$PWD/tests/cofre-exemplo" --write
+          # Cada smoke leva menos de 1 min. Às vezes o processo não fechava depois de imprimir o resultado e o job
+          # esperava os 30 min do limite: agora cada um tem 5 min e, se estourar, o log mostra quem ficou vivo.
+          smoke() {
+            timeout -k 15 300 xvfb-run -a release/linux-unpacked/runas-codex --smoke --no-sandbox --vault="$PWD/tests/cofre-exemplo" "$@" && return 0
+            status=$?
+            if [ "$status" = 124 ] || [ "$status" = 137 ]; then
+              echo "::error::O smoke ${1:-só leitura} não terminou em 5 min (saída $status)."
+              ps -eo pid,ppid,etime,stat,args --forest | grep -Ei 'runas|xvfb|electron' | grep -v grep || true
+            fi
+            return "$status"
+          }
+          smoke
+          smoke --write
 
       - uses: actions/upload-artifact@v4
         with:

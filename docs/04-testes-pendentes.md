@@ -2559,3 +2559,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.7.3 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.3 instalada as seções “Calendários da Wiki”, “Correção: a página rolava inteira no Elenco” e
   “Correção: botões “Usar” dos geradores” acima.
+
+## Smoke do Linux sem travar o Release
+
+- [ ] Nos próximos Releases, o passo “Smoke no app empacotado” do linux termina em poucos minutos. Se o app não fechar,
+  o log mostra “Smoke: o app não fechou 15 s depois do resultado; saindo à força.” e o smoke com gravação roda em
+  seguida; se ainda assim travar, o passo falha em 5 min com a lista dos processos vivos, em vez de esperar 30 min.
