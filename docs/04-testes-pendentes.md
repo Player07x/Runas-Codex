@@ -2502,3 +2502,20 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com a 1.7.0 instalada, o aviso “Atualizar para 1.7.1” aparece na barra lateral (ou pelo botão “Verificar
   atualizações”), e a atualização termina com a 1.7.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.1 instalada a seção “Árvore genealógica com os parentes (1.7.1)” acima.
+
+## Calendários da Wiki (depois da 1.7.1)
+
+- [ ] Wiki › Calendário com dois ou mais calendários: escolher outro na lista e clicar **Tornar padrão**. Aparece o
+  selo “Padrão” e a lista marca “(padrão)”. Sair da Wiki, voltar a Calendário: abre o escolhido, não o Rúnico. No
+  Obsidian, a nota inicial da wiki (`Wikis/<wiki>/<wiki>.md`) tem `calendario: "[[Nome do calendário]]"`; se a nota
+  não existia, foi criada com o modelo da wiki.
+- [ ] Com dois calendários sincronizados, abrir o mês do aniversário de alguém que nasceu no outro: aparece “Nome
+  (idade · SIGLA)” no dia certo deste calendário.
+- [ ] Sincronizar › **Conferir a sincronização**: a frase “Hoje aqui… é … no …” bate com a conversão; nas luas de mesmo
+  nome nos dois calendários, a diferença da lua cheia aparece e **Acertar no …** / **Acertar aqui** reescrevem o
+  `cheia_em` (conferir no bloco da nota). Em **Mover a ligação**, +1 dia mostra a prévia (aniversários e “hoje” mudam
+  um dia), **Desfazer** volta e **Gravar** muda a `data_no_outro` (ou `data`) da correspondência.
+- [ ] Campanha › Painel › Relógio do mundo › ⋯ › **Ajustar data e hora**: com dois calendários na wiki aparece
+  **Calendário**. Trocar converte a data (se sincronizados) ou começa no “hoje” do outro com um aviso. Salvar: o cartão
+  passa a dizer o outro calendário e a nota da campanha ganha `data_mundo` com a sigla dele. O Início mostra a data da
+  campanha no calendário dela.
