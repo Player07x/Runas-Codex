@@ -2532,3 +2532,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   **Calendário**. Trocar converte a data (se sincronizados) ou começa no “hoje” do outro com um aviso. Salvar: o cartão
   passa a dizer o outro calendário e a nota da campanha ganha `data_mundo` com a sigla dele. O Início mostra a data da
   campanha no calendário dela.
+
+## android-revisao: link público resolvido sem o cache do runner
+
+- [ ] Nos próximos Releases, o job `android-revisao` não cai mais com `fetch failed` logo depois de “o link público
+  leva a chave da sala”. A causa provável: o nome `*.trycloudflare.com` só existe depois que a Cloudflare o publica;
+  consultado antes disso, o DNS do runner guardava o “não existe” por até 60 s e as 20 tentativas falhavam na hora. O
+  teste agora espera o nome existir em resolvedores públicos (1.1.1.1 e 8.8.8.8) e acessa o link por eles.
+- [ ] Se voltar a falhar, o `tunel/resultado.json` do artefato traz `dns` (o que o DNS do runner e o público
+  respondiam), `timings.dnsMs` e `retries` (a causa de cada tentativa, como `ENOTFOUND` ou `ETIMEDOUT`).

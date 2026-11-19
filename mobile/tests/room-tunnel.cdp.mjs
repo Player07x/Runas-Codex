@@ -3,6 +3,8 @@
 // por isso roda no job de revisão, que não segura a publicação.
 // Uso: node mobile/tests/room-tunnel.cdp.mjs <pasta com fixture.json e fixture/> [endpoint devtools]
 import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { lookup as systemLookup, Resolver } from 'node:dns/promises'
+import { request } from 'node:https'
 import { connectDevtools, sleep } from './devtools-client.mjs'
 
 const output = process.argv[2] ?? '/tmp/runas-android-review/tunel'
@@ -14,10 +16,41 @@ const appButton = async text => {
   await app.until(`[...document.querySelectorAll('button')].some(b=>b.textContent.trim().startsWith(${JSON.stringify(text)}))`)
   await app.run(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith(${JSON.stringify(text)})).click();true`)
 }
+// O nome *.trycloudflare.com só existe depois que a Cloudflare o publica; antes disso a resposta é NXDOMAIN, que o
+// resolvedor do runner guarda por até 60 s (TTL mínimo do SOA de trycloudflare.com). Consultado cedo demais, todas as
+// tentativas falhavam na hora com "fetch failed" (3 vezes na 1.6/1.7). Por isso o link público é resolvido por
+// resolvedores públicos, que não guardam a resposta entre consultas, e cada falha registra a causa.
+const publicDns = new Resolver({ timeout: 3000, tries: 2 })
+publicDns.setServers(['1.1.1.1', '8.8.8.8'])
+const describe = error => {
+  const cause = error?.cause ?? error
+  return [error?.message, cause?.code, cause?.hostname].filter((v, i, all) => v && all.indexOf(v) === i).join(' · ')
+}
+const publicLookup = (hostname, options, callback) => {
+  const done = addresses => options.all ? callback(null, addresses.map(address => ({ address, family: 4 }))) : callback(null, addresses[0], 4)
+  publicDns.resolve4(hostname).then(done, error =>
+    // Sem acesso aos resolvedores públicos (bloqueio de rede), vale o DNS do sistema.
+    ['ENOTFOUND', 'ENODATA'].includes(error.code) ? callback(error) : systemLookup(hostname, { family: 4, all: true }).then(found => done(found.map(f => f.address)), callback))
+}
+const publicFetch = (url, { method = 'GET', headers = {}, body } = {}, timeout = 10000) => new Promise((resolve, reject) => {
+  const sent = body === undefined ? headers : { ...headers, 'Content-Length': Buffer.byteLength(body) }
+  const req = request(url, { method, headers: sent, lookup: publicLookup, timeout }, res => {
+    const chunks = []
+    res.on('data', chunk => chunks.push(chunk))
+    res.on('end', () => { const text = Buffer.concat(chunks).toString('utf8'); resolve({ status: res.statusCode, text: async () => text }) })
+    res.on('error', reject)
+  })
+  req.on('timeout', () => req.destroy(Object.assign(new Error('tempo esgotado'), { code: 'ETIMEDOUT' })))
+  req.on('error', reject)
+  if (body !== undefined) req.write(body)
+  req.end()
+})
+result.retries = []
 const fetchRetry = async (url, init, tries = 20) => {
   let last
   for (let n = 0; n < tries; n++) {
-    try { const response = await fetch(url, { ...init, signal: AbortSignal.timeout(10000) }); if (response.status < 500) return response; last = new Error(`status ${response.status}`) } catch (error) { last = error }
+    try { const response = await publicFetch(url, init); if (response.status < 500) return response; last = new Error(`status ${response.status}`) } catch (error) { last = error }
+    if (result.retries.length < 40) result.retries.push(`${new URL(url).pathname} #${n + 1}: ${describe(last)}`)
     await sleep(1500)
   }
   throw last
@@ -57,6 +90,17 @@ try {
   if (!link) throw new Error(error ?? 'Túnel não abriu.')
   const publicUrl = new URL(link), base = publicUrl.origin
   check('o link público leva a chave da sala', publicUrl.searchParams.get('k') === key)
+  // Diagnóstico: o que o DNS do runner diria agora, e quanto tempo o nome leva para existir nos resolvedores públicos.
+  result.dns = { host: publicUrl.hostname }
+  try { result.dns.system = (await systemLookup(publicUrl.hostname)).address } catch (error) { result.dns.system = describe(error) }
+  const dnsStarted = Date.now()
+  let addresses = null
+  for (let n = 0; n < 45 && !addresses; n++) {
+    try { addresses = await publicDns.resolve4(publicUrl.hostname) } catch (error) { result.dns.public = describe(error); await sleep(2000) }
+  }
+  result.timings.dnsMs = Date.now() - dnsStarted
+  if (addresses) result.dns.public = addresses.join(', ')
+  check('o nome do link público existe no DNS', addresses, result.dns.public)
   const health = await fetchRetry(base + '/healthz')
   check('a sala responde pela internet', health.status === 200 && (await health.text()) === 'ok', health.status)
   const page = await fetchRetry(link)
@@ -74,12 +118,13 @@ try {
   let closed = false
   for (let n = 0; n < 20 && !closed; n++) {
     await sleep(1500)
-    try { closed = (await fetch(base + '/healthz', { signal: AbortSignal.timeout(8000) })).status !== 200 } catch { closed = true }
+    try { closed = (await publicFetch(base + '/healthz', {}, 8000)).status !== 200 } catch { closed = true }
   }
   check('desligar a sala derruba o link público', closed)
 } catch (error) {
-  result.error = error instanceof Error ? error.message : String(error)
+  result.error = error instanceof Error ? describe(error) : String(error)
   console.error(result.error)
+  if (result.retries.length) console.error(result.retries.slice(-5).join('\n'))
 } finally {
   result.errors = app.errors.slice(0, 5)
   await writeFile(output + '/resultado.json', JSON.stringify(result, null, 2))
