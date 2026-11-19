@@ -2460,3 +2460,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.6.0 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.6.0 instalada (Windows, Linux e Android) as seções “Atualização 1.6” acima, a “Conferência das
   correções integradas da 1.6” e a “Sala Android — reconexão e rede virtual no CI”.
+
+## Parentes na Wiki (1.7)
+
+- [ ] Num personagem da Wiki, Detalhes do artigo › Relações › Adicionar: o grupo **Família** traz, além de Pais, Filhos,
+  Cônjuges e Irmãos, os novos Meio-irmãos, Avós, Netos, Bisavós, Bisnetos, Tios, Sobrinhos, Primos, Sogros, Genros e
+  noras, Cunhados, Padrastos e madrastas, Enteados, Pais adotivos, Filhos adotivos, Padrinhos e Afilhados.
+- [ ] Escolher **Tios** e outro personagem: a frase diz “X é tio ou tia de Y”; com “Gravar também” marcado, a outra nota
+  ganha `sobrinhos:` e mostra **Sobrinhos**. Conferir no Obsidian que as duas notas têm a propriedade como lista de links.
+- [ ] Wiki › Relações › Árvore genealógica: tios, padrastos, padrinhos e sogros ficam na linha dos pais; primos, cunhados
+  e meio-irmãos na da pessoa; sobrinhos e enteados na dos filhos; avós e netos duas linhas acima e abaixo (sem traço de
+  ligação, só a posição).
