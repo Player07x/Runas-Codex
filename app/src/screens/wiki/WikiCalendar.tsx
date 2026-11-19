@@ -5,9 +5,9 @@ import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { addDays, addMonths, CalendarError, dateProblem, parseWorldDate, dayNumber, equivalentYears, eraOf, formatDate, formatYear, holidaysOn, monthLength, moons, parseCalendar, relative, season, weekday, weekdayIndex, worldDateText, type Calendar, type MoonState, type WorldDate } from "../../core/calendar"
 import { findCodeBlocks, replaceCodeBlock } from "../../core/codeblocks"
-import { addCorrespondence, calendarOffsets, convertBetween, syncedTodays } from "../../core/calendar-sync"
+import { addCorrespondence, alignedFull, birthdayAge, calendarOffsets, convertBetween, dayIn, directLink, linkVia, moonChecks, shiftedThere, syncedTodays, withCorrespondenceDate, withMoonFull } from "../../core/calendar-sync"
 import { noteName } from "../../core/text"
-import { calendarFor, calendarInNote, datesMissingAbbr, listCalendars, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
+import { calendarFor, calendarInNote, datesMissingAbbr, listCalendars, newWikiNote, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useNoteSet } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
@@ -159,14 +159,19 @@ export function WikiCalendar({ path }: { path?: string }) {
 
   // Acontecimentos (data_mundo) e aniversários (nascimento_mundo) dos artigos neste calendário.
   const events = useMemo(() => (ref ? timelineEvents(index, wiki!.root, ref) : []), [index, wiki, ref, vault.version])
+  const refs = useMemo(() => all.filter((c): c is CalendarRef => "calendar" in c), [all])
+  // Os aniversários também vêm dos calendários sincronizados com este: cada um é comemorado no calendário em que a
+  // pessoa nasceu e cai aqui no dia correspondente (Gwyn faz 83 em 18 de Ogronios R; no outro, no mesmo dia).
   const births = useMemo(() => {
     if (!ref) return []
+    const offsets = calendarOffsets(refs, ref.path)
     return index.notesIn(wiki!.root).flatMap((note) => {
       const born = noteDates(note.meta.frontmatter?.data).find((d) => d.key === "nascimento_mundo")?.date
       const found = born && calendarFor(index, note.path, born)
-      return born && found && "calendar" in found && found.path === ref.path ? [{ path: note.path, born }] : []
+      const offset = found && "calendar" in found ? offsets.get(found.path) : undefined
+      return born && found && "calendar" in found && offset !== undefined ? [{ path: note.path, born, origin: found, offset }] : []
     })
-  }, [index, wiki, ref, vault.version])
+  }, [index, wiki, ref, refs, vault.version])
   const calendarForForRecurrence = (path:string) => { const start=noteDates(index.note(path)?.meta.frontmatter?.data).find(d=>d.key==="data_mundo")?.date; const found=calendarFor(index,path,start); return found && "calendar" in found && found.path===ref?.path }
   const marks = (d: WorldDate) => {
     if (!calendar) return []
@@ -174,11 +179,15 @@ export function WikiCalendar({ path }: { path?: string }) {
     return [
       ...events.filter((e) => e.startDay <= day && e.endDay >= day && !(players && index.note(e.path)?.meta.frontmatter?.data?.segredo === true) && !index.note(e.path)?.meta.frontmatter?.data?.recorrencia_mundo).map((e) => ({ label: e.title, color: "var(--violet)", to: e.path })),
       ...index.notesIn(wiki!.root).filter(n=>{const data=n.meta.frontmatter?.data;return data?.recorrencia_mundo && !(players && data.segredo===true) && calendarForForRecurrence(n.path) && worldEventOn(data,calendar,d)}).map(n=>({label:n.name,color:"var(--violet)",to:n.path})),
-      ...births.filter((b) => b.born.month === d.month && b.born.day === d.day && b.born.year <= d.year).map((b) => ({ label: `${noteName(b.path)} (${d.year - b.born.year})`, color: "var(--gold)", to: b.path })),
+      ...births.flatMap((b) => {
+        const age = birthdayAge(calendar, d, b.origin.calendar, b.offset, b.born)
+        if (age === null) return []
+        const from = b.origin.path === ref!.path ? "" : ` · ${b.origin.calendar.abbr}`
+        return [{ label: `${noteName(b.path)} (${age}${from})`, color: "var(--gold)", to: b.path }]
+      }),
     ]
   }
 
-  const refs = all.filter((c): c is CalendarRef => "calendar" in c)
   // U39: campanhas desta wiki com data própria neste calendário (a data delas fica na nota da campanha).
   const campaignDates = useMemo(() => (calendar ? listCampaigns(index).filter((c) => !c.wiki || `Wikis/${c.wiki}/` === wiki!.root).flatMap((c) => {
     const time = campaignTime(c.home ? index.note(c.home)?.meta.frontmatter?.data : undefined, calendar)
@@ -192,6 +201,18 @@ export function WikiCalendar({ path }: { path?: string }) {
     if (!ref) return
     await setWorldToday(ref, next, sync)
     setShown({ year: next.year, month: next.month })
+  }
+  // O padrão da wiki fica na nota inicial dela (`calendario: "[[…]]"`), como o Obsidian e o resto do app leem. Wiki
+  // sem nota inicial (as importadas, por exemplo) ganha a nota, como a que o app cria com uma wiki nova.
+  const makeDefault = async () => {
+    if (!ref || !wiki) return
+    try {
+      const home = wiki.home ?? await vault.createNote(wiki.root.replace(/\/$/, ""), wiki.name, newWikiNote(wiki.name))
+      await vault.setProperty(home, "calendario", `[[${noteName(ref.path)}]]`)
+      toast(`${ref.calendar.name} é o calendário padrão da wiki ${wiki.name}.${wiki.home ? "" : ` Ele fica na nota inicial, criada em ${home}.`}`)
+    } catch (err) {
+      toast.error(err)
+    }
   }
   const advance = (days: number | "mes") => {
     if (!calendar) return
@@ -244,11 +265,18 @@ export function WikiCalendar({ path }: { path?: string }) {
             <select className="select" value={ref!.path} onChange={(e) => navigate(`/wiki/calendario/${encodeURIComponent(e.target.value)}`)} aria-label="Calendário">
               {all.map((c) => (
                 <option key={c.path} value={c.path}>
-                  {"calendar" in c ? c.calendar.name : `${noteName(c.path)} (com erro)`}
+                  {"calendar" in c ? `${c.calendar.name}${c.path === main?.path ? " (padrão)" : ""}` : `${noteName(c.path)} (com erro)`}
                 </option>
               ))}
             </select>
           )}
+          {/* O padrão é o que abre ao entrar em Calendário, nas campanhas e no Início: fica na nota inicial da wiki. */}
+          {refs.length > 1 && !players && (ref!.path === main?.path
+            ? <span className="chip" title="Este calendário abre ao entrar em Calendário, nas campanhas sem data própria e no Início">Padrão</span>
+            : <button type="button" className="btn sm ghost" disabled={readOnly} onClick={() => void makeDefault()}
+                title={readOnly ? "Libere a gravação em Configurações" : `Abrir este calendário ao entrar em Calendário, nas campanhas e no Início (grava na nota inicial da wiki${wiki!.home ? "" : ", que será criada"})`}>
+                Tornar padrão
+              </button>)}
           <ChoiceGroup label="Ver o calendário por" value={mode} onChange={setMode} options={[{ value: "mes", label: "Mês" }, { value: "ano", label: "Ano" }]} />
           <div className="row" style={{ gap: 2 }}>
             <button className="icon-btn" onClick={() => setShown(mode === "ano" ? { year: view.year - 1, month: view.month } : view.month === 1 ? { year: view.year - 1, month: calendar.months.length } : { year: view.year, month: view.month - 1 })} aria-label={mode === "ano" ? "Ano anterior" : "Mês anterior"}>
@@ -354,6 +382,7 @@ export function WikiCalendar({ path }: { path?: string }) {
             )}
           </section>}
           {sideTab === "sincronizar" && refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
+          {sideTab === "sincronizar" && linked.length > 0 && <CheckSync key={`conferir-${ref!.path}`} refs={refs} current={ref!} births={births} readOnly={readOnly} />}
           {sideTab === "configurar" && <CalendarConfig key={ref!.path} path={ref!.path} readOnly={readOnly} />}
           {sideTab === "ajuda" && <CalendarHelp />}
           </TabPanel>
@@ -496,6 +525,124 @@ function SyncCalendars({ refs, current, readOnly, onAlign }: { refs: CalendarRef
           <button type="submit" className="btn sm primary" disabled={!here.trim() || !there.trim()}>Sincronizar</button>
         </form>
       )}
+    </section>
+  )
+}
+
+interface Birth { path: string; born: WorldDate; origin: CalendarRef; offset: number }
+
+const days = (n: number) => `${n} ${Math.abs(n) === 1 ? "dia" : "dias"}`
+
+/**
+ * Conferir a sincronização (pedido de 19/11): com dois calendários ligados, as luas de mesmo nome deviam ficar cheias
+ * no mesmo dia, e os aniversários de lá caírem aqui onde o mestre espera. O cartão mostra o que não bate, acerta a cheia
+ * de uma lua num dos dois e move a ligação alguns dias, com a prévia antes de gravar.
+ */
+function CheckSync({ refs, current, births, readOnly }: { refs: CalendarRef[]; current: CalendarRef; births: Birth[]; readOnly: boolean }) {
+  const vault = useVault()
+  const toast = useToast()
+  const offsets = calendarOffsets(refs, current.path)
+  const linked = refs.filter((r) => r.path !== current.path && offsets.has(r.path))
+  const [otherPath, setOtherPath] = useState(linked[0]?.path ?? "")
+  const [shift, setShift] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const other = linked.find((r) => r.path === otherPath) ?? linked[0]
+  if (!other) return null
+  const today = current.calendar.today
+  const reference = today ? dayNumber(current.calendar, today) : 0
+  const saved = offsets.get(other.path)!
+  const offset = saved - shift
+  const checks = moonChecks(refs, current, reference, shift, other.path)
+  const link = directLink(refs, current, other)
+  const via = link ? null : linkVia(refs, current, other)
+  const thereToday = today ? dayIn(current.calendar, today, other.calendar, offset) : null
+  // Os próximos aniversários de quem nasceu no outro calendário, no dia em que caem aqui (com o ajuste em prévia).
+  const upcoming: { path: string; age: number; date: WorldDate }[] = []
+  if (today) for (let i = 0; i < 400 && upcoming.length < 3; i++) {
+    const date = addDays(current.calendar, today, i)
+    for (const b of births) {
+      if (b.origin.path !== other.path || upcoming.length >= 3) continue
+      const age = birthdayAge(current.calendar, date, other.calendar, offset, b.born)
+      if (age !== null) upcoming.push({ path: b.path, age, date })
+    }
+  }
+  const saveBlock = async (path: string, change: (content: string) => string, done: string) => {
+    const note = vault.index!.note(path)
+    const block = note ? findCodeBlocks(note.text, "runas-calendario")[0] : undefined
+    if (!note || !block) throw new Error("O bloco runas-calendario não foi encontrado na nota.")
+    setBusy(true)
+    try {
+      await vault.save(note.path, replaceCodeBlock(note.text, block, change(block.content)))
+      toast(done)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const fail = (err: unknown) => toast.error(err)
+  return (
+    <section className="card stack calendar-check" aria-labelledby="conferir-sincronizacao">
+      <span className="eyebrow" id="conferir-sincronizacao">Conferir a sincronização</span>
+      {linked.length > 1 && (
+        <select className="select" value={other.path} onChange={(e) => { setOtherPath(e.target.value); setShift(0) }} aria-label="Calendário para conferir">
+          {linked.map((c) => <option key={c.path} value={c.path}>{c.calendar.name}</option>)}
+        </select>
+      )}
+      {today && thereToday && (
+        <span className="small" role="status">
+          Hoje aqui, {formatDate(current.calendar, today)}, é {formatDate(other.calendar, thereToday)} no {other.calendar.name}
+          {shift !== 0 ? ` (prévia: ${shift > 0 ? "+" : "−"}${days(Math.abs(shift))})` : ""}.
+        </span>
+      )}
+
+      <div className="stack calendar-check-group">
+        <strong className="small">Luas</strong>
+        {checks.length === 0
+          ? <span className="tiny muted">Nenhuma lua com o mesmo nome nos dois calendários. O app compara as luas pelo nome: dê o mesmo nome à mesma lua em Configurar.</span>
+          : checks.map((c) => (
+            <div key={c.here.name} className="stack calendar-check-row">
+              <span className="small">
+                <strong>{c.here.name}</strong>: {c.diff === 0 ? "cheia no mesmo dia nos dois." : `no ${other.calendar.name}, fica cheia ${days(Math.abs(c.diff))} ${c.diff > 0 ? "depois" : "antes"}.`}
+                {!c.sameCycle && ` Os ciclos são diferentes (${c.here.cycle} e ${c.there.cycle} dias): as cheias só coincidem de vez em quando.`}
+              </span>
+              {c.diff !== 0 && !readOnly && (shift === 0
+                ? <div className="row-wrap">
+                    <button type="button" className="btn sm" disabled={busy} onClick={() => void saveBlock(other.path, (content) => withMoonFull(content, c.there.name, alignedFull(c.here, other, saved)), `${c.there.name} acertada no ${other.calendar.name}.`).catch(fail)}>Acertar no {other.calendar.name}</button>
+                    <button type="button" className="btn sm ghost" disabled={busy} onClick={() => void saveBlock(current.path, (content) => withMoonFull(content, c.here.name, alignedFull(c.there, current, -saved)), `${c.here.name} acertada no ${current.calendar.name}.`).catch(fail)}>Acertar aqui</button>
+                  </div>
+                : <span className="tiny muted">Grave ou desfaça o ajuste da ligação antes de acertar a lua.</span>)}
+            </div>
+          ))}
+      </div>
+
+      <div className="stack calendar-check-group">
+        <strong className="small">Aniversários de quem nasceu no {other.calendar.name}</strong>
+        {upcoming.length === 0
+          ? <span className="tiny muted">Ninguém com nascimento_mundo nesse calendário faz aniversário no próximo ano.</span>
+          : <ul className="calendar-check-list">
+              {upcoming.map((u) => <li key={`${u.path}-${u.age}`} className="small">{noteName(u.path)} faz {u.age} em {formatDate(current.calendar, u.date)}</li>)}
+            </ul>}
+      </div>
+
+      <div className="stack calendar-check-group">
+        <strong className="small">Mover a ligação</strong>
+        {link ? (
+          <>
+            <span className="tiny muted">Se tudo está alguns dias fora, a ligação entre os dois está errada. Mova e confira a prévia acima antes de gravar.</span>
+            <div className="row-wrap">
+              <button type="button" className="btn sm" disabled={readOnly || busy} onClick={() => setShift((n) => n - 1)} aria-label={`Um dia antes no ${other.calendar.name}`}>−1 dia</button>
+              <span className="small mono" aria-live="polite">{shift === 0 ? "sem ajuste" : `${shift > 0 ? "+" : "−"}${days(Math.abs(shift))}`}</span>
+              <button type="button" className="btn sm" disabled={readOnly || busy} onClick={() => setShift((n) => n + 1)} aria-label={`Um dia depois no ${other.calendar.name}`}>+1 dia</button>
+              {shift !== 0 && <>
+                <button type="button" className="btn sm primary" disabled={readOnly || busy} onClick={() => void saveBlock(link.owner.path, (content) => withCorrespondenceDate(content, link.cited, link.here, shiftedThere(link, current, shift)), `Ligação com o ${other.calendar.name} gravada.`).then(() => setShift(0)).catch(fail)}>Gravar</button>
+                <button type="button" className="btn sm ghost" disabled={busy} onClick={() => setShift(0)}>Desfazer</button>
+              </>}
+            </div>
+            <span className="tiny muted">A ligação fica gravada na nota {link.owner.calendar.name}. O “hoje” dos dois não muda: use “Alinhar o hoje” depois, se precisar.</span>
+          </>
+        ) : (
+          <span className="tiny muted">{via ? `A ligação com o ${other.calendar.name} passa pelo ${via.calendar.name}: ajuste por lá.` : "Os dois não têm uma ligação direta."}</span>
+        )}
+      </div>
     </section>
   )
 }
