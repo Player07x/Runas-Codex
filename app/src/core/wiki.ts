@@ -426,6 +426,24 @@ export const RELATION_TYPES: RelationType[] = [
   { key: "filhos", label: "Filhos", inverse: "Pais", group: "familia" },
   { key: "conjuges", label: "Cônjuges", inverse: "Cônjuges", symmetric: true, group: "familia" },
   { key: "irmaos", label: "Irmãos", inverse: "Irmãos", symmetric: true, group: "familia" },
+  // Parentes além do núcleo (pedido de 18/11): cada par tem a chave do outro lado, como pais e filhos.
+  { key: "meio_irmaos", label: "Meio-irmãos", inverse: "Meio-irmãos", symmetric: true, group: "familia" },
+  { key: "avos", label: "Avós", inverse: "Netos", group: "familia" },
+  { key: "netos", label: "Netos", inverse: "Avós", group: "familia" },
+  { key: "bisavos", label: "Bisavós", inverse: "Bisnetos", group: "familia" },
+  { key: "bisnetos", label: "Bisnetos", inverse: "Bisavós", group: "familia" },
+  { key: "tios", label: "Tios", inverse: "Sobrinhos", group: "familia" },
+  { key: "sobrinhos", label: "Sobrinhos", inverse: "Tios", group: "familia" },
+  { key: "primos", label: "Primos", inverse: "Primos", symmetric: true, group: "familia" },
+  { key: "sogros", label: "Sogros", inverse: "Genros e noras", group: "familia" },
+  { key: "genros", label: "Genros e noras", inverse: "Sogros", group: "familia" },
+  { key: "cunhados", label: "Cunhados", inverse: "Cunhados", symmetric: true, group: "familia" },
+  { key: "padrastos", label: "Padrastos e madrastas", inverse: "Enteados", group: "familia" },
+  { key: "enteados", label: "Enteados", inverse: "Padrastos e madrastas", group: "familia" },
+  { key: "pais_adotivos", label: "Pais adotivos", inverse: "Filhos adotivos", group: "familia" },
+  { key: "filhos_adotivos", label: "Filhos adotivos", inverse: "Pais adotivos", group: "familia" },
+  { key: "padrinhos", label: "Padrinhos", inverse: "Afilhados", group: "familia" },
+  { key: "afilhados", label: "Afilhados", inverse: "Padrinhos", group: "familia" },
   { key: "mentor", label: "Mentor", inverse: "Discípulos", group: "outras" },
   // Cada relação com sentido tem a chave do outro lado (U73): `membros: [[Aurora]]` na organização é a mesma ligação
   // que `membro_de: [[Organização]]` em Aurora, como `pais` e `filhos` já eram.
@@ -515,9 +533,16 @@ export const INVERSE_KEY: Readonly<Record<string, string>> = {
   pais: "filhos", filhos: "pais", mentor: "discipulos", discipulos: "mentor", membro_de: "membros", membros: "membro_de",
   lider_de: "liderado_por", liderado_por: "lider_de", subordinado_a: "subordinados", subordinados: "subordinado_a",
   vassalo_de: "vassalos", vassalos: "vassalo_de", localizado_em: "contem", contem: "localizado_em",
+  avos: "netos", netos: "avos", bisavos: "bisnetos", bisnetos: "bisavos", tios: "sobrinhos", sobrinhos: "tios",
+  sogros: "genros", genros: "sogros", padrastos: "enteados", enteados: "padrastos", pais_adotivos: "filhos_adotivos",
+  filhos_adotivos: "pais_adotivos", padrinhos: "afilhados", afilhados: "padrinhos",
 }
 /** As chaves novas do outro lado (U73) e a chave de sempre de cada uma; `pais`/`filhos` já eram as duas de sempre. */
-const MIRROR_OF: Readonly<Record<string, string>> = { discipulos: "mentor", membros: "membro_de", liderado_por: "lider_de", subordinados: "subordinado_a", vassalos: "vassalo_de", contem: "localizado_em" }
+const MIRROR_OF: Readonly<Record<string, string>> = {
+  discipulos: "mentor", membros: "membro_de", liderado_por: "lider_de", subordinados: "subordinado_a", vassalos: "vassalo_de", contem: "localizado_em",
+  // Parentes: a geração de cima é a ligação de sempre, para `tios` num e `sobrinhos` no outro contarem uma vez.
+  netos: "avos", bisnetos: "bisavos", sobrinhos: "tios", genros: "sogros", enteados: "padrastos", filhos_adotivos: "pais_adotivos", afilhados: "padrinhos",
+}
 
 /** A chave que a outra nota usaria para a mesma ligação. */
 export function inverseKeyOf(key: string): string {
@@ -594,6 +619,15 @@ export function familyTree(index: VaultIndex, center: string, depth = 2, scope =
       if (place(g, child)) next.push(child)
     }
     down = next
+  }
+  // Os outros parentes entram na geração deles, depois de quem a filiação já pôs no lugar.
+  const RELATIVE_GENERATION: Readonly<Record<string, number>> = {
+    meio_irmaos: 0, primos: 0, cunhados: 0, avos: -2, tios: -1, sogros: -1, padrastos: -1, pais_adotivos: -1, padrinhos: -1,
+    netos: 2, sobrinhos: 1, genros: 1, enteados: 1, filhos_adotivos: 1, afilhados: 1, bisavos: -3, bisnetos: 3,
+  }
+  for (const r of relationsOf(index, center, scope)) {
+    const generation = RELATIVE_GENERATION[r.type.key]
+    if (r.other && generation !== undefined && Math.abs(generation) <= depth) place(generation, r.other)
   }
   const unique = new Map(edges.map((e) => [`${e.from}|${e.to}|${e.kind}`, e]))
   return { center, generations, edges: [...unique.values()] }

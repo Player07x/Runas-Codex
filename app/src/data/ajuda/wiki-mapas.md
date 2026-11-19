@@ -16,7 +16,10 @@ Wiki › **Mapas** lista os mapas (notas com o bloco `runas-mapa`) com a imagem 
 ### Relações
 
 Relações são propriedades com listas de links (`aliados`, `inimigos`, `pais`, `filhos`, `conjuges`, `membro_de`,
-`lider_de`, `subordinado_a`…), escritas numa nota e mostradas nas duas. Wiki › **Relações** tem três visões, cada uma
+`lider_de`, `subordinado_a`…), escritas numa nota e mostradas nas duas. A família vai além do núcleo: `avos` e `netos`,
+`bisavos` e `bisnetos`, `tios` e `sobrinhos`, `primos`, `meio_irmaos`, `cunhados`, `sogros` e `genros` (genros e
+noras), `padrastos` e `enteados`, `pais_adotivos` e `filhos_adotivos`, `padrinhos` e `afilhados`; a árvore
+genealógica põe cada um na sua geração. Wiki › **Relações** tem três visões, cada uma
 como **Gráfico** ou **Lista** (tabela): à esquerda a lista com busca, no meio o desenho e à direita os detalhes do
 escolhido, com “Abrir artigo” e “Adicionar” relação. No celular a lista vem primeiro.
 

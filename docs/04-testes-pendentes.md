@@ -2469,3 +2469,14 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   da sala no meio do teste. O job agora desliga o Wi-Fi do emulador antes de abrir o app. Em aparelho de verdade isso
   não acontece: os jogadores entram pelo endereço do Wi-Fi, que é a rede padrão.
 - [ ] Se aparecer o aviso “O Android do emulador rebaixou a rede celular…” no resumo do job, a causa voltou.
+
+## Parentes na Wiki (1.7)
+
+- [ ] Num personagem da Wiki, Detalhes do artigo › Relações › Adicionar: o grupo **Família** traz, além de Pais, Filhos,
+  Cônjuges e Irmãos, os novos Meio-irmãos, Avós, Netos, Bisavós, Bisnetos, Tios, Sobrinhos, Primos, Sogros, Genros e
+  noras, Cunhados, Padrastos e madrastas, Enteados, Pais adotivos, Filhos adotivos, Padrinhos e Afilhados.
+- [ ] Escolher **Tios** e outro personagem: a frase diz “X é tio ou tia de Y”; com “Gravar também” marcado, a outra nota
+  ganha `sobrinhos:` e mostra **Sobrinhos**. Conferir no Obsidian que as duas notas têm a propriedade como lista de links.
+- [ ] Wiki › Relações › Árvore genealógica: tios, padrastos, padrinhos e sogros ficam na linha dos pais; primos, cunhados
+  e meio-irmãos na da pessoa; sobrinhos e enteados na dos filhos; avós e netos duas linhas acima e abaixo (sem traço de
+  ligação, só a posição).
