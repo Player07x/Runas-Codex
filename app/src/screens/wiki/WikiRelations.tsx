@@ -407,10 +407,19 @@ function FamilyTreeView({ center, root, onSelect }: { center: string; root: stri
         <svg viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height} role="group" aria-label={`${layout.nodes.length} pessoas, por geração`}>
           <g aria-hidden="true">{layout.lines.map((line, i) => line.kind === "casamento"
             ? <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} className="tree-marriage" />
-            : <path key={i} d={`M${line.x1},${line.y1} C${line.x1},${(line.y1 + line.y2) / 2} ${line.x2},${(line.y1 + line.y2) / 2} ${line.x2},${line.y2}`} className="tree-line" />)}</g>
+            : line.kind === "parentesco" ? null
+            : <path key={i} d={`M${line.x1},${line.y1} C${line.x1},${(line.y1 + line.y2) / 2} ${line.x2},${(line.y1 + line.y2) / 2} ${line.x2},${line.y2}`} className="tree-line" />)}
+            {/* Outros parentes: curva tracejada com o parentesco escrito numa etiqueta no meio. */}
+            {layout.lines.map((line, i) => line.kind === "parentesco" && line.d && <g key={`p${i}`} className="tree-kin">
+              <path d={line.d} className="tree-kin-line" />
+              {line.label && <>
+                <rect x={line.lx! - kinWidth(line.label) / 2} y={line.ly! - 10} width={kinWidth(line.label)} height={20} rx={10} className="tree-kin-tag" />
+                <text x={line.lx} y={line.ly! + 4} textAnchor="middle" className="tree-kin-text">{line.label}</text>
+              </>}
+            </g>)}</g>
           {layout.nodes.map((p) => (
             <a key={p.path} href={href(noteRoute(p.path))} data-node={p.path} aria-current={p.path === center ? "true" : undefined} onClick={(event) => { event.preventDefault(); onSelect(p.path) }}>
-              <title>{p.path === center ? `${noteName(p.path)} (centro): ver os detalhes` : `Pôr ${noteName(p.path)} no centro (${generationLabel(p.generation)})`}</title>
+              <title>{p.path === center ? `${noteName(p.path)} (centro): ver os detalhes` : `Pôr ${noteName(p.path)} no centro (${generationLabel(p.generation)}${p.relation ? `, ${p.relation}` : ""})`}</title>
               <rect x={p.x} y={p.y} width={p.w} height={p.h} rx={10} className={`tree-box ${p.path === center ? "center" : ""}`} />
               <text aria-hidden="true" x={p.x + p.w / 2} y={p.y + p.h / 2 + 4} textAnchor="middle" className="tree-name">
                 {noteName(p.path).length > 20 ? noteName(p.path).slice(0, 19) + "…" : noteName(p.path)}
@@ -420,23 +429,35 @@ function FamilyTreeView({ center, root, onSelect }: { center: string; root: stri
         </svg>
         </div>
       </div>
-      <p className="small muted relations-help">Linha cheia: filiação · tracejada: casamento. Escolha um nome para pô-lo no centro; no centro, para ver os detalhes. Arraste para mover; + e − aproximam, 0 enquadra.</p>
+      <p className="small muted relations-help">Linha cheia: filiação · tracejada dourada: casamento · tracejada azul: outros parentes, com o parentesco escrito. Escolha um nome para pô-lo no centro; no centro, para ver os detalhes. Arraste para mover; + e − aproximam, 0 enquadra.</p>
     </div>
   )
 }
 
-/** A árvore em tabela: Pessoa · Pais · Cônjuges · Filhos. */
+/** Largura da etiqueta do parentesco (texto de 11 px em média com 6 px por letra, mais a folga). */
+const kinWidth = (label: string) => label.length * 6 + 16
+
+/** Os parentes além de pais, cônjuges e filhos, agrupados: “Tios: Ana; Primos: Bia, Caio”. */
+const NUCLEAR = new Set(["pais", "filhos", "conjuges"])
+
+/** A árvore em tabela: Pessoa · Pais · Cônjuges · Filhos · Irmãos e outros parentes. */
 function FamilyTable({ people, root, onSelect }: { people: string[]; root: string; onSelect(path: string): void }) {
   const vault = useVault()
   const index = vault.index!
   const names = (path: string, key: string) => relationsOf(index, path, root).filter((r) => r.type.key === key && r.other).map((r) => noteName(r.other!)).join(", ") || "—"
+  const others = (path: string) => {
+    const groups = new Map<string, string[]>()
+    for (const r of relationsOf(index, path, root)) if (r.other && r.type.group === "familia" && !NUCLEAR.has(r.type.key))
+      groups.set(r.type.label, [...(groups.get(r.type.label) ?? []), noteName(r.other)])
+    return [...groups].map(([label, list]) => `${label}: ${list.join(", ")}`).join("; ") || "—"
+  }
   return <div className="relations-table-wrap">
     <table className="graph-table">
       <caption className="sr-only">Famílias</caption>
-      <thead><tr><th scope="col">Pessoa</th><th scope="col">Pais</th><th scope="col">Cônjuges</th><th scope="col">Filhos</th></tr></thead>
+      <thead><tr><th scope="col">Pessoa</th><th scope="col">Pais</th><th scope="col">Cônjuges</th><th scope="col">Filhos</th><th scope="col">Irmãos e outros parentes</th></tr></thead>
       <tbody>{people.map((p) => <tr key={p}>
         <th scope="row"><button type="button" className="link-btn" data-node={p} onClick={() => onSelect(p)}>{noteName(p)}</button></th>
-        <td>{names(p, "pais")}</td><td>{names(p, "conjuges")}</td><td>{names(p, "filhos")}</td>
+        <td>{names(p, "pais")}</td><td>{names(p, "conjuges")}</td><td>{names(p, "filhos")}</td><td>{others(p)}</td>
       </tr>)}</tbody>
     </table>
   </div>
