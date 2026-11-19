@@ -4,7 +4,8 @@ import {
   campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks,
   type CampaignInfo, type CampaignStats, type Clock, type PlayerCharacter, type QuestInfo, type SecretItem, type SessionInfo, type TrackedLink,
 } from "../../core/campaigns"
-import { listWikis, mainCalendar, type CalendarRef } from "../../core/wiki"
+import { listCalendars, type CalendarRef } from "../../core/wiki"
+import { campaignCalendar } from "../../core/campaign-calendar"
 import { nextSession, overdueSessions, type NextSession } from "../../core/next-session"
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
@@ -45,6 +46,8 @@ export interface CampaignData {
   calendar: Calendar | null
   /** A nota do calendário, para avançar “hoje no mundo” pelo Painel. */
   calendarRef: CalendarRef | null
+  /** Os calendários da wiki da campanha, para trocar o dela em “Ajustar data e hora”. */
+  calendars: CalendarRef[]
   /** U39: a campanha tem data e hora próprias (`data_mundo` na nota dela); sem isso, segue o `hoje` da wiki. */
   ownTime: boolean
   readOnly: boolean
@@ -62,9 +65,10 @@ export function useCampaignData(name: string): CampaignData {
     const sessions = listSessions(index, campaign, today)
     const players = listPlayers(index, campaign)
     const next = nextSession(index, today, name)
-    // O calendário principal da wiki da campanha (o da nota inicial ou o que as datas mais usam).
+    // O calendário da campanha: o da sigla da data dela, senão o padrão da wiki (nota inicial ou o mais usado).
     const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
-    const calendarRef = mainCalendar(index, root, listWikis(index).find((w) => w.root === root)?.home)
+    const calendarRef = campaignCalendar(index, root, home?.meta.frontmatter?.data)
+    const calendars = listCalendars(index, root).filter((c): c is CalendarRef => "calendar" in c)
     const time = campaignTime(home?.meta.frontmatter?.data, calendarRef?.calendar ?? null)
     const calendar = calendarRef ? calendarForCampaign(calendarRef.calendar, time) : null
     return {
@@ -89,6 +93,7 @@ export function useCampaignData(name: string): CampaignData {
       stats: campaignStats(sessions, players),
       calendar,
       calendarRef,
+      calendars,
       ownTime: time !== null,
       readOnly,
     }

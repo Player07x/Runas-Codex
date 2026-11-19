@@ -15,13 +15,27 @@ Blocos especiais). Wiki › Novo artigo › Calendário cria um pronto para edit
 ### A tela do calendário
 
 Wiki › **Calendário** mostra os meses do calendário escolhido, com luas, feriados, aniversários e os acontecimentos
-do dia. À direita, abas:
+do dia. Com mais de um calendário, **Tornar padrão** (ao lado da lista) faz o calendário escolhido abrir ao entrar em
+Calendário, nas campanhas e no Início; ele fica na propriedade `calendario: "[[Nome]]"` da nota inicial da wiki
+(`Wikis/<wiki>/<wiki>.md`, criada se faltar). O padrão aparece marcado na lista.
+
+Os aniversários de quem nasceu num calendário sincronizado também aparecem, no dia em que caem neste: “Gwyn (83 ·
+R)” diz a idade e a sigla do calendário em que a pessoa nasceu (a festa é contada no calendário dela).
+
+À direita, abas:
 
 - **Dia**: o que acontece no dia escolhido.
 - **Hoje no mundo**: a data atual da campanha; avance um dia (ou mais) conforme o jogo anda. Idades e contagens se
   atualizam.
 - **Sincronizar**: diga que um dia de um calendário é o mesmo dia de outro (“1/1/4031 OC = 1/1/812 do élfico”). As
-  correspondências valem nos dois sentidos e em cadeia, e permitem converter datas.
+  correspondências valem nos dois sentidos e em cadeia, e permitem converter datas. Abaixo, **Conferir a
+  sincronização** ajuda a achar o erro quando algo não bate:
+  - **Luas**: compara as luas de mesmo nome nos dois calendários e diz quantos dias a lua cheia está fora. **Acertar
+    no outro** ou **Acertar aqui** reescreve o `cheia_em` da lua, para ela ficar cheia nos mesmos dias.
+  - **Aniversários**: os próximos aniversários de quem nasceu no outro calendário, para conferir se caem onde deviam.
+  - **Mover a ligação**: −1 dia e +1 dia mostram a prévia (luas, aniversários e a data de hoje no outro) antes de
+    **Gravar**; isso corrige uma correspondência que ficou alguns dias fora. Quando a ligação passa por um terceiro
+    calendário, ajuste por lá.
 - **Ajuda**: o formato do bloco.
 
 ### A linha do tempo

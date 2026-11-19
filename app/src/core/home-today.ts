@@ -1,10 +1,10 @@
 import { formatDate as formatWorld } from "./calendar"
+import { campaignCalendar } from "./campaign-calendar"
 import { calendarForCampaign, campaignTime } from "./campaign-time"
 import { listCampaigns, type CampaignInfo } from "./campaigns"
 import { groupAgendaTasks, taskState } from "./tasks/agenda"
 import type { Task } from "./tasks/task"
 import type { VaultIndex } from "./vault-index"
-import { listWikis, mainCalendar } from "./wiki"
 import { clockMinutes, clockText, parseWorldClock } from "./world-clock"
 
 /**
@@ -39,12 +39,11 @@ export function activeCampaignsNow(index: VaultIndex, limit = 3): { list: Campai
   const active = listCampaigns(index).filter((campaign) => campaign.status === "ativa")
   const touched = (campaign: CampaignInfo) => (campaign.home ? index.note(campaign.home)?.mtime ?? 0 : 0)
   active.sort((a, b) => touched(b) - touched(a) || a.name.localeCompare(b.name, "pt-BR"))
-  const wikis = listWikis(index)
   const list = active.slice(0, limit).map((campaign) => {
     const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
-    const ref = mainCalendar(index, root, wikis.find((wiki) => wiki.root === root)?.home)
-    if (!ref) return { campaign, world: null }
     const data = campaign.home ? index.note(campaign.home)?.meta.frontmatter?.data : undefined
+    const ref = campaignCalendar(index, root, data)
+    if (!ref) return { campaign, world: null }
     const calendar = calendarForCampaign(ref.calendar, campaignTime(data, ref.calendar))
     if (!calendar.today) return { campaign, world: null }
     const date = formatWorld(calendar, calendar.today)

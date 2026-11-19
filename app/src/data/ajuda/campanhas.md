@@ -131,3 +131,7 @@ data pela campanha, ela passa a ter as suas (“tempo desta campanha”), gravad
 `hora_mundo` e `periodo_mundo`. A regra do relógio (horas, minutos e períodos) continua no calendário, porque é do
 mundo. No ⋯ do relógio, **Voltar a seguir a wiki** apaga as três propriedades. Em Wiki › Calendário › Hoje no mundo
 aparece a data de cada campanha que tem a sua.
+
+Uma campanha pode contar o tempo noutro calendário da wiki: em **Ajustar data e hora**, escolha o **Calendário**. Se
+os dois estão sincronizados, a data é convertida; senão, começa no “hoje” do outro calendário (confira antes de
+salvar). A sigla em `data_mundo` diz qual calendário a campanha usa, e a regra do relógio passa a ser a dele.
