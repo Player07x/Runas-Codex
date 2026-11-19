@@ -2496,3 +2496,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] A Lista da árvore tem a coluna “Irmãos e outros parentes” (“Tios: …; Primos: …”), dos dois lados.
 - [ ] Tema claro e escuro, e no celular (390 px) sem rolagem para os lados; passar o mouse numa caixa mostra o
   parentesco (“1 geração acima, tio ou tia”).
+
+## Versão 1.7.1
+
+- [ ] Com a 1.7.0 instalada, o aviso “Atualizar para 1.7.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.1 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.1 instalada a seção “Árvore genealógica com os parentes (1.7.1)” acima.
