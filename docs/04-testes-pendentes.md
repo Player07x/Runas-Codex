@@ -2487,6 +2487,35 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.7.0 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.0 instalada a seção “Parentes na Wiki (1.7)” acima.
 
+## Árvore genealógica com os parentes (1.7.1)
+
+- [ ] Num personagem com `tios` e `primos` (por exemplo Prismeus), Wiki › Relações › Árvore genealógica: um traço
+  tracejado azul liga a pessoa a cada parente, com o parentesco escrito numa etiqueta (“tio ou tia”, “primo ou
+  prima”). Entre parentes da mesma linha, a curva passa por baixo, sem cruzar as caixas.
+- [ ] Se o primo é filho do tio, a linha cheia de filiação liga os dois (o primo fica embaixo do tio).
+- [ ] A Lista da árvore tem a coluna “Irmãos e outros parentes” (“Tios: …; Primos: …”), dos dois lados.
+- [ ] Tema claro e escuro, e no celular (390 px) sem rolagem para os lados; passar o mouse numa caixa mostra o
+  parentesco (“1 geração acima, tio ou tia”).
+
+## Versão 1.7.1
+
+- [ ] Com a 1.7.0 instalada, o aviso “Atualizar para 1.7.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.1 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.1 instalada a seção “Árvore genealógica com os parentes (1.7.1)” acima.
+
+## Botão Painel nas Notas
+
+- [ ] Com uma nota aberta nas Notas e a janela larga (mais de 1180 px), o botão **Painel** da barra da nota recolhe e
+  abre o painel “Detalhes da nota”, como no artigo da Wiki. Antes ele não fazia nada nessa largura.
+- [ ] Com a janela estreita (ou no celular), o mesmo botão abre e fecha a camada com os detalhes; recolher pelo botão
+  da barra do painel também fecha a camada.
+
+## Versão 1.7.2
+
+- [ ] Com a 1.7.1 instalada, o aviso “Atualizar para 1.7.2” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.2 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.2 instalada a seção “Botão Painel nas Notas” acima.
+
 ## android-revisao: link público resolvido sem o cache do runner
 
 - [ ] Nos próximos Releases, o job `android-revisao` não cai mais com `fetch failed` logo depois de “o link público
