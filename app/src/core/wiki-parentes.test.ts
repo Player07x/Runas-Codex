@@ -52,6 +52,15 @@ describe("parentes além do núcleo", () => {
     expect(familyTree(index, P("Prismeus"), 3).generations.get(-3)).toEqual([P("Bisavô")])
   })
 
+  it("cada parente ganha um traço até a pessoa, com o parentesco escrito", () => {
+    const kin = familyTree(index, P("Prismeus")).edges.filter((e) => e.kind === "parentesco")
+    expect(kin.map((e) => `${e.to.split("/").pop()}:${e.label}`).sort()).toEqual(
+      ["Avó.md:avô ou avó", "Madrinha.md:padrinho ou madrinha", "Primo.md:primo ou prima", "Sobrinha.md:sobrinho ou sobrinha", "Tia.md:tio ou tia"])
+    expect(kin.every((e) => e.from === P("Prismeus"))).toBe(true)
+    // A mãe vem pela filiação: só a linha de sempre, sem traço repetido.
+    expect(kin.some((e) => e.to === P("Mãe"))).toBe(false)
+  })
+
   it("a frase do Adicionar diz quem é o quê", () => {
     expect(relationSentence("tios", "Prismeus", "Tia")).toBe("Tia é tio ou tia de Prismeus")
     expect(relationSentence("primos", "Prismeus", "Primo")).toBe("Prismeus e Primo são primos")

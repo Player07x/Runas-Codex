@@ -1,9 +1,12 @@
 import { familyTree, type FamilyTree } from "./wiki"
 import type { VaultIndex } from "./vault-index"
 
-export interface FamilyNode { path: string; generation: number; x: number; y: number; w: number; h: number }
-/** Linha já posicionada: filiação sai do meio do casal (ou do pai/mãe sozinho); casamento liga os dois lado a lado. */
-export interface FamilyLine { kind: "filiacao" | "casamento"; x1: number; y1: number; x2: number; y2: number }
+export interface FamilyNode { path: string; generation: number; x: number; y: number; w: number; h: number; relation?: string }
+/**
+ * Linha já posicionada: filiação sai do meio do casal (ou do pai/mãe sozinho); casamento liga os dois lado a lado;
+ * parentesco é uma curva da pessoa no centro até o parente (`d`), com o nome em `label` no ponto (`lx`, `ly`).
+ */
+export interface FamilyLine { kind: "filiacao" | "casamento" | "parentesco"; x1: number; y1: number; x2: number; y2: number; d?: string; label?: string; lx?: number; ly?: number }
 export interface FamilyLayout { nodes: FamilyNode[]; lines: FamilyLine[]; width: number; height: number }
 
 /** A árvore com `up` gerações acima e `down` abaixo da pessoa (U25). */
@@ -85,7 +88,26 @@ export function layoutFamily(tree: FamilyTree, size = { w: 170, h: 52, gapX: 24,
     const sources = couple ? [{ x: (Math.min(a.x, b.x) + Math.max(a.x, b.x) + a.w) / 2, y: a.y + a.h / 2 }] : placed.map((n) => ({ x: n.x + n.w / 2, y: n.y + n.h }))
     for (const s of sources) lines.push({ kind: "filiacao", x1: s.x, y1: s.y, x2: c.x + c.w / 2, y2: c.y })
   }
-  const height = size.margin * 2 + levels.length * size.h + Math.max(0, levels.length - 1) * size.gapY
+  for (const e of tree.edges) {
+    if (e.kind !== "parentesco") continue
+    const a = at.get(e.from), b = at.get(e.to)
+    if (!a || !b) continue
+    if (e.label) b.relation = e.label
+    if (a.y === b.y) {
+      // Mesma geração: a curva passa por baixo da fileira, sem cruzar as caixas do meio.
+      const [x1, x2, y] = [a.x + a.w / 2, b.x + b.w / 2, a.y + a.h], dip = size.gapY * 0.6
+      lines.push({ kind: "parentesco", x1, y1: y, x2, y2: y, d: `M${x1},${y} C${x1},${y + dip} ${x2},${y + dip} ${x2},${y}`, label: e.label, lx: (x1 + x2) / 2, ly: y + dip * 0.75 })
+    } else {
+      // Gerações diferentes: sai da borda de cima ou de baixo de cada caixa, como a filiação.
+      const down = b.y > a.y
+      const [x1, y1, x2, y2] = [a.x + a.w / 2, down ? a.y + a.h : a.y, b.x + b.w / 2, down ? b.y : b.y + b.h]
+      const mid = (y1 + y2) / 2
+      lines.push({ kind: "parentesco", x1, y1, x2, y2, d: `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`, label: e.label, lx: (x1 + x2) / 2, ly: mid })
+    }
+  }
+  // A curva entre parentes da última fileira passa abaixo dela: a altura cresce para caber a etiqueta.
+  const lowest = Math.max(0, ...lines.map((l) => (l.ly ?? 0) + 12))
+  const height = Math.max(size.margin * 2 + levels.length * size.h + Math.max(0, levels.length - 1) * size.gapY, lowest + size.margin)
   return { nodes, lines, width, height }
 }
 

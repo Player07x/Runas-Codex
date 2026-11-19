@@ -35,6 +35,27 @@ describe("árvore genealógica", () => {
     expect(layout.lines.filter((l) => l.kind === "casamento")).toHaveLength(1)
   })
 
+  it("liga cada parente à pessoa com uma curva e o parentesco no meio", () => {
+    const kin = vault({
+      [`${W}Eu.md`]: person("tios: ['[[Tia]]']\nprimos: ['[[Primo]]']\nsobrinhos: ['[[Sobrinha]]']"),
+      [`${W}Tia.md`]: person("filhos: ['[[Primo]]']"), [`${W}Primo.md`]: person(""), [`${W}Sobrinha.md`]: person(""),
+    })
+    const layout = layoutFamily(familyGraph(kin, `${W}Eu.md`, 2, 2, W))
+    const node = (name: string) => layout.nodes.find((n) => n.path === `${W}${name}.md`)!
+    const lines = layout.lines.filter((l) => l.kind === "parentesco")
+    expect(lines.map((l) => l.label).sort()).toEqual(["primo ou prima", "sobrinho ou sobrinha", "tio ou tia"])
+    expect(node("Tia").relation).toBe("tio ou tia")
+    const toTia = lines.find((l) => l.label === "tio ou tia")!
+    expect([toTia.x2, toTia.y2]).toEqual([node("Tia").x + 85, node("Tia").y + 52])
+    expect(toTia.d).toMatch(/^M[\d.]+,[\d.]+ C/)
+    // Primo na mesma fileira e na última: a curva passa por baixo, e o desenho cresce para caber a etiqueta.
+    const toPrimo = lines.find((l) => l.label === "primo ou prima")!
+    expect(toPrimo.ly!).toBeGreaterThan(node("Eu").y + 52)
+    expect(layout.height).toBeGreaterThanOrEqual(toPrimo.ly! + 12)
+    // O primo é filho da tia: a filiação entre os dois também aparece.
+    expect(layout.lines).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "filiacao", x2: node("Primo").x + 85, y2: node("Primo").y })]))
+  })
+
   it("não trava com ciclo nos dados", () => {
     const cycle = vault({ [`${W}A.md`]: person("filhos: ['[[B]]']\npais: ['[[B]]']"), [`${W}B.md`]: person("filhos: ['[[A]]']\npais: ['[[A]]']") })
     const layout = layoutFamily(familyGraph(cycle, `${W}A.md`, 5, 5, W))
