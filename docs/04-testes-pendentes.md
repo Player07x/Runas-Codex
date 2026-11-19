@@ -2460,3 +2460,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.6.0 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.6.0 instalada (Windows, Linux e Android) as seções “Atualização 1.6” acima, a “Conferência das
   correções integradas da 1.6” e a “Sala Android — reconexão e rede virtual no CI”.
+
+## android-room sem Wi-Fi no emulador (depois da 1.6.0)
+
+- [ ] Nos próximos Releases, o job `android-room` não cai mais com `fetch failed` / `other side closed` nem com o
+  jogador em “Reconectando…”. A causa das quedas da 1.6: o tráfego do job entra pelo `redir` na rede celular do
+  emulador (`eth0`, 10.0.2.15); 30 s depois de o Wi-Fi ficar pronto, o Android rebaixava essa rede e cortava as conexões
+  da sala no meio do teste. O job agora desliga o Wi-Fi do emulador antes de abrir o app. Em aparelho de verdade isso
+  não acontece: os jogadores entram pelo endereço do Wi-Fi, que é a rede padrão.
+- [ ] Se aparecer o aviso “O Android do emulador rebaixou a rede celular…” no resumo do job, a causa voltou.
