@@ -1,9 +1,9 @@
 import { markFreshNote } from "../lib/fresh-note"
 import { openDocumentExport } from "../components/export/ExportDialog"
-import { ResizablePanel } from "../components/ResizablePanel"
+import { ResizablePanel, setPanelCollapsed, togglePanel } from "../components/ResizablePanel"
 import { ContextMenu, contextMenuProps, OverflowMenu, type ContextPoint, type MenuEntry } from "../components/kit/OverflowMenu"
 import { SearchHelp } from "../components/kit/SearchHelp"
-import { useCallback, useDeferredValue, useEffect, useMemo, useState, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore, type DragEvent, type HTMLAttributes, type ReactNode } from "react"
 import { Archive, FileDown, ListChecks, Package, ArrowUpDown, CalendarCheck, Check, ChevronDown, Copy, FilePlus2, FileText, Folder, FolderPlus, Hash, Heading, Lock, LockKeyhole, Network, PanelTop, PenLine, Pin, Plus, Replace, Search, Shuffle, Sparkles, Star, StarOff, SwatchBook, Trash2, Unlink, Vault, ChevronsDownUp } from "lucide-react"
 import { bookmarkKey, bookmarkLabel, hasBookmark, type Bookmark } from "../core/bookmarks"
 import { randomNote } from "../core/nav-history"
@@ -43,6 +43,8 @@ import "./notes.css"
 const NOTES_ROOT = "Notas/"
 const SCOPE_KEY = "runas-codex:notas-escopo"
 const ORDER_KEY = "runas-codex:notas-ordem"
+/** Até esta largura o painel da nota sai do grid e vira camada (`layout.css`, `.workspace .pane-right`). */
+const NARROW_RIGHT = "(max-width: 1180px)"
 /** Tipo dos dados do arrastar na árvore (o caminho da nota ou pasta). */
 const DRAG_TYPE = "application/x-runas-codex-path"
 
@@ -155,6 +157,20 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const root = wholeVault || !hasNotesSpace ? "" : NOTES_ROOT
   const [query, setQuery] = useState("")
   const [showRight, setShowRight] = useState(false)
+  // Botão Painel da nota: no computador recolhe e abre o painel ao lado, como nas outras telas; até 1180 px (onde o
+  // painel some do grid) abre a camada `show-right`. Antes ele só mexia na camada e, na janela larga, não fazia nada.
+  const narrowRight = useSyncExternalStore(
+    (listener) => { const list = typeof window.matchMedia === "function" ? window.matchMedia(NARROW_RIGHT) : null; list?.addEventListener("change", listener); return () => list?.removeEventListener("change", listener) },
+    () => typeof window.matchMedia === "function" && window.matchMedia(NARROW_RIGHT).matches,
+    () => false,
+  )
+  const [rightCollapsed, setRightCollapsed] = useState(false)
+  const toggleRight = () => {
+    if (!narrowRight) return togglePanel("notes-right")
+    // Guardado como recolhido no computador, o painel apareceria vazio na camada.
+    if (!showRight) setPanelCollapsed("notes-right", false)
+    setShowRight(!showRight)
+  }
   const [dialog, setDialog] = useState<Dialog | null>(null)
   const [menu, setMenu] = useState<{ at: ContextPoint; kind: "note" | "folder"; path: string } | null>(null)
   // U55: seleção de várias notas (Shift + clique, ou “Selecionar várias” no menu, que no celular vira toque).
@@ -710,7 +726,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
               }
               renderTab={(tabPath, _pane, focused) =>
                 /\.base$/i.test(tabPath) && index.hasFile(tabPath) ? <BaseScreen key={tabPath} path={tabPath} /> : index.note(tabPath) ? (
-                  <NoteView focused={focused} key={tabPath} path={tabPath} folders={folders} onShowPanel={() => setShowRight(!showRight)} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, tabPath)} onTag={onTag} headingRequest={focused ? heading : undefined} />
+                  <NoteView focused={focused} key={tabPath} path={tabPath} folders={folders} onShowPanel={toggleRight} panelOpen={narrowRight ? showRight : !rightCollapsed} onBack={() => navigate("/notas")} onCreate={(t) => openBroken(t, tabPath)} onTag={onTag} headingRequest={focused ? heading : undefined} />
                 ) : (
                   <div className="page">
                     <p className="muted">“{basename(tabPath)}” não abre aqui.</p>
@@ -723,7 +739,7 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
         )}
       </section>
 
-      <ResizablePanel id="notes-right" label="Detalhes da nota" side="right" width={300} className="pane-right" hidden={graph}>
+      <ResizablePanel id="notes-right" label="Detalhes da nota" side="right" width={300} className="pane-right" hidden={graph} onCollapsedChange={(collapsed) => { setRightCollapsed(collapsed); if (collapsed) setShowRight(false) }}>
         {note && <VaultPanels index={index} path={note.path} readOnly={readOnly} onCreate={(t) => openBroken(t, note.path)} onSetProperty={(key, value) => vault.setProperty(note.path, key, value)} onHeading={(line) => setHeading({ line, at: Date.now() })} onSaveNote={vault.save} />}
       </ResizablePanel>
 

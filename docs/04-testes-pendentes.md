@@ -2502,3 +2502,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com a 1.7.0 instalada, o aviso “Atualizar para 1.7.1” aparece na barra lateral (ou pelo botão “Verificar
   atualizações”), e a atualização termina com a 1.7.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.1 instalada a seção “Árvore genealógica com os parentes (1.7.1)” acima.
+
+## Botão Painel nas Notas
+
+- [ ] Com uma nota aberta nas Notas e a janela larga (mais de 1180 px), o botão **Painel** da barra da nota recolhe e
+  abre o painel “Detalhes da nota”, como no artigo da Wiki. Antes ele não fazia nada nessa largura.
+- [ ] Com a janela estreita (ou no celular), o mesmo botão abre e fecha a camada com os detalhes; recolher pelo botão
+  da barra do painel também fecha a camada.
