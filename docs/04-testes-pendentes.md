@@ -2480,3 +2480,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Wiki › Relações › Árvore genealógica: tios, padrastos, padrinhos e sogros ficam na linha dos pais; primos, cunhados
   e meio-irmãos na da pessoa; sobrinhos e enteados na dos filhos; avós e netos duas linhas acima e abaixo (sem traço de
   ligação, só a posição).
+
+## Versão 1.7.0
+
+- [ ] Com a 1.6.0 instalada, o aviso “Atualizar para 1.7.0” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.0 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.0 instalada a seção “Parentes na Wiki (1.7)” acima.
