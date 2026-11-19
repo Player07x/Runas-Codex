@@ -2552,3 +2552,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 - [ ] Em Wiki › Ferramentas, gerar 10 tavernas (ou outro gerador de texto longo): os botões de copiar e **Usar** ficam
       dentro de cada cartão, alinhados na mesma coluna. No celular, eles vão para uma linha abaixo do texto.
+
+## Versão 1.7.3
+
+- [ ] Com a 1.7.2 instalada, o aviso “Atualizar para 1.7.3” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.3 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.3 instalada as seções “Calendários da Wiki”, “Correção: a página rolava inteira no Elenco” e
+  “Correção: botões “Usar” dos geradores” acima.
