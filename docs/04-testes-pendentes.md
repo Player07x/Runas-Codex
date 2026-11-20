@@ -2571,3 +2571,6 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Num mapa da Wiki, abrir Painel › Áreas e escolher uma área, rota ou rótulo. No alto do editor, “Voltar às áreas”
   volta à lista sem rolar até o fim; o que foi digitado fica gravado e a linha da forma fica com o foco. No celular,
   o botão tem altura de toque e a lista aparece sem rolagem para os lados.
+- [ ] Com a ferramenta Medir, arrastar de um pino a outro (e de uma área a outra): a régua mede, nenhum pino ou área
+  é escolhido e nenhum cartão de pino abre. A distância aparece na ponta da régua e na barra de cima. Tocar em dois
+  pontos sem arrastar também mede. No celular, arrastar com o dedo mede em vez de mover o mapa.

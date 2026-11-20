@@ -30,6 +30,8 @@ type Drag =
   | { kind: "shape"; index: number; start: MapPoint; points: MapPoint[]; moved: boolean }
   | { kind: "vertex"; index: number; vertex: number; points: MapPoint[] }
   | { kind: "box"; start: MapPoint }
+  // Régua (como a do VTT): arrastar mede; tocar sem arrastar marca o início e o toque seguinte fecha a medida.
+  | { kind: "ruler"; start: MapPoint; moved: boolean; pending: MapPoint | null }
 
 export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawings, tool = "mover", areaShape = "retangulo", onAreaShape, editable = false, selection = null, onSelect,
   onActivatePin, onPinsChange, onDrawingChange, onPlacePin, onCreateDrawing, onDeletePin, onToolDone, corner, popover, popoverAt, ghostAt, handle, compact, missingImage }: {
@@ -184,7 +186,13 @@ export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawi
     const point = toMap(event)
     if (!point) return
     const capture = () => event.currentTarget.setPointerCapture(event.pointerId)
-    if (tool === "medir") { if (inside(point)) setRuler((r) => (r.length >= 2 ? [point] : [...r, point])); return }
+    if (tool === "medir") {
+      if (!inside(point)) return
+      capture()
+      drag.current = { kind: "ruler", start: point, moved: false, pending: ruler.length === 1 ? ruler[0]! : null }
+      setRuler([point])
+      return
+    }
     if (tool === "pino" && editable) { if (inside(point)) onPlacePin?.(point); return }
     if (tool === "rotulo" && editable) { if (inside(point)) onCreateDrawing?.("rotulo", [point]); return }
     if ((tool === "rota" || (tool === "area" && areaShape === "livre")) && editable) {
@@ -220,7 +228,10 @@ export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawi
     if (d.kind === "pan") { framed.current = false; setView((v) => ({ ...v, x: d.vx + event.clientX - d.sx, y: d.vy + event.clientY - d.sy })); return }
     const p = toMap(event)
     if (!p) return
-    if (d.kind === "box") setBoxDraft({ a: d.start, b: { x: clamp01(p.x), y: clamp01(p.y) } })
+    if (d.kind === "ruler") {
+      d.moved = d.moved || Math.hypot(p.x - d.start.x, p.y - d.start.y) > 0.002
+      if (d.moved) setRuler([d.start, { x: clamp01(p.x), y: clamp01(p.y) }])
+    } else if (d.kind === "box") setBoxDraft({ a: d.start, b: { x: clamp01(p.x), y: clamp01(p.y) } })
     else if (d.kind === "pin") {
       d.moved = d.moved || Math.hypot(p.x - d.start.x, p.y - d.start.y) > 0.002
       if (!d.moved) return
@@ -236,6 +247,7 @@ export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawi
   const onPointerUp = () => {
     const d = drag.current
     drag.current = null
+    if (d?.kind === "ruler" && !d.moved && d.pending) setRuler([d.pending, d.start])
     if (d?.kind === "box" && boxDraft) {
       const { a, b } = boxDraft
       setBoxDraft(null)
@@ -425,7 +437,7 @@ export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawi
               }} />)}
           </div>}
           {size && pinList.length > 0 && <div className="map-pins" role="group" aria-label={`Pinos (${pinList.length})`}>
-            {pinList.map((view) => <button key={view.index} type="button" data-pin={view.index} tabIndex={view.index === tabPin ? 0 : -1}
+            {pinList.map((view) => <button key={view.index} type="button" data-pin={view.index} tabIndex={view.index === tabPin && tool !== "medir" ? 0 : -1}
               className={`map-pin${selection?.kind === "pin" && selection.index === view.index ? " active" : ""}${view.secret ? " secret" : ""}${view.broken ? " broken" : ""}${view.nested ? " nested" : ""}`}
               style={{ left: view.pin.x * size.w, top: view.pin.y * size.h, transform: `translate(-50%, -100%) scale(${1 / k})` }}
               aria-label={`${view.title}${view.secret ? ", segredo" : ""}${view.broken ? ", nota não encontrada" : ""}`}
@@ -449,6 +461,8 @@ export function MapCanvas({ spec, label, imageUrl, imageLayers = [], pins, drawi
           {size && ghostAt && <span className="map-pin ghost" aria-hidden="true" style={{ left: ghostAt.x * size.w, top: ghostAt.y * size.h, transform: `translate(-50%, -100%) scale(${1 / k})` }}>
             <span className="map-pin-mark"><MapPin size={16} /></span><span className="map-pin-label">Pino novo</span>
           </span>}
+          {size && ruler.length === 2 && distance && <span className="map-ruler-label" aria-hidden="true"
+            style={{ left: ruler[1]!.x * size.w, top: ruler[1]!.y * size.h, transform: `translate(-50%, -100%) scale(${1 / k}) translateY(-10px)` }}>{distance.text}</span>}
         </div>
         {popover && <div className="map-popover-wrap" style={{ ["--px" as string]: `${popoverLeft}px`, ["--py" as string]: `${popoverTop}px` }}>{popover}</div>}
         <div className="map-corner">
@@ -473,7 +487,7 @@ function ToolOptions({ tool, areaShape, onAreaShape, draft, distance, hasRuler, 
   const min = tool === "rota" ? 2 : 3
   const text = tool === "pino" ? "Toque no mapa onde o pino vai ficar (Enter põe no meio da vista)."
     : tool === "rotulo" ? "Toque no mapa onde o rótulo vai ficar (Enter põe no meio da vista)."
-    : tool === "medir" ? (distance ? distance.text : "Toque em dois pontos para medir.")
+    : tool === "medir" ? (distance ? distance.text : "Arraste no mapa para medir (ou toque em dois pontos).")
     : tool === "rota" ? `Toque para pôr cada ponto da rota${draft.length ? ` (${draft.length})` : ""}; Concluir termina.`
     : areaShape === "livre" ? `Toque para pôr cada ponto${draft.length ? ` (${draft.length})` : ""}; toque no primeiro ou em Concluir para fechar.`
     : "Arraste no mapa para desenhar a área."
@@ -483,7 +497,8 @@ function ToolOptions({ tool, areaShape, onAreaShape, draft, distance, hasRuler, 
     <span className="map-options-actions">
       {free && <button type="button" className="btn sm ghost" disabled={!draft.length} onClick={onUndo}><Undo2 size={15} /> Desfazer ponto</button>}
       {free && <button type="button" className="btn sm primary" disabled={draft.length < min} onClick={onFinish}>Concluir</button>}
-      {tool === "medir" && hasRuler && <button type="button" className="btn sm ghost" onClick={onClear}>Limpar</button>}
+      {/* Sempre presente: a barra não muda de altura (e o mapa não reenquadra) no meio da medida. */}
+      {tool === "medir" && <button type="button" className="btn sm ghost" disabled={!hasRuler} onClick={onClear}>Limpar</button>}
       <button type="button" className="btn sm ghost" onClick={onCancel}><X size={15} /> {tool === "medir" ? "Fechar" : "Cancelar"}</button>
     </span>
   </div>
