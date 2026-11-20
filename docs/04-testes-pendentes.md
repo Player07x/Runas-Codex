@@ -2565,3 +2565,23 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Nos próximos Releases, o passo “Smoke no app empacotado” do linux termina em poucos minutos. Se o app não fechar,
   o log mostra “Smoke: o app não fechou 15 s depois do resultado; saindo à força.” e o smoke com gravação roda em
   seguida; se ainda assim travar, o passo falha em 5 min com a lista dos processos vivos, em vez de esperar 30 min.
+
+## Desempenho do calendário, das relações e da abertura
+
+- [ ] Em um cofre com muitos artigos, abrir Wiki › Calendário, mudar entre mês e ano, navegar para outro ano e
+      selecionar dias. Conferir as marcações de eventos recorrentes e os aniversários em calendários ligados.
+- [ ] Em Sincronizar, escolher outro calendário, deslocar a ligação um dia nos dois sentidos e conferir as datas
+      da prévia. Gravar e desfazer numa cópia de teste do cofre.
+- [ ] Na árvore genealógica, trocar a pessoa do centro, aumentar as gerações e comparar com a aba Lista.
+      Conferir relações escritas nos dois lados e referências a personagens de outra wiki.
+- [ ] Com um cofre grande no Windows e no Android, comparar com a 1.6.0 a abertura, a busca e as mudanças feitas pelo
+      Obsidian. No Android, testar também o cofre aberto pelo seletor do sistema. Conferir a primeira abertura do
+      Livro, da Mesa, do Gráfico e das Ferramentas da Wiki após abrir o aplicativo.
+
+## Abertura da Wiki, da Mesa e do Gráfico
+
+- [ ] No Windows, abrir a Wiki com retratos nas prévias e depois abrir os artigos. Conferir os retratos em telas de
+      alta densidade. Abrir uma Mesa pela primeira vez, alternar para outra e voltar. Conferir a cena lembrada.
+- [ ] Num Android físico com cofre grande, comparar com a 1.6.0 o tempo até o índice aparecer e a primeira abertura do
+      Gráfico, com e sem passagem pela lista de Notas. Voltar ao app após editar uma nota em outro aplicativo e
+      conferir se a mudança aparece.

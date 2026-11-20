@@ -1,41 +1,5 @@
-import { parse as parseYaml } from "yaml"
-import { dayNumber, parseWorldDate, dateProblem, type Calendar, type WorldDate } from "./calendar"
 import * as T from "./generator-tables"
 import { cultureName, type NameCulture } from "./name-cultures"
-export interface RollEntry { text: string; weight: number; table?: string }
-export interface RollTable { name: string; entries: RollEntry[] }
-const object = (v:unknown):Record<string,unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string,unknown> : {}
-export function parseRollTable(code:string): RollTable {
-  const d=object(parseYaml(code)), raw=Array.isArray(d.resultados)?d.resultados:[]
-  if (!raw.length || raw.length>1000) throw new Error("A tabela precisa de 1 a 1.000 resultados.")
-  const entries=raw.map(value=>{
-    const row=typeof value === "string"?{texto:value}:object(value)
-    const weight=row.peso === undefined?1:Number(row.peso)
-    if (!Number.isSafeInteger(weight)||weight<1||weight>1000000||typeof row.texto!=="string"||!row.texto.trim()) throw new Error("Cada resultado precisa de texto e peso inteiro positivo.")
-    return {text:row.texto.slice(0,4000),weight,...(typeof row.tabela==="string"?{table:row.tabela}:{})}
-  })
-  return {name:typeof d.nome==="string"?d.nome:"Tabela aleatória",entries}
-}
-export function rollTable(table:RollTable, lookup:(target:string)=>RollTable|undefined, random= Math.random, seen:RollTable[]=[]):string[] {
-  if (seen.length>=10 || seen.includes(table)) throw new Error("A cadeia de tabelas tem um ciclo ou ultrapassa dez tabelas.")
-  const total=table.entries.reduce((sum,e)=>sum+e.weight,0)
-  let value=Math.max(0,Math.min(.999999999,random()))*total
-  const entry=table.entries.find(e=>(value-=e.weight)<0) ?? table.entries.at(-1)!
-  if (!entry.table) return [entry.text]
-  const next=lookup(entry.table)
-  if(!next) throw new Error(`Tabela não encontrada: ${entry.table}`)
-  return [entry.text,...rollTable(next,lookup,random,[...seen,table])]
-}
-export interface Dictionary { name:string; rules:string; words:{word:string;translation:string;pronunciation:string}[] }
-export function parseDictionary(code:string):Dictionary {
-  const d=object(parseYaml(code))
-  if(!Array.isArray(d.palavras)||d.palavras.length>10000) throw new Error("O dicionário precisa da lista palavras (até 10 mil entradas).")
-  return {name:typeof d.nome==="string"?d.nome:"Idioma",rules:typeof d.regras==="string"?d.regras:"",words:d.palavras.map(value=>{
-    const row=object(value)
-    if(typeof row.palavra!=="string" || typeof row.traducao!=="string") throw new Error("Informe palavra e traducao em cada entrada.")
-    return {word:row.palavra,translation:row.traducao,pronunciation:typeof row.pronuncia==="string"?row.pronuncia:""}
-  })}
-}
 export const GENERATOR_KINDS = {nome:"Nome",npc:"NPC",taverna:"Taverna",tesouro:"Tesouro",clima:"Clima",gancho:"Gancho",rumor:"Rumor",lugar:"Nome de lugar",item:"Item mágico",faccao:"Facção",divindade:"Divindade",masmorra:"Sala de masmorra",lenda:"Lenda",mercador:"Mercador",aventura:"Aventura"} as const
 export type GeneratorKind=keyof typeof GENERATOR_KINDS
 /** Grupos da tela de Ferramentas: cada gerador aparece em um só. */
@@ -102,17 +66,5 @@ export function articleFromResult(kind: GeneratorKind, text: string): GeneratedA
   const field = kind === "lenda" ? text.slice(text.indexOf(". ") + 2) : kind === "divindade" ? text.split("Mandamento: ").at(-1) : undefined
   return generatedArticle(kind, { text, ...(field ? { field } : {}) })
 }
-/** Recorrência no calendário escolhido; não usa meses/dias do calendário real. */
-export function worldEventOn(data:Record<string,unknown>, cal:Calendar, date:WorldDate):boolean {
-  const start=typeof data.data_mundo==="string"?parseWorldDate(data.data_mundo):null
-  if(!start || dateProblem(cal,start)||dateProblem(cal,date)) return false
-  const day=dayNumber(cal,date), first=dayNumber(cal,start)
-  if(day<first) return false
-  const until=typeof data.fim_recorrencia_mundo==="string"?parseWorldDate(data.fim_recorrencia_mundo):null
-  if(until && !dateProblem(cal,until) && day>dayNumber(cal,until)) return false
-  const interval=typeof data.intervalo_mundo==="number" && Number.isSafeInteger(data.intervalo_mundo) && data.intervalo_mundo>0?data.intervalo_mundo:1
-  if(data.recorrencia_mundo==="dias") return (day-first)%interval===0
-  if(data.recorrencia_mundo==="meses") return date.day===start.day && ((date.year-start.year)*cal.months.length+date.month-start.month)%interval===0
-  if(data.recorrencia_mundo==="anos") return date.day===start.day && date.month===start.month && (date.year-start.year)%interval===0
-  return day===first
-}
+export { worldEventOn } from "./world-event-recurrence"
+export { parseDictionary, parseRollTable, rollTable } from "./wiki-text-tools"

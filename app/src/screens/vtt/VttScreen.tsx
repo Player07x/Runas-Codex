@@ -1,6 +1,7 @@
+import { deferredView } from "../../components/kit/deferred-view"
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package, MonitorPlay } from "lucide-react"
+import { ArrowLeft, Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package, MonitorPlay } from "lucide-react"
 import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
@@ -9,19 +10,68 @@ import { worldItem, requestExport } from "../../lib/transfer-request"
 import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal } from "../../components/ui"
 import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
-import { MesaTable } from "../../vtt/MesaTable"
 import { parseRoomLink, type RoomLink } from "../../vtt/shared/room-link"
 import { isBrowserPreview, vtt } from "../../vtt/api"
+import { DocumentStore } from "../../vtt/document-store"
 import type { WorldSummary } from "../../vtt/shared/world"
 import { useVault } from "../../platform/VaultProvider"
 import "./vtt.css"
+
+const MesaTable = deferredView(
+  () => import("../../vtt/MesaTable").then(({ MesaTable }) => MesaTable),
+  () => <p className="page muted" role="status">Carregando a mesa…</p>,
+)
 
 export function VttScreen({ route }: { route: string[] }) {
   const [section, id] = route
   if (section === "criar") return <CreateRoom />
   if (section === "entrar") return <JoinRoom />
-  if (section === "mesa" && id) return <MesaTable id={id} />
+  if (section === "mesa" && id) return <OpenMesa key={id} id={id} />
   return <VttHome />
+}
+
+/** A sala continua aberta ao consultar outros espaços. */
+function OpenMesa({ id }: { id: string }) {
+  const { platform } = useVault()
+  const [mesa, setMesa] = useState<{ world: WorldSummary; documents: DocumentStore }>()
+  const [error, setError] = useState<string>()
+  useEffect(() => {
+    let active = true
+    let documents: DocumentStore | undefined
+    try {
+      sessionStorage.setItem("runas-codex:mesa-aberta", id)
+    } catch {
+      /* preferência opcional */
+    }
+    // Abre a sala e lê seus documentos enquanto o módulo da Mesa carrega.
+    async function open() {
+      const world = await vtt.openWorld(id)
+      if (!active) return
+      documents = new DocumentStore()
+      await documents.load()
+      if (active) setMesa({ world, documents })
+    }
+    void open().catch((reason: unknown) => {
+      if (!active) return
+      documents?.dispose()
+      documents = undefined
+      setError(reason instanceof Error ? reason.message : String(reason))
+    })
+    void MesaTable.preload().catch(() => { /* o carregador oferece nova tentativa */ })
+    return () => {
+      active = false
+      documents?.dispose()
+    }
+  }, [id])
+  if (error) return (
+    <div className="page">
+      <p style={{ color: "var(--red)" }}>{error}</p>
+      <a className="btn" href={href("/vtt/criar")}><ArrowLeft size={16} /> Voltar às mesas</a>
+    </div>
+  )
+  return mesa
+    ? <MesaTable {...mesa} keyboardHints={platform.kind !== "capacitor"} />
+    : <p className="page muted" role="status">Abrindo a mesa…</p>
 }
 
 /**

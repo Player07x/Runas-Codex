@@ -90,3 +90,39 @@ describe("VaultIndex: backlinks, links quebrados, tags e busca", () => {
     expect(local.unresolved()).toHaveLength(1)
   })
 })
+
+describe("atualização incremental", () => {
+  it("invalida links para cabeçalhos e apelidos alterados sem reler outras notas", () => {
+    const target = "Notas/Destino.md"
+    const source = "Notas/Entrada.md"
+    const index = vault({ [target]: "---\naliases: [Antigo]\n---\n## Antes", [source]: "[[Antigo]] [[Novo]] [[Destino#Antes]] [[Destino#Depois]]" })
+    const links = () => index.outgoing(source).map((link) => [link.dest, Boolean(link.subpathMissing)])
+    expect(links()).toEqual([[target, false], [null, false], [target, false], [target, true]])
+    expect(index.backlinks(target)[0]?.links).toHaveLength(3)
+    index.set({ path: target, mtime: 5, size: 40 }, "---\naliases: [Novo]\n---\n## Depois")
+    expect(index.entry(target)?.mtime).toBe(5)
+    expect(links()).toEqual([[null, false], [target, false], [target, true], [target, false]])
+    expect(index.backlinks(target)[0]?.links).toHaveLength(3)
+  })
+
+  it("mantém a resolução após remover um caminho equivalente pela normalização", () => {
+    const first = "Notas/Sessão.md", last = "Notas/SESSÃO.md", source = "Notas/Entrada.md"
+    const index = vault({ [first]: "# Primeira", [last]: "# Última", [source]: "[[Notas/Sessão]]" })
+    expect(index.outgoing(source)[0]?.dest).toBe(last)
+    index.set({ path: first, mtime: 5, size: 10 }, "# Atualizada")
+    expect(index.outgoing(source)[0]?.dest).toBe(last)
+    index.remove(last)
+    expect(index.outgoing(source)[0]?.dest).toBe(first)
+  })
+})
+
+describe("cópia da busca", () => {
+  it("busca e mostra o trecho mesmo sem espaço para guardar o texto normalizado", () => {
+    const path = "Notas/Diário.md"
+    const index = new VaultIndex([{ path, mtime: 1, size: 20 }], { [path]: "A Ponte de Prata caiu" }, { searchCacheChars: 0 })
+    expect(index.search("prata").map((hit) => hit.snippet)).toEqual(["A Ponte de Prata caiu"])
+    index.set({ path, mtime: 2, size: 22 }, "A Ponte de Ouro caiu")
+    expect(index.search("prata")).toHaveLength(0)
+    expect(index.search("ouro")).toHaveLength(1)
+  })
+})

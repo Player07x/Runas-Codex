@@ -1,3 +1,4 @@
+import { deferredView } from "../../components/kit/deferred-view"
 import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useRef, useState } from "react"
@@ -16,11 +17,15 @@ import { WikiGraph } from "./WikiGraph"
 import { WikiHome } from "./WikiHome"
 import { WikiMap } from "./WikiMap"
 import { WikiRelations } from "./WikiRelations"
-import { WikiTools } from "./WikiTools"
 import { WikiTimeline } from "./WikiTimeline"
 import { WikiProvider, useWiki } from "./wiki-state"
 import "./register"
 import "./wiki.css"
+
+const WikiTools = deferredView(
+  () => import("./WikiTools").then(({ WikiTools }) => WikiTools),
+  () => <p className="page muted" role="status">Carregando ferramentas…</p>,
+)
 
 const TABS = [
   { id: "", label: "Artigos", icon: <Newspaper size={15} /> },

@@ -105,13 +105,13 @@ export function buildGraph(index: VaultIndex, options: GraphOptions): GraphData 
     }
   }
 
-  let edgeList = [...edges.values()]
+  const edgeList = [...edges.values()]
   for (const edge of edgeList) {
     nodes.get(edge.source)!.degree++
     nodes.get(edge.target)!.degree++
   }
 
-  let keep: Set<string>
+  let keep: Set<string> | undefined
   if (options.center && nodes.has(options.center)) {
     // Gráfico local: busca em largura sem direção, até a profundidade pedida.
     const neighbors = new Map<string, string[]>()
@@ -126,10 +126,9 @@ export function buildGraph(index: VaultIndex, options: GraphOptions): GraphData 
       for (const id of frontier) for (const other of neighbors.get(id) ?? []) if (!keep.has(other)) (keep.add(other), next.push(other))
       frontier = next
     }
-  } else {
-    keep = new Set([...nodes.values()].filter((node) => options.showOrphans || node.degree > 0).map((node) => node.id))
+  } else if (!options.showOrphans) {
+    keep = new Set([...nodes.values()].filter((node) => node.degree > 0).map((node) => node.id))
   }
-  edgeList = edgeList.filter((edge) => keep.has(edge.source) && keep.has(edge.target))
 
   if (options.groups.length) {
     const members = options.groups.map((group) => new Set(group.query.trim() ? searchNotes(index, group.query, "", ALL).map((hit) => hit.path) : []))
@@ -140,5 +139,10 @@ export function buildGraph(index: VaultIndex, options: GraphOptions): GraphData 
     }
   }
 
-  return { nodes: [...nodes.values()].filter((node) => keep.has(node.id)), edges: edgeList }
+  if (!keep) return { nodes: [...nodes.values()], edges: edgeList }
+  const visible = keep
+  return {
+    nodes: [...nodes.values()].filter((node) => visible.has(node.id)),
+    edges: edgeList.filter((edge) => visible.has(edge.source) && visible.has(edge.target)),
+  }
 }

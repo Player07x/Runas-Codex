@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { IndexedNote } from "../../core/vault-index"
 import { articleImage, articleKind } from "../../core/wiki"
+import { thumbWidth } from "../../core/thumbnails"
 import { articleCategory, categoryLook } from "../../core/personalization"
 import { toneStyle } from "../../core/tones"
 import { emblemIcon } from "../../components/kit/Emblem"
@@ -17,7 +18,10 @@ export function ArticleArt({ note, size = "cover" }: { note: IndexedNote; size?:
     const propertyImage = articleKind(data.tipo)?.fields.some(field => field.kind === "imagem" && String(data[field.key] ?? "").trim())
     const bodyLink = !propertyImage ? note.meta.links.find(link => link.embed && !link.inFrontmatter && link.target === target) : undefined
     const found = set.resolve?.(target, bodyLink?.kind ?? "wiki")
-    if (found) url = set.fileUrl?.(found.path)
+    if (found) {
+      const width = size === "cover" ? null : thumbWidth(size === "thumb" ? 28 : 40, window.devicePixelRatio)
+      url = (width && vault.platform.thumbnailUrl?.(found.path, width)) || set.fileUrl?.(found.path)
+    }
   }
   // Sem imagem: o ícone e a cor da categoria (ADR 0027), ou a inicial.
   const wikiRoot = /^Wikis\/[^/]+\//.exec(note.path)?.[0]

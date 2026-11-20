@@ -3,7 +3,7 @@ import { BookOpen, ChevronLeft, ChevronRight, ListTree, Search } from "lucide-re
 import { HELP_GROUPS, HELP_TOPICS, helpHeadings, helpTopic, searchHelp, type HelpTopic } from "../core/help"
 import { FORMATTERS, FORMATTER_GROUPS } from "../core/formatters"
 import { FORMATTER_HELP } from "../data/ajuda/formatadores"
-import { WIKI_INSERTS } from "./wiki/WikiTools"
+import { WIKI_INSERTS } from "./wiki/wiki-inserts"
 import { Markdown } from "../components/Markdown"
 import { OnboardingSettings } from "../components/Onboarding"
 import { href, navigate, useRoute } from "../lib/router"

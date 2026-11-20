@@ -61,3 +61,19 @@ describe("busca com operadores", () => {
     expect(parseQuery('-tag:npc line:(a "b c") [x:y] OR z').alternatives.map((a) => a.map((t) => t.kind))).toEqual([["field", "group", "prop"], ["text"]])
   })
 })
+
+it("usa o texto atualizado nas duas buscas mesmo depois de consultar a versão antiga", () => {
+  const path = "Notas/Caderno.md"
+  const index = new VaultIndex([{ path, mtime: 1, size: 8 }], { [path]: "Na feira" })
+  expect(searchNotes(index, "feira")[0]?.snippet).toBe("Na feira")
+  expect(index.search("feira")[0]?.snippet).toBe("Na feira")
+  index.set({ path, mtime: 2, size: 10 }, "No mercado")
+  expect(searchNotes(index, "feira")).toHaveLength(0)
+  expect(index.search("feira")).toHaveLength(0)
+  expect(searchNotes(index, "mercado")[0]?.snippet).toBe("No mercado")
+  expect(index.search("mercado")[0]?.snippet).toBe("No mercado")
+})
+
+it("continua a leitura quando sobra um fechamento depois de um grupo", () => {
+  expect(paths("line:(lua cheia))")).toEqual(["Notas/Ponte de Prata.md"])
+})

@@ -55,10 +55,13 @@ export function convertBetween(refs: CalendarRef[], from: CalendarRef, date: Wor
 
 /** O "hoje" de cada calendário ligado quando `source` passa a estar em `today`. */
 export function syncedTodays(refs: CalendarRef[], source: CalendarRef, today: WorldDate): { ref: CalendarRef; today: WorldDate }[] {
+  const offsets = calendarOffsets(refs, source.path)
+  const day = dayNumber(source.calendar, today)
   return refs.flatMap((ref) => {
-    if (ref.path === source.path) return []
-    const date = convertBetween(refs, source, today, ref)
-    return date ? [{ ref, today: date }] : []
+    const offset = offsets.get(ref.path)
+    return ref.path !== source.path && offset !== undefined
+      ? [{ ref, today: fromDayNumber(ref.calendar, day - offset) }]
+      : []
   })
 }
 
@@ -113,8 +116,7 @@ export interface MoonCheck {
  * As luas com o mesmo nome em `current` e nos calendários ligados a ele, com a diferença entre as cheias perto do dia
  * `reference` (dia absoluto de `current`). `shift` simula a ligação movida: lá fica `shift` dias depois.
  */
-export function moonChecks(refs: CalendarRef[], current: CalendarRef, reference: number, shift = 0, only?: string): MoonCheck[] {
-  const offsets = calendarOffsets(refs, current.path)
+export function moonChecks(refs: CalendarRef[], current: CalendarRef, reference: number, shift = 0, only?: string, offsets = calendarOffsets(refs, current.path)): MoonCheck[] {
   return refs.flatMap((other) => {
     const base = offsets.get(other.path)
     if (other.path === current.path || base === undefined || (only && other.path !== only)) return []

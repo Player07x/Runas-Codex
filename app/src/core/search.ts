@@ -53,9 +53,10 @@ export function parseQuery(query: string): ParsedQuery {
     while (at < query.length) {
       while (/\s/.test(peek())) at++
       if (at >= query.length) break
-      if (inGroup && peek() === ")") {
+      if (peek() === ")") {
         at++
-        break
+        if (inGroup) break
+        continue
       }
       if (query.startsWith("OR", at) && /\s/.test(query[at + 2] ?? " ") && (at === 0 || /\s/.test(query[at - 1]!))) {
         at += 2
@@ -128,19 +129,26 @@ export function parseQuery(query: string): ParsedQuery {
   return { alternatives, ...(error ? { error } : {}) }
 }
 
-interface Context {
-  note: IndexedNote
-  name: string
-  aliases: string[]
-  body: string
-  lines: string[]
-  sections: string[]
+class Context {
+  private foldedName?: string
+  private foldedAliases?: string[]
+  private splitLines?: string[]
+  private splitSections?: string[]
+  private foldedBody?: string
+
+  constructor(private readonly index: VaultIndex, readonly note: IndexedNote) {}
+
+  get name() { return this.foldedName ??= foldName(this.note.name) }
+  get aliases() { return this.foldedAliases ??= this.note.meta.aliases.map(foldName) }
+  get body() { return this.foldedBody ??= this.index.foldedSearchText(this.note) }
+  get lines() { return this.splitLines ??= this.note.text.split("\n") }
+  get sections() { return this.splitSections ??= sections(this.lines) }
 }
 
-function sections(text: string): string[] {
+function sections(lines: string[]): string[] {
   const out: string[] = []
   let current: string[] = []
-  for (const line of text.split("\n")) {
+  for (const line of lines) {
     if (/^ {0,3}#{1,6}\s/.test(line) && current.length) {
       out.push(current.join("\n"))
       current = []
@@ -187,23 +195,24 @@ function matches(term: Term, ctx: Context, text?: string): boolean {
   }
 }
 
-function snippet(text: string, term: Term | undefined): string {
+function snippet(index: VaultIndex, note: IndexedNote, term: Term | undefined): string {
   if (!term) return ""
-  let index = -1
+  const text = note.text
+  let at = -1
   let length = 0
   if (term.kind === "text") {
-    index = foldName(text).indexOf(term.value)
+    at = index.foldedSearchText(note).indexOf(term.value)
     length = term.value.length
   } else if (term.kind === "regex") {
     const m = term.re.exec(text)
-    if (m) [index, length] = [m.index, m[0].length]
+    if (m) [at, length] = [m.index, m[0].length]
   } else if (term.kind === "group") {
     const first = term.terms.find((t) => !t.negate)
-    return first ? snippet(text, first) : ""
+    return first ? snippet(index, note, first) : ""
   }
-  if (index < 0) return ""
-  const start = Math.max(0, index - 50)
-  return (start > 0 ? "…" : "") + text.slice(start, index + length + 70).replace(/\s+/g, " ").trim()
+  if (at < 0) return ""
+  const start = Math.max(0, at - 50)
+  return (start > 0 ? "…" : "") + text.slice(start, at + length + 70).replace(/\s+/g, " ").trim()
 }
 
 /** Busca no cofre (ou num espaço): as notas que batem com alguma alternativa, as mais relevantes primeiro. */
@@ -212,22 +221,17 @@ export function searchNotes(index: VaultIndex, query: string, root = "", limit =
   const hits: SearchHit[] & { error?: string } = []
   if (parsed.error) hits.error = parsed.error
   if (!parsed.alternatives.length) return hits
+  const candidates: { note: IndexedNote; score: number; first?: Term }[] = []
   for (const note of index.notesIn(root)) {
-    let ctx: Context | null = null
-    const context = (): Context => {
-      if (ctx) return ctx
-      const body = foldName(note.text)
-      ctx = { note, name: foldName(note.name), aliases: note.meta.aliases.map(foldName), body, lines: note.text.split("\n"), sections: sections(note.text) }
-      return ctx
-    }
+    const context = new Context(index, note)
     let best: { score: number; terms: Term[] } | null = null
     for (const terms of parsed.alternatives) {
-      if (!terms.every((t) => matches(t, context()) !== t.negate)) continue
+      if (!terms.every((t) => matches(t, context) !== t.negate)) continue
       let score = 0
       for (const t of terms) {
         if (t.negate) continue
         if (t.kind === "text" && t.scope === "all") {
-          const { name, aliases } = context()
+          const { name, aliases } = context
           score += name === t.value ? 100 : name.startsWith(t.value) ? 50 : name.includes(t.value) ? 30 : aliases.some((a) => a.includes(t.value)) ? 20 : 1
         } else score += 5
       }
@@ -235,9 +239,10 @@ export function searchNotes(index: VaultIndex, query: string, root = "", limit =
     }
     if (!best) continue
     const first = best.terms.find((t) => !t.negate && (t.kind === "text" || t.kind === "regex" || t.kind === "group"))
-    hits.push({ path: note.path, score: best.score, snippet: snippet(note.text, first) })
+    candidates.push({ note, score: best.score, first })
   }
-  hits.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path, "pt-BR"))
-  if (hits.length > limit) hits.length = limit
+  candidates.sort((a, b) => b.score - a.score || a.note.path.localeCompare(b.note.path, "pt-BR"))
+  if (candidates.length > limit) candidates.length = limit
+  for (const { note, score, first } of candidates) hits.push({ path: note.path, score, snippet: snippet(index, note, first) })
   return hits
 }
