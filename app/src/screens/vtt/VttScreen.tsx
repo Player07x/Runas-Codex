@@ -1,7 +1,7 @@
 import { deferredView } from "../../components/kit/deferred-view"
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
-import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package, MonitorPlay } from "lucide-react"
+import { ArrowLeft, Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package, MonitorPlay } from "lucide-react"
 import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
@@ -25,8 +25,39 @@ export function VttScreen({ route }: { route: string[] }) {
   const [section, id] = route
   if (section === "criar") return <CreateRoom />
   if (section === "entrar") return <JoinRoom />
-  if (section === "mesa" && id) return <MesaTable id={id} />
+  if (section === "mesa" && id) return <OpenMesa key={id} id={id} />
   return <VttHome />
+}
+
+/** A sala continua aberta ao consultar outros espaços. */
+function OpenMesa({ id }: { id: string }) {
+  const { platform } = useVault()
+  const [world, setWorld] = useState<WorldSummary>()
+  const [error, setError] = useState<string>()
+  useEffect(() => {
+    let active = true
+    try {
+      sessionStorage.setItem("runas-codex:mesa-aberta", id)
+    } catch {
+      /* preferência opcional */
+    }
+    // Abre a sala no processo principal enquanto o módulo da Mesa carrega.
+    vtt.openWorld(id).then(
+      (opened) => { if (active) setWorld(opened) },
+      (reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) },
+    )
+    void MesaTable.preload().catch(() => { /* o carregador oferece nova tentativa */ })
+    return () => { active = false }
+  }, [id])
+  if (error) return (
+    <div className="page">
+      <p style={{ color: "var(--red)" }}>{error}</p>
+      <a className="btn" href={href("/vtt/criar")}><ArrowLeft size={16} /> Voltar às mesas</a>
+    </div>
+  )
+  return world
+    ? <MesaTable world={world} keyboardHints={platform.kind !== "capacitor"} />
+    : <p className="page muted" role="status">Abrindo a mesa…</p>
 }
 
 /**

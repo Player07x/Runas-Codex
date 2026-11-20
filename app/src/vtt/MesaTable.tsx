@@ -1,7 +1,6 @@
-import { useVault } from "../platform/VaultProvider"
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { ArrowLeft, Library, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, NotebookPen, Settings } from "lucide-react"
-import { href, navigate } from "../lib/router"
+import { navigate } from "../lib/router"
 import { remoteMaster, resolveAssetUrl, vtt } from "./api"
 import { AudioEngine } from "./audio-engine"
 import { SceneCanvas } from "./canvas/SceneCanvas"
@@ -90,40 +89,7 @@ function useMasterAudio(): AudioState {
   return state
 }
 
-/** Abre a mesa pelo id (rota `/vtt/mesa/<id>`) mantém a sala ao consultar outros espaços. */
-export function MesaTable({ id }: { id: string }) {
-  const keyboardHints = useVault().platform.kind !== "capacitor"
-  const [world, setWorld] = useState<WorldSummary | null>(null)
-  const [error, setError] = useState<string>()
-  useEffect(() => {
-    let active = true
-    try{sessionStorage.setItem("runas-codex:mesa-aberta",id)}catch{}
-    vtt.openWorld(id).then(
-      (opened) => active && setWorld(opened),
-      (reason: unknown) => active && setError(reason instanceof Error ? reason.message : String(reason)),
-    )
-    return () => {
-      active = false
-      // A sala permanece no processo principal; trocar cofre/mesa ou encerrar explicitamente a fecha.
-    }
-  }, [id])
-  if (error) {
-    return (
-      <div className="page">
-        <p style={{ color: "var(--red)" }}>{error}</p>
-        <a className="btn" href={href("/vtt/criar")}>
-          <ArrowLeft size={16} /> Voltar às mesas
-        </a>
-      </div>
-    )
-  }
-  if (!world) {
-    return (
-      <div className="page">
-        <p className="muted">Abrindo a mesa…</p>
-      </div>
-    )
-  }
+export function MesaTable({ world, keyboardHints }: { world: WorldSummary; keyboardHints: boolean }) {
   return <TableShell key={world.id} world={world} keyboardHints={keyboardHints} />
 }
 

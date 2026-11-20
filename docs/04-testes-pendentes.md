@@ -2577,3 +2577,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com um cofre grande no Windows e no Android, comparar com a 1.6.0 a abertura, a busca e as mudanças feitas pelo
       Obsidian. No Android, testar também o cofre aberto pelo seletor do sistema. Conferir a primeira abertura do
       Livro, da Mesa, do Gráfico e das Ferramentas da Wiki após abrir o aplicativo.
+
+## Abertura da Wiki, da Mesa e do Gráfico
+
+- [ ] No Windows, abrir a Wiki com retratos nas prévias e depois abrir os artigos. Conferir os retratos em telas de
+      alta densidade. Abrir uma Mesa pela primeira vez, alternar para outra e voltar. Conferir a cena lembrada.
+- [ ] Num Android físico com cofre grande, comparar com a 1.6.0 o tempo até o índice aparecer e a primeira abertura do
+      Gráfico, com e sem passagem pela lista de Notas. Voltar ao app após editar uma nota em outro aplicativo e
+      conferir se a mudança aparece.

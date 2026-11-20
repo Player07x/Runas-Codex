@@ -32,6 +32,7 @@ import { copyLinkTarget, flushOpenNotes, headingLinkText, noteRoute, vaultRoute 
 import { ConfirmDialog, NameDialog, NewNoteDialog, RenameDialog } from "../components/vault/dialogs"
 import { fillTemplate, formatDate } from "../core/templates"
 import { GraphPage } from "../components/vault/GraphPage"
+import { GraphView } from "../components/vault/GraphViewLazy"
 import { NoteView } from "../components/vault/NoteView"
 import { VaultPanels } from "../components/vault/VaultPanels"
 import { TabPanes } from "../components/vault/TabPanes"
@@ -209,6 +210,14 @@ function VaultNotes({ index, noteId }: { index: VaultIndex; noteId?: string }) {
   const fail = useCallback((error: unknown) => toast.error(error), [toast])
 
   const graph = noteId === "grafico"
+  useEffect(() => {
+    // No Android o módulo do gráfico pode carregar enquanto a lista de notas está ociosa.
+    if (vault.platform.kind !== "capacitor" || graph || !window.requestIdleCallback) return
+    const idle = window.requestIdleCallback(() => {
+      void GraphView.preload().catch(() => { /* a próxima abertura tenta de novo */ })
+    })
+    return () => window.cancelIdleCallback(idle)
+  }, [vault.platform, graph])
   const path = noteId && noteId !== "nova" && noteId !== "hoje" && noteId !== "aleatoria" && !graph ? noteId : undefined
   const note = path ? index.note(path) : undefined
   const currentFolder = note ? dirname(note.path) : root.replace(/\/$/, "")

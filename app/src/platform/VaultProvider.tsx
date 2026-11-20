@@ -75,15 +75,17 @@ async function loadIndex(): Promise<VaultIndex> {
   const entries = await platform.listVault()
   const notes = entries.filter((entry) => extname(entry.path) === ".md")
   const index = new VaultIndex(entries)
-  for (let i = 0; i < notes.length; i += BATCH) {
-    const batch = notes.slice(i, i + BATCH)
+  // Usa toda a capacidade do lote da ponte do Android.
+  const batchSize = platform.kind === "capacitor" ? 400 : BATCH
+  for (let i = 0; i < notes.length; i += batchSize) {
+    const batch = notes.slice(i, i + batchSize)
     const texts = await platform.readTexts(batch.map((entry) => entry.path))
     for (const entry of batch) {
       const text = texts[entry.path]
       if (text !== undefined) index.set(entry, text)
     }
     // Analisa um lote por vez e devolve a vez para a interface entre leituras.
-    if (i + BATCH < notes.length) await new Promise((resolve) => setTimeout(resolve))
+    if (i + batchSize < notes.length) await new Promise((resolve) => setTimeout(resolve))
   }
   return index
 }

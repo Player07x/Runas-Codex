@@ -8,20 +8,24 @@ export function deferredView<Props extends object>(
   let ready: ComponentType<Props> | undefined
   let loading: Promise<ComponentType<Props>> | undefined
 
-  return function DeferredView(props: Props) {
+  function preload() {
+    loading ??= load().then((component) => {
+      ready = component
+      return component
+    }, (error: unknown) => {
+      loading = undefined
+      throw error
+    })
+    return loading
+  }
+
+  function DeferredView(props: Props) {
     const [View, setView] = useState(() => ready)
     const [failed, setFailed] = useState(false)
     useEffect(() => {
       if (View || failed) return
       let active = true
-      loading ??= load().then((component) => {
-        ready = component
-        return component
-      }, (error: unknown) => {
-        loading = undefined
-        throw error
-      })
-      void loading.then(
+      void preload().then(
         (component) => { if (active) setView(() => component) },
         () => { if (active) setFailed(true) },
       )
@@ -35,4 +39,6 @@ export function deferredView<Props extends object>(
     </div>
     return pending(props)
   }
+
+  return Object.assign(DeferredView, { preload })
 }
