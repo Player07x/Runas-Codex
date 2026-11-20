@@ -70,31 +70,25 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          path: atual
-          persist-credentials: false
-      - uses: actions/checkout@v5
-        with:
-          ref: refs/tags/v1.6.0
-          path: anterior
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: |
-            anterior/package-lock.json
-            atual/package-lock.json
+      # Restaura com a mesma chave do Release antes de adicionar a cópia da 1.6.0.
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
           cache: gradle
-          cache-dependency-path: |
-            anterior/mobile/android/**/*.gradle
-            atual/mobile/android/**/*.gradle
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/v1.6.0
+          path: anterior
+          persist-credentials: false
       - name: Gerar APKs de teste com a depuração do WebView
         run: |
-          for fonte in anterior atual; do
+          for fonte in anterior .; do
             (
               cd "$fonte"
               npm ci
@@ -107,7 +101,11 @@ jobs:
           writeFileSync(path, JSON.stringify(config))
           JS
               cd mobile/android
-              ./gradlew assembleDebug -PrunasTunnelAbis=x86_64 --no-daemon
+              for tentativa in 1 2 3; do
+                if ./gradlew assembleDebug -PrunasTunnelAbis=x86_64 --no-daemon; then break; fi
+                if [ "$tentativa" = 3 ]; then exit 1; fi
+                sleep 10
+              done
             )
           done
       - name: Iniciar um emulador Android 35 para as duas versões
@@ -133,7 +131,6 @@ jobs:
           adb shell am force-stop com.google.android.apps.nexuslauncher
           adb shell dumpsys webviewupdate > "$RUNNER_TEMP/runas-desempenho/webview.txt"
       - name: Preparar o mesmo cofre de 10 mil notas para todos os perfis
-        working-directory: atual
         run: |
           node --input-type=module - "$RUNNER_TEMP/cofre-10000" <<'JS'
           import { generateLargeVault } from './app/src/core/large-vault.ts'
@@ -152,8 +149,8 @@ jobs:
       - name: Medir abertura, busca e gráfico em três instalações por versão
         run: |
           medir() {
-            local fonte="$1" rodada="$2" saida inicio
-            saida="$RUNNER_TEMP/runas-desempenho/$fonte/$rodada"
+            local versao="$1" fonte="$2" rodada="$3" saida inicio
+            saida="$RUNNER_TEMP/runas-desempenho/$versao/$rodada"
             mkdir -p "$saida"
             adb uninstall dev.runas.codex || true
             adb install "$fonte/mobile/android/app/build/outputs/apk/debug/app-debug.apk"
@@ -161,19 +158,21 @@ jobs:
             adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
             inicio=$(date +%s%3N)
             adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-10000
-            bash atual/mobile/tests/android-devtools.sh
-            node atual/mobile/tests/vault-large.cdp.mjs http://127.0.0.1:9224 "$saida" 10000 "$inicio"
+            bash mobile/tests/android-devtools.sh
+            node mobile/tests/vault-large.cdp.mjs http://127.0.0.1:9224 "$saida" 10000 "$inicio"
             adb shell dumpsys meminfo dev.runas.codex > "$saida/meminfo.txt"
           }
-          medir anterior 1
-          medir atual 1
-          medir atual 2
-          medir anterior 2
-          medir anterior 3
-          medir atual 3
+          medir anterior anterior 1
+          medir atual . 1
+          medir atual . 2
+          medir anterior anterior 2
+          medir anterior anterior 3
+          medir atual . 3
       - name: Guardar log do emulador
         if: always()
-        run: adb logcat -d > "$RUNNER_TEMP/runas-desempenho/logcat.txt" 2>&1 || true
+        run: |
+          mkdir -p "$RUNNER_TEMP/runas-desempenho"
+          adb logcat -d > "$RUNNER_TEMP/runas-desempenho/logcat.txt" 2>&1 || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
