@@ -140,6 +140,7 @@
 .map-tone.on { border-color: var(--line-strong); background: var(--panel-2); }
 .map-tone input { position: absolute; opacity: 0; }
 .map-tone-dot { width: 16px; height: 16px; flex: none; border-radius: 50%; background: var(--sw); border: 1px solid var(--line-strong); }
+.map-editor-back { justify-self: start; }
 .map-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .map-editor-actions .primary { margin-left: auto; }
 .map-side-close { display: none; }

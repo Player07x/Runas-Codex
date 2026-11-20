@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
-import { Crosshair, Layers, LockKeyhole, Map as MapIcon, MapPin, Plus, Route, Shapes, Trash2, Type } from "lucide-react"
+import { ChevronLeft, Crosshair, Layers, LockKeyhole, Map as MapIcon, MapPin, Plus, Route, Shapes, Trash2, Type } from "lucide-react"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { CoverImagePicker } from "../../components/kit/CoverImagePicker"
 import { FormField, FormGrid } from "../../components/kit/FormField"
@@ -49,14 +49,16 @@ export function MapPanel({ tab, onTab, spec, path, root, editable, players, pins
     { value: "mapa", label: "Mapa", icon: <MapIcon size={15} /> },
   ]
   const selected = selection?.kind === "drawing" ? drawings.find((d) => d.index === selection.index) : undefined
+  // Ao voltar do editor, o foco fica na linha da forma que estava aberta.
+  const [returnTo, setReturnTo] = useState<number>()
   return <div className="map-panel">
     <PanelTabs tabs={tabs} value={tab} onChange={onTab} label="Painel do mapa" idPrefix="mapa-painel" />
     <TabPanel idPrefix="mapa-painel" value={tab}>
       {tab === "pinos" && <PinsTab pins={pins} selection={selection} editable={editable} players={players} onChoose={onChoosePin} onCenter={onPinAtCenter} />}
       {tab === "areas" && (selected && editable
         ? <DrawingEditor key={selected.index} row={selected} layers={layers.map((l) => l.name).filter(Boolean)} root={root} path={path} onPatch={(patch) => onDrawingPatch(selected.index, patch)}
-          onDelete={() => onDeleteDrawing(selected.index)} onCenter={() => onCenterDrawing(selected.index)} onDone={onDoneDrawing} />
-        : <DrawingsTab rows={drawings} selection={selection} editable={editable} onChoose={onChooseDrawing} onNew={onNewDrawing} onDelete={onDeleteDrawing} />)}
+          onDelete={() => onDeleteDrawing(selected.index)} onCenter={() => onCenterDrawing(selected.index)} onDone={() => { setReturnTo(selected.index); onDoneDrawing() }} />
+        : <DrawingsTab rows={drawings} selection={selection} editable={editable} focusIndex={returnTo} onFocused={() => setReturnTo(undefined)} onChoose={onChooseDrawing} onNew={onNewDrawing} onDelete={onDeleteDrawing} />)}
       {tab === "camadas" && <LayersTab layers={layers} editable={editable} onToggle={onToggleLayer} update={update} />}
       {tab === "mapa" && <MapTab spec={spec} path={path} editable={editable} players={players} update={update} imagePicker={imagePicker} />}
     </TabPanel>
@@ -90,13 +92,19 @@ function drawingMeta(d: MapDrawing, hidden: boolean) {
 }
 const drawingTitle = (d: MapDrawing) => d.text.trim() || (d.kind === "zona" ? "Área sem nome" : d.kind === "rota" ? "Rota sem nome" : "Rótulo sem texto")
 
-function DrawingsTab({ rows, selection, editable, onChoose, onNew, onDelete }: { rows: DrawingRow[]; selection: MapSelection; editable: boolean; onChoose(index: number): void; onNew(kind: MapDrawing["kind"]): void; onDelete(index: number): void }) {
+function DrawingsTab({ rows, selection, editable, focusIndex, onFocused, onChoose, onNew, onDelete }: { rows: DrawingRow[]; selection: MapSelection; editable: boolean; focusIndex?: number; onFocused(): void; onChoose(index: number): void; onNew(kind: MapDrawing["kind"]): void; onDelete(index: number): void }) {
+  const stack = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (focusIndex === undefined) return
+    stack.current?.querySelector<HTMLElement>(`[data-drawing="${focusIndex}"] button`)?.focus()
+    onFocused()
+  }, [focusIndex, onFocused])
   const groups: { kind: MapDrawing["kind"]; title: string; empty: string; add: string; icon: ReactNode }[] = [
     { kind: "zona", title: "Áreas", empty: "Nenhuma área.", add: "Nova área", icon: <Shapes size={15} /> },
     { kind: "rota", title: "Rotas", empty: "Nenhuma rota.", add: "Nova rota", icon: <Route size={15} /> },
     { kind: "rotulo", title: "Rótulos", empty: "Nenhum rótulo.", add: "Novo rótulo", icon: <Type size={15} /> },
   ]
-  return <div className="map-panel-stack">
+  return <div className="map-panel-stack" ref={stack}>
     {editable && <p className="small muted">Escolha uma para editar o nome, a cor e os pontos. Os botões “Nova” põem a forma no meio da vista.</p>}
     {groups.map((g) => {
       const list = rows.filter((r) => r.drawing.kind === g.kind)
@@ -104,7 +112,7 @@ function DrawingsTab({ rows, selection, editable, onChoose, onNew, onDelete }: {
       return <section key={g.kind} className="map-panel-group" aria-label={g.title}>
         <div className="map-panel-group-head"><h3>{g.title}</h3>{editable && <button type="button" className="btn sm ghost" onClick={() => onNew(g.kind)}><Plus size={15} /> {g.add}</button>}</div>
         {list.length === 0 ? <p className="small muted">{g.empty}</p> : <div className="map-panel-list">
-          {list.map((r) => <div key={r.index} className="map-drawing-row">
+          {list.map((r) => <div key={r.index} className="map-drawing-row" data-drawing={r.index}>
             <ListRow onClick={() => onChoose(r.index)} current={selection?.kind === "drawing" && selection.index === r.index}
               media={<span className="map-row-swatch" style={{ ["--sw" as string]: r.drawing.color }}>{g.icon}</span>} title={drawingTitle(r.drawing)} meta={drawingMeta(r.drawing, r.hidden) || KIND_TEXT[r.drawing.kind]} />
             {editable && <button type="button" className="icon-btn sm map-drawing-delete" aria-label={`Apagar ${KIND_TEXT[r.drawing.kind].toLocaleLowerCase("pt-BR")} ${drawingTitle(r.drawing)}`} title="Apagar" onClick={(event) => { event.stopPropagation(); onDelete(r.index) }}><Trash2 size={16} /></button>}
@@ -141,6 +149,7 @@ function DrawingEditor({ row, layers, root, path, onPatch, onDelete, onCenter, o
   const opacity = Math.round((d.opacity ?? DEFAULT_AREA_OPACITY) * 100)
   const eraError = d.from !== undefined && d.to !== undefined && d.from > d.to ? "O fim vem antes do começo." : undefined
   return <div className="map-panel-stack map-drawing-editor">
+    <button type="button" className="btn sm ghost map-editor-back" onClick={() => { flush(); onDone() }}><ChevronLeft size={16} /> Voltar às áreas</button>
     <div className="map-panel-group-head"><h3>{kind}: {drawingTitle(d)}</h3></div>
     <FormGrid>
       <FormField label={d.kind === "rotulo" ? "Texto" : "Nome"} wide={d.kind === "rotulo"}>

@@ -2565,3 +2565,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Nos próximos Releases, o passo “Smoke no app empacotado” do linux termina em poucos minutos. Se o app não fechar,
   o log mostra “Smoke: o app não fechou 15 s depois do resultado; saindo à força.” e o smoke com gravação roda em
   seguida; se ainda assim travar, o passo falha em 5 min com a lista dos processos vivos, em vez de esperar 30 min.
+
+## Mapas: voltar à lista de áreas
+
+- [ ] Num mapa da Wiki, abrir Painel › Áreas e escolher uma área, rota ou rótulo. No alto do editor, “Voltar às áreas”
+  volta à lista sem rolar até o fim; o que foi digitado fica gravado e a linha da forma fica com o foco. No celular,
+  o botão tem altura de toque e a lista aparece sem rolagem para os lados.
