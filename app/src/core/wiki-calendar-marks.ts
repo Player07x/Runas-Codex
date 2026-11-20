@@ -1,11 +1,12 @@
 import { dayNumber, dateProblem, fromDayNumber, parseWorldDate, type WorldDate } from "./calendar"
+import { birthdayAge } from "./calendar-sync"
 import { noteName } from "./text"
 import type { VaultIndex } from "./vault-index"
 import { calendarFor, calendarListLookup, noteDates, timelineEvents, type CalendarRef } from "./wiki"
 import { worldEventMatcher } from "./world-event-recurrence"
 
 interface Mark { label: string; color: string; to: string }
-interface Birth { path: string; year: number; order: number }
+interface Birth { path: string; born: WorldDate; order: number }
 interface Birthdays {
   origin: CalendarRef
   offset: number
@@ -46,7 +47,7 @@ export function prepareWikiCalendar(index: VaultIndex, root: string, ref: Calend
       births.set(found.path, group)
     }
     const key = monthDay(born)
-    const birth = { path: note.path, year: born.year, order: order++ }
+    const birth = { path: note.path, born, order: order++ }
     const onDate = group.dates.get(key)
     if (onDate) onDate.push(birth)
     else group.dates.set(key, [birth])
@@ -65,8 +66,10 @@ export function prepareWikiCalendar(index: VaultIndex, root: string, ref: Calend
           ? date
           : fromDayNumber(group.origin.calendar, day - group.offset)
         const suffix = group.origin.path === ref.path ? "" : ` · ${group.origin.calendar.abbr}`
+        // O índice por mês:dia só escolhe os candidatos; quem decide é a mesma regra do resto do app.
         for (const birth of group.dates.get(monthDay(local)) ?? []) {
-          if (local.year >= birth.year) birthdays.push({ birth, age: local.year - birth.year, suffix })
+          const age = birthdayAge(calendar, date, group.origin.calendar, group.offset, birth.born)
+          if (age !== null) birthdays.push({ birth, age, suffix })
         }
       }
       birthdays.sort((a, b) => a.birth.order - b.birth.order)
@@ -82,9 +85,13 @@ export function prepareWikiCalendar(index: VaultIndex, root: string, ref: Calend
       const first = dayNumber(calendar, today)
       for (let day = first; day < first + 400 && upcoming.length < 3; day++) {
         const local = fromDayNumber(other.calendar, day - offset)
-        for (const birth of group.dates.get(monthDay(local)) ?? []) {
-          if (local.year < birth.year) continue
-          upcoming.push({ path: birth.path, age: local.year - birth.year, date: fromDayNumber(calendar, day) })
+        const candidates = group.dates.get(monthDay(local))
+        if (!candidates) continue
+        const date = fromDayNumber(calendar, day)
+        for (const birth of candidates) {
+          const age = birthdayAge(calendar, date, other.calendar, offset, birth.born)
+          if (age === null) continue
+          upcoming.push({ path: birth.path, age, date })
           if (upcoming.length === 3) break
         }
       }

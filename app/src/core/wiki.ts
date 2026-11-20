@@ -705,11 +705,11 @@ export interface OrgNode {
 }
 
 /** Organograma: a organização, os líderes e os membros, com a hierarquia de `subordinado_a`. */
-export function orgChart(index: VaultIndex, org: string, scope = ""): OrgNode {
+export function orgChart(index: VaultIndex, org: string, scope = "", relations = relationLookup(index, scope)): OrgNode {
   const members = new Set<string>()
   const leaders = new Set<string>()
   // Só o que os membros declaram (`membro_de`/`lider_de` apontando para a organização).
-  for (const r of relationsOf(index, org, scope)) {
+  for (const r of relations(org)) {
     // Do lado da organização, quem é membro aparece como `membros` (escrito lá ou no membro).
     if (!r.other) continue
     if (r.type.key === "membros") members.add(r.other)
@@ -723,7 +723,7 @@ export function orgChart(index: VaultIndex, org: string, scope = ""): OrgNode {
   const everyone = new Set([...members, ...leaders])
   const bossOf = new Map<string, string>()
   for (const person of everyone) {
-    const boss = relationsOf(index, person, scope).find((r) => r.type.key === "subordinado_a" && r.other && everyone.has(r.other))
+    const boss = relations(person).find((r) => r.type.key === "subordinado_a" && r.other && everyone.has(r.other))
     if (boss) bossOf.set(person, boss.other!)
   }
   const build = (path: string, seen: Set<string>): OrgNode => ({

@@ -75,9 +75,14 @@ export class VaultIndex {
   private backlinkCache: Map<string, ResolvedLink[]> | null = null
   private readonly searchTexts = new Map<IndexedNote, string>()
   private searchChars = 0
+  private readonly searchCacheChars: number
 
-  /** Todos os arquivos do cofre (notas e anexos) e o texto das notas. */
-  constructor(entries: VaultEntry[] = [], texts: Record<string, string> = {}) {
+  /**
+   * Todos os arquivos do cofre (notas e anexos) e o texto das notas. `searchCacheChars` limita a cópia normalizada
+   * guardada para a busca (menor no celular).
+   */
+  constructor(entries: VaultEntry[] = [], texts: Record<string, string> = {}, options: { searchCacheChars?: number } = {}) {
+    this.searchCacheChars = options.searchCacheChars ?? SEARCH_CACHE_CHARS
     for (const entry of entries) this.putFile(entry)
     for (const entry of entries) if (isNote(entry.path) && entry.path in texts) this.putNote(entry, texts[entry.path]!)
   }
@@ -157,7 +162,7 @@ export class VaultIndex {
     const cached = this.searchTexts.get(note)
     if (cached !== undefined) return cached
     const body = foldName(note.text)
-    if (this.notes.get(note.path) === note && this.searchChars + body.length <= SEARCH_CACHE_CHARS) {
+    if (this.notes.get(note.path) === note && this.searchChars + body.length <= this.searchCacheChars) {
       this.searchTexts.set(note, body)
       this.searchChars += body.length
     }

@@ -114,7 +114,11 @@ export async function readTexts(root: string, paths: string[]): Promise<Record<s
         if (error instanceof VaultError && error.message.startsWith("Arquivo não encontrado")) return undefined
         throw error
       }
-      return readFile(real, "utf8")
+      // Apagado entre resolver e ler (pelo Obsidian ou por um sincronizador): fica fora, como o que já tinha sumido.
+      return readFile(real, "utf8").catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return undefined
+        throw error
+      })
     }))
     for (const [at, path] of batch.entries()) {
       const text = texts[at]

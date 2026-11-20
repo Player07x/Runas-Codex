@@ -115,3 +115,14 @@ describe("atualização incremental", () => {
     expect(index.outgoing(source)[0]?.dest).toBe(first)
   })
 })
+
+describe("cópia da busca", () => {
+  it("busca e mostra o trecho mesmo sem espaço para guardar o texto normalizado", () => {
+    const path = "Notas/Diário.md"
+    const index = new VaultIndex([{ path, mtime: 1, size: 20 }], { [path]: "A Ponte de Prata caiu" }, { searchCacheChars: 0 })
+    expect(index.search("prata").map((hit) => hit.snippet)).toEqual(["A Ponte de Prata caiu"])
+    index.set({ path, mtime: 2, size: 22 }, "A Ponte de Ouro caiu")
+    expect(index.search("prata")).toHaveLength(0)
+    expect(index.search("ouro")).toHaveLength(1)
+  })
+})

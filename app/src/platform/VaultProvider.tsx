@@ -19,8 +19,11 @@ import { decodeTransferText, sameTransferVersion, type TransferWrite } from "../
 import { managedWorldPath, transferBytes, transferPath, transferSize } from "../core/transfer/archive"
 
 import { recordIndexDuration } from "../lib/performance-profile"
+import { CAPACITOR_READ_BATCH } from "./read-batch"
 
 const BATCH = 200
+/** No celular, a cópia normalizada para a busca fica menor (~4 MB em vez de ~16 MB). */
+const MOBILE_SEARCH_CACHE_CHARS = 2 * 1024 * 1024
 
 /**
  * O cofre aberto, para as telas: o índice (notas, links, tags) e as ações de gravação. Toda gravação passa por aqui,
@@ -74,9 +77,10 @@ const VaultContext = createContext<VaultState | null>(null)
 async function loadIndex(): Promise<VaultIndex> {
   const entries = await platform.listVault()
   const notes = entries.filter((entry) => extname(entry.path) === ".md")
-  const index = new VaultIndex(entries)
+  const mobile = platform.kind === "capacitor"
+  const index = new VaultIndex(entries, {}, mobile ? { searchCacheChars: MOBILE_SEARCH_CACHE_CHARS } : {})
   // Usa toda a capacidade do lote da ponte do Android.
-  const batchSize = platform.kind === "capacitor" ? 400 : BATCH
+  const batchSize = mobile ? CAPACITOR_READ_BATCH : BATCH
   for (let i = 0; i < notes.length; i += batchSize) {
     const batch = notes.slice(i, i + batchSize)
     const texts = await platform.readTexts(batch.map((entry) => entry.path))
@@ -106,14 +110,19 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
   const indexRef = useRef<VaultIndex | null>(null)
+  // O cofre do índice em uso: reler o mesmo cofre mantém o índice até o novo ficar pronto.
+  const indexedPath = useRef<string | null>(null)
   const openRequest = useRef(0)
   const importing = useRef<Promise<number> | null>(null)
   const bump = useCallback(() => setVersion((v) => v + 1), [])
 
   const open = useCallback(async (next: VaultInfo | null) => {
     const request = ++openRequest.current
-    indexRef.current = null
-    setIndex(null)
+    if (next?.path !== indexedPath.current) {
+      indexRef.current = null
+      indexedPath.current = null
+      setIndex(null)
+    }
     setInfo(next)
     setError(undefined)
     if (!next) {
@@ -132,10 +141,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       await config
       if (request !== openRequest.current) return
       indexRef.current = loaded
+      indexedPath.current = next.path
       setIndex(loaded)
     } catch (err) {
       if (request !== openRequest.current) return
       indexRef.current = null
+      indexedPath.current = null
       setIndex(null)
       setError(err instanceof Error ? err.message : String(err))
     } finally {
