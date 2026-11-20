@@ -203,7 +203,11 @@ public final class VaultStore implements VaultFs {
                 try {
                     BasicFileAttributes attrs = Files.readAttributes(item.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
                     if (attrs.isDirectory()) walk(item, path, includeHidden, out);
-                    else if (attrs.isRegularFile()) out.add(new Entry(path, attrs.size(), attrs.lastModifiedTime().toMillis()));
+                    else if (attrs.isRegularFile()) {
+                        // No Android, os atributos NIO podem arredondar a data para segundos. A versão precisa
+                        // usar a mesma precisão da gravação, que lê a data por File.lastModified().
+                        out.add(new Entry(path, attrs.size(), item.lastModified()));
+                    }
                     continue;
                 } catch (IOException ignored) {
                     // Arquivo removido durante a listagem ou inacessível.
