@@ -2594,3 +2594,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Com a ferramenta Medir, arrastar de um pino a outro (e de uma área a outra): a régua mede, nenhum pino ou área
   é escolhido e nenhum cartão de pino abre. A distância aparece na ponta da régua e na barra de cima. Tocar em dois
   pontos sem arrastar também mede. No celular, arrastar com o dedo mede em vez de mover o mapa.
+
+## Versão 1.7.4
+
+- [ ] Com a 1.7.3 instalada, o aviso “Atualizar para 1.7.4” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.7.4 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.7.4 instalada as seções “Desempenho do calendário, das relações e da abertura”, “Abertura da Wiki,
+  da Mesa e do Gráfico” e “Mapas: voltar à lista de áreas” acima.
