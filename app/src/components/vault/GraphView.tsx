@@ -5,22 +5,13 @@ import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY
 import { useEffect, useRef, useState } from "react"
 import type { GraphData, GraphGroup, GraphNode } from "../../core/graph-data"
 import { isSoftwareRenderer } from "../../core/gpu"
+import type { GraphForces } from "./GraphViewLazy"
 
 /**
  * Gráfico de notas em WebGL (PixiJS) com simulação de forças (d3-force): fluido com milhares de notas, ao contrário
  * do SVG. Arrastar o fundo move, a roda (ou pinça) aproxima, arrastar um nó o prende enquanto segura, passar o mouse
  * realça os vizinhos e clicar abre a nota.
  */
-
-export interface GraphForces {
-  repulsion: number
-  distance: number
-  nodeSize: number
-  linkWidth: number
-  arrows: boolean
-}
-
-export const DEFAULT_FORCES: GraphForces = { repulsion: 140, distance: 70, nodeSize: 1, linkWidth: 1, arrows: false }
 
 interface SimNode extends SimulationNodeDatum {
   id: string

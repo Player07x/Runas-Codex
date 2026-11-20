@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -87,6 +88,19 @@ public class VaultStoreTest {
         file("a.md", "﻿olá");
         assertEquals("﻿olá", store.readTexts(Arrays.asList("a.md", "sumiu.md")).get("a.md"));
         assertEquals(1, store.readTexts(Arrays.asList("a.md", "sumiu.md")).size());
+    }
+
+    @Test
+    public void versaoDaListagemServeParaGravar() throws IOException {
+        String path = "Notas/a.md";
+        file(path, "primeira versão");
+        Files.setLastModifiedTime(new File(root, path).toPath(), FileTime.fromMillis(1_700_000_000_123L));
+        VaultStore.Entry listed = store.list("Notas/", false).get(0);
+        VaultStore.Entry read = store.entry(path);
+        assertEquals(read.size, listed.size);
+        assertEquals(read.mtime, listed.mtime, 0);
+        store.writeText(path, "segunda versão", new VaultStore.Version(listed.size, listed.mtime), false);
+        assertEquals("segunda versão", text(path));
     }
 
     @Test

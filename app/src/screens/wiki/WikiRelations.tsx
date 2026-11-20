@@ -5,13 +5,13 @@ import type { GraphData } from "../../core/graph-data"
 import { layoutNeighbors, layoutOrg, orgStructureOf, type LayoutNode, type OrgPerson, type OrgStructure } from "../../core/relation-layout"
 import { familyGraph, generationLabel, layoutFamily } from "../../core/family-layout"
 import { noteName } from "../../core/text"
-import { articleKind, diplomacy, relationEdges, relationsOf } from "../../core/wiki"
+import { articleKind, diplomacy, relationEdges, relationLookup, type Relation } from "../../core/wiki"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { NoteCrest } from "../../components/kit/Emblem"
 import { FormField } from "../../components/kit/FormField"
 import { ListRow, PageHeader } from "../../components/kit/Layout"
 import { ResizablePanel, usePanelToggle } from "../../components/ResizablePanel"
-import { DEFAULT_FORCES, GraphView } from "../../components/vault/GraphView"
+import { DEFAULT_FORCES, GraphView } from "../../components/vault/GraphViewLazy"
 import { href, navigate } from "../../lib/router"
 import { useSinglePane } from "../../lib/tabs"
 import { usePanZoom } from "../../lib/use-pan-zoom"
@@ -30,6 +30,16 @@ const byName = (a: string, b: string) => noteName(a).localeCompare(noteName(b), 
 const fold = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR")
 const upper = (text: string) => text.charAt(0).toLocaleUpperCase("pt-BR") + text.slice(1)
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+function relationCounts(edges: readonly { from: string; to: string }[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  const add = (path: string) => counts.set(path, (counts.get(path) ?? 0) + 1)
+  for (const { from, to } of edges) {
+    add(from)
+    if (to !== from) add(to)
+  }
+  return counts
+}
 
 // Cores da teia: a exceção registrada à regra de não usar hexadecimal (D6); em texto, o nome da relação vai junto.
 const DIPLOMACY_COLORS: Record<string, { color: string; label: string }> = {
@@ -57,8 +67,11 @@ export function WikiRelations({ path }: { path?: string }) {
   const kindOf = (p: string) => articleKind(index.note(p)?.meta.frontmatter?.data?.tipo)?.id
   const orgs = useMemo(() => index.notesIn(root).filter((n) => articleKind(n.meta.frontmatter?.data?.tipo)?.id === "organizacao").map((n) => n.path).sort(byName), [index, root, vault.version])
   const structures = useMemo(() => new Map(orgs.map((o) => [o, orgStructureOf(index, o, root, edges)])), [orgs, index, root, edges])
-  const people = useMemo(() => [...new Set(edges.filter((e) => e.type.group === "familia").flatMap((e) => [e.from, e.to]))].sort(byName), [edges])
+  const familyCounts = useMemo(() => relationCounts(edges.filter((e) => e.type.group === "familia")), [edges])
+  const people = useMemo(() => [...familyCounts.keys()].sort(byName), [familyCounts])
+  const related = useMemo(() => relationLookup(index, root), [index, root, vault.version])
   const web = useMemo(() => diplomacy(index, root), [index, root, vault.version])
+  const diplomacyCounts = useMemo(() => relationCounts(web.edges), [web])
 
   // Por onde começar: o artigo pedido (organização, pessoa com família ou membro de alguma), a visão lembrada ou a
   // primeira que tem dados (Organograma, Árvore, Teia).
@@ -116,12 +129,12 @@ export function WikiRelations({ path }: { path?: string }) {
     },
     familia: {
       title: "Pessoas", items: people, placeholder: "Filtrar pessoas pelo nome",
-      meta: (p) => plural(edges.filter((e) => e.type.group === "familia" && (e.from === p || e.to === p)).length, "laço de família", "laços de família"),
+      meta: (p) => plural(familyCounts.get(p) ?? 0, "laço de família", "laços de família"),
       empty: <>Nenhuma relação de família. Use as propriedades <code>pais</code>, <code>filhos</code>, <code>conjuges</code> e <code>irmaos</code> (listas de links) nos artigos.</>,
     },
     diplomacia: {
       title: "Facções", items: web.nodes, placeholder: "Filtrar facções pelo nome",
-      meta: (f) => `${articleKind(index.note(f)?.meta.frontmatter?.data?.tipo)?.label ?? "Facção"} · ${plural(web.edges.filter((e) => e.from === f || e.to === f).length, "relação", "relações")}`,
+      meta: (f) => `${articleKind(index.note(f)?.meta.frontmatter?.data?.tipo)?.label ?? "Facção"} · ${plural(diplomacyCounts.get(f) ?? 0, "relação", "relações")}`,
       empty: <>Nenhuma relação entre facções. Em organizações, países, culturas e religiões, use <code>aliados</code>, <code>inimigos</code>, <code>rivais</code>, <code>em_guerra_com</code>, <code>paz_tensa_com</code> e <code>vassalo_de</code>.</>,
     },
   }
@@ -148,7 +161,7 @@ export function WikiRelations({ path }: { path?: string }) {
         ? <OrgGraph key={subject} structure={structure} collapsed={collapsed} selected={selected} onSelect={select} onToggle={toggleBranch} />
         : <OrgTable structure={structure} onSelect={select} />
       : view === "familia"
-        ? show === "grafico" ? <FamilyTreeView center={subject} root={root} onSelect={(path) => { if (path !== subject) choose(path); else select(path) }} /> : <FamilyTable people={people} root={root} onSelect={select} />
+        ? show === "grafico" ? <FamilyTreeView center={subject} root={root} related={related} onSelect={(path) => { if (path !== subject) choose(path); else select(path) }} /> : <FamilyTable people={people} related={related} onSelect={select} />
         : show === "grafico" ? <DiplomacyGraph root={root} onSelect={select} /> : <DiplomacyTable root={root} />
 
   const panelNode = selected ? <NodeDetails key={selected} path={selected} org={view === "organizacao" ? structure : undefined} root={root} readOnly={readOnly}
@@ -371,7 +384,7 @@ function readGenerations(): { up: number; down: number } {
  * Árvore genealógica (U25): gerações acima e abaixo escolhidas à parte e lembradas no aparelho; clicar ou Enter num nome
  * põe a pessoa no centro (e anuncia), clicar no centro mostra os detalhes.
  */
-function FamilyTreeView({ center, root, onSelect }: { center: string; root: string; onSelect(path: string): void }) {
+function FamilyTreeView({ center, root, related, onSelect }: { center: string; root: string; related(path: string): Relation[]; onSelect(path: string): void }) {
   const vault = useVault()
   const [generations, setGenerations] = useState(readGenerations)
   const change = (key: "up" | "down", value: number) => setGenerations((current) => {
@@ -379,7 +392,7 @@ function FamilyTreeView({ center, root, onSelect }: { center: string; root: stri
     try { localStorage.setItem(GENERATIONS_KEY, JSON.stringify(next)) } catch { /* preferência opcional */ }
     return next
   })
-  const layout = useMemo(() => layoutFamily(familyGraph(vault.index!, center, generations.up, generations.down, root)), [vault.index, center, root, generations, vault.version])
+  const layout = useMemo(() => layoutFamily(familyGraph(vault.index!, center, generations.up, generations.down, root, related)), [vault.index, center, root, generations, related])
   const stepper = (key: "up" | "down", label: string) => <div className="relations-stepper" role="group" aria-label={label}>
     <span className="small">{label}</span>
     <button type="button" className="icon-btn sm" aria-label={`Menos ${label.toLocaleLowerCase("pt-BR")}`} disabled={generations[key] <= 0} onClick={() => change(key, generations[key] - 1)}><Minus size={14} /></button>
@@ -441,23 +454,32 @@ const kinWidth = (label: string) => label.length * 6 + 16
 const NUCLEAR = new Set(["pais", "filhos", "conjuges"])
 
 /** A árvore em tabela: Pessoa · Pais · Cônjuges · Filhos · Irmãos e outros parentes. */
-function FamilyTable({ people, root, onSelect }: { people: string[]; root: string; onSelect(path: string): void }) {
-  const vault = useVault()
-  const index = vault.index!
-  const names = (path: string, key: string) => relationsOf(index, path, root).filter((r) => r.type.key === key && r.other).map((r) => noteName(r.other!)).join(", ") || "—"
-  const others = (path: string) => {
-    const groups = new Map<string, string[]>()
-    for (const r of relationsOf(index, path, root)) if (r.other && r.type.group === "familia" && !NUCLEAR.has(r.type.key))
-      groups.set(r.type.label, [...(groups.get(r.type.label) ?? []), noteName(r.other)])
-    return [...groups].map(([label, list]) => `${label}: ${list.join(", ")}`).join("; ") || "—"
-  }
+function FamilyTable({ people, related, onSelect }: { people: string[]; related(path: string): Relation[]; onSelect(path: string): void }) {
+  const rows = useMemo(() => people.map((path) => {
+    const nuclear = new Map<string, string[]>(), others = new Map<string, string[]>()
+    for (const { type, other } of related(path)) {
+      if (!other) continue
+      const fixed = NUCLEAR.has(type.key)
+      if (!fixed && type.group !== "familia") continue
+      const groups = fixed ? nuclear : others
+      const key = fixed ? type.key : type.label
+      const names = groups.get(key)
+      if (names) names.push(noteName(other))
+      else groups.set(key, [noteName(other)])
+    }
+    return {
+      path,
+      cells: ["pais", "conjuges", "filhos"].map((key) => nuclear.get(key)?.join(", ") || "—"),
+      others: [...others].map(([label, list]) => `${label}: ${list.join(", ")}`).join("; ") || "—",
+    }
+  }), [people, related])
   return <div className="relations-table-wrap">
     <table className="graph-table">
       <caption className="sr-only">Famílias</caption>
       <thead><tr><th scope="col">Pessoa</th><th scope="col">Pais</th><th scope="col">Cônjuges</th><th scope="col">Filhos</th><th scope="col">Irmãos e outros parentes</th></tr></thead>
-      <tbody>{people.map((p) => <tr key={p}>
-        <th scope="row"><button type="button" className="link-btn" data-node={p} onClick={() => onSelect(p)}>{noteName(p)}</button></th>
-        <td>{names(p, "pais")}</td><td>{names(p, "conjuges")}</td><td>{names(p, "filhos")}</td><td>{others(p)}</td>
+      <tbody>{rows.map(({ path, cells, others }) => <tr key={path}>
+        <th scope="row"><button type="button" className="link-btn" data-node={path} onClick={() => onSelect(path)}>{noteName(path)}</button></th>
+        <td>{cells[0]}</td><td>{cells[1]}</td><td>{cells[2]}</td><td>{others}</td>
       </tr>)}</tbody>
     </table>
   </div>

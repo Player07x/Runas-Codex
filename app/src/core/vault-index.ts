@@ -47,53 +47,126 @@ export interface SearchHit {
 
 const isNote = (path: string) => extname(path) === ".md"
 
+function appendTo<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const values = map.get(key)
+  if (values) values.push(value)
+  else map.set(key, [value])
+}
+
+function removeFrom(map: Map<string, string[]>, key: string, path: string): void {
+  const values = map.get(key)
+  if (!values) return
+  const at = values.indexOf(path)
+  if (at !== -1) values.splice(at, 1)
+  if (!values.length) map.delete(key)
+}
+
+const sameItems = <T>(a: readonly T[], b: readonly T[]) => a.length === b.length && a.every((item, i) => item === b[i])
+const fileNameKey = (path: string) => foldName(isNote(path) ? noteName(path) : basename(path))
+const SEARCH_CACHE_CHARS = 8 * 1024 * 1024
+
 export class VaultIndex {
   private readonly notes = new Map<string, IndexedNote>()
   private readonly files = new Map<string, VaultEntry>()
-  private byPath = new Map<string, string>()
-  private byName = new Map<string, string[]>()
-  private byAlias = new Map<string, string[]>()
-  private resolvedCache: Map<string, ResolvedLink[]> | null = null
+  private readonly byPath = new Map<string, string[]>()
+  private readonly byName = new Map<string, string[]>()
+  private readonly byAlias = new Map<string, string[]>()
+  private readonly resolvedCache = new Map<string, ResolvedLink[]>()
   private backlinkCache: Map<string, ResolvedLink[]> | null = null
+  private readonly searchTexts = new Map<IndexedNote, string>()
+  private searchChars = 0
+  private readonly searchCacheChars: number
 
-  /** Todos os arquivos do cofre (notas e anexos) e o texto das notas. */
-  constructor(entries: VaultEntry[] = [], texts: Record<string, string> = {}) {
-    for (const entry of entries) this.files.set(entry.path, entry)
+  /**
+   * Todos os arquivos do cofre (notas e anexos) e o texto das notas. `searchCacheChars` limita a cópia normalizada
+   * guardada para a busca (menor no celular).
+   */
+  constructor(entries: VaultEntry[] = [], texts: Record<string, string> = {}, options: { searchCacheChars?: number } = {}) {
+    this.searchCacheChars = options.searchCacheChars ?? SEARCH_CACHE_CHARS
+    for (const entry of entries) this.putFile(entry)
     for (const entry of entries) if (isNote(entry.path) && entry.path in texts) this.putNote(entry, texts[entry.path]!)
-    this.rebuildMaps()
   }
 
   // ---------- Atualização ----------
 
   /** Cria ou atualiza um arquivo; para notas, `text` é o conteúdo. */
   set(entry: VaultEntry, text?: string): void {
-    this.files.set(entry.path, entry)
-    if (isNote(entry.path) && text !== undefined) this.putNote(entry, text)
-    this.rebuildMaps()
+    const newFile = this.putFile(entry)
+    const targetsChanged = isNote(entry.path) && text !== undefined && this.putNote(entry, text)
+    if (newFile || targetsChanged) this.resolvedCache.clear()
+    if (newFile) this.backlinkCache = null
   }
 
   remove(path: string): void {
-    this.files.delete(path)
-    this.notes.delete(path)
-    this.rebuildMaps()
-  }
-
-  private putNote(entry: VaultEntry, text: string): void {
-    this.notes.set(entry.path, { path: entry.path, name: noteName(entry.path), scope: scopeOf(entry.path), mtime: entry.mtime, size: entry.size, text, meta: parseNote(text) })
-  }
-
-  private rebuildMaps(): void {
-    this.byPath = new Map()
-    this.byName = new Map()
-    this.byAlias = new Map()
-    const push = (map: Map<string, string[]>, key: string, path: string) => map.set(key, [...(map.get(key) ?? []), path])
-    for (const path of this.files.keys()) {
-      this.byPath.set(foldName(path), path)
-      push(this.byName, foldName(isNote(path) ? noteName(path) : basename(path)), path)
+    if (!this.files.delete(path)) return
+    removeFrom(this.byPath, foldName(path), path)
+    removeFrom(this.byName, fileNameKey(path), path)
+    const note = this.notes.get(path)
+    if (note) {
+      for (const alias of note.meta.aliases) removeFrom(this.byAlias, foldName(alias), path)
+      this.dropSearchText(note)
+      this.notes.delete(path)
     }
-    for (const note of this.notes.values()) for (const alias of note.meta.aliases) push(this.byAlias, foldName(alias), note.path)
-    this.resolvedCache = null
+    this.resolvedCache.clear()
     this.backlinkCache = null
+  }
+
+  private putFile(entry: VaultEntry): boolean {
+    const { path } = entry
+    const added = !this.files.has(path)
+    this.files.set(path, entry)
+    if (added) {
+      appendTo(this.byPath, foldName(path), path)
+      appendTo(this.byName, fileNameKey(path), path)
+    }
+    return added
+  }
+
+  /** Diz se uma mudança de alvo também pode afetar links escritos em outras notas. */
+  private putNote(entry: VaultEntry, text: string): boolean {
+    const { path, mtime, size } = entry
+    const previous = this.notes.get(path)
+    if (previous?.text === text) {
+      if (previous.mtime !== mtime || previous.size !== size) {
+        this.dropSearchText(previous)
+        this.notes.set(path, { ...previous, mtime, size })
+      }
+      return false
+    }
+    const meta = parseNote(text)
+    const aliases = previous?.meta.aliases ?? []
+    const aliasesChanged = !sameItems(aliases, meta.aliases)
+    if (aliasesChanged) {
+      for (const alias of aliases) removeFrom(this.byAlias, foldName(alias), path)
+      for (const alias of meta.aliases) appendTo(this.byAlias, foldName(alias), path)
+    }
+    if (previous) this.dropSearchText(previous)
+    this.notes.set(path, { path, name: noteName(path), scope: scopeOf(path), mtime, size, text, meta })
+    this.resolvedCache.delete(path)
+    this.backlinkCache = null
+    return !previous || aliasesChanged || !sameItems(previous.meta.blocks, meta.blocks)
+      || previous.meta.headings.length !== meta.headings.length
+      || previous.meta.headings.some((heading, i) => heading.text !== meta.headings[i]?.text)
+  }
+
+  private dropSearchText(note: IndexedNote): void {
+    const body = this.searchTexts.get(note)
+    if (body !== undefined) {
+      this.searchTexts.delete(note)
+      this.searchChars -= body.length
+    }
+  }
+
+  /** Normaliza sob demanda e limita a cópia extra de texto mantida por cofre. */
+  foldedSearchText(note: IndexedNote): string {
+    const cached = this.searchTexts.get(note)
+    if (cached !== undefined) return cached
+    const body = foldName(note.text)
+    if (this.notes.get(note.path) === note && this.searchChars + body.length <= this.searchCacheChars) {
+      this.searchTexts.set(note, body)
+      this.searchChars += body.length
+    }
+    return body
   }
 
   // ---------- Consulta ----------
@@ -110,6 +183,10 @@ export class VaultIndex {
     return [...this.notes.values()]
   }
 
+  entry(path: string): VaultEntry | undefined {
+    return this.files.get(path)
+  }
+
   allFiles(): VaultEntry[] {
     return [...this.files.values()]
   }
@@ -119,12 +196,15 @@ export class VaultIndex {
   }
 
   notesIn(root: string): IndexedNote[] {
-    return this.allNotes().filter((note) => note.path.startsWith(root))
+    if (!root) return this.allNotes()
+    const notes: IndexedNote[] = []
+    for (const note of this.notes.values()) if (note.path.startsWith(root)) notes.push(note)
+    return notes
   }
 
   /** O nome curto (sem pasta) aponta para um único arquivo no cofre inteiro? */
   isNameUnique(path: string): boolean {
-    return (this.byName.get(foldName(isNote(path) ? noteName(path) : basename(path)))?.length ?? 0) <= 1
+    return (this.byName.get(fileNameKey(path))?.length ?? 0) <= 1
   }
 
   /**
@@ -150,7 +230,7 @@ export class VaultIndex {
     const candidates = target.startsWith("/") ? [joinPath(target)] : [joinPath(dirname(from), target), joinPath(target)]
     for (const candidate of candidates) {
       if (!candidate) continue
-      const found = this.byPath.get(foldName(candidate)) ?? (extname(candidate) ? undefined : this.byPath.get(foldName(candidate + ".md")))
+      const found = this.byPath.get(foldName(candidate))?.at(-1) ?? (extname(candidate) ? undefined : this.byPath.get(foldName(candidate + ".md"))?.at(-1))
       if (found) return found
     }
     return null
@@ -159,11 +239,12 @@ export class VaultIndex {
   private resolveName(target: string, from: string): Partial<ResolvedLink> {
     const clean = target.replace(/^\/+/, "")
     if (clean.includes("/")) {
-      const exact = this.byPath.get(foldName(clean)) ?? this.byPath.get(foldName(clean + ".md"))
+      const exact = this.byPath.get(foldName(clean))?.at(-1) ?? this.byPath.get(foldName(clean + ".md"))?.at(-1)
       if (exact) return { dest: exact }
       // Caminho parcial (`Personagens/Aldren`): vale se só um arquivo termina assim.
       const suffix = "/" + foldName(extname(clean) ? clean : clean + ".md")
-      const matches = [...this.byPath.entries()].filter(([key]) => key.endsWith(suffix)).map(([, path]) => path)
+      const matches: string[] = []
+      for (const [key, paths] of this.byPath) if (key.endsWith(suffix)) matches.push(paths.at(-1)!)
       if (matches.length) return { dest: this.closest(matches, from), ...(matches.length > 1 ? { ambiguous: true } : {}) }
       return { dest: null }
     }
@@ -196,30 +277,29 @@ export class VaultIndex {
     return !wanted || note.meta.headings.some((h) => foldName(h.text) === foldName(wanted))
   }
 
-  private resolvedAll(): Map<string, ResolvedLink[]> {
-    if (!this.resolvedCache) {
-      this.resolvedCache = new Map()
-      for (const note of this.notes.values()) this.resolvedCache.set(note.path, note.meta.links.map((link) => this.resolve(link, note.path)))
-    }
-    return this.resolvedCache
-  }
-
   outgoing(path: string): ResolvedLink[] {
-    return this.resolvedAll().get(path) ?? []
+    const note = this.notes.get(path)
+    if (!note) return []
+    let links = this.resolvedCache.get(path)
+    if (!links) {
+      links = note.meta.links.map((link) => this.resolve(link, path))
+      this.resolvedCache.set(path, links)
+    }
+    return links
   }
 
   backlinks(path: string): Backlink[] {
     if (!this.backlinkCache) {
       this.backlinkCache = new Map()
-      for (const links of this.resolvedAll().values()) {
-        for (const resolved of links) {
+      for (const from of this.notes.keys()) {
+        for (const resolved of this.outgoing(from)) {
           if (!resolved.dest || resolved.dest === resolved.from) continue
-          this.backlinkCache.set(resolved.dest, [...(this.backlinkCache.get(resolved.dest) ?? []), resolved])
+          appendTo(this.backlinkCache, resolved.dest, resolved)
         }
       }
     }
     const grouped = new Map<string, ResolvedLink[]>()
-    for (const resolved of this.backlinkCache.get(path) ?? []) grouped.set(resolved.from, [...(grouped.get(resolved.from) ?? []), resolved])
+    for (const resolved of this.backlinkCache.get(path) ?? []) appendTo(grouped, resolved.from, resolved)
     const root = scopeOf(path).root
     return [...grouped].map(([from, links]) => ({
       from,
@@ -232,9 +312,9 @@ export class VaultIndex {
   /** Links para notas que não existem ("a escrever"), agrupados pelo nome, dentro de uma raiz. */
   unresolved(root = ""): { target: string; from: string[] }[] {
     const map = new Map<string, { target: string; from: Set<string> }>()
-    for (const [from, links] of this.resolvedAll()) {
+    for (const from of this.notes.keys()) {
       if (!from.startsWith(root)) continue
-      for (const resolved of links) {
+      for (const resolved of this.outgoing(from)) {
         if (resolved.dest || !resolved.link.target) continue
         const key = foldName(resolved.link.target)
         const item = map.get(key) ?? { target: resolved.link.target, from: new Set<string>() }
@@ -267,33 +347,37 @@ export class VaultIndex {
   search(query: string, root = "", limit = 50): SearchHit[] {
     const tokens = [...query.matchAll(/(-?)(?:(path|file|tag):)?(?:"([^"]+)"|(\S+))/g)].map((m) => ({ negate: m[1] === "-", op: m[2] ?? "", value: foldName(m[3] ?? m[4] ?? "").replace(/^#/, "") }))
     if (!tokens.length) return []
-    const hits: SearchHit[] = []
+    const hits: { note: IndexedNote; score: number }[] = []
+    const first = tokens.find((t) => !t.negate && !t.op)
     for (const note of this.notes.values()) {
       if (!note.path.startsWith(root)) continue
-      const name = foldName(note.name)
-      const aliases = note.meta.aliases.map(foldName)
-      const body = foldName(note.text)
+      let name: string | undefined, aliases: string[] | undefined, body: string | undefined
       let score = 0
       let ok = true
       for (const { negate, op, value } of tokens) {
-        const tags = note.meta.tags.map((t) => t.toLocaleLowerCase("pt-BR"))
         const found =
           op === "path" ? foldName(note.path).includes(value)
-          : op === "file" ? name.includes(value)
-          : op === "tag" ? tags.some((t) => t === value || t.startsWith(value + "/"))
-          : name.includes(value) || aliases.some((a) => a.includes(value)) || body.includes(value)
+          : op === "file" ? (name ??= foldName(note.name)).includes(value)
+          : op === "tag" ? note.meta.tags.some((t) => {
+            const tag = t.toLocaleLowerCase("pt-BR")
+            return tag === value || tag.startsWith(value + "/")
+          })
+          : (name ??= foldName(note.name)).includes(value) || (aliases ??= note.meta.aliases.map(foldName)).some((a) => a.includes(value)) || (body ??= this.foldedSearchText(note)).includes(value)
         if (found === negate) {
           ok = false
           break
         }
-        if (!negate && !op) score += name === value ? 100 : name.startsWith(value) ? 50 : name.includes(value) ? 30 : aliases.some((a) => a.includes(value)) ? 20 : 1
+        if (!negate && !op) score += name === value ? 100 : name?.startsWith(value) ? 50 : name?.includes(value) ? 30 : aliases?.some((a) => a.includes(value)) ? 20 : 1
         else if (!negate) score += 5
       }
-      if (!ok) continue
-      const first = tokens.find((t) => !t.negate && !t.op)
-      hits.push({ path: note.path, score, snippet: first ? snippetAround(note.text, first.value) : "" })
+      if (ok) hits.push({ note, score })
     }
-    return hits.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path, "pt-BR")).slice(0, limit)
+    return hits.sort((a, b) => b.score - a.score || a.note.path.localeCompare(b.note.path, "pt-BR")).slice(0, limit)
+      .map(({ note, score }) => ({
+        path: note.path,
+        score,
+        snippet: first ? snippetAround(note.text, this.foldedSearchText(note).indexOf(first.value), first.value.length) : "",
+      }))
   }
 }
 
@@ -311,9 +395,8 @@ export function contextLine(text: string, link: LinkRef): string {
     .trim()
 }
 
-function snippetAround(text: string, folded: string): string {
-  const index = foldName(text).indexOf(folded)
+function snippetAround(text: string, index: number, length: number): string {
   if (index < 0) return ""
   const start = Math.max(0, index - 50)
-  return (start > 0 ? "…" : "") + text.slice(start, index + folded.length + 70).replace(/\s+/g, " ").trim()
+  return (start > 0 ? "…" : "") + text.slice(start, index + length + 70).replace(/\s+/g, " ").trim()
 }

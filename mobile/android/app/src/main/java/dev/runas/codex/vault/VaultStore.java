@@ -9,6 +9,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.text.Normalizer;
@@ -154,7 +157,7 @@ public final class VaultStore implements VaultFs {
         return full;
     }
 
-    private static boolean nioAvailable = true;
+    private static volatile boolean nioAvailable = true;
 
     /** Link simbólico? (`lstat` pelo java.nio, do Android 8 em diante; antes, comparando o caminho canônico). */
     @SuppressLint("NewApi") // No Android 7, a chamada falha (NoClassDefFoundError) e o caminho canônico assume.
@@ -183,21 +186,37 @@ public final class VaultStore implements VaultFs {
     public List<Entry> list(String prefix, boolean includeHidden) throws IOException {
         List<Entry> out = new ArrayList<>();
         walk(root.getCanonicalFile(), "", includeHidden, out);
-        List<Entry> filtered = new ArrayList<>();
-        String p = prefix == null ? "" : prefix;
-        for (Entry e : out) if (e.path.startsWith(p)) filtered.add(e);
-        Collections.sort(filtered, (a, b) -> a.path.compareTo(b.path));
-        return filtered;
+        if (prefix != null && !prefix.isEmpty()) out.removeIf(entry -> !entry.path.startsWith(prefix));
+        Collections.sort(out, (a, b) -> a.path.compareTo(b.path));
+        return out;
     }
 
+    @SuppressLint("NewApi") // O Android 7 usa a leitura de atributos de File.
     private static void walk(File dir, String rel, boolean includeHidden, List<Entry> out) {
         File[] items = dir.listFiles();
         if (items == null) return;
         for (File item : items) {
             String name = item.getName();
             if (name.startsWith(".") && !includeHidden) continue;
-            if (isSymlink(item)) continue;
             String path = rel.isEmpty() ? name : rel + "/" + name;
+            if (nioAvailable) {
+                try {
+                    BasicFileAttributes attrs = Files.readAttributes(item.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                    if (attrs.isDirectory()) walk(item, path, includeHidden, out);
+                    else if (attrs.isRegularFile()) {
+                        // No Android, os atributos NIO podem arredondar a data para segundos. A versão precisa
+                        // usar a mesma precisão da gravação, que lê a data por File.lastModified().
+                        out.add(new Entry(path, attrs.size(), item.lastModified()));
+                    }
+                    continue;
+                } catch (IOException ignored) {
+                    // Arquivo removido durante a listagem ou inacessível.
+                    continue;
+                } catch (LinkageError ignored) {
+                    nioAvailable = false;
+                }
+            }
+            if (isSymlink(item)) continue;
             if (item.isDirectory()) walk(item, path, includeHidden, out);
             else if (item.isFile()) out.add(new Entry(path, item.length(), item.lastModified()));
         }
@@ -225,6 +244,8 @@ public final class VaultStore implements VaultFs {
     /** Lê vários textos de uma vez; os que sumiram ficam fora do resultado. */
     public Map<String, String> readTexts(List<String> paths) throws IOException {
         Map<String, String> out = new LinkedHashMap<>();
+        if (paths.isEmpty()) return out;
+        byte[] buffer = new byte[64 * 1024];
         for (String path : paths) {
             File file;
             try {
@@ -233,7 +254,7 @@ public final class VaultStore implements VaultFs {
                 if (e.getMessage() != null && e.getMessage().startsWith("Arquivo não encontrado")) continue;
                 throw e;
             }
-            out.put(path, new String(readAll(file), StandardCharsets.UTF_8));
+            out.put(path, new String(readAll(file, buffer), StandardCharsets.UTF_8));
         }
         return out;
     }
@@ -280,8 +301,11 @@ public final class VaultStore implements VaultFs {
     }
 
     static byte[] readAll(File file) throws IOException {
+        return readAll(file, new byte[64 * 1024]);
+    }
+
+    private static byte[] readAll(File file, byte[] buffer) throws IOException {
         try (InputStream in = new FileInputStream(file); ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.max(32, file.length()))) {
-            byte[] buffer = new byte[64 * 1024];
             int n;
             while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
             return out.toByteArray();

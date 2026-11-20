@@ -6,6 +6,7 @@ import { createAndroidUpdates } from "./android-updates"
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core"
 import type { BackupInfo, Platform, RoomHostInfo, VaultEntry, VaultInfo, WriteCheck } from "./platform"
 import { onAndroidReminderOpen, scheduleOnAndroid } from "./reminders"
+import { CAPACITOR_READ_BATCH } from "./read-batch"
 
 /**
  * Plataforma do Android (Capacitor): o cofre real, direto na pasta do disco, pelo plugin nativo `RunasVault`
@@ -71,9 +72,6 @@ function withExpected<T extends object>(options: T, expected: Expected): T & { e
   return expected === undefined ? options : { ...options, expected: expected && { mtime: expected.mtime, size: expected.size } }
 }
 
-/** Lê os textos em lotes (a ponte do Capacitor leva tudo como JSON numa mensagem só). */
-const READ_BATCH = 400
-
 export function createCapacitorPlatform(): Platform {
   const binary = createAndroidBinary(RunasVault)
   let root: string | null = null
@@ -106,7 +104,7 @@ export function createCapacitorPlatform(): Platform {
     },
     async readTexts(paths) {
       const out: Record<string, string> = {}
-      for (let i = 0; i < paths.length; i += READ_BATCH) Object.assign(out, (await RunasVault.read({ paths: paths.slice(i, i + READ_BATCH) })).texts)
+      for (let i = 0; i < paths.length; i += CAPACITOR_READ_BATCH) Object.assign(out, (await RunasVault.read({ paths: paths.slice(i, i + CAPACITOR_READ_BATCH) })).texts)
       return out
     },
     writeText: async (path, content, expected) => rememberEntry(await RunasVault.write(withExpected({ path, content }, expected))),

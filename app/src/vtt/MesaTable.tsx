@@ -1,7 +1,6 @@
-import { useVault } from "../platform/VaultProvider"
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { ArrowLeft, Library, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, NotebookPen, Settings } from "lucide-react"
-import { href, navigate } from "../lib/router"
+import { navigate } from "../lib/router"
 import { remoteMaster, resolveAssetUrl, vtt } from "./api"
 import { AudioEngine } from "./audio-engine"
 import { SceneCanvas } from "./canvas/SceneCanvas"
@@ -54,6 +53,12 @@ function readLastScene(worldId: string): string | null {
   }
 }
 
+function initialScene(worldId: string, store: DocumentStore): string | null {
+  const remembered = readLastScene(worldId)
+  const scenes = store.scenes()
+  return scenes.some((scene) => scene.id === remembered) ? remembered : (scenes[0]?.id ?? null)
+}
+
 /** O que o processo principal manda tocar, reproduzido nesta máquina com os volumes do mestre. */
 function useMasterAudio(): AudioState {
   const settings = useSettings()
@@ -90,41 +95,8 @@ function useMasterAudio(): AudioState {
   return state
 }
 
-/** Abre a mesa pelo id (rota `/vtt/mesa/<id>`) mantém a sala ao consultar outros espaços. */
-export function MesaTable({ id }: { id: string }) {
-  const keyboardHints = useVault().platform.kind !== "capacitor"
-  const [world, setWorld] = useState<WorldSummary | null>(null)
-  const [error, setError] = useState<string>()
-  useEffect(() => {
-    let active = true
-    try{sessionStorage.setItem("runas-codex:mesa-aberta",id)}catch{}
-    vtt.openWorld(id).then(
-      (opened) => active && setWorld(opened),
-      (reason: unknown) => active && setError(reason instanceof Error ? reason.message : String(reason)),
-    )
-    return () => {
-      active = false
-      // A sala permanece no processo principal; trocar cofre/mesa ou encerrar explicitamente a fecha.
-    }
-  }, [id])
-  if (error) {
-    return (
-      <div className="page">
-        <p style={{ color: "var(--red)" }}>{error}</p>
-        <a className="btn" href={href("/vtt/criar")}>
-          <ArrowLeft size={16} /> Voltar às mesas
-        </a>
-      </div>
-    )
-  }
-  if (!world) {
-    return (
-      <div className="page">
-        <p className="muted">Abrindo a mesa…</p>
-      </div>
-    )
-  }
-  return <TableShell key={world.id} world={world} keyboardHints={keyboardHints} />
+export function MesaTable({ world, keyboardHints, documents }: { world: WorldSummary; keyboardHints: boolean; documents: DocumentStore }) {
+  return <TableShell key={world.id} world={world} keyboardHints={keyboardHints} documents={documents} />
 }
 
 /** Mesa já aberta no computador da sala, controlada pelo celular do mestre (página `/master`, ADR 0016). */
@@ -133,10 +105,10 @@ export function RemoteMesa({ world }: { world: WorldSummary }) {
 }
 
 // A mesa remota não tem VaultProvider; a plataforma do app informa apenas as dicas de teclado.
-function TableShell({ world, keyboardHints, remote = false }: { world: WorldSummary; keyboardHints: boolean; remote?: boolean }) {
-  const [store] = useState(() => new DocumentStore())
-  const [loaded, setLoaded] = useState(false)
-  const [sceneId, setSceneId] = useState<string | null>(null)
+function TableShell({ world, keyboardHints, documents, remote = false }: { world: WorldSummary; keyboardHints: boolean; documents?: DocumentStore; remote?: boolean }) {
+  const [store] = useState(() => documents ?? new DocumentStore())
+  const [loaded, setLoaded] = useState(Boolean(documents))
+  const [sceneId, setSceneId] = useState(() => documents ? initialScene(world.id, documents) : null)
   const [tab, setTab] = useState<SideTab>("scenes")
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -157,14 +129,13 @@ function TableShell({ world, keyboardHints, remote = false }: { world: WorldSumm
   }, [propertiesOpen])
 
   useEffect(() => {
+    if (documents) return
     void store.load().then(() => {
-      const remembered = readLastScene(world.id)
-      const scenes = store.scenes()
-      setSceneId(scenes.some((scene) => scene.id === remembered) ? remembered : (scenes[0]?.id ?? null))
+      setSceneId(initialScene(world.id, store))
       setLoaded(true)
     })
     return () => store.dispose()
-  }, [store, world.id])
+  }, [documents, store, world.id])
 
   function openScene(id: string | null) {
     setSceneId(id)

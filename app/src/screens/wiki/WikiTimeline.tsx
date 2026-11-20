@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronDown, History, List, Users } from "lucide-react"
 import { dayNumber, formatDate, formatYear, fromDayNumber, type Calendar, type WorldDate } from "../../core/calendar"
 import { calendarOffsets } from "../../core/calendar-sync"
-import { listMaps, timelineEvents, type CalendarRef, type TimelineEvent } from "../../core/wiki"
+import { listMaps, calendarListLookup, timelineEvents, type CalendarRef, type TimelineEvent } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
 import { articleRoute, KindIcon, useWiki } from "./wiki-state"
@@ -76,7 +76,12 @@ export function WikiTimeline() {
   const [picked, setPicked] = useState<string[] | null>(() => (wiki ? storedPaths(wiki.name) : null))
   useEffect(() => setPicked(wiki ? storedPaths(wiki.name) : null), [wiki])
   // Sem escolha guardada: os calendários que têm acontecimentos (ou o principal).
-  const withEvents = useMemo(() => calendars.filter((c) => timelineEvents(index, wiki!.root, c, { people: true }).length > 0).map((c) => c.path), [calendars, index, wiki, vault.version])
+  const byCalendar = useMemo(() => {
+    const list = calendarListLookup(index)
+    return new Map(calendars.map((c) => [c.path, timelineEvents(index, wiki!.root, c, { people: true, list })]))
+  }, [calendars, index, wiki, vault.version])
+  const eventsByCalendar = useMemo(() => people ? byCalendar : new Map([...byCalendar].map(([path, events]) => [path, events.filter((e) => !e.life)])), [byCalendar, people])
+  const withEvents = [...byCalendar].filter(([, events]) => events.length > 0).map(([path]) => path)
   const chosen = calendars.filter((c) => (picked ?? (withEvents.length ? withEvents : main ? [main.path] : [])).includes(c.path))
   const toggle = (path: string, on: boolean) => {
     const next = calendars.map((c) => c.path).filter((p) => (p === path ? on : chosen.some((c) => c.path === p)))
@@ -93,7 +98,7 @@ export function WikiTimeline() {
         base: g.base,
         synced: g.members.length > 1,
         events: g.members
-          .flatMap(({ ref, offset }): Shown[] => timelineEvents(index, wiki!.root, ref, { people }).map((e) => ({ ...e, startDay: e.startDay + offset, endDay: e.endDay + offset, calendar: ref.calendar })))
+          .flatMap(({ ref, offset }): Shown[] => (eventsByCalendar.get(ref.path) ?? []).map((e) => ({ ...e, startDay: e.startDay + offset, endDay: e.endDay + offset, calendar: ref.calendar })))
           .filter((e) => {
             if (hidden.has(e.track)) return false
             if (tag.trim() && !e.tags.some((t) => t.toLocaleLowerCase("pt-BR").startsWith(tag.trim().replace(/^#/, "").toLocaleLowerCase("pt-BR")))) return false
@@ -103,9 +108,9 @@ export function WikiTimeline() {
           })
           .sort((a, b) => a.startDay - b.startDay || a.title.localeCompare(b.title, "pt-BR")),
       })),
-    [groups, index, wiki, people, hidden, tag, players, vault.version],
+    [groups, eventsByCalendar, index, hidden, tag, players],
   )
-  const tracks = useMemo(() => [...new Set(groups.flatMap((g) => g.members.flatMap(({ ref }) => timelineEvents(index, wiki!.root, ref, { people }).map((e) => e.track))))].sort((a, b) => a.localeCompare(b, "pt-BR")), [groups, index, wiki, people, vault.version])
+  const tracks = useMemo(() => [...new Set(groups.flatMap((g) => g.members.flatMap(({ ref }) => (eventsByCalendar.get(ref.path) ?? []).map((e) => e.track))))].sort((a, b) => a.localeCompare(b, "pt-BR")), [groups, eventsByCalendar])
 
   if (!main && !calendars.length) {
     return (

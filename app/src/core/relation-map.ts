@@ -1,5 +1,5 @@
 import type { CanvasDoc, CanvasEdge, CanvasNode } from "./canvas"
-import { RELATION_TYPES, relationsOf } from "./wiki"
+import { RELATION_TYPES, relationLookup, type Relation } from "./wiki"
 import type { VaultIndex } from "./vault-index"
 
 /**
@@ -25,12 +25,13 @@ export const RELATION_CARD = { width: 240, height: 64, ring: 340, ringGap: 200, 
 /** Nó do grupo no centro do mapa. */
 export const PARTY = "runas:grupo"
 
-export function buildRelationMap(index: VaultIndex, members: RelationMember[], scope = ""): RelationMap {
+/** `relations` lê as ligações do escopo uma vez só, em vez de varrer o cofre para cada membro. */
+export function buildRelationMap(index: VaultIndex, members: RelationMember[], scope = "", relations: (path: string) => Relation[] = relationLookup(index, scope)): RelationMap {
   const byPath = new Map(members.map((m) => [m.path, m]))
   const edges: RelationMapEdge[] = []
   const seen = new Set<string>()
   for (const member of members) {
-    for (const relation of relationsOf(index, member.path, scope)) {
+    for (const relation of relations(member.path)) {
       if (relation.inverse || !relation.other || !byPath.has(relation.other) || relation.other === member.path) continue
       // As simétricas (aliados, inimigos…) aparecem uma vez só, escritas de um lado ou dos dois; as com inverso também
       // (`filhos` no pai e `pais` no filho são a mesma ligação).

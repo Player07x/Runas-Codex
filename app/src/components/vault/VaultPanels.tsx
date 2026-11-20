@@ -15,7 +15,7 @@ import { navigate } from "../../lib/router"
 import { copyLinkTarget, copyText, headingLinkText, noteRoute, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { useToast } from "../ui"
-import { DEFAULT_FORCES, GraphView } from "./GraphView"
+import { DEFAULT_FORCES, GraphView } from "./GraphViewLazy"
 import { PanelTabs, TabPanel } from "../kit/PanelTabs"
 import { GraphList } from "./GraphPage"
 

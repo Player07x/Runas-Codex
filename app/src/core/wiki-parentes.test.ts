@@ -1,4 +1,4 @@
-import { familyTree, inverseKeyOf, relationEdges, relationsOf, RELATION_TYPES } from "./wiki"
+import { familyTree, inverseKeyOf, relationEdges, relationLookup, relationsOf, RELATION_TYPES } from "./wiki"
 import { relationSentence } from "./relation-sides"
 import { VaultIndex } from "./vault-index"
 
@@ -35,6 +35,16 @@ describe("parentes além do núcleo", () => {
     expect(labels(P("Primo"))).toEqual(["Primos:Prismeus.md"])
     expect(labels(P("Avó"))).toEqual(["Netos:Prismeus.md"])
     expect(labels(P("Madrinha"))).toEqual(["Afilhados:Prismeus.md"])
+  })
+
+  it("consulta as relações em lote mantendo a ordem, o escopo e os dois lados", () => {
+    const outside = "Wikis/Outro/Pessoa.md"
+    const missing = P("Sem parente")
+    const texts = { ...files, [outside]: '---\nprimos: ["[[Prismeus]]"]\n---', [missing]: '---\nirmaos: ["[[Inexistente]]"]\n---' }
+    const vault = new VaultIndex(Object.keys(texts).map((path) => ({ path, size: 1, mtime: 1 })), texts)
+    const related = relationLookup(vault, W)
+    for (const path of Object.keys(texts)) expect(related(path)).toEqual(relationsOf(vault, path, W))
+    expect(related(P("Prismeus")).some((relation) => relation.other === outside)).toBe(false)
   })
 
   it("tios num lado e sobrinhos no outro contam uma vez", () => {

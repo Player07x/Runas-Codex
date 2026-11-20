@@ -1,13 +1,13 @@
 import { ResizablePanel, setPanelCollapsed } from "../../components/ResizablePanel"
 import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
-import { worldEventOn } from "../../core/wiki-tools"
 import { useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { addDays, addMonths, CalendarError, dateProblem, parseWorldDate, dayNumber, equivalentYears, eraOf, formatDate, formatYear, holidaysOn, monthLength, moons, parseCalendar, relative, season, weekday, weekdayIndex, worldDateText, type Calendar, type MoonState, type WorldDate } from "../../core/calendar"
 import { findCodeBlocks, replaceCodeBlock } from "../../core/codeblocks"
-import { addCorrespondence, alignedFull, birthdayAge, calendarOffsets, convertBetween, dayIn, directLink, linkVia, moonChecks, shiftedThere, syncedTodays, withCorrespondenceDate, withMoonFull } from "../../core/calendar-sync"
+import { addCorrespondence, alignedFull, calendarOffsets, dayIn, directLink, linkVia, moonChecks, shiftedThere, syncedTodays, withCorrespondenceDate, withMoonFull } from "../../core/calendar-sync"
 import { noteName } from "../../core/text"
-import { calendarFor, calendarInNote, datesMissingAbbr, listCalendars, newWikiNote, noteDates, timelineEvents, type CalendarRef } from "../../core/wiki"
+import { calendarInNote, calendarListLookup, datesMissingAbbr, newWikiNote, type CalendarRef } from "../../core/wiki"
+import { prepareWikiCalendar, type WikiCalendarData } from "../../core/wiki-calendar-marks"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useNoteSet } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
@@ -134,12 +134,16 @@ export function CalendarBlock({ code }: { code: string }) {
 }
 
 /** Tela Calendário da wiki. */
+const noMarks = () => []
+
 export function WikiCalendar({ path }: { path?: string }) {
   const vault = useVault()
   const toast = useToast()
   const { wiki, calendar: main, players } = useWiki()
   const index = vault.index!
-  const all = useMemo(() => listCalendars(index, wiki!.root), [index, wiki, vault.version])
+  const root = wiki!.root
+  const list = useMemo(() => calendarListLookup(index), [index, vault.version])
+  const all = list(root)
   const chosenNote = path ? index.note(path) : undefined
   const chosen = chosenNote ? calendarInNote(chosenNote) : null
   const ref: CalendarRef | null = chosen && "calendar" in chosen ? chosen : main
@@ -157,36 +161,25 @@ export function WikiCalendar({ path }: { path?: string }) {
   const today = calendar?.today ?? { year: 1, month: 1, day: 1 }
   const view = shown ?? { year: today.year, month: today.month }
 
-  // Acontecimentos (data_mundo) e aniversários (nascimento_mundo) dos artigos neste calendário.
-  const events = useMemo(() => (ref ? timelineEvents(index, wiki!.root, ref) : []), [index, wiki, ref, vault.version])
   const refs = useMemo(() => all.filter((c): c is CalendarRef => "calendar" in c), [all])
-  // Os aniversários também vêm dos calendários sincronizados com este: cada um é comemorado no calendário em que a
-  // pessoa nasceu e cai aqui no dia correspondente (Gwyn faz 83 em 18 de Ogronios R; no outro, no mesmo dia).
-  const births = useMemo(() => {
-    if (!ref) return []
-    const offsets = calendarOffsets(refs, ref.path)
-    return index.notesIn(wiki!.root).flatMap((note) => {
-      const born = noteDates(note.meta.frontmatter?.data).find((d) => d.key === "nascimento_mundo")?.date
-      const found = born && calendarFor(index, note.path, born)
-      const offset = found && "calendar" in found ? offsets.get(found.path) : undefined
-      return born && found && "calendar" in found && offset !== undefined ? [{ path: note.path, born, origin: found, offset }] : []
-    })
-  }, [index, wiki, ref, refs, vault.version])
-  const calendarForForRecurrence = (path:string) => { const start=noteDates(index.note(path)?.meta.frontmatter?.data).find(d=>d.key==="data_mundo")?.date; const found=calendarFor(index,path,start); return found && "calendar" in found && found.path===ref?.path }
-  const marks = (d: WorldDate) => {
-    if (!calendar) return []
-    const day = dayNumber(calendar, d)
-    return [
-      ...events.filter((e) => e.startDay <= day && e.endDay >= day && !(players && index.note(e.path)?.meta.frontmatter?.data?.segredo === true) && !index.note(e.path)?.meta.frontmatter?.data?.recorrencia_mundo).map((e) => ({ label: e.title, color: "var(--violet)", to: e.path })),
-      ...index.notesIn(wiki!.root).filter(n=>{const data=n.meta.frontmatter?.data;return data?.recorrencia_mundo && !(players && data.segredo===true) && calendarForForRecurrence(n.path) && worldEventOn(data,calendar,d)}).map(n=>({label:n.name,color:"var(--violet)",to:n.path})),
-      ...births.flatMap((b) => {
-        const age = birthdayAge(calendar, d, b.origin.calendar, b.offset, b.born)
-        if (age === null) return []
-        const from = b.origin.path === ref!.path ? "" : ` · ${b.origin.calendar.abbr}`
-        return [{ label: `${noteName(b.path)} (${age}${from})`, color: "var(--gold)", to: b.path }]
-      }),
-    ]
-  }
+  const offsets = useMemo(() => ref ? calendarOffsets(refs, ref.path) : new Map<string, number>(), [refs, ref])
+  const linked = useMemo(() => refs.filter((c) => c.path !== ref?.path && offsets.has(c.path)), [refs, ref, offsets])
+  const calendarData = useMemo(() => ref ? prepareWikiCalendar(index, root, ref, offsets, players, list) : null, [index, root, ref, offsets, players, list])
+  const marks = useMemo(() => {
+    if (!calendarData) return noMarks
+    // Guarda só os dias da vista atual, para selecionar um dia sem recomputar a grade.
+    const cache = new Map<string, ReturnType<WikiCalendarData["marks"]>>()
+    return (date: WorldDate) => {
+      if (date.year !== view.year || (mode === "mes" && date.month !== view.month)) return calendarData.marks(date)
+      const key = worldDateText(date)
+      let result = cache.get(key)
+      if (!result) {
+        result = calendarData.marks(date)
+        cache.set(key, result)
+      }
+      return result
+    }
+  }, [calendarData, mode, view.year, view.month])
 
   // U39: campanhas desta wiki com data própria neste calendário (a data delas fica na nota da campanha).
   const campaignDates = useMemo(() => (calendar ? listCampaigns(index).filter((c) => !c.wiki || `Wikis/${c.wiki}/` === wiki!.root).flatMap((c) => {
@@ -194,7 +187,6 @@ export function WikiCalendar({ path }: { path?: string }) {
     return time ? [{ name: c.name, path: c.home!, time }] : []
   }) : []), [index, wiki, calendar, vault.version])
   const [syncToday, setSyncToday] = useState(true)
-  const linked = ref ? refs.filter((c) => c.path !== ref.path && calendarOffsets(refs, ref.path).has(c.path)) : []
   // Calendários sincronizados andam junto: o mesmo dia, convertido pela correspondência.
   const setWorldToday = useSetWorldToday()
   const setToday = async (next: WorldDate, sync = syncToday) => {
@@ -241,8 +233,8 @@ export function WikiCalendar({ path }: { path?: string }) {
   const pick = selected ?? today
   const pickProblem = dateProblem(calendar, pick)
   // O dia escolhido nos calendários sincronizados (direta ou indiretamente, nos dois sentidos).
-  const conversions = pickProblem ? [] : linked.flatMap((target) => { const date = convertBetween(refs, ref!, pick, target); return date ? [{ target, date }] : [] })
-  const dayEvents = marks(pick)
+  const conversions = pickProblem ? [] : linked.map((target) => ({ target, date: dayIn(calendar, pick, target.calendar, offsets.get(target.path)!) }))
+  const dayEvents = sideTab === "dia" && !pickProblem ? marks(pick) : []
 
   return (
     <div className="page wiki-calendar">
@@ -382,7 +374,7 @@ export function WikiCalendar({ path }: { path?: string }) {
             )}
           </section>}
           {sideTab === "sincronizar" && refs.length > 1 && <SyncCalendars key={ref!.path} refs={refs} current={ref!} readOnly={readOnly} onAlign={() => calendar.today && setToday(calendar.today, true)} />}
-          {sideTab === "sincronizar" && linked.length > 0 && <CheckSync key={`conferir-${ref!.path}`} refs={refs} current={ref!} births={births} readOnly={readOnly} />}
+          {sideTab === "sincronizar" && linked.length > 0 && calendarData && <CheckSync key={`conferir-${ref!.path}`} refs={refs} current={ref!} offsets={offsets} linked={linked} calendarData={calendarData} readOnly={readOnly} />}
           {sideTab === "configurar" && <CalendarConfig key={ref!.path} path={ref!.path} readOnly={readOnly} />}
           {sideTab === "ajuda" && <CalendarHelp />}
           </TabPanel>
@@ -415,7 +407,13 @@ function AbbrMigration({ root }: { root: string }) {
   const toast = useToast()
   const index = vault.index!
   const [busy, setBusy] = useState(false)
-  const pending = useMemo(() => index.notesIn(root).flatMap((note) => { const dates = datesMissingAbbr(index, note.path); return dates.length ? [{ path: note.path, dates }] : [] }), [index, root, vault.version])
+  const pending = useMemo(() => {
+    const list = calendarListLookup(index)
+    return index.notesIn(root).flatMap((note) => {
+      const dates = datesMissingAbbr(index, note.path, list)
+      return dates.length ? [{ path: note.path, dates }] : []
+    })
+  }, [index, root, vault.version])
   if (!pending.length) return null
   const run = async () => {
     setBusy(true)
@@ -529,8 +527,6 @@ function SyncCalendars({ refs, current, readOnly, onAlign }: { refs: CalendarRef
   )
 }
 
-interface Birth { path: string; born: WorldDate; origin: CalendarRef; offset: number }
-
 const days = (n: number) => `${n} ${Math.abs(n) === 1 ? "dia" : "dias"}`
 
 /**
@@ -538,34 +534,36 @@ const days = (n: number) => `${n} ${Math.abs(n) === 1 ? "dia" : "dias"}`
  * no mesmo dia, e os aniversários de lá caírem aqui onde o mestre espera. O cartão mostra o que não bate, acerta a cheia
  * de uma lua num dos dois e move a ligação alguns dias, com a prévia antes de gravar.
  */
-function CheckSync({ refs, current, births, readOnly }: { refs: CalendarRef[]; current: CalendarRef; births: Birth[]; readOnly: boolean }) {
+function CheckSync({ refs, current, offsets, linked, calendarData, readOnly }: {
+  refs: CalendarRef[]
+  current: CalendarRef
+  offsets: Map<string, number>
+  linked: CalendarRef[]
+  calendarData: WikiCalendarData
+  readOnly: boolean
+}) {
   const vault = useVault()
   const toast = useToast()
-  const offsets = calendarOffsets(refs, current.path)
-  const linked = refs.filter((r) => r.path !== current.path && offsets.has(r.path))
   const [otherPath, setOtherPath] = useState(linked[0]?.path ?? "")
   const [shift, setShift] = useState(0)
   const [busy, setBusy] = useState(false)
   const other = linked.find((r) => r.path === otherPath) ?? linked[0]
-  if (!other) return null
   const today = current.calendar.today
   const reference = today ? dayNumber(current.calendar, today) : 0
-  const saved = offsets.get(other.path)!
+  const saved = other ? offsets.get(other.path)! : 0
   const offset = saved - shift
-  const checks = moonChecks(refs, current, reference, shift, other.path)
-  const link = directLink(refs, current, other)
-  const via = link ? null : linkVia(refs, current, other)
+  const upcoming = useMemo(
+    () => today && other ? calendarData.upcoming(other, today, offset) : [],
+    [calendarData, other, today, offset],
+  )
+  const { link, via } = useMemo(() => {
+    const link = other ? directLink(refs, current, other) : null
+    const via = other && !link ? linkVia(refs, current, other) : null
+    return { link, via }
+  }, [refs, current, other])
+  if (!other) return null
+  const checks = moonChecks(refs, current, reference, shift, other.path, offsets)
   const thereToday = today ? dayIn(current.calendar, today, other.calendar, offset) : null
-  // Os próximos aniversários de quem nasceu no outro calendário, no dia em que caem aqui (com o ajuste em prévia).
-  const upcoming: { path: string; age: number; date: WorldDate }[] = []
-  if (today) for (let i = 0; i < 400 && upcoming.length < 3; i++) {
-    const date = addDays(current.calendar, today, i)
-    for (const b of births) {
-      if (b.origin.path !== other.path || upcoming.length >= 3) continue
-      const age = birthdayAge(current.calendar, date, other.calendar, offset, b.born)
-      if (age !== null) upcoming.push({ path: b.path, age, date })
-    }
-  }
   const saveBlock = async (path: string, change: (content: string) => string, done: string) => {
     const note = vault.index!.note(path)
     const block = note ? findCodeBlocks(note.text, "runas-calendario")[0] : undefined

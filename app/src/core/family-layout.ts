@@ -1,4 +1,4 @@
-import { familyTree, type FamilyTree } from "./wiki"
+import { familyTree, type FamilyTree, type Relation } from "./wiki"
 import type { VaultIndex } from "./vault-index"
 
 export interface FamilyNode { path: string; generation: number; x: number; y: number; w: number; h: number; relation?: string }
@@ -10,8 +10,8 @@ export interface FamilyLine { kind: "filiacao" | "casamento" | "parentesco"; x1:
 export interface FamilyLayout { nodes: FamilyNode[]; lines: FamilyLine[]; width: number; height: number }
 
 /** A árvore com `up` gerações acima e `down` abaixo da pessoa (U25). */
-export function familyGraph(index: VaultIndex, center: string, up = 2, down = up, scope = ""): FamilyTree {
-  const tree = familyTree(index, center, Math.max(up, down), scope)
+export function familyGraph(index: VaultIndex, center: string, up = 2, down = up, scope = "", relations?: (path: string) => Relation[]): FamilyTree {
+  const tree = familyTree(index, center, Math.max(up, down), scope, relations)
   const generations = new Map([...tree.generations].filter(([g]) => g >= -up && g <= down))
   const kept = new Set([...generations.values()].flat())
   return { center, generations, edges: tree.edges.filter((e) => kept.has(e.from) && kept.has(e.to)) }
@@ -43,12 +43,13 @@ export function layoutFamily(tree: FamilyTree, size = { w: 170, h: 52, gapX: 24,
       return placed.length ? placed.reduce((a, b) => a + b, 0) / placed.length : Number.POSITIVE_INFINITY
     }
     const sorted = people.map((p, i) => ({ p, i, k: key(p) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.p)
-    const row: string[] = []
+    const paired = new Set<string>()
     for (const person of sorted) {
-      if (row.includes(person)) continue
-      row.push(person)
-      for (const spouse of spouses.get(person) ?? []) if (generationOf.get(spouse) === g && !row.includes(spouse)) row.push(spouse)
+      if (paired.has(person)) continue
+      paired.add(person)
+      for (const spouse of spouses.get(person) ?? []) if (generationOf.get(spouse) === g) paired.add(spouse)
     }
+    const row = [...paired]
     order.set(g, row)
     row.forEach((p, i) => slot.set(p, i - (row.length - 1) / 2))
   }

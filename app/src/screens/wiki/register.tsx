@@ -6,6 +6,6 @@ import { MapBlock } from "./WikiMap"
 registerCodeBlock(["runas-calendario"], CalendarBlock)
 registerCodeBlock(["runas-mapa"], MapBlock)
 
-import { RollTableBlock, DictionaryBlock } from "./WikiTools"
+import { RollTableBlock, DictionaryBlock } from "./WikiTextBlocks"
 registerCodeBlock(["runas-tabela"], RollTableBlock)
 registerCodeBlock(["runas-idioma"], DictionaryBlock)

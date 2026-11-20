@@ -6,7 +6,7 @@ import { creationTime, timelapseFrame, timelapseOrder } from "../../core/graph-t
 import type { VaultIndex } from "../../core/vault-index"
 import { navigate } from "../../lib/router"
 import { vaultRoute } from "../../lib/vault-notes"
-import { DEFAULT_FORCES, GraphView, type GraphForces } from "./GraphView"
+import { DEFAULT_FORCES, GraphView, type GraphForces } from "./GraphViewLazy"
 
 const KEY = "runas-codex:grafico"
 const PALETTE = ["#ffa48e", "#9dcbb4", "#ecc484", "#bfadf1", "#7fc8f8", "#f4a3c8"]
