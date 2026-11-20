@@ -143,8 +143,14 @@ jobs:
           }
           JS
           tar -C "$RUNNER_TEMP/cofre-10000" -cf "$RUNNER_TEMP/cofre-10000.tar" .
-          adb push "$RUNNER_TEMP/cofre-10000.tar" /sdcard/Documents/cofre-10000.tar
-          adb shell 'mkdir -p /sdcard/Documents/cofre-10000 && cd /sdcard/Documents/cofre-10000 && tar -xf ../cofre-10000.tar && rm ../cofre-10000.tar'
+          adb push "$RUNNER_TEMP/cofre-10000.tar" /data/local/tmp/runas-cofre-10000.tar
+          # O armazenamento compartilhado pode demorar a aceitar gravações mesmo após boot_completed.
+          for tentativa in $(seq 1 60); do
+            if adb shell 'mkdir -p /sdcard/Documents/cofre-10000 && touch /sdcard/Documents/cofre-10000/.probe && rm /sdcard/Documents/cofre-10000/.probe'; then break; fi
+            if [ "$tentativa" = 60 ]; then exit 1; fi
+            sleep 2
+          done
+          adb shell 'tar -C /sdcard/Documents/cofre-10000 -xf /data/local/tmp/runas-cofre-10000.tar && rm /data/local/tmp/runas-cofre-10000.tar'
           test "$(adb shell 'ls /sdcard/Documents/cofre-10000/Notas/Grande | wc -l' | tr -d '\r ')" = 10000
       - name: Medir abertura, busca e gráfico em três instalações por versão
         run: |
