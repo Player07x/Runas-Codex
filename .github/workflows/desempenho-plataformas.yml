@@ -1,0 +1,183 @@
+name: Desempenho no Windows e no Android
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/desempenho-plataformas.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desempenho-plataformas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows · 1.6.0 e versão em teste
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: atual
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/v1.6.0
+          path: anterior
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            anterior/package-lock.json
+            atual/package-lock.json
+      - name: Instalar e compilar as duas versões com Profiler
+        run: |
+          for fonte in anterior atual; do
+            (
+              cd "$fonte"
+              npm ci
+              RUNAS_PROFILE=1 npm run desktop:build
+            )
+          done
+      - name: Medir três perfis novos por versão no mesmo runner
+        run: |
+          for fonte in anterior atual; do
+            (
+              cd "$fonte"
+              node desktop/benchmarks/run.mjs "$RUNNER_TEMP/runas-desempenho/$fonte" --record
+            )
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desempenho-windows
+          path: ${{ runner.temp }}/runas-desempenho
+          if-no-files-found: warn
+          retention-days: 14
+
+  android:
+    name: Android 35 · 1.6.0 e versão em teste
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: atual
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/v1.6.0
+          path: anterior
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            anterior/package-lock.json
+            atual/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+          cache-dependency-path: |
+            anterior/mobile/android/**/*.gradle
+            atual/mobile/android/**/*.gradle
+      - name: Gerar APKs de teste com a depuração do WebView
+        run: |
+          for fonte in anterior atual; do
+            (
+              cd "$fonte"
+              npm ci
+              npm run sync -w @runas-codex/mobile
+              node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs'
+          const path = 'mobile/android/app/src/main/assets/capacitor.config.json'
+          const config = JSON.parse(readFileSync(path, 'utf8'))
+          config.android = { ...config.android, webContentsDebuggingEnabled: true }
+          writeFileSync(path, JSON.stringify(config))
+          JS
+              cd mobile/android
+              ./gradlew assembleDebug -PrunasTunnelAbis=x86_64 --no-daemon
+            )
+          done
+      - name: Iniciar um emulador Android 35 para as duas versões
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/runas-avd"
+          mkdir -p "$ANDROID_AVD_HOME" "$RUNNER_TEMP/runas-desempenho"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          sudo chmod 666 /dev/kvm
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' emulator platform-tools
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force -n runas-desempenho -k 'system-images;android-35;google_apis;x86_64' --device pixel_2
+          "$ANDROID_HOME/emulator/emulator" -avd runas-desempenho -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -accel on > "$RUNNER_TEMP/runas-desempenho/emulator.log" 2>&1 &
+          timeout 120 adb wait-for-device
+          for i in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          adb shell input keyevent 82
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell am force-stop com.google.android.apps.nexuslauncher
+          adb shell dumpsys webviewupdate > "$RUNNER_TEMP/runas-desempenho/webview.txt"
+      - name: Preparar o mesmo cofre de 10 mil notas para todos os perfis
+        working-directory: atual
+        run: |
+          node --input-type=module - "$RUNNER_TEMP/cofre-10000" <<'JS'
+          import { generateLargeVault } from './app/src/core/large-vault.ts'
+          import { mkdirSync, writeFileSync } from 'node:fs'
+          import { dirname, join } from 'node:path'
+          for (const [path, text] of Object.entries(generateLargeVault(10000).texts)) {
+            const file = join(process.argv[2], path)
+            mkdirSync(dirname(file), { recursive: true })
+            writeFileSync(file, text)
+          }
+          JS
+          tar -C "$RUNNER_TEMP/cofre-10000" -cf "$RUNNER_TEMP/cofre-10000.tar" .
+          adb push "$RUNNER_TEMP/cofre-10000.tar" /sdcard/Documents/cofre-10000.tar
+          adb shell 'mkdir -p /sdcard/Documents/cofre-10000 && cd /sdcard/Documents/cofre-10000 && tar -xf ../cofre-10000.tar && rm ../cofre-10000.tar'
+          test "$(adb shell 'ls /sdcard/Documents/cofre-10000/Notas/Grande | wc -l' | tr -d '\r ')" = 10000
+      - name: Medir abertura, busca e gráfico em três instalações por versão
+        run: |
+          medir() {
+            local fonte="$1" rodada="$2" saida inicio
+            saida="$RUNNER_TEMP/runas-desempenho/$fonte/$rodada"
+            mkdir -p "$saida"
+            adb uninstall dev.runas.codex || true
+            adb install "$fonte/mobile/android/app/build/outputs/apk/debug/app-debug.apk"
+            adb shell appops set --uid dev.runas.codex MANAGE_EXTERNAL_STORAGE allow
+            adb shell pm grant dev.runas.codex android.permission.POST_NOTIFICATIONS
+            inicio=$(date +%s%3N)
+            adb shell am start -n dev.runas.codex/.MainActivity --es runasVault /sdcard/Documents/cofre-10000
+            bash atual/mobile/tests/android-devtools.sh
+            node atual/mobile/tests/vault-large.cdp.mjs http://127.0.0.1:9224 "$saida" 10000 "$inicio"
+            adb shell dumpsys meminfo dev.runas.codex > "$saida/meminfo.txt"
+          }
+          medir anterior 1
+          medir atual 1
+          medir atual 2
+          medir anterior 2
+          medir anterior 3
+          medir atual 3
+      - name: Guardar log do emulador
+        if: always()
+        run: adb logcat -d > "$RUNNER_TEMP/runas-desempenho/logcat.txt" 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desempenho-android
+          path: ${{ runner.temp }}/runas-desempenho
+          if-no-files-found: warn
+          retention-days: 14

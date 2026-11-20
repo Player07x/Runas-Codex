@@ -12,5 +12,5 @@ export const DEFAULT_FORCES: GraphForces = { repulsion: 140, distance: 70, nodeS
 
 export const GraphView = deferredView(
   () => import("./GraphView").then(({ GraphView }) => GraphView),
-  (props) => <div className={`graph-view ${props.className ?? ""}`}><p className="graph-error small" role="status">Carregando gráfico…</p></div>,
+  (props) => <div className={`graph-view ${props.className ?? ""}`}><p className="small muted" role="status">Carregando gráfico…</p></div>,
 )
