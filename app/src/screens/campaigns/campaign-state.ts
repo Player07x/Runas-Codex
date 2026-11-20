@@ -4,7 +4,7 @@ import {
   campaignInfo, campaignStats, clocksOf, listPlayers, listQuests, listSessions, secretsOf, trackedLinks,
   type CampaignInfo, type CampaignStats, type Clock, type PlayerCharacter, type QuestInfo, type SecretItem, type SessionInfo, type TrackedLink,
 } from "../../core/campaigns"
-import { listCalendars, type CalendarRef } from "../../core/wiki"
+import { calendarListLookup, type CalendarRef } from "../../core/wiki"
 import { campaignCalendar } from "../../core/campaign-calendar"
 import { nextSession, overdueSessions, type NextSession } from "../../core/next-session"
 import type { IndexedNote } from "../../core/vault-index"
@@ -67,8 +67,9 @@ export function useCampaignData(name: string): CampaignData {
     const next = nextSession(index, today, name)
     // O calendário da campanha: o da sigla da data dela, senão o padrão da wiki (nota inicial ou o mais usado).
     const root = campaign.wiki ? `Wikis/${campaign.wiki}/` : "Wikis/"
-    const calendarRef = campaignCalendar(index, root, home?.meta.frontmatter?.data)
-    const calendars = listCalendars(index, root).filter((c): c is CalendarRef => "calendar" in c)
+    const list = calendarListLookup(index)
+    const calendarRef = campaignCalendar(index, root, home?.meta.frontmatter?.data, list)
+    const calendars = list(root).filter((c): c is CalendarRef => "calendar" in c)
     const time = campaignTime(home?.meta.frontmatter?.data, calendarRef?.calendar ?? null)
     const calendar = calendarRef ? calendarForCampaign(calendarRef.calendar, time) : null
     return {

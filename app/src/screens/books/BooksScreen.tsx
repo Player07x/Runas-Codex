@@ -1,3 +1,4 @@
+import { deferredView } from "../../components/kit/deferred-view"
 import { useState } from "react"
 import { bookProperties, bookRoute, findBooks, newBookText, readBook } from "../../core/books"
 import { nameProblem } from "../../core/names"
@@ -5,12 +6,16 @@ import { parseNote } from "../../core/parse"
 import type { IndexedNote, VaultIndex } from "../../core/vault-index"
 import { href, navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
-import { BookEditor } from "./BookEditor"
 import { BookImport } from "./BookImport"
 import "../notes.css"
 import "./books.css"
 import "./book-workspace.css"
 import { useCreateRequest } from "../../lib/create-request"
+
+const BookEditor = deferredView(
+  () => import("./BookEditor").then(({ BookEditor }) => BookEditor),
+  () => <p className="page muted" role="status">Carregando o livro…</p>,
+)
 
 export function BooksScreen({ bookId }: { bookId?: string }) {
   const vault = useVault()

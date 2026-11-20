@@ -71,18 +71,29 @@ export interface VaultState {
 
 const VaultContext = createContext<VaultState | null>(null)
 
-const isText = (path: string) => /\.(md|canvas)$/i.test(path)
-
 async function loadIndex(): Promise<VaultIndex> {
   const entries = await platform.listVault()
   const notes = entries.filter((entry) => extname(entry.path) === ".md")
-  const texts: Record<string, string> = {}
+  const index = new VaultIndex(entries)
   for (let i = 0; i < notes.length; i += BATCH) {
-    Object.assign(texts, await platform.readTexts(notes.slice(i, i + BATCH).map((entry) => entry.path)))
-    // Devolve a vez para a interface entre os lotes (cofres grandes não travam a tela).
-    await new Promise((resolve) => setTimeout(resolve))
+    const batch = notes.slice(i, i + BATCH)
+    const texts = await platform.readTexts(batch.map((entry) => entry.path))
+    for (const entry of batch) {
+      const text = texts[entry.path]
+      if (text !== undefined) index.set(entry, text)
+    }
+    // Analisa um lote por vez e devolve a vez para a interface entre leituras.
+    if (i + BATCH < notes.length) await new Promise((resolve) => setTimeout(resolve))
   }
-  return new VaultIndex(entries, texts)
+  return index
+}
+
+function removeIndexedPath(index: VaultIndex, path: string): void {
+  if (index.hasFile(path)) {
+    index.remove(path)
+    return
+  }
+  for (const file of index.allFiles()) if (file.path.startsWith(path + "/")) index.remove(file.path)
 }
 
 export function VaultProvider({ children }: { children: ReactNode }) {
@@ -93,33 +104,43 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
   const indexRef = useRef<VaultIndex | null>(null)
+  const openRequest = useRef(0)
   const importing = useRef<Promise<number> | null>(null)
   const bump = useCallback(() => setVersion((v) => v + 1), [])
 
   const open = useCallback(async (next: VaultInfo | null) => {
+    const request = ++openRequest.current
+    indexRef.current = null
+    setIndex(null)
     setInfo(next)
     setError(undefined)
     if (!next) {
-      indexRef.current = null
-      setIndex(null)
       setLoading(false)
       return
     }
     setLoading(true)
     try {
-      setConfig(obsidianConfig(await platform.readTexts([...CONFIG_FILES]).catch(() => ({}))))
+      const config = platform.readTexts([...CONFIG_FILES]).catch(() => ({})).then((texts) => {
+        if (request === openRequest.current) setConfig(obsidianConfig(texts))
+      })
       const indexStarted = performance.now()
       const loaded = await loadIndex()
+      if (request !== openRequest.current) return
       recordIndexDuration(indexStarted)
+      await config
+      if (request !== openRequest.current) return
       indexRef.current = loaded
       setIndex(loaded)
     } catch (err) {
+      if (request !== openRequest.current) return
       indexRef.current = null
       setIndex(null)
       setError(err instanceof Error ? err.message : String(err))
     } finally {
-      setLoading(false)
-      bump()
+      if (request === openRequest.current) {
+        setLoading(false)
+        bump()
+      }
     }
   }, [bump])
 
@@ -135,16 +156,18 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       if (!current) return
       // Uma versão que o índice já tem (gravada por esta janela e avisada às outras) não precisa ser lida de novo.
       const known = (entry: VaultEntry) => {
-        const file = current.allFiles().find((f) => f.path === entry.path)
+        const file = current.entry(entry.path)
         return file !== undefined && file.mtime === entry.mtime && file.size === entry.size
       }
       changes = changes.filter((c) => c.type === "conflict" || c.type === "deleted" || !known(c.entry))
       if (!changes.length) return
       const changed = changes.filter((c): c is Extract<VaultChange, { type: "changed" }> => c.type === "changed")
-      const texts = await platform.readTexts(changed.filter((c) => isText(c.entry.path) && extname(c.entry.path) === ".md").map((c) => c.entry.path))
+      const paths = changed.filter((c) => extname(c.entry.path) === ".md").map((c) => c.entry.path)
+      const texts = paths.length ? await platform.readTexts(paths) : {}
+      if (indexRef.current !== current) return
       for (const change of changes) {
         if (change.type === "deleted") {
-          for (const file of current.allFiles()) if (file.path === change.path || file.path.startsWith(change.path + "/")) current.remove(file.path)
+          removeIndexedPath(current, change.path)
         } else if (change.type === "changed") current.set(change.entry, texts[change.entry.path])
       }
       bump()
@@ -157,12 +180,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     return indexRef.current
   }, [info])
 
-  const entryOf = (index: VaultIndex, path: string): VaultEntry | undefined => index.allFiles().find((file) => file.path === path)
-
   const save = useCallback(
     async (path: string, content: string) => {
       const current = requireIndex()
-      const expected = entryOf(current, path)
+      const expected = current.entry(path)
       if (!expected) throw new Error(`“${path}” não está no cofre.`)
       const previous = current.note(path)?.text
       if (previous !== undefined && previous !== content) await recordVersion(info!.path, path, previous)
@@ -211,14 +232,14 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       const plan = isFolder ? planFolderRename(current, from, to, canvasTexts) : planRename(current, from, to, canvasTexts)
       // Primeiro os links (cada arquivo com a versão que o app leu), depois o arquivo em si.
       for (const edit of plan.edits) {
-        const expected = entryOf(current, edit.path)
+        const expected = current.entry(edit.path)
         const entry = await platform.writeText(edit.path, edit.after, expected)
         current.set(entry, extname(edit.path) === ".md" ? edit.after : undefined)
       }
       await platform.rename(from, to)
       const moved = await platform.listVault(isFolder ? to + "/" : to)
       const movedTexts = await platform.readTexts(moved.filter((e) => extname(e.path) === ".md").map((e) => e.path))
-      for (const file of current.allFiles()) if (file.path === from || file.path.startsWith(from + "/")) current.remove(file.path)
+      removeIndexedPath(current, from)
       for (const entry of moved) if (entry.path === to || entry.path.startsWith(to + "/")) current.set(entry, movedTexts[entry.path])
       bump()
       // Os favoritos e as abas deste aparelho acompanham a nota ou pasta.
@@ -258,7 +279,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         if (failed.length) throw new Error(`${String(error)} Não foi possível restaurar a estrutura de: ${failed.join(", ")}. Confira esses livros.`)
         throw error
       }
-      for (const file of current.allFiles()) if (file.path === path || file.path.startsWith(path + "/")) current.remove(file.path)
+      removeIndexedPath(current, path)
       bump()
     },
     [requireIndex, bump, info, save],

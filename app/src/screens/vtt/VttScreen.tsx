@@ -1,3 +1,4 @@
+import { deferredView } from "../../components/kit/deferred-view"
 import { ResizablePanel } from "../../components/ResizablePanel"
 import { useEffect, useState } from "react"
 import { Camera, Clock, DoorOpen, Dices, Download, ImagePlus, Link2, LogIn, Map, PenLine, Plus, Trash2, Upload, Wifi, Hash, Package, MonitorPlay } from "lucide-react"
@@ -9,12 +10,16 @@ import { worldItem, requestExport } from "../../lib/transfer-request"
 import { relativeDays } from "../../lib/navigation"
 import { Empty, Modal } from "../../components/ui"
 import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
-import { MesaTable } from "../../vtt/MesaTable"
 import { parseRoomLink, type RoomLink } from "../../vtt/shared/room-link"
 import { isBrowserPreview, vtt } from "../../vtt/api"
 import type { WorldSummary } from "../../vtt/shared/world"
 import { useVault } from "../../platform/VaultProvider"
 import "./vtt.css"
+
+const MesaTable = deferredView(
+  () => import("../../vtt/MesaTable").then(({ MesaTable }) => MesaTable),
+  () => <p className="page muted" role="status">Carregando a mesa…</p>,
+)
 
 export function VttScreen({ route }: { route: string[] }) {
   const [section, id] = route

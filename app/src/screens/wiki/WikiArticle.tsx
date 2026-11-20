@@ -22,7 +22,7 @@ import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleExtras } from "./WikiArticleExtras"
 import { FormField, FormGrid } from "../../components/kit/FormField"
 import { NoteCombobox } from "../../components/kit/NoteCombobox"
-import { WIKI_INSERTS } from "./WikiTools"
+import { WIKI_INSERTS } from "./wiki-inserts"
 
 /** Recursos da Wiki: aba Wiki na galeria Formatar e seção no menu `/` (rework F3). */
 const WIKI_FORMATTERS = WIKI_INSERTS.map(([label, syntax]) => ({ label, syntax, group: "Wiki" }))

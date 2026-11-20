@@ -25,7 +25,10 @@ const inside = (realRoot: string, real: string) => real === realRoot || real.sta
  */
 export async function resolveInside(root: string, path: string): Promise<string> {
   const parts = splitVaultPath(path)
-  const realRoot = await realpath(root)
+  return resolveInsideRoot(await realpath(root), path, parts)
+}
+
+async function resolveInsideRoot(realRoot: string, path: string, parts = splitVaultPath(path)): Promise<string> {
   let real: string
   try {
     real = await realpath(resolve(realRoot, ...parts))
@@ -98,15 +101,25 @@ export async function listVault(root: string, prefix = "", includeHidden = false
 /** Lê vários arquivos de texto num pedido só. Arquivos que sumiram ficam fora do resultado. */
 export async function readTexts(root: string, paths: string[]): Promise<Record<string, string>> {
   const result: Record<string, string> = {}
-  for (const path of paths) {
-    let real: string
-    try {
-      real = await resolveInside(root, path)
-    } catch (error) {
-      if (error instanceof VaultError && error.message.startsWith("Arquivo não encontrado")) continue
-      throw error
+  if (!paths.length) return result
+  const rootPath = await realpath(root)
+  const concurrency = 8
+  for (let i = 0; i < paths.length; i += concurrency) {
+    const batch = paths.slice(i, i + concurrency)
+    const texts = await Promise.all(batch.map(async (path) => {
+      let real: string
+      try {
+        real = await resolveInsideRoot(rootPath, path)
+      } catch (error) {
+        if (error instanceof VaultError && error.message.startsWith("Arquivo não encontrado")) return undefined
+        throw error
+      }
+      return readFile(real, "utf8")
+    }))
+    for (const [at, path] of batch.entries()) {
+      const text = texts[at]
+      if (text !== undefined) result[path] = text
     }
-    result[path] = await readFile(real, "utf8")
   }
   return result
 }

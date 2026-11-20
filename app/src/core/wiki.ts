@@ -294,21 +294,24 @@ export interface CalendarRef {
   path: string
 }
 
-const calendarCache = new Map<string, { text: string; result: CalendarRef | { error: string } }>()
+const calendarCache = new WeakMap<IndexedNote, CalendarRef | { error: string } | null>()
 
 /** O calendário definido no primeiro bloco ```runas-calendario``` de uma nota. */
 export function calendarInNote(note: IndexedNote): CalendarRef | { error: string } | null {
-  const cached = calendarCache.get(note.path)
-  if (cached && cached.text === note.text) return cached.result
-  const block = findCodeBlocks(note.text, "runas-calendario")[0]
-  if (!block) return null
+  const cached = calendarCache.get(note)
+  if (cached !== undefined) return cached
+  const block = /runas-calendario/i.test(note.text) ? findCodeBlocks(note.text, "runas-calendario")[0] : undefined
+  if (!block) {
+    calendarCache.set(note, null)
+    return null
+  }
   let result: CalendarRef | { error: string }
   try {
     result = { calendar: parseCalendar(block.content), path: note.path }
   } catch (error) {
     result = { error: error instanceof CalendarError ? error.message : String(error) }
   }
-  calendarCache.set(note.path, { text: note.text, result })
+  calendarCache.set(note, result)
   return result
 }
 
@@ -324,11 +327,26 @@ export function listCalendars(index: VaultIndex, root = ""): (CalendarRef | { pa
     })
 }
 
+/** Reutiliza as listagens durante uma consulta a uma versão do índice. */
+export function calendarListLookup(index: VaultIndex) {
+  const byRoot = new Map<string, ReturnType<typeof listCalendars>>()
+  return (root = "") => {
+    let calendars = byRoot.get(root)
+    if (!calendars) {
+      calendars = listCalendars(index, root)
+      byRoot.set(root, calendars)
+    }
+    return calendars
+  }
+}
+
+type CalendarListLookup = ReturnType<typeof calendarListLookup>
+
 /** O calendário com esta sigla: primeiro na wiki da nota, depois no cofre todo. */
-export function calendarByAbbr(index: VaultIndex, abbr: string, from = ""): CalendarRef | { error: string } {
+export function calendarByAbbr(index: VaultIndex, abbr: string, from = "", list = calendarListLookup(index)): CalendarRef | { error: string } {
   const root = wikiRootOf(from)
-  const found = (list: ReturnType<typeof listCalendars>) => list.find((c): c is CalendarRef => "calendar" in c && sameAbbr(c.calendar.abbr, abbr))
-  return (root ? found(listCalendars(index, root)) : undefined) ?? found(listCalendars(index)) ?? { error: `Nenhum calendário tem a sigla “${abbr}” (ponha sigla: ${abbr} no bloco runas-calendario).` }
+  const found = (calendars: ReturnType<typeof listCalendars>) => calendars.find((c): c is CalendarRef => "calendar" in c && sameAbbr(c.calendar.abbr, abbr))
+  return (root ? found(list(root)) : undefined) ?? found(list()) ?? { error: `Nenhum calendário tem a sigla “${abbr}” (ponha sigla: ${abbr} no bloco runas-calendario).` }
 }
 
 /**
@@ -336,13 +354,13 @@ export function calendarByAbbr(index: VaultIndex, abbr: string, from = ""): Cale
  * primeira data da nota que tiver uma. Datas antigas, sem sigla, usam a propriedade `calendario` (link para a nota com
  * o bloco) ou, sem ela, o da wiki — se a wiki tem um calendário só.
  */
-export function calendarFor(index: VaultIndex, path: string, date?: WorldDate): CalendarRef | { error: string } | null {
+export function calendarFor(index: VaultIndex, path: string, date?: WorldDate, list = calendarListLookup(index)): CalendarRef | { error: string } | null {
   const note = index.note(path)
   if (!note) return null
   const own = calendarInNote(note)
   if (own) return own
   const abbr = date ? date.calendar : noteDates(note.meta.frontmatter?.data).find((d) => d.date.calendar)?.date.calendar
-  if (abbr) return calendarByAbbr(index, abbr, path)
+  if (abbr) return calendarByAbbr(index, abbr, path, list)
   const link = note.meta.frontmatter?.data?.calendario
   if (typeof link === "string" && link.trim()) {
     const target = linkTargetOf(link)?.target ?? link.trim()
@@ -352,7 +370,7 @@ export function calendarFor(index: VaultIndex, path: string, date?: WorldDate): 
     return calendarInNote(calendarNote) ?? { error: `A nota “${noteName(calendarNote.path)}” não tem um bloco runas-calendario.` }
   }
   const root = wikiRootOf(path)
-  const candidates = root ? listCalendars(index, root).filter((c): c is CalendarRef => "calendar" in c) : []
+  const candidates = root ? list(root).filter((c): c is CalendarRef => "calendar" in c) : []
   return candidates.length === 1 ? candidates[0]! : null
 }
 
@@ -382,30 +400,31 @@ export function noteDates(data: Record<string, unknown> | null | undefined): Not
  * O calendário principal de uma wiki: o da nota inicial (propriedade `calendario`), senão o que mais datas da wiki
  * usam, senão o primeiro. Assim um calendário novo, ainda sem datas, não toma o lugar do que já está em uso.
  */
-export function mainCalendar(index: VaultIndex, root: string, home?: string): CalendarRef | null {
-  const list = listCalendars(index, root).filter((c): c is CalendarRef => "calendar" in c)
-  const fromHome = home ? calendarFor(index, home) : null
+export function mainCalendar(index: VaultIndex, root: string, home?: string, list = calendarListLookup(index)): CalendarRef | null {
+  const fromHome = home ? calendarFor(index, home, undefined, list) : null
   if (fromHome && "calendar" in fromHome) return fromHome
+  const candidates = list(root).filter((c): c is CalendarRef => "calendar" in c)
+  if (candidates.length < 2) return candidates[0] ?? null
   const uses = new Map<string, number>()
   for (const note of index.notesIn(root)) {
     for (const d of noteDates(note.meta.frontmatter?.data)) {
-      const found = calendarFor(index, note.path, d.date)
+      const found = calendarFor(index, note.path, d.date, list)
       if (found && "calendar" in found) uses.set(found.path, (uses.get(found.path) ?? 0) + 1)
     }
   }
-  return [...list].sort((a, b) => (uses.get(b.path) ?? 0) - (uses.get(a.path) ?? 0))[0] ?? null
+  return candidates.sort((a, b) => (uses.get(b.path) ?? 0) - (uses.get(a.path) ?? 0))[0] ?? null
 }
 
 /**
  * Datas `_mundo` da nota ainda sem sigla, já com a do calendário que valia para elas (para regravar no formato novo).
  * Datas cujo calendário não se descobre ficam de fora.
  */
-export function datesMissingAbbr(index: VaultIndex, path: string): { key: string; text: string }[] {
+export function datesMissingAbbr(index: VaultIndex, path: string, list = calendarListLookup(index)): { key: string; text: string }[] {
   const note = index.note(path)
   if (!note) return []
   return noteDates(note.meta.frontmatter?.data).flatMap((d) => {
     if (d.date.calendar) return []
-    const found = calendarFor(index, path, d.date)
+    const found = calendarFor(index, path, d.date, list)
     return found && "calendar" in found ? [{ key: d.key, text: noteDateText(d.date, found.calendar) }] : []
   })
 }
@@ -551,28 +570,62 @@ export function inverseKeyOf(key: string): string {
   return RELATION_BY_KEY.get(key)?.symmetric ? key : INVERSE_KEY[key] ?? key
 }
 
+type IncomingRelation = { from: string; relation: ReturnType<typeof declaredRelations>[number] }
+
+function relationsWithIncoming(own: ReturnType<typeof declaredRelations>, incoming: Iterable<IncomingRelation>): Relation[] {
+  const relations: Relation[] = own.map((relation) => ({ ...relation, inverse: false }))
+  const seen = new Set(relations.map((r) => `${r.type.key}|${r.other}`))
+  for (const { from, relation } of incoming) {
+    const type = relation.type.symmetric ? relation.type : (RELATION_BY_KEY.get(INVERSE_KEY[relation.type.key] ?? "") ?? { ...relation.type, label: relation.type.inverse })
+    const key = `${type.key}|${from}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    relations.push({ type, other: from, target: noteName(from), ...(relation.note ? { note: relation.note } : {}), inverse: true })
+  }
+  return relations
+}
+
 /** As relações de uma nota: as que ela declara e as que outras notas declaram com ela (no sentido inverso). */
 export function relationsOf(index: VaultIndex, path: string, scope = ""): Relation[] {
   const note = index.note(path)
   if (!note) return []
-  const own: Relation[] = declaredRelations(index, note).map((r) => ({ ...r, inverse: false }))
-  const seen = new Set(own.map((r) => `${r.type.key}|${r.other}`))
-  const incoming: Relation[] = []
-  for (const other of index.notesIn(scope)) {
-    if (other.path === path || !other.text.includes("[[")) continue
-    for (const r of declaredRelations(index, other)) {
-      if (r.other !== path) continue
-      // Do lado de cá, `pais` escrito no filho vira "Filhos"; as simétricas continuam do mesmo tipo.
-      const type = r.type.symmetric ? r.type : (RELATION_BY_KEY.get(INVERSE_KEY[r.type.key] ?? "") ?? { ...r.type, label: r.type.inverse })
-      const key = `${type.key}|${other.path}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      incoming.push({ type, other: other.path, target: noteName(other.path), ...(r.note ? { note: r.note } : {}), inverse: true })
+  function* incoming() {
+    for (const other of index.notesIn(scope)) {
+      if (other.path === path || !other.text.includes("[[")) continue
+      for (const relation of declaredRelations(index, other)) if (relation.other === path) yield { from: other.path, relation }
     }
   }
-  return [...own, ...incoming]
+  return relationsWithIncoming(declaredRelations(index, note), incoming())
 }
 
+/** Indexa as ligações uma vez para quem consulta várias pessoas na mesma versão do cofre. */
+export function relationLookup(index: VaultIndex, scope = "") {
+  const declared = new Map<string, ReturnType<typeof declaredRelations>>()
+  const incoming = new Map<string, IncomingRelation[]>()
+  for (const note of index.notesIn(scope)) {
+    if (!note.text.includes("[[")) continue
+    const own = declaredRelations(index, note)
+    declared.set(note.path, own)
+    for (const relation of own) {
+      if (!relation.other || relation.other === note.path) continue
+      const entry = { from: note.path, relation }
+      const entries = incoming.get(relation.other)
+      if (entries) entries.push(entry)
+      else incoming.set(relation.other, [entry])
+    }
+  }
+  const result = new Map<string, Relation[]>()
+  return (path: string): Relation[] => {
+    const note = index.note(path)
+    if (!note) return []
+    let found = result.get(path)
+    if (!found) {
+      found = relationsWithIncoming(declared.get(path) ?? declaredRelations(index, note), incoming.get(path) ?? [])
+      result.set(path, found)
+    }
+    return found
+  }
+}
 
 // ---------- Árvore genealógica, organograma e diplomacia ----------
 
@@ -584,17 +637,19 @@ export interface FamilyTree {
   edges: { from: string; to: string; kind: "filiacao" | "casamento" | "parentesco"; label?: string }[]
 }
 
-export function familyTree(index: VaultIndex, center: string, depth = 2, scope = ""): FamilyTree {
-  const parentsOf = (path: string) => relationsOf(index, path, scope).filter((r) => r.other && r.type.key === "pais").map((r) => r.other!)
-  const childrenOf = (path: string) => relationsOf(index, path, scope).filter((r) => r.other && r.type.key === "filhos").map((r) => r.other!)
-  const spousesOf = (path: string) => relationsOf(index, path, scope).filter((r) => r.other && r.type.key === "conjuges").map((r) => r.other!)
+export function familyTree(index: VaultIndex, center: string, depth = 2, scope = "", relations = relationLookup(index, scope)): FamilyTree {
+  const parentsOf = (path: string) => relations(path).filter((r) => r.other && r.type.key === "pais").map((r) => r.other!)
+  const childrenOf = (path: string) => relations(path).filter((r) => r.other && r.type.key === "filhos").map((r) => r.other!)
+  const spousesOf = (path: string) => relations(path).filter((r) => r.other && r.type.key === "conjuges").map((r) => r.other!)
   const generations = new Map<number, string[]>([[0, [center]]])
   const placed = new Set([center])
   const edges: FamilyTree["edges"] = []
   const place = (generation: number, path: string) => {
     if (placed.has(path)) return false
     placed.add(path)
-    generations.set(generation, [...(generations.get(generation) ?? []), path])
+    const row = generations.get(generation)
+    if (row) row.push(path)
+    else generations.set(generation, [path])
     return true
   }
   for (const spouse of spousesOf(center)) {
@@ -603,7 +658,7 @@ export function familyTree(index: VaultIndex, center: string, depth = 2, scope =
   }
   // Irmãos: quem tem os mesmos pais.
   for (const parent of parentsOf(center)) for (const sibling of childrenOf(parent)) if (sibling !== center) place(0, sibling)
-  for (const r of relationsOf(index, center, scope)) if (r.other && r.type.key === "irmaos") place(0, r.other)
+  for (const r of relations(center)) if (r.other && r.type.key === "irmaos") place(0, r.other)
   let up = [center]
   for (let g = -1; g >= -depth; g--) {
     const next: string[] = []
@@ -629,7 +684,7 @@ export function familyTree(index: VaultIndex, center: string, depth = 2, scope =
   }
   // Quem só entra pela relação ganha um traço até a pessoa no centro, com o parentesco escrito nele; quem a filiação
   // já pôs no lugar continua só com as linhas de sempre.
-  for (const r of relationsOf(index, center, scope)) {
+  for (const r of relations(center)) {
     const generation = RELATIVE_GENERATION[r.type.key]
     if (r.other && generation !== undefined && Math.abs(generation) <= depth && place(generation, r.other))
       edges.push({ from: center, to: r.other, kind: "parentesco", label: r.type.one ?? r.type.label.toLocaleLowerCase("pt-BR") })
@@ -724,14 +779,15 @@ export interface TimelineEvent {
 }
 
 /** Acontecimentos da wiki no calendário `calendar` (notas com `data_mundo`; opcionalmente nascimentos e mortes). */
-export function timelineEvents(index: VaultIndex, root: string, ref: CalendarRef, options: { people?: boolean } = {}): TimelineEvent[] {
+export function timelineEvents(index: VaultIndex, root: string, ref: CalendarRef, options: { people?: boolean; list?: CalendarListLookup } = {}): TimelineEvent[] {
+  const list = options.list ?? calendarListLookup(index)
   const events: TimelineEvent[] = []
   for (const note of index.notesIn(root)) {
     const data = note.meta.frontmatter?.data
     if (!data) continue
     const dates = noteDates(data)
     if (!dates.length) continue
-    const inRef = (date: WorldDate) => { const found = calendarFor(index, note.path, date); return Boolean(found && "calendar" in found && found.path === ref.path) }
+    const inRef = (date: WorldDate) => { const found = calendarFor(index, note.path, date, list); return Boolean(found && "calendar" in found && found.path === ref.path) }
     const kind = articleKind(data.tipo)
     const trackValue = typeof data.trilha === "string" ? data.trilha : Array.isArray(data.trilha) ? String(data.trilha[0] ?? "") : ""
     const track = (linkTargetOf(trackValue)?.target ?? trackValue.trim()) || kind?.label || "Outros"

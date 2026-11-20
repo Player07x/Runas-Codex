@@ -5,7 +5,7 @@ import {
   Activity, BookOpen, CalendarDays, Castle, Cog, FileText, Flag, Flame, Folder, Gem, Hourglass, Landmark, Languages, Layers, Map, MapPin, PawPrint, ScrollText, Shield, Ship, Sparkles, Sun, Swords, User, Users,
   type LucideIcon,
 } from "lucide-react"
-import { articleKind, listCalendars, listWikis, mainCalendar, setCustomKinds, type CalendarRef, type WikiInfo } from "../../core/wiki"
+import { articleKind, calendarListLookup, listWikis, mainCalendar, setCustomKinds, type CalendarRef, type WikiInfo } from "../../core/wiki"
 import { customKindsIn } from "../../core/wiki-category"
 import { publicWikiIndex } from "../../core/wiki-public"
 import { VaultView, useVault } from "../../platform/VaultProvider"
@@ -87,12 +87,14 @@ export function WikiProvider({ children, articlePath }: { children: ReactNode; a
   useEffect(() => {
     if (fromArticle && fromArticle.name !== chosen) setChosen(fromArticle.name)
   }, [fromArticle, chosen])
-  const calendars = useMemo(() => (index && wiki ? listCalendars(index, wiki.root).filter((c): c is CalendarRef => "calendar" in c && (!players || index.note(c.path)?.meta.frontmatter?.data?.segredo !== true)) : []), [index, wiki, players, vault.version])
-  const calendar = useMemo(() => {
-    if (!index || !wiki) return null
-    const found = mainCalendar(index, wiki.root, wiki.home)
-    return found && calendars.some((c) => c.path === found.path) ? found : (calendars[0] ?? null)
-  }, [index, wiki, calendars, players])
+  const { calendars, calendar } = useMemo(() => {
+    if (!index || !wiki) return { calendars: [], calendar: null }
+    const list = calendarListLookup(index)
+    const calendars = list(wiki.root).filter((c): c is CalendarRef => "calendar" in c && (!players || index.note(c.path)?.meta.frontmatter?.data?.segredo !== true))
+    const found = mainCalendar(index, wiki.root, wiki.home, list)
+    const calendar = found && calendars.some((c) => c.path === found.path) ? found : (calendars[0] ?? null)
+    return { calendars, calendar }
+  }, [index, wiki, players, vault.version])
   const publicIndex=useMemo(()=>players&&index?publicWikiIndex(index):null,[players,index,vault.version])
   const deny=()=>Promise.reject(new Error("Mude para a visão do mestre para editar o cofre."))
   const value: WikiState = {
