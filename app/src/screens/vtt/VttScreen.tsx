@@ -12,6 +12,7 @@ import { Empty, Modal } from "../../components/ui"
 import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
 import { parseRoomLink, type RoomLink } from "../../vtt/shared/room-link"
 import { isBrowserPreview, vtt } from "../../vtt/api"
+import { DocumentStore } from "../../vtt/document-store"
 import type { WorldSummary } from "../../vtt/shared/world"
 import { useVault } from "../../platform/VaultProvider"
 import "./vtt.css"
@@ -32,22 +33,35 @@ export function VttScreen({ route }: { route: string[] }) {
 /** A sala continua aberta ao consultar outros espaços. */
 function OpenMesa({ id }: { id: string }) {
   const { platform } = useVault()
-  const [world, setWorld] = useState<WorldSummary>()
+  const [mesa, setMesa] = useState<{ world: WorldSummary; documents: DocumentStore }>()
   const [error, setError] = useState<string>()
   useEffect(() => {
     let active = true
+    let documents: DocumentStore | undefined
     try {
       sessionStorage.setItem("runas-codex:mesa-aberta", id)
     } catch {
       /* preferência opcional */
     }
-    // Abre a sala no processo principal enquanto o módulo da Mesa carrega.
-    vtt.openWorld(id).then(
-      (opened) => { if (active) setWorld(opened) },
-      (reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) },
-    )
+    // Abre a sala e lê seus documentos enquanto o módulo da Mesa carrega.
+    async function open() {
+      const world = await vtt.openWorld(id)
+      if (!active) return
+      documents = new DocumentStore()
+      await documents.load()
+      if (active) setMesa({ world, documents })
+    }
+    void open().catch((reason: unknown) => {
+      if (!active) return
+      documents?.dispose()
+      documents = undefined
+      setError(reason instanceof Error ? reason.message : String(reason))
+    })
     void MesaTable.preload().catch(() => { /* o carregador oferece nova tentativa */ })
-    return () => { active = false }
+    return () => {
+      active = false
+      documents?.dispose()
+    }
   }, [id])
   if (error) return (
     <div className="page">
@@ -55,8 +69,8 @@ function OpenMesa({ id }: { id: string }) {
       <a className="btn" href={href("/vtt/criar")}><ArrowLeft size={16} /> Voltar às mesas</a>
     </div>
   )
-  return world
-    ? <MesaTable world={world} keyboardHints={platform.kind !== "capacitor"} />
+  return mesa
+    ? <MesaTable {...mesa} keyboardHints={platform.kind !== "capacitor"} />
     : <p className="page muted" role="status">Abrindo a mesa…</p>
 }
 
