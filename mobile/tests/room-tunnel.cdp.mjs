@@ -90,9 +90,10 @@ try {
   if (!link) throw new Error(error ?? 'Túnel não abriu.')
   const publicUrl = new URL(link), base = publicUrl.origin
   check('o link público leva a chave da sala', publicUrl.searchParams.get('k') === key)
-  // Diagnóstico: o que o DNS do runner diria agora, e quanto tempo o nome leva para existir nos resolvedores públicos.
+  // Diagnóstico: quanto tempo o nome leva para existir nos resolvedores públicos. O DNS do runner fica para depois do
+  // “Testar link”: o emulador pergunta a ele, e uma consulta feita cedo demais guardava o “não existe” por 60 s (TTL
+  // negativo de trycloudflare.com), que o app recebia no lugar da resposta (4 de 8 falhas em 20/11).
   result.dns = { host: publicUrl.hostname }
-  try { result.dns.system = (await systemLookup(publicUrl.hostname)).address } catch (error) { result.dns.system = describe(error) }
   const dnsStarted = Date.now()
   let addresses = null
   for (let n = 0; n < 45 && !addresses; n++) {
@@ -109,9 +110,22 @@ try {
   check('o mestre pelo navegador não passa pelo túnel', (await fetchRetry(base + '/master')).status === 404)
   const foreign = await fetchRetry(`${base}/seat/join?k=${key}`, { method: 'POST', headers: { Origin: 'https://externo.invalid', 'Content-Type': 'application/json' }, body: '{"code":"AAAAAAAA"}' })
   check('origem de outro site é recusada pelo túnel', foreign.status === 403, foreign.status)
-  await appButton('Testar link')
-  await app.until(`/O link responde/.test(document.querySelector('.player-panel')?.textContent ?? '')`, 120)
-  check('“Testar link” confirma do próprio celular', true)
+  // O nativo espera até 10 s pela conexão e 10 s pela resposta.
+  const testLink = async () => {
+    await appButton('Testar link')
+    const answer = `document.querySelector('.player-panel')?.textContent.match(/O link responde|O link não respondeu[^.]*|ainda não existe para o DNS/)?.[0]`
+    await app.until(answer, 200)
+    return app.run(answer)
+  }
+  let linkTest = await testLink()
+  // Nome ainda desconhecido para o DNS do emulador: o painel pede um minuto, e o teste segue o conselho uma vez.
+  if (linkTest === 'ainda não existe para o DNS') {
+    result.linkTestRetry = true
+    await sleep(65000)
+    linkTest = await testLink()
+  }
+  try { result.dns.system = (await systemLookup(publicUrl.hostname)).address } catch (error) { result.dns.system = describe(error) }
+  check('“Testar link” confirma do próprio celular', linkTest === 'O link responde', linkTest)
   const shot = await app.send('Page.captureScreenshot', { format: 'png' })
   await writeFile(output + '/sala-tunel.png', Buffer.from(shot.data, 'base64'))
   await appButton('Desligar')
