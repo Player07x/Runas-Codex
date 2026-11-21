@@ -2601,3 +2601,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.7.4 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.4 instalada as seções “Desempenho do calendário, das relações e da abertura”, “Abertura da Wiki,
   da Mesa e do Gráfico” e “Mapas: voltar à lista de áreas” acima.
+
+## Sala: “Testar link” logo depois de gerar o link público
+
+- [ ] No Android e no desktop, ligar a transmissão, gerar o link público e tocar em “Testar link” no mesmo instante.
+  Se o endereço ainda não existir no DNS, o painel diz isso e pede para tentar de novo daqui a um minuto (em vez de
+  “O link não respondeu”). Depois de um minuto, “Testar link” mostra “O link responde”.
+- [ ] Com a internet do aparelho desligada depois de gerar o link, “Testar link” mostra a mesma mensagem, que termina
+  pedindo para conferir a internet deste aparelho.
