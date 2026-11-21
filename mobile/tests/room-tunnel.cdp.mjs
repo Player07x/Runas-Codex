@@ -91,8 +91,8 @@ try {
   const publicUrl = new URL(link), base = publicUrl.origin
   check('o link público leva a chave da sala', publicUrl.searchParams.get('k') === key)
   // Diagnóstico: quanto tempo o nome leva para existir nos resolvedores públicos. O DNS do runner fica para depois do
-  // “Testar link”: o emulador pergunta a ele, e uma consulta feita cedo demais guardava o “não existe” por 60 s (TTL
-  // negativo de trycloudflare.com), que o app recebia no lugar da resposta (4 de 8 falhas em 20/11).
+  // “Testar link”: o emulador pergunta pelo mesmo caminho, e uma consulta feita cedo demais pode deixar o “não existe”
+  // guardado por 60 s (TTL negativo de trycloudflare.com). Suspeita das falhas de 20/11 (4 de 8), não provada.
   result.dns = { host: publicUrl.hostname }
   const dnsStarted = Date.now()
   let addresses = null
