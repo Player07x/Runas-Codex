@@ -396,7 +396,10 @@ export class VttHost {
         const ms = Date.now() - started
         return response.ok && (await response.text()) === "ok" ? { ok: true, ms, status: response.status } : { ok: false, ms, status: response.status, error: `O túnel respondeu ${response.status}.` }
       } catch (error) {
-        return { ok: false, ms: Date.now() - started, error: error instanceof Error ? error.message : String(error) }
+        // O fetch do Node diz só “fetch failed”; o código (ENOTFOUND, ECONNRESET…) fica na causa e diz o que houve.
+        const code = error instanceof Error && typeof (error.cause as { code?: unknown } | undefined)?.code === "string" ? (error.cause as { code: string }).code : ""
+        const message = error instanceof Error ? error.message : String(error)
+        return { ok: false, ms: Date.now() - started, error: code ? `${message} (${code})` : message }
       }
     })
     handle(IPC.playerDownloadCloudflared, async () => {

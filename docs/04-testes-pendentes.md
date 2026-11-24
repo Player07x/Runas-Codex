@@ -2640,3 +2640,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   própria com elas.
 - [ ] Relógios: o campo de partes não tem mais as setas e só aceita números; uma ameaça aceita até 100 partes (o
   relógio vira uma fatia contínua), um progresso até 24.
+
+## Sala: “Testar link” logo depois de gerar o link público
+
+- [ ] No Android e no desktop, ligar a transmissão, gerar o link público e tocar em “Testar link” no mesmo instante.
+  Se o endereço ainda não existir no DNS, o painel diz isso e pede para tentar de novo daqui a um minuto (em vez de
+  “O link não respondeu”). Depois de um minuto, “Testar link” mostra “O link responde”.
+- [ ] Com a internet do aparelho desligada depois de gerar o link, “Testar link” mostra a mesma mensagem, que termina
+  pedindo para conferir a internet deste aparelho.
