@@ -30,7 +30,12 @@ describe("Imagens comuns e contadores reais", () => {
     expect(vaultCounts(null)).toEqual({ notas:0, agenda:0, wiki:0, campanhas:0, livros:0, mesas:0 })
     expect(vaultCounts(vault({}))).toEqual(vaultCounts(null))
     const onlyHome = vault({"Wikis/Vazio/Vazio.md":"---\ntipo: wiki\n---\n# Mundo", "Agenda/Rascunho.md":"# Ainda não é evento"})
-    expect(vaultCounts(onlyHome)).toEqual(vaultCounts(null))
+    // Uma wiki só com a página inicial já é uma wiki: o menu conta os mundos, não os artigos (anexo 11, 24/11).
+    expect(vaultCounts(onlyHome)).toEqual({ ...vaultCounts(null), wiki: 1 })
+  })
+  it("a Wiki conta as wikis, não os artigos", () => {
+    const index = vault({"Wikis/A/A.md":"# A", "Wikis/A/Locais/Porto.md":"---\ntipo: local\n---\n# Porto", "Wikis/A/Locais/Cais.md":"# Cais", "Wikis/B/B.md":"# B"})
+    expect(vaultCounts(index).wiki).toBe(2)
   })
   it("conta livros e campanhas como entidades, sem somar capítulos e sessões como se fossem outras entidades", () => {
     const index = vault({"Notas/A.md":"# Ideia", "Wikis/M/Local.md":"---\ntipo: local\n---\n# Local", "Livros/L/L.md":"---\ntipo: livro\n---\n# Livro", "Livros/L/Capítulo.md":"---\ntipo: capitulo\n---\n# Texto", "Campanhas/C/C.md":"---\ntipo: campanha\n---\n# C", "Campanhas/C/Sessões/1.md":"---\ntipo: sessao\n---\n# Sessão"})

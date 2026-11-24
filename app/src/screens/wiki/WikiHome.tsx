@@ -218,12 +218,14 @@ function Category({ folder, compact = false }: { folder: FolderNode; compact?: b
   const notes = collect(folder).filter(note => !isCategoryNote(note)).sort((a,b)=>b.mtime-a.mtime || a.name.localeCompare(b.name,"pt-BR"))
   const kinds = notes.map(note => articleKind(note.meta.frontmatter?.data?.tipo)).filter(Boolean) as ArticleKind[]
   const main = articleKinds().find(kind=>kind.folder.split("/").at(-1) === folder.name) ?? kinds[0], Icon = iconByName(main?.icon ?? "")
+  const CardIcon = Emblem ?? (main ? Icon : Folder)
   // U114: em “Só categorias” o cartão inteiro já é o link; o número desce para a linha de baixo, com o que falta escrever.
   const toWrite = useMemo(() => compact ? vault.index!.unresolved(folder.path + "/").length : 0, [compact, vault.index, vault.version, folder.path])
   const count = `${notes.length} ${notes.length === 1 ? "artigo" : "artigos"}${toWrite ? ` · ${toWrite} a escrever` : ""}`
   return <section className={`card category-card${compact ? " compact" : ""}${look.tone ? " toned" : ""}`} style={{["--cat" as string]: look.tone ? "var(--tone, var(--violet))" : "var(--violet)", ...toneStyle(look.tone)}}>
-    {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" />}
-    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon">{Emblem ? <Emblem size={18}/> : main ? <Icon size={18}/> : <Folder size={18}/>}</span><h2 className="grow">{folder.name}</h2>{!compact && <><span className="chip">{notes.length}</span><ChevronRight size={16} className="wiki-category-go" aria-hidden="true"/></>}</a>
+    {/* Sem capa escolhida, a capa padrão desenhada com o ícone da categoria (24/11). */}
+    <CoverBand tone={look.tone} cover={look.cover} from={folder.path + "/"} height={72} className="category-card-cover" art={CardIcon} />
+    <a className="row wiki-category-heading" href={href(categoryRoute(folder.path))}><span className="cat-icon"><CardIcon size={18}/></span><h2 className="grow">{folder.name}</h2>{!compact && <><span className="chip">{notes.length}</span><ChevronRight size={16} className="wiki-category-go" aria-hidden="true"/></>}</a>
     {compact && <span className="small muted wiki-category-count">{count}</span>}
     {look.description && <p className="small muted wiki-category-description">{look.description}</p>}
     {!compact && <>

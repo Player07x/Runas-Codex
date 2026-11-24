@@ -14,7 +14,9 @@ export const WIKI_CATEGORY_SMOKE = `
   await until(() => propertyArt?.complete && bodyArt?.complete)
   result.wikiCategory.propertyImage = Boolean(propertyArt?.naturalWidth > 0 && propertyArt.src.startsWith("vault-file:"))
   result.wikiCategory.bodyImage = Boolean(bodyArt?.naturalWidth > 0 && bodyArt.src.startsWith("vault-file:"))
-  result.wikiCategory.initial = Boolean(cards().find(el => el.textContent.includes("Zuri Curandeira"))?.querySelector(".wiki-art-initial"))
+  // Sem imagem, o cartão mostra o ícone da categoria (24/11), não mais a inicial.
+  const plain = cards().find(el => el.textContent.includes("Zuri Curandeira"))
+  result.wikiCategory.icon = Boolean(plain?.querySelector(".wiki-article-art .wiki-art-emblem")) && !plain?.querySelector(".wiki-art-initial")
   document.querySelector(".wiki-category-controls button[aria-pressed=false]")?.click()
   await until(() => document.querySelector(".wiki-category-results.list"))
   result.wikiCategory.list = Boolean(document.querySelector(".wiki-category-results.list")) && localStorage.getItem("runas-codex:wiki-categoria-modo") === "list"

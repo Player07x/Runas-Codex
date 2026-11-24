@@ -72,7 +72,8 @@ export class RoomAuthority {
     this.server = makeTransport({
       worldPath: () => this.store.openWorld?.summary.path ?? null,
       projection: () => this.lastProjection,
-      allowedAssets: () => [...this.lastProjection.assets, ...(this.audioEnabled ? this.audio.sounds.map((sound) => sound.audio) : [])],
+      // As imagens do artigo apresentado (anexo 6, 24/11) saem enquanto ele estiver aberto, como os assets da cena.
+      allowedAssets: () => [...this.lastProjection.assets, ...(this.audioEnabled ? this.audio.sounds.map((sound) => sound.audio) : []), ...this.collaboration.handoutAssets()],
       snapshot: (seat) => this.snapshotMessage(seat),
       onSpectators: (spectators) => {
         this.emit(spectators)

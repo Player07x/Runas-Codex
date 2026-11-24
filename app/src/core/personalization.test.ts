@@ -36,9 +36,23 @@ describe("personalização de campanhas e categorias", () => {
     })
     expect(categoryNotePath("Wikis/Mundo/Personagens")).toBe("Wikis/Mundo/Personagens/Personagens.md")
     expect(categoryLook(index, "Wikis/Mundo/Personagens").tone?.id).toBe("ametista")
-    expect(categoryLook(index, "Wikis/Mundo/Locais").tone).toBeNull()
+    // A nota sem `tipo: categoria` não personaliza: Locais fica com o padrão da categoria pronta, não com o jade dela.
+    expect(categoryLook(index, "Wikis/Mundo/Locais").tone?.id).toBe("musgo")
     expect(isCategoryNote(index.note("Wikis/Mundo/Personagens/Personagens.md")!)).toBe(true)
     expect(isCategoryNote(index.note("Wikis/Mundo/Locais/Locais.md")!)).toBe(false)
+  })
+
+  it("categoria pronta nasce com cor, ícone e descrição; o que a nota diz ganha do padrão (24/11)", () => {
+    const index = vault({
+      "Wikis/Mundo/Condições/Condições.md": "---\ntipo: categoria\ncor: sangue\ndescricao: Doenças e maldições.\n---\n",
+      "Wikis/Mundo/Monstros/Monstros.md": "---\ntipo: categoria\n---\n",
+    })
+    expect(categoryLook(index, "Wikis/Mundo/Calendários")).toEqual({ tone: expect.objectContaining({ id: "jade" }), emblem: "calendario", cover: null, description: "Sistema de organização e medição do tempo, dividido em dias, meses e anos." })
+    const conditions = categoryLook(index, "Wikis/Mundo/Condições")
+    expect([conditions.tone?.id, conditions.emblem, conditions.description]).toEqual(["sangue", "pulso", "Doenças e maldições."])
+    // Categoria criada pelo usuário e subpasta não têm padrão.
+    expect(categoryLook(index, "Wikis/Mundo/Monstros")).toEqual({ tone: null, emblem: null, cover: null })
+    expect(categoryLook(index, "Wikis/Mundo/Locais/Cidades").tone).toBeNull()
   })
 
   it("a wiki se personaliza pela nota da página inicial", () => {

@@ -720,13 +720,18 @@ export const CLOCK_BLOCK = "runas-relogios"
 /** Quantas partes um relógio pode ter: o mestre digita o número (antes, uma lista com 4, 6, 8, 10 e 12). */
 export const CLOCK_MIN_SEGMENTS = 2
 export const CLOCK_MAX_SEGMENTS = 24
+/** Relógio de ameaça vai até 100 partes (24/11): ameaças longas, de campanha inteira. */
+export const CLOCK_MAX_THREAT = 100
 
-/** O número de partes digitado, ou `null` se não for um inteiro entre o mínimo e o máximo. */
-export function clockSegments(value: string): number | null {
+/** O máximo de partes do tipo de relógio. */
+export const clockMax = (kind: Clock["kind"]) => (kind === "ameaca" ? CLOCK_MAX_THREAT : CLOCK_MAX_SEGMENTS)
+
+/** O número de partes digitado, ou `null` se não for um inteiro entre o mínimo e o máximo do tipo. */
+export function clockSegments(value: string, kind: Clock["kind"] = "progresso"): number | null {
   const text = value.trim()
   if (!/^\d+$/.test(text)) return null
   const n = Number(text)
-  return n >= CLOCK_MIN_SEGMENTS && n <= CLOCK_MAX_SEGMENTS ? n : null
+  return n >= CLOCK_MIN_SEGMENTS && n <= clockMax(kind) ? n : null
 }
 
 export function parseClocks(content: string): Clock[] {
@@ -735,12 +740,13 @@ export function parseClocks(content: string): Clock[] {
   if (!Array.isArray(data)) throw new Error("O bloco runas-relogios precisa ser uma lista.")
   return data.map((raw, i) => {
     const item = (raw ?? {}) as Record<string, unknown>
-    const segments = Math.max(CLOCK_MIN_SEGMENTS, Math.min(CLOCK_MAX_SEGMENTS, Math.round(num(item.segmentos) ?? 4)))
+    const kind: Clock["kind"] = fold(String(item.tipo ?? "")).startsWith("prog") ? "progresso" : "ameaca"
+    const segments = Math.max(CLOCK_MIN_SEGMENTS, Math.min(clockMax(kind), Math.round(num(item.segmentos) ?? 4)))
     return {
       name: str(item.nome) ?? `Relógio ${i + 1}`,
       segments,
       filled: Math.max(0, Math.min(segments, Math.round(num(item.preenchidos) ?? 0))),
-      kind: fold(String(item.tipo ?? "")).startsWith("prog") ? "progresso" : "ameaca",
+      kind,
     }
   })
 }

@@ -401,29 +401,94 @@
 .campaign-cast-cards.size-small { grid-template-columns: repeat(auto-fill, minmax(min(calc(145px * var(--font-scale, 1)), 100%), 1fr)); }
 .campaign-cast-cards.size-large { grid-template-columns: repeat(auto-fill, minmax(min(calc(270px * var(--font-scale, 1)), 100%), 1fr)); }
 .campaign-cast-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(260px * var(--font-scale, 1)), 100%), 1fr)); gap: 6px; }
-/* O cartão é um botão: o clique abre o painel; a facção leva o − e o + ao lado. */
+/* O cartão é um botão só: o clique abre o painel. A reputação só aparece; quem marca é o botão “Reputação”. */
 .campaign-cast-item { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
 .campaign-cast-list > .campaign-cast-item { flex-direction: row; flex-wrap: wrap; align-items: center; }
 .campaign-cast-item:hover, .campaign-cast-grid .campaign-cast-card:hover { border-color: var(--line-strong); }
 .campaign-cast-item.selected, .campaign-cast-grid .campaign-cast-card.selected { border-color: transparent; box-shadow: 0 0 0 2px var(--cyan); }
+/* A cor do cartão diz se o personagem já apareceu (24/11): tingido de verde quando sim; tracejado e neutro quando ainda
+   não (o tracejado e o texto escondido para leitores de tela não deixam a cor sozinha). */
+.campaign-cast-item.seen { border-color: color-mix(in oklab, var(--green) 55%, var(--line)); background: color-mix(in oklab, var(--green) 16%, var(--panel)); }
+.campaign-cast-item.seen:hover { border-color: color-mix(in oklab, var(--green) 70%, var(--line)); }
+.campaign-cast-item.unseen { border-style: dashed; }
+/* Morto (ou extinta): o cartão inteiro mais escuro, a imagem apagada, o texto ainda legível. */
+.campaign-cast-item.gone, .campaign-cast-grid > li.gone > .campaign-cast-card { border-color: var(--line); background: color-mix(in oklab, var(--panel) 62%, #000); }
+.campaign-cast-item.gone :is(.wiki-article-art, .crest), .campaign-cast-grid > li.gone .crest { filter: grayscale(.85) brightness(.6); }
+:root[data-theme="light"] :is(.campaign-cast-item.gone, .campaign-cast-grid > li.gone > .campaign-cast-card) { background: color-mix(in oklab, var(--panel) 84%, #000); }
+.cast-gone { display: inline-flex; color: var(--muted); }
+.cast-gone svg { width: 14px; height: 14px; }
 .campaign-cast-card { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; min-height: 44px; padding: 8px 10px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .campaign-cast-grid .campaign-cast-card { width: 100%; height: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.campaign-cast-card-text { display: grid; gap: 4px; justify-items: start; min-width: 0; }
-.campaign-cast-card-text strong, .campaign-cast-card-text h2 { max-width: 100%; overflow-wrap: anywhere; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.3; }
-.campaign-cast-tags { gap: 4px; }
-.campaign-cast-unseen { border-style: dashed; color: var(--muted); }
-.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card { flex-direction: column; align-items: stretch; padding: 0; }
-.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0 10px 10px; }
-.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .crest { margin: 10px 10px 0; }
-.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { flex-direction: row; align-items: center; padding: 8px 10px; }
-.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > :is(.crest, .campaign-cast-card-text) { margin: 0; padding: 0; }
-.campaign-cast-item > .campaign-faction-reputation { flex: none; padding: 0 8px 8px; justify-content: flex-end; }
-.campaign-cast-list > .campaign-cast-item > .campaign-faction-reputation { padding: 0 8px 0 0; }
-.campaign-rep-pips { display: inline-flex; gap: 3px; margin-inline: 2px; }
-.campaign-rep-pips i { display: block; width: 7px; height: 7px; border-radius: 2px; background: var(--panel-2); }
-.campaign-rep-pips i.zero { background: var(--line-strong); }
-.campaign-rep-pips i.pos { background: var(--green); }
-.campaign-rep-pips i.neg { background: var(--red); }
+/* A coluna do texto não passa da largura do cartão (anexo 9, 24/11). Nomes quebram entre palavras; só uma palavra
+   que não cabe sozinha é partida. */
+.campaign-cast-card-text { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; justify-items: start; min-width: 0; }
+.campaign-cast-card-text strong, .campaign-cast-card-text h2 { max-width: 100%; overflow-wrap: break-word; hyphens: auto; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.3; }
+/* O nome corre como texto: a caveira vai junto da última palavra e o nome só quebra entre palavras. */
+.cast-name { display: block; max-width: 100%; min-width: 0; }
+.cast-name > .cast-gone { margin-left: 4px; vertical-align: -2px; }
+.campaign-cast-grid .campaign-cast-card-text { flex: 1 1 auto; justify-items: stretch; }
+/* Imagem dos cartões médio e grande, como no desenho: um quadrado dentro do cartão, com margem e borda, e o ícone da
+   atitude no canto de cima. O símbolo da facção aparece inteiro, sobre o tom. */
+.campaign-cast-media { position: relative; display: block; margin: 8px 8px 0; border: 1px solid var(--line-strong); border-radius: calc(var(--radius) - 2px); overflow: hidden; }
+.campaign-cast-media > .wiki-article-art.cover { width: 100%; aspect-ratio: 1; }
+.campaign-cast-media.symbol > .wiki-article-art.cover img { object-fit: contain; padding: 10%; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card { flex-direction: column; align-items: stretch; gap: 8px; padding: 0 0 10px; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0 10px; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .cast-rep { margin: auto 10px 0; }
+/* Pequeno: o quadrado pequeno à esquerda, o nome ao lado e a reputação embaixo, na largura toda. */
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; align-content: start; gap: 6px 8px; padding: 8px; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > .cast-rep { grid-column: 1 / -1; align-self: end; margin: 0; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { height: 100%; }
+.campaign-cast-list > .campaign-cast-item > .campaign-cast-card { flex-wrap: wrap; }
+.campaign-cast-list > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { flex: 1 1 120px; }
+.campaign-cast-list > .campaign-cast-item > .campaign-cast-card > .cast-rep { flex: 1 0 100%; }
+/* Ícone da atitude: no canto da imagem (médio e grande) ou ao lado do nome (pequeno e lista). */
+.cast-attitude { display: inline-grid; flex: none; place-items: center; width: 22px; height: 22px; border: 1px solid currentColor; border-radius: 50%; background: var(--panel); color: var(--muted); }
+.cast-attitude svg { width: 13px; height: 13px; }
+/* No pequeno e na lista, o ícone fica no canto do quadradinho, para o nome ter a largura toda. */
+.cast-crest { position: relative; display: inline-flex; flex: none; }
+.cast-crest > .cast-attitude { position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; }
+.cast-crest > .cast-attitude svg { width: 11px; height: 11px; }
+.campaign-cast-media > .cast-attitude { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; box-shadow: 0 1px 4px rgb(0 0 0 / .35); }
+.campaign-cast-media > .cast-attitude svg { width: 16px; height: 16px; }
+.cast-attitude.green { color: var(--green); }
+.cast-attitude.cyan { color: var(--cyan); }
+.cast-attitude.gold { color: var(--gold); }
+.cast-attitude.red { color: var(--red); }
+/* A barra da reputação: pontos negativos, o número no meio e os positivos. Cada ponto se pinta pela fração (`--fill`),
+   do lado do número para fora; muitos pontos encolhem para caber no cartão pequeno. */
+.cast-rep { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+.cast-rep-side { display: flex; flex: 1 1 0; align-items: center; gap: 3px; min-width: 0; }
+.cast-rep-side.neg { justify-content: flex-end; }
+/* O ponto vazio leva um pouco da própria cor e um contorno, para a escala aparecer mesmo sem nada pintado. */
+.cast-rep-side i { --empty: color-mix(in oklab, var(--pip) 16%, var(--bg)); display: block; flex: 0 1 12px; min-width: 3px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pip) 45%, var(--line-strong)); }
+.cast-rep-side.neg i { background: linear-gradient(to left, var(--pip) var(--fill), var(--empty) var(--fill)); }
+.cast-rep-side.pos i { background: linear-gradient(to right, var(--pip) var(--fill), var(--empty) var(--fill)); }
+.cast-rep-value { flex: none; min-width: 34px; padding: 1px 6px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--text); font-family: var(--font-mono, monospace); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; text-align: center; }
+.cast-rep-value.pos { border-color: var(--green); color: var(--green); }
+.cast-rep-value.neg { border-color: var(--red); color: var(--red); }
+.cast-rep.compact .cast-rep-side i { flex-basis: 10px; height: 10px; }
+.cast-rep.compact .cast-rep-value { min-width: 30px; padding: 0 4px; font-size: calc(11px * var(--font-scale, 1)); }
+.campaign-cast-grid .cast-rep { justify-self: stretch; }
+.cast-rep-detail { justify-self: stretch; }
+.cast-rep-detail > li { display: grid; grid-template-columns: minmax(0, 7em) minmax(0, 1fr); align-items: center; gap: 8px; }
+/* Botão “Reputação”, o filtro de jogadores e a janela de marcar. */
+.campaign-cast-viewers { display: grid; gap: 4px; margin: 0; padding: 0; border: 0; }
+.campaign-cast-viewers > legend { padding: 0; margin-bottom: 4px; }
+.campaign-cast-viewer { gap: 8px; min-height: 32px; cursor: pointer; }
+.cast-rep-dialog { gap: 12px; }
+.cast-rep-dialog .search .input { width: 100%; }
+.cast-rep-players { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+.cast-rep-players > legend { padding: 0; margin-bottom: 6px; }
+.cast-rep-player { gap: 6px; min-height: 36px; padding-inline: 6px 10px; cursor: pointer; }
+.cast-rep-player.on { border-color: var(--cyan); background: color-mix(in oklab, var(--cyan) 16%, var(--panel)); color: var(--text); }
+.cast-rep-rows { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.cast-rep-row { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(120px, 200px) auto; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius); }
+.cast-rep-row-name { display: grid; min-width: 0; }
+.cast-rep-row-name strong { overflow-wrap: break-word; }
+.cast-rep-steps { gap: 2px; }
+.campaign-rep-none { color: var(--gold); }
 .campaign-roster-group { margin: 4px 0 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .campaign-appeared { gap: 4px; min-height: 32px; cursor: pointer; }
 .campaign-appeared:disabled { cursor: default; opacity: 1; }
@@ -458,6 +523,9 @@
   .campaign-cast-page .kit-tab { min-height: 44px; }
   .campaign-cast-cards, .campaign-cast-cards.size-large { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .campaign-cast-cards.size-small { grid-template-columns: minmax(0, 1fr); }
-  .campaign-cast-detail .icon-btn, .campaign-cast-item .icon-btn { width: 44px; height: 44px; }
+  .campaign-cast-detail .icon-btn, .campaign-cast-item .icon-btn, .cast-rep-steps .icon-btn { width: 44px; height: 44px; }
+  .campaign-cast-rep, .cast-rep-player, .campaign-cast-viewer { min-height: 44px; min-width: 44px; justify-content: center; }
+  .cast-rep-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .cast-rep-row > .cast-rep { grid-column: 1 / -1; grid-row: 2; }
   .campaign-cast-filters-body { position: fixed; z-index: 75; top: auto; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; max-height: 80dvh; overflow-y: auto; }
 }

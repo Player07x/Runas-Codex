@@ -17,7 +17,7 @@ const SHOWN = 30
 export function useCastRelations(data: CampaignData) {
   const vault = useVault()
   const toast = useToast()
-  const members = useMemo(() => relationMembers(data), [data])
+  const members = useMemo(() => relationMembers(data, vault.index ?? undefined), [data, vault.index])
   const map = useMemo(() => buildRelationMap(vault.index!, members, relationScope(data)), [vault.index, vault.version, members, data])
   const titles = new Map(members.map((m) => [m.path, m.title]))
   const edges = map.edges.filter((e) => e.from !== PARTY)
