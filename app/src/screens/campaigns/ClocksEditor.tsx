@@ -1,18 +1,21 @@
 import { useId, useState } from "react"
 import { Minus, Pencil, Plus, Trash } from "lucide-react"
-import { CLOCK_MAX_SEGMENTS, CLOCK_MIN_SEGMENTS, clockSegments, setClocks, type Clock } from "../../core/campaigns"
+import { CLOCK_MIN_SEGMENTS, clockMax, clockSegments, setClocks, type Clock } from "../../core/campaigns"
 import { ClockDial, useToast } from "../../components/ui"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useVault } from "../../platform/VaultProvider"
 import { FormDialog } from "./campaign-dialogs"
 import { useUndoable } from "./campaign-edits"
 
-/** Campo das partes: o mestre digita quantas quer (de 2 a 24), sem lista fixa. */
-function SegmentsInput({ value, onChange, describedBy }: { value: string; onChange(value: string): void; describedBy?: string }) {
-  const invalid = clockSegments(value) === null
-  return <input className="input clock-segments" type="number" inputMode="numeric" min={CLOCK_MIN_SEGMENTS} max={CLOCK_MAX_SEGMENTS} step={1}
-    value={value} onChange={(e) => onChange(e.target.value)} aria-label="Partes" aria-invalid={invalid || undefined} aria-describedby={describedBy}
-    title={`De ${CLOCK_MIN_SEGMENTS} a ${CLOCK_MAX_SEGMENTS} partes`} />
+/**
+ * Campo das partes: o mestre digita quantas quer (de 2 a 24; ameaça até 100), sem lista fixa. Só dígitos e sem as
+ * setas do campo de número (24/11): no celular abre o teclado numérico.
+ */
+function SegmentsInput({ value, kind, onChange, describedBy }: { value: string; kind: Clock["kind"]; onChange(value: string): void; describedBy?: string }) {
+  const invalid = clockSegments(value, kind) === null
+  return <input className="input clock-segments" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" maxLength={3}
+    value={value} onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))} aria-label="Partes" aria-invalid={invalid || undefined} aria-describedby={describedBy}
+    title={`De ${CLOCK_MIN_SEGMENTS} a ${clockMax(kind)} partes`} />
 }
 
 /**
@@ -103,18 +106,18 @@ function ClockForm({ onSubmit, onCancel }: { onSubmit(clock: Clock): void; onCan
       className="campaign-inline-form"
       onSubmit={(e) => {
         e.preventDefault()
-        const parts = clockSegments(segments)
+        const parts = clockSegments(segments, kind)
         if (name.trim() && parts) onSubmit({ name: name.trim(), segments: parts, filled: 0, kind })
       }}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
       <input className="input" autoFocus placeholder="Nome do relógio" value={name} onChange={(e) => setName(e.target.value)} aria-label="Nome do relógio" />
-      <SegmentsInput value={segments} onChange={setSegments} />
+      <SegmentsInput value={segments} kind={kind} onChange={setSegments} />
       <select className="select" value={kind} onChange={(e) => setKind(e.target.value as Clock["kind"])} aria-label="Tipo">
         <option value="ameaca">Ameaça</option>
         <option value="progresso">Progresso</option>
       </select>
-      <button type="submit" className="btn sm primary" disabled={!name.trim() || clockSegments(segments) === null}>Criar</button>
+      <button type="submit" className="btn sm primary" disabled={!name.trim() || clockSegments(segments, kind) === null}>Criar</button>
       <button type="button" className="btn sm ghost" onClick={onCancel}>Cancelar</button>
     </form>
   )
@@ -124,7 +127,8 @@ function ClockDialog({ clock, onSave, onClose }: { clock: Clock; onSave(clock: C
   const [name, setName] = useState(clock.name)
   const [segments, setSegments] = useState(String(clock.segments))
   const [kind, setKind] = useState(clock.kind)
-  const parts = clockSegments(segments)
+  const parts = clockSegments(segments, kind)
+  const max = clockMax(kind)
   const hint = useId()
   // Menos partes que as já preenchidas: o relógio fica cheio, sem passar do total.
   return (
@@ -137,8 +141,8 @@ function ClockDialog({ clock, onSave, onClose }: { clock: Clock; onSave(clock: C
       <div className="campaign-form-row">
         <label className="field grow">
           <span>Partes</span>
-          <SegmentsInput value={segments} onChange={setSegments} describedBy={hint} />
-          <span id={hint} className={`tiny ${parts === null ? "clock-segments-error" : "faint"}`}>{parts === null ? `Digite um número de ${CLOCK_MIN_SEGMENTS} a ${CLOCK_MAX_SEGMENTS}.` : `De ${CLOCK_MIN_SEGMENTS} a ${CLOCK_MAX_SEGMENTS}.`}</span>
+          <SegmentsInput value={segments} kind={kind} onChange={setSegments} describedBy={hint} />
+          <span id={hint} className={`tiny ${parts === null ? "clock-segments-error" : "faint"}`}>{parts === null ? `Digite um número de ${CLOCK_MIN_SEGMENTS} a ${max}.` : `De ${CLOCK_MIN_SEGMENTS} a ${max}.`}</span>
         </label>
         <label className="field grow">
           <span>Tipo</span>

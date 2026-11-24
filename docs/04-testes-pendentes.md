@@ -2621,5 +2621,22 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] No artigo de um local, preencher “Fica em” na ficha (ou criar um local com “Fica em”): o outro local ganha
   “Contém” na hora, e Ferramentas › Conferir relações não lista mais essa relação. Trocar o “Fica em” tira o “Contém”
   do lugar antigo. Com “Gravar também na outra nota” desmarcado no Adicionar, a ficha também grava só de um lado.
-- [ ] No Elenco, em Grade, os três tamanhos: nos médios e grandes, NPCs e facções com a imagem do mesmo tamanho (o
-  símbolo da facção inteiro); nos pequenos, nome e selos dentro do cartão e o − e o + da reputação visíveis.
+- [ ] No Elenco, em Grade, os três tamanhos e a Lista: nos médios e grandes, a imagem num quadrado dentro do cartão com
+  o ícone da atitude no canto (aliado, amigável, neutro, desconfiado, hostil); nos pequenos, o quadradinho com o ícone
+  no canto e o nome sem quebrar no meio da palavra. Sem o selo “ainda não apareceu”: quem já apareceu tem o cartão
+  esverdeado; quem não apareceu, tracejado. Um personagem com `status: morto` (ou `morte_mundo`) fica com o cartão
+  escuro e uma caveira ao lado do nome. Os cartões da mesma fileira têm a mesma altura.
+- [ ] Botão “Reputação”: escolher um jogador, subir e baixar com alguns NPCs e facções e Gravar. Escolher dois: o − e
+  o + mudam os dois, e o número do meio é a média. A nota da campanha ganha a seção “## Reputação” com uma linha por
+  par (`- [[Ilsa]] com [[Aldren Vael]]: +2`), que o Obsidian mostra como lista de links. Renomear um NPC atualiza
+  a linha.
+- [ ] Filtros e exibição › “Reputação de”: com um jogador, o cartão mostra a reputação dele; com dois ou mais, a média
+  com uma casa (1,4 pinta um ponto inteiro e 40% do próximo). A etiqueta “Reputação: …” tira o filtro.
+- [ ] ⋯ › “Escala da reputação…”: trocar para −6 a +6 dobra os valores marcados; −3 a +9 mostra 3 pontos à esquerda e
+  9 à direita. ⋯ › “Importar reputação…”: de outra campanha com os mesmos personagens, importa (com proporção se a
+  escala for outra) e oferece Desfazer; sem ninguém em comum, avisa que não há o que importar. Testar o caso do NPC de
+  uma campanha que virou jogador noutra.
+- [ ] Facções antigas com `(+1)` na nota da campanha continuam mostrando esse valor para quem ainda não tem reputação
+  própria com elas.
+- [ ] Relógios: o campo de partes não tem mais as setas e só aceita números; uma ameaça aceita até 100 partes (o
+  relógio vira uma fatia contínua), um progresso até 24.

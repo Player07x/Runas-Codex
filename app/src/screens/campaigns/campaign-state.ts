@@ -10,6 +10,7 @@ import { nextSession, overdueSessions, type NextSession } from "../../core/next-
 import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
 import { calendarForCampaign, campaignTime } from "../../core/campaign-time"
+import { parseReputation, type ReputationBook } from "../../core/reputation"
 
 /** Rota de uma tela da campanha (`/campanhas/<nome>/<seção>/<caminho>`). */
 export function campaignRoute(name: string, section = "", id?: string): string {
@@ -40,6 +41,8 @@ export interface CampaignData {
   factions: TrackedLink[]
   secrets: SecretItem[]
   clocks: Clock[] | { error: string }
+  /** Reputação de cada jogador com o elenco (seção `## Reputação` da nota da campanha). */
+  reputation: ReputationBook
   boards: string[]
   stats: CampaignStats
   /** Calendário do mundo (o primeiro bloco runas-calendario da wiki da campanha). */
@@ -86,6 +89,7 @@ export function useCampaignData(name: string): CampaignData {
       factions: trackedLinks(index, campaign, "faccoes"),
       secrets: home ? secretsOf(home.text) : [],
       clocks: home ? clocksOf(home.text) : [],
+      reputation: parseReputation(home?.text ?? ""),
       boards: index
         .allFiles()
         .filter((f) => f.path.startsWith(campaign.root) && f.path.toLowerCase().endsWith(".canvas"))

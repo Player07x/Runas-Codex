@@ -1,13 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { useSinglePane } from "../../lib/tabs"
 import { useRemembered } from "../../lib/remembered"
-import { BookOpen, Check, Library, Minus, Pencil, Plus, Search, Shapes, Shield, SlidersHorizontal, Trash, Unlink, User, UserPlus, Users, X } from "lucide-react"
+import { BookOpen, Check, Download, Gauge, Library, Minus, Pencil, Plus, Ruler, Search, Shapes, Shield, Skull, SlidersHorizontal, Trash, Unlink, User, UserPlus, Users, X } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { NoteCrest } from "../../components/kit/Emblem"
 import { PanelTabs, TabPanel } from "../../components/kit/PanelTabs"
 import { Modal } from "../../components/ui"
-import { ATTITUDES, castRows, npcExtra, withCampaignPlayer, type CastRow, type PlayerCharacter, reputationOf, withReputation, withoutPosition, withTrackedLink, type TrackedLink } from "../../core/campaigns"
+import { ATTITUDES, castRows, npcExtra, withCampaignPlayer, type CastRow, type PlayerCharacter, withoutPosition, withTrackedLink, type TrackedLink } from "../../core/campaigns"
+import { goneStatus } from "../../core/cast-status"
+import { reputationValue, type RepScale, type ResolvedReputation } from "../../core/reputation"
 import { fullRows, nextLimit } from "../../core/grid-rows"
 import { useGridColumns } from "../../components/kit/useGridColumns"
 import { noteName } from "../../core/text"
@@ -22,12 +24,15 @@ import { useCampaignEdits, useUndoable } from "./campaign-edits"
 import { sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
 import { CastRelations, useCastRelations } from "./CastRelations"
+import { AttitudeBadge, ImportReputationDialog, parseViewers, RepBar, ReputationDialog, ScaleDialog, shownReputation, useReputation } from "./cast-reputation"
 
 /**
  * Elenco (U115): uma barra só (busca, “Filtros e exibição”, “Adicionar” e ⋯), abas por tipo com o número de cada um e
  * cartões só com o nome e a atitude. O resto (atitude, “apareceu”, sessões, relações, Trocar jogador, Abrir artigo,
  * Tirar da campanha) fica no painel do cartão escolhido, como na tela Relações da Wiki. Nada some: só muda de lugar.
- * O − e o + da reputação continuam no cartão da facção (1 clique).
+ * 24/11: cada jogador tem a própria reputação com o elenco, marcada pelo botão “Reputação”; o cartão mostra a dos
+ * jogadores escolhidos em “Filtros e exibição” (a média, com os pontos pintados em fração). A cor do cartão diz se o
+ * personagem já apareceu; morto, o cartão fica mais escuro.
  */
 type Tab = "todos" | "jogadores" | "npcs" | "faccoes" | "relacoes"
 type Seen = "todos" | "apareceu" | "ainda"
@@ -76,7 +81,9 @@ const GROUPS: Record<Group, string> = { nenhum: "Sem grupos", local: "Por local"
 const ORDERS: Record<Order, string> = { nome: "Nome", recente: "Visto há menos tempo", adicao: "Últimos acrescentados" }
 const SEEN: Record<Seen, string> = { todos: "Todos", apareceu: "Apareceram", ainda: "Ainda não" }
 const fold = (text: string) => text.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{M}/gu, "")
-const repText = (rep: number) => (rep > 0 ? `+${rep}` : String(rep))
+
+/** O que o cartão precisa da reputação: a escala, quem está sendo mostrado e o valor resolvido. */
+type RepView = { rep: ResolvedReputation; viewers: string[]; scale: RepScale }
 
 export function CastView({ data, requestedPath }: { data: CampaignData; requestedPath?: string }) {
   const vault = useVault()
@@ -109,11 +116,19 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
   const [adding, setAdding] = useState(false)
   const [dialog, setDialog] = useState<ReactNode>(null)
   const relations = useCastRelations(data)
+  const rep = useReputation(data)
+  const [savedViewers, setViewers] = useRemembered(`runas-codex:campanha:elenco-reputacao:${root}`, parseViewers)
+  const chosenViewers = savedViewers.filter((path) => data.players.some((p) => p.path === path))
+  // Ninguém escolhido (ou quem estava saiu da campanha): todos os jogadores.
+  const viewers = chosenViewers.length ? chosenViewers : data.players.map((p) => p.path)
+  const repView: RepView = { rep, viewers, scale: rep.scale }
   const detailId = useId()
   const returnFocus = useRef<HTMLElement | null>(null)
   const searchInput = useRef<HTMLInputElement>(null)
 
   const rows = useMemo(() => castRows(index, data.npcs, data.sessions), [index, vault.version, data.npcs, data.sessions])
+  // As facções também “aparecem” (marcadas à mão ou citadas numa sessão), para a cor do cartão.
+  const factionRows = useMemo(() => castRows(index, data.factions, data.sessions), [index, vault.version, data.factions, data.sessions])
   const q = fold(query.trim())
   const { seen, attitude } = filters
   const players = data.players.filter((p) => !q || fold(`${p.name} ${p.player ?? ""} ${p.concept ?? ""}`).includes(q))
@@ -156,9 +171,14 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
     ...(attitude ? [{ label: `Atitude: ${attitude === "-" ? "sem atitude" : attitude}`, clear: () => setFilters((c) => ({ ...c, attitude: "" })) }] : []),
     ...(prefs.group !== "nenhum" ? [{ label: `Agrupar: ${GROUPS[prefs.group].toLocaleLowerCase("pt-BR")}`, clear: () => setPrefs({ group: "nenhum" }) }] : []),
     ...(prefs.order !== "nome" ? [{ label: `Ordem: ${ORDERS[prefs.order].toLocaleLowerCase("pt-BR")}`, clear: () => setPrefs({ order: "nome" }) }] : []),
+    ...(chosenViewers.length && chosenViewers.length < data.players.length ? [{
+      label: `Reputação: ${chosenViewers.map((path) => data.players.find((p) => p.path === path)?.name ?? noteName(path)).join(", ")}`, clear: () => setViewers([]),
+    }] : []),
   ]
   const show = (part: Tab) => tab === "todos" ? part !== "relacoes" : tab === part
-  const detail = selected ? <CastDetail data={data} selected={selected} rows={rows} relations={relations} id={detailId} focusOnRoute={fromLink} onClose={close}
+  const openReputation = () => setDialog(<ReputationDialog data={data} rep={rep} onClose={() => setDialog(null)} />)
+  const detail = selected ? <CastDetail data={data} selected={selected} rows={rows} factionRows={factionRows} rep={rep} relations={relations} id={detailId} focusOnRoute={fromLink} onClose={close}
+    onReputation={canEdit ? openReputation : undefined}
     onSaveNpc={saveNpc} onSaveFaction={saveFaction} onRemoveNpc={removeNpc} onRemoveFaction={removeFaction} onUnlink={unlinkPlayer}
     onEditPlayer={(p) => setDialog(<EditPlayerDialog campaign={data.campaign} character={p} onClose={() => setDialog(null)} />)} /> : null
 
@@ -175,11 +195,16 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
           <Search size={15} aria-hidden="true" />
           <input ref={searchInput} className="input" type="search" value={query} onChange={(e) => { setQuery(e.target.value); setLimit(PAGE) }} placeholder="Buscar no elenco" aria-label="Buscar no elenco (nome, jogador, local ou facção)" />
         </label>
-        <FiltersMenu narrow={narrow} active={chips.length} seen={seen} attitude={attitude} prefs={prefs} rows={rows}
+        <FiltersMenu narrow={narrow} active={chips.length} seen={seen} attitude={attitude} prefs={prefs} rows={rows} players={data.players} viewers={chosenViewers} onViewers={setViewers}
           onSeen={(value) => { setFilters((c) => ({ ...c, seen: value })); setLimit(PAGE) }} onAttitude={(value) => { setFilters((c) => ({ ...c, attitude: value })); setLimit(PAGE) }} onPrefs={setPrefs} />
+        <button type="button" className="btn campaign-cast-rep" onClick={openReputation} disabled={!canEdit} aria-label="Reputação: marcar a reputação dos jogadores">
+          <Gauge size={15} aria-hidden="true" /><span className={narrow ? "sr-only" : undefined}>Reputação</span>
+        </button>
         {canEdit && <button type="button" className="btn primary campaign-cast-add" onClick={() => setAdding(true)} aria-label="Adicionar ao elenco"><Plus size={15} aria-hidden="true" /><span className={narrow ? "sr-only" : undefined}>Adicionar</span></button>}
         <OverflowMenu label="Mais ações do Elenco" items={[
           { label: "Gerar relações no Quadro", hint: relations.file.split("/").at(-1), icon: <Shapes size={15} />, disabled: data.readOnly || !relations.members.length, onSelect: () => void relations.generate() },
+          { label: "Importar reputação…", icon: <Download size={15} />, disabled: !canEdit, onSelect: () => setDialog(<ImportReputationDialog data={data} onClose={() => setDialog(null)} />) },
+          { label: "Escala da reputação…", hint: `${rep.scale.min} a +${rep.scale.max}`, icon: <Ruler size={15} />, disabled: !canEdit, onSelect: () => setDialog(<ScaleDialog data={data} onClose={() => setDialog(null)} />) },
         ]} />
       </div>
       <PanelTabs label="Tipos do elenco" idPrefix="elenco" value={tab} onChange={(value) => { setFromLink(false); setTab(value); setLimit(PAGE) }} tabs={[
@@ -196,30 +221,32 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
             {show("jogadores") && <CastSection title="Jogadores" count={players.length} total={data.players.length}
               empty={data.players.length ? "Ninguém com esse nome." : "Nenhum personagem vinculado. Use “Adicionar” para criar ou escolher um personagem da wiki."}>
               <ul className="campaign-cast-grid">
-                {players.map((p) => <li key={p.path}>
-                  <button type="button" className={`campaign-cast-card${isSelected(selected, { kind: "pj", path: p.path }) ? " selected" : ""}`} aria-expanded={isSelected(selected, { kind: "pj", path: p.path })} aria-controls={detailId}
-                    onClick={(e) => select({ kind: "pj", path: p.path }, e.currentTarget)}>
-                    <NoteCrest path={p.path} name={p.name} size={36} />
-                    <span className="campaign-cast-card-text"><strong>{p.name}</strong><span className="tiny faint">{[p.player, p.concept].filter(Boolean).join(" · ") || "Sem jogador anotado"}</span></span>
-                  </button>
-                </li>)}
+                {players.map((p) => {
+                  const value = shownReputation(rep, viewers, p.path)
+                  const gone = goneStatus(index.note(p.path)?.meta.frontmatter?.data)
+                  return <li key={p.path} className={gone ? "gone" : undefined}>
+                    <button type="button" className={`campaign-cast-card${isSelected(selected, { kind: "pj", path: p.path }) ? " selected" : ""}`} aria-expanded={isSelected(selected, { kind: "pj", path: p.path })} aria-controls={detailId}
+                      onClick={(e) => select({ kind: "pj", path: p.path }, e.currentTarget)}>
+                      <NoteCrest path={p.path} name={p.name} size={36} round={false} />
+                      <span className="campaign-cast-card-text">
+                        <span className="cast-name"><strong>{p.name}</strong>{gone && <GoneMark status={gone} />}</span>
+                        <span className="tiny faint">{[p.player, p.concept].filter(Boolean).join(" · ") || "Sem jogador anotado"}</span>
+                        {value !== null && <RepBar value={value} scale={rep.scale} name={p.name} compact />}
+                      </span>
+                    </button>
+                  </li>
+                })}
               </ul>
             </CastSection>}
-            {show("npcs") && <NpcSection data={data} rows={npcs} total={rows.length} prefs={prefs} limit={limit} setLimit={setLimit} selected={selected} detailId={detailId} onSelect={select}
+            {show("npcs") && <NpcSection data={data} rows={npcs} total={rows.length} prefs={prefs} limit={limit} setLimit={setLimit} selected={selected} detailId={detailId} onSelect={select} repView={repView}
               hint={tab === "npcs" || tab === "todos" ? "clique num cartão para ver e mudar" : undefined} />}
-            {show("faccoes") && <CastSection title="Facções" count={factions.length} total={data.factions.length} hint="− e + mudam a reputação"
-              empty={data.factions.length ? "Nenhuma facção com esse nome." : "Organizações da wiki com a reputação do grupo (−3 a +3). Use “Adicionar”."}>
+            {show("faccoes") && <CastSection title="Facções" count={factions.length} total={data.factions.length} hint="clique num cartão para ver e mudar"
+              empty={data.factions.length ? "Nenhuma facção com esse nome." : "Organizações da wiki; a reputação de cada jogador com elas fica no botão “Reputação”. Use “Adicionar”."}>
               <ul className={prefs.mode === "grid" ? `campaign-cast-cards size-${prefs.size}` : "campaign-cast-list"}>
                 {factions.map((item) => {
-                  const name = noteName(item.target), rep = reputationOf(item.extra), on = isSelected(selected, selectTracked("faccao", item))
-                  const note = item.dest ? index.note(item.dest) : undefined
-                  return <li key={item.position} className={`campaign-cast-item${on ? " selected" : ""}`}>
-                    <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => select(selectTracked("faccao", item), e.currentTarget)}>
-                      {prefs.mode === "grid" && prefs.size !== "small" ? <CastMedia note={note} faction /> : <NoteCrest path={item.dest} name={name} size={32} round={false} />}
-                      <span className="campaign-cast-card-text"><strong className={item.dest ? undefined : "wikilink broken"}>{name}</strong></span>
-                    </button>
-                    <Reputation name={name} rep={rep} disabled={data.readOnly} onChange={(next) => void saveFaction(item, withReputation(item.extra, next))} />
-                  </li>
+                  const row = factionRows.find((r) => r.item.position === item.position)
+                  return <CastCard key={item.position} item={item} name={noteName(item.target)} faction appeared={row?.appeared ?? false} prefs={prefs} repView={repView}
+                    selected={isSelected(selected, selectTracked("faccao", item))} detailId={detailId} onClick={(e) => select(selectTracked("faccao", item), e)} />
                 })}
               </ul>
             </CastSection>}
@@ -248,36 +275,63 @@ function CastSection({ title, count, total, hint, empty, children }: { title: st
 }
 
 /**
- * A imagem do cartão médio e grande (anexos 8–10, 24/11): NPC e facção do mesmo tamanho, no alto do cartão. O símbolo
- * da facção aparece inteiro (sem corte); sem imagem, o ícone da categoria; sem artigo, o ícone de pessoa ou de escudo.
+ * A imagem do cartão médio e grande (24/11, como no desenho do João): um quadrado dentro do cartão, com margem, e o
+ * ícone da atitude no canto. O símbolo da facção aparece inteiro (sem corte); sem imagem, o ícone da categoria; sem
+ * artigo, o ícone de pessoa ou de escudo.
  */
-function CastMedia({ note, faction = false }: { note: IndexedNote | undefined; faction?: boolean }) {
+function CastMedia({ note, faction = false, children }: { note: IndexedNote | undefined; faction?: boolean; children?: ReactNode }) {
   const Fallback = faction ? Shield : User
   return <span className={`campaign-cast-media${faction ? " symbol" : ""}`}>
     {note ? <ArticleArt note={note} size="cover" /> : <span className="wiki-article-art cover" aria-hidden="true"><Fallback className="wiki-art-emblem" /></span>}
+    {children}
   </span>
 }
 
-/** − e + da reputação (−3 a +3), com o número em texto; no cartão da facção, 1 clique como antes. */
-function Reputation({ name, rep, disabled, onChange }: { name: string; rep: number; disabled: boolean; onChange(next: number): void }) {
-  return <span className="row campaign-faction-reputation" style={{ gap: 2 }}>
-    <button type="button" className="icon-btn sm" disabled={disabled || rep <= -3} onClick={() => onChange(rep - 1)} aria-label={`Baixar a reputação com ${name}`}><Minus size={14} /></button>
-    <span className="campaign-rep-pips" aria-hidden="true">{[-3, -2, -1, 0, 1, 2, 3].map((n) => <i key={n} className={n === 0 ? "zero" : n < 0 && rep <= n ? "neg" : n > 0 && rep >= n ? "pos" : undefined} />)}</span>
-    <span className={`chip ${rep > 0 ? "green" : rep < 0 ? "red" : ""} mono`} aria-live="polite"><span className="sr-only">Reputação com {name}: </span>{repText(rep)}</span>
-    <button type="button" className="icon-btn sm" disabled={disabled || rep >= 3} onClick={() => onChange(rep + 1)} aria-label={`Subir a reputação com ${name}`}><Plus size={14} /></button>
-  </span>
+/** Marca de morto (ou extinta) ao lado do nome: o cartão escuro não depende só da cor. */
+function GoneMark({ status }: { status: string }) {
+  return <span className="cast-gone" title={status}><Skull aria-hidden="true" /><span className="sr-only">, {status.toLocaleLowerCase("pt-BR")}</span></span>
+}
+
+/**
+ * Cartão do NPC ou da facção, em todos os tamanhos: imagem (ou o quadrado pequeno), o nome, o ícone da atitude e a
+ * reputação dos jogadores mostrados. A cor diz se já apareceu; morto, mais escuro. Os cartões da mesma fileira têm a
+ * mesma altura (a reputação vai para o pé).
+ */
+function CastCard({ item, name, faction = false, attitude = "", appeared, prefs, repView, selected, detailId, onClick }: {
+  item: TrackedLink; name: string; faction?: boolean; attitude?: string; appeared: boolean; prefs: Prefs; repView: RepView
+  selected: boolean; detailId: string; onClick(from: HTMLElement): void
+}) {
+  const vault = useVault()
+  const note = item.dest ? vault.index?.note(item.dest) : undefined
+  const gone = goneStatus(note?.meta.frontmatter?.data)
+  const big = prefs.mode === "grid" && prefs.size !== "small"
+  const value = shownReputation(repView.rep, repView.viewers, item.dest)
+  const said = [faction ? "" : attitude || "sem atitude", appeared ? "já apareceu" : "ainda não apareceu"].filter(Boolean).join(", ")
+  return <li className={`campaign-cast-item ${appeared ? "seen" : "unseen"}${gone ? " gone" : ""}${selected ? " selected" : ""}`}>
+    <button type="button" className="campaign-cast-card" aria-expanded={selected} aria-controls={detailId} onClick={(e) => onClick(e.currentTarget)}>
+      {big ? <CastMedia note={note} faction={faction}><AttitudeBadge attitude={attitude} /></CastMedia>
+        : <span className="cast-crest"><NoteCrest path={item.dest} name={name} size={28} round={false} /><AttitudeBadge attitude={attitude} /></span>}
+      <span className="campaign-cast-card-text">
+        <span className="cast-name">
+          <strong className={item.dest ? undefined : "wikilink broken"}>{name}</strong>
+          {gone && <GoneMark status={gone} />}
+        </span>
+        <span className="sr-only">{said}</span>
+      </span>
+      {value !== null && <RepBar value={value} scale={repView.scale} name={name} compact={!big} />}
+    </button>
+  </li>
 }
 
 /**
  * NPCs (T9): pensado para mais de 100. Agrupar por local, facção, atitude ou situação; na grade, “Mostrar mais” completa
- * fileiras inteiras (U28) e leva o foco ao primeiro cartão novo. O cartão mostra o nome, a atitude e um selo “ainda não
- * apareceu” quando é o caso.
+ * fileiras inteiras (U28) e leva o foco ao primeiro cartão novo. O cartão mostra o nome, o ícone da atitude e a
+ * reputação; a cor diz se já apareceu (24/11: sem o selo “ainda não apareceu”).
  */
-function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detailId, onSelect, hint }: {
+function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detailId, onSelect, hint, repView }: {
   data: CampaignData; rows: CastRow[]; total: number; prefs: Prefs; limit: number; setLimit(value: number): void
-  selected: Selected | null; detailId: string; onSelect(next: Selected, from: HTMLElement): void; hint?: string
+  selected: Selected | null; detailId: string; onSelect(next: Selected, from: HTMLElement): void; hint?: string; repView: RepView
 }) {
-  const vault = useVault()
   const gridRef = useRef<HTMLUListElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const firstNew = useRef<number | null>(null)
@@ -308,23 +362,8 @@ function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detai
       {[...groups].map(([group, list], i) => <div key={group || "todos"} className="stack" style={{ gap: grid ? 8 : 0 }}>
         {group && <h3 className="campaign-roster-group">{group} · {list.length}</h3>}
         <ul ref={i === 0 ? gridRef : undefined} className={grid ? `campaign-cast-cards npcs size-${prefs.size}` : "campaign-cast-list"}>
-          {list.map((row) => {
-            const on = isSelected(selected, selectTracked("npc", row.item))
-            const note = row.item.dest ? vault.index?.note(row.item.dest) : undefined
-            const media = grid && prefs.size !== "small" ? <CastMedia note={note} /> : <NoteCrest path={row.item.dest} name={row.name} size={32} />
-            return <li key={row.item.position} className={`campaign-cast-item${on ? " selected" : ""}`}>
-              <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => onSelect(selectTracked("npc", row.item), e.currentTarget)}>
-                {media}
-                <span className="campaign-cast-card-text">
-                  <strong className={row.item.dest ? undefined : "wikilink broken"}>{row.name}</strong>
-                  <span className="row-wrap campaign-cast-tags">
-                    <span className={`chip ${attitudeColor(row.attitude)}`}>{row.attitude || "sem atitude"}</span>
-                    {!row.appeared && <span className="chip campaign-cast-unseen">ainda não apareceu</span>}
-                  </span>
-                </span>
-              </button>
-            </li>
-          })}
+          {list.map((row) => <CastCard key={row.item.position} item={row.item} name={row.name} attitude={row.attitude} appeared={row.appeared} prefs={prefs} repView={repView}
+            selected={isSelected(selected, selectTracked("npc", row.item))} detailId={detailId} onClick={(from) => onSelect(selectTracked("npc", row.item), from)} />)}
         </ul>
       </div>)}
     </div>
@@ -332,9 +371,13 @@ function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detai
   </CastSection>
 }
 
-/** “Filtros e exibição”: Situação, Atitude, Agrupar e Ordem dos NPCs, e Lista ou Grade e o tamanho dos cartões. */
-function FiltersMenu({ narrow, active, seen, attitude, prefs, rows, onSeen, onAttitude, onPrefs }: {
+/**
+ * “Filtros e exibição”: Situação, Atitude, Agrupar e Ordem dos NPCs, Lista ou Grade e o tamanho dos cartões, e de
+ * quais jogadores é a reputação mostrada (dois ou mais: a média).
+ */
+function FiltersMenu({ narrow, active, seen, attitude, prefs, rows, players, viewers, onViewers, onSeen, onAttitude, onPrefs }: {
   narrow: boolean; active: number; seen: Seen; attitude: string; prefs: Prefs; rows: CastRow[]
+  players: PlayerCharacter[]; viewers: string[]; onViewers(value: string[]): void
   onSeen(value: Seen): void; onAttitude(value: string): void; onPrefs(next: Partial<Prefs>): void
 }) {
   const ref = useRef<HTMLDetailsElement>(null)
@@ -382,13 +425,31 @@ function FiltersMenu({ narrow, active, seen, attitude, prefs, rows, onSeen, onAt
       {prefs.mode === "grid" && <div className="field"><span id={`${id}-cartoes`}>Cartões</span>
         <ChoiceGroup labelledBy={`${id}-cartoes`} value={prefs.size} onChange={(size) => onPrefs({ size })} options={[{ value: "small", label: "Pequenos" }, { value: "medium", label: "Médios" }, { value: "large", label: "Grandes" }]} />
       </div>}
+      {players.length > 0 && <fieldset className="field campaign-cast-viewers">
+        <legend>Reputação de</legend>
+        {players.map((p) => {
+          const all = !viewers.length
+          const on = all || viewers.includes(p.path)
+          return <label key={p.path} className="row campaign-cast-viewer">
+            <input type="checkbox" checked={on} onChange={() => {
+              const current = all ? players.map((x) => x.path) : viewers
+              const next = on ? current.filter((x) => x !== p.path) : [...current, p.path]
+              // Desmarcar o último ou marcar todos volta a “todos”.
+              onViewers(next.length === players.length ? [] : next.length ? next : [])
+            }} />
+            <span>{p.name}</span>
+          </label>
+        })}
+        <span className="tiny faint">{players.length > 1 ? "Com dois ou mais, o cartão mostra a média." : "A reputação dele com cada personagem."}</span>
+      </fieldset>}
     </div>
   </details>
 }
 
 /** Painel do cartão escolhido: tudo o que antes ficava em cada cartão. */
-function CastDetail({ data, selected, rows, relations, id, focusOnRoute, onClose, onSaveNpc, onSaveFaction, onRemoveNpc, onRemoveFaction, onUnlink, onEditPlayer }: {
-  data: CampaignData; selected: Selected; rows: CastRow[]; relations: ReturnType<typeof useCastRelations>; id: string; focusOnRoute: boolean; onClose(): void
+function CastDetail({ data, selected, rows, factionRows, rep, relations, id, focusOnRoute, onClose, onReputation, onSaveNpc, onSaveFaction, onRemoveNpc, onRemoveFaction, onUnlink, onEditPlayer }: {
+  data: CampaignData; selected: Selected; rows: CastRow[]; factionRows: CastRow[]; rep: ResolvedReputation; relations: ReturnType<typeof useCastRelations>; id: string; focusOnRoute: boolean; onClose(): void
+  onReputation?: () => void
   onSaveNpc(item: TrackedLink, extra: string): void; onSaveFaction(item: TrackedLink, extra: string): void
   onRemoveNpc(row: CastRow): void; onRemoveFaction(item: TrackedLink): void; onUnlink(p: PlayerCharacter): void; onEditPlayer(p: PlayerCharacter): void
 }) {
@@ -397,6 +458,7 @@ function CastDetail({ data, selected, rows, relations, id, focusOnRoute, onClose
   const player = selected.kind === "pj" ? data.players.find((p) => p.path === selected.path) : undefined
   const row = selected.kind === "npc" ? rows.find((r) => r.item.position === selected.position) : undefined
   const faction = selected.kind === "faccao" ? data.factions.find((f) => f.position === selected.position) : undefined
+  const factionRow = faction ? factionRows.find((r) => r.item.position === faction.position) : undefined
   // Some do painel o que saiu da campanha (Desfazer traz de volta pela lista).
   if (!player && !row && !faction) return null
   const path = player?.path ?? row?.item.dest ?? faction?.dest
@@ -405,6 +467,8 @@ function CastDetail({ data, selected, rows, relations, id, focusOnRoute, onClose
   const sub = player ? [player.player, player.concept].filter(Boolean).join(" · ") : row ? [row.place, row.faction].filter(Boolean).join(" · ") : ""
   const links = path ? relations.edges.filter((e) => e.from === path || e.to === path) : []
   const known = row ? ATTITUDES.includes(row.attitude as (typeof ATTITUDES)[number]) : false
+  const seenRow = row ?? factionRow
+  const others = data.players.filter((p) => p.path !== path)
   const titleId = `${id}-title`
   return <aside id={id} className="campaign-cast-detail" aria-labelledby={titleId}>
     <div className="campaign-cast-detail-head">
@@ -425,22 +489,26 @@ function CastDetail({ data, selected, rows, relations, id, focusOnRoute, onClose
           : <ChoiceGroup labelledBy={`${id}-atitude`} value={known ? row.attitude : ""} onChange={(value) => onSaveNpc(row.item, npcExtra(value, row.marked))}
             options={[...ATTITUDES.map((a) => ({ value: a as string, label: a })), { value: "", label: row.attitude && !known ? row.attitude : "sem" }]} />}
       </div>
+    </>}
+    {seenRow && <>
       <div className="campaign-cast-detail-part">
-        {/* Apareceu: marcado à mão ou porque uma sessão cita o NPC (aí não dá para desmarcar daqui). */}
-        <button type="button" className={`chip campaign-appeared ${row.appeared ? "green" : ""}`} aria-pressed={row.appeared} disabled={data.readOnly || (row.seen.length > 0 && !row.marked)}
-          onClick={() => onSaveNpc(row.item, npcExtra(row.attitude, !row.marked))}>
-          {row.appeared ? <Check size={13} aria-hidden="true" /> : <Minus size={13} aria-hidden="true" />} {row.appeared ? "Já apareceu" : "Ainda não apareceu"}
+        {/* Apareceu: marcado à mão ou porque uma sessão cita o personagem (aí não dá para desmarcar daqui). */}
+        <button type="button" className={`chip campaign-appeared ${seenRow.appeared ? "green" : ""}`} aria-pressed={seenRow.appeared} disabled={data.readOnly || (seenRow.seen.length > 0 && !seenRow.marked)}
+          onClick={() => (row ? onSaveNpc : onSaveFaction)(seenRow.item, npcExtra(seenRow.attitude, !seenRow.marked))}>
+          {seenRow.appeared ? <Check size={13} aria-hidden="true" /> : <Minus size={13} aria-hidden="true" />} {seenRow.appeared ? "Já apareceu" : "Ainda não apareceu"}
         </button>
-        <span className="tiny faint">{row.seen.length && !row.marked ? `citado em ${noteName(row.seen[0]!.path)}` : row.marked ? "marcado à mão" : "marque quando ele entrar em cena"}</span>
+        <span className="tiny faint">{seenRow.seen.length && !seenRow.marked ? `citado em ${noteName(seenRow.seen[0]!.path)}` : seenRow.marked ? "marcado à mão" : "marque quando entrar em cena"}</span>
       </div>
-      {row.seen.length > 0 && <div className="campaign-cast-detail-part">
+      {seenRow.seen.length > 0 && <div className="campaign-cast-detail-part">
         <span className="campaign-cast-detail-label">Visto em</span>
-        <ul className="campaign-cast-detail-list">{row.seen.map((s) => <li key={s.path}><a href={href(sessionRoute(s))}>{noteName(s.path)}</a></li>)}</ul>
+        <ul className="campaign-cast-detail-list">{seenRow.seen.map((s) => <li key={s.path}><a href={href(sessionRoute(s))}>{noteName(s.path)}</a></li>)}</ul>
       </div>}
     </>}
-    {faction && <div className="campaign-cast-detail-part">
-      <span className="campaign-cast-detail-label">Reputação do grupo</span>
-      <Reputation name={name} rep={reputationOf(faction.extra)} disabled={data.readOnly} onChange={(next) => onSaveFaction(faction, withReputation(faction.extra, next))} />
+    {path && others.length > 0 && <div className="campaign-cast-detail-part">
+      <span className="campaign-cast-detail-label">Reputação</span>
+      <ul className="campaign-cast-detail-list cast-rep-detail">{others.map((p) =>
+        <li key={p.path}><span className="truncate">{p.name}</span><RepBar value={reputationValue(rep, p.path, path)} scale={rep.scale} name={`${name}, de ${p.name}`} compact /></li>)}</ul>
+      {onReputation && <button type="button" className="btn sm" onClick={onReputation}><Gauge size={14} aria-hidden="true" /> Marcar reputação</button>}
     </div>}
     <div className="campaign-cast-detail-part">
       <span className="campaign-cast-detail-label">Relações</span>
