@@ -2,6 +2,7 @@ import { deferredView } from "../../components/kit/deferred-view"
 import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useFitCount } from "../../components/kit/useFitCount"
 import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Newspaper, Plus, Wrench, Package, Trash2 } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
@@ -160,12 +161,14 @@ function WikiHeader({ current }: { current: string }) {
         "separator" as const,
         { label: "Excluir esta wiki…", icon: <Trash2 size={15} />, danger: true, disabled: vault.info?.readOnly ?? true, onSelect: () => setDeleting(true) },
       ]} />
-      {deleting && wiki && <DeleteWikiDialog root={wiki.root} name={wiki.name} onClose={() => setDeleting(false)} onDeleted={() => {
+      {/* Os diálogos vão para o fim da página: dentro da barra (que tem backdrop-filter) o diálogo fixo ficava preso a
+          ela e abria cortado no alto. */}
+      {deleting && wiki && createPortal(<DeleteWikiDialog root={wiki.root} name={wiki.name} onClose={() => setDeleting(false)} onDeleted={() => {
         const next = wikis.find((w) => w.name !== wiki.name)
         if (next) setWiki(next.name)
         navigate("/wiki")
-      }} />}
-      {creating && <NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />}
+      }} />, document.body)}
+      {creating && createPortal(<NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />, document.body)}
     </div>
   )
 }
