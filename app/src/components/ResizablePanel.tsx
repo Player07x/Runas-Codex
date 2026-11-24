@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom"
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type PointerEvent, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent, type ReactNode } from "react"
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react"
 import "./resizable-panel.css"
 
@@ -132,13 +132,28 @@ export function ResizablePanel({ id, label, side = "right", width = 300, maxWidt
       <button type="button" className="panel-collapse icon-btn sm" aria-label={action} title={id === "navigation" ? `${action} (Ctrl+\\)` : action} aria-expanded={!prefs.collapsed} onClick={toggle}><Icon size={17} /></button>
     </div>
   const target = away ? collapsedTarget : controlsTarget
-  return <Tag ref={ref} hidden={hidden} className={`resizable-panel ${className}`} data-panel-id={id} data-panel-mode={collapsedMode} data-panel-detached={Boolean(controlsTarget)} data-panel-away={away} data-panel-collapsed={prefs.collapsed} aria-label={label}>
-    {target ? createPortal(control, target) : control}
-    {children}
-    <div className={`panel-edge panel-edge-${side}`} role="separator" aria-label={`Largura de ${label}`} aria-orientation="vertical" aria-valuemin={180} aria-valuemax={maxWidth} aria-valuenow={prefs.width} tabIndex={0}
+  // A alça de largura fica fora do painel que rola (anexo 5, 24/11): dentro dele, ela ficava antes da barra de rolagem
+  // e subia junto com a lista. Presa à borda pelo posicionamento por âncora (resizable-panel.css).
+  const anchor = { "--panel-anchor": `--painel-${id.replace(/[^\w-]/g, "-")}` } as CSSProperties
+  // Fora do painel, a alça não some sozinha quando o CSS esconde o painel (janela estreita, camada fechada): só existe
+  // enquanto o painel tem tamanho, para não ficar uma alça invisível no caminho do Tab.
+  const [shown, setShown] = useState(true)
+  useEffect(() => {
+    const panel = ref.current
+    if (!panel || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => setShown(panel.getClientRects().length > 0))
+    observer.observe(panel)
+    return () => observer.disconnect()
+  }, [])
+  return <>
+    <Tag ref={ref} hidden={hidden} style={anchor} className={`resizable-panel ${className}`} data-panel-id={id} data-panel-mode={collapsedMode} data-panel-detached={Boolean(controlsTarget)} data-panel-away={away} data-panel-collapsed={prefs.collapsed} aria-label={label}>
+      {target ? createPortal(control, target) : control}
+      {children}
+    </Tag>
+    {!hidden && !away && shown && <div className={`panel-edge panel-edge-${side}`} style={anchor} data-panel-edge={id} role="separator" aria-label={`Largura de ${label}`} aria-orientation="vertical" aria-valuemin={180} aria-valuemax={maxWidth} aria-valuenow={prefs.width} tabIndex={0}
       onDoubleClick={() => setPrefs({ width, collapsed: false })}
       onKeyDown={event => { if (["ArrowLeft", "ArrowRight", "Home"].includes(event.key)) { event.preventDefault(); const delta = (event.key === "ArrowRight" ? 20 : -20) * (side === "left" ? 1 : -1); setPrefs(p => ({ collapsed: false, width: event.key === "Home" ? width : Math.min(maxWidth, Math.max(180, p.width + delta)) })) } }}
       onPointerDown={event => { if (event.button !== 0) return; event.preventDefault(); drag.current = { x: event.clientX, width: ref.current?.getBoundingClientRect().width ?? prefs.width }; event.currentTarget.setPointerCapture(event.pointerId) }}
-      onPointerMove={resize} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }} />
-  </Tag>
+      onPointerMove={resize} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }} />}
+  </>
 }

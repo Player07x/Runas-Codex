@@ -70,14 +70,15 @@ export function WikiCategory({ path }: { path: string }) {
   const activeCount = Object.values(applied).filter(Boolean).length + (subfolder ? 1 : 0)
   if (!valid) return <div className="page"><Empty title="Categoria fora desta Wiki" action={<a className="btn" href={href("/wiki")}>Voltar para a Wiki</a>}>Escolha uma categoria na página inicial.</Empty></div>
   const isRoot = folder === root.slice(0,-1)
+  const HeadIcon = Emblem ?? (kind ? Icon : Folder)
   const readOnly = vault.info?.readOnly ?? true
   // A ficha só é editável aqui nas categorias que não usam um tipo pronto (as criadas pelo usuário ou sem tipo).
   const customizable = !players && !isRoot && !ARTICLE_KINDS.some(builtIn => builtIn.id === kind?.id)
   const pick = (key: string, value: string) => { setView(current => ({ ...current, fields: { ...current.fields, [key]: value } })); firstPage() }
   return <div className={`page wiki-category-page${look.tone ? " toned" : ""}`} style={toneStyle(look.tone)}>
     <a className="wiki-category-back" href={href("/wiki")}><ArrowLeft size={16}/> Voltar para a Wiki</a>
-    {look.cover && <CoverBand tone={look.tone} cover={look.cover} from={folder + "/"} height={140} className="wiki-category-cover" />}
-    <header className="page-head"><div><span className="eyebrow">{wiki!.name} · Categoria{players ? " · Visão dos jogadores" : ""}</span><h1 className="page-title row">{Emblem ? <Emblem size={25}/> : kind ? <Icon size={25}/> : <Folder size={25}/>} {name}</h1>{look.description && <p className="wiki-category-description">{look.description}</p>}<p className="small muted">{notes.length} {notes.length === 1 ? "artigo" : "artigos"}</p></div>
+    {!isRoot && <CoverBand tone={look.tone} cover={look.cover} from={folder + "/"} height={140} className="wiki-category-cover" art={HeadIcon} />}
+    <header className="page-head"><div><span className="eyebrow">{wiki!.name} · Categoria{players ? " · Visão dos jogadores" : ""}</span><h1 className="page-title row"><HeadIcon size={25}/> {name}</h1>{look.description && <p className="wiki-category-description">{look.description}</p>}<p className="small muted">{notes.length} {notes.length === 1 ? "artigo" : "artigos"}</p></div>
       <div className="kit-actions">
         {!players && <button className="btn primary" disabled={vault.info?.readOnly} onClick={() => setCreating(true)}><Plus size={16}/> Novo {kind?.label.toLocaleLowerCase("pt-BR") ?? "artigo"}</button>}
         <OverflowMenu label="Ações da categoria" items={[

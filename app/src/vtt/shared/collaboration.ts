@@ -1,15 +1,28 @@
 export interface RoomPrompt {id:string;kind:"diario"|"avaliacao"|"enquete";title:string;options:string[]}
 export interface DiaryMessage {id:string;author:string;title:string;text:string}
-export interface RoomCollaboration {safetySignals:number;closed:boolean;prompt:RoomPrompt|null;handout:{id?:string;title:string;text:string;recipients?:string[]}|null;diaries:DiaryMessage[];ratings:{score:number;text:string}[];votes:number[];responses:number}
-export type CollaborationCommand={type:"prompt";prompt:RoomPrompt|null}|{type:"handout";handout:{id?:string;title:string;text:string;recipients?:string[]}|null}|{type:"consume-diary";id:string}|{type:"ack-safety"}
+export interface RoomCollaboration {safetySignals:number;closed:boolean;prompt:RoomPrompt|null;handout:Handout|null;diaries:DiaryMessage[];ratings:{score:number;text:string}[];votes:number[];responses:number}
+export type CollaborationCommand={type:"prompt";prompt:RoomPrompt|null}|{type:"handout";handout:Handout|null}|{type:"consume-diary";id:string}|{type:"ack-safety"}
 export type CollaborationReply={type:"safety"}|{type:"reply";promptId:string;title?:string;text?:string;score?:number;choices?:number[]}
-export interface PublicCollaboration {prompt:RoomPrompt|null;handout:{id?:string;title:string;text:string}|null;safetySignals:number}
+/**
+ * Artigo apresentado pela sala. `images` (anexo 6, 24/11): o alvo de cada imagem embutida no texto (`Anexos/x.png`) e
+ * o asset da mesa com a cópia dela (`tiles/<hash>.png`), que a sala libera enquanto o artigo estiver aberto.
+ */
+export interface Handout {id?:string;title:string;text:string;recipients?:string[];images?:Record<string,string>}
+export interface PublicCollaboration {prompt:RoomPrompt|null;handout:{id?:string;title:string;text:string;images?:Record<string,string>}|null;safetySignals:number}
+/** Só assets de imagem com nome de hash, como os que `assets.import` devolve. */
+const HANDOUT_ASSET=/^(?:tiles|tokens|maps)\/[A-Za-z0-9._-]{1,200}$/
+function handoutImages(value:unknown):Record<string,string>|undefined {
+ const d=object(value);if(!d)return undefined
+ const out:Record<string,string>={}
+ for(const [target,asset] of Object.entries(d).slice(0,60))if(target.length<=500&&typeof asset==="string"&&HANDOUT_ASSET.test(asset)&&!asset.includes(".."))out[target]=asset
+ return Object.keys(out).length?out:undefined
+}
 const object=(v:unknown):Record<string,unknown>|null=>v&&typeof v==="object"&&!Array.isArray(v)?v as Record<string,unknown>:null
 const text=(v:unknown,max:number)=>typeof v==="string"?v.slice(0,max).trim():""
 export function normalizeCollaborationCommand(value:unknown):CollaborationCommand|null {
  const d=object(value);if(!d)return null
  if(d.type==="prompt") {if(d.prompt===null)return {type:"prompt",prompt:null};const p=object(d.prompt);if(!p||!["diario","avaliacao","enquete"].includes(String(p.kind))||!text(p.id,100)||!text(p.title,200))return null;const options=Array.isArray(p.options)?p.options.filter((v):v is string=>typeof v==="string").map(v=>v.slice(0,100)).slice(0,20):[];if(p.kind==="enquete"&&options.length<2)return null;return {type:"prompt",prompt:{id:text(p.id,100),title:text(p.title,200),kind:p.kind as RoomPrompt["kind"],options}}}
- if(d.type==="handout"){if(d.handout===null)return {type:"handout",handout:null};const h=object(d.handout);if(!h||!text(h.title,200)||!text(h.text,50000))return null;return {type:"handout",handout:{title:text(h.title,200),text:text(h.text,50000),...(Array.isArray(h.recipients)?{recipients:h.recipients.filter((v):v is string=>typeof v==="string"&&/^[A-Za-z0-9_-]{1,100}$/.test(v)).slice(0,12)}:{})}}}
+ if(d.type==="handout"){if(d.handout===null)return {type:"handout",handout:null};const h=object(d.handout);if(!h||!text(h.title,200)||!text(h.text,50000))return null;const images=handoutImages(h.images);return {type:"handout",handout:{title:text(h.title,200),text:text(h.text,50000),...(Array.isArray(h.recipients)?{recipients:h.recipients.filter((v):v is string=>typeof v==="string"&&/^[A-Za-z0-9_-]{1,100}$/.test(v)).slice(0,12)}:{}),...(images?{images}:{})}}}
  if(d.type==="ack-safety")return {type:"ack-safety"}
  if(d.type==="consume-diary"&&text(d.id,100))return {type:"consume-diary",id:text(d.id,100)}
  return null
@@ -21,8 +34,10 @@ export class CollaborationRoom {
  snapshot():RoomCollaboration{return structuredClone(this.state)}
  publicSnapshot(slotId?:string):PublicCollaboration {
   const h=this.state.handout
-  return structuredClone({prompt:this.state.closed?null:this.state.prompt,handout:h && (!h.recipients || (slotId && h.recipients.includes(slotId)))?{id:h.id,title:h.title,text:h.text}:null,safetySignals:this.state.safetySignals})
+  return structuredClone({prompt:this.state.closed?null:this.state.prompt,handout:h && (!h.recipients || (slotId && h.recipients.includes(slotId)))?{id:h.id,title:h.title,text:h.text,...(h.images?{images:h.images}:{})}:null,safetySignals:this.state.safetySignals})
  }
+ /** Os assets das imagens do artigo aberto, para a sala servir (e só enquanto ele estiver aberto). */
+ handoutAssets():string[]{return Object.values(this.state.handout?.images??{})}
  reset():void{this.state={safetySignals:0,closed:true,prompt:null,handout:null,diaries:[],ratings:[],votes:[],responses:0};this.replies.clear()}
  command(raw:unknown):RoomCollaboration {
   const command=normalizeCollaborationCommand(raw);if(!command)throw new Error("Comando de colaboração inválido.")

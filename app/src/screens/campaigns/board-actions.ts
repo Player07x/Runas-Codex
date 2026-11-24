@@ -1,4 +1,6 @@
-import { npcAttitude, reputationOf } from "../../core/campaigns"
+import { npcAttitude, resolveTarget, reputationOf } from "../../core/campaigns"
+import { averageReputation, formatReputation, resolveReputation } from "../../core/reputation"
+import type { VaultIndex } from "../../core/vault-index"
 import { canvasToSave, emptyCanvasText, parseCanvas, type CanvasDoc } from "../../core/canvas"
 import type { RelationMember } from "../../core/relation-map"
 import { noteName } from "../../core/text"
@@ -24,8 +26,15 @@ export async function writeGeneratedCanvas(vault: VaultState, file: string, buil
   if (text) await vault.save(file, text)
 }
 
-/** Quem entra no mapa de relações: personagens, NPCs e facções da campanha, com a atitude ou reputação com o grupo. */
-export function relationMembers(data: CampaignData): RelationMember[] {
+/**
+ * Quem entra no mapa de relações: personagens, NPCs e facções da campanha, com a atitude ou reputação com o grupo. A
+ * reputação da facção é a média dos jogadores (24/11); sem o índice, o número antigo do grupo.
+ */
+export function relationMembers(data: CampaignData, index?: VaultIndex): RelationMember[] {
+  const home = data.campaign.home
+  const legacy = new Map(data.factions.flatMap((f) => (f.dest && reputationOf(f.extra) !== 0 ? [[f.dest, reputationOf(f.extra)] as const] : [])))
+  const rep = index && home ? resolveReputation(data.reputation, (target) => resolveTarget(index, target, home), legacy) : null
+  const players = data.players.map((p) => p.path)
   const seen = new Set<string>()
   const members: RelationMember[] = []
   const add = (member: RelationMember) => {
@@ -39,8 +48,8 @@ export function relationMembers(data: CampaignData): RelationMember[] {
     if (n.dest) add({ path: n.dest, title: noteName(n.target), kind: "npc", ...(attitude ? { toParty: attitude } : {}) })
   }
   for (const f of data.factions) {
-    const rep = reputationOf(f.extra)
-    if (f.dest) add({ path: f.dest, title: noteName(f.target), kind: "faccao", toParty: `reputação ${rep > 0 ? `+${rep}` : rep}` })
+    const value = f.dest && rep ? averageReputation(rep, players, f.dest) ?? 0 : reputationOf(f.extra)
+    if (f.dest) add({ path: f.dest, title: noteName(f.target), kind: "faccao", toParty: `reputação ${formatReputation(value)}` })
   }
   return members
 }

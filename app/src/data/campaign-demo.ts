@@ -34,6 +34,16 @@ Os personagens investigam lobos de brasa nos esgotos de [[${W}/Locais/Valdris|Va
 - { nome: Paciência do Conde, segmentos: 6, preenchidos: 2, tipo: ameaca }
 - { nome: Confiança de Aldren, segmentos: 4, preenchidos: 3, tipo: progresso }
 \`\`\`
+
+## Reputação
+
+Escala: de -3 a +3
+
+- [[${C}/Personagens/Ilsa Brasa|Ilsa Brasa]] com [[${W}/Personagens/Aldren Vael|Aldren Vael]]: +2
+- [[${C}/Personagens/Ilsa Brasa|Ilsa Brasa]] com [[${W}/Personagens/Conde Ormund|Conde Ormund]]: -1
+- [[${C}/Personagens/Mirela|Mirela]] com [[${W}/Personagens/Aldren Vael|Aldren Vael]]: +1
+- [[${C}/Personagens/Sef|Sef]] com [[${W}/Personagens/Conde Ormund|Conde Ormund]]: -3
+- [[${C}/Personagens/Torvak|Torvak]] com [[${W}/Organizações/Ordem da Chama Cinzenta|Ordem da Chama Cinzenta]]: +3
 `
 
 const pcs = (...names: string[]) => `[${names.map((n) => `"[[${C}/Personagens/${n}]]"`).join(", ")}]`

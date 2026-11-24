@@ -68,6 +68,19 @@ export function Progress({ value, max, color = "var(--cyan)" }: { value: number;
 export function ClockDial({ segments, filled, color, size = 54 }: { segments: number; filled: number; color: string; size?: number }) {
   const r = size / 2 - 3
   const c = size / 2
+  // Muitas partes (ameaça até 100, 24/11): as divisões virariam só borda; desenha a fatia cheia de uma vez.
+  if (segments > 24) {
+    const part = Math.max(0, Math.min(1, filled / segments))
+    const a1 = part * Math.PI * 2 - Math.PI / 2
+    const d = part >= 1 ? "" : `M${c},${c} L${c},${c - r} A${r},${r} 0 ${part > 0.5 ? 1 : 0} 1 ${c + r * Math.cos(a1)},${c + r * Math.sin(a1)} Z`
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${filled} de ${segments}`}>
+        <circle cx={c} cy={c} r={r} fill={part >= 1 ? color : "var(--panel-2)"} />
+        {part > 0 && part < 1 && <path d={d} fill={color} />}
+        <circle cx={c} cy={c} r={r} fill="none" stroke="var(--line-strong)" />
+      </svg>
+    )
+  }
   const slices = Array.from({ length: segments }, (_, i) => {
     const a0 = (i / segments) * Math.PI * 2 - Math.PI / 2
     const a1 = ((i + 1) / segments) * Math.PI * 2 - Math.PI / 2

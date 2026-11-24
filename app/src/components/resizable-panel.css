@@ -5,11 +5,18 @@
 .panel-title { overflow:hidden; color:var(--muted); font-size:calc(12px * var(--font-scale, 1)); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; text-overflow:ellipsis; white-space:nowrap; }
 .panel-collapse { max-width:100%; gap:8px; }
 .panel-controls .panel-collapse.btn { min-height:44px; }
-.panel-edge { position:absolute; top:0; bottom:0; width:8px; z-index:8; cursor:col-resize; touch-action:none; }
-.panel-edge:hover,.panel-edge:focus-visible { background:color-mix(in srgb,var(--cyan) 45%,transparent); }
-.panel-edge-left { right:0; } .panel-edge-right { left:0; }
+/* Alça de largura (anexo 5, 24/11): irmã do painel, presa à borda dele por âncora, do lado de fora das barras de
+   rolagem: à direita do painel da esquerda e no começo do painel da direita (a rolagem dele fica do outro lado). A
+   área de pegar tem 6 px; a linha que aparece ao passar o mouse, 3 px, em cima da borda. */
+.resizable-panel { anchor-name:var(--panel-anchor); }
+.panel-edge { position:absolute; position-anchor:var(--panel-anchor); position-visibility:anchors-visible; top:anchor(top); bottom:anchor(bottom); width:6px; z-index:8; cursor:col-resize; touch-action:none; }
+.panel-edge-left { left:anchor(right); } .panel-edge-right { left:anchor(left); }
+.panel-edge::after { content:""; position:absolute; top:0; bottom:0; left:0; width:3px; }
+.panel-edge-left::after { left:-1px; }
+.panel-edge:hover::after,.panel-edge:focus-visible::after { background:color-mix(in srgb,var(--cyan) 70%,transparent); }
+.panel-edge:focus-visible { outline:none; }
 .resizable-panel[data-panel-collapsed=true]:not([data-panel-mode=rail]) { padding:0!important; overflow:hidden; }
-.resizable-panel[data-panel-collapsed=true]:not([data-panel-mode=rail]) > :not(.panel-controls):not(.panel-edge) { display:none!important; }
+.resizable-panel[data-panel-collapsed=true]:not([data-panel-mode=rail]) > :not(.panel-controls) { display:none!important; }
 .resizable-panel[data-panel-collapsed=true] > .panel-controls { justify-content:center; padding:4px 0; border-bottom:0; }
 .resizable-panel[data-panel-collapsed=true] > .panel-controls .panel-title { display:none; }
 
