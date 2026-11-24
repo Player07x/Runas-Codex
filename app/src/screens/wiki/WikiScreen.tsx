@@ -2,13 +2,14 @@ import { deferredView } from "../../components/kit/deferred-view"
 import { openDocumentExport } from "../../components/export/ExportDialog"
 import { WikiCategory } from "./WikiCategory"
 import { useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useFitCount } from "../../components/kit/useFitCount"
-import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Newspaper, Plus, Wrench, Package } from "lucide-react"
+import { CalendarDays, Check, ChevronDown, Eye, EyeOff, FileDown, GitFork, History, Library, Map, Network, Newspaper, Plus, Wrench, Package, Trash2 } from "lucide-react"
 import { newCalendarNote, newWikiNote, WIKI_ROOT } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
 import { wikiItem, requestExport } from "../../lib/transfer-request"
 import { Empty, useToast } from "../../components/ui"
-import { NameDialog } from "../../components/vault/dialogs"
+import { ConfirmDialog, NameDialog } from "../../components/vault/dialogs"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { useVault } from "../../platform/VaultProvider"
 import { WikiArticleView } from "./WikiArticle"
@@ -119,6 +120,7 @@ function WikiHeader({ current }: { current: string }) {
   const toast = useToast()
   const { wikis, wiki, setWiki, players, setPlayers } = useWiki()
   const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const create = useCreateWiki()
   const newWiki = () => (vault.info?.readOnly ? toast("Libere a gravação em Configurações para criar uma wiki.") : setCreating(true))
   // As telas que não cabem na fileira vão para “Mais” (rework F4b, WIK-1: a fileira não é mais cortada).
@@ -155,8 +157,33 @@ function WikiHeader({ current }: { current: string }) {
         { label: "Exportar wiki…", icon: <FileDown size={15} />, onSelect: () => openDocumentExport({ paths: vault.index!.notesIn(wiki!.root).map(note => note.path), title: wiki!.name, players }) },
         // U54: o pacote (.runas ou Obsidian) com a wiki marcada, as imagens que ela usa e nada mais.
         { label: "Exportar wiki como pacote…", icon: <Package size={15} />, onSelect: () => requestExport({ items: [wikiItem(wiki!.name)] }) },
+        // Anexo 4 (24/11): a wiki inteira vai para a lixeira do cofre, como “Excluir campanha”.
+        "separator" as const,
+        { label: "Excluir esta wiki…", icon: <Trash2 size={15} />, danger: true, disabled: vault.info?.readOnly ?? true, onSelect: () => setDeleting(true) },
       ]} />
-      {creating && <NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />}
+      {/* Os diálogos vão para o fim da página: dentro da barra (que tem backdrop-filter) o diálogo fixo ficava preso a
+          ela e abria cortado no alto. */}
+      {deleting && wiki && createPortal(<DeleteWikiDialog root={wiki.root} name={wiki.name} onClose={() => setDeleting(false)} onDeleted={() => {
+        const next = wikis.find((w) => w.name !== wiki.name)
+        if (next) setWiki(next.name)
+        navigate("/wiki")
+      }} />, document.body)}
+      {creating && createPortal(<NameDialog title="Nova wiki" label="Nome do mundo" confirmLabel="Criar" hint="Cria Wikis/<nome>/ com a página inicial e um calendário de exemplo." onClose={() => setCreating(false)} onConfirm={create} />, document.body)}
     </div>
+  )
+}
+
+/** Manda `Wikis/<nome>/` inteira para a lixeira do cofre (`.trash`, a mesma do Obsidian), com a conta do que vai junto. */
+function DeleteWikiDialog({ root, name, onClose, onDeleted }: { root: string; name: string; onClose(): void; onDeleted(): void }) {
+  const vault = useVault(), toast = useToast()
+  const folder = root.replace(/\/$/, "")
+  const files = vault.index!.allFiles().filter((file) => file.path.startsWith(folder + "/")).length
+  const notes = vault.index!.notesIn(root).length
+  return (
+    <ConfirmDialog title={`Mandar “${name}” para a lixeira?`} confirmLabel="Mandar para a lixeira" danger onClose={onClose}
+      onConfirm={async () => { await vault.trash(folder); toast(`“${name}” foi para a lixeira do cofre (.trash)`); onDeleted() }}>
+      <p>A pasta <code>{folder}/</code> vai inteira para a lixeira do cofre: {notes} {notes === 1 ? "nota" : "notas"} e {files} {files === 1 ? "arquivo" : "arquivos"} ao todo, com as imagens, os calendários e os mapas dela.</p>
+      <p className="muted">Campanhas e notas fora da wiki ficam onde estão (os links para os artigos dela ficam sem destino). A lixeira é a mesma do Obsidian: dá para recuperar a pasta por lá.</p>
+    </ConfirmDialog>
   )
 }

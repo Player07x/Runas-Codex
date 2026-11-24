@@ -4,9 +4,9 @@ import { useCallback, useMemo, useState } from "react"
 import { GitFork, Link2, Network, Plus, X } from "lucide-react"
 import { dirname, noteName } from "../../core/text"
 import { calendarFor, RELATION_TYPES, relationsOf, resolveTarget, type Relation } from "../../core/wiki"
-import { addRelationWrites, relationSentence, relationSides, removeRelationWrites, type PropertyWrite } from "../../core/relation-sides"
+import { addRelationWrites, mirrorFieldWrites, relationSentence, relationSides, removeRelationWrites, type PropertyWrite } from "../../core/relation-sides"
 import { ConfirmDialog } from "../../components/vault/dialogs"
-import { useRemembered } from "../../lib/remembered"
+import { readRemembered, useRemembered } from "../../lib/remembered"
 import { NoteSetContext } from "../../lib/note-set"
 import { href, navigate } from "../../lib/router"
 import { noteRoute, vaultNoteSet } from "../../lib/vault-notes"
@@ -89,7 +89,13 @@ export function WikiArticleView({ path }: { path: string }) {
             calendars={[...calendars.map((c) => c.calendar), ...(calendarRef && "calendar" in calendarRef && !calendars.some((c) => c.path === calendarRef.path) ? [calendarRef.calendar] : [])]}
             {...(calendarRef && "error" in calendarRef ? { calendarError: calendarRef.error } : {})}
             readOnly={readOnly}
-            onSet={(key, value) => vault.setProperty(path, key, value)}
+            onSet={async (key, value) => {
+              // “Fica em” e outros campos de relação na ficha gravam o outro lado também (anexo 7), como o Adicionar.
+              const mirrors = readRemembered(BOTH_SIDES_KEY, parseBoth) ? mirrorFieldWrites(index, path, key, note.meta.frontmatter?.data?.[key], value) : []
+              await vault.setProperty(path, key, value)
+              const failed = await applyWrites(vault.setProperty, mirrors)
+              if (failed.length) toast.error(`Gravado aqui, mas não do outro lado: ${failed.join("; ")}`)
+            }}
           />
           {!players && <ShowArticle note={note} />}
           <WikiArticleExtras key={note.path} note={note} players={players} />
@@ -180,6 +186,7 @@ async function applyWrites(setProperty: (path: string, key: string, value: strin
 
 const GROUPS: [Relation["type"]["group"], string][] = [["familia", "Família"], ["organizacao", "Organização"], ["diplomacia", "Diplomacia"], ["outras", "Outras"]]
 const parseBoth = (raw: unknown) => raw !== false
+const BOTH_SIDES_KEY = "runas-codex:relacao-dois-lados"
 
 /**
  * Nova relação (D12, U73, U74): tipo nos dois sentidos, a nota pelo `NoteCombobox` e a atitude opcional. Uma frase
@@ -192,7 +199,7 @@ function AddRelation({ path, root, onDone, onError }: { path: string; root: stri
   const [target, setTarget] = useState("")
   const [attitude, setAttitude] = useState("")
   const [error, setError] = useState("")
-  const [both, setBoth] = useRemembered("runas-codex:relacao-dois-lados", parseBoth)
+  const [both, setBoth] = useRemembered(BOTH_SIDES_KEY, parseBoth)
   const clean = target.trim().replace(/^\[\[|\]\]$/g, "")
   const other = clean ? resolveTarget(index, clean, path) : null
   const otherName = other ? noteName(other) : clean

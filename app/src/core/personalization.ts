@@ -1,3 +1,4 @@
+import { categoryPreset } from "./category-defaults"
 import type { PropertyValue } from "./properties"
 import { parseEmblem, parseTone, withToneClass, type Tone } from "./tones"
 import type { IndexedNote, VaultIndex } from "./vault-index"
@@ -63,7 +64,18 @@ export function isCategoryNote(note: IndexedNote): boolean {
 
 export function categoryLook(index: VaultIndex, folder: string): Look {
   const note = index.note(categoryNotePath(folder))
-  return note && isCategoryNote(note) ? lookOf(dataOf(note)) : EMPTY_LOOK
+  const data = note && isCategoryNote(note) ? dataOf(note) : undefined
+  const look = data ? lookOf(data) : EMPTY_LOOK
+  // Categoria pronta (Personagens, Locais…): o que a nota não diz vem do padrão (anexos 1–3, 24/11).
+  const preset = categoryPreset(folder)
+  if (!preset) return look
+  const description = data?.descricao === undefined ? preset.description : look.description
+  return {
+    tone: data?.cor === undefined ? parseTone(preset.tone) : look.tone,
+    emblem: data?.icone === undefined ? preset.emblem : look.emblem,
+    cover: look.cover,
+    ...(description ? { description } : {}),
+  }
 }
 
 /** A categoria de um artigo é a primeira pasta dentro da wiki (`Wikis/Mundo/Personagens`). */

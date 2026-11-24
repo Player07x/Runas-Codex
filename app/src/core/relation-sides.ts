@@ -41,10 +41,14 @@ export function relationSentence(key: string, here: string, other: string): stri
   return sentences[key] ?? `${here} → ${other}`
 }
 
-/** O link mais curto que chega à nota a partir de `from`: o nome, ou o caminho quando há outra com o mesmo nome. */
+/**
+ * O link mais curto que chega à nota a partir de `from`: o nome, ou o caminho quando há outra com o mesmo nome. Uma
+ * nota que o índice ainda não tem (acabou de ser criada) e cujo nome não existe em lugar nenhum também vai pelo nome.
+ */
 export function linkTo(index: VaultIndex, path: string, from: string): string {
   const name = noteName(path)
-  return resolveTarget(index, name, from) === path ? `[[${name}]]` : `[[${path.replace(/\.md$/i, "")}]]`
+  const found = resolveTarget(index, name, from)
+  return found === path || (found === null && !index.note(path)) ? `[[${name}]]` : `[[${path.replace(/\.md$/i, "")}]]`
 }
 
 const entryFor = (link: string, note?: string) => `${link}${note?.trim() ? ` (${note.trim()})` : ""}`
@@ -97,6 +101,32 @@ export function addRelationWrites(index: VaultIndex, here: string, key: string, 
   const draft = new Draft(index)
   draft.add(here, key, entryFor(options.link ?? linkTo(index, other, here), options.note), other)
   if (options.both && index.note(other) && other !== here) draft.add(other, inverseKeyOf(key), entryFor(linkTo(index, here, other), options.note), here)
+  return draft.writes()
+}
+
+/** As notas a que os links de uma propriedade levam (só as que existem). */
+function destinations(index: VaultIndex, raw: unknown, from: string): Set<string> {
+  const out = new Set<string>()
+  for (const value of propertyValues(raw)) {
+    const link = linkTargetOf(value)
+    const dest = link ? resolveTarget(index, link.target, from) : null
+    if (dest && dest !== from) out.add(dest)
+  }
+  return out
+}
+
+/**
+ * Um campo de relação mudou fora do “Adicionar” (a ficha do artigo: “Fica em” do local, ou um campo de categoria com o
+ * nome de uma relação): o outro lado acompanha. Quem entrou ganha a ligação de volta; quem saiu perde. Só as gravações
+ * da outra ponta; a nota de cá quem grava é a ficha. `before` e `after` são os valores da propriedade.
+ */
+export function mirrorFieldWrites(index: VaultIndex, here: string, key: string, before: unknown, after: unknown): PropertyWrite[] {
+  if (!RELATION_KEYS.has(key)) return []
+  const inverse = inverseKeyOf(key)
+  const was = destinations(index, before, here), now = destinations(index, after, here)
+  const draft = new Draft(index)
+  for (const dest of now) if (!was.has(dest)) draft.add(dest, inverse, linkTo(index, here, dest), here)
+  for (const dest of was) if (!now.has(dest)) draft.remove(dest, inverse, here)
   return draft.writes()
 }
 

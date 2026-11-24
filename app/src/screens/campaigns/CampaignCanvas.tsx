@@ -113,7 +113,7 @@ function NewBoardDialog({ data, onClose }: { data: CampaignData; onClose(): void
   const problem = name.trim() ? nameProblem(name.trim()) : null
   const build = (): CanvasDoc | null => {
     if (template === "missoes") return questMapCanvas(buildQuestMap(data.quests))
-    if (template === "relacoes") return relationMapCanvas(buildRelationMap(vault.index!, relationMembers(data), relationScope(data)))
+    if (template === "relacoes") return relationMapCanvas(buildRelationMap(vault.index!, relationMembers(data, vault.index!), relationScope(data)))
     if (template === "linha") return sessionTimelineCanvas(data.sessions, (date) => worldDateLabel(data.calendar, date) ?? date)
     if (template === "investigacao") return investigationCanvas()
     return null
