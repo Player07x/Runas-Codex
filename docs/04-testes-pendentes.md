@@ -2648,3 +2648,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   “O link não respondeu”). Depois de um minuto, “Testar link” mostra “O link responde”.
 - [ ] Com a internet do aparelho desligada depois de gerar o link, “Testar link” mostra a mesma mensagem, que termina
   pedindo para conferir a internet deste aparelho.
+
+## Calendário: ciclo da lua com decimais
+
+- [ ] Num calendário com `ciclo: 29.530589` (a Lua real), abrir Calendário › Configurar: o bloco continua com
+  29.530589, sem virar 30. Mudar o ciclo de uma lua para um número com vírgula ou ponto e conferir que a fase do dia
+  muda de acordo.
