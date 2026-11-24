@@ -2601,3 +2601,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.7.4 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.4 instalada as seções “Desempenho do calendário, das relações e da abertura”, “Abertura da Wiki,
   da Mesa e do Gráfico” e “Mapas: voltar à lista de áreas” acima.
+
+## Calendário: ciclo da lua com decimais
+
+- [ ] Num calendário com `ciclo: 29.530589` (a Lua real), abrir Calendário › Configurar: o bloco continua com
+  29.530589, sem virar 30. Mudar o ciclo de uma lua para um número com vírgula ou ponto e conferir que a fase do dia
+  muda de acordo.

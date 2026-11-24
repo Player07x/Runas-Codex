@@ -36,6 +36,11 @@ const int = (v: unknown, fallback: number) => {
   return Number.isFinite(n) ? Math.round(n) : fallback
 }
 const optInt = (v: unknown) => (v === undefined || v === null || v === "" ? null : int(v, 0))
+/** Número com decimais (o ciclo da lua real é 29,530589 dias: arredondar mudaria as fases). */
+const positive = (v: unknown, fallback: number) => {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN
+  return Number.isFinite(n) && n > 0 ? n : fallback
+}
 
 /** O formulário a partir do YAML do bloco (o que não estiver lá fica vazio). */
 export function calendarFormFromYaml(source: string): CalendarForm {
@@ -60,7 +65,7 @@ export function calendarFormFromYaml(source: string): CalendarForm {
     primeiro_dia: int(data.primeiro_dia, 0),
     meses,
     bissexto: leap ? { a_cada: int(leap.a_cada, 4), exceto_a_cada: optInt(leap.exceto_a_cada), salvo_a_cada: optInt(leap.salvo_a_cada), mes: text(leap.mes) || meses[0]?.nome || "", dias: int(leap.dias, 1) } : null,
-    luas: list(data.luas).map((m) => { const o = rec(m); return { nome: text(o.nome), ciclo: int(o.ciclo, 28), cheia_em: text(o.cheia_em), cor: text(o.cor) } }),
+    luas: list(data.luas).map((m) => { const o = rec(m); return { nome: text(o.nome), ciclo: positive(o.ciclo, 28), cheia_em: text(o.cheia_em), cor: text(o.cor) } }),
     eras: list(data.eras).map((m) => { const o = rec(m); return { nome: text(o.nome), sigla: text(o.sigla), inicio: int(o.inicio, 0) } }),
     feriados: list(data.feriados).map((m) => { const o = rec(m); return { nome: text(o.nome), data: text(o.data), cor: text(o.cor) } }),
     relogio: clock ? { horas: int(clock.horas, 12), minutos: int(clock.minutos, 60), periodos: list(clock.periodos).map(text).filter(Boolean) } : null,

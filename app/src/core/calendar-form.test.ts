@@ -61,6 +61,13 @@ describe("configurar o calendário sem código (U35)", () => {
     expect(yaml).toContain('hoje: "2026-11-11"')
   })
 
+  it("mantém o ciclo da lua com decimais", () => {
+    const source = SOURCE.replace("ciclo: 28,", "ciclo: 29.530589,")
+    const form = calendarFormFromYaml(source)
+    expect(form.luas[0]!.ciclo).toBe(29.530589)
+    expect(applyCalendarForm(source, form)).toBe(source)
+  })
+
   it("12×30 e 13×28 têm 360 e 364 dias", () => {
     expect(yearDays(calendarTemplate("12x30", "A"))).toBe(360)
     expect(yearDays(calendarTemplate("13x28", "B"))).toBe(364)

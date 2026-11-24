@@ -140,7 +140,7 @@ export function CalendarConfig({ path, readOnly }: { path: string; readOnly: boo
         <Rows title="Luas" items={form.luas} onChange={(luas) => set({ luas })} blank={{ nome: `Lua ${form.luas.length + 1}`, ciclo: 28, cheia_em: "0000-01-01", cor: "" }}
           render={(m, edit) => <>
             <input className="input" value={m.nome} aria-label="Nome da lua" onChange={(e) => edit({ nome: e.target.value })} />
-            <input className="input cal-config-num" type="number" min={1} value={m.ciclo} aria-label={`Ciclo de ${m.nome} em dias`} title="Ciclo em dias" onChange={(e) => edit({ ciclo: Math.max(1, Number(e.target.value) || 1) })} />
+            <input className="input cal-config-num" type="number" min={1} step="any" value={m.ciclo} aria-label={`Ciclo de ${m.nome} em dias`} title="Ciclo em dias" onChange={(e) => edit({ ciclo: Math.max(1, Number(e.target.value) || 1) })} />
             <input className="input" value={m.cheia_em} aria-label={`Uma lua cheia de ${m.nome} (ANO-MM-DD)`} placeholder="Cheia em ANO-MM-DD" onChange={(e) => edit({ cheia_em: e.target.value })} />
             <input type="color" value={/^#[0-9a-f]{6}$/i.test(m.cor) ? m.cor : "#bec6ff"} aria-label={`Cor de ${m.nome}`} onChange={(e) => edit({ cor: e.target.value })} />
           </>} />
