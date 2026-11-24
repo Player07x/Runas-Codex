@@ -7,6 +7,7 @@ import type { DocumentStore } from "../document-store"
 import { useDocumentsVersion } from "../document-store"
 import { isAndroidRoom, remoteMaster, vtt } from "../api"
 import { MAX_PLAYER_SEATS } from "../shared/player-session"
+import { linkTestMessage } from "../shared/link-test"
 
 export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId: string | null }) {
   useDocumentsVersion(store)
@@ -105,7 +106,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
       </div>
       {!remoteMaster && vtt.master && <MasterRemotePanel api={vtt.master} roomUrl={state.publicUrl ?? state.localUrl} android={isAndroidRoom} />}
       {!remoteMaster && <div className="player-actions">{!isAndroidRoom && <button className="ghost" onClick={() => void run(() => vtt.player.openWindow())}><MonitorPlay size={15} /> Abrir janela local</button>}<button className="ghost" disabled={busy} onClick={() => { if (window.confirm(isAndroidRoom ? "Abrir um túnel público pela Cloudflare? Quem tiver o link assiste à cena pela internet até você desligar a transmissão." : "Baixar o cloudflared do release oficial da Cloudflare, verificar o SHA-256 e abrir um túnel público?")) void run(async () => { setTunneling(true); try { await vtt.player.publicLink() } finally { setTunneling(false) } }) }}><ExternalLink size={15} /> {tunneling ? "Conectando à Cloudflare…" : state.publicUrl ? "Gerar novo link público" : "Gerar link público"}</button>{state.publicUrl && <button className="ghost" disabled={busy || testing} onClick={() => { setTesting(true); setLinkTest(null); void vtt.player.testPublicLink().then(setLinkTest).catch((reason) => setLinkTest({ ok: false, ms: 0, error: reason instanceof Error ? reason.message : String(reason) })).finally(() => setTesting(false)) }}><Activity size={15} /> {testing ? "Testando…" : "Testar link"}</button>}</div>}
-      {linkTest && <p className={linkTest.ok ? "hint" : "error"} role="status">{linkTest.ok ? `O link responde: ${linkTest.ms} ms do seu computador até a mesa, passando pela Cloudflare. Se um jogador ainda não abrir, o bloqueio está na rede dele: alguns provedores, DNS de filtro e antivírus barram trycloudflare.com. Peça para testar em dados móveis ou com o DNS 1.1.1.1.` : `O link não respondeu: ${linkTest.error ?? "erro desconhecido"}.`}</p>}
+      {linkTest && <p className={linkTest.ok ? "hint" : "error"} role="status">{linkTestMessage(linkTest)}</p>}
       {tunneling && <p className="hint" role="status">Conectando à Cloudflare. Leva alguns segundos e, se a rede bloquear a porta 7844, o app desiste em até 60 s e explica o motivo.</p>}
         {isAndroidRoom
           ? <p className="hint">O link público usa um túnel Cloudflare Quick Tunnel, que já vem no app e só abre quando você confirma. Ele usa a internet do celular (Wi-Fi ou dados móveis) enquanto a sala estiver aberta, inclusive com a tela apagada; encerrar o aplicativo encerra a sala e o link.</p>

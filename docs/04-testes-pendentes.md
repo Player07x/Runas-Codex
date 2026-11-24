@@ -2641,9 +2641,24 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Relógios: o campo de partes não tem mais as setas e só aceita números; uma ameaça aceita até 100 partes (o
   relógio vira uma fatia contínua), um progresso até 24.
 
+## Sala: “Testar link” logo depois de gerar o link público
+
+- [ ] No Android e no desktop, ligar a transmissão, gerar o link público e tocar em “Testar link” no mesmo instante.
+  Se o endereço ainda não existir no DNS, o painel diz isso e pede para tentar de novo daqui a um minuto (em vez de
+  “O link não respondeu”). Depois de um minuto, “Testar link” mostra “O link responde”.
+- [ ] Com a internet do aparelho desligada depois de gerar o link, “Testar link” mostra a mesma mensagem, que termina
+  pedindo para conferir a internet deste aparelho.
+
+## Calendário: ciclo da lua com decimais
+
+- [ ] Num calendário com `ciclo: 29.530589` (a Lua real), abrir Calendário › Configurar: o bloco continua com
+  29.530589, sem virar 30. Mudar o ciclo de uma lua para um número com vírgula ou ponto e conferir que a fase do dia
+  muda de acordo.
+
 ## Versão 1.8.0
 
 - [ ] Com a 1.7.4 instalada, o aviso “Atualizar para 1.8.0” aparece na barra lateral (ou pelo botão “Verificar
   atualizações”), e a atualização termina com a 1.8.0 em Configurações › Privacidade e atualizações.
-- [ ] Conferir na 1.8.0 instalada a seção “Ajustes de 24/11 (Wiki, VTT, Elenco e painéis)” acima, em especial a
+- [ ] Conferir na 1.8.0 instalada as seções “Ajustes de 24/11 (Wiki, VTT, Elenco e painéis)”, “Sala: “Testar link”…” e
+  “Calendário: ciclo da lua com decimais” acima, em especial a
   reputação numa campanha de verdade e o artigo no VTT com a sala aberta.
