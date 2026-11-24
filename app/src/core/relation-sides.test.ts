@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { orgStructureOf } from "./relation-layout"
-import { addRelationWrites, completeWrites, invertedRelations, invertWrites, linkTo, oneSidedRelations, relationSentence, relationSides, removeRelationWrites } from "./relation-sides"
+import { addRelationWrites, completeWrites, invertedRelations, invertWrites, linkTo, mirrorFieldWrites, oneSidedRelations, relationSentence, relationSides, removeRelationWrites } from "./relation-sides"
 import { VaultIndex } from "./vault-index"
 import { orgChart, relationEdges, relationsOf } from "./wiki"
 
@@ -93,6 +93,38 @@ describe("consertar o que existe (U75)", () => {
     expect(invertWrites(index, found)).toEqual([
       { path: `${W}Guilda.md`, key: "membro_de", value: ["[[Liga]]"] },
       { path: `${W}Guilda.md`, key: "membros", value: ["[[Aurora]] (tesoureira)"] },
+    ])
+  })
+})
+
+describe("campo da ficha que é relação (anexo 7, 24/11)", () => {
+  const place = (extra = "") => `---\ntipo: local\n${extra}---\n`
+
+  it("“Fica em” preenchido na ficha grava o “Contém” do outro lado", () => {
+    const index = make({ [`${W}Gales.md`]: place(`contem:\n  - "[[Taranis]]"\n`), [`${W}Alva.md`]: place(), [`${W}Taranis.md`]: place() })
+    expect(mirrorFieldWrites(index, `${W}Alva.md`, "localizado_em", undefined, "[[Gales]]")).toEqual([
+      { path: `${W}Gales.md`, key: "contem", value: ["[[Taranis]]", "[[Alva]]"] },
+    ])
+  })
+
+  it("trocar o lugar tira a ligação do antigo e põe no novo", () => {
+    const index = make({ [`${W}Gales.md`]: place(`contem:\n  - "[[Alva]]"\n`), [`${W}Bitu.md`]: place(), [`${W}Alva.md`]: place(`localizado_em: "[[Gales]]"\n`) })
+    expect(mirrorFieldWrites(index, `${W}Alva.md`, "localizado_em", "[[Gales]]", "[[Bitu]]")).toEqual([
+      { path: `${W}Bitu.md`, key: "contem", value: ["[[Alva]]"] },
+      { path: `${W}Gales.md`, key: "contem", value: [] },
+    ])
+  })
+
+  it("não mexe em campos que não são relação nem repete o que já está escrito", () => {
+    const index = make({ [`${W}Gales.md`]: place(`contem:\n  - "[[Alva]]"\n`), [`${W}Alva.md`]: place() })
+    expect(mirrorFieldWrites(index, `${W}Alva.md`, "clima", undefined, "Frio")).toEqual([])
+    expect(mirrorFieldWrites(index, `${W}Alva.md`, "localizado_em", undefined, "[[Gales]]")).toEqual([])
+  })
+
+  it("um artigo recém-criado (fora do índice) é ligado pelo nome", () => {
+    const index = make({ [`${W}Gales.md`]: place() })
+    expect(mirrorFieldWrites(index, `${W}Nova.md`, "localizado_em", undefined, ["[[Gales]]"])).toEqual([
+      { path: `${W}Gales.md`, key: "contem", value: ["[[Nova]]"] },
     ])
   })
 })

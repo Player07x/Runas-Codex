@@ -2601,3 +2601,25 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.7.4 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.7.4 instalada as seções “Desempenho do calendário, das relações e da abertura”, “Abertura da Wiki,
   da Mesa e do Gráfico” e “Mapas: voltar à lista de áreas” acima.
+
+## Ajustes de 24/11 (Wiki, VTT, Elenco e painéis)
+
+- [ ] Criar uma wiki nova e um artigo em Condições: a categoria aparece com cor, ícone, descrição e a capa desenhada
+  (círculo com o ícone). Em “Só categorias” e na página da categoria. Os artigos sem imagem mostram o ícone da
+  categoria no lugar da inicial. Nas wikis que já existem (Valknut, Cronos), o que foi escolhido em Personalizar
+  continua igual; só os campos vazios ganham o padrão.
+- [ ] No ⋯ da Wiki, “Excluir esta wiki…”: a pasta vai para a lixeira do cofre (.trash) e a Wiki abre outra. Testar numa
+  wiki de teste.
+- [ ] O número ao lado de Wiki, na barra lateral, conta as wikis (4 no cofre do João), não os artigos.
+- [ ] Em Notas, a alça de largura da lista fica depois da barra de rolagem (na borda) e continua no lugar ao rolar a
+  lista. A linha que aparece ao passar o mouse é fina. O mesmo no painel Detalhes da nota, na barra lateral e nos
+  painéis da Wiki, da Agenda e do VTT.
+- [ ] O “?” da busca de Notas abre a ajuda inteira, por cima da barra lateral.
+- [ ] No VTT, “Mostrar artigo pela sala” com um artigo que tem imagem (Martim Avarik): no navegador do jogador o texto
+  vem formatado (títulos, negrito, listas) e a imagem aparece no lugar e no tamanho do artigo. Fechar a apresentação
+  e conferir que a imagem deixa de abrir pelo link. Testar também com a sala no Android.
+- [ ] No artigo de um local, preencher “Fica em” na ficha (ou criar um local com “Fica em”): o outro local ganha
+  “Contém” na hora, e Ferramentas › Conferir relações não lista mais essa relação. Trocar o “Fica em” tira o “Contém”
+  do lugar antigo. Com “Gravar também na outra nota” desmarcado no Adicionar, a ficha também grava só de um lado.
+- [ ] No Elenco, em Grade, os três tamanhos: nos médios e grandes, NPCs e facções com a imagem do mesmo tamanho (o
+  símbolo da facção inteiro); nos pequenos, nome e selos dentro do cartão e o − e o + da reputação visíveis.

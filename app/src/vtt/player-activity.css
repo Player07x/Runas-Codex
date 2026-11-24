@@ -2,7 +2,10 @@
 .player-activity { right:16px;top:70px;width:min(400px,calc(100vw - 32px)); }
 .player-handout { inset:7vh max(16px,10vw); }
 .player-handout header { display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap; }
-.player-handout h1 { font-size: calc(24px * var(--font-scale, 1)); }.player-handout pre { font:inherit;white-space:pre-wrap;overflow-wrap:anywhere; }
+.player-handout h1 { font-size: calc(24px * var(--font-scale, 1)); }
+/* O artigo vem em Markdown, desenhado pelo leitor do app (anexo 6, 24/11). */
+.player-handout-body { margin-top:12px;overflow-wrap:anywhere; }
+.player-handout-body img { max-width:100%;height:auto; }
 .player-activity label { display:grid;gap:6px;margin-block:12px; }.player-activity input,.player-activity textarea { color:var(--text);background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;padding:10px;width:100%;box-sizing:border-box; }
 .player-activity .player-choice { display:flex;align-items:center;gap:10px;min-height:44px; }.player-choice input { width:24px;height:24px; }
 .player-activity button,.player-handout button,.player-activity summary { min-height:44px;cursor:pointer; }.player-activity button,.player-handout button { background:var(--cyan);color:var(--on-accent);border:0;border-radius:8px;padding:10px 16px; }.player-activity button:disabled { opacity:.6; }

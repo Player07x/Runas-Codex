@@ -141,6 +141,8 @@ export const EMBLEMS: [id: string, label: string, lucide: string][] = [
   ["olho", "Olho", "eye"], ["chave", "Chave", "key-round"], ["dados", "Dados", "dices"], ["pessoa", "Pessoa", "user"],
   ["grupo", "Grupo", "users"], ["bandeira", "Bandeira", "flag"], ["pata", "Pata", "paw-print"], ["raio", "Raio", "zap"],
   ["ampulheta", "Ampulheta", "hourglass"], ["idioma", "Idioma", "languages"], ["camadas", "Camadas", "layers"], ["engrenagem", "Engrenagem", "cog"],
+  // Os ícones das categorias Condições e Calendários (padrão das categorias, 24/11).
+  ["pulso", "Pulso", "activity"], ["calendario", "Calendário", "calendar-days"],
 ]
 
 /** O id do ícone (`coroa`), aceitando o nome em português (com ou sem acento) ou o do Lucide. */

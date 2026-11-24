@@ -11,6 +11,9 @@ import { FormField, FormGrid } from "../../components/kit/FormField"
 import { Modal } from "../../components/ui"
 import { navigate } from "../../lib/router"
 import { useVault } from "../../platform/VaultProvider"
+import { parseFrontmatter } from "../../core/parse"
+import { mirrorFieldWrites } from "../../core/relation-sides"
+import { readRemembered } from "../../lib/remembered"
 import { CategoryKindDialog } from "./CategoryDialogs"
 import { FichaFields } from "./FichaFields"
 import { articleRoute, iconByName, useWiki } from "./wiki-state"
@@ -105,6 +108,14 @@ export function NewArticleDialog({ onClose, initialName = "", initialKind, initi
         : kind.id === "mapa" ? newMapNote(title, index.linkTarget(linkName(image), `${folderPath}/${title}.md`))
         : withArticleBody(applyFicha(newArticleNote(kind, title), kind, ficha, allCalendars), initialBody)
       const created = await vault.createNote(folderPath, title, text)
+      // Ficha com campo de relação (“Fica em”): o outro lado ganha a ligação de volta (anexo 7), se a preferência
+      // “Gravar também na outra nota” estiver ligada. Uma falha aqui não desfaz o artigo criado.
+      if (readRemembered("runas-codex:relacao-dois-lados", (raw) => raw !== false)) {
+        const data = parseFrontmatter(text)?.data ?? {}
+        for (const write of Object.keys(data).flatMap((key) => mirrorFieldWrites(index, created, key, undefined, data[key]))) {
+          await vault.setProperty(write.path, write.key, write.value.length ? write.value : undefined).catch(() => undefined)
+        }
+      }
       onClose()
       if (onCreated) onCreated(created)
       else if (kind.id === "calendario") (openConfigureNext(created), navigate(`/wiki/calendario/${encodeURIComponent(created)}`))

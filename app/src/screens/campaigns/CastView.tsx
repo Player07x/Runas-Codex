@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { useSinglePane } from "../../lib/tabs"
 import { useRemembered } from "../../lib/remembered"
-import { BookOpen, Check, Library, Minus, Pencil, Plus, Search, Shapes, SlidersHorizontal, Trash, Unlink, UserPlus, Users, X } from "lucide-react"
+import { BookOpen, Check, Library, Minus, Pencil, Plus, Search, Shapes, Shield, SlidersHorizontal, Trash, Unlink, User, UserPlus, Users, X } from "lucide-react"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { ChoiceGroup } from "../../components/kit/ChoiceGroup"
 import { NoteCrest } from "../../components/kit/Emblem"
@@ -11,6 +11,7 @@ import { ATTITUDES, castRows, npcExtra, withCampaignPlayer, type CastRow, type P
 import { fullRows, nextLimit } from "../../core/grid-rows"
 import { useGridColumns } from "../../components/kit/useGridColumns"
 import { noteName } from "../../core/text"
+import type { IndexedNote } from "../../core/vault-index"
 import { articleKind } from "../../core/wiki"
 import { href, navigate } from "../../lib/router"
 import { noteRoute } from "../../lib/vault-notes"
@@ -214,7 +215,7 @@ export function CastView({ data, requestedPath }: { data: CampaignData; requeste
                   const note = item.dest ? index.note(item.dest) : undefined
                   return <li key={item.position} className={`campaign-cast-item${on ? " selected" : ""}`}>
                     <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => select(selectTracked("faccao", item), e.currentTarget)}>
-                      {prefs.mode === "grid" && prefs.size !== "small" && note ? <ArticleArt note={note} size="thumb" /> : <NoteCrest path={item.dest} name={name} size={32} />}
+                      {prefs.mode === "grid" && prefs.size !== "small" ? <CastMedia note={note} faction /> : <NoteCrest path={item.dest} name={name} size={32} round={false} />}
                       <span className="campaign-cast-card-text"><strong className={item.dest ? undefined : "wikilink broken"}>{name}</strong></span>
                     </button>
                     <Reputation name={name} rep={rep} disabled={data.readOnly} onChange={(next) => void saveFaction(item, withReputation(item.extra, next))} />
@@ -244,6 +245,17 @@ function CastSection({ title, count, total, hint, empty, children }: { title: st
     <h2 id={id} className="campaign-cast-section-title">{title} · {count === total ? total : `${count} de ${total}`}{hint && count > 0 && <span className="tiny faint"> {hint}</span>}</h2>
     {count === 0 ? <p className="small muted">{empty}</p> : children}
   </section>
+}
+
+/**
+ * A imagem do cartão médio e grande (anexos 8–10, 24/11): NPC e facção do mesmo tamanho, no alto do cartão. O símbolo
+ * da facção aparece inteiro (sem corte); sem imagem, o ícone da categoria; sem artigo, o ícone de pessoa ou de escudo.
+ */
+function CastMedia({ note, faction = false }: { note: IndexedNote | undefined; faction?: boolean }) {
+  const Fallback = faction ? Shield : User
+  return <span className={`campaign-cast-media${faction ? " symbol" : ""}`}>
+    {note ? <ArticleArt note={note} size="cover" /> : <span className="wiki-article-art cover" aria-hidden="true"><Fallback className="wiki-art-emblem" /></span>}
+  </span>
 }
 
 /** − e + da reputação (−3 a +3), com o número em texto; no cartão da facção, 1 clique como antes. */
@@ -299,9 +311,7 @@ function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detai
           {list.map((row) => {
             const on = isSelected(selected, selectTracked("npc", row.item))
             const note = row.item.dest ? vault.index?.note(row.item.dest) : undefined
-            const media = grid && prefs.size !== "small"
-              ? note ? <ArticleArt note={note} size="cover" /> : <span className="wiki-article-art cover" aria-hidden="true"><span className="wiki-art-initial">{Array.from(row.name.trim())[0]?.toLocaleUpperCase("pt-BR") ?? "?"}</span></span>
-              : <NoteCrest path={row.item.dest} name={row.name} size={32} />
+            const media = grid && prefs.size !== "small" ? <CastMedia note={note} /> : <NoteCrest path={row.item.dest} name={row.name} size={32} />
             return <li key={row.item.position} className={`campaign-cast-item${on ? " selected" : ""}`}>
               <button type="button" className="campaign-cast-card" aria-expanded={on} aria-controls={detailId} onClick={(e) => onSelect(selectTracked("npc", row.item), e.currentTarget)}>
                 {media}

@@ -408,16 +408,28 @@
 .campaign-cast-item.selected, .campaign-cast-grid .campaign-cast-card.selected { border-color: transparent; box-shadow: 0 0 0 2px var(--cyan); }
 .campaign-cast-card { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; min-height: 44px; padding: 8px 10px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .campaign-cast-grid .campaign-cast-card { width: 100%; height: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.campaign-cast-card-text { display: grid; gap: 4px; justify-items: start; min-width: 0; }
-.campaign-cast-card-text strong, .campaign-cast-card-text h2 { max-width: 100%; overflow-wrap: anywhere; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.3; }
-.campaign-cast-tags { gap: 4px; }
+/* A coluna do texto não passa da largura do cartão (anexo 9, 24/11): sem o `minmax(0, 1fr)`, a fileira de selos
+   alargava a coluna e o nome e os selos ficavam cortados na borda. Nomes quebram entre palavras; só uma palavra que
+   não cabe sozinha é partida. */
+.campaign-cast-card-text { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; justify-items: start; min-width: 0; }
+.campaign-cast-card-text strong, .campaign-cast-card-text h2 { max-width: 100%; overflow-wrap: break-word; hyphens: auto; font-size: calc(14px * var(--font-scale, 1)); line-height: 1.3; }
+.campaign-cast-tags { gap: 4px; max-width: 100%; }
+.campaign-cast-tags .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Imagem dos cartões médio e grande: NPC e facção do mesmo tamanho; o símbolo da facção inteiro, sobre o tom. */
+.campaign-cast-media { display: block; }
+.campaign-cast-media > .wiki-article-art.cover { width: 100%; }
+.campaign-cast-media.symbol > .wiki-article-art.cover img { object-fit: contain; padding: 10%; }
+.campaign-cast-cards.size-large .campaign-cast-media > .wiki-article-art.cover { aspect-ratio: 4 / 3.4; }
 .campaign-cast-unseen { border-style: dashed; color: var(--muted); }
 .campaign-cast-cards > .campaign-cast-item > .campaign-cast-card { flex-direction: column; align-items: stretch; padding: 0; }
 .campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0 10px 10px; }
 .campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .crest { margin: 10px 10px 0; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .campaign-cast-media + .campaign-cast-card-text { padding-top: 10px; }
 .campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { flex-direction: row; align-items: center; padding: 8px 10px; }
 .campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > :is(.crest, .campaign-cast-card-text) { margin: 0; padding: 0; }
-.campaign-cast-item > .campaign-faction-reputation { flex: none; padding: 0 8px 8px; justify-content: flex-end; }
+/* O − e o + nunca saem do cartão: no pequeno, as marquinhas é que encolhem (antes o − sumia pela esquerda). */
+.campaign-cast-item > .campaign-faction-reputation { flex: none; min-width: 0; padding: 0 8px 8px; justify-content: flex-end; }
+.campaign-cast-item > .campaign-faction-reputation > .campaign-rep-pips { flex: 0 1 auto; min-width: 0; overflow: hidden; }
 .campaign-cast-list > .campaign-cast-item > .campaign-faction-reputation { padding: 0 8px 0 0; }
 .campaign-rep-pips { display: inline-flex; gap: 3px; margin-inline: 2px; }
 .campaign-rep-pips i { display: block; width: 7px; height: 7px; border-radius: 2px; background: var(--panel-2); }

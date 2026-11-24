@@ -97,8 +97,10 @@
 
   /* Painel lateral redimensionável */
   .side-panel { position: relative; grid-template-columns: 48px minmax(0, 1fr); }
-  .panel-resizer { position: absolute; z-index: 2; top: 0; bottom: 0; left: -4px; width: 8px; cursor: col-resize; }
-  .panel-resizer:hover, .panel-resizer:active { background: color-mix(in srgb, var(--cyan) 30%, transparent); }
+  /* Mais fina (24/11): 6 px para pegar, a linha de 3 px em cima da borda ao passar o mouse, como nos painéis. */
+  .panel-resizer { position: absolute; z-index: 2; top: 0; bottom: 0; left: -3px; width: 6px; cursor: col-resize; }
+  .panel-resizer::after { content: ""; position: absolute; top: 0; bottom: 0; left: 1px; width: 3px; }
+  .panel-resizer:hover::after, .panel-resizer:active::after { background: color-mix(in srgb, var(--cyan) 70%, transparent); }
   .side-tabs { grid-auto-rows: 36px; }
   .side-tabs-spacer { flex: 1; }
   .side-tabs { display: flex; flex-direction: column; }
