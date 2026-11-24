@@ -2640,3 +2640,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   própria com elas.
 - [ ] Relógios: o campo de partes não tem mais as setas e só aceita números; uma ameaça aceita até 100 partes (o
   relógio vira uma fatia contínua), um progresso até 24.
+
+## Versão 1.8.0
+
+- [ ] Com a 1.7.4 instalada, o aviso “Atualizar para 1.8.0” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.8.0 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.8.0 instalada a seção “Ajustes de 24/11 (Wiki, VTT, Elenco e painéis)” acima, em especial a
+  reputação numa campanha de verdade e o artigo no VTT com a sala aberta.
