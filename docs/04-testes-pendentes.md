@@ -2685,3 +2685,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] ⋯ da nota › “Criar links automáticos…”: lista nomes e apelidos de outras notas (e notas citadas que ainda não
   existem) que aparecem sem link, agrupados, com só a primeira de cada marcada. “Criar N links” troca no texto
   (Ctrl+Z desfaz no modo Editar); apelido vira `[[Nota|apelido]]`. Código, títulos, links e endereços ficam de fora.
+
+## Versão 1.8.1
+
+- [ ] Com a 1.8.0 instalada, o aviso “Atualizar para 1.8.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
+  especial as portas e a cena por token com a sala aberta e jogadores de verdade.
