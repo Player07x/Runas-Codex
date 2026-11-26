@@ -56,6 +56,13 @@ O botão **Painel** da nota abre as abas **Links** (quem liga para esta nota, co
 quebrados), **Propriedades**, **Sumário** (os títulos) e **Gráfico** (o gráfico local). Em Links aparecem também as
 **menções sem link**: notas que citam o nome sem `[[ ]]`, com o botão para transformar em link.
 
+No topo de Links ficam os **apelidos** da nota (a propriedade `aliases`, a mesma do Obsidian): outros nomes pelos
+quais ela é citada. **+ Apelido** acrescenta um; o × tira. O ⋯ da nota também tem **Apelidos…**.
+
+**Criar links automáticos…**, no ⋯ da nota, procura no texto os nomes e apelidos de outras notas, e os nomes de notas
+que ainda não existem mas já foram citadas num link, e mostra a lista antes de mudar qualquer coisa. Vem marcada só a
+primeira vez de cada nota; o resto fica a um clique. Um apelido vira `[[Nota|apelido]]`, que o Obsidian também segue.
+
 ### Gráfico
 
 Notas › ⋯ › **Gráfico** mostra todas as notas e ligações (em WebGL, fluido com milhares de notas). Dá para buscar,

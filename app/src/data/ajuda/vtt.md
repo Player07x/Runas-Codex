@@ -25,9 +25,14 @@ tamanho da célula, o deslocamento, a cor, quanto cada célula vale e a regra da
 | **Nota no mapa** | Um marcador com texto no mapa |
 | **Desenhar** | Mão livre, retângulo, elipse e texto |
 | **Paredes e portas** | Bloqueiam a visão e o movimento; portas abrem e fecham |
+| **Lista de portas e paredes** | Todas as portas, portas secretas e paredes da cena: leva até cada uma, abre, fecha e tranca |
 | **Luzes** | Iluminam a cena e definem o que os tokens enxergam |
 | **Sons no mapa** | Sons que tocam mais alto perto deles |
 | **Regiões** | Áreas que avisam no Registro quando um token entra |
+
+Uma **porta** comum pode ficar **trancada** (nas propriedades dela ou na lista): só o mestre abre, e os jogadores
+veem um cadeado. Destrancada, o jogador abre e fecha clicando no ícone da porta, quando a vê. Portas secretas e
+paredes nunca aparecem para os jogadores.
 
 A **névoa** segue as paredes e as luzes: os jogadores só veem o que os tokens deles enxergam. **Desfazer e refazer**
 valem para tudo o que muda na mesa (<kbd>Ctrl</kbd> <kbd>Z</kbd> e <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd>). No
@@ -57,7 +62,9 @@ No painel **Sala**:
    **Testar link** confere se ele responde. Funciona também com a sala aberta no celular (Android com processador ARM
    de 64 bits, quase todos): o túnel já vem no app e usa o Wi-Fi ou os dados móveis do celular enquanto a sala
    estiver aberta.
-3. Cada jogador entra pelo navegador e vê a cena transmitida, com a névoa, a régua e os tokens que pode mover.
+3. Cada jogador entra pelo navegador e vê a cena transmitida, com a névoa, a régua e os tokens que pode mover. Em
+   **Cena transmitida**, a opção **Cena do token de cada jogador** mostra a cada um a cena onde está o token dele
+   (o grupo pode se dividir entre cenas); quem não tem token vê a cena aberta por você.
 4. A lista mostra os aparelhos conectados; **Desconectar** tira um.
 
 No computador, a vista dos jogadores também pode abrir numa segunda tela (uma TV na mesa).
