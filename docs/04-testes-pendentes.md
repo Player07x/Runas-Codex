@@ -2695,3 +2695,12 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Smoke do Linux que não fechava (26/11)
+
+- [ ] Fechar o app várias vezes no Linux (pelo X da janela e por “Sair” na bandeja), com uma nota aberta: nenhuma
+  caixa “A JavaScript error occurred in the main process” (`Object has been destroyed`) aparece, e o processo some
+  (`pgrep -f runas-codex` não mostra nada depois de alguns segundos). O mesmo no Windows.
+- [ ] Nos próximos Releases, o passo “Smoke no app empacotado” do job `linux` termina em cerca de 2 min, sem
+  “não terminou em 5 min”. Se uma exceção aparecer no fechamento, o log mostra “Smoke: exceção não tratada no processo
+  principal” com a pilha, e o smoke falha na hora em vez de travar.
