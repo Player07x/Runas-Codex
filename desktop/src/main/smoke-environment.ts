@@ -36,21 +36,51 @@ export function configureSmokeEnvironment(app: SmokeApp, args = process.argv, en
   return { root, profile, temporaryProfile }
 }
 
-/** Espera o processo sair: no Windows, o Chromium mantém arquivos do perfil abertos até esse momento. */
+/**
+ * Espera o processo sair: no Windows, o Chromium mantém arquivos do perfil abertos até esse momento.
+ *
+ * No Linux, `kill(pid, 0)` também tem sucesso num zumbi. No CI o app saía deixando o processo principal como zumbi
+ * com uma thread presa (`Zl`): o canal do IPC não fechava e a espera não terminava nunca. Por isso o estado vem do
+ * `/proc/<pid>/stat` (Z ou X é saída), a hora de início separa o pai de outro processo que herde o PID, e a
+ * conferência roda desde o começo; o `disconnect` só a antecipa.
+ */
 export const SMOKE_CLEANUP_SCRIPT = `
+const { readFileSync } = require("node:fs")
 const { rm } = require("node:fs/promises")
 const root = process.argv[1]
 const parent = Number(process.argv[2])
-async function cleanup() {
-  while (true) {
-    try { process.kill(parent, 0) }
-    catch (error) { if (error.code === "ESRCH") break; throw error }
-    await new Promise(resolve => setTimeout(resolve, 50))
+function procStat(pid) {
+  try {
+    const text = readFileSync("/proc/" + pid + "/stat", "utf8")
+    const fields = text.slice(text.lastIndexOf(")") + 2).split(" ")
+    return { state: fields[0], start: fields[19] }
+  } catch (error) {
+    if (error.code === "ENOENT" || error.code === "ESRCH") return null
+    throw error
   }
-  await rm(root, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 })
 }
-if (process.connected) process.once("disconnect", () => { void cleanup().catch(() => process.exit(1)) })
-else void cleanup().catch(() => process.exit(1))
+const proc = process.platform === "linux" && procStat(process.pid) !== null
+const started = proc ? procStat(parent)?.start : undefined
+function parentAlive() {
+  if (proc) {
+    const stat = procStat(parent)
+    return stat !== null && stat.state !== "Z" && stat.state !== "X" && stat.start === started
+  }
+  try { process.kill(parent, 0); return true }
+  catch (error) { if (error.code === "ESRCH") return false; throw error }
+}
+let cleaning = false, timer
+function check() {
+  clearTimeout(timer)
+  if (cleaning) return
+  try {
+    if (parentAlive()) return void (timer = setTimeout(check, 50))
+  } catch { process.exit(1) }
+  cleaning = true
+  rm(root, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 }).then(() => process.exit(0), () => process.exit(1))
+}
+process.once("disconnect", check)
+check()
 `
 
 /** Sem shell nem varredura de /tmp: remove apenas a pasta criada por esta execução. */
