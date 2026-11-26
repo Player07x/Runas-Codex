@@ -1,10 +1,17 @@
 import { Notification, type BrowserWindow, type Session, type WebContents } from "electron"
 import { appNotification, pagePermissionAllowed } from "../../../app/src/core/page-permissions"
 
-/** As duas portas precisam da mesma política: a consulta e o pedido efetivo do Chromium. */
+/**
+ * As duas portas precisam da mesma política: a consulta e o pedido efetivo do Chromium.
+ *
+ * Ao fechar, o Chromium ainda consulta permissões depois de a janela ser destruída, e ler o `webContents` dela lança
+ * "Object has been destroyed". Sem janela, a página não é confiável: nega. Antes a exceção chegava à caixa de erro do
+ * Electron (no Linux, um diálogo GTK modal) e o app não terminava de fechar.
+ */
 export function configurePagePermissions(session: Pick<Session, "setPermissionRequestHandler" | "setPermissionCheckHandler">, trusted: (contents: WebContents | null) => boolean): void {
-  session.setPermissionRequestHandler((contents, permission, answer) => answer(pagePermissionAllowed(permission, trusted(contents))))
-  session.setPermissionCheckHandler((contents, permission) => pagePermissionAllowed(permission, trusted(contents)))
+  const isTrusted = (contents: WebContents | null) => { try { return trusted(contents) } catch { return false } }
+  session.setPermissionRequestHandler((contents, permission, answer) => answer(pagePermissionAllowed(permission, isTrusted(contents))))
+  session.setPermissionCheckHandler((contents, permission) => pagePermissionAllowed(permission, isTrusted(contents)))
 }
 
 /** As notificações do app passam pela ponte autorizada; a API de páginas fica bloqueada. */

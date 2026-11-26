@@ -359,3 +359,11 @@ app.on("window-all-closed", () => {
   vault.stop()
   if (process.platform !== "darwin") app.quit()
 })
+
+// No smoke ninguém clica: sem este ouvinte, uma exceção no processo principal abre a caixa de erro do Electron, que no
+// Linux é um diálogo GTK modal (gtk_dialog_run) e prendia o app depois do resultado. Aqui ela vai para o log e o
+// smoke falha, mesmo que aconteça ao fechar.
+if (smoke) process.on("uncaughtException", (error) => {
+  console.error("Smoke: exceção não tratada no processo principal:", error)
+  app.exit(1)
+})
