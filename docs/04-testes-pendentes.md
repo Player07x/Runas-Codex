@@ -2685,3 +2685,6 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] ⋯ da nota › “Criar links automáticos…”: lista nomes e apelidos de outras notas (e notas citadas que ainda não
   existem) que aparecem sem link, agrupados, com só a primeira de cada marcada. “Criar N links” troca no texto
   (Ctrl+Z desfaz no modo Editar); apelido vira `[[Nota|apelido]]`. Código, títulos, links e endereços ficam de fora.
+- [ ] Segurar e arrastar um cartão de categoria da Wiki, um item do menu da esquerda ou uma imagem de nota não leva mais
+  o endereço interno (`file://…`). Os arrastes de propósito continuam: árvore de notas, abas, tarefas, quadro de
+  missões e biblioteca do VTT.
