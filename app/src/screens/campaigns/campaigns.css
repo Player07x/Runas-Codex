@@ -397,9 +397,11 @@
 .campaign-cast-section-title .tiny { color: var(--faint); font-weight: 500; letter-spacing: 0; text-transform: none; }
 .campaign-cast-grid, .campaign-cast-cards, .campaign-cast-list { margin: 0; padding: 0; list-style: none; }
 .campaign-cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(220px * var(--font-scale, 1)), 100%), 1fr)); gap: 8px; }
-.campaign-cast-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(190px * var(--font-scale, 1)), 100%), 1fr)); gap: 10px; }
-.campaign-cast-cards.size-small { grid-template-columns: repeat(auto-fill, minmax(min(calc(145px * var(--font-scale, 1)), 100%), 1fr)); }
-.campaign-cast-cards.size-large { grid-template-columns: repeat(auto-fill, minmax(min(calc(270px * var(--font-scale, 1)), 100%), 1fr)); }
+/* Grade de cartões (anexo 3, 25/11): no máximo 7 por fileira nos pequenos, 6 nos médios e 5 nos grandes, com o mesmo
+   desenho nos três. Numa tela estreita cabem menos (o cartão não fica abaixo do mínimo). */
+.campaign-cast-cards { --cast-columns: 6; --cast-min: 120px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(max(var(--cast-min), (100% - (var(--cast-columns) - 1) * 10px) / var(--cast-columns)), 100%), 1fr)); gap: 10px; }
+.campaign-cast-cards.size-small { --cast-columns: 7; --cast-min: 96px; }
+.campaign-cast-cards.size-large { --cast-columns: 5; --cast-min: 150px; }
 .campaign-cast-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(calc(260px * var(--font-scale, 1)), 100%), 1fr)); gap: 6px; }
 /* O cartão é um botão só: o clique abre o painel. A reputação só aparece; quem marca é o botão “Reputação”. */
 .campaign-cast-item { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
@@ -435,11 +437,14 @@
 .campaign-cast-cards > .campaign-cast-item > .campaign-cast-card { flex-direction: column; align-items: stretch; gap: 8px; padding: 0 0 10px; }
 .campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0 10px; }
 .campaign-cast-cards > .campaign-cast-item > .campaign-cast-card > .cast-rep { margin: auto 10px 0; }
-/* Pequeno: o quadrado pequeno à esquerda, o nome ao lado e a reputação embaixo, na largura toda. */
-.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; align-content: start; gap: 6px 8px; padding: 8px; }
-.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0; }
-.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > .cast-rep { grid-column: 1 / -1; align-self: end; margin: 0; }
-.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card { height: 100%; }
+.campaign-cast-cards > .campaign-cast-item > .campaign-cast-card { height: 100%; }
+/* Pequeno: o mesmo cartão, com o ícone da atitude e o texto um pouco menores. */
+.campaign-cast-cards.size-small .campaign-cast-media { margin: 6px 6px 0; }
+.campaign-cast-cards.size-small .campaign-cast-media > .cast-attitude { top: 4px; right: 4px; width: 24px; height: 24px; }
+.campaign-cast-cards.size-small .campaign-cast-media > .cast-attitude svg { width: 14px; height: 14px; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { padding: 0 8px; }
+.campaign-cast-cards.size-small > .campaign-cast-item > .campaign-cast-card > .cast-rep { margin: auto 6px 0; }
+.campaign-cast-cards.size-small .campaign-cast-card-text strong { font-size: calc(13px * var(--font-scale, 1)); }
 .campaign-cast-list > .campaign-cast-item > .campaign-cast-card { flex-wrap: wrap; }
 .campaign-cast-list > .campaign-cast-item > .campaign-cast-card > .campaign-cast-card-text { flex: 1 1 120px; }
 .campaign-cast-list > .campaign-cast-item > .campaign-cast-card > .cast-rep { flex: 1 0 100%; }
@@ -521,11 +526,15 @@
   .campaign-cast-add { margin-left: 0; }
   .campaign-cast-page .kit-tabs { flex-wrap: wrap; overflow: visible; }
   .campaign-cast-page .kit-tab { min-height: 44px; }
-  .campaign-cast-cards, .campaign-cast-cards.size-large { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .campaign-cast-cards.size-small { grid-template-columns: minmax(0, 1fr); }
   .campaign-cast-detail .icon-btn, .campaign-cast-item .icon-btn, .cast-rep-steps .icon-btn { width: 44px; height: 44px; }
   .campaign-cast-rep, .cast-rep-player, .campaign-cast-viewer { min-height: 44px; min-width: 44px; justify-content: center; }
   .cast-rep-row { grid-template-columns: auto minmax(0, 1fr) auto; }
   .cast-rep-row > .cast-rep { grid-column: 1 / -1; grid-row: 2; }
   .campaign-cast-filters-body { position: fixed; z-index: 75; top: auto; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; max-height: 80dvh; overflow-y: auto; }
+}
+.campaign-note-layout { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 640px) {
+  /* Celular: 3, 2 e 2 por fileira, o mesmo cartão nos três tamanhos. */
+  .campaign-cast-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .campaign-cast-cards.size-small { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 }

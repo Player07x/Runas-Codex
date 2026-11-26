@@ -18,3 +18,17 @@
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
 }
+/* Apelidos da nota (25/11), no topo do painel Links: chips com o × e um campo que só aparece ao pedir. */
+.note-alias-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.note-alias { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding-right: 2px; }
+.note-alias > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-alias-remove { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.note-alias-remove:hover, .note-alias-remove:focus-visible { background: color-mix(in oklab, var(--text) 12%, transparent); color: var(--text); }
+.note-alias-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.note-alias-form > .input { flex: 1 1 140px; min-width: 0; }
+.note-alias-problem { flex: 1 0 100%; color: var(--red); }
+.note-alias-add { align-self: flex-start; justify-self: start; }
+@media (max-width: 640px), (pointer: coarse) {
+  .note-alias-remove { width: 44px; height: 44px; margin: -12px -10px -12px -6px; }
+  .note-alias-form .btn, .note-alias-add { min-height: 44px; }
+}

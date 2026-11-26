@@ -18,6 +18,7 @@ import { useToast } from "../ui"
 import { DEFAULT_FORCES, GraphView } from "./GraphViewLazy"
 import { PanelTabs, TabPanel } from "../kit/PanelTabs"
 import { GraphList } from "./GraphPage"
+import { NoteAliases } from "./NoteAliases"
 
 type Tab = "links" | "props" | "outline" | "graph"
 
@@ -79,6 +80,7 @@ export function LinksPanel({ index, path, onCreate, readOnly, onSaveNote }: Pick
   )
   return (
     <>
+      <NoteAliases key={path} index={index} path={path} readOnly={readOnly} />
       <div className="stack">
         <span className="eyebrow">Ligam para esta nota · {same.length}</span>
         {same.length === 0 && <span className="muted small">Nenhuma nota deste espaço aponta para cá.</span>}

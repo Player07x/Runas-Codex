@@ -34,6 +34,12 @@ function childrenOf(projection: PlayerProjection): { scene: WorldDocument<SceneD
   const scene = documentOf({ id: projection.scene.id, type: "scene", parentId: null, sort: 0, data: projection.scene.data }) as WorldDocument<SceneData>
   const children: SceneChildren = { tokens: [], tiles: [], drawings: [], notes: [], walls: [], lights: [], sounds: [], regions: [] }
   for (const child of projection.children) {
+    // Porta: só o meio dela chega; vira uma “parede” de ponto, que desenha só o ícone.
+    if (child.type === "door") {
+      const { x, y, open, locked } = child.data
+      children.walls.push(documentOf({ ...child, type: "wall", data: { x1: x, y1: y, x2: x, y2: y, kind: "door", open, doorLocked: locked } }) as SceneChildren["walls"][number])
+      continue
+    }
     const document = documentOf(child)
     if (child.type === "token") children.tokens.push(document as unknown as SceneChildren["tokens"][number])
     else if (child.type === "tile") children.tiles.push(document as unknown as SceneChildren["tiles"][number])
@@ -74,6 +80,9 @@ export function PlayerView() {
   const [notice, setNotice] = useState("")
   const transmissionKey = new URLSearchParams(location.search).get("k")
   const [seat, setSeat] = useState<PlayerSeatIdentity | null>(null)
+  // O SceneView guarda os callbacks do primeiro render: a porta lê o assento por aqui.
+  const seatRef = useRef<PlayerSeatIdentity | null>(null)
+  seatRef.current = seat
   const [lobbyOpen, setLobbyOpen] = useState(Boolean(transmissionKey))
   const [lobbyCode, setLobbyCode] = useState("")
   const [joining, setJoining] = useState(false)
@@ -120,6 +129,7 @@ export function PlayerView() {
       else if(message.type === "collaboration"){setActivity(message.collaboration);setActivityStatus("")}
       else if(message.type === "collaboration-result"){if(message.requestType==="safety")setNotice(message.ok?"Carta X enviada sem identificação.":message.reason??"Não foi possível enviar.");else setActivityStatus(message.ok?"Resposta recebida.":message.reason??"Não foi possível enviar.")}
       else if (message.type === "moves") setMoves(message.moves)
+      else if (message.type === "door-result") { if (!message.ok) setNotice(message.reason ?? "A porta não abriu.") }
       else if (message.type === "move-result") { if (!message.ok) pendingRejects.current.push({ tokenId: message.tokenId, reason: message.reason ?? "Movimento recusado." }) }
       else if (message.type === "audio") audio.current = message.audio
       else if (message.type === "ruler") ruler.current = message.ruler
@@ -230,6 +240,13 @@ export function PlayerView() {
       onOpenNote: () => undefined,
       // O VTT confere o pedido (Jogador, paredes, mapa) e devolve a cena atualizada, ou a recusa.
       onMove: (tokenId, position) => { const open = socket.current; if (open?.readyState === WebSocket.OPEN) open.send(JSON.stringify({ type: "move", tokenId, x: position.x, y: position.y })) },
+      // Porta destrancada: o VTT abre ou fecha e devolve a cena; trancada, só avisa (o VTT recusaria de todo jeito).
+      onDoor: (doorId, locked) => {
+        if (locked) { setNotice("A porta está trancada: só o mestre abre."); return }
+        if (!seatRef.current) { setNotice("Entre na mesa com o código do mestre para abrir portas."); return }
+        const open = socket.current
+        if (open?.readyState === WebSocket.OPEN) open.send(JSON.stringify({ type: "door", doorId }))
+      },
     }, { editable: false }).then((created) => {
       if (disposed) { created.destroy(); return }
       view.current = created

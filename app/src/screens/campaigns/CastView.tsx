@@ -304,7 +304,8 @@ function CastCard({ item, name, faction = false, attitude = "", appeared, prefs,
   const vault = useVault()
   const note = item.dest ? vault.index?.note(item.dest) : undefined
   const gone = goneStatus(note?.meta.frontmatter?.data)
-  const big = prefs.mode === "grid" && prefs.size !== "small"
+  // Na grade, os três tamanhos têm o mesmo desenho (anexo 3, 25/11); só muda quantos cabem por fileira (7, 6 ou 5).
+  const big = prefs.mode === "grid"
   const value = shownReputation(repView.rep, repView.viewers, item.dest)
   const said = [faction ? "" : attitude || "sem atitude", appeared ? "já apareceu" : "ainda não apareceu"].filter(Boolean).join(", ")
   return <li className={`campaign-cast-item ${appeared ? "seen" : "unseen"}${gone ? " gone" : ""}${selected ? " selected" : ""}`}>
@@ -318,7 +319,7 @@ function CastCard({ item, name, faction = false, attitude = "", appeared, prefs,
         </span>
         <span className="sr-only">{said}</span>
       </span>
-      {value !== null && <RepBar value={value} scale={repView.scale} name={name} compact={!big} />}
+      {value !== null && <RepBar value={value} scale={repView.scale} name={name} compact={!big || prefs.size === "small"} />}
     </button>
   </li>
 }
@@ -336,7 +337,7 @@ function NpcSection({ data, rows, total, prefs, limit, setLimit, selected, detai
   const listRef = useRef<HTMLDivElement>(null)
   const firstNew = useRef<number | null>(null)
   const grid = prefs.mode === "grid"
-  const columns = useGridColumns(gridRef, prefs.size === "small" ? 145 : prefs.size === "large" ? 270 : 190, `${prefs.mode}-${prefs.size}-${prefs.group}-${total > 0}`)
+  const columns = useGridColumns(gridRef, prefs.size === "small" ? 96 : prefs.size === "large" ? 150 : 120, `${prefs.mode}-${prefs.size}-${prefs.group}-${total > 0}`)
   const last = (r: CastRow) => r.seen[r.seen.length - 1]
   const sorted = [...rows].sort((a, b) =>
     prefs.order === "nome" ? a.name.localeCompare(b.name, "pt-BR")
