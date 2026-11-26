@@ -65,6 +65,11 @@ export interface WallData {
   y2: number
   kind: WallKind
   open: boolean
+  /**
+   * Porta trancada (anexo 2, 25/11): só o mestre abre e fecha. Destrancada, o jogador abre e fecha clicando no ícone.
+   * Só vale para portas comuns; portas secretas e paredes nunca são dos jogadores.
+   */
+  doorLocked: boolean
 }
 
 /** Fonte de luz fixa no mapa. Raios em células. */
@@ -296,6 +301,7 @@ export function normalizeWall(value: unknown): WallData {
     y2: num(raw.y2, 0, -100000, 100000),
     kind,
     open: kind === "wall" ? false : bool(raw.open, false),
+    doorLocked: kind === "door" ? bool(raw.doorLocked, false) : false,
   }
 }
 

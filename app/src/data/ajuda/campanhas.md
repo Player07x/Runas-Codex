@@ -27,7 +27,8 @@ jogadores. O botão **Painel** da sessão mostra os **Detalhes da sessão**, a *
 - Marcar a sessão como **realizada** pergunta se o **hoje no mundo** avança para a data no mundo dela.
 - **Notas do mestre**, abaixo das sessões, são notas soltas e secretas da campanha. **+ Novo → Nota do mestre** cria
   uma de qualquer tela: dentro de uma campanha, cai nela; fora, pergunta em qual. O ⋯ de cada nota tem **Ligar a uma
-  sessão…**, que grava `sessao: "[[Sessão 3]]"` na nota (ou tira o vínculo).
+  sessão…**, que grava `sessao: "[[Sessão 3]]"` na nota (ou tira o vínculo). A nota do mestre (e o diário de um
+  jogador) abre aqui mesmo, na aba Sessões, com o painel para ligar à sessão e fixar na Tela do Mestre.
 
 ### Relógio do mundo
 

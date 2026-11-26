@@ -11,6 +11,7 @@ import type { IndexedNote } from "../../core/vault-index"
 import { useVault } from "../../platform/VaultProvider"
 import { calendarForCampaign, campaignTime } from "../../core/campaign-time"
 import { parseReputation, type ReputationBook } from "../../core/reputation"
+import { noteRoute } from "../../lib/vault-notes"
 
 /** Rota de uma tela da campanha (`/campanhas/<nome>/<seção>/<caminho>`). */
 export function campaignRoute(name: string, section = "", id?: string): string {
@@ -23,6 +24,18 @@ export const questRoute = (name: string, path: string) => campaignRoute(name, "m
 export const sessionRoute = (session: SessionInfo) => {
   const name = /^Campanhas\/([^/]+)\//.exec(session.path)?.[1] ?? ""
   return campaignRoute(name, "sessoes", session.path)
+}
+
+/**
+ * Onde abrir uma nota a partir da campanha: sessão e missão nas telas delas; notas do mestre, diários e outras notas
+ * guardadas na pasta da campanha dentro da aba Sessões (anexo 1, 25/11), sem ir para Notas; o resto em Notas.
+ */
+export function campaignNoteRoute(data: Pick<CampaignData, "campaign" | "sessions" | "quests">, path: string): string {
+  const session = data.sessions.find((item) => item.path === path)
+  if (session) return sessionRoute(session)
+  if (data.quests.some((quest) => quest.path === path)) return questRoute(data.campaign.name, path)
+  if (data.campaign.root && path.startsWith(data.campaign.root)) return campaignRoute(data.campaign.name, "sessoes", path)
+  return noteRoute(path)
 }
 
 export interface CampaignData {

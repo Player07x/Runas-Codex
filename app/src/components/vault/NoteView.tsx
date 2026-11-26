@@ -5,7 +5,7 @@ import { imageLinkAt, linkedImages } from "../../core/images"
 import { ImageRenameDialog, NoteImagesDialog } from "./NoteImages"
 import { flushOpenNotes } from "../../lib/vault-notes"
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
-import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileCog, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Trash2, Type } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, ArrowRight, BookOpenText, ChevronLeft, Code2, Copy, FileCog, FileDown, History, ImagePlus, Images, LayoutTemplate, Link2, Merge, PanelRight, PenLine, Scissors, Star, SwatchBook, Tags, Trash2, Type, Wand2 } from "lucide-react"
 import { attachmentEmbed, imageExtension, pastedImageName } from "../../core/attachments"
 import { blockRefAt } from "../../core/block-ref"
 import { deepLinkFor } from "../../core/deep-link"
@@ -29,9 +29,12 @@ import { TaskEditDialog } from "../tasks/TaskEditDialog"
 import { copyLinkTarget, copyText, onFlushRequest, vaultNoteSet, vaultRoute } from "../../lib/vault-notes"
 import { useVault } from "../../platform/VaultProvider"
 import { Markdown } from "../Markdown"
-import { Segmented, useToast } from "../ui"
+import { Modal, Segmented, useToast } from "../ui"
 import { ConfirmDialog, LinkPicker, RenameDialog, TemplatePicker } from "./dialogs"
 import { NoteTitle } from "./NoteTitle"
+import { AutoLinksDialog } from "./AutoLinksDialog"
+import { NoteAliases } from "./NoteAliases"
+import { applyAutoLinks, type AutoLink } from "../../core/auto-links"
 import { FIRST_TEMPLATE, firstTemplateFolder, titleTarget } from "../../core/note-title"
 import { markFreshNote } from "../../lib/fresh-note"
 import { LINK_SELECTOR, targetOf, useLinkPreview } from "./LinkPreview"
@@ -183,7 +186,7 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
   const [kept, setKept] = useState(true)
   const retries = useRef(0)
   const [recovery, setRecovery] = useState<UnsavedDraft | null>(null)
-  const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | "decorate" | "images" | null>(null)
+  const [dialog, setDialog] = useState<"rename" | "trash" | "link" | "template" | "decorate" | "images" | "autolinks" | "aliases" | null>(null)
   const [gallery, setGallery] = useState(false)
   // Barra da seleção, posição do cursor (barra de status) e foco no editor (barra sobre o teclado, no celular).
   const [selectionAt, setSelectionAt] = useState<EditorSelectionInfo | null>(null)
@@ -583,6 +586,15 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     if (mode === "leitura") setMode("live")
     setDialog("link")
   }
+  // Links automáticos: no editor aberto (dá para desfazer com Ctrl+Z); no modo leitura, direto no rascunho.
+  const createAutoLinks = (links: AutoLink[]) => {
+    setDialog(null)
+    const result = applyAutoLinks(latest.current.draft, links)
+    if (!result.count) { toast("O texto mudou nesses pontos; nenhum link criado."); return }
+    if (editor.current) editor.current.transform((doc, cursor) => { const next = applyAutoLinks(doc, links).text; return { text: next, cursor: Math.min(cursor, next.length) } })
+    else { setDraft(result.text); setDocKey((k) => k + 1) }
+    toast(result.count === 1 ? "1 link criado." : `${result.count} links criados.`)
+  }
   const pickImage = () => { if (mode === "leitura") setMode("live"); fileInput.current?.click() }
   const pickTemplate = () => { if (mode === "leitura") setMode("live"); setDialog("template") }
   const slashAction = (action: "format" | "image" | "template" | "link") => {
@@ -638,10 +650,12 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
     ...(editing ? [
       { label: "Formatar…", icon: <Type size={16} />, hint: keyHint("format"), onSelect: openGallery },
       { label: "Inserir link…", icon: <Link2 size={16} />, onSelect: openLinkDialog },
+      { label: "Criar links automáticos…", icon: <Wand2 size={16} />, onSelect: () => setDialog("autolinks") },
       { label: "Inserir imagem…", icon: <ImagePlus size={16} />, onSelect: pickImage },
       { label: "Inserir modelo…", icon: <LayoutTemplate size={16} />, onSelect: pickTemplate },
       sep,
       { label: "Renomear ou mover…", icon: <PenLine size={16} />, onSelect: () => void flush().then(() => setDialog("rename")) },
+      { label: "Apelidos…", icon: <Tags size={16} />, onSelect: () => setDialog("aliases") },
     ] : []),
     { label: favorite ? "Tirar dos favoritos" : "Favoritar", icon: <Star size={16} />, onSelect: () => toggleFavorite(vault.info?.path, { type: "file", path }) },
     ...(editing ? [
@@ -841,6 +855,10 @@ export function NoteView({ path, folders, onShowPanel, panelOpen, panelHint = "L
       <NoteTools ref={tools} active={focused} path={path} draft={draft} selection={() => editor.current?.selection() ?? null} replace={(text, cursor) => editor.current?.transform(() => ({ text, cursor }))} flush={flushChecked} />
       {showKeyboardBar && <KeyboardBar onFormat={() => setGallery(true)} onSlash={() => editor.current?.openSlash()} onWrap={(mark) => editor.current?.wrap(mark)} onLink={openLinkDialog} onTask={() => window.dispatchEvent(new CustomEvent("runas-codex:nota-acao", { detail: "toggle-task" }))} />}
       {gallery && <FormatGallery code={mode === "fonte"} extra={extraFormatters} onClose={() => setGallery(false)} onInsert={insertFormatter} />}
+      {dialog === "autolinks" && <AutoLinksDialog index={index} path={path} text={draft} onApply={createAutoLinks} onClose={() => setDialog(null)} />}
+      {dialog === "aliases" && <Modal title={`Apelidos de “${note.name}”`} onClose={() => setDialog(null)} footer={<button type="button" className="btn primary" onClick={() => setDialog(null)}>Concluir</button>}>
+        <NoteAliases index={index} path={path} readOnly={readOnly} autoFocus />
+      </Modal>}
       {dialog === "images" && <NoteImagesDialog path={path} text={draft} onRename={renameImage} onClose={() => setDialog(null)} />}
       {dialog === "decorate" && <NoteDecorateDialog path={path} before={flush} onClose={() => setDialog(null)} />}
 

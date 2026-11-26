@@ -15,7 +15,7 @@ import { noteBody } from "../../core/sections"
 import { Empty, Modal, Progress, useToast } from "../../components/ui"
 import { useVault } from "../../platform/VaultProvider"
 import { NewNpcDialog, NewSessionDialog } from "./campaign-dialogs"
-import { campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
+import { campaignNoteRoute, campaignRoute, dayLabel, sessionRoute, worldDateLabel, type CampaignData } from "./campaign-state"
 import { DraftsContext, useBlurSave, useCampaignEdits, useDrafts } from "./campaign-edits"
 import { ListRow } from "../../components/kit/Layout"
 import { FormField, FormGrid } from "../../components/kit/FormField"
@@ -30,6 +30,10 @@ import { Link2 } from "lucide-react"
 import { useSetCampaignTime } from "./campaign-time"
 
 export function SessionsView({ data, path }: { data: CampaignData; path?: string }) {
+  const vault = useVault()
+  // Notas do mestre e diários abrem aqui mesmo, dentro da campanha (anexo 1, 25/11), e não em Notas.
+  if (path && !data.sessions.some((session) => session.path === path) && path.startsWith(data.campaign.root) && vault.index?.note(path))
+    return <CampaignNotePage key={path} data={data} path={path} />
   if (path) return <SessionPage key={path} data={data} path={path} />
   return <SessionList data={data} />
 }
@@ -153,10 +157,10 @@ function GmNotes({ data, onCreate }: { data: CampaignData; onCreate(): void }) {
     {notes.length === 0
       ? <p className="small muted">Pistas, planos e o que os jogadores não podem ver. Ficam em {GM_NOTES_FOLDER}, fora do diário exportado e da sala.</p>
       : <div className="stack campaign-gm-list">{notes.map((note) => <div key={note.path} className="campaign-gm-row">
-        <ListRow href={href(noteRoute(note.path))} media={<LockKeyhole size={16} aria-hidden="true" />} title={note.name}
+        <ListRow href={href(campaignNoteRoute(data, note.path))} media={<LockKeyhole size={16} aria-hidden="true" />} title={note.name}
           meta={<><span className="campaign-gm-secret">Segredo</span> · {sessionLabel(note.session)}{note.pinned ? " · Fixada na Tela do Mestre" : ""}</>} />
         <OverflowMenu label={`Ações de ${note.name}`} items={[
-          { label: "Abrir", icon: <FileText size={15} />, onSelect: () => navigate(noteRoute(note.path)) },
+          { label: "Abrir", icon: <FileText size={15} />, onSelect: () => navigate(campaignNoteRoute(data, note.path)) },
           ...(canEdit ? [
             note.pinned
               ? { label: "Desafixar da Tela do Mestre", icon: <PinOff size={15} />, onSelect: () => pin(note.path, false) }
@@ -215,7 +219,7 @@ function GmNoteDialog({ data, onClose }: { data: CampaignData; onClose(): void }
       const folder = `${data.campaign.root}${GM_NOTES_FOLDER}`
       const target = session ? vault.index!.linkTarget(session, `${folder}/${title.trim()}.md`) : undefined
       const path = await vault.createNote(folder, uniqueNoteName(vault.index!, folder, title.trim()), newGmNote(title.trim(), target))
-      onClose(); navigate(noteRoute(path))
+      onClose(); navigate(campaignRoute(data.campaign.name, "sessoes", path))
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setBusy(false) }
   }
   return <Modal title="Nova nota do mestre" onClose={() => !busy && onClose()} footer={<><button className="btn ghost" onClick={onClose} disabled={busy}>Cancelar</button><button className="btn primary" onClick={() => void create()} disabled={busy || !title.trim() || Boolean(problem)}>{busy ? "Criando…" : "Criar nota"}</button></>}>
@@ -246,7 +250,7 @@ function PlayerDiaries({ data }: { data: CampaignData }) {
       <div className="stack">
         {diaries.map((n) => (
           <article key={n.path} className="card tight stack">
-            <a className="small" href={href(noteRoute(n.path))}><strong>{n.name}</strong></a>
+            <a className="small" href={href(campaignNoteRoute(data, n.path))}><strong>{n.name}</strong></a>
             {typeof n.meta.frontmatter?.data?.jogador === "string" && <span className="tiny muted">{String(n.meta.frontmatter.data.jogador)}</span>}
             <Markdown source={noteBody(n.text)} />
           </article>
@@ -254,6 +258,71 @@ function PlayerDiaries({ data }: { data: CampaignData }) {
       </div>
     </details>
   )
+}
+
+/**
+ * Nota da pasta da campanha que não é sessão (nota do mestre, diário de jogador…), aberta dentro da aba Sessões
+ * (anexo 1, 25/11). O painel ao lado liga a nota do mestre a uma sessão e a fixa na Tela do Mestre.
+ */
+function CampaignNotePage({ data, path }: { data: CampaignData; path: string }) {
+  const vault = useVault()
+  const toast = useToast()
+  const index = vault.index!
+  const panel = usePanelToggle("campaign-note")
+  const [creatingLink, setCreatingLink] = useState<string | null>(null)
+  const folders = useMemo(() => [...new Set(index.allFiles().map((f) => dirname(f.path)))].filter(Boolean), [index, vault.version])
+  const back = () => navigate(campaignRoute(data.campaign.name, "sessoes"))
+  return (
+    <div className={`campaign-session-layout ${panel.overlay ? "show-panel" : ""}`}>
+      <section className="campaign-session-main">
+        <NoteView
+          key={path}
+          path={path}
+          folders={folders}
+          onShowPanel={panel.toggle}
+          panelOpen={panel.expanded}
+          panelHint="Sessão ligada e Tela do Mestre"
+          onBack={back}
+          backLabel="Voltar às sessões"
+          onTrashed={back}
+          onCreate={(target) => (data.readOnly ? toast(`“${target}” ainda não existe.`) : setCreatingLink(target))}
+          onTag={(tag) => toast(`Tag #${tag}`)}
+        />
+      </section>
+      <ResizablePanel id="campaign-note" label="Detalhes da nota" side="right" width={360} className="campaign-session-side" onCollapsedChange={panel.onCollapsedChange}>
+        <CampaignNoteDetails data={data} path={path} />
+      </ResizablePanel>
+      {creatingLink && <NewNpcDialog data={data} initialName={creatingLink} onClose={() => setCreatingLink(null)} onCreated={(created) => toast(`“${noteName(created)}” criado na wiki.`)} />}
+    </div>
+  )
+}
+
+function CampaignNoteDetails({ data, path }: { data: CampaignData; path: string }) {
+  const vault = useVault()
+  const toast = useToast()
+  const { setHome } = useCampaignEdits(data)
+  const gm = listGmNotes(vault.index!, data.campaign, data.data.fixadas).find((note) => note.path === path)
+  const canEdit = !data.readOnly && Boolean(data.campaign.home)
+  const current = gm?.session ? data.sessions.find((item) => noteName(item.path) === noteName(gm.session!))?.path ?? "" : ""
+  const run = async (action: () => Promise<unknown>) => { try { await action() } catch (err) { toast.error(err) } }
+  return <section className="card stack" aria-label="Detalhes da nota">
+    {gm ? <>
+      <p className="small"><span className="campaign-gm-secret">Segredo</span> · fica fora do diário exportado e do que a sala mostra.</p>
+      <FormGrid columns={1}>
+        <FormField label="Sessão" hint="A sessão em que a nota vai ser usada.">
+          {(c) => <select id={c.id} aria-describedby={c.describedBy} className="select" value={current} disabled={!canEdit}
+            onChange={(event) => { const session = event.target.value; void run(() => vault.setProperty(path, "sessao", session ? `[[${vault.index!.linkTarget(session, path)}]]` : undefined)) }}>
+            <option value="">Nenhuma</option>
+            {data.sessions.map((item) => <option key={item.path} value={item.path}>{sessionName(item)}</option>)}
+          </select>}
+        </FormField>
+      </FormGrid>
+      {canEdit && <button type="button" className="btn sm" onClick={() => void run(() => setHome("fixadas", withPinnedNote(vault.index!, data.data.fixadas, data.campaign.home!, path, !gm.pinned)))}>
+        {gm.pinned ? <><PinOff size={14} /> Desafixar da Tela do Mestre</> : <><Pin size={14} /> Fixar na Tela do Mestre</>}
+      </button>}
+    </> : <p className="small muted">Nota guardada na pasta da campanha.</p>}
+    <a className="btn sm ghost" href={href(noteRoute(path))}><FileText size={14} /> Abrir em Notas</a>
+  </section>
 }
 
 function SessionPage({ data, path }: { data: CampaignData; path: string }) {

@@ -17,7 +17,7 @@ import { useVault } from "../../platform/VaultProvider"
 import { WikiNotePicker } from "./campaign-dialogs"
 import { useCampaignEdits } from "./campaign-edits"
 import { InitiativePanel } from "./CampaignTools"
-import { sessionRoute, type CampaignData } from "./campaign-state"
+import { campaignNoteRoute, sessionRoute, type CampaignData } from "./campaign-state"
 import { attitudeColor } from "./DashboardCards"
 import { ImprovisedNpcCard } from "./ImprovisedNpc"
 
@@ -221,7 +221,7 @@ function PinnedColumn({ data, onClose }: { data: CampaignData; onClose(): void }
           <TabPanel idPrefix="mestre-fixada" value={String(current.position)}>
             {note ? <Markdown source={noteBody(note.text)} className="campaign-pin-md" /> : <p className="small" style={{ color: "var(--red)" }}>A nota não existe.</p>}
             <div className="row-wrap">
-              {note && <a className="btn sm ghost" href={href(noteRoute(note.path))} onClick={onClose}>Abrir a nota</a>}
+              {note && <a className="btn sm ghost" href={href(campaignNoteRoute(data, note.path))} onClick={onClose}>Abrir a nota</a>}
               {!data.readOnly && (
                 <button type="button" className="btn sm ghost" onClick={() => { setChosen(""); setHome("fixadas", pinnedRaw.filter((_, i) => i !== current.position)) }}>
                   <PinOff size={14} /> Desafixar {noteName(current.target)}

@@ -43,6 +43,8 @@ export interface SceneViewHandlers {
   onRulerChange?(ruler: PlayerRuler | null): void
   /** Vista dos Jogadores: o espectador soltou um token "Jogador" (o VTT confere e grava). */
   onMove?(tokenId: string, position: Point): void
+  /** Vista dos Jogadores: o jogador clicou numa porta (o VTT confere se está destrancada e abre ou fecha). */
+  onDoor?(doorId: string, locked: boolean): void
 }
 
 export interface SceneViewOptions {
@@ -101,6 +103,7 @@ const DISPOSITION_COLORS: Record<TokenDisposition, number> = { player: 0x86a47f,
 /** Cor do texto flutuante de cada tipo de entrada do Registro. */
 export const FLOAT_COLORS: Record<LogKind, number> = { damage: 0xc76561, test: 0x82aaa6, info: 0xb99b65 }
 const SELECTION_COLOR = 0xf3ece8
+const LOCK_COLOR = 0xd9b45a
 const MIN_ZOOM = 0.08
 const MAX_ZOOM = 5
 
@@ -424,6 +427,20 @@ export class SceneView {
     this.drawRemoteRuler()
   }
 
+  /** Lista de portas e paredes: escolhe a ferramenta do objeto, seleciona-o e leva a câmera até ele. */
+  focusItem(id: string): void {
+    const item = this.items.get(id)
+    if (!item || !this.options.editable) return
+    const tool = TOOL_FOR_KIND[item.kind]
+    if (tool !== this.tool) { this.setTool(tool); this.handlers.onToolChange?.(tool) }
+    this.selection = new Set([id])
+    this.emitSelection()
+    this.updateWallHandles()
+    const wall = item.kind === "wall" ? item.document.data as WallData : null
+    this.setCamera(wall ? { x: (wall.x1 + wall.x2) / 2, y: (wall.y1 + wall.y2) / 2 } : { x: item.display.x, y: item.display.y })
+    this.handlers.onViewChange?.()
+  }
+
   setSelection(ids: string[]): void {
     this.selection = new Set(ids.filter((id) => this.items.has(id)))
     this.refreshSelection()
@@ -585,7 +602,9 @@ export class SceneView {
     for (const document of children.drawings.filter(visible)) wanted.set(document.id, { kind: "drawing", document })
     for (const document of children.tokens.filter(visible)) wanted.set(document.id, { kind: "token", document })
     for (const document of children.notes.filter(visible)) wanted.set(document.id, { kind: "note", document })
-    // Paredes e luzes só existem na mesa: a Vista dos Jogadores recebe a visão pronta.
+    // Paredes e luzes só existem na mesa: a Vista dos Jogadores recebe a visão pronta e só o ícone das portas que vê
+    // (a projeção manda só o meio da porta, nunca a linha).
+    if (!this.options.editable) for (const document of children.walls) if ((document.data as WallData).kind === "door") wanted.set(document.id, { kind: "wall", document })
     if (this.options.editable) {
       for (const document of children.walls) wanted.set(document.id, { kind: "wall", document })
       for (const document of children.lights) wanted.set(document.id, { kind: "light", document })
@@ -690,6 +709,12 @@ export class SceneView {
       .roundRect(-11, -11, 22, 22, 5).fill({ color: 0x171314, alpha: 0.92 }).stroke({ color, width: 1.5 })
     if (data.open) graphics.rect(-5, -7, 3, 14).fill(color).rect(-2, -7, 7, 14).stroke({ color, width: 1, alpha: 0.6 })
     else graphics.rect(-5, -7, 10, 14).fill({ color, alpha: 0.85 }).circle(2.5, 0, 1.3).fill(0x171314)
+    // Trancada: um cadeado no canto (só o mestre abre).
+    if (data.kind === "door" && data.doorLocked) {
+      graphics.circle(10, -10, 7.5).fill({ color: 0x171314 }).stroke({ color: LOCK_COLOR, width: 1.2 })
+        .arc(10, -11.5, 2.6, Math.PI, 0).stroke({ color: LOCK_COLOR, width: 1.4 })
+        .roundRect(6.5, -11.5, 7, 5.5, 1).fill(LOCK_COLOR)
+    }
     icon.addChild(graphics)
     icon.eventMode = "static"
     icon.hitArea = new Rectangle(-22, -22, 44, 44)
@@ -698,6 +723,8 @@ export class SceneView {
       const item = this.items.get(id)
       if (!item) return
       const current = item.document.data as WallData
+      // Jogador: só pede; quem abre (se a porta estiver destrancada) é o VTT.
+      if (!this.options.editable) { this.handlers.onDoor?.(id, current.doorLocked); return }
       this.handlers.onPut({ id, type: "wall", parentId: item.document.parentId, data: { ...current, open: !current.open } })
     }
     this.doorActions.set(icon, toggle)

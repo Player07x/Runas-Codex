@@ -68,3 +68,31 @@ export function validatePlayerFlip(database: DocumentDatabase, sceneId: string |
   if (token.data.locked) return { ok: false, reason: "O mestre travou este token." }
   return { ok: true, token: { ...token, data: { ...token.data, mirror: !token.data.mirror } } }
 }
+
+/** Pedido do jogador para abrir ou fechar uma porta (anexo 2, 25/11). */
+export interface DoorRequest {
+  doorId: string
+}
+
+export type DoorResult = { ok: true; door: WorldDocument<WallData> } | { ok: false; reason: string }
+
+/** Aceita só `{ type: "door", doorId }`; o resto é ignorado. */
+export function normalizeDoorRequest(value: unknown): DoorRequest | null {
+  const raw = value && typeof value === "object" ? value as Record<string, unknown> : null
+  if (!raw || raw.type !== "door") return null
+  if (typeof raw.doorId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(raw.doorId)) return null
+  return { doorId: raw.doorId }
+}
+
+/**
+ * Valida a porta clicada pelo jogador: uma porta comum (nunca secreta nem parede), na cena que ele vê, que ele enxerga
+ * (`visible`, os ids de porta da projeção dele) e destrancada. O VTT inverte `open` e grava.
+ */
+export function validatePlayerDoor(database: DocumentDatabase, sceneId: string | null, visible: ReadonlySet<string>, request: DoorRequest): DoorResult {
+  const document = database.get(request.doorId)
+  if (!sceneId || !document || document.type !== "wall" || document.parentId !== sceneId || !visible.has(document.id)) return { ok: false, reason: "Essa porta não está à vista." }
+  const door = document as WorldDocument<WallData>
+  if (door.data.kind !== "door") return { ok: false, reason: "Essa porta não está à vista." }
+  if (door.data.doorLocked) return { ok: false, reason: "A porta está trancada: só o mestre abre." }
+  return { ok: true, door: { ...door, data: { ...door.data, open: !door.data.open } } }
+}

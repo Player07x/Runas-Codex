@@ -1,3 +1,4 @@
+import { FOLLOW_TOKENS_SCENE } from "../shared/player"
 import { useEffect, useState } from "react"
 import QRCode from "qrcode"
 import { Activity, ExternalLink, KeyRound, Minus, MonitorPlay, Plus, Radio, RefreshCw, RotateCw, Square, Target, Trash2, Users, Wifi } from "lucide-react"
@@ -112,7 +113,8 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
           ? <p className="hint">O link público usa um túnel Cloudflare Quick Tunnel, que já vem no app e só abre quando você confirma. Ele usa a internet do celular (Wi-Fi ou dados móveis) enquanto a sala estiver aberta, inclusive com a tela apagada; encerrar o aplicativo encerra a sala e o link.</p>
           : <p className="hint">O link público usa um túnel Cloudflare Quick Tunnel opcional e só é iniciado após sua confirmação.</p>}
       <div className="player-config">
-        <label className="field"><span>Cena transmitida</span><select value={state.sceneId ?? ""} onChange={(event) => void run(() => vtt.player.setScene(event.target.value || null))}><option value="">Cena aberta pelo mestre</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>{scene.data.name}</option>)}</select></label>
+        <label className="field"><span>Cena transmitida</span><select value={state.sceneId ?? ""} onChange={(event) => void run(() => vtt.player.setScene(event.target.value || null))}><option value="">Cena aberta pelo mestre</option><option value={FOLLOW_TOKENS_SCENE}>Cena do token de cada jogador</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>{scene.data.name}</option>)}</select></label>
+        {state.sceneId === FOLLOW_TOKENS_SCENE && <small className="hint">Cada jogador vê a cena onde está o token dele (com tokens em mais de uma cena, a do último que mudou). Quem não tem token na mesa vê a cena aberta por você.</small>}
         <button className="ghost" onClick={() => void run(() => vtt.player.pullCamera())}><Target size={15} /> Puxar a câmera para o ponto do mestre</button>
         <small className="hint">Cada jogador move a própria câmera. Mover a sua não mexe na deles; este botão leva todos ao que você está vendo agora.</small>
         <label className="check"><input type="checkbox" checked={state.moves} onChange={(event) => void run(() => vtt.player.setMoves(event.target.checked))} /> Jogadores podem mover os tokens marcados como Jogador</label>
@@ -122,6 +124,6 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
     </>}
     {!state?.enabled && <div className="player-offline"><RefreshCw size={16} /><span>Ligue a transmissão quando quiser compartilhar a cena. A chave de acesso muda a cada sessão.</span></div>}
     {error && <button className="scene-error" onClick={() => setError("")} role="alert">{error} ✕</button>}
-    {sceneId && state?.enabled && <small className="hint">A cena aberta atualmente é usada por padrão; você pode fixar outra acima.</small>}
+    {sceneId && state?.enabled && state.sceneId !== FOLLOW_TOKENS_SCENE && <small className="hint">A cena aberta atualmente é usada por padrão; você pode fixar outra acima.</small>}
   </section>
 }

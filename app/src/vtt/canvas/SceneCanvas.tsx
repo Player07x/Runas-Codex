@@ -28,6 +28,7 @@ import { ConfirmDialog } from "../../components/vault/dialogs"
 import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { WikiTokenPicker } from "../panels/WikiTokenPicker"
 import { noteRoute } from "../../lib/vault-notes"
+import { WallsPanel } from "../panels/WallsPanel"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
 import { SceneHistory, type SceneEdit } from "./history"
@@ -91,6 +92,8 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   const viewRef = useRef<SceneView | null>(null)
   const [ready, setReady] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
+  // Lista de portas e paredes (anexo 2, 25/11), aberta pelo menu da esquerda.
+  const [wallsOpen, setWallsOpen] = useState(false)
   const [ownPropertiesOpen, setOwnPropertiesOpen] = useState(false)
   const propertiesOpen = properties ? properties.open : ownPropertiesOpen
   // Os callbacks da vista guardam este setter do primeiro render: `properties.setOpen` precisa ser estável (um setState).
@@ -301,6 +304,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
       <button className="scene-tools-toggle ghost" aria-label="Mostrar ferramentas" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}><Wrench size={18} /> Ferramentas</button>
       <nav className={`scene-tools ${toolsOpen ? "open" : ""}`} aria-label="Ferramentas">
         {TOOLS.map(({ id, label, action, icon: Icon }) => <button key={id} className={tool === id ? "active" : ""} title={keyboardHints && shortcutOf(action) ? `${label} (${shortcutOf(action)})` : label} aria-label={label} aria-pressed={tool === id} onClick={() => { setTool(id); setToolsOpen(false); setContext(null) }}><Icon size={17} /></button>)}
+        <button className={wallsOpen ? "active" : ""} title="Lista de portas e paredes" aria-label="Lista de portas e paredes" aria-pressed={wallsOpen} onClick={() => { setWallsOpen((value) => !value); setToolsOpen(false); setContext(null) }}><DoorClosed size={17} /></button>
         <span className="divider" />
         <button className={preview ? "active" : ""} title={scene.data.vision.enabled ? "Ver como os jogadores (névoa e escuridão)" : "Ver a escuridão como os jogadores (a névoa está desligada nesta cena)"} aria-label="Ver como os jogadores" aria-pressed={preview} onClick={() => setPreview((value) => !value)}><ScanEye size={17} /></button>
         <button title="Adicionar imagem (tile)" aria-label="Adicionar imagem" onClick={() => tileInput.current?.click()}><ImagePlus size={17} /></button>
@@ -320,6 +324,8 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
         {WALL_KINDS.map((kind) => { const Icon = WALL_ICONS[kind]; return <button key={kind} className={wallKind === kind ? "active" : ""} title={WALL_LABELS[kind]} aria-label={WALL_LABELS[kind]} onClick={() => setWallKind(kind)}><Icon size={15} /></button> })}
         <span className="draw-options-label">{WALL_LABELS[wallKind]}</span>
       </div>}
+      {wallsOpen && <WallsPanel walls={store.children(scene.id).walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put}
+        onFocus={(id) => viewRef.current?.focusItem(id)} onClose={() => setWallsOpen(false)} />}
       <nav className="scene-actions" aria-label="Comandos da cena">
         <button aria-label="Desfazer" title={keyboardHints ? "Desfazer (Ctrl+Z)" : "Desfazer"} disabled={!history.canUndo} onClick={() => void history.undo().catch(reportError)}><Undo2 size={18} /></button>
         <button aria-label="Refazer" title={keyboardHints ? "Refazer (Ctrl+Shift+Z)" : "Refazer"} disabled={!history.canRedo} onClick={() => void history.redo().catch(reportError)}><Redo2 size={18} /></button>
@@ -596,6 +602,9 @@ function WallFields({ data, update }: { data: WallData; update: (patch: Partial<
   return <>
     <Field label="Tipo"><select value={data.kind} onChange={(event) => update({ kind: event.target.value as WallKind })}>{WALL_KINDS.map((kind) => <option key={kind} value={kind}>{WALL_LABELS[kind]}</option>)}</select></Field>
     {data.kind !== "wall" && <label className="check"><input type="checkbox" checked={data.open} onChange={(event) => update({ open: event.target.checked })} /> Aberta (deixa ver através)</label>}
+    {data.kind === "door" && <label className="check"><input type="checkbox" checked={data.doorLocked} onChange={(event) => update({ doorLocked: event.target.checked })} /> Trancada (só o mestre abre)</label>}
+    {data.kind === "door" && <small className="hint">{data.doorLocked ? "Os jogadores veem o cadeado e não abrem." : "Os jogadores abrem e fecham clicando no ícone da porta, quando a veem."}</small>}
+    {data.kind === "secret" && <small className="hint">Os jogadores não veem a porta secreta: só o mestre abre.</small>}
     <small className="hint">Paredes e portas fechadas bloqueiam visão e luz. Porta secreta aparece para os jogadores como parede comum. Arraste as pontas para ajustar.</small>
   </>
 }

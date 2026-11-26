@@ -1,24 +1,36 @@
 import type { PublicCollaboration, CollaborationReply } from "./collaboration"
 import type { PlayerBarVisibility } from "./ipc"
-import type { NoteData, SceneData, TileData, TokenData, DrawingData, AssetPath } from "./scene"
+import type { NoteData, SceneData, TileData, TokenData, DrawingData, AssetPath, WallData } from "./scene"
 import { isAssetPath } from "./scene"
 import { playerBars } from "./bars"
 import type { LogKind } from "./log"
 import type { WorldDocument } from "./world"
-import { cellPixels, isTokenVisible, renderVision, type RenderVision, type SceneVision } from "./vision"
+import { cellPixels, isPointVisible, isTokenVisible, renderVision, type RenderVision, type SceneVision } from "./vision"
 import type { FogData } from "./scene"
 import type { AudioState } from "./audio"
 import type { PlayerRegion, RegionData } from "./region"
+
+/**
+ * “Cena transmitida” = “Cena do token de cada jogador” (anexo 2, 25/11): cada assento vê a cena onde está o próprio
+ * token; espectadores e assentos sem token veem a cena aberta pelo mestre. Ids de documento não têm “@”.
+ */
+export const FOLLOW_TOKENS_SCENE = "@tokens"
 
 /** Formato sanitizado que atravessa a rede. */
 export interface PlayerScene { id: string; data: SceneData }
 export interface PlayerTokenData extends Omit<TokenData, "bars" | "vision" | "light"> { bars: TokenData["bars"] }
 export interface PlayerNoteData extends Omit<NoteData, "url" | "notePath"> {}
+/**
+ * Porta comum vista pelos jogadores (anexo 2, 25/11): só o meio dela, para o ícone, e se está aberta ou trancada. A
+ * linha da porta, as paredes e as portas secretas nunca saem do VTT.
+ */
+export interface PlayerDoorData { x: number; y: number; open: boolean; locked: boolean }
 export type PlayerChild =
   | { id: string; type: "token"; parentId: string; sort: number; data: PlayerTokenData }
   | { id: string; type: "tile"; parentId: string; sort: number; data: TileData }
   | { id: string; type: "drawing"; parentId: string; sort: number; data: DrawingData }
   | { id: string; type: "note"; parentId: string; sort: number; data: PlayerNoteData }
+  | { id: string; type: "door"; parentId: string; sort: number; data: PlayerDoorData }
 export interface PlayerProjection {
   scene: PlayerScene | null
   children: PlayerChild[]
@@ -54,6 +66,8 @@ export type PlayerWireMessage =
   | PlayerProjectionPatch
   /** Resposta ao espectador que pediu para mover um token (só para ele). */
   | { type: "move-result"; tokenId: string; ok: boolean; reason?: string }
+  /** Resposta ao jogador que clicou numa porta (só para ele). */
+  | { type: "door-result"; doorId: string; ok: boolean; reason?: string }
   /** O mestre ligou ou desligou o movimento de tokens Jogador pelos espectadores. */
   | { type: "moves"; moves: boolean }
   /** O que está tocando; `null` com o áudio desligado para os jogadores. */
@@ -72,6 +86,7 @@ export type PlayerClientMessage =
   | { type: "ping" }
   | { type: "move"; tokenId: string; x: number; y: number }
   | { type: "flip"; tokenId: string }
+  | { type: "door"; doorId: string }
 
 const COORDINATE_LIMIT = 1_000_000
 
@@ -92,7 +107,7 @@ export function normalizeRuler(value: unknown): PlayerRuler | null {
 }
 export interface ProjectionInput {
   scene: WorldDocument<SceneData> | null
-  children: { tokens: WorldDocument<TokenData>[]; tiles: WorldDocument<TileData>[]; drawings: WorldDocument<DrawingData>[]; notes: WorldDocument<NoteData>[]; regions?: WorldDocument<RegionData>[] }
+  children: { tokens: WorldDocument<TokenData>[]; tiles: WorldDocument<TileData>[]; drawings: WorldDocument<DrawingData>[]; notes: WorldDocument<NoteData>[]; regions?: WorldDocument<RegionData>[]; walls?: WorldDocument<WallData>[] }
   bars: PlayerBarVisibility
   /** Visão calculada pelo processo principal (Fase 6). */
   vision?: { vision: SceneVision; fog: FogData | null } | null
@@ -100,6 +115,23 @@ export interface ProjectionInput {
 
 function visible<T extends WorldDocument>(document: T): boolean { return !(document.data as { hidden?: boolean }).hidden }
 function asset(value: string | null): AssetPath | null { return isAssetPath(value) ? value : null }
+
+/**
+ * Porta comum que algum aliado vê: o meio dela, ou um ponto de cada lado (a linha da porta fica na borda da visão).
+ * Sem névoa, todas aparecem, como os tokens.
+ */
+export function playerDoor(wall: WallData, sight: SceneVision | null, cell: number): PlayerDoorData | null {
+  if (wall.kind !== "door") return null
+  const x = (wall.x1 + wall.x2) / 2
+  const y = (wall.y1 + wall.y2) / 2
+  if (sight) {
+    const length = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1) || 1
+    const nx = -(wall.y2 - wall.y1) / length * cell * 0.3
+    const ny = (wall.x2 - wall.x1) / length * cell * 0.3
+    if (![{ x, y }, { x: x + nx, y: y + ny }, { x: x - nx, y: y - ny }].some((point) => isPointVisible(sight, point))) return null
+  }
+  return { x, y, open: wall.open, locked: wall.doorLocked }
+}
 
 /** Remove explicitamente os campos privados antes de serializar a projeção. */
 export function projectScene(input: ProjectionInput): PlayerProjection {
@@ -134,6 +166,10 @@ export function projectScene(input: ProjectionInput): PlayerProjection {
     if (!visible(document)) continue
     const { url: _url, ...withoutUrl } = structuredClone(document.data)
     children.push({ id: document.id, type: "note", parentId: input.scene.id, sort: document.sort, data: withoutUrl })
+  }
+  for (const document of input.children.walls ?? []) {
+    const door = playerDoor(document.data, sight, cell)
+    if (door) children.push({ id: document.id, type: "door", parentId: input.scene.id, sort: document.sort, data: door })
   }
   const regions: PlayerRegion[] = (input.children.regions ?? []).filter((region) => region.data.visible).map(({ id, data }) => ({
     id, shape: data.shape, x: data.x, y: data.y, width: data.width, height: data.height, color: data.color,

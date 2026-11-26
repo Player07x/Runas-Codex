@@ -2662,3 +2662,29 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Conferir na 1.8.0 instalada as seções “Ajustes de 24/11 (Wiki, VTT, Elenco e painéis)”, “Sala: “Testar link”…” e
   “Calendário: ciclo da lua com decimais” acima, em especial a
   reputação numa campanha de verdade e o artigo no VTT com a sala aberta.
+
+## Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)
+
+- [ ] Campanha › Sessões: abrir uma nota do mestre (pela lista, pelo ⋯ › Abrir, ao criar uma nova e pelo “Abrir a
+  nota” da Tela do Mestre) abre dentro da campanha, com a aba Sessões marcada e “Voltar às sessões”; o painel ao lado
+  liga a nota a uma sessão e fixa na Tela do Mestre. O diário de um jogador abre do mesmo jeito.
+- [ ] Elenco em Grade: Pequenos, Médios e Grandes têm o mesmo cartão (imagem em cima, ícone da atitude no canto);
+  na tela cheia cabem 7, 6 e 5 por fileira. No celular, 3, 2 e 2, sem rolagem para os lados.
+- [ ] VTT: o botão de porta no menu da esquerda abre a lista de portas, portas secretas e paredes da cena. Clicar no
+  nome leva até ela e abre as propriedades; os botões abrem/fecham e trancam; “Trancar todas”, “Destrancar todas” e
+  “Fechar todas” valem para as portas comuns.
+- [ ] Porta trancada aparece com cadeado para o mestre e para o jogador; o jogador que clica vê “A porta está trancada:
+  só o mestre abre.”. Destrancada, o jogador (entrou com o código) abre e fecha clicando no ícone, e a névoa muda para
+  todos. Espectador sem código não abre. Portas secretas e paredes não aparecem para os jogadores; portas fora da
+  visão também não.
+- [ ] Sala › Cena transmitida › “Cena do token de cada jogador”: com os tokens dos jogadores 1 e 2 na cena 1 e o do
+  jogador 3 na cena 2, o jogador 3 vê a cena 2 e os outros a cena 1. Levar o token do jogador 3 para a cena 1 (por
+  uma região de teleporte, por exemplo) troca a cena só dele. Conferir no desktop e na sala aberta no Android.
+- [ ] Notas e Wiki: no painel Links (aba Links do artigo), “Apelidos” no topo; “+ Apelido” acrescenta (Enter), o ×
+  tira, e um nome que já é de outra nota é recusado com aviso. No Obsidian, a nota mostra `aliases` nas propriedades.
+- [ ] ⋯ da nota › “Criar links automáticos…”: lista nomes e apelidos de outras notas (e notas citadas que ainda não
+  existem) que aparecem sem link, agrupados, com só a primeira de cada marcada. “Criar N links” troca no texto
+  (Ctrl+Z desfaz no modo Editar); apelido vira `[[Nota|apelido]]`. Código, títulos, links e endereços ficam de fora.
+- [ ] Segurar e arrastar um cartão de categoria da Wiki, um item do menu da esquerda ou uma imagem de nota não leva mais
+  o endereço interno (`file://…`). Os arrastes de propósito continuam: árvore de notas, abas, tarefas, quadro de
+  missões e biblioteca do VTT.

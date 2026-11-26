@@ -1,9 +1,9 @@
 import { CollaborationRoom } from "./collaboration"
 import type { DocumentChange, PlayerBarVisibility, PlayerDrop, PlayerSeatState, PlayerState, PlayerTunnelInfo, TableReport } from "./ipc"
-import type { LogData, SceneData, TokenData, TileData, DrawingData, NoteData } from "./scene"
+import type { LogData, SceneData, TokenData, TileData, DrawingData, NoteData, WallData } from "./scene"
 import type { RegionData } from "./region"
 import type { WorldDocument } from "./world"
-import { normalizeRuler, projectScene, type PlayerProjection, type PlayerProjectionPatch, type PlayerRuler } from "./player"
+import { FOLLOW_TOKENS_SCENE, normalizeRuler, projectScene, type PlayerProjection, type PlayerProjectionPatch, type PlayerRuler } from "./player"
 import { childrenForSeat, childrenHaveOwnerBars, projectionForSeat } from "./bars"
 import type { PlayerTransport, PlayerTransportOptions, JoinedPlayerSeat, PlayerSeatConnection } from "./transport"
 import type { PlayerWireMessage } from "./player"
@@ -15,10 +15,18 @@ import type { VisionService } from "./vision-service"
 import type { AudioState } from "./audio"
 import type { DocumentChange as Change } from "./ipc"
 import { putDocument } from "./world-documents"
-import { normalizeFlipRequest, normalizeMoveRequest, validatePlayerFlip, validatePlayerMove, type FlipRequest } from "./player-moves"
+import { normalizeDoorRequest, normalizeFlipRequest, normalizeMoveRequest, validatePlayerDoor, validatePlayerFlip, validatePlayerMove, type DoorRequest, type FlipRequest } from "./player-moves"
 import { PlayerSession, normalizeSeatCount, randomSecret } from "./player-session"
 
 const DEFAULT_PORT = 30000
+
+
+/** Para quem não deve receber nada num envio por assento: o `pong` só renova a conexão. */
+const NOTHING: PlayerWireMessage = { type: "pong" }
+const EMPTY_PROJECTION: PlayerProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
+
+/** O que cada assento via antes de uma mudança (para mandar só a diferença). */
+interface RoomViews { main: PlayerProjection; scenes: Map<string, PlayerProjection>; seats: Map<string, string> }
 
 function validPort(value: number): number {
   if (!Number.isInteger(value) || value < 1 || value > 65535) throw new Error("A porta precisa estar entre 1 e 65535.")
@@ -49,6 +57,11 @@ export class RoomAuthority {
   /** O endereço da rede local quando a sala abriu (ou na última conferência). */
   private lastAddress = ""
   private sceneId: string | null = null
+  /** Cada jogador vê a cena do próprio token (FOLLOW_TOKENS_SCENE). */
+  private followTokens = false
+  /** No modo acima: a cena de cada assento e a projeção das cenas que não são a do mestre. */
+  private seatScenes = new Map<string, string>()
+  private sceneProjections = new Map<string, PlayerProjection>()
   private table: TableReport = { sceneId: null, selection: [], center: null, zoom: null }
   private ruler: PlayerRuler | null = null
   private audioEnabled = true
@@ -73,7 +86,7 @@ export class RoomAuthority {
       worldPath: () => this.store.openWorld?.summary.path ?? null,
       projection: () => this.lastProjection,
       // As imagens do artigo apresentado (anexo 6, 24/11) saem enquanto ele estiver aberto, como os assets da cena.
-      allowedAssets: () => [...this.lastProjection.assets, ...(this.audioEnabled ? this.audio.sounds.map((sound) => sound.audio) : []), ...this.collaboration.handoutAssets()],
+      allowedAssets: () => [...this.lastProjection.assets, ...[...this.sceneProjections.values()].flatMap((projection) => projection.assets), ...(this.audioEnabled ? this.audio.sounds.map((sound) => sound.audio) : []), ...this.collaboration.handoutAssets()],
       snapshot: (seat) => this.snapshotMessage(seat),
       onSpectators: (spectators) => {
         this.emit(spectators)
@@ -101,7 +114,7 @@ export class RoomAuthority {
       tunnel: this.tunnel,
       tunnelLost: this.tunnelLost,
       drop: this.drop,
-      sceneId: this.sceneId,
+      sceneId: this.followTokens ? FOLLOW_TOKENS_SCENE : this.sceneId,
       audio: this.audioEnabled,
       moves: this.movesEnabled,
       bars: this.bars,
@@ -334,7 +347,8 @@ export class RoomAuthority {
   }
 
   setScene(sceneId: string | null): void {
-    this.sceneId = typeof sceneId === "string" && sceneId ? sceneId : null
+    this.followTokens = sceneId === FOLLOW_TOKENS_SCENE
+    this.sceneId = typeof sceneId === "string" && sceneId && !this.followTokens ? sceneId : null
     if (this.enabled) this.publishSnapshot()
     this.emit()
   }
@@ -348,7 +362,11 @@ export class RoomAuthority {
   /** Única forma de mover a câmera dos jogadores: um pedido explícito do mestre. */
   pullCamera(): void {
     const center = this.table.center
-    if (this.enabled && center) this.server.publish({ type: "camera", center, zoom: this.table.zoom ?? null })
+    if (!this.enabled || !center) return
+    const message: PlayerWireMessage = { type: "camera", center, zoom: this.table.zoom ?? null }
+    // Cada um na cena do próprio token: só quem está na cena do mestre é puxado.
+    if (this.followTokens) this.server.publishTo((seat) => this.projectionFor(seat).scene?.id === this.table.sceneId ? message : NOTHING)
+    else this.server.publish(message)
   }
 
   /**
@@ -358,10 +376,13 @@ export class RoomAuthority {
    */
   setRuler(value: unknown): void {
     const ruler = normalizeRuler(value)
-    const visible = ruler && ruler.sceneId === this.lastProjection.scene?.id ? ruler : null
+    const visible = ruler && this.transmittedScenes().has(ruler.sceneId) ? ruler : null
     if (!visible && !this.ruler) return
     this.ruler = visible
-    if (this.enabled) this.server.publish({ type: "ruler", ruler: visible })
+    if (!this.enabled) return
+    // Com jogadores em cenas diferentes, cada um só recebe a régua da cena que vê.
+    if (this.sceneProjections.size) this.server.publishTo((seat) => ({ type: "ruler", ruler: this.rulerFor(seat) }))
+    else this.server.publish({ type: "ruler", ruler: visible })
   }
 
   setMasterView(report: TableReport): void {
@@ -392,33 +413,58 @@ export class RoomAuthority {
       this.emit()
     }
     if (change.kind === "put" || change.kind === "delete") {
-      const before = this.lastProjection
+      const before: RoomViews = { main: this.lastProjection, scenes: this.sceneProjections, seats: this.seatScenes }
       this.refreshProjection()
       this.publishProjectionPatch(before)
     }
   }
 
+  /** A projeção que o assento vê: a da cena do token dele (modo “cada jogador na sua cena”) ou a transmitida. */
+  private projectionFor(seat?: PlayerSeatConnection | null, views: RoomViews = { main: this.lastProjection, scenes: this.sceneProjections, seats: this.seatScenes }): PlayerProjection {
+    const sceneId = seat ? views.seats.get(seat.slotId) : undefined
+    return (sceneId && views.scenes.get(sceneId)) || views.main
+  }
+
+  /** Cenas que algum jogador vê agora. */
+  private transmittedScenes(): Set<string> {
+    return new Set([this.lastProjection.scene?.id, ...this.sceneProjections.keys()].filter((id): id is string => Boolean(id)))
+  }
+
+  private rulerFor(seat?: PlayerSeatConnection | null): PlayerRuler | null {
+    return this.ruler && this.projectionFor(seat).scene?.id === this.ruler.sceneId ? this.ruler : null
+  }
+
   /** Repete o texto flutuante do Registro só para tokens que os jogadores veem. */
   private publishFloat(entry: LogData): void {
     if (!entry.tokenId || !entry.floatingText) return
-    const visible = this.lastProjection.children.some((child) => child.type === "token" && child.id === entry.tokenId)
-    if (visible) this.server.publish({ type: "float", tokenId: entry.tokenId, text: entry.floatingText, kind: entry.kind })
+    const message: PlayerWireMessage = { type: "float", tokenId: entry.tokenId, text: entry.floatingText, kind: entry.kind }
+    const sees = (projection: PlayerProjection) => projection.children.some((child) => child.type === "token" && child.id === entry.tokenId)
+    if (!this.sceneProjections.size) { if (sees(this.lastProjection)) this.server.publish(message); return }
+    if (sees(this.lastProjection) || [...this.sceneProjections.values()].some(sees)) this.server.publishTo((seat) => sees(this.projectionFor(seat)) ? message : NOTHING)
   }
 
   private refreshProjection(): void {
+    // Mapas novos: quem guardou a versão anterior (onDocumentChange) compara com ela.
+    this.sceneProjections = new Map()
+    this.seatScenes = new Map()
     const database = this.store.openWorld?.database
     if (!database) {
-      this.lastProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
+      this.lastProjection = EMPTY_PROJECTION
       return
     }
-    const targetId = this.sceneId ?? this.table.sceneId
+    this.lastProjection = this.projectSceneOf(database, this.sceneId ?? this.table.sceneId)
+    if (!this.followTokens) return
+    for (const [slotId, sceneId] of seatTokenScenes(database)) {
+      this.seatScenes.set(slotId, sceneId)
+      if (sceneId !== this.lastProjection.scene?.id && !this.sceneProjections.has(sceneId)) this.sceneProjections.set(sceneId, this.projectSceneOf(database, sceneId))
+    }
+  }
+
+  private projectSceneOf(database: DocumentDatabase, targetId: string | null): PlayerProjection {
     const scene = targetId ? database.get(targetId) : null
-    if (!scene || scene.type !== "scene") {
-      this.lastProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
-      return
-    }
+    if (!scene || scene.type !== "scene") return EMPTY_PROJECTION
     const sceneData = scene.data as SceneData
-    this.lastProjection = projectScene({
+    const projection = projectScene({
       scene: scene as WorldDocument<SceneData>,
       children: {
         tokens: database.list("token", scene.id) as WorldDocument<TokenData>[],
@@ -426,6 +472,7 @@ export class RoomAuthority {
         drawings: database.list("drawing", scene.id) as WorldDocument<DrawingData>[],
         notes: database.list("note", scene.id) as WorldDocument<NoteData>[],
         regions: database.list("region", scene.id) as WorldDocument<RegionData>[],
+        walls: database.list("wall", scene.id) as WorldDocument<WallData>[],
       },
       bars: this.bars,
       vision: this.vision?.get(scene.id) ?? null,
@@ -434,6 +481,7 @@ export class RoomAuthority {
     // database is generic, while projectScene is the only place that reads
     // and strips fields before they reach the transport.
     void sceneData
+    return projection
   }
 
   /** Cena cujos sons do mapa são ouvidos: a fixada na transmissão ou a aberta pelo mestre. */
@@ -471,13 +519,15 @@ export class RoomAuthority {
     }
     const flip = normalizeFlipRequest(value)
     if (flip) return this.handleFlip(flip, seat)
+    const door = normalizeDoorRequest(value)
+    if (door) return this.handleDoor(door, seat)
     const request = normalizeMoveRequest(value)
     if (!request) return null
     const reject = (reason: string): PlayerWireMessage => ({ type: "move-result", tokenId: request.tokenId, ok: false, reason })
     if (!this.enabled || !this.movesEnabled) return reject("O mestre não está permitindo mover tokens agora.")
     const database = this.store.openWorld?.database
     if (!database || !this.commit) return reject("Nenhuma mesa aberta.")
-    const result = validatePlayerMove(database, this.lastProjection.scene?.id ?? null, request)
+    const result = validatePlayerMove(database, this.projectionFor(seat).scene?.id ?? null, request)
     if (!result.ok) return reject(result.reason)
     // A network client can move only the token attached to its own seat. The
     // optional parameter keeps the pure unit-test entry point useful; the
@@ -497,11 +547,29 @@ export class RoomAuthority {
     if (!this.enabled || !this.movesEnabled) return reject("O mestre não está permitindo mexer nos tokens agora.")
     const database = this.store.openWorld?.database
     if (!database || !this.commit) return reject("Nenhuma mesa aberta.")
-    const result = validatePlayerFlip(database, this.lastProjection.scene?.id ?? null, request)
+    const result = validatePlayerFlip(database, this.projectionFor(seat).scene?.id ?? null, request)
     if (!result.ok) return reject(result.reason)
     if (seat !== undefined && (!seat || result.token.data.playerSlotId !== seat.slotId)) return reject("Esse token pertence a outro jogador.")
     this.commit(putDocument(database, { id: result.token.id, type: "token", parentId: result.token.parentId, data: result.token.data }).change)
     return { type: "move-result", tokenId: request.tokenId, ok: true }
+  }
+
+  /**
+   * Porta clicada pelo jogador (anexo 2, 25/11): só quem entrou com um assento, numa porta que ele vê e que o mestre
+   * deixou destrancada. Abre ou fecha, e a visão de todos é recalculada como numa mudança do mestre.
+   */
+  private handleDoor(request: DoorRequest, seat?: PlayerSeatConnection | null): PlayerWireMessage {
+    const reject = (reason: string): PlayerWireMessage => ({ type: "door-result", doorId: request.doorId, ok: false, reason })
+    if (!this.enabled) return reject("Sala encerrada.")
+    if (seat === null) return reject("Entre na mesa com o código do mestre para abrir portas.")
+    const database = this.store.openWorld?.database
+    if (!database || !this.commit) return reject("Nenhuma mesa aberta.")
+    const projection = this.projectionFor(seat)
+    const visible = new Set(projection.children.filter((child) => child.type === "door").map((child) => child.id))
+    const result = validatePlayerDoor(database, projection.scene?.id ?? null, visible, request)
+    if (!result.ok) return reject(result.reason)
+    this.commit(putDocument(database, { id: result.door.id, type: "wall", parentId: result.door.parentId, data: result.door.data }).change)
+    return { type: "door-result", doorId: request.doorId, ok: true }
   }
 
   setAudioEnabled(enabled: boolean): void {
@@ -517,12 +585,39 @@ export class RoomAuthority {
 
   private publishSnapshot(): void {
     this.refreshProjection()
-    if (this.ruler && this.ruler.sceneId !== this.lastProjection.scene?.id) this.ruler = null
+    if (this.ruler && !this.transmittedScenes().has(this.ruler.sceneId)) this.ruler = null
     this.server.publishTo((seat) => this.snapshotMessage(seat))
   }
 
-  private publishProjectionPatch(before: PlayerProjection): void {
-    const after = this.lastProjection
+  /**
+   * Manda a cada um só o que mudou na cena que ele vê. Quem passou para outra cena (o token foi para outra cena, no modo
+   * “cada jogador na sua cena”) recebe a cena nova inteira.
+   */
+  private publishProjectionPatch(before: RoomViews): void {
+    if (!this.followTokens && !before.scenes.size) {
+      const patch = this.projectionPatch(before.main, this.lastProjection)
+      if (!patch) return
+      // Barras “só do dono” (U12) vão só ao assento dono do token; sem elas, um envio só para todos.
+      if (childrenHaveOwnerBars(patch.upsert)) this.server.publishTo((seat) => ({ ...patch, upsert: childrenForSeat(patch.upsert, seat?.slotId) }))
+      else this.server.publish(patch)
+      return
+    }
+    const patches = new Map<string, PlayerProjectionPatch | null>()
+    const plan = (seat: PlayerSeatConnection | null): PlayerWireMessage | null => {
+      const old = this.projectionFor(seat, before)
+      const now = this.projectionFor(seat)
+      if (old.scene?.id !== now.scene?.id) return this.snapshotMessage(seat)
+      const key = now.scene?.id ?? ""
+      if (!patches.has(key)) patches.set(key, this.projectionPatch(old, now))
+      const patch = patches.get(key)!
+      return patch && { ...patch, upsert: childrenForSeat(patch.upsert, seat?.slotId) }
+    }
+    const seats = [null, ...[...new Set([...before.seats.keys(), ...this.seatScenes.keys()])].map((slotId) => ({ slotId, label: "" }))]
+    if (seats.every((seat) => plan(seat) === null)) return
+    this.server.publishTo((seat) => plan(seat) ?? NOTHING)
+  }
+
+  private projectionPatch(before: PlayerProjection, after: PlayerProjection): PlayerProjectionPatch | null {
     const beforeChildren = new Map(before.children.map((child) => [child.id, child]))
     const afterChildren = new Map(after.children.map((child) => [child.id, child]))
     const upsert = [...afterChildren.values()].filter((child) => JSON.stringify(child) !== JSON.stringify(beforeChildren.get(child.id)))
@@ -536,18 +631,16 @@ export class RoomAuthority {
     if (assetsChanged) patch.assets = after.assets
     if (visionChanged) patch.vision = after.vision
     if (regionsChanged) patch.regions = after.regions
-    if (!sceneChanged && !assetsChanged && !visionChanged && !regionsChanged && !patch.upsert.length && !patch.removed.length) return
-    // Barras “só do dono” (U12) vão só ao assento dono do token; sem elas, um envio só para todos.
-    if (childrenHaveOwnerBars(patch.upsert)) this.server.publishTo((seat) => ({ ...patch, upsert: childrenForSeat(patch.upsert, seat?.slotId) }))
-    else this.server.publish(patch)
+    if (!sceneChanged && !assetsChanged && !visionChanged && !regionsChanged && !patch.upsert.length && !patch.removed.length) return null
+    return patch
   }
 
   private snapshotMessage(seat?: PlayerSeatConnection | null): PlayerWireMessage {
     return {
       type: "snapshot",
       collaboration: this.collaboration.publicSnapshot(seat?.slotId),
-      projection: projectionForSeat(this.lastProjection, seat?.slotId),
-      ruler: this.ruler,
+      projection: projectionForSeat(this.projectionFor(seat), seat?.slotId),
+      ruler: this.rulerFor(seat),
       audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null,
       moves: this.movesEnabled,
     }
@@ -568,4 +661,19 @@ export class RoomAuthority {
   private seatStates(codes: Record<string, string> = {}): PlayerSeatState[] {
     return this.session?.snapshot().seats.map((seat) => ({ ...seat, ...(codes[seat.slotId] ? { code: codes[seat.slotId] } : {}), tokens: this.tokenCounts.get(seat.slotId) ?? 0 })) ?? []
   }
+}
+
+/**
+ * Cena de cada assento: a do token dele (marcado com o assento e não oculto). Com tokens em mais de uma cena, vale o
+ * que mudou por último (o que acabou de passar por um teleporte, por exemplo).
+ */
+export function seatTokenScenes(database: DocumentDatabase): Map<string, string> {
+  const latest = new Map<string, { sceneId: string; at: number }>()
+  for (const document of database.list("token") as WorldDocument<TokenData>[]) {
+    const slotId = document.data.playerSlotId
+    if (!slotId || document.data.hidden || !document.parentId) continue
+    const current = latest.get(slotId)
+    if (!current || document.updatedAt > current.at) latest.set(slotId, { sceneId: document.parentId, at: document.updatedAt })
+  }
+  return new Map([...latest].map(([slotId, { sceneId }]) => [slotId, sceneId]))
 }

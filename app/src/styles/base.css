@@ -178,3 +178,8 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
      baixo do ícone); o que não cabe é cortado ou quebra dentro do próprio nome. Só o que vem depois desce. */
   .list-item > svg:first-child + :is(span, div, strong):not(.meta) { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
 }
+
+/* Links e imagens não se arrastam (25/11): segurar e puxar um cartão, um item de menu ou uma imagem levava junto o
+   endereço interno do app (file://…). Os arrastes de propósito (árvore de notas, abas, tarefas, quadro de missões,
+   biblioteca do VTT) marcam `draggable="true"` e continuam funcionando; texto selecionado ainda se arrasta. */
+a:not([draggable="true"]), img:not([draggable="true"]) { -webkit-user-drag: none; }

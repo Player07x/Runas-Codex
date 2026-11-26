@@ -153,8 +153,9 @@ export function importFoundryScene(source: string | unknown, sceneId = "cena-imp
   for (const entry of walls) {
     const value = object(entry), c = coordinates(value.c)
     if (!c) continue
-    const door = number(value.door, 0), open = number(value.ds, 0) === 1
-    result.documents.push(document("wall", sceneId, index++, normalizeWall({ x1: c[0] - padX, y1: c[1] - padY, x2: c[2] - padX, y2: c[3] - padY, kind: door === 2 ? "secret" : door ? "door" : "wall", open: door ? open : false })))
+    // Foundry: `ds` 0 fechada, 1 aberta, 2 trancada.
+    const door = number(value.door, 0), open = number(value.ds, 0) === 1, locked = number(value.ds, 0) === 2
+    result.documents.push(document("wall", sceneId, index++, normalizeWall({ x1: c[0] - padX, y1: c[1] - padY, x2: c[2] - padX, y2: c[3] - padY, kind: door === 2 ? "secret" : door ? "door" : "wall", open: door ? open : false, doorLocked: locked })))
   }
   const tokens = Array.isArray(raw.tokens) ? raw.tokens : []
   let withImage = 0
