@@ -2688,3 +2688,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Segurar e arrastar um cartão de categoria da Wiki, um item do menu da esquerda ou uma imagem de nota não leva mais
   o endereço interno (`file://…`). Os arrastes de propósito continuam: árvore de notas, abas, tarefas, quadro de
   missões e biblioteca do VTT.
+
+## Versão 1.8.1
+
+- [ ] Com a 1.8.0 instalada, o aviso “Atualizar para 1.8.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
+  especial as portas e a cena por token com a sala aberta e jogadores de verdade.
