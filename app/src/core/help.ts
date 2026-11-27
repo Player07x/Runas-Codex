@@ -37,7 +37,7 @@ export const HELP_TOPICS: HelpTopic[] = [
   { id: "configuracoes", title: "Configurações", group: "Arquivos e sistema", summary: "O que cada seção das Configurações faz." },
   { id: "acessibilidade", title: "Acessibilidade e aparência", group: "Arquivos e sistema", summary: "Tema, tamanho do texto, fonte para leitura, contraste alto, movimento, foco e navegação por teclado." },
   { id: "atalhos", title: "Atalhos de teclado", group: "Arquivos e sistema", summary: "Todos os atalhos do app e do editor." },
-  { id: "privacidade", title: "Privacidade e atualizações", group: "Arquivos e sistema", summary: "Sem telemetria, o que usa a rede e como atualizar o app." },
+  { id: "privacidade", title: "Privacidade e atualizações", group: "Arquivos e sistema", summary: "O que fica no aparelho, o que usa a rede, como atualizar e como enviar um relatório." },
 ]
 
 export const helpTopic = (id: string | undefined): HelpTopic | undefined => HELP_TOPICS.find((topic) => topic.id === id)

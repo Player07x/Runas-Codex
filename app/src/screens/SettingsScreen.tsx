@@ -1,3 +1,4 @@
+import { ReportButton } from "../components/ErrorReport"
 import { ImageFolderSettings } from "../components/vault/NoteImages"
 import { AccessibilitySettings, AppearanceSettings } from "../components/Appearance"
 import { DesktopTraySettings } from "../platform/DesktopTray"
@@ -179,12 +180,12 @@ export function SettingsScreen({ theme, onTheme }: { theme: string; onTheme: (th
     ) },
     { id: "privacidade", title: "Privacidade e atualizações", icon: <ShieldCheck size={16} />, body: (
       <SettingsCard icon={<ShieldCheck size={16} />} title="Privacidade e atualizações">
-        <Row title="Telemetria" hint="Não existe. Fora da sala do VTT, o app só consulta as versões publicadas (abaixo).">
-          <span className="chip green">desligada sempre</span>
-        </Row>
         <UpdateRow />
         <AutoUpdateRow />
         <PinRow />
+        <Row title="Relatório de problema" hint="Monta um relatório com a versão e os erros desta sessão. Você confere e edita antes; nada é enviado sozinho.">
+          <ReportButton />
+        </Row>
       </SettingsCard>
     ) },
     // A Ajuda tem tela própria (U119): o item do índice leva a /ajuda, e /config/ajuda/… continua funcionando.
