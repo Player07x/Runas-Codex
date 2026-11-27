@@ -29,6 +29,8 @@ import { OverflowMenu } from "../../components/kit/OverflowMenu"
 import { WikiTokenPicker } from "../panels/WikiTokenPicker"
 import { noteRoute } from "../../lib/vault-notes"
 import { WallsPanel } from "../panels/WallsPanel"
+import { RegionsPanel } from "../panels/RegionsPanel"
+import { LightingPanel } from "../panels/LightingPanel"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
 import { SceneHistory, type SceneEdit } from "./history"
@@ -44,8 +46,12 @@ const TOOLS: { id: SceneTool; label: string; action: KeyAction; icon: typeof Rul
   { id: "wall", label: "Paredes e portas", action: "toolWall", icon: BrickWall },
   { id: "light", label: "Luzes", action: "toolLight", icon: Lightbulb },
   { id: "sound", label: "Sons no mapa", action: "toolSound", icon: AudioLines },
-  { id: "region", label: "Regiões", action: "toolRegion", icon: SquareDashed },
+  { id: "region", label: "Áreas", action: "toolRegion", icon: SquareDashed },
 ]
+
+/** Abas do menu da direita desenhadas pela cena (1.9) e o tipo de objeto que cada uma edita ali mesmo. */
+export type SceneSideTab = "walls" | "regions" | "lighting"
+const TAB_KINDS: Record<SceneSideTab, string> = { walls: "wall", regions: "region", lighting: "light" }
 
 const REGION_SHAPE_LABELS: Record<RegionShape, string> = { rectangle: "Retângulo", ellipse: "Elipse" }
 const REGION_TRIGGER_LABELS: Record<RegionTrigger, string> = { friendly: "Só Jogador e Aliado", any: "Qualquer token" }
@@ -57,7 +63,7 @@ const MASTER_DARKNESS = 0.6
 
 const TOOL_HINTS: Partial<Record<SceneTool, string>> = {
   wall: "Arraste para criar uma parede · as pontas encaixam em outras paredes e na grade (Alt solta) · clique numa parede para editar · ícones de porta abrem e fecham",
-  region: "Arraste para criar uma região · clique numa região para editar teleporte, texto ou terreno difícil · os cantos encaixam em meias células (Alt solta)",
+  region: "Arraste para criar uma área · clique numa área para editar teleporte, texto ou terreno difícil · os cantos encaixam em meias células (Alt solta)",
   sound: "Clique para pôr um som no mapa · ele toca para os jogadores quando um aliado está no alcance · Alt solta da grade",
   light: "Clique para acender uma luz · arraste para mover · os raios aparecem com a luz selecionada",
 }
@@ -84,7 +90,12 @@ export async function importImage(kind: AssetKind, file: File): Promise<{ path: 
  * `properties` (U11): a mesa abre as propriedades do objeto no trilho do lado direito (no lugar do painel aberto), nunca
  * por cima dele. Sem isso (mestre remoto antigo, testes), o painel fica sobre o mapa como antes.
  */
-export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properties, onLibraryScene }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean; properties?: { host: HTMLElement | null; open: boolean; setOpen(open: boolean): void }; onLibraryScene?: (sceneId: string) => void }) {
+/**
+ * `sideTab` (1.9): a aba Portas e paredes, Áreas ou Luz e névoa aberta no menu da direita, desenhada aqui (precisa do
+ * desfazer e da câmera do mapa) dentro de `host`. Com ela aberta, escolher um objeto do tipo dela abre os campos na
+ * própria lista, e não nas propriedades.
+ */
+export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properties, sideTab, onLibraryScene }: { store: DocumentStore; sceneId: string | null; onOpenUrl: (url: string) => void; keyboardHints: boolean; properties?: { host: HTMLElement | null; open: boolean; setOpen(open: boolean): void }; sideTab?: { tab: SceneSideTab | null; host: HTMLElement | null }; onLibraryScene?: (sceneId: string) => void }) {
   const version = useDocumentsVersion(store)
   const settings = useSettings()
   const host = useRef<HTMLDivElement>(null)
@@ -92,8 +103,13 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   const viewRef = useRef<SceneView | null>(null)
   const [ready, setReady] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
-  // Lista de portas e paredes (anexo 2, 25/11), aberta pelo menu da esquerda.
-  const [wallsOpen, setWallsOpen] = useState(false)
+  const sideTabRef = useRef<SceneSideTab | null>(null)
+  sideTabRef.current = sideTab?.tab ?? null
+  /** Um objeto só, do tipo da aba aberta: os campos dele aparecem na lista da aba. */
+  const editsInTab = (ids: string[]) => {
+    const tab = sideTabRef.current
+    return Boolean(tab) && ids.length === 1 && store.get(ids[0]!)?.type === TAB_KINDS[tab!]
+  }
   const [ownPropertiesOpen, setOwnPropertiesOpen] = useState(false)
   const propertiesOpen = properties ? properties.open : ownPropertiesOpen
   // Os callbacks da vista guardam este setter do primeiro render: `properties.setOpen` precisa ser estável (um setState).
@@ -165,7 +181,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
     let disposed = false
     let created: SceneView | null = null
     void SceneView.create(element, {
-      onSelectionChange: (ids) => { setSelection(ids); setPropertiesOpen(ids.length > 0); setContext(null); latest.current = { ...latest.current, selection: ids }; scheduleReport() },
+      onSelectionChange: (ids) => { setSelection(ids); setPropertiesOpen(ids.length > 0 && !editsInTab(ids)); setContext(null); latest.current = { ...latest.current, selection: ids }; scheduleReport() },
       onViewChange: scheduleReport,
       onToolChange: setTool,
       onContextMenu: (id, point) => { setContext({ id, ...point }); setPropertiesOpen(false) },
@@ -292,6 +308,19 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
 
   const selected = selection.length === 1 ? store.get(selection[0]!) : null
 
+  /** Conteúdo da aba da cena aberta no menu da direita. */
+  function sidePanel(tab: SceneSideTab) {
+    if (!scene) return <section className="scene-side-panel"><p className="hint">Abra uma cena na aba <b>Cenas</b> para ver as portas, as áreas e as luzes dela.</p></section>
+    const children = store.children(scene.id)
+    const current = selection.length === 1 ? selection[0]! : null
+    // Tocar de novo na linha aberta fecha os campos (e solta a seleção).
+    const focus = (id: string) => { if (current === id) viewRef.current?.cancel(); else viewRef.current?.focusItem(id) }
+    const editor = (document: WorldDocument) => <ObjectFields document={document} scene={scene} store={store} put={put} />
+    if (tab === "walls") return <WallsPanel walls={children.walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put} selected={current} onFocus={focus} editor={editor} />
+    if (tab === "regions") return <RegionsPanel regions={children.regions} put={put} selected={current} onFocus={focus} editor={editor} sceneName={(id) => (id ? store.get<SceneData>(id)?.data.name ?? null : null)} />
+    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} />
+  }
+
   return <div className={`scene-canvas ${propertiesOpen && selection.length ? "properties-open" : ""}`} tabIndex={0} onKeyDown={(event) => {
     if (!(event.target as HTMLElement).closest("input,select,textarea") && (event.ctrlKey || event.metaKey) && ["z", "y"].includes(event.key.toLowerCase())) {
       event.preventDefault()
@@ -304,7 +333,6 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
       <button className="scene-tools-toggle ghost" aria-label="Mostrar ferramentas" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}><Wrench size={18} /> Ferramentas</button>
       <nav className={`scene-tools ${toolsOpen ? "open" : ""}`} aria-label="Ferramentas">
         {TOOLS.map(({ id, label, action, icon: Icon }) => <button key={id} className={tool === id ? "active" : ""} title={keyboardHints && shortcutOf(action) ? `${label} (${shortcutOf(action)})` : label} aria-label={label} aria-pressed={tool === id} onClick={() => { setTool(id); setToolsOpen(false); setContext(null) }}><Icon size={17} /></button>)}
-        <button className={wallsOpen ? "active" : ""} title="Lista de portas e paredes" aria-label="Lista de portas e paredes" aria-pressed={wallsOpen} onClick={() => { setWallsOpen((value) => !value); setToolsOpen(false); setContext(null) }}><DoorClosed size={17} /></button>
         <span className="divider" />
         <button className={preview ? "active" : ""} title={scene.data.vision.enabled ? "Ver como os jogadores (névoa e escuridão)" : "Ver a escuridão como os jogadores (a névoa está desligada nesta cena)"} aria-label="Ver como os jogadores" aria-pressed={preview} onClick={() => setPreview((value) => !value)}><ScanEye size={17} /></button>
         <button title="Adicionar imagem (tile)" aria-label="Adicionar imagem" onClick={() => tileInput.current?.click()}><ImagePlus size={17} /></button>
@@ -316,7 +344,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
         <label title="Cor do preenchimento"><input type="color" value={drawOptions.fillColor} onChange={(event) => setDrawOptions({ ...drawOptions, fillColor: event.target.value, fillAlpha: drawOptions.fillAlpha || 0.35 })} /></label>
         <label className="range" title="Espessura"><input type="range" min={0} max={24} value={drawOptions.strokeWidth} onChange={(event) => setDrawOptions({ ...drawOptions, strokeWidth: Number(event.target.value) })} /></label>
       </div>}
-      {tool === "region" && <div className="draw-options" aria-label="Forma da região">
+      {tool === "region" && <div className="draw-options" aria-label="Forma da área">
         {REGION_SHAPES.map((shape) => { const Icon = shape === "rectangle" ? Square : Circle; return <button key={shape} className={regionShape === shape ? "active" : ""} title={REGION_SHAPE_LABELS[shape]} aria-label={REGION_SHAPE_LABELS[shape]} onClick={() => setRegionShape(shape)}><Icon size={15} /></button> })}
         <span className="draw-options-label">{REGION_SHAPE_LABELS[regionShape]}</span>
       </div>}
@@ -324,8 +352,6 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
         {WALL_KINDS.map((kind) => { const Icon = WALL_ICONS[kind]; return <button key={kind} className={wallKind === kind ? "active" : ""} title={WALL_LABELS[kind]} aria-label={WALL_LABELS[kind]} onClick={() => setWallKind(kind)}><Icon size={15} /></button> })}
         <span className="draw-options-label">{WALL_LABELS[wallKind]}</span>
       </div>}
-      {wallsOpen && <WallsPanel walls={store.children(scene.id).walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put}
-        onFocus={(id) => viewRef.current?.focusItem(id)} onClose={() => setWallsOpen(false)} />}
       <nav className="scene-actions" aria-label="Comandos da cena">
         <button aria-label="Desfazer" title={keyboardHints ? "Desfazer (Ctrl+Z)" : "Desfazer"} disabled={!history.canUndo} onClick={() => void history.undo().catch(reportError)}><Undo2 size={18} /></button>
         <button aria-label="Refazer" title={keyboardHints ? "Refazer (Ctrl+Shift+Z)" : "Refazer"} disabled={!history.canRedo} onClick={() => void history.redo().catch(reportError)}><Redo2 size={18} /></button>
@@ -372,7 +398,9 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
       </footer>
     </>}
     {error && <button className="scene-error" onClick={() => setError("")}>{error} ✕</button>}
+    {sideTab?.tab && sideTab.host && createPortal(sidePanel(sideTab.tab), sideTab.host)}
   </div>
+
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -398,7 +426,7 @@ function TextInput({ value, onCommit, placeholder, label }: { value: string; onC
 function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove, onClose }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void; inRail: boolean; onKeep?: () => void; onRemove: () => void; onClose: () => void }) {
   const update = (patch: Record<string, unknown>) => put({ id: document.id, type: document.type, parentId: document.parentId, data: { ...(document.data as object), ...patch } })
   const data = document.data as { hidden?: boolean; locked?: boolean }
-  const title = { token: "Token", tile: "Imagem", drawing: "Desenho", note: "Nota", wall: "Parede", light: "Luz", sound: "Som", region: "Região" }[document.type as "token"] ?? "Objeto"
+  const title = { token: "Token", tile: "Imagem", drawing: "Desenho", note: "Nota", wall: "Parede", light: "Luz", sound: "Som", region: "Área" }[document.type as "token"] ?? "Objeto"
   const body = <>
     <header>
       <strong>{title}</strong>
@@ -410,6 +438,18 @@ function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove
         <button className="icon-toggle" aria-label="Fechar propriedades" onClick={onClose}><X size={15} /></button>
       </div>
     </header>
+    <ObjectFields document={document} scene={scene} store={store} put={put} />
+  </>
+  // No trilho da mesa a largura é a do trilho; sozinho sobre o mapa, o painel tem a própria alça.
+  return inRail
+    ? <section className="properties rail" aria-label={`Propriedades: ${title}`}>{body}</section>
+    : <ResizablePanel id="vtt-properties" label={`Propriedades: ${title}`} width={290} className="properties">{body}</ResizablePanel>
+}
+
+/** Os campos de cada tipo de objeto: nas propriedades e nas listas das abas da cena. */
+function ObjectFields({ document, scene, store, put }: { document: WorldDocument; scene: WorldDocument<SceneData>; store: DocumentStore; put: (input: DocumentInput) => void }) {
+  const update = (patch: Record<string, unknown>) => put({ id: document.id, type: document.type, parentId: document.parentId, data: { ...(document.data as object), ...patch } })
+  return <>
     {document.type === "token" && <TokenFields tokenId={document.id} data={document.data as TokenData} scene={scene} store={store} update={update} />}
     {document.type === "tile" && <TileFields data={document.data as TileData} update={update} />}
     {document.type === "drawing" && <DrawingFields data={document.data as DrawingData} update={update} />}
@@ -419,10 +459,6 @@ function PropertiesPanel({ document, scene, store, put, inRail, onKeep, onRemove
     {document.type === "sound" && <SoundFields data={document.data as SoundData} update={update} />}
     {document.type === "region" && <RegionFields id={document.id} data={document.data as RegionData} store={store} update={update} />}
   </>
-  // No trilho da mesa a largura é a do trilho; sozinho sobre o mapa, o painel tem a própria alça.
-  return inRail
-    ? <section className="properties rail" aria-label={`Propriedades: ${title}`}>{body}</section>
-    : <ResizablePanel id="vtt-properties" label={`Propriedades: ${title}`} width={290} className="properties">{body}</ResizablePanel>
 }
 
 function ImagePicker({ kind, path, onChange }: { kind: AssetKind; path: string | null; onChange: (path: string | null, size?: { width: number; height: number }) => void }) {
@@ -669,8 +705,8 @@ function RegionFields({ id, data, store, update }: { id: string; data: RegionDat
       <label className="check"><input type="checkbox" checked={data.teleport.enabled} onChange={(event) => update({ teleport: { ...data.teleport, enabled: event.target.checked } })} /> <strong>Teleporte</strong></label>
       {data.teleport.enabled && <>
         <Field label="Cena de destino"><select value={targetScene ?? ""} onChange={(event) => update({ teleport: { ...data.teleport, sceneId: event.target.value || null, regionId: null } })}><option value="">Escolha…</option>{store.scenes().map((scene) => <option key={scene.id} value={scene.id}>{scene.data.name}</option>)}</select></Field>
-        {targetScene && <Field label="Região de destino"><select value={data.teleport.regionId ?? ""} onChange={(event) => update({ teleport: { ...data.teleport, sceneId: targetScene, regionId: event.target.value || null } })}><option value="">Escolha…</option>{targets.map((region) => <option key={region.id} value={region.id}>{region.data.name}</option>)}</select></Field>}
-        {targetScene && targets.length === 0 && <small className="hint">Crie uma região na cena de destino para o token chegar nela.</small>}
+        {targetScene && <Field label="Área de destino"><select value={data.teleport.regionId ?? ""} onChange={(event) => update({ teleport: { ...data.teleport, sceneId: targetScene, regionId: event.target.value || null } })}><option value="">Escolha…</option>{targets.map((region) => <option key={region.id} value={region.id}>{region.data.name}</option>)}</select></Field>}
+        {targetScene && targets.length === 0 && <small className="hint">Crie uma área na cena de destino para o token chegar nela.</small>}
       </>}
     </div>
 
@@ -685,7 +721,7 @@ function RegionFields({ id, data, store, update }: { id: string; data: RegionDat
     <div className="bars">
       <label className="check"><input type="checkbox" checked={data.terrain.enabled} onChange={(event) => update({ terrain: { ...data.terrain, enabled: event.target.checked } })} /> <strong>Terreno difícil</strong></label>
       {data.terrain.enabled && <Field label="Cada célula conta como"><NumberInput value={data.terrain.multiplier} step={0.5} min={1} onCommit={(multiplier) => update({ terrain: { ...data.terrain, multiplier: Math.max(1, multiplier) } })} /></Field>}
-      {data.terrain.enabled && <small className="hint">A régua conta o trecho dentro da região multiplicado. Os jogadores só contam se a região estiver visível para eles.</small>}
+      {data.terrain.enabled && <small className="hint">A régua conta o trecho dentro da área multiplicado. Os jogadores só contam se a área estiver visível para eles.</small>}
     </div>
   </>
 }

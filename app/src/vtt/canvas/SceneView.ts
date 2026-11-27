@@ -1646,7 +1646,7 @@ export class SceneView {
       const height = Math.abs(end.y - interaction.start.y)
       if (width * this.world.scale.x < 6 || height * this.world.scale.x < 6) return
       const id = newDocumentId()
-      this.handlers.onPut({ id, type: "region", parentId: scene.id, data: { name: "Região", shape: this.regionShape, x: Math.min(interaction.start.x, end.x), y: Math.min(interaction.start.y, end.y), width, height } })
+      this.handlers.onPut({ id, type: "region", parentId: scene.id, data: { name: "Área", shape: this.regionShape, x: Math.min(interaction.start.x, end.x), y: Math.min(interaction.start.y, end.y), width, height } })
       this.pendingSelection = id
       return
     }

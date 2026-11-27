@@ -2695,3 +2695,18 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Atualização 1.9 — A: menu da direita da mesa
+
+- [ ] Na mesa, o trilho da direita tem oito abas: Cenas, Biblioteca, **Portas e paredes**, **Áreas**, **Luz e névoa**,
+  Áudio, Notas e Sala. O botão “Lista de portas e paredes” saiu do menu da esquerda.
+- [ ] Portas e paredes: a mesma lista de antes (trancar, destrancar e fechar todas; abrir e trancar cada porta).
+  Tocar numa linha leva o mapa até o objeto e abre os campos dele embaixo da linha; tocar de novo fecha.
+- [ ] Áreas: lista as áreas com o que cada uma faz; o olho mostra ou esconde dos jogadores, o botão de energia ativa ou
+  desativa. Tocar numa linha abre os campos ali mesmo (não abre as propriedades por cima do painel).
+- [ ] Luz e névoa: névoa de guerra, escuridão, luz do dia, “Lembrar as áreas exploradas” e “Redefinir áreas
+  exploradas” saíram da configuração da cena e estão aqui; embaixo, a lista de luzes (acender e apagar, campos na linha).
+  Ctrl+Z desfaz uma mudança da névoa.
+- [ ] A ferramenta “Regiões” agora se chama **Áreas** (atalho G continua); áreas novas nascem com o nome “Área”.
+- [ ] Trocar de cena com o painel aberto não fecha o painel (computador e celular).
+- [ ] Celular (320 px): a fileira de abas rola para o lado dentro dela mesma; a tela não rola para os lados.

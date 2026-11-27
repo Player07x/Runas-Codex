@@ -25,25 +25,28 @@ tamanho da célula, o deslocamento, a cor, quanto cada célula vale e a regra da
 | **Nota no mapa** | Um marcador com texto no mapa |
 | **Desenhar** | Mão livre, retângulo, elipse e texto |
 | **Paredes e portas** | Bloqueiam a visão e o movimento; portas abrem e fecham |
-| **Lista de portas e paredes** | Todas as portas, portas secretas e paredes da cena: leva até cada uma, abre, fecha e tranca |
 | **Luzes** | Iluminam a cena e definem o que os tokens enxergam |
 | **Sons no mapa** | Sons que tocam mais alto perto deles |
-| **Regiões** | Áreas que avisam no Registro quando um token entra |
+| **Áreas** | Partes do mapa que teleportam, mostram um texto ou marcam terreno difícil quando um token entra |
 
-Uma **porta** comum pode ficar **trancada** (nas propriedades dela ou na lista): só o mestre abre, e os jogadores
+Uma **porta** comum pode ficar **trancada** (nas propriedades dela ou na aba Portas e paredes): só o mestre abre, e os jogadores
 veem um cadeado. Destrancada, o jogador abre e fecha clicando no ícone da porta, quando a vê. Portas secretas e
 paredes nunca aparecem para os jogadores.
 
-A **névoa** segue as paredes e as luzes: os jogadores só veem o que os tokens deles enxergam. **Desfazer e refazer**
+Trocar de cena não fecha o painel da direita. A **névoa** segue as paredes e as luzes: os jogadores só veem o que os tokens deles enxergam. **Desfazer e refazer**
 valem para tudo o que muda na mesa (<kbd>Ctrl</kbd> <kbd>Z</kbd> e <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd>). No
 celular e no tablet, mova, edite e desenhe pelo toque; dois dedos aproximam e afastam.
 
 ### Painéis da mesa
 
 - **Cenas**: criar, ordenar e escolher a cena transmitida.
+- **Portas e paredes**: todas as portas, portas secretas e paredes da cena. Leva até cada uma, abre, fecha e tranca;
+  tocar numa linha mostra os campos dela ali mesmo.
+- **Áreas**: as áreas da cena, com o que cada uma faz; tocar numa linha mostra os campos dela ali mesmo.
+- **Luz e névoa**: névoa de guerra, escuridão, luz do dia e áreas exploradas da cena, e a lista das luzes.
 - **Áudio**: playlists e faixas, tocar, parar, repetir e o volume de cada uma; **Parar os sons desta mesa** silencia
   tudo.
-- **Registro**: testes, danos e avisos das regiões, do mais recente ao mais antigo; dá para apagar tudo.
+- **Registro**: testes, danos e avisos das áreas, do mais recente ao mais antigo; dá para apagar tudo.
 - **Sala**: a sala dos jogadores (abaixo).
 
 ### Tokens da Wiki
