@@ -2698,6 +2698,9 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 ## Logo em recorte
 
+As capturas de como ficou (ícones do sistema, barra lateral nas paletas e o celular em 320 px) estão em
+`docs/imagens/logo-recorte/`.
+
 - [ ] Barra lateral: a logo (a pedra com a runa ᚱ vazada) aparece na cor de destaque da paleta (Órbita lavanda,
   Floresta verde, Brasa laranja, Runa ciano), nos temas escuro e claro. Recolhida e no tablet, fica com 32 px, inteira.
 - [ ] Estados vazios (por exemplo, Campanha › Sessões sem sessão) mostram a mesma logo, na cor de destaque.
