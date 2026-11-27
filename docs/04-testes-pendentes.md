@@ -2711,3 +2711,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   token é puxado.
 - [ ] Girar o celular ou mudar o tamanho da janela com a câmera presa: o token continua no meio.
 - [ ] Mestre remoto pelo celular: a seção “Câmera dos jogadores” funciona igual.
+
+## Atualização 1.9 — F: régua do mestre para todos
+
+- [ ] Com a sala aberta, medir com a ferramenta Régua: jogadores e espectadores veem a régua (dourada, com a medida) e
+  ela continua na tela deles depois de soltar, até a próxima medida ou a troca de ferramenta.
+- [ ] Ferramenta Régua › botão de pessoas (“Todos veem a régua” / “Régua só para você”) e painel Sala › “Mostrar a minha
+  régua a jogadores e espectadores”: os dois mudam juntos; desligado, a régua some da tela dos jogadores na hora e as
+  próximas medidas ficam só na tela do mestre.

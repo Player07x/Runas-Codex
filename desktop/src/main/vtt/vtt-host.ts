@@ -386,6 +386,7 @@ export class VttHost {
       t.setBars(bars as PlayerBarVisibility)
     })
     handle(IPC.playerSetCamera, (_event, rules) => t.setCameraRules(normalizeCameraRules(rules)))
+    handle(IPC.playerSetShareRuler, (_event, enabled) => t.setShareRuler(Boolean(enabled)))
     // Link público (túnel rápido da Cloudflare), só quando o mestre pede: é a única ida à internet do app.
     handle(IPC.playerPublicLink, () => this.openTunnel())
     // Do computador do mestre até o servidor, passando pela Cloudflare: confirma DNS, borda e túnel.

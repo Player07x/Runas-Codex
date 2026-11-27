@@ -25,7 +25,7 @@ function createBrowserPreviewApi(): VttApi {
   const documents = new Map<string, WorldDocument>()
   const documentListeners = new Set<(change: DocumentChange) => void>()
   const playerListeners = new Set<(value: PlayerState) => void>()
-  const player: PlayerState = { enabled: false, port: 30000, key: null, localUrl: null, publicUrl: null, tunnel: null, tunnelLost: false, drop: null, sceneId: null, audio: true, moves: true, bars: "friendly", spectators: 0, players: 0, sessionId: null, seats: [], camera: { ...DEFAULT_CAMERA_RULES } }
+  const player: PlayerState = { enabled: false, port: 30000, key: null, localUrl: null, publicUrl: null, tunnel: null, tunnelLost: false, drop: null, sceneId: null, audio: true, moves: true, bars: "friendly", spectators: 0, players: 0, sessionId: null, seats: [], camera: { ...DEFAULT_CAMERA_RULES }, shareRuler: true }
   const emitPlayer = () => playerListeners.forEach((listener) => listener({ ...player }))
   return {
     collaboration: {state:async()=>collaboration.snapshot(),command:async command=>collaboration.command(command)},
@@ -136,6 +136,7 @@ function createBrowserPreviewApi(): VttApi {
       testPublicLink: async () => ({ ok: false, ms: 0, error: "Disponível só no app desktop." }),
       downloadCloudflared: async () => undefined,
       setCamera: async (rules) => { player.camera = normalizeCameraRules(rules); emitPlayer() },
+      setShareRuler: async (enabled) => { player.shareRuler = enabled; emitPlayer() },
     },
     audio: {
       state: async () => ({ now: Date.now(), sounds: [] }),

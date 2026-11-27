@@ -408,6 +408,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
         if (!(await native.tunnelAvailable()).available) throw new Error("O link público não está disponível neste aparelho (o processador não é ARM de 64 bits).")
       },
       setCamera: async (rules) => authority.setCameraRules(normalizeCameraRules(rules)),
+      setShareRuler: async (enabled) => authority.setShareRuler(enabled),
     },
     audio: {
       state: async () => audio.get(),

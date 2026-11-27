@@ -56,6 +56,7 @@ export const IPC = {
   deleteWorld: "vtt:worlds-delete",
   worldsCover: "vtt:worlds-cover",
   playerSetCamera: "vtt:player-set-camera",
+  playerSetShareRuler: "vtt:player-set-share-ruler",
 } as const
 
 /** O que a mesa informa ao processo principal (cena aberta, seleção e câmera, para a vista dos jogadores). */
@@ -168,6 +169,8 @@ export interface PlayerState {
   seats: PlayerSeatState[]
   /** 1.9: regras da câmera dos jogadores. */
   camera: CameraRules
+  /** 1.9: a régua do mestre aparece para jogadores e espectadores. */
+  shareRuler: boolean
 }
 
 /** API da mesa para a interface (no desktop, `window.runasCodex.vtt`; no navegador, uma prévia em memória). */
@@ -223,6 +226,8 @@ export interface VttApi {
     downloadCloudflared(): Promise<void>
     /** 1.9: câmera dos jogadores presa ao token e afastamento máximo. */
     setCamera(rules: CameraRules): Promise<void>
+    /** 1.9: mostrar (ou não) a régua da ferramenta Régua do mestre a jogadores e espectadores. */
+    setShareRuler(enabled: boolean): Promise<void>
   }
   audio: {
     state(): Promise<AudioState>

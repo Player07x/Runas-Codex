@@ -126,6 +126,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
           <small className="hint">Ao entrar numa cena, cada jogador começa perto do próprio token. Todos os tokens revelados continuam aparecendo; a trava só evita passear pelo mapa sem mover o token. Com ela ligada, “Puxar a câmera” só move quem não tem token na cena.</small>
         </div>
         <label className="check"><input type="checkbox" checked={state.moves} onChange={(event) => void run(() => vtt.player.setMoves(event.target.checked))} /> Jogadores podem mover os tokens marcados como Jogador</label>
+        <label className="check"><input type="checkbox" checked={state.shareRuler ?? true} onChange={(event) => void run(() => vtt.player.setShareRuler(event.target.checked))} /> Mostrar a minha régua a jogadores e espectadores</label>
         <label className="check"><input type="checkbox" checked={state.audio} onChange={(event) => void run(() => vtt.player.setAudio(event.target.checked))} /> Tocar o áudio também para os jogadores</label>
         <label className="field"><span>Mostrar barras aos jogadores</span><select value={state.bars} onChange={(event) => void run(() => vtt.player.setBars(event.target.value as PlayerState["bars"]))}><option value="friendly">Só em Jogador e Aliado</option><option value="all">Todos os tokens</option><option value="none">Nenhuma</option></select></label>
       </div>

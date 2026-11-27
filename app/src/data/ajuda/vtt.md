@@ -20,7 +20,7 @@ tamanho da célula, o deslocamento, a cor, quanto cada célula vale e a regra da
 | Ferramenta | O que faz |
 | :-- | :-- |
 | **Selecionar e mover** | Escolhe e arrasta tokens, desenhos e notas; alças mudam o tamanho e giram |
-| **Régua** | Mede distâncias na unidade da grade |
+| **Régua** | Mede distâncias na unidade da grade; o botão de pessoas ao lado escolhe se jogadores e espectadores veem a sua régua (também no painel Sala) |
 | **Novo token** | Põe um token (imagem), com barras como PV, PA e PE e a visão dele |
 | **Nota no mapa** | Um marcador com texto no mapa |
 | **Desenhar** | Mão livre, retângulo, elipse e texto |

@@ -171,3 +171,20 @@ describe("câmera dos jogadores presa ao token (1.9)", () => {
     expect(camera("")).toBe("camera")
   })
 })
+
+describe("régua do mestre para todos (1.9)", () => {
+  it("desligada, apaga a régua na tela dos jogadores e não manda as próximas", async () => {
+    const { authority, sent } = await room()
+    authority.setRuler({ sceneId: "praca", from: { x: 0, y: 0 }, to: { x: 200, y: 0 } })
+    sent.length = 0
+    authority.setShareRuler(false)
+    expect(sent.some((entry) => entry.message.type === "ruler" && entry.message.ruler === null)).toBe(true)
+    expect(authority.state().shareRuler).toBe(false)
+    sent.length = 0
+    authority.setRuler({ sceneId: "praca", from: { x: 0, y: 0 }, to: { x: 300, y: 0 } })
+    expect(sent.filter((entry) => entry.message.type === "ruler" && entry.message.ruler !== null)).toEqual([])
+    authority.setShareRuler(true)
+    authority.setRuler({ sceneId: "praca", from: { x: 0, y: 0 }, to: { x: 300, y: 0 } })
+    expect(sent.some((entry) => entry.message.type === "ruler" && entry.message.ruler !== null)).toBe(true)
+  })
+})
