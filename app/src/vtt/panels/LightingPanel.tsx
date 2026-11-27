@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { SelectAllButton, SideSelectHint } from "./SideSelect"
 import { Lightbulb, LightbulbOff, LocateFixed, RotateCcw } from "lucide-react"
 import type { DocumentInput } from "../shared/ipc"
 import type { LightData, SceneData, SceneVisionConfig } from "../shared/scene"
@@ -11,11 +12,12 @@ const cells = (value: number) => `${value.toLocaleString("pt-BR", { maximumFract
  * Luz e névoa da cena (1.9), na aba do menu da direita: a visão da cena (que antes ficava no fim da configuração da
  * cena) e a lista das luzes, cada uma com os campos abertos ali mesmo.
  */
-export function LightingPanel({ scene, lights, put, selected, onFocus, editor, children }: {
+export function LightingPanel({ scene, lights, put, selected, onFocus, editor, children, onSelectAll }: {
   scene: WorldDocument<SceneData>; lights: WorldDocument<LightData>[]; put(input: DocumentInput): void
   selected: string | null; onFocus(id: string): void; editor(light: WorldDocument<LightData>): ReactNode
   /** Seções a mais embaixo das luzes (áreas de névoa). */
   children?: ReactNode
+  onSelectAll?(): void
 }) {
   const vision = scene.data.vision
   const updateVision = (patch: Partial<SceneVisionConfig>) => put({ id: scene.id, type: "scene", parentId: null, data: { ...scene.data, vision: { ...vision, ...patch } } })
@@ -34,7 +36,8 @@ export function LightingPanel({ scene, lights, put, selected, onFocus, editor, c
       </>}
       <small className="hint">Sem luz do dia, só as luzes (ferramenta Luzes ou a luz do token) e o alcance no escuro dos aliados revelam o mapa. Paredes e portas fechadas bloqueiam visão e luz.</small>
     </div>
-    <h3 className="scene-side-subtitle">Luzes · {lights.length}</h3>
+    <div className="scene-side-subhead"><h3 className="scene-side-subtitle">Luzes · {lights.length}</h3><SelectAllButton count={lights.length} onSelectAll={onSelectAll} /></div>
+    {lights.length > 0 && <SideSelectHint what="as luzes" />}
     {!lights.length ? <p className="hint">Nenhuma luz nesta cena. Acenda uma com a ferramenta Luzes; tokens também podem levar luz (nas propriedades do token).</p> : <ul className="scene-side-list">
       {lights.map((light, index) => {
         const name = `Luz ${index + 1}`

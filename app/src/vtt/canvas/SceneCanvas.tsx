@@ -32,7 +32,7 @@ import { WallsPanel } from "../panels/WallsPanel"
 import { RegionsPanel } from "../panels/RegionsPanel"
 import { LightingPanel } from "../panels/LightingPanel"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
-import { FLOAT_COLORS, SceneView, type DrawOptions, type SceneTool } from "./SceneView"
+import { FLOAT_COLORS, SceneView, type DrawOptions, type ItemKind, type SceneTool } from "./SceneView"
 import { SceneHistory, type SceneEdit } from "./history"
 import { useSceneKeyboard } from "./keyboard"
 import { TokenSizeField } from "../../components/kit/TokenSizeField"
@@ -51,7 +51,7 @@ const TOOLS: { id: SceneTool; label: string; action: KeyAction; icon: typeof Rul
 
 /** Abas do menu da direita desenhadas pela cena (1.9) e o tipo de objeto que cada uma edita ali mesmo. */
 export type SceneSideTab = "walls" | "regions" | "lighting"
-const TAB_KINDS: Record<SceneSideTab, string> = { walls: "wall", regions: "region", lighting: "light" }
+const TAB_KINDS: Record<SceneSideTab, ItemKind> = { walls: "wall", regions: "region", lighting: "light" }
 
 const REGION_SHAPE_LABELS: Record<RegionShape, string> = { rectangle: "Retângulo", ellipse: "Elipse" }
 const REGION_TRIGGER_LABELS: Record<RegionTrigger, string> = { friendly: "Só Jogador e Aliado", any: "Qualquer token" }
@@ -108,7 +108,8 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   /** Um objeto só, do tipo da aba aberta: os campos dele aparecem na lista da aba. */
   const editsInTab = (ids: string[]) => {
     const tab = sideTabRef.current
-    return Boolean(tab) && ids.length === 1 && store.get(ids[0]!)?.type === TAB_KINDS[tab!]
+    // Uma ou várias do tipo da aba: os campos ficam na lista dela (ou, várias, nas alças do grupo).
+    return Boolean(tab) && ids.length > 0 && ids.every((id) => store.get(id)?.type === TAB_KINDS[tab!])
   }
   const [ownPropertiesOpen, setOwnPropertiesOpen] = useState(false)
   const propertiesOpen = properties ? properties.open : ownPropertiesOpen
@@ -230,6 +231,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   }, [version, ready, store])
 
   useEffect(() => { viewRef.current?.setTool(tool) }, [tool, ready])
+  useEffect(() => { viewRef.current?.setSideKinds(sideTab?.tab ? [TAB_KINDS[sideTab.tab]] : []) }, [sideTab?.tab, ready])
   useEffect(() => { viewRef.current?.setFreePlacement(freePlacement) }, [freePlacement, ready])
   useEffect(() => { viewRef.current?.setDrawOptions(drawOptions) }, [drawOptions, ready])
   useEffect(() => { viewRef.current?.setPanSpeed(settings.panSpeed) }, [settings.panSpeed, ready])
@@ -308,6 +310,16 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
 
   const selected = selection.length === 1 ? store.get(selection[0]!) : null
 
+  /** Ctrl+A e “Selecionar todas”: tudo o que a aba aberta (ou a ferramenta) seleciona; o mapa leva a seleção junto. */
+  const selectAll = () => {
+    const view = viewRef.current
+    if (!view) return
+    if (sideTab?.tab && tool !== "select") setTool("select")
+    if (sideTab?.tab) view.setTool("select")
+    const count = view.selectAll()
+    setStatus(count ? `${count} ${count === 1 ? "selecionada" : "selecionadas"}.` : "Nada para selecionar.")
+  }
+
   /** Conteúdo da aba da cena aberta no menu da direita. */
   function sidePanel(tab: SceneSideTab) {
     if (!scene) return <section className="scene-side-panel"><p className="hint">Abra uma cena na aba <b>Cenas</b> para ver as portas, as áreas e as luzes dela.</p></section>
@@ -316,15 +328,18 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
     // Tocar de novo na linha aberta fecha os campos (e solta a seleção).
     const focus = (id: string) => { if (current === id) viewRef.current?.cancel(); else viewRef.current?.focusItem(id) }
     const editor = (document: WorldDocument) => <ObjectFields document={document} scene={scene} store={store} put={put} />
-    if (tab === "walls") return <WallsPanel walls={children.walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put} selected={current} onFocus={focus} editor={editor} />
-    if (tab === "regions") return <RegionsPanel regions={children.regions} put={put} selected={current} onFocus={focus} editor={editor} sceneName={(id) => (id ? store.get<SceneData>(id)?.data.name ?? null : null)} />
-    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} />
+    if (tab === "walls") return <WallsPanel walls={children.walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll} />
+    if (tab === "regions") return <RegionsPanel regions={children.regions} put={put} selected={current} onFocus={focus} editor={editor} sceneName={(id) => (id ? store.get<SceneData>(id)?.data.name ?? null : null)} onSelectAll={selectAll} />
+    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll} />
   }
 
   return <div className={`scene-canvas ${propertiesOpen && selection.length ? "properties-open" : ""}`} tabIndex={0} onKeyDown={(event) => {
     if (!(event.target as HTMLElement).closest("input,select,textarea") && (event.ctrlKey || event.metaKey) && ["z", "y"].includes(event.key.toLowerCase())) {
       event.preventDefault()
       void (event.shiftKey || event.key.toLowerCase() === "y" ? history.redo() : history.undo()).catch(reportError)
+    } else if (!(event.target as HTMLElement).closest("input,select,textarea") && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+      event.preventDefault()
+      selectAll()
     } else keyboard.onKeyDown(event)
   }} onKeyUp={keyboard.onKeyUp} onBlur={keyboard.onBlur} onPointerDown={(event) => { if ((event.target as HTMLElement).tagName === "CANVAS") event.currentTarget.focus() }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
     <div ref={host} className="scene-host" />

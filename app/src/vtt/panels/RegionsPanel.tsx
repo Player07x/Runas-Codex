@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { SelectAllButton, SideSelectHint } from "./SideSelect"
 import { Circle, Eye, EyeOff, LocateFixed, Power, PowerOff, Square } from "lucide-react"
 import type { DocumentInput } from "../shared/ipc"
 import type { RegionData } from "../shared/region"
@@ -18,16 +19,19 @@ export function regionSummary(data: RegionData, sceneName: (id: string | null) =
  * Áreas da cena (1.9), na aba Áreas do menu da direita: cada linha leva até a área no mapa e abre os campos dela ali
  * mesmo, sem cobrir o painel com as propriedades.
  */
-export function RegionsPanel({ regions, put, selected, onFocus, editor, sceneName }: {
+export function RegionsPanel({ regions, put, selected, onFocus, editor, sceneName, onSelectAll }: {
   regions: WorldDocument<RegionData>[]; put(input: DocumentInput): void
   selected: string | null; onFocus(id: string): void; editor(region: WorldDocument<RegionData>): ReactNode
   sceneName(id: string | null): string | null
+  onSelectAll?(): void
 }) {
   const update = (region: WorldDocument<RegionData>, patch: Partial<RegionData>) => put({ id: region.id, type: "region", parentId: region.parentId, data: { ...region.data, ...patch } })
   return <section className="scene-side-panel" aria-labelledby="scene-regions-title">
     <header className="panel-header">
       <div><p className="eyebrow">Cena</p><h2 id="scene-regions-title">Áreas · {regions.length}</h2></div>
+      <SelectAllButton count={regions.length} onSelectAll={onSelectAll} />
     </header>
+    {regions.length > 0 && <SideSelectHint what="as áreas" />}
     {!regions.length ? <p className="hint">Nenhuma área nesta cena. Desenhe uma com a ferramenta Áreas: ela pode teleportar, mostrar um texto ou marcar terreno difícil.</p> : <ul className="scene-side-list">
       {regions.map((region) => {
         const open = region.id === selected

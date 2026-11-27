@@ -2710,3 +2710,16 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] A ferramenta “Regiões” agora se chama **Áreas** (atalho G continua); áreas novas nascem com o nome “Área”.
 - [ ] Trocar de cena com o painel aberto não fecha o painel (computador e celular).
 - [ ] Celular (320 px): a fileira de abas rola para o lado dentro dela mesma; a tela não rola para os lados.
+
+## Atualização 1.9 — B: selecionar e redimensionar paredes e áreas
+
+- [ ] Com a aba **Portas e paredes** aberta, “Selecionar e mover” arrasta uma parede ou porta inteira (encaixa em meias
+  células; Alt solta), seleciona várias com uma caixa (só paredes e portas, nunca tokens) ou com Shift, e Shift + setas
+  empurra a seleção uma célula. Clicar no ícone da porta continua abrindo e fechando.
+- [ ] O mesmo com a aba **Áreas** (as áreas) e **Luz e névoa** (as luzes).
+- [ ] “Selecionar todas” em cada aba e Ctrl+A no mapa selecionam todos os objetos da aba aberta (sem aba, Ctrl+A pega
+  os tokens, imagens, desenhos e notas).
+- [ ] A seleção ganha uma caixa com quatro alças: arrastar um canto estica as paredes e áreas juntas a partir do canto
+  oposto, encaixando na grade (Alt solta; Shift mantém a proporção). Luzes só mudam de lugar. Um Ctrl+Z volta tudo.
+- [ ] Com a aba fechada, nada muda: Selecionar e mover não pega paredes, áreas nem luzes.
+- [ ] Celular: as alças dos cantos respondem ao toque.

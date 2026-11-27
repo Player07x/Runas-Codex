@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { SelectAllButton, SideSelectHint } from "./SideSelect"
 import { BrickWall, DoorClosed, DoorOpen, EyeOff, Lock, LockOpen, LocateFixed } from "lucide-react"
 import type { WallData, WallKind } from "../shared/scene"
 import type { DocumentInput } from "../shared/ipc"
@@ -18,10 +19,12 @@ const cells = (value: number) => `${value.toLocaleString("pt-BR", { maximumFract
  * Trancada, só o mestre abre; destrancada, o jogador abre e fecha clicando no ícone da porta (quando a vê). Portas
  * secretas e paredes nunca são dos jogadores.
  */
-export function WallsPanel({ walls, cell, put, selected, onFocus, editor }: {
+export function WallsPanel({ walls, cell, put, selected, onFocus, editor, onSelectAll }: {
   walls: WorldDocument<WallData>[]; cell: number; put(input: DocumentInput): void
   /** A parede escolhida, que mostra os campos embaixo da linha. */
   selected: string | null; onFocus(id: string): void; editor(wall: WorldDocument<WallData>): ReactNode
+  /** Seleciona no mapa todas as paredes e portas da cena. */
+  onSelectAll?(): void
 }) {
   const update = (wall: WorldDocument<WallData>, patch: Partial<WallData>) => put({ id: wall.id, type: "wall", parentId: wall.parentId, data: { ...wall.data, ...patch } })
   const doors = walls.filter((wall) => wall.data.kind === "door")
@@ -29,7 +32,9 @@ export function WallsPanel({ walls, cell, put, selected, onFocus, editor }: {
   return <section className="scene-side-panel" aria-labelledby="scene-walls-title">
     <header className="panel-header">
       <div><p className="eyebrow">Cena</p><h2 id="scene-walls-title">Portas e paredes</h2></div>
+      <SelectAllButton count={walls.length} onSelectAll={onSelectAll} />
     </header>
+    {walls.length > 0 && <SideSelectHint what="as paredes e portas" />}
     {doors.length > 1 && <div className="row-actions scene-walls-bulk" role="group" aria-label="Todas as portas">
       <button className="ghost" onClick={() => all({ doorLocked: true })}><Lock size={14} /> Trancar todas</button>
       <button className="ghost" onClick={() => all({ doorLocked: false })}><LockOpen size={14} /> Destrancar todas</button>

@@ -44,6 +44,12 @@ celular e no tablet, mova, edite e desenhe pelo toque; dois dedos aproximam e af
   tocar numa linha mostra os campos dela ali mesmo.
 - **Áreas**: as áreas da cena, com o que cada uma faz; tocar numa linha mostra os campos dela ali mesmo.
 - **Luz e névoa**: névoa de guerra, escuridão, luz do dia e áreas exploradas da cena, e a lista das luzes.
+
+Com uma dessas três abas aberta, **Selecionar e mover** também pega os objetos dela (paredes e portas, áreas ou
+luzes): arraste para mover, use uma caixa ou Shift para várias, Shift + setas para empurrar uma célula, e
+**Selecionar todas** (ou Ctrl+A no mapa) para pegar todas. A caixa em volta da seleção tem alças nos cantos: arrastar
+uma estica ou encolhe tudo junto (Shift mantém a proporção; Alt solta da grade), e Ctrl+Z desfaz de uma vez. Com a aba
+fechada, Selecionar e mover volta a pegar só tokens, imagens, desenhos e notas.
 - **Áudio**: playlists e faixas, tocar, parar, repetir e o volume de cada uma; **Parar os sons desta mesa** silencia
   tudo.
 - **Registro**: testes, danos e avisos das áreas, do mais recente ao mais antigo; dá para apagar tudo.
