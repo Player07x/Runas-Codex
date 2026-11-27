@@ -2801,3 +2801,18 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.9.0 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.9.0 instalada as seções “Atualização 1.9” acima (A a G), em especial a câmera travada,
   a régua para todos e a configuração lembrada da sala com a sala aberta e jogadores de verdade (desktop e Android).
+
+## Revisão da 1.9 (27/11)
+
+- [ ] Ctrl+A ou arrastar o mouse não seleciona menus e títulos; campos, editor e texto das notas, artigos, livros e
+  Ajuda continuam selecionáveis (PR #227).
+- [ ] Enviar relatório com uma nota aberta: “Onde” mostra só o módulo (`/notas`, `/wiki`…), sem o caminho da nota; um
+  erro que cite uma nota mostra `<nota>.md` no lugar do nome, no texto e no título do GitHub.
+- [ ] Redimensionar a janela não faz aparecer “Algo deu errado no app.” (o aviso do ResizeObserver não conta mais).
+- [ ] Aba Luz e névoa aberta: clicar no mapa numa área sem névoa própria abre as propriedades dela no trilho (com
+  “Voltar a Luz e névoa”); “Selecionar todas” das luzes pega só as luzes; Ctrl+A pega as luzes e as áreas de névoa.
+- [ ] Com uma aba da cena aberta, uma imagem sozinha selecionada mostra só as alças dela (tamanho e giro), sem a caixa
+  do grupo por cima.
+- [ ] Página do jogador: arrastar a borda da janela para redimensionar continua fluido com névoa na cena, e a câmera
+  presa ao token volta a centralizar nele.
+- [ ] Sala: o aviso “Na última sessão desta mesa você usou o link público” some depois de uma sessão sem o link.
