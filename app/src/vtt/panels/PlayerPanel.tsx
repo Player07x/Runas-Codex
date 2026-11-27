@@ -119,7 +119,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
       <label className="field"><span>Porta local</span><input inputMode="numeric" value={port} disabled={Boolean(state?.enabled) || busy} onChange={(event) => setPort(event.target.value.replace(/\D/g, "").slice(0, 5))} /></label>
       <label className="field"><span>Jogadores</span><input inputMode="numeric" min="1" max="12" value={seatCount} disabled={Boolean(state?.enabled) || busy} onChange={(event) => setSeatCount(event.target.value.replace(/\D/g, "").slice(0, 2))} /></label>
       {!state?.enabled
-        ? <button className="primary" disabled={busy || !port || !seatCount} onClick={() => void run(async () => { applying.current = true; try { const next = await vtt.player.start(Number(port), Number(seatCount)); await applyLive(saved); setState(await vtt.player.state().catch(() => next)) } finally { applying.current = false } })}><Wifi size={15} /> Ligar transmissão</button>
+        ? <button className="primary" disabled={busy || !port || !seatCount} onClick={() => void run(async () => { applying.current = true; try { const next = await vtt.player.start(Number(port), Number(seatCount)); setState(next); await applyLive(saved) } finally { applying.current = false } })}><Wifi size={15} /> Ligar transmissão</button>
         : <button className="ghost danger" disabled={busy} onClick={() => void run(() => vtt.player.stop())}><Square size={14} /> Desligar</button>}
     </div>}
     {!state?.enabled && saved.publicLink && !remoteMaster && <p className="hint">Na última sessão desta mesa você usou o link público. Depois de ligar a transmissão, gere o link de novo (ele muda a cada vez e pede sua confirmação).</p>}
