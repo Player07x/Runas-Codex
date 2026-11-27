@@ -2695,3 +2695,16 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Logo em recorte
+
+- [ ] Barra lateral: a logo (a pedra com a runa ᚱ vazada) aparece na cor de destaque da paleta (Órbita lavanda,
+  Floresta verde, Brasa laranja, Runa ciano), nos temas escuro e claro. Recolhida e no tablet, fica com 32 px, inteira.
+- [ ] Estados vazios (por exemplo, Campanha › Sessões sem sessão) mostram a mesma logo, na cor de destaque.
+- [ ] Desktop instalado (Linux e Windows): o ícone do instalador, do menu de aplicativos e da barra de tarefas é o
+  ladrilho escuro com a pedra ciano. Com “Continuar na bandeja ao fechar a janela” ligado, a bandeja mostra a versão
+  pequena (sem a rachadura), nítida.
+- [ ] Android: o ícone da tela inicial mostra a pedra inteira em qualquer formato do launcher (redondo, quadrado,
+  gota); a abertura mostra a pedra no fundo escuro; o lembrete da Agenda mostra a silhueta da pedra com a runa vazada
+  na barra de status.
+- [ ] Navegador (`npm run dev`): o favicon da aba é a logo pequena, ciano com o sistema no tema escuro e petróleo no claro.

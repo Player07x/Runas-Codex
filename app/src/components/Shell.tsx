@@ -7,7 +7,7 @@ import {
   ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords,
   LockKeyhole, CircleHelp, PanelsTopLeft,
 } from "lucide-react"
-import runa from "../assets/runa.png"
+import { RuneLogo } from "./RuneLogo"
 import { href, navigate } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
 import { routeOfNote } from "../lib/navigation"
@@ -118,7 +118,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
     <div className="shell">
       <ResizablePanel id="navigation" label="Navegação" side="left" width={240} as="nav" className="sidebar" aria-label="Espaços" collapsedMode="rail">
         <a className="brand" href={href("/")} aria-label="Runas-Codex, início">
-          <img src={runa} alt="" />
+          <RuneLogo className="brand-logo" />
           <div>
             <strong>Runas-Codex</strong>
             <small className="truncate">Cofre: {vault.info?.name ?? "nenhum aberto"}</small>

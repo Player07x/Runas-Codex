@@ -27,12 +27,12 @@
 .sidebar.resizable-panel > .panel-controls .panel-collapse { width:44px; height:44px; border:1px solid var(--line); background:var(--panel); }
 .sidebar.resizable-panel > .panel-controls .panel-collapse:hover { background:var(--panel-2); }
 .sidebar.resizable-panel .brand { position:relative; flex:none; height:96px; margin-inline:-14px; padding:0; }
-.sidebar.resizable-panel .brand img { position:absolute; left:14px; top:12px; width:56px; height:56px; border-radius:14px; transition:left .2s ease, top .2s ease, width .2s ease, height .2s ease, border-radius .2s ease; }
+.sidebar.resizable-panel .brand .brand-logo { position:absolute; left:14px; top:12px; width:56px; height:56px; border-radius:14px; transition:left .2s ease, top .2s ease, width .2s ease, height .2s ease, border-radius .2s ease; }
 .sidebar.resizable-panel .brand > div { position:absolute; top:12px; left:76px; right:62px; height:56px; display:grid; align-content:center; transition:opacity .15s ease, visibility .15s; }
 /* Recolhida: a runa pequena logo abaixo do botão, com o centro alinhado ao dele. */
 .sidebar[data-panel-collapsed=true] { padding:0 8px 12px; overflow-x:hidden; }
 .sidebar[data-panel-collapsed=true] .brand { margin-inline:-8px; }
-.sidebar[data-panel-collapsed=true] .brand img, :root[data-tablet=true] .sidebar.resizable-panel .brand img { left:calc(100% - 50px); top:60px; width:32px; height:32px; border-radius:9px; }
+.sidebar[data-panel-collapsed=true] .brand .brand-logo, :root[data-tablet=true] .sidebar.resizable-panel .brand .brand-logo { left:calc(100% - 50px); top:60px; width:32px; height:32px; border-radius:9px; }
 .sidebar.resizable-panel .brand strong { overflow:hidden; font-size:calc(14px * var(--font-scale, 1)); text-overflow:ellipsis; white-space:nowrap; }
 .sidebar[data-panel-collapsed=true] .brand > div { opacity:0; visibility:hidden; }
 .sidebar[data-panel-collapsed=true] :is(.nav-link span, .nav-link .count, .nav-label, .offline-pill span) { display:none; }

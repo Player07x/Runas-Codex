@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ícone das notificações (lembretes da Agenda): a runa ᚱ em branco, como o Android pede para a barra de status. -->
+<!-- Ícone das notificações (lembretes da Agenda): a logo em recorte, em branco, como o Android pede para a barra de status.
+     Gerado por desktop/scripts/gerar-icones.mjs a partir de app/src/core/logo.ts. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M7,2h2.5v20H7z M9.5,2.6l7,4.4l-7,4.4V8.6l3.1,-1.6L9.5,5.4z M9.5,11.4l7.6,10.6h-3l-4.6,-6.5z" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group
+        android:pivotX="259"
+        android:pivotY="251"
+        android:scaleX="1.2"
+        android:scaleY="1.2"
+        android:translateX="-3"
+        android:translateY="5">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M149.39 112.42 Q162 92 184.87 84.71 L277.13 55.29 Q300 48 319.9 61.42 L363.1 90.58 Q383 104 385.91 127.82 L403.09 268.18 Q406 292 395.33 313.5 L343.67 417.5 Q333 439 309.16 441.73 L225.84 451.27 Q202 454 188.89 433.89 L127.11 339.11 Q114 319 113.67 295 L112.33 197 Q112 173 124.61 152.58 Z M212 362 L212 150 A20 20 0 0 1 245.75 135.48 L321.75 207.48 A20 20 0 0 1 320.88 237.3 L261.55 287.26 L322.14 347.86 A20 20 0 0 1 293.86 376.14 L252 334.28 L252 362 A20 20 0 0 1 212 362 Z M252 196.5 L277.99 221.12 L252 243.01 Z" />
+    </group>
 </vector>
