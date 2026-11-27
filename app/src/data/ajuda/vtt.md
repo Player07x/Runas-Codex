@@ -82,6 +82,12 @@ cena, mover tokens, tocar áudio. **Trocar chave** invalida o link anterior (út
   diário.
 - Ler um artigo da Wiki que o mestre mostrar pela sala (sem os segredos).
 
+**Configuração da sala.** Cada mesa lembra as escolhas da última sessão (porta, número de jogadores, cena transmitida,
+mover tokens, áudio, barras, câmera e régua) e a sala volta assim ao ser ligada; uma mesa nova começa com as últimas
+usadas neste aparelho. Em **Configuração da sala**, **Salvar como…** guarda uma predefinição com nome (neste aparelho),
+**Exportar** gera um `.json` e **Importar** lê um desses arquivos. Códigos e chave da sala nunca entram, e o link
+público continua pedindo confirmação a cada sessão.
+
 **A câmera do jogador.** Ao entrar numa cena em que tem token, o jogador começa perto dele: a tela mostra cerca de 8
 vezes o tamanho do token (com vários tokens, o último que ele escolheu). O botão **Seguir meu token** (o alvo) faz a
 câmera acompanhar o token; arrastar o mapa solta. No painel **Sala**, em **Câmera dos jogadores**, o mestre pode deixar

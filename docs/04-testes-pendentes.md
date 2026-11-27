@@ -2719,3 +2719,15 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Ferramenta Régua › botão de pessoas (“Todos veem a régua” / “Régua só para você”) e painel Sala › “Mostrar a minha
   régua a jogadores e espectadores”: os dois mudam juntos; desligado, a régua some da tela dos jogadores na hora e as
   próximas medidas ficam só na tela do mestre.
+
+## Atualização 1.9 — E: configurações da sala
+
+- [ ] Ligar a sala com 4 jogadores, cena do token, áudio desligado e câmera presa; desligar; fechar e abrir a mesa (e o
+  app): o painel Sala já mostra 4 jogadores e, ao ligar, a sala volta com as mesmas opções.
+- [ ] Uma mesa nova começa com as últimas configurações usadas neste aparelho.
+- [ ] Configuração da sala › Salvar como… “Mega dungeon”; mudar as opções; escolher “Mega dungeon” na lista: as opções
+  voltam (com a sala desligada, valem ao ligar). Excluir tira a predefinição só deste aparelho.
+- [ ] Exportar gera `Sala — <nome>.json`; Importar esse arquivo em outro aparelho ou mesa aplica e cria a predefinição.
+  Um `.json` qualquer é recusado com aviso.
+- [ ] Depois de uma sessão com link público, a sala desligada lembra disso, mas o link só abre com nova confirmação.
+- [ ] O arquivo `outros.json` da mesa ganha o documento `sala`; nenhum `.md` novo aparece no cofre.

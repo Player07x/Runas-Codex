@@ -1,6 +1,6 @@
 import { DEFAULT_CAMERA_RULES, ZOOM_OUT_LIMITS } from "../shared/player-camera"
 import { FOLLOW_TOKENS_SCENE } from "../shared/player"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import QRCode from "qrcode"
 import { Activity, ExternalLink, KeyRound, Minus, MonitorPlay, Plus, Radio, RefreshCw, RotateCw, Square, Target, Trash2, Users, Wifi } from "lucide-react"
 import type { LinkTestResult, PlayerState } from "../shared/ipc"
@@ -10,6 +10,15 @@ import { useDocumentsVersion } from "../document-store"
 import { isAndroidRoom, remoteMaster, vtt } from "../api"
 import { MAX_PLAYER_SEATS } from "../shared/player-session"
 import { linkTestMessage } from "../shared/link-test"
+import { DEFAULT_ROOM_SETTINGS, ROOM_SETTINGS_ID, normalizeRoomSettings, sameRoomSettings, sceneForRoom, settingsFromState, type RoomSettings } from "../shared/room-settings"
+import { RoomSettingsBar } from "./RoomSettingsBar"
+
+/** 1.9: as últimas configurações usadas em qualquer mesa deste aparelho (uma mesa nova começa com elas). */
+const LAST_ROOM_KEY = "runas-codex:sala-ultima"
+
+function readLastRoom(): RoomSettings {
+  try { return normalizeRoomSettings(JSON.parse(localStorage.getItem(LAST_ROOM_KEY) ?? "null")) } catch { return { ...DEFAULT_ROOM_SETTINGS } }
+}
 
 export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId: string | null }) {
   useDocumentsVersion(store)
@@ -25,10 +34,37 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
   const platform = /linux/i.test(navigator.userAgent) ? "linux" : /mac/i.test(navigator.userAgent) ? "darwin" : "win32"
   const [linkTest, setLinkTest] = useState<LinkTestResult | null>(null)
   const [testing, setTesting] = useState(false)
+  // 1.9: a mesa guarda as configurações da última sessão (documento `sala`); sem ele, as últimas deste aparelho.
+  const savedDocument = store.get(ROOM_SETTINGS_ID)
+  const saved = savedDocument?.type === "room-settings" ? normalizeRoomSettings(savedDocument.data) : readLastRoom()
+  const savedRef = useRef(saved)
+  // Enquanto a sala liga e recebe a configuração guardada, o estado intermediário não é gravado por cima dela.
+  const applying = useRef(false)
+  savedRef.current = saved
+  function persist(settings: RoomSettings) {
+    try { localStorage.setItem(LAST_ROOM_KEY, JSON.stringify(settings)) } catch { /* preferência opcional */ }
+    if (savedDocument?.type === "room-settings" && sameRoomSettings(saved, settings)) return
+    void store.put({ id: ROOM_SETTINGS_ID, type: "room-settings", parentId: null, data: settings }).catch((reason: unknown) => setError(errorMessage(reason)))
+  }
+  /** Aplica na sala ligada o que dá para mudar com ela aberta (porta e jogadores valem ao ligar). */
+  async function applyLive(settings: RoomSettings) {
+    await vtt.player.setScene(sceneForRoom(settings, store.scenes().map((scene) => scene.id)))
+    await vtt.player.setMoves(settings.moves)
+    await vtt.player.setAudio(settings.audio)
+    await vtt.player.setBars(settings.bars)
+    await vtt.player.setCamera(settings.camera)
+    await vtt.player.setShareRuler(settings.shareRuler)
+  }
 
   useEffect(() => {
     let mounted = true
-    void vtt.player.state().then((value) => { if (mounted) { setState(value); setPort(String(value.port)) } }).catch((reason) => { if (mounted) setError(errorMessage(reason)) })
+    void vtt.player.state().then((value) => {
+      if (!mounted) return
+      setState(value)
+      // Desligada, a sala começa como na última sessão desta mesa.
+      setPort(String(value.enabled ? value.port : savedRef.current.port))
+      if (!value.enabled) setSeatCount(String(savedRef.current.seats))
+    }).catch((reason) => { if (mounted) setError(errorMessage(reason)) })
     const unsubscribe = vtt.player.onState((value) => {
       if (!mounted) return
       setState((previous) => previous && value.sessionId === previous.sessionId
@@ -37,6 +73,12 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
     })
     return () => { mounted = false; unsubscribe() }
   }, [])
+
+  // Com a sala ligada, cada mudança vira a configuração guardada da mesa.
+  useEffect(() => {
+    if (state?.enabled && state.sessionId && !applying.current) persist(settingsFromState(state, savedRef.current))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
 
   // Um resultado é do link em que foi medido.
   useEffect(() => { setLinkTest(null) }, [state?.publicUrl])
@@ -77,9 +119,15 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
       <label className="field"><span>Porta local</span><input inputMode="numeric" value={port} disabled={Boolean(state?.enabled) || busy} onChange={(event) => setPort(event.target.value.replace(/\D/g, "").slice(0, 5))} /></label>
       <label className="field"><span>Jogadores</span><input inputMode="numeric" min="1" max="12" value={seatCount} disabled={Boolean(state?.enabled) || busy} onChange={(event) => setSeatCount(event.target.value.replace(/\D/g, "").slice(0, 2))} /></label>
       {!state?.enabled
-        ? <button className="primary" disabled={busy || !port || !seatCount} onClick={() => void run(async () => { const next = await vtt.player.start(Number(port), Number(seatCount)); setState(next) })}><Wifi size={15} /> Ligar transmissão</button>
+        ? <button className="primary" disabled={busy || !port || !seatCount} onClick={() => void run(async () => { applying.current = true; try { const next = await vtt.player.start(Number(port), Number(seatCount)); await applyLive(saved); setState(await vtt.player.state().catch(() => next)) } finally { applying.current = false } })}><Wifi size={15} /> Ligar transmissão</button>
         : <button className="ghost danger" disabled={busy} onClick={() => void run(() => vtt.player.stop())}><Square size={14} /> Desligar</button>}
     </div>}
+    {!state?.enabled && saved.publicLink && !remoteMaster && <p className="hint">Na última sessão desta mesa você usou o link público. Depois de ligar a transmissão, gere o link de novo (ele muda a cada vez e pede sua confirmação).</p>}
+    <RoomSettingsBar current={state?.enabled ? settingsFromState(state, saved) : { ...saved, port: Number(port) || saved.port, seats: Number(seatCount) || saved.seats }} onApply={async (settings) => {
+      setPort(String(state?.enabled ? state.port : settings.port))
+      if (!state?.enabled) { setSeatCount(String(settings.seats)); persist(settings); return }
+      await applyLive(settings)
+    }} />
 
     {state?.enabled && <>
       <div className="player-link-card">

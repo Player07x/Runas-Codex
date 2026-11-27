@@ -34,7 +34,7 @@ export class DocumentStore {
   async load(): Promise<void> {
     this.unsubscribe = vtt.documents.onChange((change) => this.apply(change))
     // A névoa explorada é do processo principal (Vista dos Jogadores); a mesa não precisa dela.
-    const types = ["scene", "log-entry", "table-notes", "playlist", "track", ...SCENE_CHILD_TYPES.filter((type) => type !== "fog")]
+    const types = ["scene", "log-entry", "table-notes", "room-settings", "playlist", "track", ...SCENE_CHILD_TYPES.filter((type) => type !== "fog")]
     const lists = await Promise.all(types.map((type) => vtt.documents.list(type as WorldDocument["type"])))
     for (const document of lists.flat()) this.documents.set(document.id, document)
     this.emit()
