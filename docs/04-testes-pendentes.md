@@ -2818,3 +2818,19 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Sala: o aviso “Na última sessão desta mesa você usou o link público” some depois de uma sessão sem o link.
 - [ ] Trocar de cena com o painel da direita aberto: no computador ele continua aberto; no celular (e no tablet em pé)
   ele fecha para mostrar a cena nova (decisão de 27/11; vale no lugar do item “computador e celular” da seção A).
+
+## Logo em recorte
+
+As capturas de como ficou (ícones do sistema, barra lateral nas paletas e o celular em 320 px) estão em
+`docs/imagens/logo-recorte/`.
+
+- [ ] Barra lateral: a logo (a pedra com a runa ᚱ vazada) aparece na cor de destaque da paleta (Órbita lavanda,
+  Floresta verde, Brasa laranja, Runa ciano), nos temas escuro e claro. Recolhida e no tablet, fica com 32 px, inteira.
+- [ ] Estados vazios (por exemplo, Campanha › Sessões sem sessão) mostram a mesma logo, na cor de destaque.
+- [ ] Desktop instalado (Linux e Windows): o ícone do instalador, do menu de aplicativos e da barra de tarefas é o
+  ladrilho escuro com a pedra ciano. Com “Continuar na bandeja ao fechar a janela” ligado, a bandeja mostra a versão
+  pequena (sem a rachadura), nítida.
+- [ ] Android: o ícone da tela inicial mostra a pedra inteira em qualquer formato do launcher (redondo, quadrado,
+  gota); a abertura mostra a pedra no fundo escuro; o lembrete da Agenda mostra a silhueta da pedra com a runa vazada
+  na barra de status.
+- [ ] Navegador (`npm run dev`): o favicon da aba é a logo pequena, ciano com o sistema no tema escuro e petróleo no claro.
