@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { BookmarkPlus, FileUp, ImagePlus, Map as MapIcon, Plus, RotateCcw, Trash2 } from "lucide-react"
+import { BookmarkPlus, FileUp, ImagePlus, Map as MapIcon, Plus, Trash2 } from "lucide-react"
 import { DIAGONAL_RULES, GRID_TYPES, type DiagonalRule, type GridConfig, type GridType } from "../shared/grid"
-import { DEFAULT_GRID, type SceneData, type SceneVisionConfig } from "../shared/scene"
+import { DEFAULT_GRID, type SceneData } from "../shared/scene"
 import type { WorldDocument } from "../shared/world"
-import { resolveAssetUrl, vtt } from "../api"
+import { resolveAssetUrl } from "../api"
 import { importImage } from "../canvas/SceneCanvas"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { ImportDialog } from "./ImportDialog"
@@ -66,7 +66,6 @@ function SceneConfig({ scene, store, onDeleted }: { scene: WorldDocument<SceneDa
   const data = scene.data
   const update = (patch: Partial<SceneData>) => void store.put({ id: scene.id, type: "scene", parentId: null, data: { ...data, ...patch } })
   const updateGrid = (patch: Partial<GridConfig>) => update({ grid: { ...data.grid, ...patch } })
-  const updateVision = (patch: Partial<SceneVisionConfig>) => update({ vision: { ...data.vision, ...patch } })
   const cells = (pixels: number) => Math.round((pixels / data.grid.size) * 100) / 100
 
   async function chooseBackground(file: File) {
@@ -116,15 +115,7 @@ function SceneConfig({ scene, store, onDeleted }: { scene: WorldDocument<SceneDa
       <Field label={`Opacidade: ${Math.round(data.grid.alpha * 100)}%`}><input type="range" min={0} max={1} step={0.05} value={data.grid.alpha} onChange={(event) => updateGrid({ alpha: Number(event.target.value) })} /></Field>
     </div>}
 
-    <h3>Visão, luz e névoa</h3>
-    <label className="check"><input type="checkbox" checked={data.vision.enabled} onChange={(event) => updateVision({ enabled: event.target.checked })} /> Névoa de guerra: os jogadores veem só o que os aliados enxergam</label>
-    <Field label={`Escuridão: ${Math.round(data.vision.darkness * 100)}%`}><input type="range" min={0} max={1} step={0.05} value={data.vision.darkness} onChange={(event) => updateVision({ darkness: Number(event.target.value) })} /></Field>
-    <label className="check"><input type="checkbox" checked={data.vision.globalLight} onChange={(event) => updateVision({ globalLight: event.target.checked })} /> Luz do dia: tudo na linha de visão está iluminado</label>
-    {data.vision.enabled && <>
-      <label className="check"><input type="checkbox" checked={data.vision.exploration} onChange={(event) => updateVision({ exploration: event.target.checked })} /> Lembrar as áreas exploradas</label>
-      <div className="row-actions"><button className="ghost small" onClick={() => { if (window.confirm("Apagar as áreas exploradas desta cena? A névoa volta a cobrir tudo o que os aliados não estão vendo agora.")) void vtt.vision.resetExploration(scene.id) }}><RotateCcw size={13} /> Redefinir áreas exploradas</button></div>
-    </>}
-    <small className="hint">Sem luz do dia, só as luzes (ferramenta Luzes ou a luz do token) e o alcance no escuro dos aliados revelam o mapa. Paredes e portas fechadas bloqueiam visão e luz.</small>
+    <small className="hint">Névoa de guerra, escuridão e luzes ficam na aba <b>Luz e névoa</b>; portas e áreas, nas abas delas.</small>
 
     {library && <div className="row-actions">
       <button className="ghost" onClick={() => { setKept(""); void saveSceneToLibrary(store, scene.id).then((name) => setKept(`Mapa “${name}” guardado na biblioteca, com grade, paredes, luzes e regiões.`), (reason: unknown) => setKept(reason instanceof Error ? reason.message : String(reason))) }}><BookmarkPlus size={14} /> Guardar mapa na biblioteca</button>

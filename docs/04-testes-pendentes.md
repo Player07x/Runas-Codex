@@ -2695,3 +2695,142 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Smoke do Linux que não fechava (26/11)
+
+- [ ] Fechar o app várias vezes no Linux (pelo X da janela e por “Sair” na bandeja), com uma nota aberta: nenhuma
+  caixa “A JavaScript error occurred in the main process” (`Object has been destroyed`) aparece, e o processo some
+  (`pgrep -f runas-codex` não mostra nada depois de alguns segundos). O mesmo no Windows.
+- [ ] Nos próximos Releases, o passo “Smoke no app empacotado” do job `linux` termina em cerca de 2 min, sem
+  “não terminou em 5 min”. Se uma exceção aparecer no fechamento, o log mostra “Smoke: exceção não tratada no processo
+  principal” com a pilha, e o smoke falha na hora em vez de travar.
+
+## Atualização 1.9 — A: menu da direita da mesa
+
+- [ ] Na mesa, o trilho da direita tem oito abas: Cenas, Biblioteca, **Portas e paredes**, **Áreas**, **Luz e névoa**,
+  Áudio, Notas e Sala. O botão “Lista de portas e paredes” saiu do menu da esquerda.
+- [ ] Portas e paredes: a mesma lista de antes (trancar, destrancar e fechar todas; abrir e trancar cada porta).
+  Tocar numa linha leva o mapa até o objeto e abre os campos dele embaixo da linha; tocar de novo fecha.
+- [ ] Áreas: lista as áreas com o que cada uma faz; o olho mostra ou esconde dos jogadores, o botão de energia ativa ou
+  desativa. Tocar numa linha abre os campos ali mesmo (não abre as propriedades por cima do painel).
+- [ ] Luz e névoa: névoa de guerra, escuridão, luz do dia, “Lembrar as áreas exploradas” e “Redefinir áreas
+  exploradas” saíram da configuração da cena e estão aqui; embaixo, a lista de luzes (acender e apagar, campos na linha).
+  Ctrl+Z desfaz uma mudança da névoa.
+- [ ] A ferramenta “Regiões” agora se chama **Áreas** (atalho G continua); áreas novas nascem com o nome “Área”.
+- [ ] Trocar de cena com o painel aberto não fecha o painel (computador e celular).
+- [ ] Celular (320 px): a fileira de abas rola para o lado dentro dela mesma; a tela não rola para os lados.
+
+## Atualização 1.9 — B: selecionar e redimensionar paredes e áreas
+
+- [ ] Com a aba **Portas e paredes** aberta, “Selecionar e mover” arrasta uma parede ou porta inteira (encaixa em meias
+  células; Alt solta), seleciona várias com uma caixa (só paredes e portas, nunca tokens) ou com Shift, e Shift + setas
+  empurra a seleção uma célula. Clicar no ícone da porta continua abrindo e fechando.
+- [ ] O mesmo com a aba **Áreas** (as áreas) e **Luz e névoa** (as luzes).
+- [ ] “Selecionar todas” em cada aba e Ctrl+A no mapa selecionam todos os objetos da aba aberta (sem aba, Ctrl+A pega
+  os tokens, imagens, desenhos e notas).
+- [ ] A seleção ganha uma caixa com quatro alças: arrastar um canto estica as paredes e áreas juntas a partir do canto
+  oposto, encaixando na grade (Alt solta; Shift mantém a proporção). Luzes só mudam de lugar. Um Ctrl+Z volta tudo.
+- [ ] Com a aba fechada, nada muda: Selecionar e mover não pega paredes, áreas nem luzes.
+- [ ] Celular: as alças dos cantos respondem ao toque.
+
+## Atualização 1.9 — C: névoa por área
+
+- [ ] Luz e névoa › **Nova área de névoa** cria uma área “Névoa” (sempre à vista) no meio da tela e abre os campos; a
+  lista “Névoa por área” mostra o que cada uma muda. Com a aba aberta, a área se move e se redimensiona pelo mapa.
+- [ ] Névoa de guerra desligada na área: com “Ver como os jogadores” e na página do jogador, a área aparece mesmo sem
+  aliado vendo, e os tokens dentro dela também. Ligada numa cena sem névoa: só a área fica coberta.
+- [ ] Luz do dia desligada na área (cena com dia): o aliado só vê ali com luz ou alcance no escuro. Ligada (cena sem
+  dia): a linha de visão dentro da área fica iluminada.
+- [ ] Escuridão própria: a área fica mais clara ou mais escura que o resto, para o mestre e os jogadores.
+- [ ] Lembrar exploração desligada na área: ao sair, a área volta a ficar coberta; ligada numa cena sem exploração,
+  só ela lembra.
+- [ ] **Revelar agora** e **Cobrir de novo** (com exploração ligada) mudam o que os jogadores veem na hora.
+- [ ] Com 20 áreas de névoa na cena, mover tokens continua fluido (computador e celular).
+
+## Atualização 1.9 — D: câmera do jogador
+
+- [ ] Sala aberta, um token “Jogador” controlado pelo Jogador 1: ao entrar com o código, a câmera começa centrada no
+  token, mostrando uns 8 quadros (token de 1 quadro) ou uns 16 (token Grande). Trocar de cena (cena do token) faz o mesmo.
+- [ ] Com dois tokens do mesmo jogador: a câmera fica no último que ele escolheu (tocar no token); sem escolha, no
+  último que se moveu.
+- [ ] Botão **Seguir meu token** (alvo) na barra do jogador: ligado, a câmera acompanha o token quando ele anda
+  (inclusive quando o mestre o move); arrastar o mapa solta e avisa. A escolha fica salva no aparelho.
+- [ ] Painel Sala › Câmera dos jogadores › “Câmera sempre no token”: o jogador com token não arrasta mais o mapa, o
+  botão do alvo fica preso (tocar avisa que o mestre prendeu) e afastar para no “Afastamento máximo” escolhido. Tokens
+  mais longe (inimigos revelados) continuam aparecendo. Desligar devolve a câmera livre.
+- [ ] Com a trava ligada, “Puxar a câmera para o ponto do mestre” não move quem tem token na cena; quem assiste sem
+  token é puxado.
+- [ ] Girar o celular ou mudar o tamanho da janela com a câmera presa: o token continua no meio.
+- [ ] Mestre remoto pelo celular: a seção “Câmera dos jogadores” funciona igual.
+
+## Atualização 1.9 — F: régua do mestre para todos
+
+- [ ] Com a sala aberta, medir com a ferramenta Régua: jogadores e espectadores veem a régua (dourada, com a medida) e
+  ela continua na tela deles depois de soltar, até a próxima medida ou a troca de ferramenta.
+- [ ] Ferramenta Régua › botão de pessoas (“Todos veem a régua” / “Régua só para você”) e painel Sala › “Mostrar a minha
+  régua a jogadores e espectadores”: os dois mudam juntos; desligado, a régua some da tela dos jogadores na hora e as
+  próximas medidas ficam só na tela do mestre.
+
+## Atualização 1.9 — E: configurações da sala
+
+- [ ] Ligar a sala com 4 jogadores, cena do token, áudio desligado e câmera presa; desligar; fechar e abrir a mesa (e o
+  app): o painel Sala já mostra 4 jogadores e, ao ligar, a sala volta com as mesmas opções.
+- [ ] Uma mesa nova começa com as últimas configurações usadas neste aparelho.
+- [ ] Configuração da sala › Salvar como… “Mega dungeon”; mudar as opções; escolher “Mega dungeon” na lista: as opções
+  voltam (com a sala desligada, valem ao ligar). Excluir tira a predefinição só deste aparelho.
+- [ ] Exportar gera `Sala — <nome>.json`; Importar esse arquivo em outro aparelho ou mesa aplica e cria a predefinição.
+  Um `.json` qualquer é recusado com aviso.
+- [ ] Depois de uma sessão com link público, a sala desligada lembra disso, mas o link só abre com nova confirmação.
+- [ ] O arquivo `outros.json` da mesa ganha o documento `sala`; nenhum `.md` novo aparece no cofre.
+
+## Atualização 1.9 — G: sem telemetria e Enviar relatório
+
+- [ ] O selo “Offline · cofre local” sumiu do menu lateral (computador, recolhido e tablet) e do “Mais” do celular.
+- [ ] Configurações › Privacidade e atualizações: sem a linha “Telemetria”; com “Relatório de problema · Enviar
+  relatório…”. A Ajuda mostra “Enviar relatório…” no topo do índice e o tópico Privacidade explica o relatório.
+- [ ] Enviar relatório: a janela mostra versão, sistema, tela e erros desta sessão; escrever em “O que aconteceu?”
+  atualiza o texto; editar o texto mantém a edição. Nenhum caminho com o seu nome de usuário ou a pasta do cofre aparece.
+- [ ] “Enviar pelo GitHub” abre o navegador do sistema (no computador e no Android) na página de novo problema,
+  já preenchida; nada é enviado sem você clicar em “Submit new issue” lá.
+- [ ] Copiar e Salvar como arquivo (`relatorio-runas-codex.md`) funcionam.
+- [ ] Quando um erro acontece, aparece o aviso “Algo deu errado no app.” com o botão “Enviar relatório”.
+
+## Versão 1.9.0
+
+- [ ] Com a 1.8.1 instalada, o aviso “Atualizar para 1.9.0” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.9.0 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.9.0 instalada as seções “Atualização 1.9” acima (A a G), em especial a câmera travada,
+  a régua para todos e a configuração lembrada da sala com a sala aberta e jogadores de verdade (desktop e Android).
+
+## Revisão da 1.9 (27/11)
+
+- [ ] Ctrl+A ou arrastar o mouse não seleciona menus e títulos; campos, editor e texto das notas, artigos, livros e
+  Ajuda continuam selecionáveis (PR #227).
+- [ ] Enviar relatório com uma nota aberta: “Onde” mostra só o módulo (`/notas`, `/wiki`…), sem o caminho da nota; um
+  erro que cite uma nota mostra `<nota>.md` no lugar do nome, no texto e no título do GitHub.
+- [ ] Redimensionar a janela não faz aparecer “Algo deu errado no app.” (o aviso do ResizeObserver não conta mais).
+- [ ] Aba Luz e névoa aberta: clicar no mapa numa área sem névoa própria abre as propriedades dela no trilho (com
+  “Voltar a Luz e névoa”); “Selecionar todas” das luzes pega só as luzes; Ctrl+A pega as luzes e as áreas de névoa.
+- [ ] Com uma aba da cena aberta, uma imagem sozinha selecionada mostra só as alças dela (tamanho e giro), sem a caixa
+  do grupo por cima.
+- [ ] Página do jogador: arrastar a borda da janela para redimensionar continua fluido com névoa na cena, e a câmera
+  presa ao token volta a centralizar nele.
+- [ ] Sala: o aviso “Na última sessão desta mesa você usou o link público” some depois de uma sessão sem o link.
+- [ ] Trocar de cena com o painel da direita aberto: no computador ele continua aberto; no celular (e no tablet em pé)
+  ele fecha para mostrar a cena nova (decisão de 27/11; vale no lugar do item “computador e celular” da seção A).
+
+## Logo em recorte
+
+As capturas de como ficou (ícones do sistema, barra lateral nas paletas e o celular em 320 px) estão em
+`docs/imagens/logo-recorte/`.
+
+- [ ] Barra lateral: a logo (a pedra com a runa ᚱ vazada) aparece na cor de destaque da paleta (Órbita lavanda,
+  Floresta verde, Brasa laranja, Runa ciano), nos temas escuro e claro. Recolhida e no tablet, fica com 32 px, inteira.
+- [ ] Estados vazios (por exemplo, Campanha › Sessões sem sessão) mostram a mesma logo, na cor de destaque.
+- [ ] Desktop instalado (Linux e Windows): o ícone do instalador, do menu de aplicativos e da barra de tarefas é o
+  ladrilho escuro com a pedra ciano. Com “Continuar na bandeja ao fechar a janela” ligado, a bandeja mostra a versão
+  pequena (sem a rachadura), nítida.
+- [ ] Android: o ícone da tela inicial mostra a pedra inteira em qualquer formato do launcher (redondo, quadrado,
+  gota); a abertura mostra a pedra no fundo escuro; o lembrete da Agenda mostra a silhueta da pedra com a runa vazada
+  na barra de status.
+- [ ] Navegador (`npm run dev`): o favicon da aba é a logo pequena, ciano com o sistema no tema escuro e petróleo no claro.

@@ -1,5 +1,6 @@
 import { app, Menu, nativeImage, Tray, type BrowserWindow } from "electron"
-import icon from "../../build/icon.png?asset"
+// A bandeja usa a versão pequena da logo (sem a rachadura), feita para 24 px.
+import icon from "../../build/tray.png?asset"
 export class DesktopTray {
  private tray:Tray|null=null
  private window:BrowserWindow|null=null

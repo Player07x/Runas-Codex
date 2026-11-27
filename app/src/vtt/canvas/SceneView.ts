@@ -17,6 +17,7 @@ import type { LogKind } from "../shared/log"
 import { resolveAssetUrl } from "../api"
 import { LONG_PRESS_MS, TouchGestures, type TouchGesture } from "./gestures"
 import { transformCenter, transformObject, type TransformHandle } from "./transforms"
+import { CORNERS, cornerPoint, documentBounds, groupBounds, scaleBox, scaleDocument, type Box, type Corner } from "./group-transform"
 
 export type SceneTool = "select" | "ruler" | "token" | "note" | "draw" | "wall" | "light" | "sound" | "region"
 
@@ -45,6 +46,10 @@ export interface SceneViewHandlers {
   onMove?(tokenId: string, position: Point): void
   /** Vista dos Jogadores: o jogador clicou numa porta (o VTT confere se está destrancada e abre ou fecha). */
   onDoor?(doorId: string, locked: boolean): void
+  /** Vista dos Jogadores: o jogador arrastou o mapa com a câmera seguindo o token (sem trava): o seguir desliga. */
+  onFollowBreak?(): void
+  /** A área do mapa na tela mudou de tamanho (já com o canvas novo). */
+  onScreenResize?(): void
 }
 
 export interface SceneViewOptions {
@@ -56,7 +61,7 @@ export interface SceneViewOptions {
   editable: boolean
 }
 
-type ItemKind = "token" | "tile" | "drawing" | "note" | "wall" | "light" | "sound" | "region"
+export type ItemKind = "token" | "tile" | "drawing" | "note" | "wall" | "light" | "sound" | "region"
 
 interface Item {
   id: string
@@ -98,6 +103,7 @@ type Interaction =
   | { type: "region"; start: Point }
   | { type: "transform"; id: string; handle: TransformHandle; origin: Point; before: WorldDocument; preview: DocumentInput }
   | { type: "wall-end"; id: string; end: 1 | 2; fixed: Point }
+  | { type: "group"; corner: Corner; from: Box; to: Box; documents: WorldDocument[] }
 
 const DISPOSITION_COLORS: Record<TokenDisposition, number> = { player: 0x86a47f, friendly: 0x82aaa6, neutral: 0xb99b65, hostile: 0xc76561, secret: 0x927f9c }
 /** Cor do texto flutuante de cada tipo de entrada do Registro. */
@@ -144,6 +150,10 @@ export class SceneView {
   /** Alças nas pontas da parede selecionada. */
   private readonly wallHandles = new Container()
   private readonly transformHandles = new Container()
+  /** Caixa e alças para redimensionar a seleção junta (com uma aba da cena aberta no menu da direita). */
+  private readonly groupHandles = new Container()
+  /** Tipos que “Selecionar e mover” também alcança: os da aba da cena aberta no menu da direita (1.9 B). */
+  private sideKinds = new Set<ItemKind>()
   private readonly handleActions = new Map<Container, (event: ScenePointer) => void>()
   private readonly doorActions = new Map<Container, () => void>()
   private freePlacement = false
@@ -159,6 +169,9 @@ export class SceneView {
   /** Há uma régua da ferramenta Régua publicada; apagá-la avisa `onRulerChange(null)`. */
   private rulerPublished = false
   private panVelocity: Point = { x: 0, y: 0 }
+  /** Câmera dos jogadores (1.9): o menor zoom permitido (afastamento máximo) e o ponto que a câmera segue. */
+  private zoomFloor: number | null = null
+  private follow: { point: Point; locked: boolean } | null = null
   private panSpeed = 1000
   private readonly items = new Map<string, Item>()
   private readonly images = new Map<string, Promise<HTMLImageElement>>()
@@ -188,7 +201,7 @@ export class SceneView {
     this.layers.lights.visible = false
     this.layers.sounds.visible = false
     this.layers.regions.addChild(this.playerRegions)
-    this.layers.overlay.addChild(this.remoteOverlay, this.remoteRulerLabel, this.overlay, this.rulerLabel, this.wallHandles, this.transformHandles)
+    this.layers.overlay.addChild(this.remoteOverlay, this.remoteRulerLabel, this.overlay, this.rulerLabel, this.wallHandles, this.transformHandles, this.groupHandles)
     this.rulerLabel.anchor.set(0.5, 1.2)
     this.rulerLabel.visible = false
     this.remoteRulerLabel.anchor.set(0.5, 1.2)
@@ -275,7 +288,14 @@ export class SceneView {
     const app = new Application()
     await app.init({ resizeTo: container, background: "#0c0f15", antialias: true, autoDensity: true, resolution: window.matchMedia("(pointer: coarse)").matches ? Math.min(window.devicePixelRatio || 1, 1.5) : window.devicePixelRatio || 1 })
     container.appendChild(app.canvas)
-    return new SceneView(app, container, handlers, options)
+    const view = new SceneView(app, container, handlers, options)
+    // O Pixi muda o tamanho do canvas depois do evento da janela: a câmera que segue um ponto volta a centralizar nele.
+    app.renderer.on("resize", () => {
+      if (view.destroyed) return
+      if (view.follow) view.centerOn(view.follow.point)
+      handlers.onScreenResize?.()
+    })
+    return view
   }
 
   destroy(): void {
@@ -389,19 +409,59 @@ export class SceneView {
     this.tool = tool
     this.clearOverlay()
     this.app.canvas.style.cursor = tool === "select" ? "default" : "crosshair"
-    this.layers.lights.visible = tool === "light"
+    this.layers.lights.visible = this.editing("light")
     this.layers.sounds.visible = tool === "sound"
     for (const item of this.items.values()) if (item.kind === "wall" || item.kind === "region") item.onZoom?.()
     // Trocar de ferramenta solta o que só a outra ferramenta seleciona (paredes, luzes).
-    if (changed && [...this.selection].some((id) => { const item = this.items.get(id); return item && TOOL_FOR_KIND[item.kind] !== tool })) {
+    if (changed && [...this.selection].some((id) => { const item = this.items.get(id); return item && !this.targets(item.kind) })) {
       this.selection.clear()
       this.emitSelection()
     }
     this.updateWallHandles()
     this.updateTransformHandles()
+    this.updateGroupHandles()
   }
 
   setFreePlacement(free: boolean): void { this.freePlacement = free }
+
+  /**
+   * Aba da cena aberta no menu da direita (1.9 B): com ela, “Selecionar e mover” também seleciona, arrasta e
+   * redimensiona os objetos dessa aba (paredes e portas, áreas, luzes), e a seleção em caixa pega só eles.
+   */
+  setSideKinds(kinds: readonly ItemKind[]): void {
+    const next = new Set(kinds)
+    if ([...next].sort().join() === [...this.sideKinds].sort().join()) return
+    this.sideKinds = next
+    if (this.interaction?.type === "box" || this.interaction?.type === "group") this.cancelInteraction()
+    this.layers.lights.visible = this.editing("light")
+    for (const item of this.items.values()) if (item.kind === "wall" || item.kind === "region") item.onZoom?.()
+    if ([...this.selection].some((id) => { const item = this.items.get(id); return item && !this.targets(item.kind) })) {
+      this.selection = new Set([...this.selection].filter((id) => { const item = this.items.get(id); return item && this.targets(item.kind) }))
+      this.emitSelection()
+    } else this.refreshSelection()
+  }
+
+  /**
+   * Seleciona todos os objetos da aba aberta (ou, sem aba, tudo o que a ferramenta atual seleciona). `accept` restringe
+   * a uma parte deles (as luzes da aba Luz e névoa, sem as áreas).
+   */
+  selectAll(accept?: (document: WorldDocument) => boolean): number {
+    if (!this.options.editable) return 0
+    const side = this.tool === "select" && this.sideKinds.size > 0
+    this.selection = new Set([...this.items.values()].filter((item) => (side ? this.sideKinds.has(item.kind) : TOOL_FOR_KIND[item.kind] === this.tool) && (!accept || accept(item.document))).map((item) => item.id))
+    this.emitSelection()
+    return this.selection.size
+  }
+
+  /** A ferramenta atual alcança este tipo de objeto. */
+  private targets(kind: ItemKind): boolean {
+    return TOOL_FOR_KIND[kind] === this.tool || (this.tool === "select" && this.sideKinds.has(kind))
+  }
+
+  /** Os objetos deste tipo aparecem inteiros para edição (ferramenta própria ou a aba deles aberta). */
+  private editing(kind: ItemKind): boolean {
+    return this.tool === TOOL_FOR_KIND[kind] || (this.tool === "select" && this.sideKinds.has(kind))
+  }
 
   setDrawOptions(options: DrawOptions): void {
     this.drawOptions = options
@@ -432,7 +492,7 @@ export class SceneView {
     const item = this.items.get(id)
     if (!item || !this.options.editable) return
     const tool = TOOL_FOR_KIND[item.kind]
-    if (tool !== this.tool) { this.setTool(tool); this.handlers.onToolChange?.(tool) }
+    if (!this.targets(item.kind)) { this.setTool(tool); this.handlers.onToolChange?.(tool) }
     this.selection = new Set([id])
     this.emitSelection()
     this.updateWallHandles()
@@ -463,10 +523,47 @@ export class SceneView {
   /** Move a câmera para um ponto sem criar uma intenção de edição. */
   setCamera(center: Point, zoom?: number | null): void {
     if (!this.scene) return
-    const nextZoom = zoom === null || zoom === undefined ? this.world.scale.x : Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom))
+    const nextZoom = this.clampZoom(zoom === null || zoom === undefined ? this.world.scale.x : zoom)
     this.world.scale.set(nextZoom)
     this.world.position.set(this.app.screen.width / 2 - center.x * nextZoom, this.app.screen.height / 2 - center.y * nextZoom)
     this.updateOverlayScale()
+  }
+
+  /** Tamanho da área do mapa na tela, em pixels. */
+  viewSize(): { width: number; height: number } {
+    return { width: this.app.screen.width, height: this.app.screen.height }
+  }
+
+  /**
+   * Câmera dos jogadores (1.9): o menor zoom (o mestre limita o afastamento) e o ponto que a câmera segue. Seguindo, o
+   * zoom aproxima e afasta em volta do ponto; com `locked`, o mapa não se arrasta. Sem trava, arrastar o mapa desliga o
+   * seguir (`onFollowBreak`).
+   */
+  setCameraFollow(follow: { point: Point; locked: boolean } | null, zoomFloor: number | null = null): void {
+    this.zoomFloor = zoomFloor
+    this.follow = follow
+    if (!this.scene) return
+    if (zoomFloor !== null && this.world.scale.x < zoomFloor) this.world.scale.set(this.clampZoom(this.world.scale.x))
+    if (follow) this.centerOn(follow.point)
+    this.updateOverlayScale()
+  }
+
+  private clampZoom(zoom: number): number {
+    return Math.max(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoomFloor ?? MIN_ZOOM)), Math.min(MAX_ZOOM, zoom))
+  }
+
+  private centerOn(point: Point): void {
+    const zoom = this.world.scale.x
+    this.world.position.set(this.app.screen.width / 2 - point.x * zoom, this.app.screen.height / 2 - point.y * zoom)
+  }
+
+  /** Câmera presa ao token: o mapa não se arrasta. Seguindo sem trava, arrastar solta o seguir. */
+  private canPan(): boolean {
+    if (!this.follow) return true
+    if (this.follow.locked) return false
+    this.follow = null
+    this.handlers.onFollowBreak?.()
+    return true
   }
 
   /** Converte um ponto da tela (relativo ao elemento) para a cena. */
@@ -497,9 +594,10 @@ export class SceneView {
     if (!this.scene) return
     const { width, height } = this.scene.data
     const scale = Math.min(this.app.screen.width / width, this.app.screen.height / height) * 0.92
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale))
+    const zoom = this.clampZoom(scale)
     this.world.scale.set(zoom)
     this.world.position.set((this.app.screen.width - width * zoom) / 2, (this.app.screen.height - height * zoom) / 2)
+    if (this.follow) this.centerOn(this.follow.point)
     this.updateOverlayScale()
     this.handlers.onViewChange?.()
   }
@@ -510,9 +608,14 @@ export class SceneView {
     if (!grid) return
     for (const id of this.selection) {
       const item = this.items.get(id)
-      if (!item || this.isLocked(item) || item.kind === "wall") continue
-      const data = item.document.data as { x: number; y: number }
+      if (!item || this.isLocked(item)) continue
       const step = grid.type === "none" ? 50 : grid.size
+      if (item.kind === "wall") {
+        const wall = item.document.data as WallData, dx = columns * step, dy = rows * step
+        this.handlers.onPut({ id, type: "wall", parentId: item.document.parentId, data: { ...wall, x1: wall.x1 + dx, y1: wall.y1 + dy, x2: wall.x2 + dx, y2: wall.y2 + dy } })
+        continue
+      }
+      const data = item.document.data as { x: number; y: number }
       let next = { x: data.x + columns * step, y: data.y + rows * step }
       if (item.kind === "token") next = snapTokenCenter(next, (data as TokenData).size, grid)
       this.handlers.onPut({ id, type: item.kind, parentId: item.document.parentId, data: { ...data, ...next } })
@@ -681,7 +784,7 @@ export class SceneView {
     const draw = () => {
       const zoom = this.world.scale.x
       const width = 3 / zoom
-      line.visible = this.tool === "wall"
+      line.visible = this.editing("wall")
       line.clear()
         .moveTo(data.x1, data.y1).lineTo(data.x2, data.y2).stroke({ color: 0x080707, width: width * 2.4, alpha: 0.8 })
         .moveTo(data.x1, data.y1).lineTo(data.x2, data.y2).stroke({ color, width, alpha: data.open ? 0.4 : 1 })
@@ -696,7 +799,7 @@ export class SceneView {
       contains: (x: number, y: number) => {
         const zoom = this.world.scale.x
         if (icon && Math.hypot(x - midpoint.x, y - midpoint.y) <= 14 / zoom) return true
-        return this.tool === "wall" && distanceToSegment({ x, y }, data) <= 8 / zoom
+        return this.editing("wall") && distanceToSegment({ x, y }, data) <= 8 / zoom
       },
     }
     return { display, selection, onZoom: draw }
@@ -779,7 +882,7 @@ export class SceneView {
     const outline = (graphics: Graphics) => data.shape === "ellipse" ? graphics.ellipse(data.width / 2, data.height / 2, data.width / 2, data.height / 2) : graphics.rect(0, 0, data.width, data.height)
     const draw = () => {
       const zoom = this.world.scale.x
-      const editing = this.tool === "region"
+      const editing = this.editing("region")
       display.visible = editing || data.visible
       label.visible = editing
       label.scale.set(1 / zoom)
@@ -789,7 +892,7 @@ export class SceneView {
       outline(selection).stroke({ color: SELECTION_COLOR, width: 3 / zoom, alpha: 0.9 })
     }
     draw()
-    display.hitArea = { contains: (x: number, y: number) => this.tool === "region" && regionContains({ ...data, x: 0, y: 0 }, { x, y }) }
+    display.hitArea = { contains: (x: number, y: number) => this.editing("region") && regionContains({ ...data, x: 0, y: 0 }, { x, y }) }
     return { display, selection, onZoom: draw }
   }
 
@@ -1058,6 +1161,7 @@ export class SceneView {
     for (const item of this.items.values()) item.selection.visible = this.options.editable && this.selection.has(item.id)
     this.updateWallHandles()
     this.updateTransformHandles()
+    this.updateGroupHandles()
   }
 
   /** Alças para arrastar as pontas da parede selecionada (ferramenta Paredes). */
@@ -1139,6 +1243,7 @@ export class SceneView {
     for (const item of this.items.values()) item.onZoom?.()
     for (const handle of this.wallHandles.children) handle.scale.set(1 / this.world.scale.x)
     this.updateTransformHandles()
+    this.updateGroupHandles()
   }
 
   /** Desenha uma régua e devolve o texto da medida. */
@@ -1186,7 +1291,7 @@ export class SceneView {
 
   private panTick(deltaMS: number): void {
     const { x, y } = this.panVelocity
-    if ((x === 0 && y === 0) || !this.scene) return
+    if ((x === 0 && y === 0) || !this.scene || !this.canPan()) return
     const length = Math.hypot(x, y)
     const step = (this.panSpeed * Math.min(deltaMS, 100)) / 1000
     this.world.position.set(this.world.x - (x / length) * step, this.world.y - (y / length) * step)
@@ -1195,10 +1300,11 @@ export class SceneView {
 
   private zoomAt(screen: Point, factor: number): void {
     const before = this.world.toLocal(screen)
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.world.scale.x * factor))
+    const zoom = this.clampZoom(this.world.scale.x * factor)
     this.world.scale.set(zoom)
     const after = this.world.toGlobal(before)
     this.world.position.set(this.world.position.x + screen.x - after.x, this.world.position.y + screen.y - after.y)
+    if (this.follow) this.centerOn(this.follow.point)
     this.updateOverlayScale()
     this.handlers.onViewChange?.()
   }
@@ -1214,10 +1320,11 @@ export class SceneView {
   private movePinch(first: Point, second: Point): void {
     const pinch = this.pinch
     if (!pinch) return
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, pinch.zoom * Math.hypot(second.x - first.x, second.y - first.y) / pinch.distance))
+    const zoom = this.clampZoom(pinch.zoom * Math.hypot(second.x - first.x, second.y - first.y) / pinch.distance)
     const middle = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }
     this.world.scale.set(zoom)
     this.world.position.set(middle.x - pinch.anchor.x * zoom, middle.y - pinch.anchor.y * zoom)
+    if (this.follow) this.centerOn(this.follow.point)
     this.updateOverlayScale()
   }
 
@@ -1227,6 +1334,7 @@ export class SceneView {
     if (interaction?.type === "drag") for (const entry of interaction.entries) this.items.get(entry.id)?.display.position.set(entry.start.x, entry.start.y)
     if (interaction?.type === "transform") this.restoreTransform(interaction)
     this.interaction = null
+    if (interaction?.type === "group") this.updateGroupHandles()
     this.touchPlacement = false
     this.clearOverlay()
   }
@@ -1253,7 +1361,7 @@ export class SceneView {
     const local = this.world.toLocal(point)
     let closest: Item | undefined, distance = 22 / this.world.scale.x
     for (const item of this.items.values()) {
-      if (TOOL_FOR_KIND[item.kind] !== this.tool) continue
+      if (!this.targets(item.kind)) continue
       const center = item.display.position
       const next = item.kind === "wall" ? distanceToSegment(local, item.document.data as WallData) : Math.hypot(local.x - center.x, local.y - center.y)
       if (next < distance) { closest = item; distance = next }
@@ -1266,8 +1374,10 @@ export class SceneView {
     const hit = this.hitAt(point)
     if (!hit.item) return
     this.cancelInteraction()
-    this.setTool(TOOL_FOR_KIND[hit.item.kind])
-    this.handlers.onToolChange?.(this.tool)
+    if (!this.targets(hit.item.kind)) {
+      this.setTool(TOOL_FOR_KIND[hit.item.kind])
+      this.handlers.onToolChange?.(this.tool)
+    }
     this.selection = new Set([hit.item.id])
     this.emitSelection()
     this.handlers.onContextMenu?.(hit.item.id, point)
@@ -1345,6 +1455,58 @@ export class SceneView {
     add("rotation", rotate(0, -halfHeight - 36 / zoom), "↻")
   }
 
+  /** Objetos da seleção que a caixa do grupo estica (nunca os bloqueados). */
+  private groupDocuments(): WorldDocument[] {
+    if (!this.options.editable || this.tool !== "select" || this.sideKinds.size === 0) return []
+    return [...this.selection].map((id) => this.items.get(id)).filter((item): item is Item => Boolean(item) && !this.isLocked(item!)).map((item) => item.document)
+  }
+
+  /** Caixa em volta da seleção, com uma alça em cada canto (só com uma aba da cena aberta). */
+  private updateGroupHandles(): void {
+    for (const child of this.groupHandles.removeChildren()) { this.handleActions.delete(child); child.destroy() }
+    if (this.interaction?.type === "group") return
+    const documents = this.groupDocuments()
+    // Uma imagem sozinha já tem as próprias alças (tamanho e giro): a caixa do grupo ficaria por cima delas.
+    if (documents.length === 1 && documents[0]!.type === "tile") return
+    const box = groupBounds(documents)
+    if (!box || (box.width < 1 && box.height < 1)) return
+    const zoom = this.world.scale.x
+    const frame = new Graphics().rect(box.x, box.y, box.width, box.height).stroke({ color: 0x82aaa6, width: 1.5 / zoom, alpha: 0.9 })
+    this.groupHandles.addChild(frame)
+    for (const corner of CORNERS) {
+      const point = cornerPoint(box, corner)
+      const handle = new Graphics().rect(-7, -7, 14, 14).fill({ color: 0x171314 }).stroke({ color: 0x82aaa6, width: 2 })
+      handle.position.set(point.x, point.y)
+      handle.scale.set(1 / zoom)
+      handle.eventMode = "static"
+      handle.cursor = corner === "nw" || corner === "se" ? "nwse-resize" : "nesw-resize"
+      handle.hitArea = new Rectangle(-22, -22, 44, 44)
+      const start = (event: ScenePointer) => {
+        if (event.button !== 0) return
+        event.stopPropagation()
+        this.interaction = { type: "group", corner, from: box, to: box, documents }
+        this.groupHandles.visible = false
+      }
+      handle.on("pointerdown", start)
+      this.handleActions.set(handle, start)
+      this.groupHandles.addChild(handle)
+    }
+    this.groupHandles.visible = true
+  }
+
+  /** Prévia do grupo esticado: a caixa nova, as paredes e o contorno das áreas e imagens. */
+  private drawGroupPreview(interaction: Extract<Interaction, { type: "group" }>): void {
+    const zoom = this.world.scale.x, { to } = interaction
+    this.overlay.clear().rect(to.x, to.y, to.width, to.height).stroke({ color: 0x82aaa6, width: 1.5 / zoom })
+    for (const document of interaction.documents) {
+      const data = scaleDocument(document, interaction.from, to).data as Record<string, number>
+      if (document.type === "wall") this.overlay.moveTo(data.x1!, data.y1!).lineTo(data.x2!, data.y2!).stroke({ color: SELECTION_COLOR, width: 3 / zoom })
+      else if (typeof data.width === "number" && typeof data.height === "number") this.overlay.rect(data.x!, data.y!, data.width, data.height).stroke({ color: SELECTION_COLOR, width: 2 / zoom })
+      else this.overlay.circle(data.x!, data.y!, 6 / zoom).fill(SELECTION_COLOR)
+    }
+    this.handlers.onStatus?.(`${formatNumber(to.width)} × ${formatNumber(to.height)} px · Shift mantém a proporção · Alt solta da grade`)
+  }
+
   private previewTransform(interaction: Extract<Interaction, { type: "transform" }>): void {
     const item = this.items.get(interaction.id)
     if (!item) return
@@ -1384,7 +1546,7 @@ export class SceneView {
 
   private onItemPointerDown(event: ScenePointer, id: string): void {
     const item = this.items.get(id)
-    if (this.pinch || event.button !== 0 || !item || TOOL_FOR_KIND[item.kind] !== this.tool) return
+    if (this.pinch || event.button !== 0 || !item || !this.targets(item.kind)) return
     // Espectador: só arrasta tokens "Jogador", e um de cada vez.
     if (!this.options.editable) {
       if (!this.movable(item.document)) return
@@ -1392,7 +1554,7 @@ export class SceneView {
       this.interaction = { type: "drag", origin: this.world.toLocal(event.global), moved: false, entries: [{ id, start: { x: item.display.x, y: item.display.y } }], selection: new Set() }
       return
     }
-    if (item.kind === "wall") {
+    if (item.kind === "wall" && this.tool === "wall") {
       // Clicar na ponta de uma parede começa outra parede emendada ali, em vez de arrastar esta.
       const wall = item.document.data as WallData
       const point = this.world.toLocal(event.global)
@@ -1424,7 +1586,7 @@ export class SceneView {
 
   private onStagePointerDown(event: ScenePointer): void {
     if (this.pinch) return
-    if (event.button === 1 || event.button === 2) {
+    if ((event.button === 1 || event.button === 2) && this.canPan()) {
       this.interaction = { type: "pan", startGlobal: { x: event.global.x, y: event.global.y }, startPosition: { x: this.world.x, y: this.world.y }, context: event.button === 2 }
       this.app.canvas.style.cursor = "grabbing"
       return
@@ -1434,6 +1596,7 @@ export class SceneView {
     if (!this.options.editable) {
       // Espectador: régua local ou arrastar o mapa com o botão esquerdo.
       if (this.tool === "ruler") { this.interaction = { type: "ruler", start: point }; this.drawRuler(point, point); return }
+      if (!this.canPan()) return
       this.interaction = { type: "pan", startGlobal: { x: event.global.x, y: event.global.y }, startPosition: { x: this.world.x, y: this.world.y } }
       this.app.canvas.style.cursor = "grabbing"
       return
@@ -1521,6 +1684,7 @@ export class SceneView {
       const dy = point.y - interaction.origin.y
       if (!interaction.moved && Math.hypot(dx, dy) * this.world.scale.x < 4) return
       interaction.moved = true
+      this.groupHandles.visible = false
       for (const entry of interaction.entries) this.items.get(entry.id)?.display.position.set(entry.start.x + dx, entry.start.y + dy)
       const first = interaction.entries[0]
       const firstItem = first ? this.items.get(first.id) : null
@@ -1530,6 +1694,12 @@ export class SceneView {
     if (interaction.type === "transform") {
       interaction.preview = transformObject(interaction.before, interaction.handle, interaction.origin, point, this.scene?.data.grid.size || 100, event.altKey || this.freePlacement)
       this.previewTransform(interaction)
+      return
+    }
+    if (interaction.type === "group") {
+      const target = this.snapHalfCell(point, event.altKey || this.freePlacement)
+      interaction.to = scaleBox(interaction.from, interaction.corner, target, event.shiftKey)
+      this.drawGroupPreview(interaction)
       return
     }
     if (interaction.type === "ruler") { this.drawRuler(interaction.start, point, this.options.editable); return }
@@ -1580,6 +1750,18 @@ export class SceneView {
       if (item && item.document.updatedAt === interaction.before.updatedAt) this.handlers.onPut(transformObject(interaction.before, interaction.handle, interaction.origin, this.world.toLocal(event.global), this.scene?.data.grid.size || 100, event.altKey || this.freePlacement))
       this.restoreTransform(interaction)
       this.refreshSelection()
+      return
+    }
+    if (interaction.type === "group") {
+      this.clearOverlay()
+      const { from, to } = interaction
+      if (Math.abs(to.width - from.width) + Math.abs(to.height - from.height) + Math.abs(to.x - from.x) + Math.abs(to.y - from.y) < 0.01) { this.updateGroupHandles(); return }
+      // Tudo de uma vez: o desfazer volta o grupo inteiro num passo só.
+      for (const document of interaction.documents) {
+        const item = this.items.get(document.id)
+        if (item && item.document.updatedAt === document.updatedAt) this.handlers.onPut(scaleDocument(document, from, to))
+      }
+      this.updateGroupHandles()
       return
     }
     const scene = this.scene
@@ -1646,7 +1828,7 @@ export class SceneView {
       const height = Math.abs(end.y - interaction.start.y)
       if (width * this.world.scale.x < 6 || height * this.world.scale.x < 6) return
       const id = newDocumentId()
-      this.handlers.onPut({ id, type: "region", parentId: scene.id, data: { name: "Região", shape: this.regionShape, x: Math.min(interaction.start.x, end.x), y: Math.min(interaction.start.y, end.y), width, height } })
+      this.handlers.onPut({ id, type: "region", parentId: scene.id, data: { name: "Área", shape: this.regionShape, x: Math.min(interaction.start.x, end.x), y: Math.min(interaction.start.y, end.y), width, height } })
       this.pendingSelection = id
       return
     }
@@ -1667,10 +1849,13 @@ export class SceneView {
       const top = Math.min(interaction.start.y, point.y)
       const bottom = Math.max(interaction.start.y, point.y)
       if ((right - left) * this.world.scale.x < 4 && (bottom - top) * this.world.scale.x < 4) return
+      // Com uma aba da cena aberta, a caixa pega só os objetos dela (pelo meio de cada um).
+      const side = this.sideKinds.size > 0
       for (const item of this.items.values()) {
-        if (TOOL_FOR_KIND[item.kind] !== "select") continue
-        const bounds = item.display.getBounds()
-        const center = this.world.toLocal({ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 })
+        if (side ? !this.sideKinds.has(item.kind) : TOOL_FOR_KIND[item.kind] !== "select") continue
+        const box = side ? documentBounds(item.document) : null
+        const bounds = box ? null : item.display.getBounds()
+        const center = box ? { x: box.x + box.width / 2, y: box.y + box.height / 2 } : this.world.toLocal({ x: bounds!.x + bounds!.width / 2, y: bounds!.y + bounds!.height / 2 })
         if (center.x >= left && center.x <= right && center.y >= top && center.y <= bottom) this.selection.add(item.id)
       }
       this.emitSelection()

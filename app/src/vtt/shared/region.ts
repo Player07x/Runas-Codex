@@ -12,6 +12,23 @@ export type RegionShape = (typeof REGION_SHAPES)[number]
 export const REGION_TRIGGERS = ["friendly", "any"] as const
 export type RegionTrigger = (typeof REGION_TRIGGERS)[number]
 
+/** Opção de névoa da área (1.9 C): a da cena (“Usar padrão”), ligada ou desligada só aqui. */
+export const FOG_CHOICES = ["default", "on", "off"] as const
+export type FogChoice = (typeof FOG_CHOICES)[number]
+
+/** Névoa por área: o que muda dentro dela em relação à cena. */
+export interface RegionFog {
+  enabled: boolean
+  /** Névoa de guerra: “off” deixa a área sempre à vista; “on” cobre a área mesmo com a névoa da cena desligada. */
+  vision: FogChoice
+  /** Lembrar as áreas exploradas aqui dentro. */
+  exploration: FogChoice
+  /** Luz do dia: a linha de visão dentro da área está iluminada? */
+  globalLight: FogChoice
+  /** Escuridão própria (0 a 1); `null` usa a da cena. */
+  darkness: number | null
+}
+
 export interface RegionData {
   name: string
   shape: RegionShape
@@ -29,6 +46,7 @@ export interface RegionData {
   teleport: { enabled: boolean; sceneId: string | null; regionId: string | null }
   text: { enabled: boolean; message: string; once: boolean }
   terrain: { enabled: boolean; multiplier: number }
+  fog: RegionFog
   locked: boolean
 }
 
@@ -58,6 +76,7 @@ export function normalizeRegion(value: unknown): RegionData {
   const teleport = record(raw.teleport)
   const text = record(raw.text)
   const terrain = record(raw.terrain)
+  const fog = record(raw.fog)
   return {
     name: str(raw.name, "Região", 80).trim() || "Região",
     shape: oneOf(raw.shape, REGION_SHAPES, "rectangle"),
@@ -72,6 +91,13 @@ export function normalizeRegion(value: unknown): RegionData {
     teleport: { enabled: bool(teleport.enabled, false), sceneId: id(teleport.sceneId), regionId: id(teleport.regionId) },
     text: { enabled: bool(text.enabled, false), message: str(text.message, "", 280), once: bool(text.once, false) },
     terrain: { enabled: bool(terrain.enabled, false), multiplier: num(terrain.multiplier, 2, 1, 10) },
+    fog: {
+      enabled: bool(fog.enabled, false),
+      vision: oneOf(fog.vision, FOG_CHOICES, "default"),
+      exploration: oneOf(fog.exploration, FOG_CHOICES, "default"),
+      globalLight: oneOf(fog.globalLight, FOG_CHOICES, "default"),
+      darkness: typeof fog.darkness === "number" && Number.isFinite(fog.darkness) ? Math.min(1, Math.max(0, fog.darkness)) : null,
+    },
     locked: bool(raw.locked, false),
   }
 }

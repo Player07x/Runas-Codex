@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
-import { ArrowLeft, Library, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, NotebookPen, Settings } from "lucide-react"
+import { ArrowLeft, DoorClosed, Library, Lightbulb, Map as MapIcon, Maximize2, Minimize2, MonitorPlay, Music, NotebookPen, Settings, SquareDashed } from "lucide-react"
 import { navigate } from "../lib/router"
 import { remoteMaster, resolveAssetUrl, vtt } from "./api"
 import { AudioEngine } from "./audio-engine"
-import { SceneCanvas } from "./canvas/SceneCanvas"
+import { SceneCanvas, type SceneSideTab } from "./canvas/SceneCanvas"
 import { DocumentStore } from "./document-store"
 import { AudioPanel, audioMixListeners } from "./panels/AudioPanel"
 import { TableNotesPanel } from "./panels/TableNotesPanel"
@@ -17,11 +17,20 @@ import type { AudioState } from "./shared/audio"
 import type { WorldSummary } from "./shared/world"
 import "./vtt.css"
 
-type SideTab = "scenes" | "audio" | "log" | "players" | "library"
+type SideTab = "scenes" | "audio" | "log" | "players" | "library" | SceneSideTab
+
+/** O painel da direita fica por cima do mapa (o mesmo ponto de quebra de `vtt.css`). */
+const PANEL_OVER_MAP = "(max-width: 900px), (max-width: 1100px) and (orientation: portrait)"
+
+/** Abas cujo conteúdo é desenhado pela cena (precisam da seleção, do desfazer e da câmera do mapa). */
+const SCENE_TABS: readonly SideTab[] = ["walls", "regions", "lighting"]
 
 const SIDE_TABS: { id: SideTab; label: string; icon: typeof MapIcon }[] = [
   { id: "scenes", label: "Cenas", icon: MapIcon },
   { id: "library", label: "Biblioteca", icon: Library },
+  { id: "walls", label: "Portas e paredes", icon: DoorClosed },
+  { id: "regions", label: "Áreas", icon: SquareDashed },
+  { id: "lighting", label: "Luz e névoa", icon: Lightbulb },
   { id: "audio", label: "Áudio", icon: Music },
   { id: "log", label: "Notas", icon: NotebookPen },
   { id: "players", label: "Sala", icon: MonitorPlay },
@@ -117,6 +126,9 @@ function TableShell({ world, keyboardHints, documents, remote = false }: { world
   // U11: as propriedades do objeto abrem no trilho, no lugar do painel; ao fechar, o trilho volta como estava.
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [propertiesHost, setPropertiesHost] = useState<HTMLDivElement | null>(null)
+  const [sceneTabHost, setSceneTabHost] = useState<HTMLDivElement | null>(null)
+  // A aba da cena aberta vale também com as propriedades no trilho (ex.: uma porta escolhida na lista).
+  const sceneTab = panelOpen && SCENE_TABS.includes(tab) ? tab as SceneSideTab : null
   const panelBefore = useRef<boolean | null>(null)
   useEffect(() => {
     if (propertiesOpen) {
@@ -137,9 +149,11 @@ function TableShell({ world, keyboardHints, documents, remote = false }: { world
     return () => store.dispose()
   }, [documents, store, world.id])
 
+  // O painel da direita fica como estava ao trocar de cena (1.9). No celular e no tablet em pé ele cobre a parte de
+  // baixo do mapa: fecha, para a cena nova aparecer inteira (decisão do João, 27/11).
   function openScene(id: string | null) {
     setSceneId(id)
-    setPanelOpen(false)
+    if (window.matchMedia?.(PANEL_OVER_MAP).matches) setPanelOpen(false)
     try {
       if (id) localStorage.setItem(lastSceneKey(world.id), id)
     } catch {
@@ -210,7 +224,7 @@ function TableShell({ world, keyboardHints, documents, remote = false }: { world
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         <section className="canvas-area" aria-label="Cena">
           <RoomDropBanner />
-          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} properties={{ host: propertiesHost, open: propertiesOpen, setOpen: setPropertiesOpen }} onLibraryScene={openScene} />}
+          {loaded && <SceneCanvas store={store} sceneId={sceneId} onOpenUrl={openUrl} keyboardHints={keyboardHints} properties={{ host: propertiesHost, open: propertiesOpen, setOpen: setPropertiesOpen }} sideTab={{ tab: sceneTab, host: sceneTabHost }} onLibraryScene={openScene} />}
         </section>
         <aside className="side-panel" aria-label="Painel da mesa">
           <div className="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionar painel" onPointerDown={startResize} onPointerMove={resize} onPointerUp={endResize} onPointerCancel={endResize} />
@@ -236,7 +250,7 @@ function TableShell({ world, keyboardHints, documents, remote = false }: { world
               </button>
               <div ref={setPropertiesHost} className="side-properties-body" />
             </section>
-          ) : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
+          ) : SCENE_TABS.includes(tab) ? <div ref={setSceneTabHost} className="side-scene-tab" /> : tab === "scenes" ? <ScenesPanel store={store} sceneId={sceneId} onOpen={openScene} /> : tab === "library" ? <LibraryPanel store={store} sceneId={sceneId} onOpenScene={openScene} /> : tab === "log" ? <TableNotesPanel store={store} canSaveSession /> : tab === "players" ? <PlayerPanel store={store} sceneId={sceneId} /> : <AudioPanel store={store} audio={audio} />}
         </aside>
       </div>
     </main>

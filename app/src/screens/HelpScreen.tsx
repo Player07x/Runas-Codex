@@ -6,6 +6,7 @@ import { FORMATTER_HELP } from "../data/ajuda/formatadores"
 import { WIKI_INSERTS } from "./wiki/wiki-inserts"
 import { Markdown } from "../components/Markdown"
 import { OnboardingSettings } from "../components/Onboarding"
+import { ReportButton } from "../components/ErrorReport"
 import { href, navigate, useRoute } from "../lib/router"
 import comecar from "../data/ajuda/comecar.md?raw"
 import cofre from "../data/ajuda/cofre.md?raw"
@@ -127,8 +128,9 @@ export function HelpScreen() {
       <nav className="help-pane help-index" aria-label="Tópicos da Ajuda">
         <div className="help-index-head">
           {asked
-            ? <span className="eyebrow row"><BookOpen size={15} aria-hidden="true" /> Manual offline</span>
+            ? <span className="eyebrow row"><BookOpen size={15} aria-hidden="true" /> Manual</span>
             : <h1 ref={indexTitle} tabIndex={-1} className="page-title row help-index-title"><BookOpen size={18} aria-hidden="true" /> Ajuda</h1>}
+          <ReportButton className="btn sm help-report" />
           <label className="help-search">
             <Search size={17} aria-hidden="true" />
             <input type="search" className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar na Ajuda" aria-label={`Buscar na Ajuda (${HELP_TOPICS.length} tópicos)`} />

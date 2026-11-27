@@ -37,6 +37,8 @@ export const MASTER_CHANNELS: readonly string[] = [
   ...HOST_CHANNELS,
   IPC.collaborationState,
   IPC.collaborationCommand,
+  IPC.playerSetCamera,
+  IPC.playerSetShareRuler,
 ]
 
 /** Eventos que o computador repassa ao celular do mestre. */

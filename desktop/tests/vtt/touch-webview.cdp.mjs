@@ -178,11 +178,14 @@ try {
   // Imagem sintética local: textura real de 4096 x 4096, sem rede nem material do cofre do dono.
   await run(`new Promise(resolve=>{const c=document.createElement('canvas');c.width=c.height=4096;const g=c.getContext('2d');g.fillStyle='#383b43';g.fillRect(0,0,4096,4096);g.strokeStyle='#999079';g.lineWidth=8;for(let x=0;x<4096;x+=256){g.strokeRect(x,128,220,1800);g.strokeRect(128,x,1800,220)}c.toBlob(blob=>{const data=new DataTransfer();data.items.add(new File([blob],'Mapa 4096.png',{type:'image/png'}));const e=document.querySelector('.scene-config .background-picker input[type=file]');e.files=data.files;e.dispatchEvent(new Event('change',{bubbles:true}));resolve()},'image/png')})`)
   await until(`document.querySelector('.background-picker img')?.complete && document.querySelector('.background-picker img')?.naturalWidth === 4096`)
-  await tap(`Array.from(document.querySelectorAll('.scene-config label.check')).find(e=>e.textContent.includes('Névoa de guerra'))`)
-  await tap(`Array.from(document.querySelectorAll('.scene-config label.check')).find(e=>e.textContent.includes('Luz do dia'))`)
-  results.vision = await run(`(()=>{const fields=Array.from(document.querySelectorAll('.scene-config label.check'));return {fog:fields.find(e=>e.textContent.includes('Névoa de guerra'))?.querySelector('input').checked,daylight:fields.find(e=>e.textContent.includes('Luz do dia'))?.querySelector('input').checked}})()`)
+  // 1.9: a névoa e a luz do dia ficam na aba Luz e névoa.
+  await label('Luz e névoa')
+  await until(`document.querySelector('.lighting-panel label.check')`)
+  await tap(`Array.from(document.querySelectorAll('.lighting-panel label.check')).find(e=>e.textContent.includes('Névoa de guerra'))`)
+  await tap(`Array.from(document.querySelectorAll('.lighting-panel label.check')).find(e=>e.textContent.includes('Luz do dia'))`)
+  results.vision = await run(`(()=>{const fields=Array.from(document.querySelectorAll('.lighting-panel label.check'));return {fog:fields.find(e=>e.textContent.includes('Névoa de guerra'))?.querySelector('input').checked,daylight:fields.find(e=>e.textContent.includes('Luz do dia'))?.querySelector('input').checked}})()`)
   if (!results.vision.fog || results.vision.daylight) throw new Error('A cena grande precisa de névoa e luz do dia desligada.')
-  await label('Cenas'); await label('Enquadrar cena'); await tool('Luzes')
+  await label('Luz e névoa'); await label('Enquadrar cena'); await tool('Luzes')
   await tapPoint(await at(1200, 1200, 4096, 4096)); await label('Fechar propriedades')
   await tapPoint(await at(2000, 1700, 4096, 4096)); await label('Fechar propriedades')
   await tool('Selecionar e mover'); if (await run(`!!document.querySelector('[aria-label="Soltar seleção"]')`)) await label('Soltar seleção'); await label('Enquadrar cena'); await sleep(3000)

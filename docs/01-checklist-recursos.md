@@ -16,7 +16,7 @@ PROJ decorre do desenho do Runas-Codex (ainda não visto nos concorrentes).
 ## Requisitos fixos (definidos por você, sem checkbox)
 
 - Roda em **Windows, Linux e Android**.
-- **100% offline**; a única função online é conectar a uma mesa do VTT. Sem contas, nuvem ou telemetria.
+- **100% offline**; a única função online é conectar a uma mesa do VTT. Sem contas nem nuvem, e sem coleta de dados de uso ([ADR 0039](adr/0039-sem-telemetria.md)).
 - Núcleo = organizador de `.md` **compatível com o Obsidian**, com todos os recursos de links.
 - **Espaços isolados** (Notas, Agenda, Wiki, Campanhas, Livros, Mesas): uma nota de campanha não aparece na wiki,
   mas notas podem se ligar entre espaços por links.
@@ -429,6 +429,6 @@ _O DOCX já existe no Runas Book e será portado, sem item próprio._
 - [x] **Primeiros passos e conteúdo de exemplo**. _(RN, WA)_
 - [x] **Ajuda offline embutida**. _(WA)_
 - [x] **Desempenho com cofres grandes** — 10 mil notas sem travar no celular. _(lição do estudo)_
-- [x] **Zero telemetria e nenhuma chamada de rede fora do VTT**. _(PROJ)_ **(obrigatório)**
+- [x] **Nenhuma coleta de dados e nenhuma chamada de rede fora do VTT** — no lugar, “Enviar relatório”, que a pessoa confere e manda ([ADR 0039](adr/0039-sem-telemetria.md)). _(PROJ)_ **(obrigatório)**
 - [x] **Atualização manual** — o botão "Verificar atualizações" consulta quando você clica (ADR 0017); desde a 1.5, o app também consulta sozinho uma vez por dia, ao abrir (desligável em Privacidade), e mostra "Atualizar para …" na barra lateral; instalar continua dependendo do clique (ADR 0038). _(PROJ)_
 - [x] **API de extensões** (futuro). _(FVTT, OBR, OBS)_

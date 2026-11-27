@@ -24,6 +24,16 @@ describe("permissões e notificações no Electron", () => {
     }
     expect(onCheck(null, "clipboard-sanitized-write", "", { isMainFrame: true })).toBe(false)
   })
+  it("nega sem lançar quando a janela já foi destruída no fechamento", () => {
+    const request = vi.fn<Session["setPermissionRequestHandler"]>(), check = vi.fn<Session["setPermissionCheckHandler"]>()
+    // O mesmo que `mainWindow.webContents` numa janela destruída: o Electron lança em vez de devolver.
+    configurePagePermissions({ setPermissionRequestHandler: request, setPermissionCheckHandler: check }, () => { throw new TypeError("Object has been destroyed") })
+    const onRequest = request.mock.calls[0]![0]!, onCheck = check.mock.calls[0]![0]!
+    const contents = {} as WebContents, answer = vi.fn()
+    expect(onCheck(contents, "clipboard-sanitized-write", "file://", { isMainFrame: true })).toBe(false)
+    onRequest(contents, "clipboard-sanitized-write", answer, { requestingUrl: "file:///app/index.html", isMainFrame: true })
+    expect(answer).toHaveBeenCalledExactlyOnceWith(false)
+  })
   it("emite a notificação nativa validada e não emite nada para entrada inválida ou sistema sem suporte", () => {
     notifications.shown.mockClear()
     showAppNotification("Sala interrompida", "Reconectar")

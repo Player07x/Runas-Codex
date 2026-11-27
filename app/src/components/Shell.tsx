@@ -3,11 +3,11 @@ import { ResizablePanel, togglePanel } from "./ResizablePanel"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   ArrowDownUp, BookOpen, CalendarDays, ChevronRight, Dices, Ellipsis, FileText, House, Library, Moon, NotebookPen,
-  Plus, ScrollText, Search, Settings, Sun, WifiOff, DoorOpen, LogIn,
+  Plus, ScrollText, Search, Settings, Sun, DoorOpen, LogIn,
   ArrowLeft, ArrowRight, Shuffle, CalendarPlus, FilePlus, BookPlus, Swords,
   LockKeyhole, CircleHelp, PanelsTopLeft,
 } from "lucide-react"
-import runa from "../assets/runa.png"
+import { RuneLogo } from "./RuneLogo"
 import { href, navigate } from "../lib/router"
 import { ALL_NOTES } from "../lib/links"
 import { routeOfNote } from "../lib/navigation"
@@ -118,7 +118,7 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
     <div className="shell">
       <ResizablePanel id="navigation" label="Navegação" side="left" width={240} as="nav" className="sidebar" aria-label="Espaços" collapsedMode="rail">
         <a className="brand" href={href("/")} aria-label="Runas-Codex, início">
-          <img src={runa} alt="" />
+          <RuneLogo className="brand-logo" />
           <div>
             <strong>Runas-Codex</strong>
             <small className="truncate">Cofre: {vault.info?.name ?? "nenhum aberto"}</small>
@@ -144,10 +144,6 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
           <UpdateNavItem />
         </div>
         <div className="sidebar-foot">
-          <div className="offline-pill" title="Nenhuma chamada de rede fora da sala do VTT e da consulta de atualizações">
-            <WifiOff size={15} aria-hidden="true" />
-            <span>Offline · cofre local</span>
-          </div>
 
         </div>
       </ResizablePanel>
@@ -206,9 +202,6 @@ export function Shell({ route, theme, onToggleTheme, fill, children }: { route: 
               </a>
             ))}
             <UpdateNavItem />
-            <div className="offline-pill">
-              <WifiOff size={15} /> Offline · cofre local
-            </div>
           </div>
         </Modal>
       )}

@@ -9,7 +9,7 @@
 
 .sidebar { display: flex; flex-direction: column; gap: 6px; min-height: 0; padding: 24px 14px 14px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--bg-deep); }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 24px; text-decoration: none; color: var(--text); }
-.brand img { width: 34px; height: 34px; border-radius: 9px; }
+.brand .brand-logo { flex: none; width: 34px; height: 34px; color: var(--cyan); }
 .brand strong { display: block; font-family: var(--font-display); font-size: calc(16px * var(--font-scale, 1)); letter-spacing: -0.03em; }
 .brand > div { min-width: 0; }
 .brand small { display: block; color: var(--muted); font-size: calc(12px * var(--font-scale, 1)); }
@@ -25,12 +25,10 @@
 .nav-link.active svg { color: var(--cyan); }
 .nav-link .count { margin-left: auto; color: var(--faint); font-size: calc(12px * var(--font-scale, 1)); font-weight: 600; font-variant-numeric: tabular-nums; }
 .sidebar-foot { margin-top: auto; display: grid; gap: 2px; padding-top: 14px; border-top: 1px solid var(--line); }
-.offline-pill { display: flex; align-items: center; gap: 8px; margin: 6px 4px 2px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--green); font-size: calc(12.5px * var(--font-scale, 1)); font-weight: 650; white-space: nowrap; }
-.shell.collapsed .brand > div, .shell.collapsed .nav-link span, .shell.collapsed .nav-link .count, .shell.collapsed .nav-label, .shell.collapsed .offline-pill span { display: none; }
+.shell.collapsed .brand > div, .shell.collapsed .nav-link span, .shell.collapsed .nav-link .count, .shell.collapsed .nav-label { display: none; }
 .shell.collapsed .sidebar { padding-left: 8px; padding-right: 8px; }
 .shell.collapsed .brand { padding-left: 6px; padding-right: 6px; }
 .shell.collapsed .nav-link { justify-content: center; padding: 0; }
-.shell.collapsed .offline-pill { justify-content: center; }
 
 .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 /* U36: só o conteúdo cresce e encolhe. A barra do topo (e o aviso de conflito) têm altura fixa: com flex-basis auto
@@ -156,3 +154,6 @@
 }
 /* U107: aviso de erro com a cor de erro (borda e fundo), além do ícone. */
 .toast.toast-error { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); background: color-mix(in srgb, var(--red) 10%, var(--panel)); }
+/* 1.9: janela Enviar relatório. */
+.report-dialog { display: grid; gap: 12px; }
+.report-dialog .report-text { min-height: 12rem; font-size: calc(12px * var(--font-scale, 1)); white-space: pre; overflow-wrap: normal; overflow-x: auto; }

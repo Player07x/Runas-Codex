@@ -1,7 +1,7 @@
 import { useDialogFocus } from "./useDialogFocus"
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { CheckCircle2, CircleAlert, X } from "lucide-react"
-import runa from "../assets/runa.png"
+import { RuneLogo } from "./RuneLogo"
 
 export function Modal({ title, onClose, children, footer, wide }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -44,7 +44,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
 export function Empty({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="empty">
-      <img className="rune-mark" src={runa} alt="" />
+      <RuneLogo className="rune-mark" />
       <strong style={{ color: "var(--text)", fontSize: 16 }}>{title}</strong>
       {children && <p style={{ maxWidth: 420 }}>{children}</p>}
       {action}

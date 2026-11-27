@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { once } from "node:events"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -85,5 +85,46 @@ describe("isolamento do smoke local", () => {
     expect((await finished)[0]).toBe(0)
     expect(existsSync(owned)).toBe(false)
     expect(readFileSync(join(neighbor, "preservar"), "utf8")).toBe("intacto")
+  })
+
+  // No CI, o principal ficava zumbi com uma thread presa (`Zl`) e o canal do IPC aberto: kill(pid, 0) dava certo
+  // para sempre e o auxiliar segurava o job. Aqui o "pai" vira zumbi de verdade e o canal com o teste nunca fecha.
+  async function cleansAfterZombie(holderCommand: string, holderArgs: string[]): Promise<void> {
+    const owned = mkdtempSync(join(tmpdir(), "codex-teste-zumbi-"))
+    roots.push(owned)
+    writeFileSync(join(owned, "arquivo"), "temporário")
+    const holder = spawn(holderCommand, holderArgs, { stdio: ["ignore", "pipe", "ignore"] })
+    try {
+      const [line] = (await once(holder.stdout!, "data")) as [Buffer]
+      const target = Number(line.toString().trim())
+      expect(target).toBeGreaterThan(0)
+      const cleaner = spawn(process.execPath, ["-e", SMOKE_CLEANUP_SCRIPT, owned, String(target)], { stdio: ["ignore", "ignore", "ignore", "ipc"] })
+      const finished = once(cleaner, "exit")
+      expect(existsSync(owned)).toBe(true)
+      expect((await finished)[0]).toBe(0)
+      expect(existsSync(owned)).toBe(false)
+      // O pai continua lá, sem ser recolhido: a limpeza não esperou por isso.
+      const stat = readFileSync(`/proc/${target}/stat`, "utf8")
+      expect(stat.slice(stat.lastIndexOf(")") + 2)[0]).toBe("Z")
+    } finally {
+      holder.kill("SIGKILL")
+    }
+  }
+
+  it.runIf(process.platform === "linux")("apaga a pasta quando o pai vira zumbi e ninguém o recolhe", async () => {
+    // O `sleep 0.5` é filho do `sleep 30` (o `exec` troca o shell), que nunca chama wait(): ao sair, fica zumbi.
+    await cleansAfterZombie("sh", ["-c", "sleep 0.5 & echo $!; exec sleep 30"])
+  })
+
+  const python = process.platform === "linux" && spawnSync("python3", ["--version"]).status === 0
+  const exitThread = ({ x64: 60, arm64: 93 } as Record<string, number>)[process.arch]
+  it.runIf(python && exitThread !== undefined)("apaga a pasta quando a thread principal sai e outra fica presa (Zl)", async () => {
+    // A thread principal sai sozinha (SYS_exit, não exit_group) e a outra continua: o mesmo `Zl` do log do CI.
+    const script = `import ctypes, os, sys, threading, time
+threading.Thread(target=time.sleep, args=(30,), daemon=True).start()
+print(os.getpid(), flush=True)
+time.sleep(0.5)
+ctypes.CDLL(None).syscall(${exitThread}, 0)`
+    await cleansAfterZombie("python3", ["-c", script])
   })
 })

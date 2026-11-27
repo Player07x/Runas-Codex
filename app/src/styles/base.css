@@ -162,7 +162,7 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
 
 /* ---------- Estado vazio ---------- */
 .empty { display: grid; justify-items: center; gap: 10px; padding: 40px 20px; border: 1px dashed var(--line); border-radius: var(--radius-lg); color: var(--muted); text-align: center; }
-.empty .rune-mark { width: 64px; height: 64px; opacity: 0.85; }
+.empty .rune-mark { width: 64px; height: 64px; color: var(--cyan); opacity: 0.85; }
 
 /* ---------- Faixa de protótipo ---------- */
 .proto-note { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px dashed color-mix(in srgb, var(--gold) 50%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--gold) 7%, transparent); color: var(--gold); font-size: calc(13px * var(--font-scale, 1)); }
@@ -183,3 +183,9 @@ kbd, .kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1p
    endereço interno do app (file://…). Os arrastes de propósito (árvore de notas, abas, tarefas, quadro de missões,
    biblioteca do VTT) marcam `draggable="true"` e continuam funcionando; texto selecionado ainda se arrasta. */
 a:not([draggable="true"]), img:not([draggable="true"]) { -webkit-user-drag: none; }
+
+/* A interface não se seleciona como texto (27/11): Ctrl+A ou arrastar o mouse pintava menus, botões e títulos, o que
+   não acontece num app. Só o que a pessoa escreve ou lê continua selecionável: campos, o que é editável, o editor de
+   notas e o texto das notas, artigos e Ajuda (`.md`). */
+body { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable]:not([contenteditable="false"]), .cm-editor, .md { -webkit-user-select: text; user-select: text; }
