@@ -2704,3 +2704,45 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Nos próximos Releases, o passo “Smoke no app empacotado” do job `linux` termina em cerca de 2 min, sem
   “não terminou em 5 min”. Se uma exceção aparecer no fechamento, o log mostra “Smoke: exceção não tratada no processo
   principal” com a pilha, e o smoke falha na hora em vez de travar.
+
+## Atualização 1.9 — A: menu da direita da mesa
+
+- [ ] Na mesa, o trilho da direita tem oito abas: Cenas, Biblioteca, **Portas e paredes**, **Áreas**, **Luz e névoa**,
+  Áudio, Notas e Sala. O botão “Lista de portas e paredes” saiu do menu da esquerda.
+- [ ] Portas e paredes: a mesma lista de antes (trancar, destrancar e fechar todas; abrir e trancar cada porta).
+  Tocar numa linha leva o mapa até o objeto e abre os campos dele embaixo da linha; tocar de novo fecha.
+- [ ] Áreas: lista as áreas com o que cada uma faz; o olho mostra ou esconde dos jogadores, o botão de energia ativa ou
+  desativa. Tocar numa linha abre os campos ali mesmo (não abre as propriedades por cima do painel).
+- [ ] Luz e névoa: névoa de guerra, escuridão, luz do dia, “Lembrar as áreas exploradas” e “Redefinir áreas
+  exploradas” saíram da configuração da cena e estão aqui; embaixo, a lista de luzes (acender e apagar, campos na linha).
+  Ctrl+Z desfaz uma mudança da névoa.
+- [ ] A ferramenta “Regiões” agora se chama **Áreas** (atalho G continua); áreas novas nascem com o nome “Área”.
+- [ ] Trocar de cena com o painel aberto não fecha o painel (computador e celular).
+- [ ] Celular (320 px): a fileira de abas rola para o lado dentro dela mesma; a tela não rola para os lados.
+
+## Atualização 1.9 — B: selecionar e redimensionar paredes e áreas
+
+- [ ] Com a aba **Portas e paredes** aberta, “Selecionar e mover” arrasta uma parede ou porta inteira (encaixa em meias
+  células; Alt solta), seleciona várias com uma caixa (só paredes e portas, nunca tokens) ou com Shift, e Shift + setas
+  empurra a seleção uma célula. Clicar no ícone da porta continua abrindo e fechando.
+- [ ] O mesmo com a aba **Áreas** (as áreas) e **Luz e névoa** (as luzes).
+- [ ] “Selecionar todas” em cada aba e Ctrl+A no mapa selecionam todos os objetos da aba aberta (sem aba, Ctrl+A pega
+  os tokens, imagens, desenhos e notas).
+- [ ] A seleção ganha uma caixa com quatro alças: arrastar um canto estica as paredes e áreas juntas a partir do canto
+  oposto, encaixando na grade (Alt solta; Shift mantém a proporção). Luzes só mudam de lugar. Um Ctrl+Z volta tudo.
+- [ ] Com a aba fechada, nada muda: Selecionar e mover não pega paredes, áreas nem luzes.
+- [ ] Celular: as alças dos cantos respondem ao toque.
+
+## Atualização 1.9 — C: névoa por área
+
+- [ ] Luz e névoa › **Nova área de névoa** cria uma área “Névoa” (sempre à vista) no meio da tela e abre os campos; a
+  lista “Névoa por área” mostra o que cada uma muda. Com a aba aberta, a área se move e se redimensiona pelo mapa.
+- [ ] Névoa de guerra desligada na área: com “Ver como os jogadores” e na página do jogador, a área aparece mesmo sem
+  aliado vendo, e os tokens dentro dela também. Ligada numa cena sem névoa: só a área fica coberta.
+- [ ] Luz do dia desligada na área (cena com dia): o aliado só vê ali com luz ou alcance no escuro. Ligada (cena sem
+  dia): a linha de visão dentro da área fica iluminada.
+- [ ] Escuridão própria: a área fica mais clara ou mais escura que o resto, para o mestre e os jogadores.
+- [ ] Lembrar exploração desligada na área: ao sair, a área volta a ficar coberta; ligada numa cena sem exploração,
+  só ela lembra.
+- [ ] **Revelar agora** e **Cobrir de novo** (com exploração ligada) mudam o que os jogadores veem na hora.
+- [ ] Com 20 áreas de névoa na cena, mover tokens continua fluido (computador e celular).

@@ -1,6 +1,8 @@
 import type { DocumentChange } from "./ipc"
 import { normalizeFog, type FogData, type LightData, type SceneData, type TokenData, type WallData } from "./scene"
-import { computeVision, fogLayout, mergeExplored, visibleCells, type SceneVision } from "./vision"
+import { computeVision, decodeBits, encodeBits, fogLayout, mergeExplored, visibleCells, type SceneVision } from "./vision"
+import { applyExplorationAreas, fogAreas, remembersExploration } from "./fog-areas"
+import type { RegionData } from "./region"
 import type { WorldDocument } from "./world"
 import type { DocumentDatabase } from "./database"
 
@@ -10,7 +12,8 @@ export interface SceneVisionState {
   fog: FogData | null
 }
 
-const VISION_TYPES = new Set(["scene", "token", "wall", "light"])
+// Áreas mudam a névoa por área (1.9 C); o documento `fog` muda com “Revelar agora” e “Cobrir de novo”.
+const VISION_TYPES = new Set(["scene", "token", "wall", "light", "region", "fog"])
 const fogId = (sceneId: string) => `fog-${sceneId}`
 
 /**
@@ -44,14 +47,22 @@ export class VisionService {
     const tokens = (database.list("token", sceneId) as WorldDocument<TokenData>[]).map((token) => ({ id: token.id, data: token.data }))
     const walls = (database.list("wall", sceneId) as WorldDocument<WallData>[]).map((wall) => wall.data)
     const lights = (database.list("light", sceneId) as WorldDocument<LightData>[]).map((light) => light.data)
-    const vision = computeVision(data, tokens, walls, lights)
+    const areas = fogAreas((database.list("region", sceneId) as WorldDocument<RegionData>[]).map((region) => ({ id: region.id, data: region.data })))
+    const vision = computeVision(data, tokens, walls, lights, areas)
     let fog: FogData | null = null
-    if (data.vision.enabled && data.vision.exploration) {
+    if (vision.enabled && remembersExploration(data.vision.exploration, areas)) {
       const stored = database.get(fogId(sceneId))
+      const before = stored ? normalizeFog(stored.data) : null
       const layout = fogLayout(data)
-      const merged = mergeExplored(stored ? normalizeFog(stored.data) : null, layout, visibleCells(vision, layout))
+      const merged = mergeExplored(before, layout, visibleCells(vision, layout))
       fog = merged.fog
-      if (merged.changed) this.writeFog(database, sceneId, fog, stored?.createdAt)
+      if (areas.length) {
+        // Exploração por área: “off” esquece o que está dentro; sem exploração na cena, só as áreas com “on” lembram.
+        const cells = decodeBits(fog.bits, layout.cols * layout.rows)
+        applyExplorationAreas(cells, layout, data.vision.exploration, areas)
+        fog = { ...fog, bits: encodeBits(cells) }
+      }
+      if (merged.changed || fog.bits !== before?.bits) this.writeFog(database, sceneId, fog, stored?.createdAt)
     }
     const state = { vision, fog }
     this.cache.set(sceneId, state)

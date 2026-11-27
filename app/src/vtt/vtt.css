@@ -520,13 +520,23 @@
 /* U89: acrescentar e tirar assentos com a sala aberta. */
 .player-seats-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 /* Lista de portas e paredes (anexo 2, 25/11): ao lado do menu da esquerda, como as opções das ferramentas. */
-.vtt-root .scene-walls { position: absolute; z-index: 6; top: 114px; left: 62px; display: grid; align-content: start; gap: 8px; width: min(320px, calc(100% - 74px)); max-height: calc(100% - 160px); overflow-y: auto; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--panel) 96%, transparent); box-shadow: 0 10px 30px rgb(0 0 0 / 40%); }
-.vtt-root .scene-walls > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* Abas da cena no menu da direita (1.9): Portas e paredes, Áreas e Luz e névoa. */
+.vtt-root .side-scene-tab { display: grid; min-width: 0; min-height: 0; }
+.vtt-root .scene-side-panel { display: grid; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow-y: auto; padding: 16px; }
+.vtt-root .scene-side-section { display: grid; gap: 10px; }
+.vtt-root .scene-side-subtitle { margin: 6px 0 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.vtt-root .scene-side-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+/* 1.9 B: “Selecionar todas” ao lado do título e a dica de como mexer no mapa. */
+.vtt-root .scene-side-subhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.vtt-root .scene-side-select-hint { margin: 0; }
+.vtt-root .scene-side-list li, .vtt-root .scene-walls-group li { display: grid; gap: 8px; min-width: 0; }
+.vtt-root .scene-walls-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.vtt-root .scene-side-list li.selected .scene-walls-name, .vtt-root .scene-walls-group li.selected .scene-walls-name { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 10%, var(--panel-2)); }
+.vtt-root .scene-side-editor { display: grid; gap: 10px; min-width: 0; padding: 4px 4px 12px 12px; border-left: 2px solid color-mix(in srgb, var(--cyan) 45%, var(--line)); }
 .vtt-root .scene-walls-bulk button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 4px 8px; font-size: calc(12px * var(--font-scale, 1)); }
 .vtt-root .scene-walls-group > summary { padding: 4px 0; color: var(--gold); font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
 .vtt-root .scene-walls-group ul { display: grid; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
-.vtt-root .scene-walls-group li { display: flex; align-items: center; gap: 4px; }
-.vtt-root .scene-walls-name { display: flex; flex: 1 1 auto; align-items: center; gap: 8px; min-width: 0; min-height: 36px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--text); text-align: left; }
+.vtt-root .scene-walls-name { display: flex; flex: 1 1 auto; text-align: left; align-items: center; gap: 8px; min-width: 0; min-height: 36px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--text); text-align: left; }
 .vtt-root .scene-walls-name:hover { border-color: var(--line-strong); }
 .vtt-root .scene-walls-name > span { display: grid; flex: 1 1 auto; min-width: 0; }
 .vtt-root .scene-walls-name strong { font-size: calc(13px * var(--font-scale, 1)); }
@@ -534,6 +544,10 @@
 .vtt-root .scene-walls-go { flex: none; color: var(--muted); }
 .vtt-root .scene-walls-secret { display: grid; width: 30px; height: 30px; place-items: center; color: var(--muted); }
 @media (max-width: 900px), (pointer: coarse) {
-  .vtt-root .scene-walls { top: auto; right: 8px; bottom: 44px; left: 8px; width: auto; max-height: 60%; }
-  .vtt-root .scene-walls .icon-toggle, .vtt-root .scene-walls-name, .vtt-root .scene-walls-bulk button { min-height: 44px; min-width: 44px; }
+  .vtt-root .scene-side-panel .icon-toggle, .vtt-root .scene-walls-name, .vtt-root .scene-walls-bulk button { min-height: 44px; min-width: 44px; }
+}
+/* Oito abas no celular: a fileira rola sozinha em vez de empurrar a tela para os lados. */
+@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
+  .vtt-root .side-tabs { justify-content: safe space-around; overflow-x: auto; scrollbar-width: none; }
+  .vtt-root .side-tabs button { flex: 0 0 auto; width: 44px; }
 }

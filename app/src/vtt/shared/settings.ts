@@ -29,7 +29,7 @@ export const KEY_ACTIONS = [
   { id: "toolWall", label: "Paredes e portas", group: "Ferramentas", defaults: ["KeyB"] },
   { id: "toolLight", label: "Luzes", group: "Ferramentas", defaults: ["KeyL"] },
   { id: "toolSound", label: "Sons no mapa", group: "Ferramentas", defaults: ["KeyM"] },
-  { id: "toolRegion", label: "Regiões", group: "Ferramentas", defaults: ["KeyG"] },
+  { id: "toolRegion", label: "Áreas", group: "Ferramentas", defaults: ["KeyG"] },
   { id: "flipToken", label: "Espelhar o token", group: "Objetos", defaults: ["KeyF"] },
   { id: "toggleHidden", label: "Ocultar/mostrar aos jogadores", group: "Objetos", defaults: ["KeyH"] },
   { id: "deleteSelection", label: "Excluir a seleção", group: "Objetos", defaults: ["Delete", "Backspace"] },
