@@ -2746,3 +2746,39 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   só ela lembra.
 - [ ] **Revelar agora** e **Cobrir de novo** (com exploração ligada) mudam o que os jogadores veem na hora.
 - [ ] Com 20 áreas de névoa na cena, mover tokens continua fluido (computador e celular).
+
+## Atualização 1.9 — D: câmera do jogador
+
+- [ ] Sala aberta, um token “Jogador” controlado pelo Jogador 1: ao entrar com o código, a câmera começa centrada no
+  token, mostrando uns 8 quadros (token de 1 quadro) ou uns 16 (token Grande). Trocar de cena (cena do token) faz o mesmo.
+- [ ] Com dois tokens do mesmo jogador: a câmera fica no último que ele escolheu (tocar no token); sem escolha, no
+  último que se moveu.
+- [ ] Botão **Seguir meu token** (alvo) na barra do jogador: ligado, a câmera acompanha o token quando ele anda
+  (inclusive quando o mestre o move); arrastar o mapa solta e avisa. A escolha fica salva no aparelho.
+- [ ] Painel Sala › Câmera dos jogadores › “Câmera sempre no token”: o jogador com token não arrasta mais o mapa, o
+  botão do alvo fica preso (tocar avisa que o mestre prendeu) e afastar para no “Afastamento máximo” escolhido. Tokens
+  mais longe (inimigos revelados) continuam aparecendo. Desligar devolve a câmera livre.
+- [ ] Com a trava ligada, “Puxar a câmera para o ponto do mestre” não move quem tem token na cena; quem assiste sem
+  token é puxado.
+- [ ] Girar o celular ou mudar o tamanho da janela com a câmera presa: o token continua no meio.
+- [ ] Mestre remoto pelo celular: a seção “Câmera dos jogadores” funciona igual.
+
+## Atualização 1.9 — F: régua do mestre para todos
+
+- [ ] Com a sala aberta, medir com a ferramenta Régua: jogadores e espectadores veem a régua (dourada, com a medida) e
+  ela continua na tela deles depois de soltar, até a próxima medida ou a troca de ferramenta.
+- [ ] Ferramenta Régua › botão de pessoas (“Todos veem a régua” / “Régua só para você”) e painel Sala › “Mostrar a minha
+  régua a jogadores e espectadores”: os dois mudam juntos; desligado, a régua some da tela dos jogadores na hora e as
+  próximas medidas ficam só na tela do mestre.
+
+## Atualização 1.9 — E: configurações da sala
+
+- [ ] Ligar a sala com 4 jogadores, cena do token, áudio desligado e câmera presa; desligar; fechar e abrir a mesa (e o
+  app): o painel Sala já mostra 4 jogadores e, ao ligar, a sala volta com as mesmas opções.
+- [ ] Uma mesa nova começa com as últimas configurações usadas neste aparelho.
+- [ ] Configuração da sala › Salvar como… “Mega dungeon”; mudar as opções; escolher “Mega dungeon” na lista: as opções
+  voltam (com a sala desligada, valem ao ligar). Excluir tira a predefinição só deste aparelho.
+- [ ] Exportar gera `Sala — <nome>.json`; Importar esse arquivo em outro aparelho ou mesa aplica e cria a predefinição.
+  Um `.json` qualquer é recusado com aviso.
+- [ ] Depois de uma sessão com link público, a sala desligada lembra disso, mas o link só abre com nova confirmação.
+- [ ] O arquivo `outros.json` da mesa ganha o documento `sala`; nenhum `.md` novo aparece no cofre.

@@ -551,3 +551,16 @@
   .vtt-root .side-tabs { justify-content: safe space-around; overflow-x: auto; scrollbar-width: none; }
   .vtt-root .side-tabs button { flex: 0 0 auto; width: 44px; }
 }
+
+/* 1.9: câmera dos jogadores no painel Sala. */
+.vtt-root .player-camera { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.vtt-root .player-camera > strong { font-size: calc(13px * var(--font-scale, 1)); }
+
+/* 1.9: configuração da sala (predefinições, exportar e importar) no painel Sala. */
+.vtt-root .room-settings { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.vtt-root .room-settings > strong { font-size: calc(13px * var(--font-scale, 1)); }
+.vtt-root .room-settings .hint { margin: 0; }
+.vtt-root .room-settings-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.vtt-root .room-settings-row .field { flex: 1 1 160px; min-width: 0; }
+.vtt-root .room-settings-actions button { display: inline-flex; align-items: center; gap: 5px; }
+@media (max-width: 900px), (pointer: coarse) { .vtt-root .room-settings button { min-height: 44px; } }

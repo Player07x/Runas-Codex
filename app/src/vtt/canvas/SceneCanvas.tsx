@@ -4,7 +4,7 @@ import { createPortal } from "react-dom"
 import { keyLabel, type KeyAction } from "../shared/settings"
 import type { PlayerRuler } from "../shared/player"
 import { useSettings } from "../settings"
-import { BookmarkPlus, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Waves } from "lucide-react"
+import { BookmarkPlus, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2X2, Maximize2, Minus, Plus, Redo2, Undo2, X, SlidersHorizontal, Wrench, AudioLines, BrickWall, Circle, SquareDashed, DoorClosed, DoorOpen, Eye, EyeOff, ImagePlus, Lightbulb, Lock, MapPin, MousePointer2, Pencil, Ruler, ScanEye, Square, Trash2, Type, UserRound, Users, Waves } from "lucide-react"
 import type { DocumentInput } from "../shared/ipc"
 import { snapTokenCenter } from "../shared/grid"
 import { BAR_VISIBILITIES, BAR_VISIBILITY_LABELS, isAlly, MAX_TOKEN_BARS, TOKEN_DISPOSITIONS, WALL_KINDS, type BarVisibility, type DrawingData, type DrawingShape, type LightData, type NoteData, type SceneData, type TileData, type TokenBar, type TokenData, type TokenDisposition, type WallData, type WallKind } from "../shared/scene"
@@ -128,6 +128,14 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   const [wallKind, setWallKind] = useState<WallKind>("wall")
   const [regionShape, setRegionShape] = useState<RegionShape>("rectangle")
   const [preview, setPreview] = useState(false)
+  // 1.9: a régua do mestre aparece para jogadores e espectadores (opção da sala, também no painel Sala).
+  const [shareRuler, setShareRuler] = useState(true)
+  useEffect(() => {
+    let mounted = true
+    void vtt.player.state().then((state) => { if (mounted) setShareRuler(state.shareRuler ?? true) }).catch(() => undefined)
+    const unsubscribe = vtt.player.onState((state) => setShareRuler(state.shareRuler ?? true))
+    return () => { mounted = false; unsubscribe() }
+  }, [])
   const [drawOptions, setDrawOptions] = useState<DrawOptions>({ shape: "rectangle", strokeColor: "#f3ece8", fillColor: "#82aaa6", fillAlpha: 0, strokeWidth: 4 })
   const [selection, setSelection] = useState<string[]>([])
   const [status, setStatus] = useState("")
@@ -370,6 +378,10 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
         <label title="Cor do traço"><input type="color" value={drawOptions.strokeColor} onChange={(event) => setDrawOptions({ ...drawOptions, strokeColor: event.target.value })} /></label>
         <label title="Cor do preenchimento"><input type="color" value={drawOptions.fillColor} onChange={(event) => setDrawOptions({ ...drawOptions, fillColor: event.target.value, fillAlpha: drawOptions.fillAlpha || 0.35 })} /></label>
         <label className="range" title="Espessura"><input type="range" min={0} max={24} value={drawOptions.strokeWidth} onChange={(event) => setDrawOptions({ ...drawOptions, strokeWidth: Number(event.target.value) })} /></label>
+      </div>}
+      {tool === "ruler" && <div className="draw-options" aria-label="Opções da régua">
+        <button className={shareRuler ? "active" : ""} aria-pressed={shareRuler} aria-label="Mostrar minha régua a todos" title={shareRuler ? "Jogadores e espectadores veem a sua régua: clique para medir só para você" : "Só você vê a régua: clique para mostrar a todos"} onClick={() => void vtt.player.setShareRuler(!shareRuler).catch(reportError)}><Users size={15} /></button>
+        <span className="draw-options-label">{shareRuler ? "Todos veem a régua" : "Régua só para você"}</span>
       </div>}
       {tool === "region" && <div className="draw-options" aria-label="Forma da área">
         {REGION_SHAPES.map((shape) => { const Icon = shape === "rectangle" ? Square : Circle; return <button key={shape} className={regionShape === shape ? "active" : ""} title={REGION_SHAPE_LABELS[shape]} aria-label={REGION_SHAPE_LABELS[shape]} onClick={() => setRegionShape(shape)}><Icon size={15} /></button> })}

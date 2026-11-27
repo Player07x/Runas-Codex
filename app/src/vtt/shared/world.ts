@@ -61,6 +61,8 @@ export const DOCUMENT_TYPES = [
   "log-entry",
   /** Notas do mestre durante o jogo (U14): um rascunho por mesa, que só vira nota do cofre em “Salvar Sessão”. */
   "table-notes",
+  /** 1.9: configurações da sala da última sessão (um por mesa, id `sala`); normalizadas em `room-settings.ts`. */
+  "room-settings",
 ] as const
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number]

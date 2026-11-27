@@ -20,7 +20,7 @@ tamanho da célula, o deslocamento, a cor, quanto cada célula vale e a regra da
 | Ferramenta | O que faz |
 | :-- | :-- |
 | **Selecionar e mover** | Escolhe e arrasta tokens, desenhos e notas; alças mudam o tamanho e giram |
-| **Régua** | Mede distâncias na unidade da grade |
+| **Régua** | Mede distâncias na unidade da grade; o botão de pessoas ao lado escolhe se jogadores e espectadores veem a sua régua (também no painel Sala) |
 | **Novo token** | Põe um token (imagem), com barras como PV, PA e PE e a visão dele |
 | **Nota no mapa** | Um marcador com texto no mapa |
 | **Desenhar** | Mão livre, retângulo, elipse e texto |
@@ -97,6 +97,20 @@ cena, mover tokens, tocar áudio. **Trocar chave** invalida o link anterior (út
 - Responder às atividades que o mestre manda das Campanhas: avaliação da sessão, enquete de data e entradas do
   diário.
 - Ler um artigo da Wiki que o mestre mostrar pela sala (sem os segredos).
+
+**Configuração da sala.** Cada mesa lembra as escolhas da última sessão (porta, número de jogadores, cena transmitida,
+mover tokens, áudio, barras, câmera e régua) e a sala volta assim ao ser ligada; uma mesa nova começa com as últimas
+usadas neste aparelho. Em **Configuração da sala**, **Salvar como…** guarda uma predefinição com nome (neste aparelho),
+**Exportar** gera um `.json` e **Importar** lê um desses arquivos. Códigos e chave da sala nunca entram, e o link
+público continua pedindo confirmação a cada sessão.
+
+**A câmera do jogador.** Ao entrar numa cena em que tem token, o jogador começa perto dele: a tela mostra cerca de 8
+vezes o tamanho do token (com vários tokens, o último que ele escolheu). O botão **Seguir meu token** (o alvo) faz a
+câmera acompanhar o token; arrastar o mapa solta. No painel **Sala**, em **Câmera dos jogadores**, o mestre pode deixar
+a **câmera sempre no token** (o jogador não arrasta o mapa) e escolher o **afastamento máximo**, de 4 a 30 vezes o
+tamanho do token. É um combinado de mesa para não passear pelo mapa sem mover o token: todos os tokens revelados
+continuam aparecendo, e a névoa continua sendo o que esconde o resto. Com a trava ligada, **Puxar a câmera** só move
+quem não tem token na cena.
 
 ### Levar e trazer mesas
 
