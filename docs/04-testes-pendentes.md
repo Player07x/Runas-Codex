@@ -2695,3 +2695,10 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Versão 1.9.0
+
+- [ ] Com a 1.8.1 instalada, o aviso “Atualizar para 1.9.0” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.9.0 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.9.0 instalada as seções “Atualização 1.9” acima (A, B, D, E, F e G), em especial a câmera travada,
+  a régua para todos e a configuração lembrada da sala com a sala aberta e jogadores de verdade (desktop e Android).
