@@ -71,6 +71,8 @@ export class RoomAuthority {
   private commit: ((change: Change) => void) | null = null
   private audio: AudioState = { now: 0, sounds: [] }
   private bars: PlayerBarVisibility = "friendly"
+  /** 1.9: a régua do mestre aparece para jogadores e espectadores (padrão, como antes). */
+  private shareRuler = true
   private lastProjection: PlayerProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
   private onStateChange: (state: PlayerState) => void
 
@@ -122,6 +124,7 @@ export class RoomAuthority {
       players: this.playerCount,
       sessionId: this.session?.id ?? null,
       seats: this.seatStates(),
+      shareRuler: this.shareRuler,
     }
   }
 
@@ -359,6 +362,13 @@ export class RoomAuthority {
     this.emit()
   }
 
+  /** 1.9: liga ou desliga a régua do mestre para os jogadores; desligar apaga a que estiver na tela deles. */
+  setShareRuler(enabled: boolean): void {
+    if (!enabled) this.setRuler(null)
+    this.shareRuler = enabled
+    this.emit()
+  }
+
   /** Única forma de mover a câmera dos jogadores: um pedido explícito do mestre. */
   pullCamera(): void {
     const center = this.table.center
@@ -375,7 +385,7 @@ export class RoomAuthority {
    * aqui, para não revelar movimentos.
    */
   setRuler(value: unknown): void {
-    const ruler = normalizeRuler(value)
+    const ruler = this.shareRuler ? normalizeRuler(value) : null
     const visible = ruler && this.transmittedScenes().has(ruler.sceneId) ? ruler : null
     if (!visible && !this.ruler) return
     this.ruler = visible

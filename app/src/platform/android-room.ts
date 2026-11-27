@@ -406,6 +406,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
       downloadCloudflared: async () => {
         if (!(await native.tunnelAvailable()).available) throw new Error("O link público não está disponível neste aparelho (o processador não é ARM de 64 bits).")
       },
+      setShareRuler: async (enabled) => authority.setShareRuler(enabled),
     },
     audio: {
       state: async () => audio.get(),

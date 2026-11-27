@@ -118,6 +118,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
         <button className="ghost" onClick={() => void run(() => vtt.player.pullCamera())}><Target size={15} /> Puxar a câmera para o ponto do mestre</button>
         <small className="hint">Cada jogador move a própria câmera. Mover a sua não mexe na deles; este botão leva todos ao que você está vendo agora.</small>
         <label className="check"><input type="checkbox" checked={state.moves} onChange={(event) => void run(() => vtt.player.setMoves(event.target.checked))} /> Jogadores podem mover os tokens marcados como Jogador</label>
+        <label className="check"><input type="checkbox" checked={state.shareRuler ?? true} onChange={(event) => void run(() => vtt.player.setShareRuler(event.target.checked))} /> Mostrar a minha régua a jogadores e espectadores</label>
         <label className="check"><input type="checkbox" checked={state.audio} onChange={(event) => void run(() => vtt.player.setAudio(event.target.checked))} /> Tocar o áudio também para os jogadores</label>
         <label className="field"><span>Mostrar barras aos jogadores</span><select value={state.bars} onChange={(event) => void run(() => vtt.player.setBars(event.target.value as PlayerState["bars"]))}><option value="friendly">Só em Jogador e Aliado</option><option value="all">Todos os tokens</option><option value="none">Nenhuma</option></select></label>
       </div>

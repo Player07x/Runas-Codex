@@ -384,6 +384,7 @@ export class VttHost {
       if (bars !== "friendly" && bars !== "all" && bars !== "none") throw new Error("Opção de barras inválida.")
       t.setBars(bars as PlayerBarVisibility)
     })
+    handle(IPC.playerSetShareRuler, (_event, enabled) => t.setShareRuler(Boolean(enabled)))
     // Link público (túnel rápido da Cloudflare), só quando o mestre pede: é a única ida à internet do app.
     handle(IPC.playerPublicLink, () => this.openTunnel())
     // Do computador do mestre até o servidor, passando pela Cloudflare: confirma DNS, borda e túnel.

@@ -182,6 +182,7 @@ export function createRemoteVttApi(connection: MasterConnection): RemoteVttApi {
       publicLink: refuse,
       testPublicLink: refuse,
       downloadCloudflared: refuse,
+      setShareRuler: (enabled) => invoke(IPC.playerSetShareRuler, enabled),
     },
     audio: {
       state: () => invoke(IPC.audioState),

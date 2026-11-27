@@ -2695,3 +2695,11 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Atualização 1.9 — F: régua do mestre para todos
+
+- [ ] Com a sala aberta, medir com a ferramenta Régua: jogadores e espectadores veem a régua (dourada, com a medida) e
+  ela continua na tela deles depois de soltar, até a próxima medida ou a troca de ferramenta.
+- [ ] Ferramenta Régua › botão de pessoas (“Todos veem a régua” / “Régua só para você”) e painel Sala › “Mostrar a minha
+  régua a jogadores e espectadores”: os dois mudam juntos; desligado, a régua some da tela dos jogadores na hora e as
+  próximas medidas ficam só na tela do mestre.

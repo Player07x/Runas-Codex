@@ -61,6 +61,7 @@ export async function dispatchMaster(api: VttApi, channel: string, args: unknown
     case IPC.playerRemoveSeat: return api.player.removeSeat()
     case IPC.collaborationState: return api.collaboration?.state()
     case IPC.collaborationCommand: return api.collaboration?.command(args[0] as CollaborationCommand)
+    case IPC.playerSetShareRuler: return api.player.setShareRuler(boolean())
     default: throw new Error("Comando do mestre indisponível.")
   }
 }

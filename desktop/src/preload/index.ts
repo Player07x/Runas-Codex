@@ -110,6 +110,7 @@ const bridge: RunasCodexBridge = {
       publicLink: () => invoke(VTT.playerPublicLink),
       testPublicLink: () => invoke(VTT.playerTestPublicLink),
       downloadCloudflared: () => invoke(VTT.playerDownloadCloudflared),
+      setShareRuler: (enabled) => invoke(VTT.playerSetShareRuler, enabled),
     },
     audio: {
       state: () => invoke(VTT.audioState),
