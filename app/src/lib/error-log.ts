@@ -1,4 +1,4 @@
-import { pushError, type ErrorEntry } from "../core/error-report"
+import { ignorableError, pushError, type ErrorEntry } from "../core/error-report"
 
 /**
  * Erros desta sessão para o “Enviar relatório” (1.9): ficam só na memória, nunca em arquivo, e somem ao fechar o app.
@@ -10,6 +10,7 @@ const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((listener) => listener())
 
 export function recordError(message: string, stack?: string): void {
+  if (ignorableError(message)) return
   const next = pushError(errors, { at: Date.now(), message: message.slice(0, 500), ...(stack ? { stack: stack.slice(0, 2000) } : {}) })
   const changed = next.length !== errors.length || next.at(-1) !== errors.at(-1)
   errors = next

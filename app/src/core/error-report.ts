@@ -37,6 +37,27 @@ export function sanitizeReportText(text: string, vaultPath?: string | null): str
     .replace(/[?&]k=[0-9a-f]{16,}/gi, "?k=…")
 }
 
+/**
+ * Mensagens de erro às vezes citam a nota (“Não foi possível gravar Diário/27-11.md”): o nome vira `<nota>`. Só nos
+ * erros; a descrição é texto da pessoa, que ela mesma confere.
+ */
+export function scrubNoteNames(text: string): string {
+  return text
+    .replace(/([“"'«‘])[^“”"'«»‘’\n]{1,200}\.(md|canvas)([”"'»’])/gi, "$1<nota>.$2$3")
+    .replace(/[^\s“”"'«»‘’()<>]+\.(md|canvas)\b/gi, "<nota>.$1")
+}
+
+/** A tela aberta, só pelo módulo (`/notas`, `/wiki`…): o resto do endereço tem o caminho da nota ou da mesa. */
+export function reportRoute(hash: string): string {
+  const segment = hash.replace(/^#/, "").split("?")[0]!.split("/").find(Boolean)
+  return segment ? `/${segment}` : "/"
+}
+
+/** Erros que o navegador dispara sem haver problema (o ResizeObserver avisa quando adia uma medida). */
+export function ignorableError(message: string): boolean {
+  return /^ResizeObserver loop/i.test(message.trim())
+}
+
 const two = (value: number) => String(value).padStart(2, "0")
 const time = (at: number) => { const date = new Date(at); return `${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}` }
 
@@ -57,14 +78,15 @@ export function buildReport(context: ReportContext, description: string, vaultPa
     "",
     `## Erros desta sessão (${errors.length})`,
     "",
-    ...(errors.length ? errors.flatMap((error) => [`- ${time(error.at)} — ${error.message}`, ...(error.stack ? ["  ```", ...error.stack.split("\n").slice(0, 6).map((line) => `  ${line}`), "  ```"] : [])]) : ["Nenhum erro registrado desde que o app abriu."]),
+    ...(errors.length ? errors.flatMap((error) => [`- ${time(error.at)} — ${scrubNoteNames(error.message)}`, ...(error.stack ? ["  ```", ...error.stack.split("\n").slice(0, 6).map((line) => `  ${scrubNoteNames(line)}`), "  ```"] : [])]) : ["Nenhum erro registrado desde que o app abriu."]),
   ]
   return sanitizeReportText(lines.join("\n"), vaultPath)
 }
 
 /** Título curto a partir da descrição (ou do último erro), também sem caminhos pessoais. */
 export function reportTitle(description: string, errors: readonly ErrorEntry[], vaultPath?: string | null): string {
-  const first = sanitizeReportText(description.trim().split("\n")[0]?.trim() || errors.at(-1)?.message || "Problema no Runas-Codex", vaultPath)
+  const lastError = errors.at(-1)?.message
+  const first = sanitizeReportText(description.trim().split("\n")[0]?.trim() || (lastError ? scrubNoteNames(lastError) : "") || "Problema no Runas-Codex", vaultPath)
   return first.length > 80 ? `${first.slice(0, 79)}…` : first
 }
 

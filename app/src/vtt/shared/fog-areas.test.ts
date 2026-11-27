@@ -3,6 +3,9 @@ import { applyExplorationAreas, areaPolygon, fogAreas, setAreaExplored, type Fog
 import { normalizeRegion } from "./region"
 import { normalizeScene, normalizeToken } from "./scene"
 import { computeVision, decodeBits, fogLayout, isPointVisible, renderVision, visibleCells } from "./vision"
+import { VisionService } from "./vision-service"
+import type { DocumentDatabase } from "./database"
+import type { WorldDocument } from "./world"
 
 const square = (x: number, y: number, size: number) => areaPolygon({ shape: "rectangle", x, y, width: size, height: size })
 const area = (patch: Partial<FogArea>): FogArea => ({ id: "a", polygon: square(600, 0, 400), vision: "default", exploration: "default", globalLight: "default", darkness: null, ...patch })
@@ -71,5 +74,27 @@ describe("névoa por área (1.9 C)", () => {
     expect(decodeBits(revealed.bits, 100).reduce((sum, value) => sum + value, 0)).toBe(4)
     const covered = setAreaExplored(revealed, layout, square(0, 0, 100), false)
     expect(decodeBits(covered.bits, 100).reduce((sum, value) => sum + value, 0)).toBe(3)
+  })
+
+  it("não regrava a névoa explorada quando um aliado vê dentro de uma área que não lembra", () => {
+    const documents = new Map<string, WorldDocument>()
+    let writes = 0
+    const database: DocumentDatabase = {
+      get: (id) => documents.get(id) ?? null,
+      list: (type, parentId) => [...documents.values()].filter((document) => document.type === type && (parentId === undefined || document.parentId === parentId)),
+      put: (document) => { if (document.type === "fog") writes += 1; documents.set(document.id, document) },
+      delete: (id) => { documents.delete(id) },
+      descendantIds: () => [],
+    }
+    const add = (id: string, type: WorldDocument["type"], parentId: string | null, data: unknown) => documents.set(id, { id, type, parentId, sort: 0, data, createdAt: 1, updatedAt: 1 } as WorldDocument)
+    add("s", "scene", null, scene({ enabled: true, exploration: true, globalLight: true }))
+    add("heroi", "token", "s", viewer.data)
+    // O herói enxerga dentro da área com a exploração desligada.
+    add("a", "region", "s", normalizeRegion({ x: 0, y: 0, width: 400, height: 400, fog: { enabled: true, exploration: "off" } }))
+    const service = new VisionService(() => database)
+    service.get("s")
+    expect(writes).toBe(1)
+    for (let index = 0; index < 3; index += 1) { service.clear(); service.get("s") }
+    expect(writes).toBe(1)
   })
 })

@@ -56,13 +56,16 @@ export class VisionService {
       const layout = fogLayout(data)
       const merged = mergeExplored(before, layout, visibleCells(vision, layout))
       fog = merged.fog
+      let changed = merged.changed
       if (areas.length) {
         // Exploração por área: “off” esquece o que está dentro; sem exploração na cena, só as áreas com “on” lembram.
         const cells = decodeBits(fog.bits, layout.cols * layout.rows)
         applyExplorationAreas(cells, layout, data.vision.exploration, areas)
         fog = { ...fog, bits: encodeBits(cells) }
+        // O que um aliado vê numa área “off” entra no merge e sai de novo: só grava se o resultado mudou.
+        changed = !before || fog.bits !== before.bits || fog.cols !== before.cols || fog.rows !== before.rows || fog.cellSize !== before.cellSize
       }
-      if (merged.changed || fog.bits !== before?.bits) this.writeFog(database, sceneId, fog, stored?.createdAt)
+      if (changed) this.writeFog(database, sceneId, fog, stored?.createdAt)
     }
     const state = { vision, fog }
     this.cache.set(sceneId, state)

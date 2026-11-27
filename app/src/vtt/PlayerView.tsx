@@ -74,6 +74,8 @@ export function PlayerView() {
   const [reconnecting, setReconnecting] = useState(false)
   const [ready, setReady] = useState(false)
   const [revision, setRevision] = useState(0)
+  // A câmera se recalcula sozinha (tela redimensionada, token escolhido), sem redesenhar a cena e a névoa.
+  const [cameraTick, setCameraTick] = useState(0)
   const [tool, setTool] = useState<SceneTool>("select")
   const audio = useRef<AudioState | null>(null)
   const engine = useRef<AudioEngine | null>(null)
@@ -251,11 +253,11 @@ export function PlayerView() {
         selected.current = ids
         // Só conta o último token do próprio jogador: é nele que a câmera fica.
         const own = ids.filter((id) => camera.current.positions.has(id)).at(-1)
-        if (own && own !== camera.current.lastSelected) { camera.current.lastSelected = own; setRevision((value) => value + 1) }
+        if (own && own !== camera.current.lastSelected) { camera.current.lastSelected = own; setCameraTick((value) => value + 1) }
       },
       // Arrastar o mapa com o seguir ligado (sem trava do mestre) desliga o seguir.
       // A tela mudou de tamanho: o limite de afastamento depende dela.
-      onScreenResize: () => setRevision((value) => value + 1),
+      onScreenResize: () => setCameraTick((value) => value + 1),
       onFollowBreak: () => { setFollow(false); setNotice("Seguir meu token desligado. Toque no alvo para voltar.") },
       onPut: () => undefined,
       onRemove: () => undefined,
@@ -292,7 +294,15 @@ export function PlayerView() {
     for (const reject of pendingRejects.current.splice(0)) { current.revertToken(reject.tokenId); setNotice(reject.reason) }
     engine.current?.apply(audio.current)
     setPlayingCount(audio.current?.sounds.length ?? 0)
-  }, [ready, revision, cameraRules, follow, seat])
+  }, [ready, revision])
+
+  // Regras do mestre, Seguir, assento, tela ou token escolhido: só a câmera muda (a cena e a névoa ficam como estão).
+  useEffect(() => {
+    const current = view.current
+    if (!ready || !current) return
+    const { scene, children } = childrenOf(projection.current)
+    placeCamera(current, scene, children)
+  }, [ready, cameraRules, follow, seat, cameraTick])
 
   useEffect(() => { try { localStorage.setItem(FOLLOW_KEY, follow ? "1" : "0") } catch { /* preferência opcional */ } }, [follow])
 

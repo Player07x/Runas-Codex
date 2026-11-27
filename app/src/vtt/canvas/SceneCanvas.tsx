@@ -56,6 +56,12 @@ export type SceneSideTab = "walls" | "regions" | "lighting"
 // Luz e névoa também alcança as áreas: é ali que ficam as áreas de névoa (1.9 C).
 const TAB_KINDS: Record<SceneSideTab, ItemKind[]> = { walls: ["wall"], regions: ["region"], lighting: ["light", "region"] }
 
+/** O objeto aparece na lista da aba: em Luz e névoa, só as áreas com névoa própria (as outras abrem nas propriedades). */
+function listedInTab(tab: SceneSideTab, document: WorldDocument | null | undefined): boolean {
+  if (!document || !(TAB_KINDS[tab] as string[]).includes(document.type)) return false
+  return tab !== "lighting" || document.type !== "region" || Boolean((document.data as RegionData).fog?.enabled)
+}
+
 const REGION_SHAPE_LABELS: Record<RegionShape, string> = { rectangle: "Retângulo", ellipse: "Elipse" }
 const REGION_TRIGGER_LABELS: Record<RegionTrigger, string> = { friendly: "Só Jogador e Aliado", any: "Qualquer token" }
 
@@ -112,7 +118,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   const editsInTab = (ids: string[]) => {
     const tab = sideTabRef.current
     // Uma ou várias do tipo da aba: os campos ficam na lista dela (ou, várias, nas alças do grupo).
-    return Boolean(tab) && ids.length > 0 && ids.every((id) => (TAB_KINDS[tab!] as string[]).includes(store.get(id)?.type ?? ""))
+    return Boolean(tab) && ids.length > 0 && ids.every((id) => listedInTab(tab!, store.get(id)))
   }
   const [ownPropertiesOpen, setOwnPropertiesOpen] = useState(false)
   const propertiesOpen = properties ? properties.open : ownPropertiesOpen
@@ -322,12 +328,14 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   const selected = selection.length === 1 ? store.get(selection[0]!) : null
 
   /** Ctrl+A e “Selecionar todas”: tudo o que a aba aberta (ou a ferramenta) seleciona; o mapa leva a seleção junto. */
-  const selectAll = () => {
+  const selectAll = (accept?: (document: WorldDocument) => boolean) => {
     const view = viewRef.current
     if (!view) return
     if (sideTab?.tab && tool !== "select") setTool("select")
     if (sideTab?.tab) view.setTool("select")
-    const count = view.selectAll()
+    // Com uma aba aberta, “todas” são as da lista dela (em Luz e névoa, as luzes e as áreas de névoa).
+    const tab = sideTab?.tab
+    const count = view.selectAll(accept ?? (tab ? (document) => listedInTab(tab, document) : undefined))
     setStatus(count ? `${count} ${count === 1 ? "selecionada" : "selecionadas"}.` : "Nada para selecionar.")
   }
 
@@ -339,8 +347,8 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
     // Tocar de novo na linha aberta fecha os campos (e solta a seleção).
     const focus = (id: string) => { if (current === id) viewRef.current?.cancel(); else viewRef.current?.focusItem(id) }
     const editor = (document: WorldDocument) => <ObjectFields document={document} scene={scene} store={store} put={put} />
-    if (tab === "walls") return <WallsPanel walls={children.walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll} />
-    if (tab === "regions") return <RegionsPanel regions={children.regions} put={put} selected={current} onFocus={focus} editor={editor} sceneName={(id) => (id ? store.get<SceneData>(id)?.data.name ?? null : null)} onSelectAll={selectAll} />
+    if (tab === "walls") return <WallsPanel walls={children.walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={() => selectAll()} />
+    if (tab === "regions") return <RegionsPanel regions={children.regions} put={put} selected={current} onFocus={focus} editor={editor} sceneName={(id) => (id ? store.get<SceneData>(id)?.data.name ?? null : null)} onSelectAll={() => selectAll()} />
     const createFog = () => {
       const view = viewRef.current
       const id = newId()
@@ -348,7 +356,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
       // O mapa recebe a área no próximo desenho; então leva até ela e abre os campos.
       window.setTimeout(() => viewRef.current?.focusItem(id), 150)
     }
-    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll}>
+    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={() => selectAll((document) => document.type === "light")}>
       <FogAreasSection regions={children.regions} selected={current} onFocus={focus} onCreate={createFog} editor={editor} />
     </LightingPanel>
   }

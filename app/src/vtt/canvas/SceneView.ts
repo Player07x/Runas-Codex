@@ -441,11 +441,14 @@ export class SceneView {
     } else this.refreshSelection()
   }
 
-  /** Seleciona todos os objetos da aba aberta (ou, sem aba, tudo o que a ferramenta atual seleciona). */
-  selectAll(): number {
+  /**
+   * Seleciona todos os objetos da aba aberta (ou, sem aba, tudo o que a ferramenta atual seleciona). `accept` restringe
+   * a uma parte deles (as luzes da aba Luz e névoa, sem as áreas).
+   */
+  selectAll(accept?: (document: WorldDocument) => boolean): number {
     if (!this.options.editable) return 0
     const side = this.tool === "select" && this.sideKinds.size > 0
-    this.selection = new Set([...this.items.values()].filter((item) => side ? this.sideKinds.has(item.kind) : TOOL_FOR_KIND[item.kind] === this.tool).map((item) => item.id))
+    this.selection = new Set([...this.items.values()].filter((item) => (side ? this.sideKinds.has(item.kind) : TOOL_FOR_KIND[item.kind] === this.tool) && (!accept || accept(item.document))).map((item) => item.id))
     this.emitSelection()
     return this.selection.size
   }
@@ -1463,6 +1466,8 @@ export class SceneView {
     for (const child of this.groupHandles.removeChildren()) { this.handleActions.delete(child); child.destroy() }
     if (this.interaction?.type === "group") return
     const documents = this.groupDocuments()
+    // Uma imagem sozinha já tem as próprias alças (tamanho e giro): a caixa do grupo ficaria por cima delas.
+    if (documents.length === 1 && documents[0]!.type === "tile") return
     const box = groupBounds(documents)
     if (!box || (box.width < 1 && box.height < 1)) return
     const zoom = this.world.scale.x

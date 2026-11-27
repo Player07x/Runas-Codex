@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { Copy, Download, ExternalLink, MessageSquareWarning } from "lucide-react"
-import { buildReport, issueUrl, reportTitle } from "../core/error-report"
+import { buildReport, issueUrl, reportRoute, reportTitle } from "../core/error-report"
 import { closeReport, installErrorLog, openReport, reportOpen, sessionErrors, subscribeErrorLog } from "../lib/error-log"
 import { useOptionalVault } from "../platform/VaultProvider"
 import { Modal, useToast } from "./ui"
@@ -43,7 +43,7 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
   const [version, setVersion] = useState("versão desconhecida")
   const [description, setDescription] = useState("")
   const errors = sessionErrors()
-  const context = { version, system: systemName(platform?.kind), screen: `${window.screen.width}×${window.screen.height} (janela ${window.innerWidth}×${window.innerHeight})`, route: location.hash.replace(/^#/, "").split("?")[0] ?? "/", errors }
+  const context = { version, system: systemName(platform?.kind), screen: `${window.screen.width}×${window.screen.height} (janela ${window.innerWidth}×${window.innerHeight})`, route: reportRoute(location.hash), errors }
   const generated = buildReport(context, description, vault?.info?.path)
   // O texto é da pessoa: depois de mexer nele, não é mais gerado de novo.
   const [edited, setEdited] = useState<string | null>(null)
@@ -69,7 +69,7 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
       <label className="field"><span>Relatório ({errors.length} {errors.length === 1 ? "erro" : "erros"} desta sessão) — dá para editar</span>
         <textarea className="input mono report-text" rows={12} value={body} onChange={(event) => setEdited(event.target.value)} />
       </label>
-      <p className="small muted">Vão a versão do app, o sistema, o tamanho da tela, a tela aberta e os últimos erros desde que o app abriu. Não vão notas, nomes de arquivos do cofre nem a pasta do cofre (vira &lt;cofre&gt;).{link.truncated ? " O relatório é longo: no GitHub ele chega cortado; o texto inteiro está em Copiar." : ""}</p>
+      <p className="small muted">Vão a versão do app, o sistema, o tamanho da tela, a tela aberta e os últimos erros desde que o app abriu. Não vão notas nem a pasta do cofre (vira &lt;cofre&gt;); nomes de notas citados nos erros viram &lt;nota&gt;, e da tela aberta vai só o módulo (Notas, Wiki…).{link.truncated ? " O relatório é longo: no GitHub ele chega cortado; o texto inteiro está em Copiar." : ""}</p>
       {status && <p className="small" role="status">{status}</p>}
     </div>
   </Modal>

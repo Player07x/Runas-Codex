@@ -41,6 +41,13 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
   // Enquanto a sala liga e recebe a configuração guardada, o estado intermediário não é gravado por cima dela.
   const applying = useRef(false)
   savedRef.current = saved
+  // “Na última sessão você usou o link público” vale só para a sessão que acabou: cada sessão começa sem ele.
+  const linkSession = useRef<{ id: string | null; used: boolean }>({ id: null, used: false })
+  if (state?.enabled && state.sessionId) {
+    if (linkSession.current.id !== state.sessionId) linkSession.current = { id: state.sessionId, used: false }
+    if (state.publicUrl) linkSession.current.used = true
+  }
+  const thisSession = (previous: RoomSettings): RoomSettings => ({ ...previous, publicLink: linkSession.current.used })
   function persist(settings: RoomSettings) {
     try { localStorage.setItem(LAST_ROOM_KEY, JSON.stringify(settings)) } catch { /* preferência opcional */ }
     if (savedDocument?.type === "room-settings" && sameRoomSettings(saved, settings)) return
@@ -76,7 +83,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
 
   // Com a sala ligada, cada mudança vira a configuração guardada da mesa.
   useEffect(() => {
-    if (state?.enabled && state.sessionId && !applying.current) persist(settingsFromState(state, savedRef.current))
+    if (state?.enabled && state.sessionId && !applying.current) persist(settingsFromState(state, thisSession(savedRef.current)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
@@ -123,7 +130,7 @@ export function PlayerPanel({ store, sceneId }: { store: DocumentStore; sceneId:
         : <button className="ghost danger" disabled={busy} onClick={() => void run(() => vtt.player.stop())}><Square size={14} /> Desligar</button>}
     </div>}
     {!state?.enabled && saved.publicLink && !remoteMaster && <p className="hint">Na última sessão desta mesa você usou o link público. Depois de ligar a transmissão, gere o link de novo (ele muda a cada vez e pede sua confirmação).</p>}
-    <RoomSettingsBar current={state?.enabled ? settingsFromState(state, saved) : { ...saved, port: Number(port) || saved.port, seats: Number(seatCount) || saved.seats }} onApply={async (settings) => {
+    <RoomSettingsBar current={state?.enabled ? settingsFromState(state, thisSession(saved)) : { ...saved, port: Number(port) || saved.port, seats: Number(seatCount) || saved.seats }} onApply={async (settings) => {
       setPort(String(state?.enabled ? state.port : settings.port))
       if (!state?.enabled) { setSeatCount(String(settings.seats)); persist(settings); return }
       await applyLive(settings)

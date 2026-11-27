@@ -11,6 +11,7 @@ export function regionSummary(data: RegionData, sceneName: (id: string | null) =
   if (data.teleport.enabled) parts.push(`teleporte${sceneName(data.teleport.sceneId) ? ` → ${sceneName(data.teleport.sceneId)}` : ""}`)
   if (data.text.enabled) parts.push(data.text.once ? "texto uma vez" : "texto")
   if (data.terrain.enabled) parts.push(`terreno ×${data.terrain.multiplier.toLocaleString("pt-BR")}`)
+  if (data.fog?.enabled) parts.push("névoa própria")
   if (!data.enabled) parts.push("desativada")
   return parts.join(" · ")
 }
