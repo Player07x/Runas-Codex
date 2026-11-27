@@ -31,6 +31,8 @@ import { noteRoute } from "../../lib/vault-notes"
 import { WallsPanel } from "../panels/WallsPanel"
 import { RegionsPanel } from "../panels/RegionsPanel"
 import { LightingPanel } from "../panels/LightingPanel"
+import { FogAreasSection, newFogArea, RegionFogFields } from "../panels/RegionFogFields"
+import { fogAreas } from "../shared/fog-areas"
 import { newId, useDocumentsVersion, type DocumentStore } from "../document-store"
 import { FLOAT_COLORS, SceneView, type DrawOptions, type ItemKind, type SceneTool } from "./SceneView"
 import { SceneHistory, type SceneEdit } from "./history"
@@ -51,7 +53,8 @@ const TOOLS: { id: SceneTool; label: string; action: KeyAction; icon: typeof Rul
 
 /** Abas do menu da direita desenhadas pela cena (1.9) e o tipo de objeto que cada uma edita ali mesmo. */
 export type SceneSideTab = "walls" | "regions" | "lighting"
-const TAB_KINDS: Record<SceneSideTab, ItemKind> = { walls: "wall", regions: "region", lighting: "light" }
+// Luz e névoa também alcança as áreas: é ali que ficam as áreas de névoa (1.9 C).
+const TAB_KINDS: Record<SceneSideTab, ItemKind[]> = { walls: ["wall"], regions: ["region"], lighting: ["light", "region"] }
 
 const REGION_SHAPE_LABELS: Record<RegionShape, string> = { rectangle: "Retângulo", ellipse: "Elipse" }
 const REGION_TRIGGER_LABELS: Record<RegionTrigger, string> = { friendly: "Só Jogador e Aliado", any: "Qualquer token" }
@@ -109,7 +112,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   const editsInTab = (ids: string[]) => {
     const tab = sideTabRef.current
     // Uma ou várias do tipo da aba: os campos ficam na lista dela (ou, várias, nas alças do grupo).
-    return Boolean(tab) && ids.length > 0 && ids.every((id) => store.get(id)?.type === TAB_KINDS[tab!])
+    return Boolean(tab) && ids.length > 0 && ids.every((id) => (TAB_KINDS[tab!] as string[]).includes(store.get(id)?.type ?? ""))
   }
   const [ownPropertiesOpen, setOwnPropertiesOpen] = useState(false)
   const propertiesOpen = properties ? properties.open : ownPropertiesOpen
@@ -231,7 +234,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
   }, [version, ready, store])
 
   useEffect(() => { viewRef.current?.setTool(tool) }, [tool, ready])
-  useEffect(() => { viewRef.current?.setSideKinds(sideTab?.tab ? [TAB_KINDS[sideTab.tab]] : []) }, [sideTab?.tab, ready])
+  useEffect(() => { viewRef.current?.setSideKinds(sideTab?.tab ? TAB_KINDS[sideTab.tab] : []) }, [sideTab?.tab, ready])
   useEffect(() => { viewRef.current?.setFreePlacement(freePlacement) }, [freePlacement, ready])
   useEffect(() => { viewRef.current?.setDrawOptions(drawOptions) }, [drawOptions, ready])
   useEffect(() => { viewRef.current?.setPanSpeed(settings.panSpeed) }, [settings.panSpeed, ready])
@@ -245,7 +248,7 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
     const current = sceneId ? store.get<SceneData>(sceneId) : null
     if (!current) { view.setVision(null); return }
     const children = store.children(current.id)
-    const vision = computeVision(current.data, children.tokens.map(({ id, data }) => ({ id, data })), children.walls.map((wall) => wall.data), children.lights.map((light) => light.data))
+    const vision = computeVision(current.data, children.tokens.map(({ id, data }) => ({ id, data })), children.walls.map((wall) => wall.data), children.lights.map((light) => light.data), fogAreas(children.regions))
     view.setVision(renderVision(vision, null, preview), preview ? 1 : MASTER_DARKNESS)
   }, [version, sceneId, ready, store, preview])
 
@@ -330,7 +333,16 @@ export function SceneCanvas({ store, sceneId, onOpenUrl, keyboardHints, properti
     const editor = (document: WorldDocument) => <ObjectFields document={document} scene={scene} store={store} put={put} />
     if (tab === "walls") return <WallsPanel walls={children.walls} cell={scene.data.grid.type === "none" ? 100 : scene.data.grid.size} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll} />
     if (tab === "regions") return <RegionsPanel regions={children.regions} put={put} selected={current} onFocus={focus} editor={editor} sceneName={(id) => (id ? store.get<SceneData>(id)?.data.name ?? null : null)} onSelectAll={selectAll} />
-    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll} />
+    const createFog = () => {
+      const view = viewRef.current
+      const id = newId()
+      put(newFogArea(id, scene.id, view ? view.viewCenter() : { x: scene.data.width / 2, y: scene.data.height / 2 }, scene.data.grid.type === "none" ? 100 : scene.data.grid.size))
+      // O mapa recebe a área no próximo desenho; então leva até ela e abre os campos.
+      window.setTimeout(() => viewRef.current?.focusItem(id), 150)
+    }
+    return <LightingPanel scene={scene} lights={children.lights} put={put} selected={current} onFocus={focus} editor={editor} onSelectAll={selectAll}>
+      <FogAreasSection regions={children.regions} selected={current} onFocus={focus} onCreate={createFog} editor={editor} />
+    </LightingPanel>
   }
 
   return <div className={`scene-canvas ${propertiesOpen && selection.length ? "properties-open" : ""}`} tabIndex={0} onKeyDown={(event) => {
@@ -473,6 +485,7 @@ function ObjectFields({ document, scene, store, put }: { document: WorldDocument
     {document.type === "light" && <LightFields data={document.data as LightData} update={update} />}
     {document.type === "sound" && <SoundFields data={document.data as SoundData} update={update} />}
     {document.type === "region" && <RegionFields id={document.id} data={document.data as RegionData} store={store} update={update} />}
+    {document.type === "region" && <RegionFogFields sceneId={scene.id} scene={scene.data} data={document.data as RegionData} update={update} />}
   </>
 }
 

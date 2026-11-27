@@ -2723,3 +2723,17 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   oposto, encaixando na grade (Alt solta; Shift mantém a proporção). Luzes só mudam de lugar. Um Ctrl+Z volta tudo.
 - [ ] Com a aba fechada, nada muda: Selecionar e mover não pega paredes, áreas nem luzes.
 - [ ] Celular: as alças dos cantos respondem ao toque.
+
+## Atualização 1.9 — C: névoa por área
+
+- [ ] Luz e névoa › **Nova área de névoa** cria uma área “Névoa” (sempre à vista) no meio da tela e abre os campos; a
+  lista “Névoa por área” mostra o que cada uma muda. Com a aba aberta, a área se move e se redimensiona pelo mapa.
+- [ ] Névoa de guerra desligada na área: com “Ver como os jogadores” e na página do jogador, a área aparece mesmo sem
+  aliado vendo, e os tokens dentro dela também. Ligada numa cena sem névoa: só a área fica coberta.
+- [ ] Luz do dia desligada na área (cena com dia): o aliado só vê ali com luz ou alcance no escuro. Ligada (cena sem
+  dia): a linha de visão dentro da área fica iluminada.
+- [ ] Escuridão própria: a área fica mais clara ou mais escura que o resto, para o mestre e os jogadores.
+- [ ] Lembrar exploração desligada na área: ao sair, a área volta a ficar coberta; ligada numa cena sem exploração,
+  só ela lembra.
+- [ ] **Revelar agora** e **Cobrir de novo** (com exploração ligada) mudam o que os jogadores veem na hora.
+- [ ] Com 20 áreas de névoa na cena, mover tokens continua fluido (computador e celular).

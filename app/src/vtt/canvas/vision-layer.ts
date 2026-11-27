@@ -54,9 +54,15 @@ export class VisionLayer {
     }
 
     const darkness = vision.darkness * darknessScale
-    if (darkness > 0.001) {
+    const darkAreas = vision.darkAreas ?? []
+    if (darkness > 0.001 || darkAreas.some((area) => area.darkness > 0.001)) {
       const root = new Container()
       root.addChild(new Graphics().rect(0, 0, width, height).fill({ color: 0x05060a, alpha: darkness }))
+      // Escuridão por área (1.9 C): apaga a da cena ali e pinta a da área.
+      for (const area of darkAreas) {
+        root.addChild(polygonGraphics([area.polygon], 1, true))
+        root.addChild(polygonGraphics([area.polygon], area.darkness * darknessScale, false, 0x05060a))
+      }
       root.addChild(polygonGraphics(vision.lights.map((light) => light.dim), DIM_REVEAL, true))
       root.addChild(polygonGraphics(vision.lights.flatMap((light) => (light.bright ? [light.bright] : [])), 1, true))
       if (vision.fog) root.addChild(polygonGraphics(vision.fog.viewers.flatMap((viewer) => (viewer.sight ? [viewer.sight] : [])), DARKVISION_REVEAL, true))
@@ -69,7 +75,12 @@ export class VisionLayer {
     const fog = vision.fog
     if (!fog) { this.fog.visible = false; return }
     const root = new Container()
-    root.addChild(new Graphics().rect(0, 0, width, height).fill({ color: 0x000000, alpha: 1 }))
+    const areas = fog.areas ?? []
+    // Sem névoa na cena, só as áreas com névoa ligada começam cobertas.
+    const sceneFog = fog.scene ?? true
+    if (sceneFog) root.addChild(new Graphics().rect(0, 0, width, height).fill({ color: 0x000000, alpha: 1 }))
+    else root.addChild(polygonGraphics(areas.filter((area) => area.vision === "on").map((area) => area.polygon), 1, false, 0x000000))
+    // Ordem importa: o que apaga solto vem antes do recipiente com máscara (a linha de visão iluminada), no fim.
     let exploredTexture: Texture | null = null
     if (fog.explored && fog.explored.bits) {
       exploredTexture = exploredMask(fog.explored.bits, fog.explored.cols, fog.explored.rows)
@@ -80,13 +91,24 @@ export class VisionLayer {
       root.addChild(explored)
     }
     root.addChild(polygonGraphics(fog.viewers.flatMap((viewer) => (viewer.sight ? [viewer.sight] : [])), 1, true))
+    // Áreas sem névoa (1.9 C): sempre à vista.
+    root.addChild(polygonGraphics(areas.filter((area) => area.vision === "off").map((area) => area.polygon), 1, true))
     const lineOfSight = fog.viewers.map((viewer) => viewer.los)
-    if (fog.globalLight) root.addChild(polygonGraphics(lineOfSight, 1, true))
-    else if (vision.lights.length) {
-      // Área iluminada que algum aliado enxerga: as luzes recortadas pela linha de visão.
+    const daylightOn = areas.filter((area) => area.globalLight === "on").map((area) => area.polygon)
+    const daylightOff = areas.filter((area) => area.globalLight === "off").map((area) => area.polygon)
+    if (fog.globalLight || vision.lights.length || daylightOn.length) {
+      // Área iluminada que algum aliado enxerga: o dia (com furos nas áreas sem dia), as áreas com dia e as luzes.
       const lit = new Container()
       const mask = polygonGraphics(lineOfSight, 1, false)
-      lit.addChild(mask, polygonGraphics(vision.lights.map((light) => light.dim), 1, true))
+      lit.addChild(mask)
+      if (fog.globalLight) {
+        const day = new Graphics().rect(0, 0, width, height).fill({ color: 0xffffff, alpha: 1 })
+        for (const polygon of daylightOff) if (polygon.length >= 6) day.poly(polygon, true).cut()
+        day.blendMode = "erase"
+        lit.addChild(day)
+      }
+      if (daylightOn.length) lit.addChild(polygonGraphics(daylightOn, 1, true))
+      if (vision.lights.length) lit.addChild(polygonGraphics(vision.lights.map((light) => light.dim), 1, true))
       lit.mask = mask
       root.addChild(lit)
     }

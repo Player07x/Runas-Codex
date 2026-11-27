@@ -50,6 +50,13 @@ luzes): arraste para mover, use uma caixa ou Shift para várias, Shift + setas p
 **Selecionar todas** (ou Ctrl+A no mapa) para pegar todas. A caixa em volta da seleção tem alças nos cantos: arrastar
 uma estica ou encolhe tudo junto (Shift mantém a proporção; Alt solta da grade), e Ctrl+Z desfaz de uma vez. Com a aba
 fechada, Selecionar e mover volta a pegar só tokens, imagens, desenhos e notas.
+
+**Névoa por área:** em Luz e névoa, **Nova área de névoa** cria uma área no meio da tela (ou marque **Névoa
+própria** nos campos de qualquer área). Dentro dela, cada opção da cena pode ficar como está (**Usar padrão**) ou mudar
+só ali: **Névoa de guerra** (desligada deixa a área sempre à vista; ligada cobre a área mesmo com a névoa da cena
+desligada), **Lembrar as áreas exploradas**, **Luz do dia** e **Escuridão**. **Revelar agora** marca a área como
+explorada e **Cobrir de novo** apaga o que foi explorado ali (o que um aliado está vendo continua à vista). Os
+jogadores recebem só a névoa pronta, nunca as opções da área.
 - **Áudio**: playlists e faixas, tocar, parar, repetir e o volume de cada uma; **Parar os sons desta mesa** silencia
   tudo.
 - **Registro**: testes, danos e avisos das áreas, do mais recente ao mais antigo; dá para apagar tudo.

@@ -1,5 +1,6 @@
 import type { Point } from "./grid"
 import { isAlly, type FogData, type LightData, type SceneData, type TokenData, type WallData } from "./scene"
+import type { FogArea } from "./fog-areas"
 
 /**
  * Visão, luz e névoa (Fase 6). Código puro, usado pelo processo principal (a
@@ -35,7 +36,12 @@ export interface VisionLight {
 }
 
 export interface SceneVision {
+  /** Há névoa em algum lugar (na cena ou numa área com névoa ligada). */
   enabled: boolean
+  /** A névoa da cena inteira; desligada, só as áreas com névoa “on” ficam cobertas. */
+  sceneFog: boolean
+  /** Névoa por área (1.9 C). */
+  areas: FogArea[]
   darkness: number
   globalLight: boolean
   width: number
@@ -187,9 +193,10 @@ export function isViewer(token: TokenData): boolean {
 }
 
 /** Calcula linhas de visão e áreas iluminadas da cena. */
-export function computeVision(scene: SceneData, tokens: readonly VisionToken[], walls: readonly WallData[], lights: readonly LightData[]): SceneVision {
+export function computeVision(scene: SceneData, tokens: readonly VisionToken[], walls: readonly WallData[], lights: readonly LightData[], areas: readonly FogArea[] = []): SceneVision {
   const { width, height } = scene
-  const base: SceneVision = { enabled: scene.vision.enabled, darkness: scene.vision.darkness, globalLight: scene.vision.globalLight, width, height, viewers: [], lights: [] }
+  const enabled = scene.vision.enabled || areas.some((area) => area.vision === "on")
+  const base: SceneVision = { enabled, sceneFog: scene.vision.enabled, areas: [...areas], darkness: scene.vision.darkness, globalLight: scene.vision.globalLight, width, height, viewers: [], lights: [] }
   const cell = cellPixels(scene)
   const segments = sightSegments(walls)
   const polygon = (origin: Point, radius = 0) => visibilityPolygon(origin, segments, width, height, radius)
@@ -213,7 +220,7 @@ export function computeVision(scene: SceneData, tokens: readonly VisionToken[], 
     })
   }
 
-  if (!scene.vision.enabled) return base
+  if (!enabled) return base
   for (const { id, data } of tokens) {
     if (!isViewer(data)) continue
     const origin = { x: data.x, y: data.y }
@@ -224,13 +231,26 @@ export function computeVision(scene: SceneData, tokens: readonly VisionToken[], 
   return base
 }
 
+/** A última área (a de cima) que muda a opção e contém o ponto. */
+function areaAt(vision: SceneVision, point: Point, choice: "vision" | "globalLight"): FogArea | undefined {
+  for (let index = vision.areas.length - 1; index >= 0; index -= 1) {
+    const area = vision.areas[index]!
+    if (area[choice] !== "default" && pointInPolygon(point, area.polygon)) return area
+  }
+  return undefined
+}
+
 function lit(vision: SceneVision, point: Point): boolean {
-  return vision.globalLight || vision.lights.some((light) => pointInPolygon(point, light.dim))
+  const area = areaAt(vision, point, "globalLight")
+  const daylight = area ? area.globalLight === "on" : vision.globalLight
+  return daylight || vision.lights.some((light) => pointInPolygon(point, light.dim))
 }
 
 /** O ponto está visível para os jogadores? Sem névoa, tudo está. */
 export function isPointVisible(vision: SceneVision, point: Point): boolean {
   if (!vision.enabled) return true
+  const area = areaAt(vision, point, "vision")
+  if (area ? area.vision === "off" : !vision.sceneFog) return true
   for (const viewer of vision.viewers) {
     if (viewer.sight && pointInPolygon(point, viewer.sight)) return true
     if (pointInPolygon(point, viewer.los) && lit(vision, point)) return true
@@ -268,6 +288,10 @@ function boundingBox(polygon: Polygon) {
 
 export interface RenderFog {
   globalLight: boolean
+  /** Névoa na cena inteira; sem ela, só as áreas com névoa “on” começam cobertas. */
+  scene: boolean
+  /** Áreas que mudam a névoa ou a luz do dia (a forma e o que muda, nada mais). */
+  areas: { polygon: Polygon; vision: FogArea["vision"]; globalLight: FogArea["globalLight"] }[]
   viewers: { los: Polygon; sight: Polygon | null }[]
   explored: FogData | null
 }
@@ -275,6 +299,8 @@ export interface RenderFog {
 /** Dados de desenho da escuridão, das luzes e da névoa (sem paredes nem tokens). */
 export interface RenderVision {
   darkness: number
+  /** Áreas com escuridão própria. */
+  darkAreas: { polygon: Polygon; darkness: number }[]
   lights: VisionLight[]
   /** `null`: sem névoa (mestre fora da prévia, ou cena sem névoa). */
   fog: RenderFog | null
@@ -286,11 +312,14 @@ export interface RenderVision {
  * paredes de salas não vistas.
  */
 export function renderVision(vision: SceneVision, explored: FogData | null, withFog: boolean): RenderVision {
-  if (!withFog || !vision.enabled) return { darkness: vision.darkness, lights: vision.lights, fog: null }
+  const darkAreas = vision.areas.filter((area) => area.darkness !== null).map((area) => ({ polygon: area.polygon, darkness: area.darkness! }))
+  if (!withFog || !vision.enabled) return { darkness: vision.darkness, darkAreas, lights: vision.lights, fog: null }
+  const areas = vision.areas.filter((area) => area.vision !== "default" || area.globalLight !== "default").map(({ polygon, vision: fog, globalLight }) => ({ polygon, vision: fog, globalLight }))
   return {
     darkness: vision.darkness,
+    darkAreas,
     lights: vision.lights.filter((light) => touchesAnyView(vision, light.dim)),
-    fog: { globalLight: vision.globalLight, viewers: vision.viewers.map(({ los, sight }) => ({ los, sight })), explored },
+    fog: { globalLight: vision.globalLight, scene: vision.sceneFog, areas, viewers: vision.viewers.map(({ los, sight }) => ({ los, sight })), explored },
   }
 }
 
@@ -305,8 +334,8 @@ export function fogLayout(scene: SceneData): FogLayout {
   return { cellSize, cols: Math.ceil(scene.width / cellSize), rows: Math.ceil(scene.height / cellSize) }
 }
 
-/** Preenche (OR) as células cujo centro está dentro do polígono. */
-export function fillPolygon(mask: Uint8Array, layout: FogLayout, polygon: Polygon): void {
+/** Preenche (OR) as células cujo centro está dentro do polígono; com `value` 0, apaga. */
+export function fillPolygon(mask: Uint8Array, layout: FogLayout, polygon: Polygon, value: 0 | 1 = 1): void {
   const { cellSize, cols, rows } = layout
   if (polygon.length < 6) return
   const box = boundingBox(polygon)
@@ -325,7 +354,7 @@ export function fillPolygon(mask: Uint8Array, layout: FogLayout, polygon: Polygo
     for (let k = 0; k + 1 < crossings.length; k += 2) {
       const start = Math.max(0, Math.ceil(crossings[k]! / cellSize - 0.5))
       const end = Math.min(cols - 1, Math.floor(crossings[k + 1]! / cellSize - 0.5))
-      for (let col = start; col <= end; col += 1) mask[row * cols + col] = 1
+      for (let col = start; col <= end; col += 1) mask[row * cols + col] = value
     }
   }
 }
@@ -340,11 +369,10 @@ export function visibleCells(vision: SceneVision, layout: FogLayout): Uint8Array
     fillPolygon(los, layout, viewer.los)
     if (viewer.sight) fillPolygon(visible, layout, viewer.sight)
   }
-  if (vision.globalLight) {
-    for (let index = 0; index < size; index += 1) if (los[index]) visible[index] = 1
-    return visible
-  }
   const litCells = new Uint8Array(size)
+  if (vision.globalLight) litCells.fill(1)
+  // Luz do dia por área: desligada apaga, ligada acende (a de cima vale).
+  for (const area of vision.areas) if (area.globalLight !== "default") fillPolygon(litCells, layout, area.polygon, area.globalLight === "on" ? 1 : 0)
   for (const light of vision.lights) fillPolygon(litCells, layout, light.dim)
   for (let index = 0; index < size; index += 1) if (los[index] && litCells[index]) visible[index] = 1
   return visible
