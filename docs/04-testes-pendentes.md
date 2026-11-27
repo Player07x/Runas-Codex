@@ -2700,5 +2700,5 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 
 - [ ] Com a 1.8.1 instalada, o aviso “Atualizar para 1.9.0” aparece na barra lateral (ou pelo botão “Verificar
   atualizações”), e a atualização termina com a 1.9.0 em Configurações › Privacidade e atualizações.
-- [ ] Conferir na 1.9.0 instalada as seções “Atualização 1.9” acima (A, B, D, E, F e G), em especial a câmera travada,
+- [ ] Conferir na 1.9.0 instalada as seções “Atualização 1.9” acima (A a G), em especial a câmera travada,
   a régua para todos e a configuração lembrada da sala com a sala aberta e jogadores de verdade (desktop e Android).
