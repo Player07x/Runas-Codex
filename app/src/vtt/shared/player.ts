@@ -1,3 +1,4 @@
+import type { CameraRules } from "./player-camera"
 import type { PublicCollaboration, CollaborationReply } from "./collaboration"
 import type { PlayerBarVisibility } from "./ipc"
 import type { NoteData, SceneData, TileData, TokenData, DrawingData, AssetPath, WallData } from "./scene"
@@ -62,7 +63,7 @@ export interface PlayerRuler { sceneId: string; from: { x: number; y: number }; 
 export type PlayerWireMessage =
   | { type:"collaboration"; collaboration:PublicCollaboration }
   | { type:"collaboration-result"; requestType?:"safety"|"reply"; ok:boolean; reason?:string }
-  | { type: "snapshot"; collaboration?:PublicCollaboration; projection: PlayerProjection; ruler: PlayerRuler | null; audio: AudioState | null; moves: boolean }
+  | { type: "snapshot"; collaboration?:PublicCollaboration; projection: PlayerProjection; ruler: PlayerRuler | null; audio: AudioState | null; moves: boolean; camera?: CameraRules }
   | PlayerProjectionPatch
   /** Resposta ao espectador que pediu para mover um token (só para ele). */
   | { type: "move-result"; tokenId: string; ok: boolean; reason?: string }
@@ -79,6 +80,8 @@ export type PlayerWireMessage =
   /** Identidade confirmada depois do upgrade autenticado. */
   | { type: "seat-status"; seat: { slotId: string; label: string } }
   | { type: "pong" }
+  /** 1.9: o mestre mudou as regras da câmera (presa ao token, afastamento máximo). */
+  | { type: "camera-rules"; rules: CameraRules }
 
 /** Mensagens que a página dos jogadores pode enviar. */
 export type PlayerClientMessage =

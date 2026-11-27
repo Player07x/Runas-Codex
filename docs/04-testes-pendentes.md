@@ -2695,3 +2695,19 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Atualização 1.9 — D: câmera do jogador
+
+- [ ] Sala aberta, um token “Jogador” controlado pelo Jogador 1: ao entrar com o código, a câmera começa centrada no
+  token, mostrando uns 8 quadros (token de 1 quadro) ou uns 16 (token Grande). Trocar de cena (cena do token) faz o mesmo.
+- [ ] Com dois tokens do mesmo jogador: a câmera fica no último que ele escolheu (tocar no token); sem escolha, no
+  último que se moveu.
+- [ ] Botão **Seguir meu token** (alvo) na barra do jogador: ligado, a câmera acompanha o token quando ele anda
+  (inclusive quando o mestre o move); arrastar o mapa solta e avisa. A escolha fica salva no aparelho.
+- [ ] Painel Sala › Câmera dos jogadores › “Câmera sempre no token”: o jogador com token não arrasta mais o mapa, o
+  botão do alvo fica preso (tocar avisa que o mestre prendeu) e afastar para no “Afastamento máximo” escolhido. Tokens
+  mais longe (inimigos revelados) continuam aparecendo. Desligar devolve a câmera livre.
+- [ ] Com a trava ligada, “Puxar a câmera para o ponto do mestre” não move quem tem token na cena; quem assiste sem
+  token é puxado.
+- [ ] Girar o celular ou mudar o tamanho da janela com a câmera presa: o token continua no meio.
+- [ ] Mestre remoto pelo celular: a seção “Câmera dos jogadores” funciona igual.

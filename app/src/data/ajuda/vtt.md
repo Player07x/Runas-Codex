@@ -82,6 +82,14 @@ cena, mover tokens, tocar áudio. **Trocar chave** invalida o link anterior (út
   diário.
 - Ler um artigo da Wiki que o mestre mostrar pela sala (sem os segredos).
 
+**A câmera do jogador.** Ao entrar numa cena em que tem token, o jogador começa perto dele: a tela mostra cerca de 8
+vezes o tamanho do token (com vários tokens, o último que ele escolheu). O botão **Seguir meu token** (o alvo) faz a
+câmera acompanhar o token; arrastar o mapa solta. No painel **Sala**, em **Câmera dos jogadores**, o mestre pode deixar
+a **câmera sempre no token** (o jogador não arrasta o mapa) e escolher o **afastamento máximo**, de 4 a 30 vezes o
+tamanho do token. É um combinado de mesa para não passear pelo mapa sem mover o token: todos os tokens revelados
+continuam aparecendo, e a névoa continua sendo o que esconde o resto. Com a trava ligada, **Puxar a câmera** só move
+quem não tem token na cena.
+
 ### Levar e trazer mesas
 
 Em Importar e exportar, **Mesas e dados do VTT** levam uma mesa inteira (com mapas, tokens e áudios) para outro

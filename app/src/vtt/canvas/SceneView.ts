@@ -45,6 +45,10 @@ export interface SceneViewHandlers {
   onMove?(tokenId: string, position: Point): void
   /** Vista dos Jogadores: o jogador clicou numa porta (o VTT confere se está destrancada e abre ou fecha). */
   onDoor?(doorId: string, locked: boolean): void
+  /** Vista dos Jogadores: o jogador arrastou o mapa com a câmera seguindo o token (sem trava): o seguir desliga. */
+  onFollowBreak?(): void
+  /** A área do mapa na tela mudou de tamanho (já com o canvas novo). */
+  onScreenResize?(): void
 }
 
 export interface SceneViewOptions {
@@ -159,6 +163,9 @@ export class SceneView {
   /** Há uma régua da ferramenta Régua publicada; apagá-la avisa `onRulerChange(null)`. */
   private rulerPublished = false
   private panVelocity: Point = { x: 0, y: 0 }
+  /** Câmera dos jogadores (1.9): o menor zoom permitido (afastamento máximo) e o ponto que a câmera segue. */
+  private zoomFloor: number | null = null
+  private follow: { point: Point; locked: boolean } | null = null
   private panSpeed = 1000
   private readonly items = new Map<string, Item>()
   private readonly images = new Map<string, Promise<HTMLImageElement>>()
@@ -275,7 +282,14 @@ export class SceneView {
     const app = new Application()
     await app.init({ resizeTo: container, background: "#0c0f15", antialias: true, autoDensity: true, resolution: window.matchMedia("(pointer: coarse)").matches ? Math.min(window.devicePixelRatio || 1, 1.5) : window.devicePixelRatio || 1 })
     container.appendChild(app.canvas)
-    return new SceneView(app, container, handlers, options)
+    const view = new SceneView(app, container, handlers, options)
+    // O Pixi muda o tamanho do canvas depois do evento da janela: a câmera que segue um ponto volta a centralizar nele.
+    app.renderer.on("resize", () => {
+      if (view.destroyed) return
+      if (view.follow) view.centerOn(view.follow.point)
+      handlers.onScreenResize?.()
+    })
+    return view
   }
 
   destroy(): void {
@@ -463,10 +477,47 @@ export class SceneView {
   /** Move a câmera para um ponto sem criar uma intenção de edição. */
   setCamera(center: Point, zoom?: number | null): void {
     if (!this.scene) return
-    const nextZoom = zoom === null || zoom === undefined ? this.world.scale.x : Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom))
+    const nextZoom = this.clampZoom(zoom === null || zoom === undefined ? this.world.scale.x : zoom)
     this.world.scale.set(nextZoom)
     this.world.position.set(this.app.screen.width / 2 - center.x * nextZoom, this.app.screen.height / 2 - center.y * nextZoom)
     this.updateOverlayScale()
+  }
+
+  /** Tamanho da área do mapa na tela, em pixels. */
+  viewSize(): { width: number; height: number } {
+    return { width: this.app.screen.width, height: this.app.screen.height }
+  }
+
+  /**
+   * Câmera dos jogadores (1.9): o menor zoom (o mestre limita o afastamento) e o ponto que a câmera segue. Seguindo, o
+   * zoom aproxima e afasta em volta do ponto; com `locked`, o mapa não se arrasta. Sem trava, arrastar o mapa desliga o
+   * seguir (`onFollowBreak`).
+   */
+  setCameraFollow(follow: { point: Point; locked: boolean } | null, zoomFloor: number | null = null): void {
+    this.zoomFloor = zoomFloor
+    this.follow = follow
+    if (!this.scene) return
+    if (zoomFloor !== null && this.world.scale.x < zoomFloor) this.world.scale.set(this.clampZoom(this.world.scale.x))
+    if (follow) this.centerOn(follow.point)
+    this.updateOverlayScale()
+  }
+
+  private clampZoom(zoom: number): number {
+    return Math.max(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoomFloor ?? MIN_ZOOM)), Math.min(MAX_ZOOM, zoom))
+  }
+
+  private centerOn(point: Point): void {
+    const zoom = this.world.scale.x
+    this.world.position.set(this.app.screen.width / 2 - point.x * zoom, this.app.screen.height / 2 - point.y * zoom)
+  }
+
+  /** Câmera presa ao token: o mapa não se arrasta. Seguindo sem trava, arrastar solta o seguir. */
+  private canPan(): boolean {
+    if (!this.follow) return true
+    if (this.follow.locked) return false
+    this.follow = null
+    this.handlers.onFollowBreak?.()
+    return true
   }
 
   /** Converte um ponto da tela (relativo ao elemento) para a cena. */
@@ -497,9 +548,10 @@ export class SceneView {
     if (!this.scene) return
     const { width, height } = this.scene.data
     const scale = Math.min(this.app.screen.width / width, this.app.screen.height / height) * 0.92
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale))
+    const zoom = this.clampZoom(scale)
     this.world.scale.set(zoom)
     this.world.position.set((this.app.screen.width - width * zoom) / 2, (this.app.screen.height - height * zoom) / 2)
+    if (this.follow) this.centerOn(this.follow.point)
     this.updateOverlayScale()
     this.handlers.onViewChange?.()
   }
@@ -1186,7 +1238,7 @@ export class SceneView {
 
   private panTick(deltaMS: number): void {
     const { x, y } = this.panVelocity
-    if ((x === 0 && y === 0) || !this.scene) return
+    if ((x === 0 && y === 0) || !this.scene || !this.canPan()) return
     const length = Math.hypot(x, y)
     const step = (this.panSpeed * Math.min(deltaMS, 100)) / 1000
     this.world.position.set(this.world.x - (x / length) * step, this.world.y - (y / length) * step)
@@ -1195,10 +1247,11 @@ export class SceneView {
 
   private zoomAt(screen: Point, factor: number): void {
     const before = this.world.toLocal(screen)
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.world.scale.x * factor))
+    const zoom = this.clampZoom(this.world.scale.x * factor)
     this.world.scale.set(zoom)
     const after = this.world.toGlobal(before)
     this.world.position.set(this.world.position.x + screen.x - after.x, this.world.position.y + screen.y - after.y)
+    if (this.follow) this.centerOn(this.follow.point)
     this.updateOverlayScale()
     this.handlers.onViewChange?.()
   }
@@ -1214,10 +1267,11 @@ export class SceneView {
   private movePinch(first: Point, second: Point): void {
     const pinch = this.pinch
     if (!pinch) return
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, pinch.zoom * Math.hypot(second.x - first.x, second.y - first.y) / pinch.distance))
+    const zoom = this.clampZoom(pinch.zoom * Math.hypot(second.x - first.x, second.y - first.y) / pinch.distance)
     const middle = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }
     this.world.scale.set(zoom)
     this.world.position.set(middle.x - pinch.anchor.x * zoom, middle.y - pinch.anchor.y * zoom)
+    if (this.follow) this.centerOn(this.follow.point)
     this.updateOverlayScale()
   }
 
@@ -1424,7 +1478,7 @@ export class SceneView {
 
   private onStagePointerDown(event: ScenePointer): void {
     if (this.pinch) return
-    if (event.button === 1 || event.button === 2) {
+    if ((event.button === 1 || event.button === 2) && this.canPan()) {
       this.interaction = { type: "pan", startGlobal: { x: event.global.x, y: event.global.y }, startPosition: { x: this.world.x, y: this.world.y }, context: event.button === 2 }
       this.app.canvas.style.cursor = "grabbing"
       return
@@ -1434,6 +1488,7 @@ export class SceneView {
     if (!this.options.editable) {
       // Espectador: régua local ou arrastar o mapa com o botão esquerdo.
       if (this.tool === "ruler") { this.interaction = { type: "ruler", start: point }; this.drawRuler(point, point); return }
+      if (!this.canPan()) return
       this.interaction = { type: "pan", startGlobal: { x: event.global.x, y: event.global.y }, startPosition: { x: this.world.x, y: this.world.y } }
       this.app.canvas.style.cursor = "grabbing"
       return

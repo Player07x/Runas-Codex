@@ -1,3 +1,4 @@
+import { normalizeCameraRules } from "../../../../app/src/vtt/shared/player-camera"
 import { join } from "node:path"
 import { app, BrowserWindow, Notification, protocol, screen, type IpcMainInvokeEvent } from "electron"
 import { ASSET_SCHEME, IPC, type DocumentChange, type DocumentInput, type LinkTestResult, type PlayerBarVisibility, type PlayerState, type TableReport } from "../../../../app/src/vtt/shared/ipc"
@@ -384,6 +385,7 @@ export class VttHost {
       if (bars !== "friendly" && bars !== "all" && bars !== "none") throw new Error("Opção de barras inválida.")
       t.setBars(bars as PlayerBarVisibility)
     })
+    handle(IPC.playerSetCamera, (_event, rules) => t.setCameraRules(normalizeCameraRules(rules)))
     // Link público (túnel rápido da Cloudflare), só quando o mestre pede: é a única ida à internet do app.
     handle(IPC.playerPublicLink, () => this.openTunnel())
     // Do computador do mestre até o servidor, passando pela Cloudflare: confirma DNS, borda e túnel.

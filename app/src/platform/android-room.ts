@@ -1,3 +1,4 @@
+import { normalizeCameraRules } from "../vtt/shared/player-camera"
 import { registerPlugin, type PluginListenerHandle } from "@capacitor/core"
 import { sha256 } from "@noble/hashes/sha256"
 import { bytesToHex } from "@noble/hashes/utils"
@@ -406,6 +407,7 @@ export function createAndroidVttApi(platform: Platform): VttApi {
       downloadCloudflared: async () => {
         if (!(await native.tunnelAvailable()).available) throw new Error("O link público não está disponível neste aparelho (o processador não é ARM de 64 bits).")
       },
+      setCamera: async (rules) => authority.setCameraRules(normalizeCameraRules(rules)),
     },
     audio: {
       state: async () => audio.get(),

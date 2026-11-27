@@ -148,3 +148,26 @@ describe("cada jogador na cena do próprio token (anexo 2, 25/11)", () => {
     expect(bySeat.get("")?.type).toBe("projection-patch")
   })
 })
+
+describe("câmera dos jogadores presa ao token (1.9)", () => {
+  it("avisa as regras a todos e entra no estado da sala", async () => {
+    const { authority, sent } = await room()
+    sent.length = 0
+    authority.setCameraRules({ lockToToken: true, maxZoomOut: 10 })
+    expect(sent).toEqual([{ seat: "*", message: { type: "camera-rules", rules: { lockToToken: true, maxZoomOut: 10 } } }])
+    expect(authority.state().camera).toEqual({ lockToToken: true, maxZoomOut: 10 })
+  })
+
+  it("com a trava, “Puxar a câmera” não move quem tem token na cena", async () => {
+    const { authority, sent } = await room()
+    authority.setMasterView({ sceneId: "praca", selection: [], center: { x: 400, y: 300 }, zoom: 1 })
+    authority.setCameraRules({ lockToToken: true, maxZoomOut: 12 })
+    sent.length = 0
+    authority.pullCamera()
+    const camera = (seat: string) => sent.find((entry) => entry.seat === seat)?.message.type
+    // A Heroína está na Praça (a cena transmitida); o assento 2 e quem assiste sem assento não têm token nela.
+    expect(camera("player-1")).toBe("pong")
+    expect(camera("player-2")).toBe("camera")
+    expect(camera("")).toBe("camera")
+  })
+})

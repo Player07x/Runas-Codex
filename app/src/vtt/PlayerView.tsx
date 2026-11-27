@@ -1,7 +1,7 @@
 import { PlayerActivity } from "./PlayerActivity"
 import type { PublicCollaboration } from "./shared/collaboration"
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { FlipHorizontal2, Hand, KeyRound, LoaderCircle, LogOut, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
+import { FlipHorizontal2, Hand, KeyRound, LoaderCircle, LocateFixed, LogOut, Ruler, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react"
 import type { SceneChildren } from "./document-store"
 import { configurePlayerAssets, resolveAssetUrl } from "./api"
 import { AudioEngine } from "./audio-engine"
@@ -13,9 +13,16 @@ import type { PlayerProjection, PlayerRuler, PlayerWireMessage } from "./shared/
 import type { SceneData } from "./shared/scene"
 import type { WorldDocument } from "./shared/world"
 import { PING_INTERVAL_MS, connectionIsDead, reconnectDelay } from "./shared/reconnect"
+import { DEFAULT_CAMERA_RULES, ENTER_SPAN, movedTokens, normalizeCameraRules, pickFocusToken, tokenPixels, zoomForSpan, type CameraRules, type CameraToken } from "./shared/player-camera"
 
 const BINDINGS = defaultKeyBindings()
 const VOLUME_KEY = "runas-codex:sala-volume"
+/** 1.9: o jogador escolheu seguir o próprio token (preferência deste aparelho). */
+const FOLLOW_KEY = "runas-codex:sala-seguir"
+
+function readFollow(): boolean {
+  try { return localStorage.getItem(FOLLOW_KEY) === "1" } catch { return false }
+}
 
 interface PlayerSeatIdentity { slotId: string; label: string }
 
@@ -89,6 +96,11 @@ export function PlayerView() {
   const [joinError, setJoinError] = useState("")
   const pendingRejects = useRef<{ tokenId: string; reason: string }[]>([])
   const selected = useRef<string[]>([])
+  // Câmera dos jogadores (1.9): regras do mestre, o seguir do jogador e o que a câmera já fez nesta cena.
+  const [cameraRules, setCameraRules] = useState<CameraRules>(DEFAULT_CAMERA_RULES)
+  const [follow, setFollow] = useState(readFollow)
+  const camera = useRef<{ sceneId: string | null; focused: boolean; lastSelected: string | null; lastMoved: string | null; positions: Map<string, { x: number; y: number }> }>({ sceneId: null, focused: false, lastSelected: null, lastMoved: null, positions: new Map() })
+  const [focusToken, setFocusToken] = useState<CameraToken | null>(null)
 
   useEffect(() => {
     const key = transmissionKey
@@ -111,7 +123,7 @@ export function PlayerView() {
       lastMessageAt = Date.now()
       let message: PlayerWireMessage
       try { message = JSON.parse(String(event.data)) as PlayerWireMessage } catch { return }
-      if (message.type === "snapshot") { setActivity(message.collaboration??{prompt:null,handout:null,safetySignals:0}); projection.current = message.projection; ruler.current = message.ruler; audio.current = message.audio; setMoves(message.moves) }
+      if (message.type === "snapshot") { setActivity(message.collaboration??{prompt:null,handout:null,safetySignals:0}); projection.current = message.projection; ruler.current = message.ruler; audio.current = message.audio; setMoves(message.moves); setCameraRules(normalizeCameraRules(message.camera)) }
       else if (message.type === "projection-patch") {
         const current = projection.current
         const byId = new Map(current.children.map((child) => [child.id, child]))
@@ -129,6 +141,7 @@ export function PlayerView() {
       else if(message.type === "collaboration"){setActivity(message.collaboration);setActivityStatus("")}
       else if(message.type === "collaboration-result"){if(message.requestType==="safety")setNotice(message.ok?"Carta X enviada sem identificação.":message.reason??"Não foi possível enviar.");else setActivityStatus(message.ok?"Resposta recebida.":message.reason??"Não foi possível enviar.")}
       else if (message.type === "moves") setMoves(message.moves)
+      else if (message.type === "camera-rules") setCameraRules(normalizeCameraRules(message.rules))
       else if (message.type === "door-result") { if (!message.ok) setNotice(message.reason ?? "A porta não abriu.") }
       else if (message.type === "move-result") { if (!message.ok) pendingRejects.current.push({ tokenId: message.tokenId, reason: message.reason ?? "Movimento recusado." }) }
       else if (message.type === "audio") audio.current = message.audio
@@ -234,7 +247,16 @@ export function PlayerView() {
     if (!element) return
     let disposed = false
     void SceneView.create(element, {
-      onSelectionChange: (ids) => { selected.current = ids },
+      onSelectionChange: (ids) => {
+        selected.current = ids
+        // Só conta o último token do próprio jogador: é nele que a câmera fica.
+        const own = ids.filter((id) => camera.current.positions.has(id)).at(-1)
+        if (own && own !== camera.current.lastSelected) { camera.current.lastSelected = own; setRevision((value) => value + 1) }
+      },
+      // Arrastar o mapa com o seguir ligado (sem trava do mestre) desliga o seguir.
+      // A tela mudou de tamanho: o limite de afastamento depende dela.
+      onScreenResize: () => setRevision((value) => value + 1),
+      onFollowBreak: () => { setFollow(false); setNotice("Seguir meu token desligado. Toque no alvo para voltar.") },
       onPut: () => undefined,
       onRemove: () => undefined,
       onOpenNote: () => undefined,
@@ -260,15 +282,50 @@ export function PlayerView() {
     if (!ready || !current) return
     const { scene, children } = childrenOf(projection.current)
     current.setScene(scene, children)
+    placeCamera(current, scene, children)
     current.setVision(projection.current.vision)
     current.setPlayerRegions(projection.current.regions ?? [])
     current.setRemoteRuler(ruler.current)
-    if (pendingCamera.current) { current.setCamera(pendingCamera.current.center, pendingCamera.current.zoom); pendingCamera.current = null }
+    // Com a câmera presa ao token, “Puxar a câmera” não desfaz a trava (o VTT já nem manda; isto cobre a corrida).
+    if (pendingCamera.current) { if (!(cameraRules.lockToToken && camera.current.focused)) current.setCamera(pendingCamera.current.center, pendingCamera.current.zoom); pendingCamera.current = null }
     for (const float of pendingFloats.current.splice(0)) current.floatText(float.tokenId, float.text, float.color)
     for (const reject of pendingRejects.current.splice(0)) { current.revertToken(reject.tokenId); setNotice(reject.reason) }
     engine.current?.apply(audio.current)
     setPlayingCount(audio.current?.sounds.length ?? 0)
-  }, [ready, revision])
+  }, [ready, revision, cameraRules, follow, seat])
+
+  useEffect(() => { try { localStorage.setItem(FOLLOW_KEY, follow ? "1" : "0") } catch { /* preferência opcional */ } }, [follow])
+
+  /**
+   * Câmera dos jogadores (1.9). Ao entrar numa cena com token próprio, centraliza nele e enquadra ENTER_SPAN vezes o
+   * tamanho dele. Seguindo (escolha do jogador ou trava do mestre), a câmera acompanha o token; com a trava, o mapa não
+   * se arrasta e o afastamento para em `maxZoomOut` vezes o token. Nada é escondido: todo token revelado continua
+   * desenhado, perto ou longe.
+   */
+  function placeCamera(current: SceneView, scene: WorldDocument<SceneData> | null, children: SceneChildren | null) {
+    const state = camera.current
+    const sceneId = scene?.id ?? null
+    if (sceneId !== state.sceneId) { state.sceneId = sceneId; state.focused = false; state.positions = new Map() }
+    const own: CameraToken[] = scene && children && seat ? children.tokens
+      .filter((token) => token.data.disposition === "player" && token.data.playerSlotId === seat.slotId)
+      .map((token) => ({ id: token.id, x: token.data.x, y: token.data.y, size: token.data.size })) : []
+    const moved = movedTokens(state.positions, own)
+    if (moved.length) state.lastMoved = moved[moved.length - 1]!
+    state.positions = new Map(own.map((token) => [token.id, { x: token.x, y: token.y }]))
+    const focus = pickFocusToken(own, state.lastSelected, state.lastMoved)
+    setFocusToken((previous) => previous?.id === focus?.id && previous?.x === focus?.x && previous?.y === focus?.y && previous?.size === focus?.size ? previous : focus)
+    if (!scene || !focus) { current.setCameraFollow(null); return }
+    const size = tokenPixels(focus.size, scene.data.grid)
+    const screen = current.viewSize()
+    const locked = cameraRules.lockToToken
+    const floor = locked ? zoomForSpan(screen, size, cameraRules.maxZoomOut) : null
+    if (!state.focused) {
+      state.focused = true
+      current.setCameraFollow(null, floor)
+      current.setCamera({ x: focus.x, y: focus.y }, zoomForSpan(screen, size, ENTER_SPAN))
+    }
+    current.setCameraFollow(locked || follow ? { point: { x: focus.x, y: focus.y }, locked } : null, floor)
+  }
 
   // Um só volume na página (o mestre já equilibra música, ambiente e efeitos).
   useEffect(() => {
@@ -339,6 +396,9 @@ export function PlayerView() {
       <span className="player-tools-divider" aria-hidden="true" />
       <button title="Aproximar (ou afaste dois dedos na tela)" aria-label="Aproximar" onClick={() => view.current?.zoomBy(1.25)}><ZoomIn size={17} /></button>
       <button title="Afastar (ou aproxime dois dedos na tela)" aria-label="Afastar" onClick={() => view.current?.zoomBy(0.8)}><ZoomOut size={17} /></button>
+      {focusToken && <button className={cameraRules.lockToToken || follow ? "active" : ""} aria-pressed={cameraRules.lockToToken || follow} aria-disabled={cameraRules.lockToToken}
+        title={cameraRules.lockToToken ? "O mestre prendeu a câmera ao seu token" : follow ? "Seguindo o seu token: toque para soltar" : "Seguir meu token"} aria-label="Seguir meu token"
+        onClick={() => { if (cameraRules.lockToToken) setNotice(`O mestre prendeu a câmera ao seu token (afastamento até ${cameraRules.maxZoomOut} vezes o tamanho dele).`); else setFollow((value) => !value) }}><LocateFixed size={17} /></button>}
       {canFlip && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Virar meu token (${BINDINGS.flipToken.map(keyLabel).join(" / ")})`} aria-label="Virar meu token" onClick={flipOwn}><FlipHorizontal2 size={17} /></button></>}
       {seat && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Sair da mesa (${seat.label})`} aria-label="Sair da mesa" data-player-leave onClick={() => void leaveSeat()}><LogOut size={17} /></button></>}
     </nav>}

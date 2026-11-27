@@ -2,6 +2,7 @@ import type { CollaborationCommand, RoomCollaboration } from "./collaboration"
 import type { HostHandler } from "./host-services"
 import type { AssetPath } from "./scene"
 import type { PlayerRuler } from "./player"
+import type { CameraRules } from "./player-camera"
 import type { AudioState } from "./audio"
 import type { AssetKind, DocumentType, NewWorldInput, WorldDocument, WorldSummary } from "./world"
 import type { MasterState } from "./master"
@@ -54,6 +55,7 @@ export const IPC = {
   renameWorld: "vtt:worlds-rename",
   deleteWorld: "vtt:worlds-delete",
   worldsCover: "vtt:worlds-cover",
+  playerSetCamera: "vtt:player-set-camera",
 } as const
 
 /** O que a mesa informa ao processo principal (cena aberta, seleção e câmera, para a vista dos jogadores). */
@@ -164,6 +166,8 @@ export interface PlayerState {
   players: number
   sessionId: string | null
   seats: PlayerSeatState[]
+  /** 1.9: regras da câmera dos jogadores. */
+  camera: CameraRules
 }
 
 /** API da mesa para a interface (no desktop, `window.runasCodex.vtt`; no navegador, uma prévia em memória). */
@@ -217,6 +221,8 @@ export interface VttApi {
     publicLink(): Promise<string>
     testPublicLink(): Promise<LinkTestResult>
     downloadCloudflared(): Promise<void>
+    /** 1.9: câmera dos jogadores presa ao token e afastamento máximo. */
+    setCamera(rules: CameraRules): Promise<void>
   }
   audio: {
     state(): Promise<AudioState>

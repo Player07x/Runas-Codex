@@ -1,3 +1,4 @@
+import { DEFAULT_CAMERA_RULES, type CameraRules } from "./player-camera"
 import { CollaborationRoom } from "./collaboration"
 import type { DocumentChange, PlayerBarVisibility, PlayerDrop, PlayerSeatState, PlayerState, PlayerTunnelInfo, TableReport } from "./ipc"
 import type { LogData, SceneData, TokenData, TileData, DrawingData, NoteData, WallData } from "./scene"
@@ -71,6 +72,8 @@ export class RoomAuthority {
   private commit: ((change: Change) => void) | null = null
   private audio: AudioState = { now: 0, sounds: [] }
   private bars: PlayerBarVisibility = "friendly"
+  /** 1.9: câmera dos jogadores presa ao token e afastamento máximo. */
+  private cameraRules: CameraRules = { ...DEFAULT_CAMERA_RULES }
   private lastProjection: PlayerProjection = { scene: null, children: [], assets: [], vision: null, regions: [] }
   private onStateChange: (state: PlayerState) => void
 
@@ -122,6 +125,7 @@ export class RoomAuthority {
       players: this.playerCount,
       sessionId: this.session?.id ?? null,
       seats: this.seatStates(),
+      camera: { ...this.cameraRules },
     }
   }
 
@@ -364,9 +368,22 @@ export class RoomAuthority {
     const center = this.table.center
     if (!this.enabled || !center) return
     const message: PlayerWireMessage = { type: "camera", center, zoom: this.table.zoom ?? null }
-    // Cada um na cena do próprio token: só quem está na cena do mestre é puxado.
-    if (this.followTokens) this.server.publishTo((seat) => this.projectionFor(seat).scene?.id === this.table.sceneId ? message : NOTHING)
-    else this.server.publish(message)
+    // Cada um na cena do próprio token: só quem está na cena do mestre é puxado. Com a câmera presa ao token (1.9),
+    // quem tem token na cena fica onde está: puxar desfaria a trava.
+    if (!this.followTokens && !this.cameraRules.lockToToken) { this.server.publish(message); return }
+    this.server.publishTo((seat) => {
+      const projection = this.projectionFor(seat)
+      if (this.followTokens && projection.scene?.id !== this.table.sceneId) return NOTHING
+      if (this.cameraRules.lockToToken && seatHasToken(projection, seat?.slotId)) return NOTHING
+      return message
+    })
+  }
+
+  /** 1.9: regras da câmera dos jogadores; vão a todos na hora e em cada snapshot. */
+  setCameraRules(rules: CameraRules): void {
+    this.cameraRules = { ...rules }
+    if (this.enabled) this.server.publish({ type: "camera-rules", rules: { ...rules } })
+    this.emit()
   }
 
   /**
@@ -643,6 +660,7 @@ export class RoomAuthority {
       ruler: this.rulerFor(seat),
       audio: this.audioEnabled ? { ...this.audio, now: Date.now() } : null,
       moves: this.movesEnabled,
+      camera: { ...this.cameraRules },
     }
   }
 
@@ -676,4 +694,10 @@ export function seatTokenScenes(database: DocumentDatabase): Map<string, string>
     if (!current || document.updatedAt > current.at) latest.set(slotId, { sceneId: document.parentId, at: document.updatedAt })
   }
   return new Map([...latest].map(([slotId, { sceneId }]) => [slotId, sceneId]))
+}
+
+/** O assento tem um token “Jogador” dele na cena projetada. */
+function seatHasToken(projection: PlayerProjection, slotId: string | undefined): boolean {
+  if (!slotId) return false
+  return projection.children.some((child) => child.type === "token" && (child.data as { playerSlotId?: string }).playerSlotId === slotId)
 }

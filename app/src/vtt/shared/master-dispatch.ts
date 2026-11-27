@@ -1,3 +1,4 @@
+import { normalizeCameraRules } from "./player-camera"
 import type { CollaborationCommand } from "./collaboration"
 import { IPC, type DocumentInput, type TableReport, type VttApi } from "./ipc"
 import { MASTER_CHANNELS } from "./master"
@@ -61,6 +62,7 @@ export async function dispatchMaster(api: VttApi, channel: string, args: unknown
     case IPC.playerRemoveSeat: return api.player.removeSeat()
     case IPC.collaborationState: return api.collaboration?.state()
     case IPC.collaborationCommand: return api.collaboration?.command(args[0] as CollaborationCommand)
+    case IPC.playerSetCamera: return api.player.setCamera(normalizeCameraRules(args[0]))
     default: throw new Error("Comando do mestre indisponível.")
   }
 }

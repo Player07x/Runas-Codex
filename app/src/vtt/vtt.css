@@ -537,3 +537,7 @@
   .vtt-root .scene-walls { top: auto; right: 8px; bottom: 44px; left: 8px; width: auto; max-height: 60%; }
   .vtt-root .scene-walls .icon-toggle, .vtt-root .scene-walls-name, .vtt-root .scene-walls-bulk button { min-height: 44px; min-width: 44px; }
 }
+
+/* 1.9: câmera dos jogadores no painel Sala. */
+.vtt-root .player-camera { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.vtt-root .player-camera > strong { font-size: calc(13px * var(--font-scale, 1)); }
