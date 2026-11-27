@@ -35,12 +35,11 @@
 .sidebar[data-panel-collapsed=true] .brand img, :root[data-tablet=true] .sidebar.resizable-panel .brand img { left:calc(100% - 50px); top:60px; width:32px; height:32px; border-radius:9px; }
 .sidebar.resizable-panel .brand strong { overflow:hidden; font-size:calc(14px * var(--font-scale, 1)); text-overflow:ellipsis; white-space:nowrap; }
 .sidebar[data-panel-collapsed=true] .brand > div { opacity:0; visibility:hidden; }
-.sidebar[data-panel-collapsed=true] :is(.nav-link span, .nav-link .count, .nav-label, .offline-pill span) { display:none; }
+.sidebar[data-panel-collapsed=true] :is(.nav-link span, .nav-link .count, .nav-label) { display:none; }
 :root[data-tablet=true] .sidebar.resizable-panel { padding-top:0; }
 :root[data-tablet=true] .sidebar.resizable-panel .brand { margin-inline:-6px; }
 .sidebar[data-panel-collapsed=true] .nav-link { justify-content:center; padding:0; }
 .sidebar[data-panel-collapsed=true] .nav-group + .nav-label { display:block; height:1px; margin:14px 8px; padding:0; overflow:hidden; background:var(--line); font-size:0; }
-.sidebar[data-panel-collapsed=true] .offline-pill { justify-content:center; margin-inline:0; }
 @media(min-width:861px) {
  body .shell:has(>.resizable-panel) { grid-template-columns:var(--panel-navigation,240px) minmax(0,1fr); }
  body .workspace { grid-template-columns:var(--panel-notes-left,280px) minmax(0,1fr) var(--panel-notes-right,300px); }

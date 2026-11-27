@@ -2695,3 +2695,15 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
   atualizações”), e a atualização termina com a 1.8.1 em Configurações › Privacidade e atualizações.
 - [ ] Conferir na 1.8.1 instalada a seção “Ajustes de 25/11 (campanha, VTT, Elenco e links automáticos)” acima, em
   especial as portas e a cena por token com a sala aberta e jogadores de verdade.
+
+## Atualização 1.9 — G: sem telemetria e Enviar relatório
+
+- [ ] O selo “Offline · cofre local” sumiu do menu lateral (computador, recolhido e tablet) e do “Mais” do celular.
+- [ ] Configurações › Privacidade e atualizações: sem a linha “Telemetria”; com “Relatório de problema · Enviar
+  relatório…”. A Ajuda mostra “Enviar relatório…” no topo do índice e o tópico Privacidade explica o relatório.
+- [ ] Enviar relatório: a janela mostra versão, sistema, tela e erros desta sessão; escrever em “O que aconteceu?”
+  atualiza o texto; editar o texto mantém a edição. Nenhum caminho com o seu nome de usuário ou a pasta do cofre aparece.
+- [ ] “Enviar pelo GitHub” abre o navegador do sistema (no computador e no Android) na página de novo problema,
+  já preenchida; nada é enviado sem você clicar em “Submit new issue” lá.
+- [ ] Copiar e Salvar como arquivo (`relatorio-runas-codex.md`) funcionam.
+- [ ] Quando um erro acontece, aparece o aviso “Algo deu errado no app.” com o botão “Enviar relatório”.

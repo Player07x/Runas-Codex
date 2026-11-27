@@ -61,3 +61,5 @@
 .help-formatter-group table { min-width: 620px; }
 .help-formatter-group th, .help-formatter-group td { vertical-align: top; }
 .help-syntax { display: block; max-width: 260px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--cyan); }
+/* 1.9: Enviar relatório no topo do índice da Ajuda. */
+.help-report { justify-self: start; }

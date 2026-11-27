@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
+import { ErrorReportRuntime } from "./components/ErrorReport"
 import { useRoute } from "./lib/router"
 import { Shell } from "./components/Shell"
 import { ToastProvider } from "./components/ui"
@@ -109,6 +110,7 @@ export function App() {
         <TasksRuntime />
         {performanceProfiling && <PerformanceRuntime />}
         <WriteCheckRuntime />
+        <ErrorReportRuntime />
       </ToastProvider>
     </VaultProvider>
   )

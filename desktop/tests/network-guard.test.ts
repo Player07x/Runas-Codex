@@ -7,6 +7,6 @@ describe("guarda de rede do smoke", () => {
     expect(networkRequestAllowed("http://192.168.1.20:30000/socket")).toBe(true)
     expect(networkRequestAllowed("https://mesa.trycloudflare.com/?k=x")).toBe(true)
     expect(networkRequestAllowed("https://api.github.com/repos/Player07x/Runas-Codex/releases")).toBe(true)
-    expect(networkRequestAllowed("https://example.com/telemetry")).toBe(false)
+    expect(networkRequestAllowed("https://example.com/coleta")).toBe(false)
   })
 })
