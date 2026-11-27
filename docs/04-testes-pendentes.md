@@ -2816,3 +2816,5 @@ para a assinatura gratuita continua pendente antes da inscrição na Foundation.
 - [ ] Página do jogador: arrastar a borda da janela para redimensionar continua fluido com névoa na cena, e a câmera
   presa ao token volta a centralizar nele.
 - [ ] Sala: o aviso “Na última sessão desta mesa você usou o link público” some depois de uma sessão sem o link.
+- [ ] Trocar de cena com o painel da direita aberto: no computador ele continua aberto; no celular (e no tablet em pé)
+  ele fecha para mostrar a cena nova (decisão de 27/11; vale no lugar do item “computador e celular” da seção A).

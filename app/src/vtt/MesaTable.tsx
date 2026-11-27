@@ -19,6 +19,9 @@ import "./vtt.css"
 
 type SideTab = "scenes" | "audio" | "log" | "players" | "library" | SceneSideTab
 
+/** O painel da direita fica por cima do mapa (o mesmo ponto de quebra de `vtt.css`). */
+const PANEL_OVER_MAP = "(max-width: 900px), (max-width: 1100px) and (orientation: portrait)"
+
 /** Abas cujo conteúdo é desenhado pela cena (precisam da seleção, do desfazer e da câmera do mapa). */
 const SCENE_TABS: readonly SideTab[] = ["walls", "regions", "lighting"]
 
@@ -146,9 +149,11 @@ function TableShell({ world, keyboardHints, documents, remote = false }: { world
     return () => store.dispose()
   }, [documents, store, world.id])
 
-  // O painel da direita fica como estava ao trocar de cena (1.9): no celular ele ocupa só a metade de baixo.
+  // O painel da direita fica como estava ao trocar de cena (1.9). No celular e no tablet em pé ele cobre a parte de
+  // baixo do mapa: fecha, para a cena nova aparecer inteira (decisão do João, 27/11).
   function openScene(id: string | null) {
     setSceneId(id)
+    if (window.matchMedia?.(PANEL_OVER_MAP).matches) setPanelOpen(false)
     try {
       if (id) localStorage.setItem(lastSceneKey(world.id), id)
     } catch {

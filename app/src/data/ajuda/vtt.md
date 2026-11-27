@@ -33,7 +33,7 @@ Uma **porta** comum pode ficar **trancada** (nas propriedades dela ou na aba Por
 veem um cadeado. Destrancada, o jogador abre e fecha clicando no ícone da porta, quando a vê. Portas secretas e
 paredes nunca aparecem para os jogadores.
 
-Trocar de cena não fecha o painel da direita. A **névoa** segue as paredes e as luzes: os jogadores só veem o que os tokens deles enxergam. **Desfazer e refazer**
+Trocar de cena não fecha o painel da direita no computador; no celular (e no tablet em pé), onde ele cobre a parte de baixo do mapa, ele fecha para mostrar a cena nova. A **névoa** segue as paredes e as luzes: os jogadores só veem o que os tokens deles enxergam. **Desfazer e refazer**
 valem para tudo o que muda na mesa (<kbd>Ctrl</kbd> <kbd>Z</kbd> e <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd>). No
 celular e no tablet, mova, edite e desenhe pelo toque; dois dedos aproximam e afastam.
 

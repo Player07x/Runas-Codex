@@ -133,8 +133,6 @@ try {
   await until(`document.querySelector('.vtt-root .side-tabs')`)
   await label('Cenas'); await button('Nova cena')
   await until(`document.querySelector('.scene-host canvas')`); await sleep(700)
-  // 1.9: trocar de cena não fecha mais o painel; fechado, o toque no mapa não cai nele.
-  await label('Cenas')
   console.log('Mesa criada; movendo token por toque nativo.')
   if (process.argv.includes('--slow')) await run(`new Promise(resolve=>{const interval=setInterval(()=>{const end=performance.now()+90;while(performance.now()<end){}},120);setTimeout(()=>{clearInterval(interval);resolve(true)},4000)})`)
   await label('Enquadrar cena')
