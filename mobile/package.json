@@ -1,6 +1,6 @@
 {
   "name": "@runas-codex/mobile",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "private": true,
   "description": "Casca Android (Capacitor) do Runas-Codex",
   "author": "João Antonio",

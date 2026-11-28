@@ -2845,3 +2845,10 @@ As capturas de como ficou (ícones do sistema, barra lateral nas paletas e o cel
   antes. Ligado (ou com a câmera presa pelo mestre em Sala), as mesmas teclas andam com o token uma célula por toque;
   segurando, anda uma célula a cada fração de segundo e a câmera vai junto. Contra uma parede, porta fechada ou a
   borda, o token para e aparece o motivo. Com “Jogadores movem tokens” desligado, as teclas avisam e não andam.
+
+## Versão 1.9.1
+
+- [ ] Com a 1.9.0 instalada, o aviso “Atualizar para 1.9.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.9.1 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.9.1 instalada a seção “Ajustes de 28/11 (Ignorar Escuridão e andar com WASD)” acima, com a sala
+  aberta e jogadores de verdade (desktop e Android).
