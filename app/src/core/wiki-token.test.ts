@@ -39,7 +39,7 @@ describe("token salvo na biblioteca", () => {
 })
 
 describe("ligar o token a uma nota (U94)", () => {
-  const fresh = { name: "Token", x: 10, y: 20, size: 1, image: null, rotation: 0, mirror: false, hidden: false, locked: false, disposition: "hostile" as const, elevation: 0, bars: [], showName: true, vision: { enabled: true, range: 0 }, light: { bright: 0, dim: 0, color: "#ffb45a" } }
+  const fresh = { name: "Token", x: 10, y: 20, size: 1, image: null, rotation: 0, mirror: false, hidden: false, locked: false, disposition: "hostile" as const, elevation: 0, bars: [], showName: true, vision: { enabled: true, range: 0, ignoreDarkness: false }, light: { bright: 0, dim: 0, color: "#ffb45a" } }
   const guarda = { name: "Guarda", image: "tokens/guarda.png", size: 2, disposition: "friendly" as const, bars: [{ label: "PV", value: 12, max: 12, color: "#ff0000" }] }
 
   it("preenche tudo num token novo", () => {
@@ -77,7 +77,7 @@ describe("ligar o token a uma nota (U94)", () => {
 })
 
 describe("desfazer a ligação do token (U94)", () => {
-  const before = { name: "Token", x: 10, y: 20, size: 1, image: null, rotation: 0, mirror: false, hidden: false, locked: false, disposition: "hostile" as const, elevation: 0, bars: [], showName: true, vision: { enabled: true, range: 0 }, light: { bright: 0, dim: 0, color: "#ffb45a" } }
+  const before = { name: "Token", x: 10, y: 20, size: 1, image: null, rotation: 0, mirror: false, hidden: false, locked: false, disposition: "hostile" as const, elevation: 0, bars: [], showName: true, vision: { enabled: true, range: 0, ignoreDarkness: false }, light: { bright: 0, dim: 0, color: "#ffb45a" } }
   const after = { ...before, name: "Guarda", notePath: "Wikis/Guarda.md", size: 2, bars: [{ label: "PV", value: 12, max: 12, color: "#ff0000" }] }
 
   it("volta o que a nota trouxe", () => {

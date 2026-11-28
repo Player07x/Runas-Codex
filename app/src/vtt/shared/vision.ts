@@ -20,6 +20,8 @@ export interface VisionViewer {
   los: Polygon
   /** Linha de visão limitada ao alcance no escuro; `null` sem alcance. */
   sight: Polygon | null
+  /** Ignorar Escuridão: toda a linha de visão conta como iluminada para este observador. */
+  ignoreDarkness: boolean
 }
 
 export interface VisionLight {
@@ -226,7 +228,7 @@ export function computeVision(scene: SceneData, tokens: readonly VisionToken[], 
     const origin = { x: data.x, y: data.y }
     // O alcance no escuro conta a partir da borda do token.
     const range = data.vision.range > 0 ? data.vision.range * cell + (data.size * cell) / 2 : 0
-    base.viewers.push({ id, x: data.x, y: data.y, los: polygon(origin), sight: range > 0 ? polygon(origin, range) : null })
+    base.viewers.push({ id, x: data.x, y: data.y, los: polygon(origin), sight: range > 0 ? polygon(origin, range) : null, ignoreDarkness: data.vision.ignoreDarkness })
   }
   return base
 }
@@ -253,7 +255,7 @@ export function isPointVisible(vision: SceneVision, point: Point): boolean {
   if (area ? area.vision === "off" : !vision.sceneFog) return true
   for (const viewer of vision.viewers) {
     if (viewer.sight && pointInPolygon(point, viewer.sight)) return true
-    if (pointInPolygon(point, viewer.los) && lit(vision, point)) return true
+    if (pointInPolygon(point, viewer.los) && (viewer.ignoreDarkness || lit(vision, point))) return true
   }
   return false
 }
@@ -292,7 +294,7 @@ export interface RenderFog {
   scene: boolean
   /** Áreas que mudam a névoa ou a luz do dia (a forma e o que muda, nada mais). */
   areas: { polygon: Polygon; vision: FogArea["vision"]; globalLight: FogArea["globalLight"] }[]
-  viewers: { los: Polygon; sight: Polygon | null }[]
+  viewers: { los: Polygon; sight: Polygon | null; ignoreDarkness?: boolean }[]
   explored: FogData | null
 }
 
@@ -319,7 +321,7 @@ export function renderVision(vision: SceneVision, explored: FogData | null, with
     darkness: vision.darkness,
     darkAreas,
     lights: vision.lights.filter((light) => touchesAnyView(vision, light.dim)),
-    fog: { globalLight: vision.globalLight, scene: vision.sceneFog, areas, viewers: vision.viewers.map(({ los, sight }) => ({ los, sight })), explored },
+    fog: { globalLight: vision.globalLight, scene: vision.sceneFog, areas, viewers: vision.viewers.map(({ los, sight, ignoreDarkness }) => (ignoreDarkness ? { los, sight, ignoreDarkness } : { los, sight })), explored },
   }
 }
 
@@ -367,7 +369,8 @@ export function visibleCells(vision: SceneVision, layout: FogLayout): Uint8Array
   const los = new Uint8Array(size)
   for (const viewer of vision.viewers) {
     fillPolygon(los, layout, viewer.los)
-    if (viewer.sight) fillPolygon(visible, layout, viewer.sight)
+    if (viewer.ignoreDarkness) fillPolygon(visible, layout, viewer.los)
+    else if (viewer.sight) fillPolygon(visible, layout, viewer.sight)
   }
   const litCells = new Uint8Array(size)
   if (vision.globalLight) litCells.fill(1)

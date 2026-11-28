@@ -45,6 +45,11 @@ export interface TokenVision {
   enabled: boolean
   /** Alcance no escuro, em células (0 = só enxerga áreas iluminadas). */
   range: number
+  /**
+   * Ignorar Escuridão (1.9.1): enxerga tudo na linha de visão, mesmo sem luz. Paredes continuam bloqueando, e o que
+   * está fora da linha de visão segue sob a névoa.
+   */
+  ignoreDarkness: boolean
 }
 
 /** Luz carregada pelo token (tocha, lanterna). Raios em células; 0 e 0 = sem luz. */
@@ -364,7 +369,7 @@ export function normalizeToken(value: unknown): TokenData {
 
 function normalizeTokenVision(value: unknown): TokenVision {
   const raw = record(value)
-  return { enabled: bool(raw.enabled, true), range: radius(raw.range, 0) }
+  return { enabled: bool(raw.enabled, true), range: radius(raw.range, 0), ignoreDarkness: bool(raw.ignoreDarkness, false) }
 }
 
 function normalizeTokenLight(value: unknown): TokenLight {

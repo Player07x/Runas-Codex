@@ -376,6 +376,42 @@ export class SceneView {
     item.display.position.set(data.x, data.y)
   }
 
+  /** Posição gravada de um token da cena, ou `null` se ele não estiver nela. */
+  tokenPosition(tokenId: string): Point | null {
+    const item = this.items.get(tokenId)
+    if (!item || item.kind !== "token") return null
+    const data = item.document.data as TokenData
+    return { x: data.x, y: data.y }
+  }
+
+  /** Mostra o token num ponto sem gravar nada (passo ainda sem resposta do VTT). */
+  placeToken(tokenId: string, position: Point): void {
+    this.items.get(tokenId)?.display.position.set(position.x, position.y)
+  }
+
+  /**
+   * Sala dos jogadores (1.9.1): anda uma célula pelo teclado com a câmera presa ao token. Parte de `from` (o último
+   * passo enviado) ou da posição gravada, encaixa na grade e pede ao VTT pelo mesmo `onMove` de arrastar; o VTT confere
+   * tudo. A câmera que segue o token vai junto, sem esperar a resposta.
+   */
+  stepToken(tokenId: string, columns: number, rows: number, from?: Point | null): Point | null {
+    const item = this.items.get(tokenId)
+    const scene = this.scene
+    if (this.options.editable || !item || item.kind !== "token" || !scene || !this.movable(item.document)) return null
+    const data = item.document.data as TokenData
+    const grid = scene.data.grid
+    const step = grid.type === "none" ? 50 : grid.size
+    const start = from ?? { x: data.x, y: data.y }
+    const wanted = { x: Math.min(scene.data.width, Math.max(0, start.x + columns * step)), y: Math.min(scene.data.height, Math.max(0, start.y + rows * step)) }
+    const next = snapTokenCenter(wanted, data.size, grid)
+    if (next.x < 0 || next.y < 0 || next.x > scene.data.width || next.y > scene.data.height) return null
+    if (next.x === start.x && next.y === start.y) return null
+    item.display.position.set(next.x, next.y)
+    if (this.follow) { this.follow = { ...this.follow, point: next }; this.centerOn(next); this.updateOverlayScale() }
+    this.handlers.onMove?.(tokenId, next)
+    return next
+  }
+
   private applyMovable(item: Item): void {
     const movable = item.kind === "token" && this.movable(item.document)
     item.display.eventMode = movable ? "static" : "auto"

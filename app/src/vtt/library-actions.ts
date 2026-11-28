@@ -66,7 +66,7 @@ export async function placeWikiToken(store: DocumentStore, source: WikiTokenSour
   await store.put({ id: newId(), type: "token", parentId: sceneId, data: {
     name: source.name, notePath: source.notePath, x: at.x, y: at.y, size: source.token.size, image,
     rotation: 0, mirror: false, hidden: false, locked: false, disposition: source.token.disposition, elevation: 0,
-    bars: source.token.bars, showName: true, vision: { enabled: true, range: 0 }, light: { bright: 0, dim: 0, color: "#ffb45a" },
+    bars: source.token.bars, showName: true, vision: { enabled: true, range: 0, ignoreDarkness: false }, light: { bright: 0, dim: 0, color: "#ffb45a" },
   } })
 }
 

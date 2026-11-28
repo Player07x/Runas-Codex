@@ -68,6 +68,29 @@ describe("visão da cena", () => {
     expect(isPointVisible(vision, { x: 520, y: 300 })).toBe(false)
   })
 
+  it("Ignorar Escuridão vê toda a linha de visão no breu, mas não atravessa paredes", () => {
+    const dark = scene({ globalLight: false, darkness: 1 })
+    const hero = token("heroi", { x: 100, y: 300, disposition: "player", vision: { enabled: true, range: 0, ignoreDarkness: true } })
+    const enemy = token("inimigo", { x: 450, y: 300, disposition: "hostile" })
+    const hidden = token("emboscada", { x: 750, y: 300, disposition: "hostile" })
+    const vision = computeVision(dark, [hero, enemy, hidden], [middleWall], [])
+    expect(vision.viewers[0]?.ignoreDarkness).toBe(true)
+    expect(isPointVisible(vision, { x: 480, y: 50 })).toBe(true)
+    expect(isTokenVisible(vision, enemy.id, enemy.data, 100)).toBe(true)
+    // a parede continua bloqueando: o outro lado segue sob a névoa
+    expect(isPointVisible(vision, { x: 520, y: 300 })).toBe(false)
+    expect(isTokenVisible(vision, hidden.id, hidden.data, 100)).toBe(false)
+    // só explora o que a linha de visão alcança
+    const layout = fogLayout(dark)
+    const cells = visibleCells(vision, layout)
+    expect(cells[Math.floor(300 / layout.cellSize) * layout.cols + Math.floor(450 / layout.cellSize)]).toBe(1)
+    expect(cells[Math.floor(300 / layout.cellSize) * layout.cols + Math.floor(750 / layout.cellSize)]).toBe(0)
+  })
+
+  it("Ignorar Escuridão vem desligado em tokens antigos", () => {
+    expect(normalizeToken({ vision: { enabled: true, range: 2 } }).vision).toEqual({ enabled: true, range: 2, ignoreDarkness: false })
+  })
+
   it("a luz de um token ilumina ao redor dele", () => {
     const dark = scene({ globalLight: false })
     const vision = computeVision(dark, [token("heroi", { x: 100, y: 300, disposition: "friendly", light: { bright: 1, dim: 2 } })], [], [])
