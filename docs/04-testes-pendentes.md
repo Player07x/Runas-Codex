@@ -2834,3 +2834,21 @@ As capturas de como ficou (ícones do sistema, barra lateral nas paletas e o cel
   gota); a abertura mostra a pedra no fundo escuro; o lembrete da Agenda mostra a silhueta da pedra com a runa vazada
   na barra de status.
 - [ ] Navegador (`npm run dev`): o favicon da aba é a logo pequena, ciano com o sistema no tema escuro e petróleo no claro.
+
+## Ajustes de 28/11 (Ignorar Escuridão e andar com WASD)
+
+- [ ] Mesa › token › Visão e luz: marcar “Ignorar Escuridão” num token Jogador ou Aliado numa cena com névoa, escuridão
+  alta e sem luz. Na página do jogador, a sala do token aparece inteira e sem escuridão, com os tokens que estão nela;
+  o outro lado de uma parede ou porta fechada continua coberto pela névoa. Desmarcado, volta a ver só o que tem luz
+  (ou o alcance de “Enxerga no escuro”).
+- [ ] Página do jogador com assento e token: com “Seguir meu token” desligado, WASD e as setas movem a câmera, como
+  antes. Ligado (ou com a câmera presa pelo mestre em Sala), as mesmas teclas andam com o token uma célula por toque;
+  segurando, anda uma célula a cada fração de segundo e a câmera vai junto. Contra uma parede, porta fechada ou a
+  borda, o token para e aparece o motivo. Com “Jogadores movem tokens” desligado, as teclas avisam e não andam.
+
+## Versão 1.9.1
+
+- [ ] Com a 1.9.0 instalada, o aviso “Atualizar para 1.9.1” aparece na barra lateral (ou pelo botão “Verificar
+  atualizações”), e a atualização termina com a 1.9.1 em Configurações › Privacidade e atualizações.
+- [ ] Conferir na 1.9.1 instalada a seção “Ajustes de 28/11 (Ignorar Escuridão e andar com WASD)” acima, com a sala
+  aberta e jogadores de verdade (desktop e Android).

@@ -8,7 +8,7 @@ import { AudioEngine } from "./audio-engine"
 import { DEFAULT_AUDIO_MIX, type AudioState } from "./shared/audio"
 import { FLOAT_COLORS, SceneView, type SceneTool } from "./canvas/SceneView"
 import { useSceneKeyboard } from "./canvas/keyboard"
-import { defaultKeyBindings, keyLabel } from "./shared/settings"
+import { actionForKey, defaultKeyBindings, keyLabel, PAN_ACTIONS, type PanAction } from "./shared/settings"
 import type { PlayerProjection, PlayerRuler, PlayerWireMessage } from "./shared/player"
 import type { SceneData } from "./shared/scene"
 import type { WorldDocument } from "./shared/world"
@@ -19,6 +19,11 @@ const BINDINGS = defaultKeyBindings()
 const VOLUME_KEY = "runas-codex:sala-volume"
 /** 1.9: o jogador escolheu seguir o próprio token (preferência deste aparelho). */
 const FOLLOW_KEY = "runas-codex:sala-seguir"
+
+/** 1.9.1: com a câmera no token, intervalo entre passos ao segurar uma tecla (abaixo do limite de 8 pedidos/s da sala). */
+const STEP_MS = 180
+
+const isPanAction = (action: string | null): action is PanAction => action !== null && action in PAN_ACTIONS
 
 function readFollow(): boolean {
   try { return localStorage.getItem(FOLLOW_KEY) === "1" } catch { return false }
@@ -103,6 +108,12 @@ export function PlayerView() {
   const [follow, setFollow] = useState(readFollow)
   const camera = useRef<{ sceneId: string | null; focused: boolean; lastSelected: string | null; lastMoved: string | null; positions: Map<string, { x: number; y: number }> }>({ sceneId: null, focused: false, lastSelected: null, lastMoved: null, positions: new Map() })
   const [focusToken, setFocusToken] = useState<CameraToken | null>(null)
+  // 1.9.1: com a câmera no token (trava do mestre ou Seguir), WASD e setas andam com ele, uma célula por passo.
+  const focusId = useRef<string | null>(null)
+  const walk = useRef<{ tokenId: string; target: { x: number; y: number } } | null>(null)
+  const walkKeys = useRef(new Set<PanAction>())
+  const walkTimer = useRef<number | null>(null)
+  const lastStep = useRef(0)
 
   useEffect(() => {
     const key = transmissionKey
@@ -284,6 +295,14 @@ export function PlayerView() {
     if (!ready || !current) return
     const { scene, children } = childrenOf(projection.current)
     current.setScene(scene, children)
+    const pending = walk.current
+    if (pending) {
+      const saved = current.tokenPosition(pending.tokenId)
+      if (!saved) walk.current = null
+      else if (saved.x === pending.target.x && saved.y === pending.target.y) { if (walkKeys.current.size === 0) walk.current = null }
+      // Passo ainda sem resposta: a cena nova não puxa o token (nem a câmera) de volta.
+      else current.placeToken(pending.tokenId, pending.target)
+    }
     placeCamera(current, scene, children)
     current.setVision(projection.current.vision)
     current.setPlayerRegions(projection.current.regions ?? [])
@@ -291,7 +310,12 @@ export function PlayerView() {
     // Com a câmera presa ao token, “Puxar a câmera” não desfaz a trava (o VTT já nem manda; isto cobre a corrida).
     if (pendingCamera.current) { if (!(cameraRules.lockToToken && camera.current.focused)) current.setCamera(pendingCamera.current.center, pendingCamera.current.zoom); pendingCamera.current = null }
     for (const float of pendingFloats.current.splice(0)) current.floatText(float.tokenId, float.text, float.color)
-    for (const reject of pendingRejects.current.splice(0)) { current.revertToken(reject.tokenId); setNotice(reject.reason) }
+    for (const reject of pendingRejects.current.splice(0)) {
+      // Recusado (parede, porta, borda): para de andar até a tecla ser apertada de novo.
+      if (walk.current?.tokenId === reject.tokenId) { walk.current = null; stopWalking(); placeCamera(current, scene, children) }
+      current.revertToken(reject.tokenId)
+      setNotice(reject.reason)
+    }
     engine.current?.apply(audio.current)
     setPlayingCount(audio.current?.sounds.length ?? 0)
   }, [ready, revision])
@@ -323,6 +347,7 @@ export function PlayerView() {
     if (moved.length) state.lastMoved = moved[moved.length - 1]!
     state.positions = new Map(own.map((token) => [token.id, { x: token.x, y: token.y }]))
     const focus = pickFocusToken(own, state.lastSelected, state.lastMoved)
+    focusId.current = focus?.id ?? null
     setFocusToken((previous) => previous?.id === focus?.id && previous?.x === focus?.x && previous?.y === focus?.y && previous?.size === focus?.size ? previous : focus)
     if (!scene || !focus) { current.setCameraFollow(null); return }
     const size = tokenPixels(focus.size, scene.data.grid)
@@ -334,8 +359,35 @@ export function PlayerView() {
       current.setCameraFollow(null, floor)
       current.setCamera({ x: focus.x, y: focus.y }, zoomForSpan(screen, size, ENTER_SPAN))
     }
-    current.setCameraFollow(locked || follow ? { point: { x: focus.x, y: focus.y }, locked } : null, floor)
+    const point = walk.current?.tokenId === focus.id ? walk.current.target : { x: focus.x, y: focus.y }
+    current.setCameraFollow(locked || follow ? { point, locked } : null, floor)
   }
+
+  /** Um passo na direção das teclas seguradas; toques rápidos não passam do limite da sala. */
+  function walkStep(): void {
+    const current = view.current
+    const id = focusId.current
+    let x = 0
+    let y = 0
+    for (const action of walkKeys.current) { x += PAN_ACTIONS[action][0]; y += PAN_ACTIONS[action][1] }
+    if (!current || !id || (x === 0 && y === 0)) return
+    const now = performance.now()
+    if (now - lastStep.current < STEP_MS - 20) return
+    const from = walk.current?.tokenId === id ? walk.current.target : null
+    const next = current.stepToken(id, Math.sign(x), Math.sign(y), from)
+    if (!next) return
+    lastStep.current = now
+    walk.current = { tokenId: id, target: next }
+  }
+
+  function stopWalking(): void {
+    walkKeys.current.clear()
+    if (walkTimer.current !== null) { window.clearInterval(walkTimer.current); walkTimer.current = null }
+  }
+  useEffect(() => {
+    window.addEventListener("blur", stopWalking)
+    return () => { window.removeEventListener("blur", stopWalking); stopWalking() }
+  }, [])
 
   // Um só volume na página (o mestre já equilibra música, ambiente e efeitos).
   useEffect(() => {
@@ -388,8 +440,28 @@ export function PlayerView() {
     else if (action === "toolSelect" || action === "cancel") setTool("select")
   }, false)
   useEffect(() => {
-    const down = (event: KeyboardEvent) => keyboard.onKeyDown(event)
-    const up = (event: KeyboardEvent) => keyboard.onKeyUp(event)
+    // Câmera no token (trava do mestre ou Seguir): as teclas de direção andam com ele em vez de mover a câmera.
+    const walking = (event: KeyboardEvent) => {
+      if (!(cameraRules.lockToToken || follow) || !focusToken || event.ctrlKey || event.metaKey || event.altKey) return null
+      if ((event.target as HTMLElement | null)?.closest?.("input, select, textarea")) return null
+      const action = actionForKey(BINDINGS, event.code)
+      return isPanAction(action) ? action : null
+    }
+    const down = (event: KeyboardEvent) => {
+      const action = walking(event)
+      if (!action) { keyboard.onKeyDown(event); return }
+      event.preventDefault()
+      if (event.repeat || walkKeys.current.has(action)) return
+      walkKeys.current.add(action)
+      if (!moves || !seat) { setNotice("O mestre não liberou mover os tokens agora."); return }
+      if (walkTimer.current === null) { walkStep(); walkTimer.current = window.setInterval(walkStep, STEP_MS) }
+    }
+    const up = (event: KeyboardEvent) => {
+      const action = walking(event)
+      if (!action) { keyboard.onKeyUp(event); return }
+      walkKeys.current.delete(action)
+      if (walkKeys.current.size === 0) stopWalking()
+    }
     window.addEventListener("keydown", down)
     window.addEventListener("keyup", up)
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up) }
@@ -407,7 +479,7 @@ export function PlayerView() {
       <button title="Aproximar (ou afaste dois dedos na tela)" aria-label="Aproximar" onClick={() => view.current?.zoomBy(1.25)}><ZoomIn size={17} /></button>
       <button title="Afastar (ou aproxime dois dedos na tela)" aria-label="Afastar" onClick={() => view.current?.zoomBy(0.8)}><ZoomOut size={17} /></button>
       {focusToken && <button className={cameraRules.lockToToken || follow ? "active" : ""} aria-pressed={cameraRules.lockToToken || follow} aria-disabled={cameraRules.lockToToken}
-        title={cameraRules.lockToToken ? "O mestre prendeu a câmera ao seu token" : follow ? "Seguindo o seu token: toque para soltar" : "Seguir meu token"} aria-label="Seguir meu token"
+        title={cameraRules.lockToToken ? "O mestre prendeu a câmera ao seu token: WASD ou setas andam com ele" : follow ? "Seguindo o seu token (WASD ou setas andam com ele): toque para soltar" : "Seguir meu token"} aria-label="Seguir meu token"
         onClick={() => { if (cameraRules.lockToToken) setNotice(`O mestre prendeu a câmera ao seu token (afastamento até ${cameraRules.maxZoomOut} vezes o tamanho dele).`); else setFollow((value) => !value) }}><LocateFixed size={17} /></button>}
       {canFlip && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Virar meu token (${BINDINGS.flipToken.map(keyLabel).join(" / ")})`} aria-label="Virar meu token" onClick={flipOwn}><FlipHorizontal2 size={17} /></button></>}
       {seat && <><span className="player-tools-divider" aria-hidden="true" /><button title={`Sair da mesa (${seat.label})`} aria-label="Sair da mesa" data-player-leave onClick={() => void leaveSeat()}><LogOut size={17} /></button></>}

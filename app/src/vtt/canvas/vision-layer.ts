@@ -65,7 +65,11 @@ export class VisionLayer {
       }
       root.addChild(polygonGraphics(vision.lights.map((light) => light.dim), DIM_REVEAL, true))
       root.addChild(polygonGraphics(vision.lights.flatMap((light) => (light.bright ? [light.bright] : [])), 1, true))
-      if (vision.fog) root.addChild(polygonGraphics(vision.fog.viewers.flatMap((viewer) => (viewer.sight ? [viewer.sight] : [])), DARKVISION_REVEAL, true))
+      if (vision.fog) {
+        root.addChild(polygonGraphics(vision.fog.viewers.flatMap((viewer) => (viewer.sight && !viewer.ignoreDarkness ? [viewer.sight] : [])), DARKVISION_REVEAL, true))
+        // Ignorar Escuridão (1.9.1): a escuridão some em toda a linha de visão do observador.
+        root.addChild(polygonGraphics(vision.fog.viewers.flatMap((viewer) => (viewer.ignoreDarkness ? [viewer.los] : [])), 1, true))
+      }
       this.darknessTexture = this.draw(root, this.darknessTexture, width, height, scale, 0)
       this.darkness.texture = this.darknessTexture
       this.darkness.scale.set(1 / scale)
@@ -91,6 +95,8 @@ export class VisionLayer {
       root.addChild(explored)
     }
     root.addChild(polygonGraphics(fog.viewers.flatMap((viewer) => (viewer.sight ? [viewer.sight] : [])), 1, true))
+    // Ignorar Escuridão: a linha de visão inteira, sem atravessar paredes nem a névoa além dela.
+    root.addChild(polygonGraphics(fog.viewers.flatMap((viewer) => (viewer.ignoreDarkness ? [viewer.los] : [])), 1, true))
     // Áreas sem névoa (1.9 C): sempre à vista.
     root.addChild(polygonGraphics(areas.filter((area) => area.vision === "off").map((area) => area.polygon), 1, true))
     const lineOfSight = fog.viewers.map((viewer) => viewer.los)

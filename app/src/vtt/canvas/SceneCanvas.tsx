@@ -596,6 +596,7 @@ function TokenFields({ tokenId, data, scene, store, update }: { tokenId: string;
       <div className="field-row">
         <Field label="Enxerga no escuro (células)"><NumberInput value={data.vision.range} step={1} min={0} onCommit={(range) => update({ vision: { ...data.vision, range: Math.max(0, range) } })} /></Field>
       </div>
+      <label className="check" title="Enxerga dentro da escuridão em toda a linha de visão. Paredes continuam bloqueando, e a névoa de guerra continua valendo."><input type="checkbox" checked={data.vision.ignoreDarkness} onChange={(event) => update({ vision: { ...data.vision, ignoreDarkness: event.target.checked } })} /> Ignorar Escuridão (não atravessa paredes nem a névoa)</label>
       <div className="field-row">
         <Field label="Luz plena (células)"><NumberInput value={data.light.bright} step={1} min={0} onCommit={(bright) => update({ light: { ...data.light, bright: Math.max(0, bright), dim: Math.max(data.light.dim, bright) } })} /></Field>
         <Field label="Penumbra (células)"><NumberInput value={data.light.dim} step={1} min={0} onCommit={(dim) => update({ light: { ...data.light, dim: Math.max(0, dim) } })} /></Field>
